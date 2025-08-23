@@ -1,8 +1,12 @@
 {
-  "name": "schematic-trace-solver",
-  "module": "index.ts",
+  "name": "@tscircuit/schematic-trace-solver",
+  "main": "dist/index.js",
+  "version": "0.0.1",
   "type": "module",
-  "private": true,
+  "scripts": {
+    "start": "cosmos",
+    "format": "biome format --write ."
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.2.2",
     "@tscircuit/math-utils": "^0.0.19",
