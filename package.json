@@ -5,7 +5,9 @@
   "private": true,
   "devDependencies": {
     "@biomejs/biome": "^2.2.2",
+    "@tscircuit/math-utils": "^0.0.19",
     "@types/bun": "latest",
+    "graphics-debug": "^0.0.62",
     "react-cosmos": "^7.0.0",
     "react-cosmos-plugin-vite": "^7.0.0",
     "vite": "^7.1.3"

@@ -12,19 +12,19 @@ type PinId = string
 
 new SchematicTraceSolver({
   chips: Array<{
-    chipId: ChipId,
-    center: { x: number, y: number },
-    width: number,
-    height: number,
+    chipId: ChipId
+    center: { x: number; y: number }
+    width: number
+    height: number
     pins: Array<{
-       pinId: PinId,
-       x: number,
-       y: number
+      pinId: PinId
+      x: number
+      y: number
     }>
   }>,
   connections: Array<{
-    pinIds: [PinId, PinId],
+    pinIds: [PinId, PinId]
     netName?: string
-  }>
+  }>,
 })
 ```
