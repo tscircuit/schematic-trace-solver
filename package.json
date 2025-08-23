@@ -1,0 +1,16 @@
+{
+  "name": "schematic-trace-solver",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.2",
+    "@types/bun": "latest",
+    "react-cosmos": "^7.0.0",
+    "react-cosmos-plugin-vite": "^7.0.0",
+    "vite": "^7.1.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
