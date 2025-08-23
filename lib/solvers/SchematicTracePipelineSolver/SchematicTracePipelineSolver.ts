@@ -15,9 +15,9 @@ type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
   solverClass: T
   getConstructorParams: (
-    instance: LayoutPipelineSolver,
+    instance: SchematicTracePipelineSolver,
   ) => ConstructorParameters<T>
-  onSolved?: (instance: LayoutPipelineSolver) => void
+  onSolved?: (instance: SchematicTracePipelineSolver) => void
 }
 
 function definePipelineStep<
@@ -26,11 +26,11 @@ function definePipelineStep<
   ) => BaseSolver,
   const P extends ConstructorParameters<T>,
 >(
-  solverName: keyof LayoutPipelineSolver,
+  solverName: keyof SchematicTracePipelineSolver,
   solverClass: T,
-  getConstructorParams: (instance: LayoutPipelineSolver) => P,
+  getConstructorParams: (instance: SchematicTracePipelineSolver) => P,
   opts: {
-    onSolved?: (instance: LayoutPipelineSolver) => void
+    onSolved?: (instance: SchematicTracePipelineSolver) => void
   } = {},
 ): PipelineStep<T> {
   return {
@@ -41,7 +41,7 @@ function definePipelineStep<
   }
 }
 
-export class LayoutPipelineSolver extends BaseSolver {
+export class SchematicTracePipelineSolver extends BaseSolver {
   mspConnectionPairSolver?: MspConnectionPairSolver
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver

@@ -9,14 +9,22 @@ export interface InputPin {
 export interface InputChip {
   chipId: ChipId
   center: { x: number; y: number }
+  width: number
+  height: number
   pins: Array<InputPin>
 }
-export interface InputConnection {
+export interface InputDirectConnection {
   pinIds: [PinId, PinId]
-  netName?: string
+  netId?: string
+}
+
+export interface InputNetConnection {
+  netId: string
+  pinIds: Array<PinId>
 }
 
 export interface InputProblem {
   chips: Array<InputChip>
-  connections: Array<InputConnection>
+  directConnections: Array<InputDirectConnection>
+  netConnections: Array<InputNetConnection>
 }
