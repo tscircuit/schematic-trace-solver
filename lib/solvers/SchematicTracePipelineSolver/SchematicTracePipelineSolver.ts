@@ -87,6 +87,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           dcConnMap: this.mspConnectionPairSolver!.dcConnMap,
           globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
           inputProblem: this.inputProblem,
+          guidelines: this.guidelinesSolver!.guidelines,
         },
       ],
       {
