@@ -5,10 +5,11 @@ import { getColorFromString } from "lib/utils/getColorFromString"
 export const visualizeInputProblem = (
   inputProblem: InputProblem,
   opts: {
+    chipAlpha?: number
     connectionAlpha?: number
   } = {},
 ): GraphicsObject => {
-  const { connectionAlpha = 0.8 } = opts
+  const { connectionAlpha = 0.8, chipAlpha = 0.8 } = opts
   const graphics: Pick<
     Required<GraphicsObject>,
     "lines" | "points" | "rects"
@@ -31,7 +32,7 @@ export const visualizeInputProblem = (
       center: chip.center,
       width: chip.width,
       height: chip.height,
-      fill: getColorFromString(chip.chipId, 0.8),
+      fill: getColorFromString(chip.chipId, chipAlpha),
     })
 
     for (const pin of chip.pins) {

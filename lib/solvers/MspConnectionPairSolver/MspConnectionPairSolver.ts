@@ -5,6 +5,7 @@ import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInp
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 import type { GraphicsObject } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 
 export type MspConnectionPair = {
   mspPairId: string
@@ -95,10 +96,13 @@ export class MspConnectionPairSolver extends BaseSolver {
   }
 
   override visualize(): GraphicsObject {
-    const graphics: Pick<Required<GraphicsObject>, "points" | "lines"> = {
-      points: [],
-      lines: [],
-    }
+    const graphics: Pick<
+      Required<GraphicsObject>,
+      "points" | "lines"
+    > = visualizeInputProblem(this.inputProblem, {
+      chipAlpha: 0.1,
+      connectionAlpha: 0.1,
+    })
 
     // Draw all the solved MSP with lines, and the next-to-be-solved points with points
     for (const pair of this.mspConnectionPairs) {

@@ -2,6 +2,8 @@
 
 Solve for the correct positions and routing for schematic traces and net labels. For use inside [@tscircuit/core](https://github.com/tscircuit/core)
 
+[Online Playground](https://schematic-trace-solver.vercel.app) ・ [tscircuit](https://github.com/tscircuit/tscircuit) ・ [@tscircuit/core](https://github.com/tscircuit/core)
+
 ## Overview
 
 The Schematic Trace Solver is a pipeline that figures out how to route schematic traces
