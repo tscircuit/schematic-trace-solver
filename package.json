@@ -20,5 +20,8 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@react-hook/resize-observer": "^2.0.2"
   }
 }

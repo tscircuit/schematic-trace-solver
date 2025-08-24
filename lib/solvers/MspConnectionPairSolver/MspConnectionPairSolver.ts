@@ -4,9 +4,12 @@ import { ConnectivityMap } from "connectivity-map"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 import type { GraphicsObject } from "graphics-debug"
+import { getColorFromString } from "lib/utils/getColorFromString"
 
 export type MspConnectionPair = {
   mspPairId: string
+  dcConnNetId: string
+  globalConnNetId: string
   pins: [InputPin & { chipId: string }, InputPin & { chipId: string }]
 }
 
@@ -14,9 +17,9 @@ export class MspConnectionPairSolver extends BaseSolver {
   inputProblem: InputProblem
 
   mspConnectionPairs: MspConnectionPair[] = []
-  directConnMap: ConnectivityMap
-  netConnMap: ConnectivityMap
-  queuedNetIds: string[]
+  dcConnMap: ConnectivityMap
+  globalConnMap: ConnectivityMap
+  queuedDcNetIds: string[]
 
   pinMap: Record<string, InputPin & { chipId: string }>
 
@@ -37,7 +40,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedNetIds = Object.keys(netConnMap.netMap)
+    this.queuedDcNetIds = Object.keys(directConnMap.netMap)
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -49,14 +52,14 @@ export class MspConnectionPairSolver extends BaseSolver {
   }
 
   override _step() {
-    if (this.queuedNetIds.length === 0) {
+    if (this.queuedDcNetIds.length === 0) {
       this.solved = true
       return
     }
 
-    const netId = this.queuedNetIds.shift()!
+    const dcNetId = this.queuedDcNetIds.shift()!
 
-    const directlyConnectedPins = this.directConnMap.getIdsConnectedToNet(netId)
+    const directlyConnectedPins = this.dcConnMap.getIdsConnectedToNet(dcNetId)
 
     if (directlyConnectedPins.length === 1) {
       return
@@ -67,6 +70,8 @@ export class MspConnectionPairSolver extends BaseSolver {
 
       this.mspConnectionPairs.push({
         mspPairId: `${pin1}-${pin2}`,
+        dcConnNetId: dcNetId,
+        globalConnNetId: this.globalConnMap.getNetConnectedToId(pin1!)!,
         pins: [this.pinMap[pin1!]!, this.pinMap[pin2!]!],
       })
 
@@ -82,6 +87,8 @@ export class MspConnectionPairSolver extends BaseSolver {
     for (const [pin1, pin2] of msp) {
       this.mspConnectionPairs.push({
         mspPairId: `${pin1}-${pin2}`,
+        dcConnNetId: dcNetId,
+        globalConnNetId: this.globalConnMap.getNetConnectedToId(pin1!)!,
         pins: [this.pinMap[pin1!]!, this.pinMap[pin2!]!],
       })
     }
@@ -95,6 +102,19 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     // Draw all the solved MSP with lines, and the next-to-be-solved points with points
     for (const pair of this.mspConnectionPairs) {
+      graphics.lines.push({
+        points: [
+          {
+            x: pair.pins[0].x,
+            y: pair.pins[0].y,
+          },
+          {
+            x: pair.pins[1].x,
+            y: pair.pins[1].y,
+          },
+        ],
+        strokeColor: getColorFromString(pair.mspPairId, 0.75),
+      })
     }
 
     return graphics
