@@ -70,7 +70,14 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     definePipelineStep(
       "schematicTraceLinesSolver",
       SchematicTraceLinesSolver,
-      () => [],
+      () => [
+        {
+          mspConnectionPairs: this.mspConnectionPairSolver!.mspConnectionPairs,
+          dcConnMap: this.mspConnectionPairSolver!.dcConnMap,
+          globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
+          inputProblem: this.inputProblem,
+        },
+      ],
       {
         onSolved: (schematicTraceLinesSolver) => {
           // TODO
