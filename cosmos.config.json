@@ -1,5 +1,6 @@
 {
   "$schema": "http://json.schemastore.org/cosmos-config",
   "plugins": ["react-cosmos-plugin-vite"],
-  "fixtureFileSuffix": "page"
+  "fixtureFileSuffix": "page",
+  "decoratorFile": "cosmos.decorator.tsx"
 }
