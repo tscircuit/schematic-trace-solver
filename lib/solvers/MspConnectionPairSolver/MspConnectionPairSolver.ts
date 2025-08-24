@@ -96,17 +96,14 @@ export class MspConnectionPairSolver extends BaseSolver {
   }
 
   override visualize(): GraphicsObject {
-    const graphics: Pick<
-      Required<GraphicsObject>,
-      "points" | "lines"
-    > = visualizeInputProblem(this.inputProblem, {
+    const graphics = visualizeInputProblem(this.inputProblem, {
       chipAlpha: 0.1,
       connectionAlpha: 0.1,
     })
 
     // Draw all the solved MSP with lines, and the next-to-be-solved points with points
     for (const pair of this.mspConnectionPairs) {
-      graphics.lines.push({
+      graphics.lines!.push({
         points: [
           {
             x: pair.pins[0].x,
