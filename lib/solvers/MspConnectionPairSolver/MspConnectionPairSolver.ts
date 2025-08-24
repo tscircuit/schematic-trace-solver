@@ -2,6 +2,8 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
 import { ConnectivityMap } from "connectivity-map"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
+import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
+import type { GraphicsObject } from "graphics-debug"
 
 export type MspConnectionPair = {
   mspPairId: string
@@ -71,8 +73,30 @@ export class MspConnectionPairSolver extends BaseSolver {
       return
     }
 
-    // ...
+    // There are more than 3 pins, so we need to run MSP to find the best pairs
 
-    // ...
+    const msp = getOrthogonalMinimumSpanningTree(
+      directlyConnectedPins.map((p) => this.pinMap[p]!),
+    )
+
+    for (const [pin1, pin2] of msp) {
+      this.mspConnectionPairs.push({
+        mspPairId: `${pin1}-${pin2}`,
+        pins: [this.pinMap[pin1!]!, this.pinMap[pin2!]!],
+      })
+    }
+  }
+
+  override visualize(): GraphicsObject {
+    const graphics: Pick<Required<GraphicsObject>, "points" | "lines"> = {
+      points: [],
+      lines: [],
+    }
+
+    // Draw all the solved MSP with lines, and the next-to-be-solved points with points
+    for (const pair of this.mspConnectionPairs) {
+    }
+
+    return graphics
   }
 }
