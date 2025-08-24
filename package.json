@@ -12,6 +12,7 @@
     "@tscircuit/math-utils": "^0.0.19",
     "@types/bun": "latest",
     "calculate-elbow": "^0.0.9",
+    "connectivity-map": "^1.0.0",
     "graphics-debug": "^0.0.62",
     "react-cosmos": "^7.0.0",
     "react-cosmos-plugin-vite": "^7.0.0",
