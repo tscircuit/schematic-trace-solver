@@ -87,12 +87,13 @@ const inputProblem: InputProblem = {
       pinIds: ["U1.2", "C2.1"],
       netId: "VCC",
     },
+  ],
+  netConnections: [
     {
-      pinIds: ["U1.3", "C1.2"],
+      pinIds: ["U1.3", "C2.2", "C1.2"],
       netId: "GND",
     },
   ],
-  netConnections: [],
 }
 
 export default () => <PipelineDebugger inputProblem={inputProblem} />
