@@ -11,6 +11,7 @@ import { SchematicTraceLinesSolver } from "../SchematicTraceLinesSolver/Schemati
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { visualizeInputProblem } from "./visualizeInputProblem"
+import { GuidelinesSolver } from "../GuidelinesSolver/GuidelinesSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -44,6 +45,7 @@ function definePipelineStep<
 
 export class SchematicTracePipelineSolver extends BaseSolver {
   mspConnectionPairSolver?: MspConnectionPairSolver
+  guidelinesSolver?: GuidelinesSolver
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
@@ -61,10 +63,19 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       MspConnectionPairSolver,
       () => [{ inputProblem: this.inputProblem }],
       {
-        onSolved: (mspSolver) => {
-          // mspSolver.mspConnectionPairs
-          // TODO
+        onSolved: (mspSolver) => {},
+      },
+    ),
+    definePipelineStep(
+      "guidelinesSolver",
+      GuidelinesSolver,
+      () => [
+        {
+          inputProblem: this.inputProblem,
         },
+      ],
+      {
+        onSolved: (guidelinesSolver) => {},
       },
     ),
     definePipelineStep(
