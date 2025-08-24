@@ -1,5 +1,5 @@
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { InputPin, InputProblem } from "lib/types/InputProblem"
+import type { InputChip, InputPin, InputProblem } from "lib/types/InputProblem"
 import { ConnectivityMap } from "connectivity-map"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
@@ -7,8 +7,10 @@ import type { GraphicsObject } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 
+export type MspConnectionPairId = string
+
 export type MspConnectionPair = {
-  mspPairId: string
+  mspPairId: MspConnectionPairId
   dcConnNetId: string
   globalConnNetId: string
   pins: [InputPin & { chipId: string }, InputPin & { chipId: string }]
@@ -21,6 +23,7 @@ export class MspConnectionPairSolver extends BaseSolver {
   dcConnMap: ConnectivityMap
   globalConnMap: ConnectivityMap
   queuedDcNetIds: string[]
+  chipMap: Record<string, InputChip>
 
   pinMap: Record<string, InputPin & { chipId: string }>
 
@@ -39,6 +42,11 @@ export class MspConnectionPairSolver extends BaseSolver {
       for (const pin of chip.pins) {
         this.pinMap[pin.pinId] = { ...pin, chipId: chip.chipId }
       }
+    }
+
+    this.chipMap = {}
+    for (const chip of inputProblem.chips) {
+      this.chipMap[chip.chipId] = chip
     }
 
     this.queuedDcNetIds = Object.keys(directConnMap.netMap)

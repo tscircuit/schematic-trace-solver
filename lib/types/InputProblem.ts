@@ -1,3 +1,5 @@
+import type { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
+
 export type ChipId = string
 export type PinId = string
 
@@ -5,6 +7,8 @@ export interface InputPin {
   pinId: PinId
   x: number
   y: number
+
+  _facingDirection?: "x+" | "x-" | "y+" | "y-"
 }
 export interface InputChip {
   chipId: ChipId
@@ -27,4 +31,6 @@ export interface InputProblem {
   chips: Array<InputChip>
   directConnections: Array<InputDirectConnection>
   netConnections: Array<InputNetConnection>
+
+  _chipObstacleSpatialIndex?: ChipObstacleSpatialIndex
 }
