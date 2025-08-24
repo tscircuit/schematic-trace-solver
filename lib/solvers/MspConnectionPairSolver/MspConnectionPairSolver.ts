@@ -30,8 +30,8 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     const { directConnMap, netConnMap } =
       getConnectivityMapsFromInputProblem(inputProblem)
-    this.directConnMap = directConnMap
-    this.netConnMap = netConnMap
+    this.dcConnMap = directConnMap
+    this.globalConnMap = netConnMap
 
     this.pinMap = {}
     for (const chip of inputProblem.chips) {

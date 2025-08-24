@@ -13,19 +13,24 @@ import { SolverBreadcrumbInputDownloader } from "./SolverBreadcrumbInputDownload
  *
  * After any action, we need to incRenderCount internally to trigger a rerender
  */
-export const SolverToolbar = ({ solver }: { solver: BaseSolver }) => {
+export const SolverToolbar = ({
+  solver,
+  triggerRender,
+}: {
+  solver: BaseSolver
+  triggerRender: Function
+}) => {
   const [isAnimating, setIsAnimating] = useReducer((x) => !x, false)
-  const [, incRenderCount] = useReducer((x) => x + 1, 0)
   const animationRef = useRef<number | undefined>(undefined)
 
   const handleStep = () => {
     solver.step()
-    incRenderCount()
+    triggerRender()
   }
 
   const handleSolve = () => {
     solver.solve()
-    incRenderCount()
+    triggerRender()
   }
 
   const handleAnimate = () => {
@@ -44,11 +49,11 @@ export const SolverToolbar = ({ solver }: { solver: BaseSolver }) => {
             animationRef.current = undefined
           }
           setIsAnimating()
-          incRenderCount()
+          triggerRender()
           return
         }
         solver.step()
-        incRenderCount()
+        triggerRender()
       }, 25) // 40 iterations/second = 25ms interval
     }
   }
