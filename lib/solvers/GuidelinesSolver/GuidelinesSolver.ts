@@ -25,6 +25,9 @@ export class GuidelinesSolver extends BaseSolver {
 
   chipPairsGenerator: Generator<readonly [InputChip, InputChip]>
 
+  usedXGuidelines: Set<number>
+  usedYGuidelines: Set<number>
+
   constructor(params: {
     inputProblem: InputProblem
   }) {
@@ -34,6 +37,9 @@ export class GuidelinesSolver extends BaseSolver {
     this.chipPairsGenerator = getGeneratorForAllChipPairs(
       this.inputProblem.chips,
     )
+
+    this.usedXGuidelines = new Set()
+    this.usedYGuidelines = new Set()
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -62,23 +68,35 @@ export class GuidelinesSolver extends BaseSolver {
     )
     const verticalGuidelineX = getVerticalGuidelineX(chip1Bounds, chip2Bounds)
 
-    this.guidelines.push({
-      orientation: "horizontal",
-      y: horizontalGuidelineY,
-      x: undefined,
-    })
+    if (!this.usedYGuidelines.has(horizontalGuidelineY)) {
+      this.usedYGuidelines.add(horizontalGuidelineY)
+      this.guidelines.push({
+        orientation: "horizontal",
+        y: horizontalGuidelineY,
+        x: undefined,
+      })
+    }
 
-    this.guidelines.push({
-      orientation: "vertical",
-      y: undefined,
-      x: verticalGuidelineX,
-    })
+    if (!this.usedXGuidelines.has(verticalGuidelineX)) {
+      this.usedXGuidelines.add(verticalGuidelineX)
+      this.guidelines.push({
+        orientation: "vertical",
+        y: undefined,
+        x: verticalGuidelineX,
+      })
+    }
   }
 
   override visualize(): GraphicsObject {
     const graphics = visualizeInputProblem(this.inputProblem)
 
     const bounds = getBounds(graphics)
+    const boundsWidth = bounds.maxX - bounds.minX
+    const boundsHeight = bounds.maxY - bounds.minY
+    bounds.minX -= boundsWidth * 0.3
+    bounds.maxX += boundsWidth * 0.3
+    bounds.minY -= boundsHeight * 0.3
+    bounds.maxY += boundsHeight * 0.3
 
     for (const guideline of this.guidelines) {
       if (guideline.orientation === "horizontal") {
