@@ -10,6 +10,7 @@ import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectio
 import { SchematicTraceLinesSolver } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { visualizeInputProblem } from "./visualizeInputProblem"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -158,27 +159,30 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     if (!this.solved && this.activeSubSolver)
       return this.activeSubSolver.visualize()
 
-    const visualizations = this.pipelineDef
-      .map((p) => (this as any)[p.solverName]?.visualize())
-      .filter(Boolean)
-      .map((viz, stepIndex) => {
-        for (const rect of viz!.rects ?? []) {
-          rect.step = stepIndex
-        }
-        for (const point of viz!.points ?? []) {
-          point.step = stepIndex
-        }
-        for (const circle of viz!.circles ?? []) {
-          circle.step = stepIndex
-        }
-        for (const text of viz!.texts ?? []) {
-          text.step = stepIndex
-        }
-        for (const line of viz!.lines ?? []) {
-          line.step = stepIndex
-        }
-        return viz
-      }) as GraphicsObject[]
+    const visualizations = [
+      visualizeInputProblem(this.inputProblem),
+      ...(this.pipelineDef
+        .map((p) => (this as any)[p.solverName]?.visualize())
+        .filter(Boolean)
+        .map((viz, stepIndex) => {
+          for (const rect of viz!.rects ?? []) {
+            rect.step = stepIndex
+          }
+          for (const point of viz!.points ?? []) {
+            point.step = stepIndex
+          }
+          for (const circle of viz!.circles ?? []) {
+            circle.step = stepIndex
+          }
+          for (const text of viz!.texts ?? []) {
+            text.step = stepIndex
+          }
+          for (const line of viz!.lines ?? []) {
+            line.step = stepIndex
+          }
+          return viz
+        }) as GraphicsObject[]),
+    ]
 
     if (visualizations.length === 1) return visualizations[0]!
 
