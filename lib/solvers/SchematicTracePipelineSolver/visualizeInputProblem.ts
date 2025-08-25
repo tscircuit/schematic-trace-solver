@@ -1,6 +1,7 @@
 import type { GraphicsObject } from "graphics-debug"
 import type { PinId, InputPin, InputProblem } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
+import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 
 export const visualizeInputProblem = (
   inputProblem: InputProblem,
@@ -37,7 +38,7 @@ export const visualizeInputProblem = (
 
     for (const pin of chip.pins) {
       graphics.points.push({
-        label: pin.pinId,
+        label: `${pin.pinId}\n${pin._facingDirection ?? getPinDirection(pin, chip)}`,
         x: pin.x,
         y: pin.y,
         color: getColorFromString(pin.pinId, 0.8),
