@@ -12,6 +12,8 @@ import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlap
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { visualizeInputProblem } from "./visualizeInputProblem"
 import { GuidelinesSolver } from "../GuidelinesSolver/GuidelinesSolver"
+import { getInputChipBounds } from "../GuidelinesSolver/getInputChipBounds"
+import { correctPinsInsideChips } from "./correctPinsInsideChip"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -135,7 +137,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
 
   constructor(inputProblem: InputProblem) {
     super()
-    this.inputProblem = inputProblem
+    this.inputProblem = this.cloneAndCorrectInputProblem(inputProblem)
     this.MAX_ITERATIONS = 1e6
     this.startTimeOfPhase = {}
     this.endTimeOfPhase = {}
@@ -144,6 +146,17 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   }
 
   currentPipelineStepIndex = 0
+
+  private cloneAndCorrectInputProblem(original: InputProblem): InputProblem {
+    const cloned: InputProblem = structuredClone({
+      ...original,
+      _chipObstacleSpatialIndex: undefined,
+    })
+
+    correctPinsInsideChips(cloned)
+
+    return cloned
+  }
 
   override _step() {
     const pipelineStepDef = this.pipelineDef[this.currentPipelineStepIndex]
