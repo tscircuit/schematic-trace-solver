@@ -331,9 +331,15 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         ? hostCandidates.reduce((a, b) => (lengthOf(a) >= lengthOf(b) ? a : b))
         : this.overlappingSameNetTraceGroup.overlappingTraces
 
+    if (!host) {
+      this.failed = true
+      this.error = "No host trace found for net label placement"
+      return
+    }
+
     // Ensure we traverse the host path starting at the segment attached to the largest chip's pin
     let pts = host.tracePath.slice()
-    if (largestChipId) {
+    if (largestChipId && host) {
       const largePin =
         host.pins[0].chipId === largestChipId ? host.pins[0] : host.pins[1]
       const d0 =
@@ -425,7 +431,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
           }
 
           // Trace collision check (ignore the host segment)
-          if (this.rectIntersectsAnyTrace(bounds, host.mspPairId, si)) {
+          if (this.rectIntersectsAnyTrace(bounds, host!.mspPairId, si)) {
             this.testedCandidates.push({
               center: testCenter,
               width,
@@ -453,7 +459,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
           this.netLabelPlacement = {
             globalConnNetId: this.overlappingSameNetTraceGroup.globalConnNetId,
-            dcConnNetId: host.dcConnNetId,
+            dcConnNetId: host!.dcConnNetId,
             orientation,
             anchorPoint: anchor,
             width,
