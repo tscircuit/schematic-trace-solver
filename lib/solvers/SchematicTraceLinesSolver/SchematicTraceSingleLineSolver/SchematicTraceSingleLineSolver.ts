@@ -1,4 +1,4 @@
-import type { GraphicsObject } from "graphics-debug"
+import { getBounds, type GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { Guideline } from "lib/solvers/GuidelinesSolver/GuidelinesSolver"
@@ -10,6 +10,7 @@ import { getPinDirection } from "./getPinDirection"
 import { generateElbowVariants } from "./generateElbowVariants"
 import type { Point } from "@tscircuit/math-utils"
 import { visualizeGuidelines } from "lib/solvers/GuidelinesSolver/visualizeGuidelines"
+import { getColorFromString } from "lib/utils/getColorFromString"
 
 export class SchematicTraceSingleLineSolver extends BaseSolver {
   pins: MspConnectionPair["pins"]
@@ -99,7 +100,19 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
 
     const nextCandidatePath = this.queuedCandidatePaths.shift()!
 
-    // TODO check for collisions
+    const obstacleOps = {
+      excludeChipIds: [this.pins[0].chipId, this.pins[1].chipId],
+    }
+    for (let i = 0; i < nextCandidatePath.length - 1; i++) {
+      const start = nextCandidatePath[i]
+      const end = nextCandidatePath[i + 1]
+      const intersects =
+        this.chipObstacleSpatialIndex.doesOrthogonalLineIntersectChip(
+          [start, end],
+          obstacleOps,
+        )
+      if (intersects) return
+    }
 
     this.solvedTracePath = nextCandidatePath
     this.solved = true
@@ -111,6 +124,9 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       connectionAlpha: 0.1,
     })
 
+    const bounds = getBounds(graphics)
+    const boundsWidth = bounds.maxX - bounds.minX
+    const boundsHeight = bounds.maxY - bounds.minY
     visualizeGuidelines({ guidelines: this.guidelines, graphics })
 
     // Visualize movable segments
@@ -133,19 +149,31 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     }
 
     // Draw the next candidate path in orange
-    if (this.queuedCandidatePaths.length > 0) {
-      graphics.lines!.push({
-        points: this.queuedCandidatePaths[0],
-        strokeColor: "orange",
-      })
-    }
+    if (!this.solvedTracePath) {
+      if (this.queuedCandidatePaths.length > 0) {
+        graphics.lines!.push({
+          points: this.queuedCandidatePaths[0],
+          strokeColor: "orange",
+          strokeWidth: boundsWidth * 0.005,
+        })
+      }
 
-    // Visualize all the other queued candidates in faded yellow
-    for (const candidatePath of this.queuedCandidatePaths.slice(1)) {
-      graphics.lines!.push({
-        points: candidatePath,
-        strokeColor: "rgba(255,255,0,0.5)",
-      })
+      // Visualize all the other queued candidates in faded yellow
+      for (let i = 1; i < this.queuedCandidatePaths.length; i++) {
+        const candidatePath = this.queuedCandidatePaths[i]
+        const pi = i / this.queuedCandidatePaths.length
+        graphics.lines!.push({
+          points: candidatePath.map((p) => ({
+            x: p.x + pi * boundsWidth * 0.005,
+            y: p.y + pi * boundsHeight * 0.005,
+          })),
+          strokeColor: getColorFromString(
+            `${candidatePath.reduce((acc, p) => `${acc},${p.x},${p.y}`, "")}`,
+            0.5,
+          ),
+          strokeDash: "8 8",
+        })
+      }
     }
 
     if (this.solvedTracePath) {

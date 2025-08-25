@@ -39,13 +39,94 @@ export const generateElbowVariants = ({
     movableSegments.push({ start, end, freedom, dir: dir(freedom) })
   }
 
-  // To generate elbow variants, you move the movable segments in their freedom
-  // or negative freedom direction but only to guidelines, you generate every
-  // variation of the path with the movable segments moved to guidelines in
-  // different configurations
+  // Find relevant guidelines for each movable segment
+  const segmentGuidelineOptions: Array<Array<number>> = []
+
+  for (const segment of movableSegments) {
+    const relevantPositions: number[] = []
+
+    if (segment.freedom === "x+" || segment.freedom === "x-") {
+      // Segment can move horizontally, find vertical guidelines
+      for (const guideline of guidelines) {
+        if (guideline.orientation === "vertical" && guideline.x !== undefined) {
+          relevantPositions.push(guideline.x)
+        }
+      }
+      // Add current position as an option (no movement)
+      relevantPositions.push(segment.start.x)
+    } else {
+      // Segment can move vertically, find horizontal guidelines
+      for (const guideline of guidelines) {
+        if (
+          guideline.orientation === "horizontal" &&
+          guideline.y !== undefined
+        ) {
+          relevantPositions.push(guideline.y)
+        }
+      }
+      // Add current position as an option (no movement)
+      relevantPositions.push(segment.start.y)
+    }
+
+    segmentGuidelineOptions.push(
+      [...new Set(relevantPositions)].sort((a, b) => a - b),
+    )
+  }
+
+  // Generate all combinations of segment positions
+  const generateCombinations = (
+    options: Array<Array<number>>,
+  ): Array<Array<number>> => {
+    if (options.length === 0) return [[]]
+    if (options.length === 1) return options[0].map((pos) => [pos])
+
+    const combinations: Array<Array<number>> = []
+    const firstOptions = options[0]
+    const restCombinations = generateCombinations(options.slice(1))
+
+    for (const firstOption of firstOptions) {
+      for (const restCombination of restCombinations) {
+        combinations.push([firstOption, ...restCombination])
+      }
+    }
+
+    return combinations
+  }
+
+  const positionCombinations = generateCombinations(segmentGuidelineOptions)
+
+  // Create elbow variants by applying each combination
+  const elbowVariants: Array<Point[]> = []
+
+  for (const combination of positionCombinations) {
+    const variant = [...baseElbow]
+
+    // Apply each segment movement
+    for (
+      let segmentIndex = 0;
+      segmentIndex < movableSegments.length;
+      segmentIndex++
+    ) {
+      const segment = movableSegments[segmentIndex]
+      const newPosition = combination[segmentIndex]
+      const elbowIndex = segmentIndex + 1 // movable segments start at index 1
+
+      if (segment.freedom === "x+" || segment.freedom === "x-") {
+        // Move horizontally
+        variant[elbowIndex] = { ...variant[elbowIndex], x: newPosition }
+        variant[elbowIndex + 1] = { ...variant[elbowIndex + 1], x: newPosition }
+      } else {
+        // Move vertically
+        variant[elbowIndex] = { ...variant[elbowIndex], y: newPosition }
+        variant[elbowIndex + 1] = { ...variant[elbowIndex + 1], y: newPosition }
+      }
+    }
+
+    elbowVariants.push(variant)
+  }
 
   return {
-    elbowVariants: [],
+    elbowVariants,
     movableSegments,
   }
 }

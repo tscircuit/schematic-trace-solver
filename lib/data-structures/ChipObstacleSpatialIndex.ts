@@ -47,7 +47,13 @@ export class ChipObstacleSpatialIndex {
     return chipSpatialIndexIds.map((id) => this.spatialIndexIdToChip.get(id)!)
   }
 
-  doesOrthogonalLineIntersectChip(line: [Point, Point]): boolean {
+  doesOrthogonalLineIntersectChip(
+    line: [Point, Point],
+    opts: {
+      excludeChipIds?: string[]
+    } = {},
+  ): boolean {
+    const excludeChipIds = opts.excludeChipIds ?? []
     const [p1, p2] = line
     const { x: x1, y: y1 } = p1
     const { x: x2, y: y2 } = p2
@@ -57,7 +63,7 @@ export class ChipObstacleSpatialIndex {
       minY: Math.min(y1, y2),
       maxX: Math.max(x1, x2),
       maxY: Math.max(y1, y2),
-    })
+    }).filter((chip) => !excludeChipIds.includes(chip.chipId))
 
     return chips.length > 0
   }
