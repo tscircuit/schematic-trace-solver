@@ -163,6 +163,14 @@ export class NetLabelPlacementSolver extends BaseSolver {
     }
     const graphics = visualizeInputProblem(this.inputProblem)
 
+    for (const trace of Object.values(this.inputTraceMap)) {
+      graphics.lines!.push({
+        points: trace.tracePath,
+        strokeColor: "purple",
+        strokeWidth: 0.005,
+      })
+    }
+
     for (const p of this.netLabelPlacements) {
       graphics.rects!.push({
         center: p.center,

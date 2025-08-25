@@ -3,7 +3,7 @@ import type {
   NetLabelPlacement,
   OverlappingSameNetTraceGroup,
 } from "../NetLabelPlacementSolver"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { FacingDirection } from "lib/utils/dir"
@@ -172,8 +172,63 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       return
     }
 
-    const host = this.overlappingSameNetTraceGroup.overlappingTraces
-    const pts = host.tracePath
+    // Prefer starting from the trace connected to the "largest" chip (most pins)
+    const groupId = this.overlappingSameNetTraceGroup.globalConnNetId
+    const chipsById: Record<string, InputChip> = Object.fromEntries(
+      this.inputProblem.chips.map((c) => [c.chipId, c]),
+    )
+    const groupTraces = Object.values(this.inputTraceMap).filter(
+      (t) => t.globalConnNetId === groupId,
+    )
+    const chipIdsInGroup = new Set<string>()
+    for (const t of groupTraces) {
+      chipIdsInGroup.add(t.pins[0].chipId)
+      chipIdsInGroup.add(t.pins[1].chipId)
+    }
+    let largestChipId: string | null = null
+    let largestPinCount = -1
+    for (const id of chipIdsInGroup) {
+      const chip = chipsById[id]
+      const count = chip?.pins?.length ?? 0
+      if (count > largestPinCount) {
+        largestPinCount = count
+        largestChipId = id
+      }
+    }
+    const lengthOf = (path: SolvedTracePath) => {
+      let sum = 0
+      const pts = path.tracePath
+      for (let i = 0; i < pts.length - 1; i++) {
+        sum += Math.abs(pts[i + 1]!.x - pts[i]!.x) + Math.abs(pts[i + 1]!.y - pts[i]!.y)
+      }
+      return sum
+    }
+    const hostCandidates =
+      largestChipId == null
+        ? []
+        : groupTraces.filter(
+            (t) => t.pins[0].chipId === largestChipId || t.pins[1].chipId === largestChipId,
+          )
+    let host =
+      hostCandidates.length > 0
+        ? hostCandidates.reduce((a, b) => (lengthOf(a) >= lengthOf(b) ? a : b))
+        : this.overlappingSameNetTraceGroup.overlappingTraces
+
+    // Ensure we traverse the host path starting at the segment attached to the largest chip's pin
+    let pts = host.tracePath.slice()
+    if (largestChipId) {
+      const largePin =
+        host.pins[0].chipId === largestChipId ? host.pins[0] : host.pins[1]
+      const d0 =
+        Math.abs(pts[0].x - largePin.x) + Math.abs(pts[0].y - largePin.y)
+      const dL =
+        Math.abs(pts[pts.length - 1].x - largePin.x) +
+        Math.abs(pts[pts.length - 1].y - largePin.y)
+      if (d0 > dL) {
+        pts = pts.slice().reverse()
+      }
+    }
+
     const orientations =
       this.availableOrientations.length > 0
         ? this.availableOrientations
@@ -303,7 +358,46 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
     // Visualize the entire trace group for this net id
     const groupId = this.overlappingSameNetTraceGroup.globalConnNetId
-    const host = this.overlappingSameNetTraceGroup.overlappingTraces
+    // Choose host as in _step: the trace that touches the largest chip in the group
+    const chipsById: Record<string, InputChip> = Object.fromEntries(
+      this.inputProblem.chips.map((c) => [c.chipId, c]),
+    )
+    const groupTraces = Object.values(this.inputTraceMap).filter(
+      (t) => t.globalConnNetId === groupId,
+    )
+    const chipIdsInGroup = new Set<string>()
+    for (const t of groupTraces) {
+      chipIdsInGroup.add(t.pins[0].chipId)
+      chipIdsInGroup.add(t.pins[1].chipId)
+    }
+    let largestChipId: string | null = null
+    let largestPinCount = -1
+    for (const id of chipIdsInGroup) {
+      const chip = chipsById[id]
+      const count = chip?.pins?.length ?? 0
+      if (count > largestPinCount) {
+        largestPinCount = count
+        largestChipId = id
+      }
+    }
+    const lengthOf = (path: SolvedTracePath) => {
+      let sum = 0
+      const pts = path.tracePath
+      for (let i = 0; i < pts.length - 1; i++) {
+        sum += Math.abs(pts[i + 1]!.x - pts[i]!.x) + Math.abs(pts[i + 1]!.y - pts[i]!.y)
+      }
+      return sum
+    }
+    const hostCandidates =
+      largestChipId == null
+        ? []
+        : groupTraces.filter(
+            (t) => t.pins[0].chipId === largestChipId || t.pins[1].chipId === largestChipId,
+          )
+    const host =
+      hostCandidates.length > 0
+        ? hostCandidates.reduce((a, b) => (lengthOf(a) >= lengthOf(b) ? a : b))
+        : this.overlappingSameNetTraceGroup.overlappingTraces
     const groupStroke = getColorFromString(groupId, 0.9)
     const groupFill = getColorFromString(groupId, 0.5)
 
