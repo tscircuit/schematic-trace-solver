@@ -107,9 +107,11 @@ export class NetLabelPlacementSolver extends BaseSolver {
           repLen = len
         }
       }
+      const userNetId =
+        traces.find((t) => t.userNetId != null)?.userNetId
       groups.push({
         globalConnNetId,
-        netId: globalConnNetId,
+        netId: userNetId,
         overlappingTraces: rep,
       })
     }
