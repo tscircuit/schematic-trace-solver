@@ -25,6 +25,7 @@ export class MspConnectionPairSolver extends BaseSolver {
   globalConnMap: ConnectivityMap
   queuedDcNetIds: string[]
   chipMap: Record<string, InputChip>
+  maxMspPairDistance: number
 
   pinMap: Record<string, InputPin & { chipId: string }>
   userNetIdByPinId: Record<string, string | undefined>
@@ -33,6 +34,7 @@ export class MspConnectionPairSolver extends BaseSolver {
     super()
 
     this.inputProblem = inputProblem
+    this.maxMspPairDistance = inputProblem.maxMspPairDistance ?? 1
 
     const { directConnMap, netConnMap } =
       getConnectivityMapsFromInputProblem(inputProblem)
@@ -112,6 +114,7 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     const msp = getOrthogonalMinimumSpanningTree(
       directlyConnectedPins.map((p) => this.pinMap[p]!),
+      { maxDistance: this.maxMspPairDistance },
     )
 
     for (const [pin1, pin2] of msp) {

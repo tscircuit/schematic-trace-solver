@@ -171,6 +171,7 @@ const inputProblem: InputProblem = {
       pinIds: ["C5.1", "U1.5"],
     },
   ],
+  maxMspPairDistance: 2,
   availableNetLabelOrientations: {
     VSYS: ["y+"],
     GND: ["y-"],

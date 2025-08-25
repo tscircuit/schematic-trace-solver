@@ -9,4 +9,7 @@ export default defineConfig({
       tests: path.resolve(__dirname, "tests"),
     },
   },
+  server: {
+    port: 5020,
+  },
 })
