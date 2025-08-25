@@ -18,14 +18,12 @@ export const PipelineDebugger = ({
 
   return (
     <div>
-      <SolverToolbar
-        triggerRender={() => {
-          incRenderCount()
-        }}
-        solver={solver}
-      />
+      <SolverToolbar triggerRender={() => incRenderCount()} solver={solver} />
       <InteractiveGraphics graphics={solver.visualize()} />
-      <PipelineStageTable pipelineSolver={solver} />
+      <PipelineStageTable
+        triggerRender={() => incRenderCount()}
+        pipelineSolver={solver}
+      />
     </div>
   )
 }

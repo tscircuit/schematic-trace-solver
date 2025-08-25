@@ -77,10 +77,10 @@ export const SolverToolbar = ({
   }, [solver.solved, solver.failed, isAnimating])
 
   return (
-    <div className="space-y-4 px-1">
+    <div className="space-y-1 px-1">
       <SolverBreadcrumbInputDownloader solver={solver} />
 
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 pb-1 items-center">
         <button
           onClick={handleStep}
           disabled={solver.solved || solver.failed || isAnimating}

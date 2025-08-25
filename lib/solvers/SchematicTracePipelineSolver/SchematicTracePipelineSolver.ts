@@ -11,6 +11,7 @@ import { SchematicTraceLinesSolver } from "../SchematicTraceLinesSolver/Schemati
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { visualizeInputProblem } from "./visualizeInputProblem"
+import { GuidelinesSolver } from "../GuidelinesSolver/GuidelinesSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -44,6 +45,7 @@ function definePipelineStep<
 
 export class SchematicTracePipelineSolver extends BaseSolver {
   mspConnectionPairSolver?: MspConnectionPairSolver
+  guidelinesSolver?: GuidelinesSolver
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
@@ -61,36 +63,68 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       MspConnectionPairSolver,
       () => [{ inputProblem: this.inputProblem }],
       {
-        onSolved: (mspSolver) => {
-          // mspSolver.mspConnectionPairs
-          // TODO
+        onSolved: (mspSolver) => {},
+      },
+    ),
+    definePipelineStep(
+      "guidelinesSolver",
+      GuidelinesSolver,
+      () => [
+        {
+          inputProblem: this.inputProblem,
         },
+      ],
+      {
+        onSolved: (guidelinesSolver) => {},
       },
     ),
     definePipelineStep(
       "schematicTraceLinesSolver",
       SchematicTraceLinesSolver,
-      () => [],
-      {
-        onSolved: (schematicTraceLinesSolver) => {
-          // TODO
+      () => [
+        {
+          mspConnectionPairs: this.mspConnectionPairSolver!.mspConnectionPairs,
+          dcConnMap: this.mspConnectionPairSolver!.dcConnMap,
+          globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
+          inputProblem: this.inputProblem,
+          guidelines: this.guidelinesSolver!.guidelines,
+          chipMap: this.mspConnectionPairSolver!.chipMap,
         },
+      ],
+      {
+        onSolved: (schematicTraceLinesSolver) => {},
       },
     ),
     definePipelineStep(
       "traceOverlapShiftSolver",
       TraceOverlapShiftSolver,
-      () => [],
-      {
-        onSolved: (_solver) => {
-          // TODO
+      () => [
+        {
+          inputProblem: this.inputProblem,
+          inputTracePaths: this.schematicTraceLinesSolver!.solvedTracePaths,
+          globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
         },
+      ],
+      {
+        onSolved: (_solver) => {},
       },
     ),
     definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
-      () => [],
+      () => [
+        {
+          inputProblem: this.inputProblem,
+          inputTraceMap:
+            this.traceOverlapShiftSolver?.correctedTraceMap ??
+            Object.fromEntries(
+              this.schematicTraceLinesSolver!.solvedTracePaths.map((p) => [
+                p.mspPairId,
+                p,
+              ]),
+            ),
+        },
+      ],
       {
         onSolved: (_solver) => {
           // TODO
@@ -146,7 +180,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   }
 
   solveUntilPhase(phase: string) {
-    while (this.getCurrentPhase() !== phase) {
+    while (this.getCurrentPhase().toLowerCase() !== phase.toLowerCase()) {
       this.step()
     }
   }

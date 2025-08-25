@@ -1,15 +1,19 @@
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { InputPin, InputProblem } from "lib/types/InputProblem"
+import type { InputChip, InputPin, InputProblem } from "lib/types/InputProblem"
 import { ConnectivityMap } from "connectivity-map"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 import type { GraphicsObject } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+
+export type MspConnectionPairId = string
 
 export type MspConnectionPair = {
-  mspPairId: string
+  mspPairId: MspConnectionPairId
   dcConnNetId: string
   globalConnNetId: string
+  userNetId?: string
   pins: [InputPin & { chipId: string }, InputPin & { chipId: string }]
 }
 
@@ -20,8 +24,10 @@ export class MspConnectionPairSolver extends BaseSolver {
   dcConnMap: ConnectivityMap
   globalConnMap: ConnectivityMap
   queuedDcNetIds: string[]
+  chipMap: Record<string, InputChip>
 
   pinMap: Record<string, InputPin & { chipId: string }>
+  userNetIdByPinId: Record<string, string | undefined>
 
   constructor({ inputProblem }: { inputProblem: InputProblem }) {
     super()
@@ -37,6 +43,26 @@ export class MspConnectionPairSolver extends BaseSolver {
     for (const chip of inputProblem.chips) {
       for (const pin of chip.pins) {
         this.pinMap[pin.pinId] = { ...pin, chipId: chip.chipId }
+      }
+    }
+
+    this.chipMap = {}
+    for (const chip of inputProblem.chips) {
+      this.chipMap[chip.chipId] = chip
+    }
+
+    // Build a mapping from PinId to user-provided netId (if any)
+    this.userNetIdByPinId = {}
+    for (const dc of inputProblem.directConnections) {
+      if (dc.netId) {
+        const [a, b] = dc.pinIds
+        this.userNetIdByPinId[a] = dc.netId
+        this.userNetIdByPinId[b] = dc.netId
+      }
+    }
+    for (const nc of inputProblem.netConnections) {
+      for (const pid of nc.pinIds) {
+        this.userNetIdByPinId[pid] = nc.netId
       }
     }
 
@@ -67,11 +93,15 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     if (directlyConnectedPins.length === 2) {
       const [pin1, pin2] = directlyConnectedPins
+      const globalConnNetId = this.globalConnMap.getNetConnectedToId(pin1!)!
+      const userNetId =
+        this.userNetIdByPinId[pin1!] ?? this.userNetIdByPinId[pin2!]
 
       this.mspConnectionPairs.push({
         mspPairId: `${pin1}-${pin2}`,
         dcConnNetId: dcNetId,
-        globalConnNetId: this.globalConnMap.getNetConnectedToId(pin1!)!,
+        globalConnNetId,
+        userNetId,
         pins: [this.pinMap[pin1!]!, this.pinMap[pin2!]!],
       })
 
@@ -85,24 +115,28 @@ export class MspConnectionPairSolver extends BaseSolver {
     )
 
     for (const [pin1, pin2] of msp) {
+      const globalConnNetId = this.globalConnMap.getNetConnectedToId(pin1!)!
+      const userNetId =
+        this.userNetIdByPinId[pin1!] ?? this.userNetIdByPinId[pin2!]
       this.mspConnectionPairs.push({
         mspPairId: `${pin1}-${pin2}`,
         dcConnNetId: dcNetId,
-        globalConnNetId: this.globalConnMap.getNetConnectedToId(pin1!)!,
+        globalConnNetId,
+        userNetId,
         pins: [this.pinMap[pin1!]!, this.pinMap[pin2!]!],
       })
     }
   }
 
   override visualize(): GraphicsObject {
-    const graphics: Pick<Required<GraphicsObject>, "points" | "lines"> = {
-      points: [],
-      lines: [],
-    }
+    const graphics = visualizeInputProblem(this.inputProblem, {
+      chipAlpha: 0.1,
+      connectionAlpha: 0.1,
+    })
 
     // Draw all the solved MSP with lines, and the next-to-be-solved points with points
     for (const pair of this.mspConnectionPairs) {
-      graphics.lines.push({
+      graphics.lines!.push({
         points: [
           {
             x: pair.pins[0].x,
