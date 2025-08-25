@@ -71,5 +71,9 @@ const solver = new SchematicTracePipelineSolver({
     },
     // ...
   ],
+  availableNetLabelOrientations: {
+    VCC: ["y+", "y-"],
+    GND: ["y+", "y-"],
+  },
 })
 ```
