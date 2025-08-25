@@ -7,12 +7,18 @@ import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/
 import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import { calculateElbow } from "calculate-elbow"
 import { getPinDirection } from "./getPinDirection"
+import { generateElbowVariants } from "./generateElbowVariants"
+import type { Point } from "@tscircuit/math-utils"
 
 export class SchematicTraceSingleLineSolver extends BaseSolver {
   pins: MspConnectionPair["pins"]
   inputProblem: InputProblem
   guidelines: Guideline[]
   chipMap: Record<string, InputChip>
+  movableSegments: Array<[Point, Point]>
+  baseElbow: Point[]
+
+  queuedCandidatePaths: Array<Point[]>
 
   chipObstacleSpatialIndex: ChipObstacleSpatialIndex
 
@@ -44,23 +50,9 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
         pin._facingDirection = getPinDirection(pin, chip)
       }
     }
-  }
 
-  override getConstructorParams(): ConstructorParameters<
-    typeof SchematicTraceSingleLineSolver
-  >[0] {
-    return {
-      chipMap: this.chipMap,
-      pins: this.pins,
-      guidelines: this.guidelines,
-      inputProblem: this.inputProblem,
-    }
-  }
-
-  override _step() {
     const [pin1, pin2] = this.pins
-
-    this.solvedTracePath = calculateElbow(
+    this.baseElbow = calculateElbow(
       {
         x: pin1.x,
         y: pin1.y,
@@ -76,10 +68,41 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       },
     )
 
-    // TODO check for collisions
+    const { elbowVariants, movableSegments } = generateElbowVariants({
+      baseElbow: this.baseElbow,
+      guidelines: this.guidelines,
+    })
 
-    this.solved = true
-    // TODO: Implement
+    this.movableSegments = movableSegments
+
+    this.queuedCandidatePaths = [this.baseElbow, ...elbowVariants]
+  }
+
+  override getConstructorParams(): ConstructorParameters<
+    typeof SchematicTraceSingleLineSolver
+  >[0] {
+    return {
+      chipMap: this.chipMap,
+      pins: this.pins,
+      guidelines: this.guidelines,
+      inputProblem: this.inputProblem,
+    }
+  }
+
+  override _step() {
+    if (this.queuedCandidatePaths.length === 0) {
+      this.failed = true
+      this.error = "No more candidate elbows, everything had collisions"
+      return
+    }
+
+    const nextCandidatePath = this.queuedCandidatePaths.shift()
+
+    // this.solvedTracePath =
+    //   // TODO check for collisions
+
+    //   this.solved = true
+    // // TODO: Implement
   }
 
   override visualize(): GraphicsObject {
@@ -87,6 +110,15 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       chipAlpha: 0.1,
       connectionAlpha: 0.1,
     })
+
+    // Visualize movable segments
+    for (const [start, end] of this.movableSegments) {
+      graphics.lines!.push({
+        points: [start, end],
+        strokeColor: "rgba(0,0,255,0.5)",
+        strokeDash: "2 2",
+      })
+    }
 
     if (this.solvedTracePath) {
       for (const point of this.solvedTracePath) {
