@@ -11,9 +11,21 @@ import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
+import {
+  getDimsForOrientation,
+  getCenterFromAnchor,
+  getRectBounds,
+  NET_LABEL_HORIZONTAL_WIDTH,
+  NET_LABEL_HORIZONTAL_HEIGHT,
+} from "./geometry"
+import { rectIntersectsAnyTrace } from "./collisions"
+import { chooseHostTraceForGroup } from "./host"
+import { anchorsForSegment } from "./anchors"
 
-export const NET_LABEL_HORIZONTAL_WIDTH = 0.4
-export const NET_LABEL_HORIZONTAL_HEIGHT = 0.2
+export {
+  NET_LABEL_HORIZONTAL_WIDTH,
+  NET_LABEL_HORIZONTAL_HEIGHT,
+} from "./geometry"
 // NOTE: net labels, when in the y+/y- orientation, are rotated and therefore
 // the width/height are swapped
 
@@ -77,95 +89,6 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       new ChipObstacleSpatialIndex(params.inputProblem.chips)
   }
 
-  private getDimsForOrientation(orientation: FacingDirection) {
-    if (orientation === "y+" || orientation === "y-") {
-      return {
-        width: NET_LABEL_HORIZONTAL_HEIGHT,
-        height: NET_LABEL_HORIZONTAL_WIDTH,
-      }
-    }
-    return {
-      width: NET_LABEL_HORIZONTAL_WIDTH,
-      height: NET_LABEL_HORIZONTAL_HEIGHT,
-    }
-  }
-
-  private getCenterFromAnchor(
-    anchor: { x: number; y: number },
-    orientation: FacingDirection,
-    width: number,
-    height: number,
-  ) {
-    switch (orientation) {
-      case "x+":
-        return { x: anchor.x + width / 2, y: anchor.y }
-      case "x-":
-        return { x: anchor.x - width / 2, y: anchor.y }
-      case "y+":
-        return { x: anchor.x, y: anchor.y + height / 2 }
-      case "y-":
-        return { x: anchor.x, y: anchor.y - height / 2 }
-    }
-  }
-
-  private getRectBounds(
-    center: { x: number; y: number },
-    w: number,
-    h: number,
-  ) {
-    return {
-      minX: center.x - w / 2,
-      minY: center.y - h / 2,
-      maxX: center.x + w / 2,
-      maxY: center.y + h / 2,
-    }
-  }
-
-  private segmentIntersectsRect(
-    p1: { x: number; y: number },
-    p2: { x: number; y: number },
-    rect: { minX: number; minY: number; maxX: number; maxY: number },
-    EPS = 1e-9,
-  ): boolean {
-    const isVert = Math.abs(p1.x - p2.x) < EPS
-    const isHorz = Math.abs(p1.y - p2.y) < EPS
-    if (!isVert && !isHorz) return false
-
-    if (isVert) {
-      const x = p1.x
-      if (x < rect.minX - EPS || x > rect.maxX + EPS) return false
-      const segMinY = Math.min(p1.y, p2.y)
-      const segMaxY = Math.max(p1.y, p2.y)
-      const overlap =
-        Math.min(segMaxY, rect.maxY) - Math.max(segMinY, rect.minY)
-      return overlap > EPS
-    } else {
-      const y = p1.y
-      if (y < rect.minY - EPS || y > rect.maxY + EPS) return false
-      const segMinX = Math.min(p1.x, p2.x)
-      const segMaxX = Math.max(p1.x, p2.x)
-      const overlap =
-        Math.min(segMaxX, rect.maxX) - Math.max(segMinX, rect.minX)
-      return overlap > EPS
-    }
-  }
-
-  private rectIntersectsAnyTrace(
-    bounds: { minX: number; minY: number; maxX: number; maxY: number },
-    hostPathId: MspConnectionPairId,
-    hostSegIndex: number,
-  ): boolean {
-    for (const [pairId, solved] of Object.entries(this.inputTraceMap)) {
-      const pts = solved.tracePath
-      for (let i = 0; i < pts.length - 1; i++) {
-        if (pairId === hostPathId && i === hostSegIndex) continue
-        if (this.segmentIntersectsRect(pts[i]!, pts[i + 1]!, bounds))
-          return true
-      }
-    }
-    return false
-  }
-
   override _step() {
     if (this.netLabelPlacement) {
       this.solved = true
@@ -206,9 +129,9 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
               : { x: 0, y: -1 }
 
       for (const orientation of orientations) {
-        const { width, height } = this.getDimsForOrientation(orientation)
+        const { width, height } = getDimsForOrientation(orientation)
         // Place label fully outside the chip: shift center slightly outward
-        const baseCenter = this.getCenterFromAnchor(
+        const baseCenter = getCenterFromAnchor(
           anchor,
           orientation,
           width,
@@ -220,7 +143,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
           x: baseCenter.x + outward.x * offset,
           y: baseCenter.y + outward.y * offset,
         }
-        const bounds = this.getRectBounds(center, width, height)
+        const bounds = getRectBounds(center, width, height)
 
         // Chip collision check
         const chips = this.chipObstacleSpatialIndex.getChipsInBounds(bounds)
@@ -240,7 +163,12 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
         // Trace collision check
         if (
-          this.rectIntersectsAnyTrace(bounds, "" as MspConnectionPairId, -1)
+          rectIntersectsAnyTrace(
+            bounds,
+            this.inputTraceMap,
+            "" as MspConnectionPairId,
+            -1,
+          )
         ) {
           this.testedCandidates.push({
             center,
@@ -287,49 +215,12 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
     // Prefer starting from the trace connected to the "largest" chip (most pins)
     const groupId = this.overlappingSameNetTraceGroup.globalConnNetId
-    const chipsById: Record<string, InputChip> = Object.fromEntries(
-      this.inputProblem.chips.map((c) => [c.chipId, c]),
-    )
-    const groupTraces = Object.values(this.inputTraceMap).filter(
-      (t) => t.globalConnNetId === groupId,
-    )
-    const chipIdsInGroup = new Set<string>()
-    for (const t of groupTraces) {
-      chipIdsInGroup.add(t.pins[0].chipId)
-      chipIdsInGroup.add(t.pins[1].chipId)
-    }
-    let largestChipId: string | null = null
-    let largestPinCount = -1
-    for (const id of chipIdsInGroup) {
-      const chip = chipsById[id]
-      const count = chip?.pins?.length ?? 0
-      if (count > largestPinCount) {
-        largestPinCount = count
-        largestChipId = id
-      }
-    }
-    const lengthOf = (path: SolvedTracePath) => {
-      let sum = 0
-      const pts = path.tracePath
-      for (let i = 0; i < pts.length - 1; i++) {
-        sum +=
-          Math.abs(pts[i + 1]!.x - pts[i]!.x) +
-          Math.abs(pts[i + 1]!.y - pts[i]!.y)
-      }
-      return sum
-    }
-    const hostCandidates =
-      largestChipId == null
-        ? []
-        : groupTraces.filter(
-            (t) =>
-              t.pins[0].chipId === largestChipId ||
-              t.pins[1].chipId === largestChipId,
-          )
-    let host =
-      hostCandidates.length > 0
-        ? hostCandidates.reduce((a, b) => (lengthOf(a) >= lengthOf(b) ? a : b))
-        : this.overlappingSameNetTraceGroup.overlappingTraces
+    let host = chooseHostTraceForGroup({
+      inputProblem: this.inputProblem,
+      inputTraceMap: this.inputTraceMap,
+      globalConnNetId: groupId,
+      fallbackTrace: this.overlappingSameNetTraceGroup.overlappingTraces,
+    })
 
     if (!host) {
       this.failed = true
@@ -339,18 +230,6 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
     // Ensure we traverse the host path starting at the segment attached to the largest chip's pin
     let pts = host.tracePath.slice()
-    if (largestChipId && host) {
-      const largePin =
-        host.pins[0].chipId === largestChipId ? host.pins[0] : host.pins[1]
-      const d0 =
-        Math.abs(pts[0].x - largePin.x) + Math.abs(pts[0].y - largePin.y)
-      const dL =
-        Math.abs(pts[pts.length - 1].x - largePin.x) +
-        Math.abs(pts[pts.length - 1].y - largePin.y)
-      if (d0 > dL) {
-        pts = pts.slice().reverse()
-      }
-    }
 
     const orientations =
       this.availableOrientations.length > 0
@@ -358,17 +237,6 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         : (["x+", "x-", "y+", "y-"] as FacingDirection[])
 
     const EPS = 1e-6
-    const anchorsForSegment = (
-      a: { x: number; y: number },
-      b: { x: number; y: number },
-    ) => {
-      // Start, midpoint, end
-      return [
-        { x: a.x, y: a.y },
-        { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
-        { x: b.x, y: b.y },
-      ]
-    }
 
     for (let si = 0; si < pts.length - 1; si++) {
       const a = pts[si]!
@@ -390,8 +258,8 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       const anchors = anchorsForSegment(a, b)
       for (const anchor of anchors) {
         for (const orientation of candidateOrients) {
-          const { width, height } = this.getDimsForOrientation(orientation)
-          const center = this.getCenterFromAnchor(
+          const { width, height } = getDimsForOrientation(orientation)
+          const center = getCenterFromAnchor(
             anchor,
             orientation,
             width,
@@ -412,7 +280,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
             x: center.x + outward.x * offset,
             y: center.y + outward.y * offset,
           }
-          const bounds = this.getRectBounds(testCenter, width, height)
+          const bounds = getRectBounds(testCenter, width, height)
 
           // Chip collision check
           const chips = this.chipObstacleSpatialIndex.getChipsInBounds(bounds)
@@ -431,7 +299,14 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
           }
 
           // Trace collision check (ignore the host segment)
-          if (this.rectIntersectsAnyTrace(bounds, host!.mspPairId, si)) {
+          if (
+            rectIntersectsAnyTrace(
+              bounds,
+              this.inputTraceMap,
+              host!.mspPairId,
+              si,
+            )
+          ) {
             this.testedCandidates.push({
               center: testCenter,
               width,
@@ -481,50 +356,12 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
     // Visualize the entire trace group for this net id
     const groupId = this.overlappingSameNetTraceGroup.globalConnNetId
-    // Choose host as in _step: the trace that touches the largest chip in the group
-    const chipsById: Record<string, InputChip> = Object.fromEntries(
-      this.inputProblem.chips.map((c) => [c.chipId, c]),
-    )
-    const groupTraces = Object.values(this.inputTraceMap).filter(
-      (t) => t.globalConnNetId === groupId,
-    )
-    const chipIdsInGroup = new Set<string>()
-    for (const t of groupTraces) {
-      chipIdsInGroup.add(t.pins[0].chipId)
-      chipIdsInGroup.add(t.pins[1].chipId)
-    }
-    let largestChipId: string | null = null
-    let largestPinCount = -1
-    for (const id of chipIdsInGroup) {
-      const chip = chipsById[id]
-      const count = chip?.pins?.length ?? 0
-      if (count > largestPinCount) {
-        largestPinCount = count
-        largestChipId = id
-      }
-    }
-    const lengthOf = (path: SolvedTracePath) => {
-      let sum = 0
-      const pts = path.tracePath
-      for (let i = 0; i < pts.length - 1; i++) {
-        sum +=
-          Math.abs(pts[i + 1]!.x - pts[i]!.x) +
-          Math.abs(pts[i + 1]!.y - pts[i]!.y)
-      }
-      return sum
-    }
-    const hostCandidates =
-      largestChipId == null
-        ? []
-        : groupTraces.filter(
-            (t) =>
-              t.pins[0].chipId === largestChipId ||
-              t.pins[1].chipId === largestChipId,
-          )
-    const host =
-      hostCandidates.length > 0
-        ? hostCandidates.reduce((a, b) => (lengthOf(a) >= lengthOf(b) ? a : b))
-        : this.overlappingSameNetTraceGroup.overlappingTraces
+    const host = chooseHostTraceForGroup({
+      inputProblem: this.inputProblem,
+      inputTraceMap: this.inputTraceMap,
+      globalConnNetId: groupId,
+      fallbackTrace: this.overlappingSameNetTraceGroup.overlappingTraces,
+    })
     const groupStroke = getColorFromString(groupId, 0.9)
     const groupFill = getColorFromString(groupId, 0.5)
 
