@@ -35,6 +35,7 @@ export interface InputProblem {
   netConnections: Array<InputNetConnection>
 
   availableNetLabelOrientations: Record<NetId, FacingDirection[]>
+  maxMspPairDistance?: number
 
   _chipObstacleSpatialIndex?: ChipObstacleSpatialIndex
 }
