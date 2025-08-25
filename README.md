@@ -76,4 +76,6 @@ const solver = new SchematicTracePipelineSolver({
     GND: ["y+", "y-"],
   },
 })
+
+solver.solve()
 ```
