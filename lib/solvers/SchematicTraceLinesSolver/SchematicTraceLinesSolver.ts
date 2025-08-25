@@ -10,6 +10,11 @@ import type { ConnectivityMap } from "connectivity-map"
 import { SchematicTraceSingleLineSolver } from "./SchematicTraceSingleLineSolver/SchematicTraceSingleLineSolver"
 import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
 import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
+import type { Point } from "@tscircuit/math-utils"
+
+export interface SolvedTracePath extends MspConnectionPair {
+  tracePath: Point[]
+}
 
 export class SchematicTraceLinesSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -24,7 +29,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
 
   currentConnectionPair: MspConnectionPair | null = null
 
-  solvedTracePaths: Record<MspConnectionPairId, { x: number; y: number }[]> = {}
+  solvedTracePaths: Array<SolvedTracePath> = []
 
   declare activeSubSolver: SchematicTraceSingleLineSolver | null
 
@@ -62,8 +67,10 @@ export class SchematicTraceLinesSolver extends BaseSolver {
 
   override _step() {
     if (this.activeSubSolver?.solved) {
-      this.solvedTracePaths[this.currentConnectionPair!.mspPairId] =
-        this.activeSubSolver!.solvedTracePath!
+      this.solvedTracePaths.push({
+        ...this.currentConnectionPair!,
+        tracePath: this.activeSubSolver!.solvedTracePath!,
+      })
       this.activeSubSolver = null
       this.currentConnectionPair = null
     }
@@ -107,11 +114,10 @@ export class SchematicTraceLinesSolver extends BaseSolver {
 
     visualizeGuidelines({ guidelines: this.guidelines, graphics })
 
-    for (const [mspPairId, tracePath] of Object.entries(
-      this.solvedTracePaths,
-    )) {
+    for (const { mspPairId, tracePath } of this.solvedTracePaths) {
       graphics.lines!.push({
         points: tracePath,
+        strokeWidth: 0.005,
         strokeColor: "green",
       })
     }

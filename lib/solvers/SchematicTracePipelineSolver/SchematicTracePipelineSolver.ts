@@ -92,19 +92,21 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       ],
       {
-        onSolved: (schematicTraceLinesSolver) => {
-          // TODO
-        },
+        onSolved: (schematicTraceLinesSolver) => {},
       },
     ),
     definePipelineStep(
       "traceOverlapShiftSolver",
       TraceOverlapShiftSolver,
-      () => [],
-      {
-        onSolved: (_solver) => {
-          // TODO
+      () => [
+        {
+          inputProblem: this.inputProblem,
+          inputTracePaths: this.schematicTraceLinesSolver!.solvedTracePaths,
+          globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
         },
+      ],
+      {
+        onSolved: (_solver) => {},
       },
     ),
     definePipelineStep(
