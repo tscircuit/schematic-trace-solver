@@ -71,14 +71,144 @@ export class TraceOverlapShiftSolver extends BaseSolver {
   }
 
   computeTraceNetIslands(): Record<ConnNetId, Array<SolvedTracePath>> {
-    // Compute the trace net islands using the correctedTraceMap
-    throw new Error("Not implemented")
+    // Build islands keyed by global connection net id.
+    // Preserve stable order by iterating original inputTracePaths array.
+    const islands: Record<ConnNetId, Array<SolvedTracePath>> = {}
+
+    for (const original of this.inputTracePaths) {
+      const path = this.correctedTraceMap[original.mspPairId] ?? original
+      const key: ConnNetId = path.globalConnNetId
+      if (!islands[key]) islands[key] = []
+      islands[key].push(path)
+    }
+
+    return islands
   }
 
   findNextOverlapIssue(): {
     overlappingTraceSegments: Array<OverlappingTraceSegmentLocator>
   } | null {
-    throw new Error("Not implemented")
+    // Detect the next set of overlapping segments between two different net islands.
+    const EPS = 1e-6
+
+    const netIds = Object.keys(this.traceNetIslands)
+    // Compare each pair of different nets
+    for (let i = 0; i < netIds.length; i++) {
+      for (let j = i + 1; j < netIds.length; j++) {
+        const netA = netIds[i]!
+        const netB = netIds[j]!
+        const pathsA = this.traceNetIslands[netA] || []
+        const pathsB = this.traceNetIslands[netB] || []
+
+        // Collect overlaps for this pair
+        const overlapsA: Array<{
+          solvedTracePathIndex: number
+          traceSegmentIndex: number
+        }> = []
+        const overlapsB: Array<{
+          solvedTracePathIndex: number
+          traceSegmentIndex: number
+        }> = []
+
+        // Track to avoid duplicates
+        const seenA = new Set<string>()
+        const seenB = new Set<string>()
+
+        const overlaps1D = (
+          a1: number,
+          a2: number,
+          b1: number,
+          b2: number,
+        ): boolean => {
+          const minA = Math.min(a1, a2)
+          const maxA = Math.max(a1, a2)
+          const minB = Math.min(b1, b2)
+          const maxB = Math.max(b1, b2)
+          const overlap = Math.min(maxA, maxB) - Math.max(minA, minB)
+          return overlap > EPS
+        }
+
+        for (let pa = 0; pa < pathsA.length; pa++) {
+          const pathA = pathsA[pa]!
+          const ptsA = pathA.tracePath
+          for (let sa = 0; sa < ptsA.length - 1; sa++) {
+            const a1 = ptsA[sa]!
+            const a2 = ptsA[sa + 1]!
+            const aVert = Math.abs(a1.x - a2.x) < EPS
+            const aHorz = Math.abs(a1.y - a2.y) < EPS
+            if (!aVert && !aHorz) continue
+
+            for (let pb = 0; pb < pathsB.length; pb++) {
+              const pathB = pathsB[pb]!
+              const ptsB = pathB.tracePath
+              for (let sb = 0; sb < ptsB.length - 1; sb++) {
+                const b1 = ptsB[sb]!
+                const b2 = ptsB[sb + 1]!
+                const bVert = Math.abs(b1.x - b2.x) < EPS
+                const bHorz = Math.abs(b1.y - b2.y) < EPS
+                if (!bVert && !bHorz) continue
+
+                // Only consider colinear, parallel orientation overlaps
+                if (aVert && bVert) {
+                  if (Math.abs(a1.x - b1.x) < EPS) {
+                    if (overlaps1D(a1.y, a2.y, b1.y, b2.y)) {
+                      const keyA = `${pa}:${sa}`
+                      const keyB = `${pb}:${sb}`
+                      if (!seenA.has(keyA)) {
+                        overlapsA.push({
+                          solvedTracePathIndex: pa,
+                          traceSegmentIndex: sa,
+                        })
+                        seenA.add(keyA)
+                      }
+                      if (!seenB.has(keyB)) {
+                        overlapsB.push({
+                          solvedTracePathIndex: pb,
+                          traceSegmentIndex: sb,
+                        })
+                        seenB.add(keyB)
+                      }
+                    }
+                  }
+                } else if (aHorz && bHorz) {
+                  if (Math.abs(a1.y - b1.y) < EPS) {
+                    if (overlaps1D(a1.x, a2.x, b1.x, b2.x)) {
+                      const keyA = `${pa}:${sa}`
+                      const keyB = `${pb}:${sb}`
+                      if (!seenA.has(keyA)) {
+                        overlapsA.push({
+                          solvedTracePathIndex: pa,
+                          traceSegmentIndex: sa,
+                        })
+                        seenA.add(keyA)
+                      }
+                      if (!seenB.has(keyB)) {
+                        overlapsB.push({
+                          solvedTracePathIndex: pb,
+                          traceSegmentIndex: sb,
+                        })
+                        seenB.add(keyB)
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        if (overlapsA.length > 0 && overlapsB.length > 0) {
+          return {
+            overlappingTraceSegments: [
+              { connNetId: netA, pathsWithOverlap: overlapsA },
+              { connNetId: netB, pathsWithOverlap: overlapsB },
+            ],
+          }
+        }
+      }
+    }
+
+    return null
   }
 
   override _step() {
@@ -89,7 +219,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
         this.correctedTraceMap[mspPairId] = newTrace
       }
       this.activeSubSolver = null
-      this.computeTraceNetIslands()
+      this.traceNetIslands = this.computeTraceNetIslands()
     }
 
     if (this.activeSubSolver) {
@@ -120,7 +250,14 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
     const graphics = visualizeInputProblem(this.inputProblem)
 
-    // TODO draw the nonOverlappingTraces
+    // Draw current corrected traces
+    for (const trace of Object.values(this.correctedTraceMap)) {
+      graphics.lines!.push({
+        points: trace.tracePath,
+        strokeColor: "purple",
+        strokeWidth: 0.005,
+      })
+    }
 
     return graphics
   }
