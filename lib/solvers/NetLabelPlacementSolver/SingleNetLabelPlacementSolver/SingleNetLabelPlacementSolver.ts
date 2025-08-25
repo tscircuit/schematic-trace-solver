@@ -172,6 +172,117 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       return
     }
 
+    // Handle port-only island (no traces) by placing a label at the port
+    if (this.overlappingSameNetTraceGroup.portOnlyPinId) {
+      const pinId = this.overlappingSameNetTraceGroup.portOnlyPinId
+      // Find pin coordinates
+      let pin: { x: number; y: number } | null = null
+      for (const chip of this.inputProblem.chips) {
+        const p = chip.pins.find((pp) => pp.pinId === pinId)
+        if (p) {
+          pin = { x: p.x, y: p.y }
+          break
+        }
+      }
+      if (!pin) {
+        this.failed = true
+        this.error = `Port-only pin not found: ${pinId}`
+        return
+      }
+
+      const orientations =
+        this.availableOrientations.length > 0
+          ? this.availableOrientations
+          : (["x+", "x-", "y+", "y-"] as FacingDirection[])
+
+      const anchor = { x: pin.x, y: pin.y }
+      const outwardOf = (o: FacingDirection) =>
+        o === "x+"
+          ? { x: 1, y: 0 }
+          : o === "x-"
+            ? { x: -1, y: 0 }
+            : o === "y+"
+              ? { x: 0, y: 1 }
+              : { x: 0, y: -1 }
+
+      for (const orientation of orientations) {
+        const { width, height } = this.getDimsForOrientation(orientation)
+        // Place label fully outside the chip: shift center slightly outward
+        const baseCenter = this.getCenterFromAnchor(
+          anchor,
+          orientation,
+          width,
+          height,
+        )
+        const outward = outwardOf(orientation)
+        const offset = 1e-3
+        const center = {
+          x: baseCenter.x + outward.x * offset,
+          y: baseCenter.y + outward.y * offset,
+        }
+        const bounds = this.getRectBounds(center, width, height)
+
+        // Chip collision check
+        const chips = this.chipObstacleSpatialIndex.getChipsInBounds(bounds)
+        if (chips.length > 0) {
+          this.testedCandidates.push({
+            center,
+            width,
+            height,
+            bounds,
+            anchor,
+            orientation,
+            status: "chip-collision",
+            hostSegIndex: -1,
+          })
+          continue
+        }
+
+        // Trace collision check
+        if (this.rectIntersectsAnyTrace(bounds, "" as MspConnectionPairId, -1)) {
+          this.testedCandidates.push({
+            center,
+            width,
+            height,
+            bounds,
+            anchor,
+            orientation,
+            status: "trace-collision",
+            hostSegIndex: -1,
+          })
+          continue
+        }
+
+        // Found a valid placement
+        this.testedCandidates.push({
+          center,
+          width,
+          height,
+          bounds,
+          anchor,
+          orientation,
+          status: "ok",
+          hostSegIndex: -1,
+        })
+
+        this.netLabelPlacement = {
+          globalConnNetId: this.overlappingSameNetTraceGroup.globalConnNetId,
+          dcConnNetId: undefined,
+          orientation,
+          anchorPoint: anchor,
+          width,
+          height,
+          center,
+        }
+        this.solved = true
+        return
+      }
+
+      this.failed = true
+      this.error = "Could not place net label at port without collisions"
+      return
+    }
+
     // Prefer starting from the trace connected to the "largest" chip (most pins)
     const groupId = this.overlappingSameNetTraceGroup.globalConnNetId
     const chipsById: Record<string, InputChip> = Object.fromEntries(
@@ -411,7 +522,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
     for (const trace of Object.values(this.inputTraceMap)) {
       if (trace.globalConnNetId !== groupId) continue
-      const isHost = trace.mspPairId === host.mspPairId
+      const isHost = host ? trace.mspPairId === host.mspPairId : false
       graphics.lines!.push({
         points: trace.tracePath,
         strokeColor: isHost ? groupStroke : groupFill,
