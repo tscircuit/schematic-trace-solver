@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "cosmos",
+    "build": "tsup lib/index.ts --format esm --dts",
     "format": "biome format --write ."
   },
   "devDependencies": {
@@ -17,12 +18,12 @@
     "graphics-debug": "^0.0.62",
     "react-cosmos": "^7.0.0",
     "react-cosmos-plugin-vite": "^7.0.0",
-    "vite": "^7.1.3"
+    "tsup": "^8.5.0",
+    "vite": "^7.1.3",
+    "@react-hook/resize-observer": "^2.0.2"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
-  "dependencies": {
-    "@react-hook/resize-observer": "^2.0.2"
-  }
+  "dependencies": {}
 }
