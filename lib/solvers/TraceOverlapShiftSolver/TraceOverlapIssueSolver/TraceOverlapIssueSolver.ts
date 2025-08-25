@@ -45,8 +45,9 @@ export class TraceOverlapIssueSolver extends BaseSolver {
   }
 
   override _step() {
-    // Apply shifts to resolve the current overlap set, but only to the specific
-    // overlapping segments (introducing small jogs), not the entire trace.
+    // Shift only the overlapping segments, and move the shared endpoints
+    // (the last point of the previous segment and the first point of the next
+    // segment) so the polyline remains orthogonal without self-overlap.
     const EPS = 1e-6
 
     // Compute offsets for each island involved: alternate directions
@@ -62,68 +63,71 @@ export class TraceOverlapIssueSolver extends BaseSolver {
       q: { x: number; y: number } | undefined,
     ) => !!p && !!q && eq(p.x, q.x) && eq(p.y, q.y)
 
-    // For each net island group, shift only its overlapping segments
+    // For each net island group, shift only its overlapping segments and adjust adjacent joints
     this.overlappingTraceSegments.forEach((group, gidx) => {
       const offset = offsets[gidx]!
-      const byPath: Map<number, number[]> = new Map()
+
+      // Gather unique segment indices per path
+      const byPath: Map<number, Set<number>> = new Map()
       for (const loc of group.pathsWithOverlap) {
-        const arr = byPath.get(loc.solvedTracePathIndex) ?? []
-        arr.push(loc.traceSegmentIndex)
-        byPath.set(loc.solvedTracePathIndex, arr)
+        if (!byPath.has(loc.solvedTracePathIndex)) {
+          byPath.set(loc.solvedTracePathIndex, new Set())
+        }
+        byPath.get(loc.solvedTracePathIndex)!.add(loc.traceSegmentIndex)
       }
 
-      for (const [pathIdx, segIdxs] of byPath) {
+      for (const [pathIdx, segIdxSet] of byPath) {
         const original = this.traceNetIslands[group.connNetId][pathIdx]!
         const current = this.correctedTraceMap[original.mspPairId] ?? original
-        const pts = current.tracePath
+        const pts = current.tracePath.map((p) => ({ ...p }))
 
-        // Sort segment indices to process in natural order
-        segIdxs.sort((a, b) => a - b)
+        const segIdxs = Array.from(segIdxSet).sort((a, b) => a - b)
 
-        const segIdxSet = new Set(segIdxs)
-        const newPts: typeof pts = [pts[0]!]
+        // Track per-point adjustments to avoid double-shifting shared joints
+        const appliedX = new Set<number>()
+        const appliedY = new Set<number>()
 
-        for (let si = 0; si < pts.length - 1; si++) {
+        for (const si of segIdxs) {
+          if (si < 0 || si >= pts.length - 1) continue
           const start = pts[si]!
           const end = pts[si + 1]!
-
-          if (!segIdxSet.has(si)) {
-            // keep original segment
-            if (!samePoint(newPts[newPts.length - 1], end)) {
-              newPts.push(end)
-            }
-            continue
-          }
-
           const isVertical = Math.abs(start.x - end.x) < EPS
           const isHorizontal = Math.abs(start.y - end.y) < EPS
 
-          if (!isVertical && !isHorizontal) {
-            // Non-orthogonal (unexpected); leave as-is
-            if (!samePoint(newPts[newPts.length - 1], end)) {
-              newPts.push(end)
-            }
-            continue
-          }
+          if (!isVertical && !isHorizontal) continue
 
           if (isVertical) {
-            const q1 = { x: start.x + offset, y: start.y }
-            const q2 = { x: end.x + offset, y: end.y }
-            if (!samePoint(newPts[newPts.length - 1], q1)) newPts.push(q1)
-            if (!samePoint(newPts[newPts.length - 1], q2)) newPts.push(q2)
-            if (!samePoint(newPts[newPts.length - 1], end)) newPts.push(end)
+            if (!appliedX.has(si)) {
+              start.x += offset
+              appliedX.add(si)
+            }
+            if (!appliedX.has(si + 1)) {
+              end.x += offset
+              appliedX.add(si + 1)
+            }
           } else if (isHorizontal) {
-            const q1 = { x: start.x, y: start.y + offset }
-            const q2 = { x: end.x, y: end.y + offset }
-            if (!samePoint(newPts[newPts.length - 1], q1)) newPts.push(q1)
-            if (!samePoint(newPts[newPts.length - 1], q2)) newPts.push(q2)
-            if (!samePoint(newPts[newPts.length - 1], end)) newPts.push(end)
+            if (!appliedY.has(si)) {
+              start.y += offset
+              appliedY.add(si)
+            }
+            if (!appliedY.has(si + 1)) {
+              end.y += offset
+              appliedY.add(si + 1)
+            }
+          }
+        }
+
+        // Remove consecutive duplicate points that might appear after shifts
+        const cleaned: typeof pts = []
+        for (const p of pts) {
+          if (cleaned.length === 0 || !samePoint(cleaned[cleaned.length - 1], p)) {
+            cleaned.push(p)
           }
         }
 
         this.correctedTraceMap[original.mspPairId] = {
           ...current,
-          tracePath: newPts,
+          tracePath: cleaned,
         }
       }
     })
