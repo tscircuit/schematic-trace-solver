@@ -107,8 +107,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
           repLen = len
         }
       }
-      const userNetId =
-        traces.find((t) => t.userNetId != null)?.userNetId
+      const userNetId = traces.find((t) => t.userNetId != null)?.userNetId
       groups.push({
         globalConnNetId,
         netId: userNetId,

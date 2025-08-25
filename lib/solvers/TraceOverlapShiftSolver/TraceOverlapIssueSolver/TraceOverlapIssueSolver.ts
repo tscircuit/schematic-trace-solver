@@ -120,7 +120,10 @@ export class TraceOverlapIssueSolver extends BaseSolver {
         // Remove consecutive duplicate points that might appear after shifts
         const cleaned: typeof pts = []
         for (const p of pts) {
-          if (cleaned.length === 0 || !samePoint(cleaned[cleaned.length - 1], p)) {
+          if (
+            cleaned.length === 0 ||
+            !samePoint(cleaned[cleaned.length - 1], p)
+          ) {
             cleaned.push(p)
           }
         }
@@ -146,11 +149,12 @@ export class TraceOverlapIssueSolver extends BaseSolver {
 
     // Draw overlapped segments in red
     for (const group of this.overlappingTraceSegments) {
-      for (const { solvedTracePathIndex, traceSegmentIndex } of group
-        .pathsWithOverlap) {
-        const path = this.traceNetIslands[group.connNetId][
-          solvedTracePathIndex
-        ]!
+      for (const {
+        solvedTracePathIndex,
+        traceSegmentIndex,
+      } of group.pathsWithOverlap) {
+        const path =
+          this.traceNetIslands[group.connNetId][solvedTracePathIndex]!
         const segStart = path.tracePath[traceSegmentIndex]!
         const segEnd = path.tracePath[traceSegmentIndex + 1]!
         graphics.lines!.push({

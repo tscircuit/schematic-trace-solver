@@ -199,7 +199,9 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       let sum = 0
       const pts = path.tracePath
       for (let i = 0; i < pts.length - 1; i++) {
-        sum += Math.abs(pts[i + 1]!.x - pts[i]!.x) + Math.abs(pts[i + 1]!.y - pts[i]!.y)
+        sum +=
+          Math.abs(pts[i + 1]!.x - pts[i]!.x) +
+          Math.abs(pts[i + 1]!.y - pts[i]!.y)
       }
       return sum
     }
@@ -207,7 +209,9 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       largestChipId == null
         ? []
         : groupTraces.filter(
-            (t) => t.pins[0].chipId === largestChipId || t.pins[1].chipId === largestChipId,
+            (t) =>
+              t.pins[0].chipId === largestChipId ||
+              t.pins[1].chipId === largestChipId,
           )
     let host =
       hostCandidates.length > 0
@@ -384,7 +388,9 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       let sum = 0
       const pts = path.tracePath
       for (let i = 0; i < pts.length - 1; i++) {
-        sum += Math.abs(pts[i + 1]!.x - pts[i]!.x) + Math.abs(pts[i + 1]!.y - pts[i]!.y)
+        sum +=
+          Math.abs(pts[i + 1]!.x - pts[i]!.x) +
+          Math.abs(pts[i + 1]!.y - pts[i]!.y)
       }
       return sum
     }
@@ -392,7 +398,9 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       largestChipId == null
         ? []
         : groupTraces.filter(
-            (t) => t.pins[0].chipId === largestChipId || t.pins[1].chipId === largestChipId,
+            (t) =>
+              t.pins[0].chipId === largestChipId ||
+              t.pins[1].chipId === largestChipId,
           )
     const host =
       hostCandidates.length > 0

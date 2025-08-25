@@ -93,8 +93,7 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     if (directlyConnectedPins.length === 2) {
       const [pin1, pin2] = directlyConnectedPins
-      const globalConnNetId =
-        this.globalConnMap.getNetConnectedToId(pin1!)!
+      const globalConnNetId = this.globalConnMap.getNetConnectedToId(pin1!)!
       const userNetId =
         this.userNetIdByPinId[pin1!] ?? this.userNetIdByPinId[pin2!]
 

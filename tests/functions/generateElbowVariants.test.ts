@@ -22,7 +22,7 @@ test("generateElbowVariants - simple horizontal segment", () => {
   expect(result.movableSegments).toHaveLength(2)
   expect(result.movableSegments[0].freedom).toBe("y+")
   expect(result.movableSegments[1].freedom).toBe("x+")
-  
+
   // Should generate variants for each combination of guideline positions
   expect(result.elbowVariants.length).toBeGreaterThan(1)
 })
@@ -61,7 +61,7 @@ test("generateElbowVariants - vertical movable segment", () => {
 
   expect(result.movableSegments).toHaveLength(1)
   expect(result.movableSegments[0].freedom).toBe("x+")
-  
+
   // Should include original position plus guideline positions
   expect(result.elbowVariants.length).toBe(3) // Original + 2 guidelines
 })
@@ -85,14 +85,14 @@ test("generateElbowVariants - multiple segments with guidelines", () => {
   const result = generateElbowVariants({ baseElbow, guidelines })
 
   expect(result.movableSegments).toHaveLength(3)
-  
+
   // First segment moves vertically (y+/y-)
   expect(result.movableSegments[0].freedom).toMatch(/^y[+-]$/)
   // Second segment moves horizontally (x+/x-)
   expect(result.movableSegments[1].freedom).toMatch(/^x[+-]$/)
   // Third segment moves vertically (y+/y-)
   expect(result.movableSegments[2].freedom).toMatch(/^y[+-]$/)
-  
+
   // Should generate multiple variants
   expect(result.elbowVariants.length).toBeGreaterThan(1)
 })
