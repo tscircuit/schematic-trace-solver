@@ -14,6 +14,7 @@ import { visualizeInputProblem } from "./visualizeInputProblem"
 import { GuidelinesSolver } from "../GuidelinesSolver/GuidelinesSolver"
 import { getInputChipBounds } from "../GuidelinesSolver/getInputChipBounds"
 import { correctPinsInsideChips } from "./correctPinsInsideChip"
+import { expandChipsToFitPins } from "./expandChipsToFitPins"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -153,6 +154,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       _chipObstacleSpatialIndex: undefined,
     })
 
+    // First, expand chips so existing pin coordinates sit on or within their edges without shrinking.
+    expandChipsToFitPins(cloned)
+    // Then, for any remaining pins that are still inside due to mixed extremes, snap them to the nearest edge.
     correctPinsInsideChips(cloned)
 
     return cloned
