@@ -7,6 +7,7 @@ import type { FacingDirection } from "lib/utils/dir"
 import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import { getColorFromString } from "lib/utils/getColorFromString"
 
 /**
  * A group of traces that have at least one overlapping segment and
@@ -75,13 +76,45 @@ export class NetLabelPlacementSolver extends BaseSolver {
   }
 
   computeOverlappingSameNetTraceGroups(): Array<OverlappingSameNetTraceGroup> {
-    const overlappingSameNetTraceGroups: Array<OverlappingSameNetTraceGroup> =
-      []
+    // Group traces by their global connectivity net id.
+    const byGlobal: Record<string, Array<SolvedTracePath>> = {}
+    for (const trace of Object.values(this.inputTraceMap)) {
+      const key = trace.globalConnNetId
+      if (!byGlobal[key]) byGlobal[key] = []
+      byGlobal[key].push(trace)
+    }
 
-    // TODO, we can use SolveTracePath.globalConnNetId and the
-    // path segments to compute
+    // For each group, pick a representative path (longest by L1 length).
+    const groups: Array<OverlappingSameNetTraceGroup> = []
+    for (const [globalConnNetId, traces] of Object.entries(byGlobal)) {
+      if (traces.length === 0) continue
+      const lengthOf = (path: SolvedTracePath) => {
+        let sum = 0
+        const pts = path.tracePath
+        for (let i = 0; i < pts.length - 1; i++) {
+          sum +=
+            Math.abs(pts[i + 1]!.x - pts[i]!.x) +
+            Math.abs(pts[i + 1]!.y - pts[i]!.y)
+        }
+        return sum
+      }
+      let rep = traces[0]!
+      let repLen = lengthOf(rep)
+      for (let i = 1; i < traces.length; i++) {
+        const len = lengthOf(traces[i]!)
+        if (len > repLen) {
+          rep = traces[i]!
+          repLen = len
+        }
+      }
+      groups.push({
+        globalConnNetId,
+        netId: globalConnNetId,
+        overlappingTraces: rep,
+      })
+    }
 
-    return overlappingSameNetTraceGroups
+    return groups
   }
 
   override _step() {
@@ -110,22 +143,40 @@ export class NetLabelPlacementSolver extends BaseSolver {
       return
     }
 
-    const netId = nextOverlappingSameNetTraceGroup.netId
+    const netId =
+      nextOverlappingSameNetTraceGroup.netId ??
+      nextOverlappingSameNetTraceGroup.globalConnNetId
 
     this.activeSubSolver = new SingleNetLabelPlacementSolver({
       inputProblem: this.inputProblem,
       inputTraceMap: this.inputTraceMap,
       overlappingSameNetTraceGroup: nextOverlappingSameNetTraceGroup,
       availableOrientations: this.inputProblem.availableNetLabelOrientations[
-        netId!
+        netId
       ] ?? ["x+", "x-", "y+", "y-"],
     })
   }
 
   override visualize(): GraphicsObject {
+    if (this.activeSubSolver) {
+      return this.activeSubSolver.visualize()
+    }
     const graphics = visualizeInputProblem(this.inputProblem)
 
-    // TODO draw net labels
+    for (const p of this.netLabelPlacements) {
+      graphics.rects!.push({
+        center: p.center,
+        width: p.width,
+        height: p.height,
+        fill: getColorFromString(p.globalConnNetId, 0.35),
+        strokeColor: getColorFromString(p.globalConnNetId, 0.9),
+      } as any)
+      graphics.points!.push({
+        x: p.anchorPoint.x,
+        y: p.anchorPoint.y,
+        color: getColorFromString(p.globalConnNetId, 0.9),
+      } as any)
+    }
 
     return graphics
   }

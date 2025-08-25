@@ -85,7 +85,7 @@ const inputProblem: InputProblem = {
     },
     {
       pinIds: ["U1.2", "C2.1"],
-      netId: "VCC",
+      netId: "EN",
     },
   ],
   netConnections: [
@@ -94,6 +94,11 @@ const inputProblem: InputProblem = {
       netId: "GND",
     },
   ],
+  availableNetLabelOrientations: {
+    VCC: ["y+", "y-"],
+    EN: ["x+", "x-"],
+    GND: ["y+", "y-"],
+  },
 }
 
 export default () => <PipelineDebugger inputProblem={inputProblem} />

@@ -9,6 +9,8 @@ import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/Ms
 import type { FacingDirection } from "lib/utils/dir"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import { getColorFromString } from "lib/utils/getColorFromString"
 
 export const NET_LABEL_HORIZONTAL_WIDTH = 0.4
 export const NET_LABEL_HORIZONTAL_HEIGHT = 0.2
@@ -47,6 +49,16 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
   chipObstacleSpatialIndex: ChipObstacleSpatialIndex
 
   netLabelPlacement: NetLabelPlacement | null = null
+  testedCandidates: Array<{
+    center: { x: number; y: number }
+    width: number
+    height: number
+    bounds: { minX: number; minY: number; maxX: number; maxY: number }
+    anchor: { x: number; y: number }
+    orientation: FacingDirection
+    status: "ok" | "chip-collision" | "trace-collision" | "parallel-to-segment"
+    hostSegIndex: number
+  }> = []
 
   constructor(params: {
     inputProblem: InputProblem
@@ -65,9 +77,301 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       new ChipObstacleSpatialIndex(params.inputProblem.chips)
   }
 
-  override _step() {
-    // TODO: Implement
+  private getDimsForOrientation(orientation: FacingDirection) {
+    if (orientation === "y+" || orientation === "y-") {
+      return {
+        width: NET_LABEL_HORIZONTAL_HEIGHT,
+        height: NET_LABEL_HORIZONTAL_WIDTH,
+      }
+    }
+    return {
+      width: NET_LABEL_HORIZONTAL_WIDTH,
+      height: NET_LABEL_HORIZONTAL_HEIGHT,
+    }
   }
 
-  override visualize(): GraphicsObject {}
+  private getCenterFromAnchor(
+    anchor: { x: number; y: number },
+    orientation: FacingDirection,
+    width: number,
+    height: number,
+  ) {
+    switch (orientation) {
+      case "x+":
+        return { x: anchor.x + width / 2, y: anchor.y }
+      case "x-":
+        return { x: anchor.x - width / 2, y: anchor.y }
+      case "y+":
+        return { x: anchor.x, y: anchor.y + height / 2 }
+      case "y-":
+        return { x: anchor.x, y: anchor.y - height / 2 }
+    }
+  }
+
+  private getRectBounds(
+    center: { x: number; y: number },
+    w: number,
+    h: number,
+  ) {
+    return {
+      minX: center.x - w / 2,
+      minY: center.y - h / 2,
+      maxX: center.x + w / 2,
+      maxY: center.y + h / 2,
+    }
+  }
+
+  private segmentIntersectsRect(
+    p1: { x: number; y: number },
+    p2: { x: number; y: number },
+    rect: { minX: number; minY: number; maxX: number; maxY: number },
+    EPS = 1e-9,
+  ): boolean {
+    const isVert = Math.abs(p1.x - p2.x) < EPS
+    const isHorz = Math.abs(p1.y - p2.y) < EPS
+    if (!isVert && !isHorz) return false
+
+    if (isVert) {
+      const x = p1.x
+      if (x < rect.minX - EPS || x > rect.maxX + EPS) return false
+      const segMinY = Math.min(p1.y, p2.y)
+      const segMaxY = Math.max(p1.y, p2.y)
+      const overlap =
+        Math.min(segMaxY, rect.maxY) - Math.max(segMinY, rect.minY)
+      return overlap > EPS
+    } else {
+      const y = p1.y
+      if (y < rect.minY - EPS || y > rect.maxY + EPS) return false
+      const segMinX = Math.min(p1.x, p2.x)
+      const segMaxX = Math.max(p1.x, p2.x)
+      const overlap =
+        Math.min(segMaxX, rect.maxX) - Math.max(segMinX, rect.minX)
+      return overlap > EPS
+    }
+  }
+
+  private rectIntersectsAnyTrace(
+    bounds: { minX: number; minY: number; maxX: number; maxY: number },
+    hostPathId: MspConnectionPairId,
+    hostSegIndex: number,
+  ): boolean {
+    for (const [pairId, solved] of Object.entries(this.inputTraceMap)) {
+      const pts = solved.tracePath
+      for (let i = 0; i < pts.length - 1; i++) {
+        if (pairId === hostPathId && i === hostSegIndex) continue
+        if (this.segmentIntersectsRect(pts[i]!, pts[i + 1]!, bounds))
+          return true
+      }
+    }
+    return false
+  }
+
+  override _step() {
+    if (this.netLabelPlacement) {
+      this.solved = true
+      return
+    }
+
+    const host = this.overlappingSameNetTraceGroup.overlappingTraces
+    const pts = host.tracePath
+    const orientations =
+      this.availableOrientations.length > 0
+        ? this.availableOrientations
+        : (["x+", "x-", "y+", "y-"] as FacingDirection[])
+
+    const EPS = 1e-6
+    const anchorsForSegment = (
+      a: { x: number; y: number },
+      b: { x: number; y: number },
+    ) => {
+      // Start, midpoint, end
+      return [
+        { x: a.x, y: a.y },
+        { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+        { x: b.x, y: b.y },
+      ]
+    }
+
+    for (let si = 0; si < pts.length - 1; si++) {
+      const a = pts[si]!
+      const b = pts[si + 1]!
+      const isH = Math.abs(a.y - b.y) < EPS
+      const isV = Math.abs(a.x - b.x) < EPS
+      if (!isH && !isV) continue
+
+      // Only consider orientations perpendicular to the segment to avoid
+      // self-overlap with the host segment.
+      const segmentAllowed: FacingDirection[] = isH
+        ? (["y+", "y-"] as FacingDirection[])
+        : (["x+", "x-"] as FacingDirection[])
+      const candidateOrients = orientations.filter((o) =>
+        segmentAllowed.includes(o),
+      )
+      if (candidateOrients.length === 0) continue
+
+      const anchors = anchorsForSegment(a, b)
+      for (const anchor of anchors) {
+        for (const orientation of candidateOrients) {
+          const { width, height } = this.getDimsForOrientation(orientation)
+          const center = this.getCenterFromAnchor(
+            anchor,
+            orientation,
+            width,
+            height,
+          )
+
+          // Small outward offset to avoid counting the touching trace as a collision
+          const outward =
+            orientation === "x+"
+              ? { x: 1, y: 0 }
+              : orientation === "x-"
+                ? { x: -1, y: 0 }
+                : orientation === "y+"
+                  ? { x: 0, y: 1 }
+                  : { x: 0, y: -1 }
+          const offset = 1e-4
+          const testCenter = {
+            x: center.x + outward.x * offset,
+            y: center.y + outward.y * offset,
+          }
+          const bounds = this.getRectBounds(testCenter, width, height)
+
+          // Chip collision check
+          const chips = this.chipObstacleSpatialIndex.getChipsInBounds(bounds)
+          if (chips.length > 0) {
+            this.testedCandidates.push({
+              center: testCenter,
+              width,
+              height,
+              bounds,
+              anchor,
+              orientation,
+              status: "chip-collision",
+              hostSegIndex: si,
+            })
+            continue
+          }
+
+          // Trace collision check (ignore the host segment)
+          if (this.rectIntersectsAnyTrace(bounds, host.mspPairId, si)) {
+            this.testedCandidates.push({
+              center: testCenter,
+              width,
+              height,
+              bounds,
+              anchor,
+              orientation,
+              status: "trace-collision",
+              hostSegIndex: si,
+            })
+            continue
+          }
+
+          // Found a valid placement
+          this.testedCandidates.push({
+            center: testCenter,
+            width,
+            height,
+            bounds,
+            anchor,
+            orientation,
+            status: "ok",
+            hostSegIndex: si,
+          })
+
+          this.netLabelPlacement = {
+            globalConnNetId: this.overlappingSameNetTraceGroup.globalConnNetId,
+            dcConnNetId: host.dcConnNetId,
+            orientation,
+            anchorPoint: anchor,
+            width,
+            height,
+            center,
+          }
+          this.solved = true
+          return
+        }
+      }
+    }
+
+    this.failed = true
+    this.error = "Could not place net label without collisions"
+  }
+
+  override visualize(): GraphicsObject {
+    const graphics = visualizeInputProblem(this.inputProblem)
+
+    // Visualize the entire trace group for this net id
+    const groupId = this.overlappingSameNetTraceGroup.globalConnNetId
+    const host = this.overlappingSameNetTraceGroup.overlappingTraces
+    const groupStroke = getColorFromString(groupId, 0.9)
+    const groupFill = getColorFromString(groupId, 0.5)
+
+    for (const trace of Object.values(this.inputTraceMap)) {
+      if (trace.globalConnNetId !== groupId) continue
+      const isHost = trace.mspPairId === host.mspPairId
+      graphics.lines!.push({
+        points: trace.tracePath,
+        strokeColor: isHost ? groupStroke : groupFill,
+        strokeWidth: isHost ? 0.006 : 0.003,
+        strokeDash: isHost ? undefined : "4 2",
+      } as any)
+    }
+
+    // Visualize all tested candidate rectangles with reason coloring
+    for (const c of this.testedCandidates) {
+      const fill =
+        c.status === "ok"
+          ? "rgba(0, 180, 0, 0.25)"
+          : c.status === "chip-collision"
+            ? "rgba(220, 0, 0, 0.25)"
+            : c.status === "trace-collision"
+              ? "rgba(220, 140, 0, 0.25)"
+              : "rgba(120, 120, 120, 0.15)"
+      const stroke =
+        c.status === "ok"
+          ? "green"
+          : c.status === "chip-collision"
+            ? "red"
+            : c.status === "trace-collision"
+              ? "orange"
+              : "gray"
+
+      graphics.rects!.push({
+        center: {
+          x: (c.bounds.minX + c.bounds.maxX) / 2,
+          y: (c.bounds.minY + c.bounds.maxY) / 2,
+        },
+        width: c.width,
+        height: c.height,
+        fill,
+        strokeColor: stroke,
+      } as any)
+
+      graphics.points!.push({
+        x: c.anchor.x,
+        y: c.anchor.y,
+        color: stroke,
+      } as any)
+    }
+
+    // Visualize the final accepted label (if any)
+    if (this.netLabelPlacement) {
+      const p = this.netLabelPlacement
+      graphics.rects!.push({
+        center: p.center,
+        width: p.width,
+        height: p.height,
+        fill: "rgba(0, 128, 255, 0.35)",
+        strokeColor: "blue",
+      } as any)
+      graphics.points!.push({
+        x: p.anchorPoint.x,
+        y: p.anchorPoint.y,
+        color: "blue",
+      } as any)
+    }
+
+    return graphics
+  }
 }

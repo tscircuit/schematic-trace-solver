@@ -112,7 +112,19 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
-      () => [],
+      () => [
+        {
+          inputProblem: this.inputProblem,
+          inputTraceMap:
+            this.traceOverlapShiftSolver?.correctedTraceMap ??
+            Object.fromEntries(
+              this.schematicTraceLinesSolver!.solvedTracePaths.map((p) => [
+                p.mspPairId,
+                p,
+              ]),
+            ),
+        },
+      ],
       {
         onSolved: (_solver) => {
           // TODO
