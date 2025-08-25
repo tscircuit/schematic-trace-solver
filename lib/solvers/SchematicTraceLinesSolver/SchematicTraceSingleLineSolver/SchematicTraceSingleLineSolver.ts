@@ -97,13 +97,12 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       return
     }
 
-    const nextCandidatePath = this.queuedCandidatePaths.shift()
+    const nextCandidatePath = this.queuedCandidatePaths.shift()!
 
-    // this.solvedTracePath =
-    //   // TODO check for collisions
+    // TODO check for collisions
 
-    //   this.solved = true
-    // // TODO: Implement
+    this.solvedTracePath = nextCandidatePath
+    this.solved = true
   }
 
   override visualize(): GraphicsObject {
@@ -130,6 +129,22 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
         ],
         strokeColor: "rgba(0,0,255,0.5)",
         strokeDash: "2 2",
+      })
+    }
+
+    // Draw the next candidate path in orange
+    if (this.queuedCandidatePaths.length > 0) {
+      graphics.lines!.push({
+        points: this.queuedCandidatePaths[0],
+        strokeColor: "orange",
+      })
+    }
+
+    // Visualize all the other queued candidates in faded yellow
+    for (const candidatePath of this.queuedCandidatePaths.slice(1)) {
+      graphics.lines!.push({
+        points: candidatePath,
+        strokeColor: "rgba(255,255,0,0.5)",
       })
     }
 

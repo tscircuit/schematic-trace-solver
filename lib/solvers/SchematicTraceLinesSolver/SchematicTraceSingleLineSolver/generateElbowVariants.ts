@@ -38,9 +38,11 @@ export const generateElbowVariants = ({
 
     movableSegments.push({ start, end, freedom, dir: dir(freedom) })
   }
-  console.log(movableSegments)
 
-  // We consider
+  // To generate elbow variants, you move the movable segments in their freedom
+  // or negative freedom direction but only to guidelines, you generate every
+  // variation of the path with the movable segments moved to guidelines in
+  // different configurations
 
   return {
     elbowVariants: [],
