@@ -239,7 +239,9 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         }
 
         // Trace collision check
-        if (this.rectIntersectsAnyTrace(bounds, "" as MspConnectionPairId, -1)) {
+        if (
+          this.rectIntersectsAnyTrace(bounds, "" as MspConnectionPairId, -1)
+        ) {
           this.testedCandidates.push({
             center,
             width,

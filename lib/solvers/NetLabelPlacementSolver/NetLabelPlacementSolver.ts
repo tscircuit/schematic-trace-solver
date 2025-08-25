@@ -87,7 +87,9 @@ export class NetLabelPlacementSolver extends BaseSolver {
     }
 
     // Build global connectivity from input so we also consider pins with no traces
-    const { netConnMap } = getConnectivityMapsFromInputProblem(this.inputProblem)
+    const { netConnMap } = getConnectivityMapsFromInputProblem(
+      this.inputProblem,
+    )
 
     // Map pins to user-provided netIds (if any)
     const userNetIdByPinId: Record<string, string | undefined> = {}
@@ -108,7 +110,9 @@ export class NetLabelPlacementSolver extends BaseSolver {
 
     // Consider every global connectivity net id
     for (const globalConnNetId of Object.keys((netConnMap as any).netMap)) {
-      const pinsInNet = netConnMap.getIdsConnectedToNet(globalConnNetId) as string[]
+      const pinsInNet = netConnMap.getIdsConnectedToNet(
+        globalConnNetId,
+      ) as string[]
 
       // Build adjacency from solved traces (edges)
       const adj: Record<string, Set<string>> = {}
@@ -168,8 +172,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
             }
           }
 
-          let userNetId =
-            compTraces.find((t) => t.userNetId != null)?.userNetId
+          let userNetId = compTraces.find((t) => t.userNetId != null)?.userNetId
           if (!userNetId) {
             for (const p of component) {
               if (userNetIdByPinId[p]) {

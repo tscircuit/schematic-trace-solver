@@ -34,8 +34,7 @@ export class MspConnectionPairSolver extends BaseSolver {
     super()
 
     this.inputProblem = inputProblem
-    this.maxMspPairDistance =
-      inputProblem.maxMspPairDistance ?? 1
+    this.maxMspPairDistance = inputProblem.maxMspPairDistance ?? 1
 
     const { directConnMap, netConnMap } =
       getConnectivityMapsFromInputProblem(inputProblem)
