@@ -6,7 +6,8 @@
   "scripts": {
     "start": "cosmos",
     "build": "tsup lib/index.ts --format esm --dts",
-    "format": "biome format --write ."
+    "format": "biome format --write .",
+    "format:check": "biome format ."
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.2",

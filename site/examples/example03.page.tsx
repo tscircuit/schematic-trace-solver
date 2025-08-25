@@ -1,3 +1,4 @@
+import type { InputProblem } from "lib/index"
 import { PipelineDebugger } from "site/components/PipelineDebugger"
 
 const inputProblem: InputProblem = {
