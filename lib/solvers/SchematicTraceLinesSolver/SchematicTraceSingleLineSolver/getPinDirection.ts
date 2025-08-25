@@ -14,10 +14,10 @@ export const getPinDirection = (
   const xMinusEdge = center.x - width / 2
 
   // Which edge is the pin closest to?
-  const yPlusDistance = Math.abs(y - yPlusEdge)
-  const yMinusDistance = Math.abs(y - yMinusEdge)
-  const xPlusDistance = Math.abs(x - xPlusEdge)
-  const xMinusDistance = Math.abs(x - xMinusEdge)
+  const yPlusDistance = yPlusEdge - y
+  const yMinusDistance = y - yMinusEdge
+  const xPlusDistance = xPlusEdge - x
+  const xMinusDistance = x - xMinusEdge
 
   const minDistance = Math.min(
     yPlusDistance,

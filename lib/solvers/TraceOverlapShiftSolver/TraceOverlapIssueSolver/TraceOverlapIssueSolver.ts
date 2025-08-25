@@ -89,6 +89,8 @@ export class TraceOverlapIssueSolver extends BaseSolver {
 
         for (const si of segIdxs) {
           if (si < 0 || si >= pts.length - 1) continue
+          // Do not move the first or last segment since they connect directly to pins
+          if (si === 0 || si === pts.length - 2) continue
           const start = pts[si]!
           const end = pts[si + 1]!
           const isVertical = Math.abs(start.x - end.x) < EPS
