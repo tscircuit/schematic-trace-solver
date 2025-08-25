@@ -1,4 +1,4 @@
-import type { GraphicsObject } from "lib/graphics/GraphicsObject"
+import type { GraphicsObject } from "graphics-debug"
 import type { Guideline } from "./GuidelinesSolver"
 import { getBounds } from "graphics-debug"
 

@@ -7,7 +7,10 @@ import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/
 import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import { calculateElbow } from "calculate-elbow"
 import { getPinDirection } from "./getPinDirection"
-import { generateElbowVariants } from "./generateElbowVariants"
+import {
+  generateElbowVariants,
+  type MovableSegment,
+} from "./generateElbowVariants"
 import type { Point } from "@tscircuit/math-utils"
 import { visualizeGuidelines } from "lib/solvers/GuidelinesSolver/visualizeGuidelines"
 import { getColorFromString } from "lib/utils/getColorFromString"
@@ -177,12 +180,10 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     }
 
     if (this.solvedTracePath) {
-      for (const point of this.solvedTracePath) {
-        graphics.lines!.push({
-          points: this.solvedTracePath,
-          strokeColor: "green",
-        })
-      }
+      graphics.lines!.push({
+        points: this.solvedTracePath,
+        strokeColor: "green",
+      })
     }
 
     return graphics
