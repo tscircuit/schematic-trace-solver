@@ -9,13 +9,14 @@ import { calculateElbow } from "calculate-elbow"
 import { getPinDirection } from "./getPinDirection"
 import { generateElbowVariants } from "./generateElbowVariants"
 import type { Point } from "@tscircuit/math-utils"
+import { visualizeGuidelines } from "lib/solvers/GuidelinesSolver/visualizeGuidelines"
 
 export class SchematicTraceSingleLineSolver extends BaseSolver {
   pins: MspConnectionPair["pins"]
   inputProblem: InputProblem
   guidelines: Guideline[]
   chipMap: Record<string, InputChip>
-  movableSegments: Array<[Point, Point]>
+  movableSegments: Array<MovableSegment>
   baseElbow: Point[]
 
   queuedCandidatePaths: Array<Point[]>
@@ -111,10 +112,22 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       connectionAlpha: 0.1,
     })
 
+    visualizeGuidelines({ guidelines: this.guidelines, graphics })
+
     // Visualize movable segments
-    for (const [start, end] of this.movableSegments) {
+    for (const { start, end, dir } of this.movableSegments) {
+      const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 }
+      const dist = Math.sqrt((start.x - end.x) ** 2 + (start.y - end.y) ** 2)
       graphics.lines!.push({
-        points: [start, end],
+        points: [start, mid, end],
+        strokeColor: "rgba(0,0,255,0.5)",
+        strokeDash: "2 2",
+      })
+      graphics.lines!.push({
+        points: [
+          mid,
+          { x: mid.x + dir.x * dist * 0.1, y: mid.y + dir.y * dist * 0.1 },
+        ],
         strokeColor: "rgba(0,0,255,0.5)",
         strokeDash: "2 2",
       })

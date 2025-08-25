@@ -166,7 +166,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   }
 
   solveUntilPhase(phase: string) {
-    while (this.getCurrentPhase() !== phase) {
+    while (this.getCurrentPhase().toLowerCase() !== phase.toLowerCase()) {
       this.step()
     }
   }

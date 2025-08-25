@@ -9,6 +9,7 @@ import type {
 import type { ConnectivityMap } from "connectivity-map"
 import { SchematicTraceSingleLineSolver } from "./SchematicTraceSingleLineSolver/SchematicTraceSingleLineSolver"
 import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
+import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
 
 export class SchematicTraceLinesSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -104,37 +105,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       connectionAlpha: 0.1,
     })
 
-    const globalBounds = getBounds(graphics)
-    const boundsWidth = globalBounds.maxX - globalBounds.minX
-    const boundsHeight = globalBounds.maxY - globalBounds.minY
-    globalBounds.minX -= boundsWidth * 0.3
-    globalBounds.maxX += boundsWidth * 0.3
-    globalBounds.minY -= boundsHeight * 0.3
-    globalBounds.maxY += boundsHeight * 0.3
-
-    for (const guideline of this.guidelines) {
-      if (guideline.orientation === "horizontal") {
-        graphics.lines!.push({
-          points: [
-            { x: globalBounds.minX, y: guideline.y },
-            { x: globalBounds.maxX, y: guideline.y },
-          ],
-          strokeColor: "rgba(0, 0, 0, 0.5)",
-          strokeDash: "2 2",
-        })
-      }
-
-      if (guideline.orientation === "vertical") {
-        graphics.lines!.push({
-          points: [
-            { x: guideline.x, y: globalBounds.minY },
-            { x: guideline.x, y: globalBounds.maxY },
-          ],
-          strokeColor: "rgba(0, 0, 0, 0.5)",
-          strokeDash: "2 2",
-        })
-      }
-    }
+    visualizeGuidelines({ guidelines: this.guidelines, graphics })
 
     for (const [mspPairId, tracePath] of Object.entries(
       this.solvedTracePaths,
