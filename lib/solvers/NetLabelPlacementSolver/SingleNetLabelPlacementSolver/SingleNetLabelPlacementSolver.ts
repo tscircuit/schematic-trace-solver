@@ -135,7 +135,10 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     )
     const tracesToScan =
       this.availableOrientations.length === 1
-        ? [host, ...tracesToScanBase.filter((t) => t.mspPairId !== host!.mspPairId)]
+        ? [
+            host,
+            ...tracesToScanBase.filter((t) => t.mspPairId !== host!.mspPairId),
+          ]
         : [host]
 
     const orientations =
@@ -161,17 +164,15 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
           return -anchor.x
       }
     }
-    let bestCandidate:
-      | {
-          anchor: { x: number; y: number }
-          orientation: FacingDirection
-          width: number
-          height: number
-          center: { x: number; y: number }
-          hostSegIndex: number
-          dcConnNetId: string
-        }
-      | null = null
+    let bestCandidate: {
+      anchor: { x: number; y: number }
+      orientation: FacingDirection
+      width: number
+      height: number
+      center: { x: number; y: number }
+      hostSegIndex: number
+      dcConnNetId: string
+    } | null = null
     let bestScore = -Infinity
 
     const EPS = 1e-6
@@ -179,131 +180,132 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     for (const curr of tracesToScan) {
       const pts = curr.tracePath.slice()
       for (let si = 0; si < pts.length - 1; si++) {
-      const a = pts[si]!
-      const b = pts[si + 1]!
-      const isH = Math.abs(a.y - b.y) < EPS
-      const isV = Math.abs(a.x - b.x) < EPS
-      if (!isH && !isV) continue
+        const a = pts[si]!
+        const b = pts[si + 1]!
+        const isH = Math.abs(a.y - b.y) < EPS
+        const isV = Math.abs(a.x - b.x) < EPS
+        if (!isH && !isV) continue
 
-      // Only consider orientations perpendicular to the segment to avoid
-      // self-overlap with the host segment.
-      const segmentAllowed: FacingDirection[] = isH
-        ? (["y+", "y-"] as FacingDirection[])
-        : (["x+", "x-"] as FacingDirection[])
-      const candidateOrients = orientations.filter((o) =>
-        segmentAllowed.includes(o),
-      )
-      if (candidateOrients.length === 0) continue
+        // Only consider orientations perpendicular to the segment to avoid
+        // self-overlap with the host segment.
+        const segmentAllowed: FacingDirection[] = isH
+          ? (["y+", "y-"] as FacingDirection[])
+          : (["x+", "x-"] as FacingDirection[])
+        const candidateOrients = orientations.filter((o) =>
+          segmentAllowed.includes(o),
+        )
+        if (candidateOrients.length === 0) continue
 
-      const anchors = anchorsForSegment(a, b)
-      for (const anchor of anchors) {
-        for (const orientation of candidateOrients) {
-          const { width, height } = getDimsForOrientation(orientation)
-          const center = getCenterFromAnchor(
-            anchor,
-            orientation,
-            width,
-            height,
-          )
-
-          // Small outward offset to avoid counting the touching trace as a collision
-          const outward =
-            orientation === "x+"
-              ? { x: 1, y: 0 }
-              : orientation === "x-"
-                ? { x: -1, y: 0 }
-                : orientation === "y+"
-                  ? { x: 0, y: 1 }
-                  : { x: 0, y: -1 }
-          const offset = 1e-4
-          const testCenter = {
-            x: center.x + outward.x * offset,
-            y: center.y + outward.y * offset,
-          }
-          const bounds = getRectBounds(testCenter, width, height)
-
-          // Chip collision check
-          const chips = this.chipObstacleSpatialIndex.getChipsInBounds(bounds)
-          if (chips.length > 0) {
-            this.testedCandidates.push({
-              center: testCenter,
-              width,
-              height,
-              bounds,
+        const anchors = anchorsForSegment(a, b)
+        for (const anchor of anchors) {
+          for (const orientation of candidateOrients) {
+            const { width, height } = getDimsForOrientation(orientation)
+            const center = getCenterFromAnchor(
               anchor,
               orientation,
-              status: "chip-collision",
-              hostSegIndex: si,
-            })
-            continue
-          }
-
-          // Trace collision check (ignore the host segment)
-          if (
-            rectIntersectsAnyTrace(
-              bounds,
-              this.inputTraceMap,
-              curr.mspPairId,
-              si,
+              width,
+              height,
             )
-          ) {
-            this.testedCandidates.push({
-              center: testCenter,
-              width,
-              height,
-              bounds,
-              anchor,
-              orientation,
-              status: "trace-collision",
-              hostSegIndex: si,
-            })
-            continue
-          }
 
-          // Found a valid placement
-          this.testedCandidates.push({
-            center: testCenter,
-            width,
-            height,
-            bounds,
-            anchor,
-            orientation,
-            status: "ok",
-            hostSegIndex: si,
-          })
+            // Small outward offset to avoid counting the touching trace as a collision
+            const outward =
+              orientation === "x+"
+                ? { x: 1, y: 0 }
+                : orientation === "x-"
+                  ? { x: -1, y: 0 }
+                  : orientation === "y+"
+                    ? { x: 0, y: 1 }
+                    : { x: 0, y: -1 }
+            const offset = 1e-4
+            const testCenter = {
+              x: center.x + outward.x * offset,
+              y: center.y + outward.y * offset,
+            }
+            const bounds = getRectBounds(testCenter, width, height)
 
-          if (singleOrientationMode) {
-            const s = scoreFor(orientation, anchor)
-            if (s > bestScore + 1e-9) {
-              bestScore = s
-              bestCandidate = {
-                anchor,
-                orientation,
+            // Chip collision check
+            const chips = this.chipObstacleSpatialIndex.getChipsInBounds(bounds)
+            if (chips.length > 0) {
+              this.testedCandidates.push({
+                center: testCenter,
                 width,
                 height,
-                center,
+                bounds,
+                anchor,
+                orientation,
+                status: "chip-collision",
                 hostSegIndex: si,
-                dcConnNetId: curr.dcConnNetId,
-              }
+              })
+              continue
             }
-            // Continue traversing to prioritize the furthest valid point
-            continue
-          }
 
-          this.netLabelPlacement = {
-            globalConnNetId: this.overlappingSameNetTraceGroup.globalConnNetId,
-            dcConnNetId: curr.dcConnNetId,
-            orientation,
-            anchorPoint: anchor,
-            width,
-            height,
-            center,
+            // Trace collision check (ignore the host segment)
+            if (
+              rectIntersectsAnyTrace(
+                bounds,
+                this.inputTraceMap,
+                curr.mspPairId,
+                si,
+              )
+            ) {
+              this.testedCandidates.push({
+                center: testCenter,
+                width,
+                height,
+                bounds,
+                anchor,
+                orientation,
+                status: "trace-collision",
+                hostSegIndex: si,
+              })
+              continue
+            }
+
+            // Found a valid placement
+            this.testedCandidates.push({
+              center: testCenter,
+              width,
+              height,
+              bounds,
+              anchor,
+              orientation,
+              status: "ok",
+              hostSegIndex: si,
+            })
+
+            if (singleOrientationMode) {
+              const s = scoreFor(orientation, anchor)
+              if (s > bestScore + 1e-9) {
+                bestScore = s
+                bestCandidate = {
+                  anchor,
+                  orientation,
+                  width,
+                  height,
+                  center,
+                  hostSegIndex: si,
+                  dcConnNetId: curr.dcConnNetId,
+                }
+              }
+              // Continue traversing to prioritize the furthest valid point
+              continue
+            }
+
+            this.netLabelPlacement = {
+              globalConnNetId:
+                this.overlappingSameNetTraceGroup.globalConnNetId,
+              dcConnNetId: curr.dcConnNetId,
+              orientation,
+              anchorPoint: anchor,
+              width,
+              height,
+              center,
+            }
+            this.solved = true
+            return
           }
-          this.solved = true
-          return
         }
       }
-    }
     }
 
     if (singleOrientationMode && bestCandidate) {

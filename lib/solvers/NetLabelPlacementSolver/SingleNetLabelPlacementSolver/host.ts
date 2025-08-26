@@ -6,7 +6,8 @@ export function lengthOfTrace(path: SolvedTracePath): number {
   let sum = 0
   const pts = path.tracePath
   for (let i = 0; i < pts.length - 1; i++) {
-    sum += Math.abs(pts[i + 1]!.x - pts[i]!.x) + Math.abs(pts[i + 1]!.y - pts[i]!.y)
+    sum +=
+      Math.abs(pts[i + 1]!.x - pts[i]!.x) + Math.abs(pts[i + 1]!.y - pts[i]!.y)
   }
   return sum
 }
@@ -48,7 +49,9 @@ export function chooseHostTraceForGroup(params: {
     largestChipId == null
       ? []
       : groupTraces.filter(
-          (t) => t.pins[0].chipId === largestChipId || t.pins[1].chipId === largestChipId,
+          (t) =>
+            t.pins[0].chipId === largestChipId ||
+            t.pins[1].chipId === largestChipId,
         )
 
   if (hostCandidates.length > 0) {
