@@ -13,6 +13,7 @@ import {
 } from "./generateElbowVariants"
 import type { Point } from "@tscircuit/math-utils"
 import { visualizeGuidelines } from "lib/solvers/GuidelinesSolver/visualizeGuidelines"
+import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
 import { getColorFromString } from "lib/utils/getColorFromString"
 
 export class SchematicTraceSingleLineSolver extends BaseSolver {
@@ -128,8 +129,25 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
             Math.abs(pin.x - start.x) < 1e-10 &&
             Math.abs(pin.y - start.y) < 1e-10,
         )
-        if (startPin && !excludeChipIds.includes(startPin.chipId)) {
-          excludeChipIds.push(startPin.chipId)
+        if (startPin) {
+          // Enforce that the first segment does not enter the chip interior.
+          const bounds = getInputChipBounds(this.chipMap[startPin.chipId])
+          const dx = end.x - start.x
+          const dy = end.y - start.y
+          const EPS = 1e-9
+          const onLeft = Math.abs(start.x - bounds.minX) < 1e-9
+          const onRight = Math.abs(start.x - bounds.maxX) < 1e-9
+          const onBottom = Math.abs(start.y - bounds.minY) < 1e-9
+          const onTop = Math.abs(start.y - bounds.maxY) < 1e-9
+          const entersInterior =
+            (onLeft && dx > EPS) ||
+            (onRight && dx < -EPS) ||
+            (onBottom && dy > EPS) ||
+            (onTop && dy < -EPS)
+          if (entersInterior) return
+          if (!excludeChipIds.includes(startPin.chipId)) {
+            excludeChipIds.push(startPin.chipId)
+          }
         }
       }
 
@@ -138,8 +156,25 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
           (pin) =>
             Math.abs(pin.x - end.x) < 1e-10 && Math.abs(pin.y - end.y) < 1e-10,
         )
-        if (endPin && !excludeChipIds.includes(endPin.chipId)) {
-          excludeChipIds.push(endPin.chipId)
+        if (endPin) {
+          // Enforce that the last segment approaches the pin from outside the chip.
+          const bounds = getInputChipBounds(this.chipMap[endPin.chipId])
+          const dx = start.x - end.x // vector from pin outward toward previous point
+          const dy = start.y - end.y
+          const EPS = 1e-9
+          const onLeft = Math.abs(end.x - bounds.minX) < 1e-9
+          const onRight = Math.abs(end.x - bounds.maxX) < 1e-9
+          const onBottom = Math.abs(end.y - bounds.minY) < 1e-9
+          const onTop = Math.abs(end.y - bounds.maxY) < 1e-9
+          const entersInterior =
+            (onLeft && dx > EPS) ||
+            (onRight && dx < -EPS) ||
+            (onBottom && dy > EPS) ||
+            (onTop && dy < -EPS)
+          if (entersInterior) return
+          if (!excludeChipIds.includes(endPin.chipId)) {
+            excludeChipIds.push(endPin.chipId)
+          }
         }
       }
 
