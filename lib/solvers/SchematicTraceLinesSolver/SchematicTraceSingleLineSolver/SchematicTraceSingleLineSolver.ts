@@ -106,33 +106,43 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     for (let i = 0; i < nextCandidatePath.length - 1; i++) {
       const start = nextCandidatePath[i]
       const end = nextCandidatePath[i + 1]
-      
+
       // Determine which chips to exclude for this specific segment
       let excludeChipIds: string[] = []
-      
+
       // Always exclude chips that contain the start or end points of this segment
       // if those points are actually pin locations
-      const isStartPin = this.pins.some(pin => 
-        Math.abs(pin.x - start.x) < 1e-10 && Math.abs(pin.y - start.y) < 1e-10)
-      const isEndPin = this.pins.some(pin => 
-        Math.abs(pin.x - end.x) < 1e-10 && Math.abs(pin.y - end.y) < 1e-10)
-      
+      const isStartPin = this.pins.some(
+        (pin) =>
+          Math.abs(pin.x - start.x) < 1e-10 &&
+          Math.abs(pin.y - start.y) < 1e-10,
+      )
+      const isEndPin = this.pins.some(
+        (pin) =>
+          Math.abs(pin.x - end.x) < 1e-10 && Math.abs(pin.y - end.y) < 1e-10,
+      )
+
       if (isStartPin) {
-        const startPin = this.pins.find(pin => 
-          Math.abs(pin.x - start.x) < 1e-10 && Math.abs(pin.y - start.y) < 1e-10)
+        const startPin = this.pins.find(
+          (pin) =>
+            Math.abs(pin.x - start.x) < 1e-10 &&
+            Math.abs(pin.y - start.y) < 1e-10,
+        )
         if (startPin && !excludeChipIds.includes(startPin.chipId)) {
           excludeChipIds.push(startPin.chipId)
         }
       }
-      
+
       if (isEndPin) {
-        const endPin = this.pins.find(pin => 
-          Math.abs(pin.x - end.x) < 1e-10 && Math.abs(pin.y - end.y) < 1e-10)
+        const endPin = this.pins.find(
+          (pin) =>
+            Math.abs(pin.x - end.x) < 1e-10 && Math.abs(pin.y - end.y) < 1e-10,
+        )
         if (endPin && !excludeChipIds.includes(endPin.chipId)) {
           excludeChipIds.push(endPin.chipId)
         }
       }
-      
+
       const obstacleOps = { excludeChipIds }
       const intersects =
         this.chipObstacleSpatialIndex.doesOrthogonalLineIntersectChip(
