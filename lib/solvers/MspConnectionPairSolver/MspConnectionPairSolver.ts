@@ -113,7 +113,7 @@ export class MspConnectionPairSolver extends BaseSolver {
     // There are more than 3 pins, so we need to run MSP to find the best pairs
 
     const msp = getOrthogonalMinimumSpanningTree(
-      directlyConnectedPins.map((p) => this.pinMap[p]!),
+      directlyConnectedPins.map((p) => this.pinMap[p]!).filter(Boolean),
       { maxDistance: this.maxMspPairDistance },
     )
 

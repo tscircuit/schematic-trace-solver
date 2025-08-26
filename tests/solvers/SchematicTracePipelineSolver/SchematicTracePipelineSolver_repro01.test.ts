@@ -107,5 +107,5 @@ test("SchematicTracePipelineSolver_repro01", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
 
-  console.log(solver.schematicTraceLinesSolver!.solvedTracePaths)
+  // console.log(solver.schematicTraceLinesSolver!.solvedTracePaths)
 })
