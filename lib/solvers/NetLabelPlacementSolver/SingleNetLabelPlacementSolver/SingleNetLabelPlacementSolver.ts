@@ -137,6 +137,36 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         ? this.availableOrientations
         : (["x+", "x-", "y+", "y-"] as FacingDirection[])
 
+    const singleOrientationMode = this.availableOrientations.length === 1
+
+    // For axis-aligned comparisons (furthest-point selection)
+    const scoreFor = (
+      orientation: FacingDirection,
+      anchor: { x: number; y: number },
+    ) => {
+      switch (orientation) {
+        case "y+":
+          return anchor.y
+        case "y-":
+          return -anchor.y
+        case "x+":
+          return anchor.x
+        case "x-":
+          return -anchor.x
+      }
+    }
+    let bestCandidate:
+      | {
+          anchor: { x: number; y: number }
+          orientation: FacingDirection
+          width: number
+          height: number
+          center: { x: number; y: number }
+          hostSegIndex: number
+        }
+      | null = null
+    let bestScore = -Infinity
+
     const EPS = 1e-6
 
     for (let si = 0; si < pts.length - 1; si++) {
@@ -233,6 +263,23 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
             hostSegIndex: si,
           })
 
+          if (singleOrientationMode) {
+            const s = scoreFor(orientation, anchor)
+            if (s > bestScore + 1e-9) {
+              bestScore = s
+              bestCandidate = {
+                anchor,
+                orientation,
+                width,
+                height,
+                center,
+                hostSegIndex: si,
+              }
+            }
+            // Continue traversing to prioritize the furthest valid point
+            continue
+          }
+
           this.netLabelPlacement = {
             globalConnNetId: this.overlappingSameNetTraceGroup.globalConnNetId,
             dcConnNetId: host!.dcConnNetId,
@@ -246,6 +293,20 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
           return
         }
       }
+    }
+
+    if (singleOrientationMode && bestCandidate) {
+      this.netLabelPlacement = {
+        globalConnNetId: this.overlappingSameNetTraceGroup.globalConnNetId,
+        dcConnNetId: host!.dcConnNetId,
+        orientation: bestCandidate.orientation,
+        anchorPoint: bestCandidate.anchor,
+        width: bestCandidate.width,
+        height: bestCandidate.height,
+        center: bestCandidate.center,
+      }
+      this.solved = true
+      return
     }
 
     this.failed = true

@@ -95,9 +95,9 @@ const inputProblem: InputProblem = {
     },
   ],
   availableNetLabelOrientations: {
-    VCC: ["y+", "y-"],
+    VCC: ["y+"],
     EN: ["x+", "x-"],
-    GND: ["y+", "y-"],
+    GND: ["y-"],
   },
   maxMspPairDistance: 2,
 }
