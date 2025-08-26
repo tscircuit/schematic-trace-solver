@@ -30,6 +30,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
   currentConnectionPair: MspConnectionPair | null = null
 
   solvedTracePaths: Array<SolvedTracePath> = []
+  failedConnectionPairs: Array<MspConnectionPair & { error?: string }> = []
 
   declare activeSubSolver: SchematicTraceSingleLineSolver | null
 
@@ -75,9 +76,16 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       this.currentConnectionPair = null
     }
     if (this.activeSubSolver?.failed) {
-      this.failed = true
-      this.error = this.activeSubSolver.error
-      return
+      // Record the failure for this connection and continue to the next pair
+      if (this.currentConnectionPair) {
+        this.failedConnectionPairs.push({
+          ...this.currentConnectionPair,
+          error: this.activeSubSolver.error || undefined,
+        })
+      }
+      this.activeSubSolver = null
+      this.currentConnectionPair = null
+      // Do not fail the whole solver; proceed to schedule the next pair
     }
 
     if (this.activeSubSolver) {
@@ -119,6 +127,19 @@ export class SchematicTraceLinesSolver extends BaseSolver {
         points: tracePath,
         strokeWidth: 0.005,
         strokeColor: "green",
+      })
+    }
+
+    // Indicate failed connection pairs with dashed red lines between their pins
+    for (const pair of this.failedConnectionPairs) {
+      graphics.lines!.push({
+        points: [
+          { x: pair.pins[0].x, y: pair.pins[0].y },
+          { x: pair.pins[1].x, y: pair.pins[1].y },
+        ],
+        strokeColor: "red",
+        strokeDash: "4 2",
+        strokeWidth: 0.004,
       })
     }
 
