@@ -3,7 +3,7 @@ import type {
   NetLabelPlacement,
   OverlappingSameNetTraceGroup,
 } from "../NetLabelPlacementSolver"
-import type { InputChip, InputProblem } from "lib/types/InputProblem"
+import type { InputProblem } from "lib/types/InputProblem"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { FacingDirection } from "lib/utils/dir"
@@ -130,7 +130,13 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     }
 
     // Ensure we traverse the host path starting at the segment attached to the largest chip's pin
-    let pts = host.tracePath.slice()
+    const tracesToScanBase = Object.values(this.inputTraceMap).filter(
+      (t) => t.globalConnNetId === groupId,
+    )
+    const tracesToScan =
+      this.availableOrientations.length === 1
+        ? [host, ...tracesToScanBase.filter((t) => t.mspPairId !== host!.mspPairId)]
+        : [host]
 
     const orientations =
       this.availableOrientations.length > 0
@@ -163,13 +169,16 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
           height: number
           center: { x: number; y: number }
           hostSegIndex: number
+          dcConnNetId: string
         }
       | null = null
     let bestScore = -Infinity
 
     const EPS = 1e-6
 
-    for (let si = 0; si < pts.length - 1; si++) {
+    for (const curr of tracesToScan) {
+      const pts = curr.tracePath.slice()
+      for (let si = 0; si < pts.length - 1; si++) {
       const a = pts[si]!
       const b = pts[si + 1]!
       const isH = Math.abs(a.y - b.y) < EPS
@@ -234,7 +243,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
             rectIntersectsAnyTrace(
               bounds,
               this.inputTraceMap,
-              host!.mspPairId,
+              curr.mspPairId,
               si,
             )
           ) {
@@ -274,6 +283,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
                 height,
                 center,
                 hostSegIndex: si,
+                dcConnNetId: curr.dcConnNetId,
               }
             }
             // Continue traversing to prioritize the furthest valid point
@@ -282,7 +292,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
           this.netLabelPlacement = {
             globalConnNetId: this.overlappingSameNetTraceGroup.globalConnNetId,
-            dcConnNetId: host!.dcConnNetId,
+            dcConnNetId: curr.dcConnNetId,
             orientation,
             anchorPoint: anchor,
             width,
@@ -294,11 +304,12 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         }
       }
     }
+    }
 
     if (singleOrientationMode && bestCandidate) {
       this.netLabelPlacement = {
         globalConnNetId: this.overlappingSameNetTraceGroup.globalConnNetId,
-        dcConnNetId: host!.dcConnNetId,
+        dcConnNetId: bestCandidate.dcConnNetId,
         orientation: bestCandidate.orientation,
         anchorPoint: bestCandidate.anchor,
         width: bestCandidate.width,
