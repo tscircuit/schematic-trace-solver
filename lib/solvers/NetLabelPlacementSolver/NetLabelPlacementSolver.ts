@@ -60,6 +60,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
   declare activeSubSolver: SingleNetLabelPlacementSolver | null
 
   netLabelPlacements: Array<NetLabelPlacement> = []
+  currentGroup: OverlappingSameNetTraceGroup | null = null
+  triedAnyOrientationFallbackForCurrentGroup = false
 
   constructor(params: {
     inputProblem: InputProblem
@@ -209,10 +211,34 @@ export class NetLabelPlacementSolver extends BaseSolver {
     if (this.activeSubSolver?.solved) {
       this.netLabelPlacements.push(this.activeSubSolver.netLabelPlacement!)
       this.activeSubSolver = null
+      this.currentGroup = null
+      this.triedAnyOrientationFallbackForCurrentGroup = false
       return
     }
 
     if (this.activeSubSolver?.failed) {
+      // Retry once with all orientations as a fallback before failing
+      const fullOrients: FacingDirection[] = ["x+", "x-", "y+", "y-"]
+      const currOrients = this.activeSubSolver.availableOrientations
+      const isAlreadyFull =
+        currOrients.length === 4 &&
+        fullOrients.every((o) => currOrients.includes(o))
+
+      if (
+        !this.triedAnyOrientationFallbackForCurrentGroup &&
+        !isAlreadyFull &&
+        this.currentGroup
+      ) {
+        this.triedAnyOrientationFallbackForCurrentGroup = true
+        this.activeSubSolver = new SingleNetLabelPlacementSolver({
+          inputProblem: this.inputProblem,
+          inputTraceMap: this.inputTraceMap,
+          overlappingSameNetTraceGroup: this.currentGroup,
+          availableOrientations: fullOrients,
+        })
+        return
+      }
+
       this.failed = true
       this.error = this.activeSubSolver.error
       return
@@ -234,6 +260,9 @@ export class NetLabelPlacementSolver extends BaseSolver {
     const netId =
       nextOverlappingSameNetTraceGroup.netId ??
       nextOverlappingSameNetTraceGroup.globalConnNetId
+
+    this.currentGroup = nextOverlappingSameNetTraceGroup
+    this.triedAnyOrientationFallbackForCurrentGroup = false
 
     this.activeSubSolver = new SingleNetLabelPlacementSolver({
       inputProblem: this.inputProblem,
