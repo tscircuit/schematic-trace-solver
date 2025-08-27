@@ -6,6 +6,7 @@ import { getGeneratorForAllChipPairs } from "./getGeneratorForAllChipPairs"
 import { getInputChipBounds } from "./getInputChipBounds"
 import { getHorizontalGuidelineY } from "./getHorizontalGuidelineY"
 import { getVerticalGuidelineX } from "./getVerticalGuidelineX"
+import { getInputProblemBounds } from "./getInputProblemBounds"
 
 export type Guideline =
   | {
@@ -18,6 +19,8 @@ export type Guideline =
       y: undefined
       x: number
     }
+
+const GUIDELINE_PADDING_FROM_PROBLEM_BOUNDS = 0.1
 
 export class GuidelinesSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -33,7 +36,29 @@ export class GuidelinesSolver extends BaseSolver {
   }) {
     super()
     this.inputProblem = params.inputProblem
-    this.guidelines = []
+    const inputProblemBounds = getInputProblemBounds(this.inputProblem)
+    this.guidelines = [
+      {
+        orientation: "horizontal",
+        y: inputProblemBounds.minY - GUIDELINE_PADDING_FROM_PROBLEM_BOUNDS,
+        x: undefined,
+      },
+      {
+        orientation: "horizontal",
+        y: inputProblemBounds.maxY + GUIDELINE_PADDING_FROM_PROBLEM_BOUNDS,
+        x: undefined,
+      },
+      {
+        orientation: "vertical",
+        y: undefined,
+        x: inputProblemBounds.minX - GUIDELINE_PADDING_FROM_PROBLEM_BOUNDS,
+      },
+      {
+        orientation: "vertical",
+        y: undefined,
+        x: inputProblemBounds.maxX + GUIDELINE_PADDING_FROM_PROBLEM_BOUNDS,
+      },
+    ]
     this.chipPairsGenerator = getGeneratorForAllChipPairs(
       this.inputProblem.chips,
     )
