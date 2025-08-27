@@ -106,6 +106,6 @@
       "EN": ["x+", "x-"],
       "GND": ["y-"]
     },
-    "maxMspPairDistance": 2
+    "maxMspPairDistance": 5
   }
 }

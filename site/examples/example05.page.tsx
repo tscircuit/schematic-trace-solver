@@ -174,7 +174,7 @@ const inputProblem: InputProblem = {
   ],
   netConnections: [],
   availableNetLabelOrientations: {},
-  maxMspPairDistance: 2,
+  maxMspPairDistance: 10,
 }
 
 export default function Example05Page() {
