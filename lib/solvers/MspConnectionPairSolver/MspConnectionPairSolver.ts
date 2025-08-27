@@ -96,6 +96,15 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     if (directlyConnectedPins.length === 2) {
       const [pin1, pin2] = directlyConnectedPins
+      const p1 = this.pinMap[pin1!]!
+      const p2 = this.pinMap[pin2!]!
+      // Enforce max pair distance (use Manhattan to match orthogonal routing metric)
+      const manhattanDist = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)
+      if (manhattanDist > this.maxMspPairDistance) {
+        // Too far apart; skip creating an MSP pair for this net
+        return
+      }
+
       const globalConnNetId = this.globalConnMap.getNetConnectedToId(pin1!)!
       const userNetId =
         this.userNetIdByPinId[pin1!] ?? this.userNetIdByPinId[pin2!]
@@ -105,7 +114,7 @@ export class MspConnectionPairSolver extends BaseSolver {
         dcConnNetId: dcNetId,
         globalConnNetId,
         userNetId,
-        pins: [this.pinMap[pin1!]!, this.pinMap[pin2!]!],
+        pins: [p1, p2],
       })
 
       return
