@@ -1,11 +1,31 @@
 import type { InputProblem } from "lib/types/InputProblem"
 import { PipelineDebugger } from "site/components/PipelineDebugger"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 export default () => {
   const [inputText, setInputText] = useState("")
   const [inputProblem, setInputProblem] = useState<InputProblem | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const existing = params.get("input")
+    if (existing) setInputText(existing)
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (inputText.trim()) {
+      params.set("input", inputText)
+    } else {
+      params.delete("input")
+    }
+    const newQuery = params.toString()
+    const newUrl = newQuery
+      ? `${window.location.pathname}?${newQuery}`
+      : window.location.pathname
+    window.history.replaceState(null, "", newUrl)
+  }, [inputText])
 
   const handleOpenDebugger = () => {
     try {
