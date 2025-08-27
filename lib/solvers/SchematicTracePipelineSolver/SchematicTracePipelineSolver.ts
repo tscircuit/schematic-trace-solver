@@ -146,6 +146,12 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     this.firstIterationOfPhase = {}
   }
 
+  override getConstructorParams(): ConstructorParameters<
+    typeof SchematicTracePipelineSolver
+  >[0] {
+    return this.inputProblem
+  }
+
   currentPipelineStepIndex = 0
 
   private cloneAndCorrectInputProblem(original: InputProblem): InputProblem {
