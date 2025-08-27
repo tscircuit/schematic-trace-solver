@@ -1,5 +1,5 @@
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputProblem, PinId } from "lib/types/InputProblem"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 import { SingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver/SingleNetLabelPlacementSolver"
@@ -24,6 +24,19 @@ export type OverlappingSameNetTraceGroup = {
 export interface NetLabelPlacement {
   globalConnNetId: string
   dcConnNetId?: string
+  /**
+   * Optional user-provided net identifier (if present in the input problem).
+   */
+  netId?: string
+  /**
+   * MSP pair ids that the label is associated with. Port-only labels use [].
+   */
+  mspConnectionPairIds: MspConnectionPairId[]
+  /**
+   * Pin ids relevant to this label. For a host trace, the two pins of that pair;
+   * for a port-only label, the single port pin id.
+   */
+  pinIds: PinId[]
   orientation: FacingDirection
 
   /**

@@ -3,7 +3,7 @@ import type {
   NetLabelPlacement,
   OverlappingSameNetTraceGroup,
 } from "../NetLabelPlacementSolver"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputProblem, PinId } from "lib/types/InputProblem"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { FacingDirection } from "lib/utils/dir"
@@ -172,6 +172,8 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       center: { x: number; y: number }
       hostSegIndex: number
       dcConnNetId: string
+      mspPairId: MspConnectionPairId
+      pinIds: PinId[]
     } | null = null
     let bestScore = -Infinity
 
@@ -285,6 +287,8 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
                   center,
                   hostSegIndex: si,
                   dcConnNetId: curr.dcConnNetId,
+                  mspPairId: curr.mspPairId,
+                  pinIds: [curr.pins[0].pinId, curr.pins[1].pinId],
                 }
               }
               // Continue traversing to prioritize the furthest valid point
@@ -295,6 +299,9 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
               globalConnNetId:
                 this.overlappingSameNetTraceGroup.globalConnNetId,
               dcConnNetId: curr.dcConnNetId,
+              netId: this.overlappingSameNetTraceGroup.netId,
+              mspConnectionPairIds: [curr.mspPairId],
+              pinIds: [curr.pins[0].pinId, curr.pins[1].pinId],
               orientation,
               anchorPoint: anchor,
               width,
@@ -312,6 +319,9 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       this.netLabelPlacement = {
         globalConnNetId: this.overlappingSameNetTraceGroup.globalConnNetId,
         dcConnNetId: bestCandidate.dcConnNetId,
+        netId: this.overlappingSameNetTraceGroup.netId,
+        mspConnectionPairIds: [bestCandidate.mspPairId],
+        pinIds: bestCandidate.pinIds,
         orientation: bestCandidate.orientation,
         anchorPoint: bestCandidate.anchor,
         width: bestCandidate.width,

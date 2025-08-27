@@ -159,6 +159,9 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     const placement: NetLabelPlacement = {
       globalConnNetId: overlappingSameNetTraceGroup.globalConnNetId,
       dcConnNetId: undefined,
+      netId: overlappingSameNetTraceGroup.netId,
+      mspConnectionPairIds: [],
+      pinIds: [pinId],
       orientation,
       anchorPoint: anchor,
       width,
