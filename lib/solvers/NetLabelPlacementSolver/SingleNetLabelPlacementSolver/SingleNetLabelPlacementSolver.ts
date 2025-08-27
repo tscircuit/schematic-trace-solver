@@ -121,6 +121,8 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       inputTraceMap: this.inputTraceMap,
       globalConnNetId: groupId,
       fallbackTrace: this.overlappingSameNetTraceGroup.overlappingTraces,
+      mspConnectionPairIds:
+        this.overlappingSameNetTraceGroup.mspConnectionPairIds,
     })
 
     if (!host) {
@@ -130,8 +132,14 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     }
 
     // Ensure we traverse the host path starting at the segment attached to the largest chip's pin
+    const traceIdSet = new Set(
+      this.overlappingSameNetTraceGroup.mspConnectionPairIds ?? [],
+    )
     const tracesToScanBase = Object.values(this.inputTraceMap).filter(
-      (t) => t.globalConnNetId === groupId,
+      (t) =>
+        t.globalConnNetId === groupId &&
+        (traceIdSet.size === 0 ||
+          t.mspConnectionPairIds.some((id) => traceIdSet.has(id))),
     )
     const tracesToScan =
       this.availableOrientations.length === 1

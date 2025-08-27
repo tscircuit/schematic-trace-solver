@@ -17,17 +17,29 @@ export function chooseHostTraceForGroup(params: {
   inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
   globalConnNetId: string
   fallbackTrace?: SolvedTracePath
+  mspConnectionPairIds?: MspConnectionPairId[]
 }): SolvedTracePath | undefined {
-  const { inputProblem, inputTraceMap, globalConnNetId, fallbackTrace } = params
-
+  const {
+    inputProblem,
+    inputTraceMap,
+    globalConnNetId,
+    fallbackTrace,
+    mspConnectionPairIds,
+  } = params
   const chipsById: Record<string, InputChip> = Object.fromEntries(
     inputProblem.chips.map((c) => [c.chipId, c]),
   )
 
-  const groupTraces = Object.values(inputTraceMap).filter(
+  let groupTraces = Object.values(inputTraceMap).filter(
     (t) => t.globalConnNetId === globalConnNetId,
   )
 
+  if (mspConnectionPairIds && mspConnectionPairIds.length > 0) {
+    const idSet = new Set(mspConnectionPairIds)
+    groupTraces = groupTraces.filter((t) =>
+      t.mspConnectionPairIds.some((id) => idSet.has(id)),
+    )
+  }
   const chipIdsInGroup = new Set<string>()
   for (const t of groupTraces) {
     chipIdsInGroup.add(t.pins[0].chipId)
