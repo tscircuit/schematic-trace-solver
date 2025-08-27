@@ -62,6 +62,19 @@ const uniqSortedWithTol = (vals: number[], tol = EPS): number[] => {
 const keyForPolyline = (pts: Point[], decimals = 9): string =>
   pts.map((p) => `${p.x.toFixed(decimals)},${p.y.toFixed(decimals)}`).join("|")
 
+/** Remove consecutive duplicate points (within tolerance) to eliminate zero-length segments. */
+const preprocessElbow = (pts: Point[], tol = MIN_LEN): Point[] => {
+  if (pts.length === 0) return []
+  const out: Point[] = [{ ...pts[0] }]
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i]
+    const last = out[out.length - 1]
+    const manhattan = Math.abs(p.x - last.x) + Math.abs(p.y - last.y)
+    if (manhattan > tol) out.push({ ...p })
+  }
+  return out
+}
+
 /** Collect guideline coordinate candidates for a given movement axis. */
 const collectAxisCandidates = (
   axis: Axis,
@@ -137,16 +150,17 @@ export const generateElbowVariants = ({
   elbowVariants: Array<Point[]>
   movableSegments: Array<MovableSegment>
 } => {
-  // 1) Validate the input path.
-  assertOrthogonalPolyline(baseElbow)
+  // 1) Preprocess to remove zero-length segments, then validate the input path.
+  const elbow = preprocessElbow(baseElbow)
+  assertOrthogonalPolyline(elbow)
 
-  const nPts = baseElbow.length
+  const nPts = elbow.length
   const nSegs = nPts - 1
 
   // No interior segments to move if path is too short.
   if (nSegs < 5) {
     return {
-      elbowVariants: [baseElbow.map((p) => ({ ...p }))],
+      elbowVariants: [elbow.map((p) => ({ ...p }))],
       movableSegments: [],
     }
   }
@@ -163,10 +177,10 @@ export const generateElbowVariants = ({
   const optionsPerSegment: number[][] = []
 
   for (let i = firstMovableIndex; i <= lastMovableIndex; i++) {
-    const prev = baseElbow[i - 1]
-    const start = baseElbow[i]
-    const end = baseElbow[i + 1]
-    const next2 = baseElbow[i + 2]
+    const prev = elbow[i - 1]
+    const start = elbow[i]
+    const end = elbow[i + 1]
+    const next2 = elbow[i + 2]
 
     // Ensure the three segments around this joint are orth and valid.
     // (orientationOf throws if non-orth.)
@@ -217,16 +231,16 @@ export const generateElbowVariants = ({
 
   // Always include the base elbow first.
   {
-    const key = keyForPolyline(baseElbow)
+    const key = keyForPolyline(elbow)
     seen.add(key)
-    elbowVariants.push(baseElbow.map((p) => ({ ...p })))
+    elbowVariants.push(elbow.map((p) => ({ ...p })))
   }
 
   for (const combo of combos) {
     // Skip the "do nothing" combo if it matches the base (we already added it).
     if (combo.length === 0) continue
 
-    const variant = baseElbow.map((p) => ({ ...p }))
+    const variant = elbow.map((p) => ({ ...p }))
 
     // Slide each selected segment perpendicular to its orientation.
     for (let k = 0; k < movableIdx.length; k++) {
