@@ -14,7 +14,7 @@
     "@react-hook/resize-observer": "^2.0.2",
     "@tscircuit/math-utils": "^0.0.19",
     "@types/bun": "latest",
-    "calculate-elbow": "^0.0.10",
+    "calculate-elbow": "^0.0.11",
     "connectivity-map": "^1.0.0",
     "flatbush": "^4.5.0",
     "graphics-debug": "^0.0.62",
