@@ -19,10 +19,14 @@ export const generateElbowVariants = ({
   elbowVariants: Array<Point[]>
   movableSegments: Array<MovableSegment>
 } => {
-  // First we find the movable segments, movable segments are the any segments
-  // of the baseElbow that are not the first or last segment
+  // First, find movable segments. To keep the polyline orthogonal, only move
+  // strictly interior segments whose endpoints are not adjacent to the first
+  // or last segment (avoid [P1-P2] and [P(n-3)-P(n-2)]).
   const movableSegments: Array<MovableSegment> = []
-  for (let i = 1; i < baseElbow.length - 2; i++) {
+  const firstMovableIndex = 2
+  const lastMovableIndex = baseElbow.length - 4
+  for (let i = firstMovableIndex; i <= lastMovableIndex; i++) {
+    if (i < 0 || i + 1 >= baseElbow.length) continue
     const prev = baseElbow[i - 1]
     const start = baseElbow[i]
     const end = baseElbow[i + 1]

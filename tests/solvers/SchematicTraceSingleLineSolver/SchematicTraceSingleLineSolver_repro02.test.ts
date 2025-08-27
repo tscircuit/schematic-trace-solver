@@ -898,7 +898,6 @@ test("SchematicTraceSingleLineSolver should solve problem correctly", () => {
     const dy = end.y - start.y
     const isHorizontal = Math.abs(dy) < 1e-6
     const isVertical = Math.abs(dx) < 1e-6
-    console.log({ start, end })
     expect(isHorizontal || isVertical).toBe(true)
   }
 })
