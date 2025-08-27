@@ -1,5 +1,5 @@
 import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import inputParams from "./MspConnectionPairsSolver01_params.json"
+import inputParams from "./MspConnectionPairSolver01_params.json"
 import { GenericSolverDebugger } from "site/components/GenericSolverDebugger"
 import { useMemo } from "react"
 import type { InputProblem } from "lib/types/InputProblem"
