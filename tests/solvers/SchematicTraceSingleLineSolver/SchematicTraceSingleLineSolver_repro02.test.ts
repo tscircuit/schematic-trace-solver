@@ -891,13 +891,14 @@ test("SchematicTraceSingleLineSolver should solve problem correctly", () => {
 
   // Check that the output is composed of strictly orthogonal lines
 
-  console.log(solver.solvedTracePath)
   for (let i = 0; i < solver.solvedTracePath!.length - 1; i++) {
     const start = solver.solvedTracePath![i]
     const end = solver.solvedTracePath![i + 1]
     const dx = end.x - start.x
     const dy = end.y - start.y
-    expect(Math.abs(dx)).toBeCloseTo(0)
-    expect(Math.abs(dy)).toBeCloseTo(0)
+    const isHorizontal = Math.abs(dy) < 1e-6
+    const isVertical = Math.abs(dx) < 1e-6
+    console.log({ start, end })
+    expect(isHorizontal || isVertical).toBe(true)
   }
 })
