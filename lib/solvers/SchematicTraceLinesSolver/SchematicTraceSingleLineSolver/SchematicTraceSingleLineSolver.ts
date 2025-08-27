@@ -73,6 +73,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
         overshoot: 0.2,
       },
     )
+    console.log("baseElbow", this.baseElbow)
 
     const { elbowVariants, movableSegments } = generateElbowVariants({
       baseElbow: this.baseElbow,
