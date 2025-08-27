@@ -1,0 +1,326 @@
+{
+  "inputProblem": {
+    "chips": [
+      {
+        "chipId": "U1",
+        "center": {
+          "x": 0,
+          "y": 0
+        },
+        "width": 1.6,
+        "height": 0.6,
+        "pins": [
+          {
+            "pinId": "U1.1",
+            "x": -0.8,
+            "y": 0.2
+          },
+          {
+            "pinId": "U1.2",
+            "x": -0.8,
+            "y": 0
+          },
+          {
+            "pinId": "U1.3",
+            "x": -0.8,
+            "y": -0.2
+          },
+          {
+            "pinId": "U1.4",
+            "x": 0.8,
+            "y": -0.2
+          },
+          {
+            "pinId": "U1.5",
+            "x": 0.8,
+            "y": 0
+          },
+          {
+            "pinId": "U1.6",
+            "x": 0.8,
+            "y": 0.2
+          }
+        ]
+      },
+      {
+        "chipId": "C1",
+        "center": {
+          "x": -2,
+          "y": 0
+        },
+        "width": 0.5,
+        "height": 1,
+        "pins": [
+          {
+            "pinId": "C1.1",
+            "x": -2,
+            "y": 0.5
+          },
+          {
+            "pinId": "C1.2",
+            "x": -2,
+            "y": -0.5
+          }
+        ]
+      },
+      {
+        "chipId": "C2",
+        "center": {
+          "x": -4,
+          "y": 0
+        },
+        "width": 0.5,
+        "height": 1,
+        "pins": [
+          {
+            "pinId": "C2.1",
+            "x": -4,
+            "y": 0.5
+          },
+          {
+            "pinId": "C2.2",
+            "x": -4,
+            "y": -0.5
+          }
+        ]
+      }
+    ],
+    "directConnections": [
+      {
+        "pinIds": ["U1.1", "C1.1"],
+        "netId": "VCC"
+      },
+      {
+        "pinIds": ["U1.2", "C2.1"],
+        "netId": "EN"
+      }
+    ],
+    "netConnections": [
+      {
+        "pinIds": ["U1.3", "C2.2", "C1.2"],
+        "netId": "GND"
+      }
+    ],
+    "availableNetLabelOrientations": {
+      "VCC": ["y+"],
+      "EN": ["x+", "x-"],
+      "GND": ["y-"]
+    },
+    "maxMspPairDistance": 2
+  },
+  "chipMap": {
+    "U1": {
+      "chipId": "U1",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 1.6,
+      "height": 0.6,
+      "pins": [
+        {
+          "pinId": "U1.1",
+          "x": -0.8,
+          "y": 0.2
+        },
+        {
+          "pinId": "U1.2",
+          "x": -0.8,
+          "y": 0
+        },
+        {
+          "pinId": "U1.3",
+          "x": -0.8,
+          "y": -0.2
+        },
+        {
+          "pinId": "U1.4",
+          "x": 0.8,
+          "y": -0.2
+        },
+        {
+          "pinId": "U1.5",
+          "x": 0.8,
+          "y": 0
+        },
+        {
+          "pinId": "U1.6",
+          "x": 0.8,
+          "y": 0.2
+        }
+      ]
+    },
+    "C1": {
+      "chipId": "C1",
+      "center": {
+        "x": -2,
+        "y": 0
+      },
+      "width": 0.5,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "C1.1",
+          "x": -2,
+          "y": 0.5
+        },
+        {
+          "pinId": "C1.2",
+          "x": -2,
+          "y": -0.5
+        }
+      ]
+    },
+    "C2": {
+      "chipId": "C2",
+      "center": {
+        "x": -4,
+        "y": 0
+      },
+      "width": 0.5,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "C2.1",
+          "x": -4,
+          "y": 0.5
+        },
+        {
+          "pinId": "C2.2",
+          "x": -4,
+          "y": -0.5
+        }
+      ]
+    }
+  },
+  "mspConnectionPairs": [
+    {
+      "mspPairId": "U1.1-C1.1",
+      "dcConnNetId": "connectivity_net0",
+      "globalConnNetId": "connectivity_net0",
+      "userNetId": "VCC",
+      "pins": [
+        {
+          "pinId": "U1.1",
+          "x": -0.8,
+          "y": 0.2,
+          "chipId": "U1"
+        },
+        {
+          "pinId": "C1.1",
+          "x": -2,
+          "y": 0.5,
+          "chipId": "C1"
+        }
+      ]
+    },
+    {
+      "mspPairId": "U1.3-C1.2",
+      "dcConnNetId": "connectivity_net2",
+      "globalConnNetId": "connectivity_net2",
+      "userNetId": "GND",
+      "pins": [
+        {
+          "pinId": "U1.3",
+          "x": -0.8,
+          "y": -0.2,
+          "chipId": "U1"
+        },
+        {
+          "pinId": "C1.2",
+          "x": -2,
+          "y": -0.5,
+          "chipId": "C1"
+        }
+      ]
+    },
+    {
+      "mspPairId": "C2.2-C1.2",
+      "dcConnNetId": "connectivity_net2",
+      "globalConnNetId": "connectivity_net2",
+      "userNetId": "GND",
+      "pins": [
+        {
+          "pinId": "C2.2",
+          "x": -4,
+          "y": -0.5,
+          "chipId": "C2"
+        },
+        {
+          "pinId": "C1.2",
+          "x": -2,
+          "y": -0.5,
+          "chipId": "C1"
+        }
+      ]
+    }
+  ],
+  "dcConnMap": {
+    "netMap": {
+      "connectivity_net0": ["VCC", "U1.1", "C1.1"],
+      "connectivity_net1": ["EN", "U1.2", "C2.1"],
+      "connectivity_net2": ["GND", "U1.3", "C2.2", "C1.2"]
+    },
+    "idToNetMap": {
+      "VCC": "connectivity_net0",
+      "U1.1": "connectivity_net0",
+      "C1.1": "connectivity_net0",
+      "EN": "connectivity_net1",
+      "U1.2": "connectivity_net1",
+      "C2.1": "connectivity_net1"
+    }
+  },
+  "globalConnMap": {
+    "netMap": {
+      "connectivity_net0": ["VCC", "U1.1", "C1.1"],
+      "connectivity_net1": ["EN", "U1.2", "C2.1"],
+      "connectivity_net2": ["GND", "U1.3", "C2.2", "C1.2"]
+    },
+    "idToNetMap": {
+      "VCC": "connectivity_net0",
+      "U1.1": "connectivity_net0",
+      "C1.1": "connectivity_net0",
+      "EN": "connectivity_net1",
+      "U1.2": "connectivity_net1",
+      "C2.1": "connectivity_net1",
+      "GND": "connectivity_net2",
+      "U1.3": "connectivity_net2",
+      "C2.2": "connectivity_net2",
+      "C1.2": "connectivity_net2"
+    }
+  },
+  "guidelines": [
+    {
+      "orientation": "horizontal",
+      "y": -0.6
+    },
+    {
+      "orientation": "horizontal",
+      "y": 0.6
+    },
+    {
+      "orientation": "vertical",
+      "x": -4.35
+    },
+    {
+      "orientation": "vertical",
+      "x": 0.9
+    },
+    {
+      "orientation": "horizontal",
+      "y": 0
+    },
+    {
+      "orientation": "vertical",
+      "x": -1.275
+    },
+    {
+      "orientation": "vertical",
+      "x": -2.275
+    },
+    {
+      "orientation": "vertical",
+      "x": -3
+    }
+  ]
+}
