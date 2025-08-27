@@ -6,6 +6,24 @@ interface DownloadDropdownProps {
   className?: string
 }
 
+const deepRemoveUnderscoreProperties = (obj: any): any => {
+  if (obj === null || typeof obj !== "object") {
+    return obj
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(deepRemoveUnderscoreProperties)
+  }
+
+  const result: any = {}
+  for (const [key, value] of Object.entries(obj)) {
+    if (!key.startsWith("_")) {
+      result[key] = deepRemoveUnderscoreProperties(value)
+    }
+  }
+  return result
+}
+
 export const DownloadDropdown = ({
   solver,
   className = "",
@@ -36,7 +54,9 @@ export const DownloadDropdown = ({
         return
       }
 
-      const params = solver.getConstructorParams()
+      const params = deepRemoveUnderscoreProperties(
+        solver.getConstructorParams(),
+      )
       const blob = new Blob([JSON.stringify(params, null, 2)], {
         type: "application/json",
       })
@@ -56,7 +76,9 @@ export const DownloadDropdown = ({
 
   const downloadPageTsx = () => {
     try {
-      const params = solver.getConstructorParams()
+      const params = deepRemoveUnderscoreProperties(
+        solver.getConstructorParams(),
+      )
       const solverName = solver.constructor.name
       const isSchematicTracePipelineSolver =
         solverName === "SchematicTracePipelineSolver"
@@ -104,19 +126,21 @@ export default () => {
 
   const downloadTestTs = () => {
     try {
-      const params = solver.getConstructorParams()
+      const params = deepRemoveUnderscoreProperties(
+        solver.getConstructorParams(),
+      )
       const solverName = solver.constructor.name
 
-      const content = `import { ${solverName} } from "lib/solvers/${solverName}/${solverName}"
+      const content = `import { ${solverName} } from "lib/solvers/${solverName}/${solverName}\nimport { test, expect } from "bun:test"
 
 test("${solverName} should solve problem correctly", () => {
   const input = ${JSON.stringify(params, null, 2)}
   
   const solver = new ${solverName}(input as any)
-  const result = solver.solve()
+  solver.solve()
   
-  expect(result).toBeDefined()
   // Add more specific assertions based on expected output
+  // expect(solver.netLabelPlacementSolver!.netLabelPlacements).toMatchInlineSnapshot()
 })
 `
 
