@@ -24,6 +24,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
   movableSegments: Array<MovableSegment>
   baseElbow: Point[]
 
+  allCandidatePaths: Array<Point[]>
   queuedCandidatePaths: Array<Point[]>
 
   chipObstacleSpatialIndex: ChipObstacleSpatialIndex
@@ -91,7 +92,8 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       return len
     }
 
-    this.queuedCandidatePaths = [this.baseElbow, ...elbowVariants].sort(
+    this.allCandidatePaths = [this.baseElbow, ...elbowVariants]
+    this.queuedCandidatePaths = [...this.allCandidatePaths].sort(
       (a, b) => getPathLength(a) - getPathLength(b),
     )
   }
