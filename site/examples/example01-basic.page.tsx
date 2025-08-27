@@ -99,7 +99,7 @@ const inputProblem: InputProblem = {
     EN: ["x+", "x-"],
     GND: ["y-"],
   },
-  maxMspPairDistance: 2,
+  maxMspPairDistance: 5,
 }
 
 export default () => <PipelineDebugger inputProblem={inputProblem} />
