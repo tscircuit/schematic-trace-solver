@@ -10,5 +10,7 @@ test("MspConnectionPairSolver_repro1", () => {
 
   solver.solve()
 
+  console.log(solver.mspConnectionPairs)
+
   expect(solver.mspConnectionPairs.length).toBe(4)
 })
