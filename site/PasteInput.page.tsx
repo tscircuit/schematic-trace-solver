@@ -11,14 +11,14 @@ export default () => {
     try {
       setError(null)
       let parsed: InputProblem
-      
+
       const trimmedInput = inputText.trim()
       if (trimmedInput.startsWith("{") || trimmedInput.startsWith("[")) {
         parsed = JSON.parse(trimmedInput)
       } else {
         parsed = eval(`(${trimmedInput})`)
       }
-      
+
       setInputProblem(parsed)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid input format")
@@ -33,7 +33,7 @@ export default () => {
     <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
       <h1>Paste Input Problem</h1>
       <p>Paste a JSON or JavaScript object representing an InputProblem:</p>
-      
+
       <textarea
         value={inputText}
         onChange={(e) => setInputText(e.target.value)}
@@ -45,22 +45,24 @@ export default () => {
           padding: "10px",
           border: "1px solid #ccc",
           borderRadius: "4px",
-          marginBottom: "10px"
+          marginBottom: "10px",
         }}
       />
-      
+
       {error && (
-        <div style={{ 
-          color: "red", 
-          marginBottom: "10px",
-          padding: "10px",
-          backgroundColor: "#fee",
-          borderRadius: "4px"
-        }}>
+        <div
+          style={{
+            color: "red",
+            marginBottom: "10px",
+            padding: "10px",
+            backgroundColor: "#fee",
+            borderRadius: "4px",
+          }}
+        >
           Error: {error}
         </div>
       )}
-      
+
       <button
         onClick={handleOpenDebugger}
         disabled={!inputText.trim()}
@@ -71,7 +73,7 @@ export default () => {
           border: "none",
           borderRadius: "4px",
           cursor: inputText.trim() ? "pointer" : "not-allowed",
-          fontSize: "16px"
+          fontSize: "16px",
         }}
       >
         Open Debugger
