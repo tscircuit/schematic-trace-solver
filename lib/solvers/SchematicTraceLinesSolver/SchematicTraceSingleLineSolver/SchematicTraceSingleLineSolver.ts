@@ -81,7 +81,19 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
 
     this.movableSegments = movableSegments
 
-    this.queuedCandidatePaths = [this.baseElbow, ...elbowVariants]
+    const getPathLength = (pts: Point[]) => {
+      let len = 0
+      for (let i = 0; i < pts.length - 1; i++) {
+        const dx = pts[i + 1].x - pts[i].x
+        const dy = pts[i + 1].y - pts[i].y
+        len += Math.sqrt(dx * dx + dy * dy)
+      }
+      return len
+    }
+
+    this.queuedCandidatePaths = [this.baseElbow, ...elbowVariants].sort(
+      (a, b) => getPathLength(a) - getPathLength(b),
+    )
   }
 
   override getConstructorParams(): ConstructorParameters<
