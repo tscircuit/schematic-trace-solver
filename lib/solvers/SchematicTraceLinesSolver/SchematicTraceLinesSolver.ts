@@ -1,7 +1,7 @@
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { getBounds, type GraphicsObject } from "graphics-debug"
-import type { InputChip, InputProblem } from "lib/types/InputProblem"
+import type { InputChip, InputProblem, PinId } from "lib/types/InputProblem"
 import type {
   MspConnectionPair,
   MspConnectionPairId,
@@ -14,6 +14,8 @@ import type { Point } from "@tscircuit/math-utils"
 
 export interface SolvedTracePath extends MspConnectionPair {
   tracePath: Point[]
+  mspConnectionPairIds: MspConnectionPairId[]
+  pinIds: PinId[]
 }
 
 export class SchematicTraceLinesSolver extends BaseSolver {
@@ -71,6 +73,11 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       this.solvedTracePaths.push({
         ...this.currentConnectionPair!,
         tracePath: this.activeSubSolver!.solvedTracePath!,
+        mspConnectionPairIds: [this.currentConnectionPair!.mspPairId],
+        pinIds: [
+          this.currentConnectionPair!.pins[0].pinId,
+          this.currentConnectionPair!.pins[1].pinId,
+        ],
       })
       this.activeSubSolver = null
       this.currentConnectionPair = null
