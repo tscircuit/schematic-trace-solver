@@ -19,6 +19,7 @@ export type OverlappingSameNetTraceGroup = {
   netId?: string
   overlappingTraces?: SolvedTracePath
   portOnlyPinId?: string
+  mspConnectionPairIds?: MspConnectionPairId[]
 }
 
 export interface NetLabelPlacement {
@@ -196,11 +197,19 @@ export class NetLabelPlacementSolver extends BaseSolver {
               }
             }
           }
+          const mspConnectionPairIds = Array.from(
+            new Set(
+              compTraces.flatMap(
+                (t) => t.mspConnectionPairIds ?? [t.mspPairId],
+              ),
+            ),
+          )
 
           groups.push({
             globalConnNetId,
             netId: userNetId,
             overlappingTraces: rep,
+            mspConnectionPairIds,
           })
         } else {
           // No traces in this component: place label at each pin that has a user net id
