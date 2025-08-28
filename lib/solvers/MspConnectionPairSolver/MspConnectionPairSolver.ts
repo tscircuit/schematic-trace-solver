@@ -71,6 +71,42 @@ export class MspConnectionPairSolver extends BaseSolver {
     this.queuedDcNetIds = Object.keys(netConnMap.netMap)
   }
 
+  private getPinSide(
+    pin: InputPin & { chipId: string },
+    chip: InputChip,
+  ): "left" | "right" | "top" | "bottom" | null {
+    const dx = pin.x - chip.center.x
+    const dy = pin.y - chip.center.y
+    const halfW = chip.width / 2
+    const halfH = chip.height / 2
+    if (dx <= -halfW) return "left"
+    if (dx >= halfW) return "right"
+    if (dy >= halfH) return "top"
+    if (dy <= -halfH) return "bottom"
+    return null
+  }
+
+  private canPinsConnect(
+    p1: InputPin & { chipId: string },
+    p2: InputPin & { chipId: string },
+  ): boolean {
+    if (p1.chipId !== p2.chipId) return true
+    const chip = this.chipMap[p1.chipId]
+    if (!chip) return true
+    const side1 = this.getPinSide(p1, chip)
+    const side2 = this.getPinSide(p2, chip)
+    if (!side1 || !side2) return true
+    if (
+      (side1 === "left" && side2 === "right") ||
+      (side1 === "right" && side2 === "left") ||
+      (side1 === "top" && side2 === "bottom") ||
+      (side1 === "bottom" && side2 === "top")
+    ) {
+      return false
+    }
+    return true
+  }
+
   override getConstructorParams(): ConstructorParameters<
     typeof MspConnectionPairSolver
   >[0] {
@@ -98,6 +134,9 @@ export class MspConnectionPairSolver extends BaseSolver {
       const [pin1, pin2] = directlyConnectedPins
       const p1 = this.pinMap[pin1!]!
       const p2 = this.pinMap[pin2!]!
+      if (!this.canPinsConnect(p1, p2)) {
+        return
+      }
       // Enforce max pair distance (use Manhattan to match orthogonal routing metric)
       const manhattanDist = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)
       if (manhattanDist > this.maxMspPairDistance) {
@@ -124,7 +163,10 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     const msp = getOrthogonalMinimumSpanningTree(
       directlyConnectedPins.map((p) => this.pinMap[p]!).filter(Boolean),
-      { maxDistance: this.maxMspPairDistance },
+      {
+        maxDistance: this.maxMspPairDistance,
+        canConnect: (a, b) => this.canPinsConnect(a as any, b as any),
+      },
     )
 
     for (const [pin1, pin2] of msp) {

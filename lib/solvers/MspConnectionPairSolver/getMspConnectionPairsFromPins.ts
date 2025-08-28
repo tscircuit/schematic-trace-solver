@@ -18,10 +18,14 @@ import type { InputPin, PinId } from "lib/types/InputProblem"
  */
 export function getOrthogonalMinimumSpanningTree(
   pins: InputPin[],
-  opts: { maxDistance?: number } = {},
+  opts: {
+    maxDistance?: number
+    canConnect?: (a: InputPin, b: InputPin) => boolean
+  } = {},
 ): Array<[PinId, PinId]> {
   const n = pins.length
   const maxDistance = opts?.maxDistance ?? Number.POSITIVE_INFINITY
+  const canConnect = opts?.canConnect
   if (n <= 1) return []
 
   // Quick validation (optional; remove if hot path)
@@ -82,7 +86,10 @@ export function getOrthogonalMinimumSpanningTree(
     for (let v = 0; v < n; v++) {
       if (!inTree[v]) {
         const d0 = manhattan(pins[u], pins[v])
-        const d = d0 > maxDistance ? Number.POSITIVE_INFINITY : d0
+        const d =
+          d0 > maxDistance || (canConnect && !canConnect(pins[u], pins[v]))
+            ? Number.POSITIVE_INFINITY
+            : d0
         if (
           d < bestDist[v] ||
           (d === bestDist[v] && pins[u].pinId < pins[parent[v]]?.pinId)
