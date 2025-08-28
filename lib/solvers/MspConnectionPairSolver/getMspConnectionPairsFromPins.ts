@@ -1,4 +1,5 @@
-import type { InputPin, PinId } from "lib/types/InputProblem"
+import type { InputPin, PinId, InputChip } from "lib/types/InputProblem"
+import { wouldCrossChip } from "./chipSideCrossing"
 
 /**
  * Compute the Orthogonal (Manhattan/L1) Minimum Spanning Tree (MST)
@@ -6,6 +7,9 @@ import type { InputPin, PinId } from "lib/types/InputProblem"
  *
  * The MST minimizes total |Δx| + |Δy| distance and fully connects all points.
  * Uses Prim's algorithm with O(n^2) time and O(n) extra space.
+ *
+ * Includes logic to prevent connections that would cross through chip bodies
+ * (i.e., connecting pins on opposite sides of the same chip).
  *
  * Edge cases:
  * - []           -> []
@@ -17,11 +21,12 @@ import type { InputPin, PinId } from "lib/types/InputProblem"
  *   whose pinId is lexicographically smallest (for stable output).
  */
 export function getOrthogonalMinimumSpanningTree(
-  pins: InputPin[],
-  opts: { maxDistance?: number } = {},
+  pins: (InputPin & { chipId?: string })[],
+  opts: { maxDistance?: number; chipMap?: Record<string, InputChip> } = {},
 ): Array<[PinId, PinId]> {
   const n = pins.length
   const maxDistance = opts?.maxDistance ?? Number.POSITIVE_INFINITY
+  const chipMap = opts?.chipMap
   if (n <= 1) return []
 
   // Quick validation (optional; remove if hot path)
@@ -39,6 +44,19 @@ export function getOrthogonalMinimumSpanningTree(
   // Helper: Manhattan distance
   const manhattan = (a: InputPin, b: InputPin) =>
     Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+
+  // Helper: Check if connecting two pins would cross a chip
+  const wouldCrossChipBody = (i: number, j: number): boolean => {
+    if (!chipMap) return false
+    const pin1 = pins[i]
+    const pin2 = pins[j]
+    if (!pin1.chipId || !pin2.chipId) return false
+    return wouldCrossChip(
+      pin1 as InputPin & { chipId: string },
+      pin2 as InputPin & { chipId: string },
+      chipMap,
+    )
+  }
 
   // Prim's data structures
   const inTree = new Array<boolean>(n).fill(false)
@@ -82,7 +100,14 @@ export function getOrthogonalMinimumSpanningTree(
     for (let v = 0; v < n; v++) {
       if (!inTree[v]) {
         const d0 = manhattan(pins[u], pins[v])
-        const d = d0 > maxDistance ? Number.POSITIVE_INFINITY : d0
+
+        // Check if this connection would cross a chip body
+        const crossesChip = wouldCrossChipBody(u, v)
+
+        // If it crosses a chip or exceeds max distance, set distance to infinity
+        const d =
+          d0 > maxDistance || crossesChip ? Number.POSITIVE_INFINITY : d0
+
         if (
           d < bestDist[v] ||
           (d === bestDist[v] && pins[u].pinId < pins[parent[v]]?.pinId)

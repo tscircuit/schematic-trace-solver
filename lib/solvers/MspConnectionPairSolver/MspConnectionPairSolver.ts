@@ -3,6 +3,7 @@ import type { InputChip, InputPin, InputProblem } from "lib/types/InputProblem"
 import { ConnectivityMap } from "connectivity-map"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
+import { wouldCrossChip } from "./chipSideCrossing"
 import type { GraphicsObject } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
@@ -98,6 +99,13 @@ export class MspConnectionPairSolver extends BaseSolver {
       const [pin1, pin2] = directlyConnectedPins
       const p1 = this.pinMap[pin1!]!
       const p2 = this.pinMap[pin2!]!
+
+      // Check if this would cross a chip body
+      if (wouldCrossChip(p1, p2, this.chipMap)) {
+        // Skip creating an MSP pair for pins that would cross a chip
+        return
+      }
+
       // Enforce max pair distance (use Manhattan to match orthogonal routing metric)
       const manhattanDist = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)
       if (manhattanDist > this.maxMspPairDistance) {
@@ -120,11 +128,15 @@ export class MspConnectionPairSolver extends BaseSolver {
       return
     }
 
-    // There are more than 3 pins, so we need to run MSP to find the best pairs
+    // There are more than 2 pins, so we need to run MSP to find the best pairs
+    // Pass chipMap to prevent connections across chip bodies
 
     const msp = getOrthogonalMinimumSpanningTree(
       directlyConnectedPins.map((p) => this.pinMap[p]!).filter(Boolean),
-      { maxDistance: this.maxMspPairDistance },
+      {
+        maxDistance: this.maxMspPairDistance,
+        chipMap: this.chipMap,
+      },
     )
 
     for (const [pin1, pin2] of msp) {
