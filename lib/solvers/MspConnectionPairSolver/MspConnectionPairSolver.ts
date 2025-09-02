@@ -77,7 +77,6 @@ export class MspConnectionPairSolver extends BaseSolver {
     this.queuedDcNetIds = Object.keys(netConnMap.netMap)
   }
 
-
   override getConstructorParams(): ConstructorParameters<
     typeof MspConnectionPairSolver
   >[0] {
@@ -105,7 +104,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       const [pin1, pin2] = directlyConnectedPins
       const p1 = this.pinMap[pin1!]!
       const p2 = this.pinMap[pin2!]!
-         if (!checkIfMspPairCanConnectDirectly(this.chipMap, p1, p2)) {
+      if (!checkIfMspPairCanConnectDirectly(this.chipMap, p1, p2)) {
         return
       }
 
@@ -135,14 +134,10 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     const msp = getOrthogonalMinimumSpanningTree(
       directlyConnectedPins.map((p) => this.pinMap[p]!).filter(Boolean),
-        {
+      {
         maxDistance: this.maxMspPairDistance,
         canConnect: (a, b) =>
-          checkIfMspPairCanConnectDirectly(
-            this.chipMap,
-            a as any,
-            b as any,
-          ),
+          checkIfMspPairCanConnectDirectly(this.chipMap, a as any, b as any),
       },
     )
 

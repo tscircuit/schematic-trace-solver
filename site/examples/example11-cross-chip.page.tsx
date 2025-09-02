@@ -41,9 +41,18 @@ const inputProblem: InputProblem = {
     },
   ],
   directConnections: [
-    { pinIds: ["C20.1", "U3.8"], netId: "capacitor.C20 > port.pin1 to .U3 > .VDD" },
-    { pinIds: ["C20.2", "U3.4"], netId: "capacitor.C20 > port.pin2 to .U3 > .GND" },
-    { pinIds: ["R11.2", "U3.1"], netId: "resistor.R11 > port.pin2 to .U3 > .N_CS" },
+    {
+      pinIds: ["C20.1", "U3.8"],
+      netId: "capacitor.C20 > port.pin1 to .U3 > .VDD",
+    },
+    {
+      pinIds: ["C20.2", "U3.4"],
+      netId: "capacitor.C20 > port.pin2 to .U3 > .GND",
+    },
+    {
+      pinIds: ["R11.2", "U3.1"],
+      netId: "resistor.R11 > port.pin2 to .U3 > .N_CS",
+    },
   ],
   netConnections: [
     { netId: "V3_3", pinIds: ["U3.8", "U3.3", "U3.7", "C20.1", "R11.1"] },

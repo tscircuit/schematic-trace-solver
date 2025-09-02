@@ -91,7 +91,7 @@ export function getOrthogonalMinimumSpanningTree(
             ? Number.POSITIVE_INFINITY
             : d0
         if (
-        d !== Number.POSITIVE_INFINITY &&
+          d !== Number.POSITIVE_INFINITY &&
           (d < bestDist[v] ||
             (d === bestDist[v] && pins[u].pinId < pins[parent[v]]?.pinId))
         ) {
