@@ -21,7 +21,7 @@ export function getOrthogonalMinimumSpanningTree(
   opts: {
     maxDistance?: number
     canConnect?: (a: InputPin, b: InputPin) => boolean
-    } = {},
+  } = {},
 ): Array<[PinId, PinId]> {
   const n = pins.length
   const maxDistance = opts?.maxDistance ?? Number.POSITIVE_INFINITY

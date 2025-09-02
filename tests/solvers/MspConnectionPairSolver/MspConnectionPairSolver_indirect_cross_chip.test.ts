@@ -17,9 +17,7 @@ const inputProblem: InputProblem = {
     },
   ],
   directConnections: [],
-  netConnections: [
-    { netId: "N1", pinIds: ["L", "T", "R"] },
-  ],
+  netConnections: [{ netId: "N1", pinIds: ["L", "T", "R"] }],
   availableNetLabelOrientations: {},
   maxMspPairDistance: 5,
 }
@@ -29,7 +27,10 @@ test("MspConnectionPairSolver allows indirect cross-chip traces", () => {
   solver.solve()
   expect(solver.mspConnectionPairs).toHaveLength(2)
   const pairIds = solver.mspConnectionPairs.map(({ pins }) =>
-    pins.map((p) => p.pinId).sort().join("-")
+    pins
+      .map((p) => p.pinId)
+      .sort()
+      .join("-"),
   )
   expect(pairIds).toContain("L-T")
   expect(pairIds).toContain("R-T")

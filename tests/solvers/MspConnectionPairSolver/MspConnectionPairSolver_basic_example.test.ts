@@ -16,9 +16,7 @@ const inputProblem: InputProblem = {
     },
   ],
   directConnections: [],
-  netConnections: [
-    { netId: "N1", pinIds: ["A", "B"] },
-  ],
+  netConnections: [{ netId: "N1", pinIds: ["A", "B"] }],
   availableNetLabelOrientations: {},
   maxMspPairDistance: 5,
 }

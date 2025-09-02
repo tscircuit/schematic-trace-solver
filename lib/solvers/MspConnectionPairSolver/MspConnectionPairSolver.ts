@@ -45,11 +45,12 @@ export class MspConnectionPairSolver extends BaseSolver {
     this.pinMap = {}
     for (const chip of inputProblem.chips) {
       for (const pin of chip.pins) {
- this.pinMap[pin.pinId] = {
+        this.pinMap[pin.pinId] = {
           ...pin,
           chipId: chip.chipId,
           _facingDirection: pin._facingDirection ?? getPinDirection(pin, chip),
-        }      }
+        }
+      }
     }
 
     this.chipMap = {}
@@ -93,7 +94,6 @@ export class MspConnectionPairSolver extends BaseSolver {
     return true
   }
 
-
   override getConstructorParams(): ConstructorParameters<
     typeof MspConnectionPairSolver
   >[0] {
@@ -121,7 +121,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       const [pin1, pin2] = directlyConnectedPins
       const p1 = this.pinMap[pin1!]!
       const p2 = this.pinMap[pin2!]!
-        if (!this.canPinsConnect(p1, p2)) {
+      if (!this.canPinsConnect(p1, p2)) {
         return
       }
       // Enforce max pair distance (use Manhattan to match orthogonal routing metric)
@@ -152,7 +152,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       directlyConnectedPins.map((p) => this.pinMap[p]!).filter(Boolean),
       {
         maxDistance: this.maxMspPairDistance,
-                canConnect: (a, b) => this.canPinsConnect(a as any, b as any),
+        canConnect: (a, b) => this.canPinsConnect(a as any, b as any),
       },
     )
 
