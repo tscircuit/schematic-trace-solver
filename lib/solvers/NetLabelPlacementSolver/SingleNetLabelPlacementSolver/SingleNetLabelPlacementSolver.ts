@@ -189,7 +189,22 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
     for (const curr of tracesToScan) {
       const pts = curr.tracePath.slice()
-      for (let si = 0; si < pts.length - 1; si++) {
+      // Always prioritize horizontal labels by scanning vertical segments first
+      const segmentIndices: number[] = []
+      for (let segIdx = 0; segIdx < pts.length - 1; segIdx++) segmentIndices.push(segIdx)
+      const verticalSegmentIndices: number[] = []
+      const horizontalSegmentIndices: number[] = []
+      for (const segIdx of segmentIndices) {
+        const pointA = pts[segIdx]!
+        const pointB = pts[segIdx + 1]!
+        const isVertical = Math.abs(pointA.x - pointB.x) < EPS
+        const isHorizontal = Math.abs(pointA.y - pointB.y) < EPS
+        if (isVertical) verticalSegmentIndices.push(segIdx)
+        else if (isHorizontal) horizontalSegmentIndices.push(segIdx)
+      }
+      const orderedSegmentIndices = [...verticalSegmentIndices, ...horizontalSegmentIndices]
+
+      for (const si of orderedSegmentIndices) {
         const a = pts[si]!
         const b = pts[si + 1]!
         const isH = Math.abs(a.y - b.y) < EPS
