@@ -2,105 +2,99 @@
   <rect width="100%" height="100%" fill="white" />
   <g>
     <circle data-type="point" data-label="R1.1
-x-" data-x="-1.58" data-y="0.765" cx="103.74558303886928" cy="224.94699646643113" r="3" fill="hsl(226, 100%, 50%, 0.8)" />
+x-" data-x="-1.58" data-y="0.765" cx="55.09433962264151" cy="210.94339622641508" r="3" fill="hsl(226, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="R1.2
-x+" data-x="-0.48" data-y="0.765" cx="259.2226148409894" cy="224.94699646643113" r="3" fill="hsl(227, 100%, 50%, 0.8)" />
+x+" data-x="-0.48" data-y="0.765" cx="221.1320754716981" cy="210.94339622641508" r="3" fill="hsl(227, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="R2.1
-x-" data-x="0.48" data-y="0.765" cx="394.9116607773851" cy="224.94699646643113" r="3" fill="hsl(107, 100%, 50%, 0.8)" />
+x-" data-x="0.48" data-y="0.765" cx="366.03773584905656" cy="210.94339622641508" r="3" fill="hsl(107, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="R2.2
-x+" data-x="1.58" data-y="0.765" cx="550.3886925795052" cy="224.94699646643113" r="3" fill="hsl(108, 100%, 50%, 0.8)" />
+x+" data-x="1.58" data-y="0.765" cx="532.0754716981131" cy="210.94339622641508" r="3" fill="hsl(108, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="R3.1
-x-" data-x="-1.58" data-y="-0.765" cx="103.74558303886928" cy="441.2014134275618" r="3" fill="hsl(348, 100%, 50%, 0.8)" />
+x-" data-x="-1.58" data-y="-0.765" cx="55.09433962264151" cy="441.88679245283015" r="3" fill="hsl(348, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="R3.2
-x+" data-x="-0.48" data-y="-0.765" cx="259.2226148409894" cy="441.2014134275618" r="3" fill="hsl(349, 100%, 50%, 0.8)" />
+x+" data-x="-0.48" data-y="-0.765" cx="221.1320754716981" cy="441.88679245283015" r="3" fill="hsl(349, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="J1.1
-x-" data-x="0.5800000000000001" data-y="-0.665" cx="409.0459363957597" cy="427.0671378091873" r="3" fill="hsl(218, 100%, 50%, 0.8)" />
+x-" data-x="0.5800000000000001" data-y="-0.665" cx="381.1320754716981" cy="426.7924528301886" r="3" fill="hsl(218, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="J1.2
-y-" data-x="1.03" data-y="-1.03" cx="472.6501766784452" cy="478.65724381625444" r="3" fill="hsl(219, 100%, 50%, 0.8)" />
+y-" data-x="1.03" data-y="-1.03" cx="449.05660377358487" cy="481.88679245283015" r="3" fill="hsl(219, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="J1.3
-x+" data-x="1.48" data-y="-0.665" cx="536.2544169611307" cy="427.0671378091873" r="3" fill="hsl(220, 100%, 50%, 0.8)" />
+x+" data-x="1.48" data-y="-0.665" cx="516.9811320754716" cy="426.7924528301886" r="3" fill="hsl(220, 100%, 50%, 0.8)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="0.27999999999999997" data-y="0.765" cx="366.64310954063603" cy="224.94699646643113" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="0.27999999999999997" data-y="0.665" cx="335.84905660377353" cy="226.0377358490566" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="1.7800000000000002" data-y="0.765" cx="578.6572438162544" cy="224.94699646643113" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="1.58" data-y="0.765" cx="532.0754716981131" cy="210.94339622641508" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="0.5800000000000001" data-y="-0.665" cx="409.0459363957597" cy="427.0671378091873" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="0.34" data-y="-0.665" cx="344.90566037735846" cy="426.7924528301886" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="-1.58" data-y="0.765" cx="103.74558303886928" cy="224.94699646643113" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="1.63" data-y="-0.665" cx="539.6226415094338" cy="426.7924528301886" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="1.48" data-y="-0.665" cx="536.2544169611307" cy="427.0671378091873" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <polyline data-points="0.48,0.765 -0.48,-0.765" data-type="line" data-label="" points="366.03773584905656,210.94339622641508 221.1320754716981,441.88679245283015" fill="none" stroke="hsl(224, 100%, 50%, 0.8)" stroke-width="1" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="-0.48" data-y="0.765" cx="259.2226148409894" cy="224.94699646643113" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <polyline data-points="1.58,0.765 -1.58,-0.765" data-type="line" data-label="" points="532.0754716981131,210.94339622641508 55.09433962264151,441.88679245283015" fill="none" stroke="hsl(224, 100%, 50%, 0.8)" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="0.48,0.765 -0.48,-0.765" data-type="line" data-label="" points="394.9116607773851,224.94699646643113 259.2226148409894,441.2014134275618" fill="none" stroke="hsl(224, 100%, 50%, 0.8)" stroke-width="1" />
+    <polyline data-points="0.5800000000000001,-0.665 -1.58,0.765" data-type="line" data-label="" points="381.1320754716981,426.7924528301886 55.09433962264151,210.94339622641508" fill="none" stroke="hsl(168, 100%, 50%, 0.8)" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="1.58,0.765 -1.58,-0.765" data-type="line" data-label="" points="550.3886925795052,224.94699646643113 103.74558303886928,441.2014134275618" fill="none" stroke="hsl(224, 100%, 50%, 0.8)" stroke-width="1" />
+    <polyline data-points="1.48,-0.665 -0.48,0.765" data-type="line" data-label="" points="516.9811320754716,426.7924528301886 221.1320754716981,210.94339622641508" fill="none" stroke="hsl(168, 100%, 50%, 0.8)" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="0.5800000000000001,-0.665 -1.58,0.765" data-type="line" data-label="" points="409.0459363957597,427.0671378091873 103.74558303886928,224.94699646643113" fill="none" stroke="hsl(168, 100%, 50%, 0.8)" stroke-width="1" />
+    <polyline data-points="0.48,0.765 0.27999999999999997,0.665 -0.1,0.665 -0.1,-0.765 -0.27999999999999997,-0.765 -0.48,-0.765" data-type="line" data-label="" points="366.03773584905656,210.94339622641508 335.84905660377353,226.0377358490566 278.49056603773585,226.0377358490566 278.49056603773585,441.88679245283015 251.32075471698113,441.88679245283015 221.1320754716981,441.88679245283015" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="1.48,-0.665 -0.48,0.765" data-type="line" data-label="" points="536.2544169611307,427.0671378091873 259.2226148409894,224.94699646643113" fill="none" stroke="hsl(168, 100%, 50%, 0.8)" stroke-width="1" />
+    <polyline data-points="1.58,0.765 1.58,-0.1 -1.6800000000000002,-0.1 -1.6800000000000002,-0.765 -1.58,-0.765" data-type="line" data-label="" points="532.0754716981131,210.94339622641508 532.0754716981131,341.5094339622641 39.99999999999997,341.5094339622641 39.99999999999997,441.88679245283015 55.09433962264151,441.88679245283015" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="0.48,0.765 0.27999999999999997,0.765 0,0.765 0,-0.765 -0.27999999999999997,-0.765 -0.48,-0.765" data-type="line" data-label="" points="394.9116607773851,224.94699646643113 366.64310954063603,224.94699646643113 327.0671378091873,224.94699646643113 327.0671378091873,441.2014134275618 287.4911660777385,441.2014134275618 259.2226148409894,441.2014134275618" fill="none" stroke="purple" stroke-width="1" />
+    <polyline data-points="0.5800000000000001,-0.665 0.1,-0.665 0.1,0.1 -1.6800000000000002,0.1 -1.6800000000000002,0.765 -1.58,0.765" data-type="line" data-label="" points="381.1320754716981,426.7924528301886 308.6792452830188,426.7924528301886 308.6792452830188,311.3207547169811 39.99999999999997,311.3207547169811 39.99999999999997,210.94339622641508 55.09433962264151,210.94339622641508" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="1.58,0.765 1.7800000000000002,0.765 1.7800000000000002,0 -1.78,0 -1.78,-0.765 -1.58,-0.765" data-type="line" data-label="" points="550.3886925795052,224.94699646643113 578.6572438162544,224.94699646643113 578.6572438162544,333.0742049469965 75.47703180212017,333.0742049469965 75.47703180212017,441.2014134275618 103.74558303886928,441.2014134275618" fill="none" stroke="purple" stroke-width="1" />
+    <polyline data-points="1.48,-0.665 1.78,-0.665 1.78,0.03527232500000027 0,0.03527232500000027 0,0.765 -0.48,0.765" data-type="line" data-label="" points="516.9811320754716,426.7924528301886 562.2641509433961,426.7924528301886 562.2641509433961,321.0909698113207 293.58490566037733,321.0909698113207 293.58490566037733,210.94339622641508 221.1320754716981,210.94339622641508" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <rect data-type="rect" data-label="schematic_component_0" data-x="-1.03" data-y="0.765" x="103.74558303886928" y="197.46214134275627" width="155.47703180212014" height="54.969710247349695" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.0070750000000000006" />
+    <rect data-type="rect" data-label="schematic_component_0" data-x="-1.03" data-y="0.765" x="55.09433962264151" y="181.59164528301895" width="166.0377358490566" height="58.70350188679228" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.006625000000000001" />
   </g>
   <g>
-    <rect data-type="rect" data-label="schematic_component_1" data-x="1.03" data-y="0.765" x="394.9116607773851" y="197.46214134275627" width="155.4770318021201" height="54.969710247349695" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.0070750000000000006" />
+    <rect data-type="rect" data-label="schematic_component_1" data-x="1.03" data-y="0.765" x="366.03773584905656" y="181.59164528301895" width="166.03773584905656" height="58.70350188679228" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.006625000000000001" />
   </g>
   <g>
-    <rect data-type="rect" data-label="schematic_component_2" data-x="-1.03" data-y="-0.765" x="103.74558303886928" y="413.716558303887" width="155.47703180212014" height="54.969710247349724" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.0070750000000000006" />
+    <rect data-type="rect" data-label="schematic_component_2" data-x="-1.03" data-y="-0.765" x="55.09433962264151" y="412.535041509434" width="166.0377358490566" height="58.70350188679231" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.006625000000000001" />
   </g>
   <g>
-    <rect data-type="rect" data-label="schematic_component_3" data-x="1.03" data-y="-0.765" x="409.0459363957597" y="403.74558303886926" width="127.20848056537096" height="74.91166077738518" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.0070750000000000006" />
+    <rect data-type="rect" data-label="schematic_component_3" data-x="1.03" data-y="-0.765" x="381.1320754716981" y="401.88679245283015" width="135.84905660377348" height="80" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.006625000000000001" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="0.27999999999999997" data-y="0.99" x="352.5088339222615" y="161.3427561837456" width="28.26855123674909" height="63.60424028268554" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0070750000000000006" />
+    <rect data-type="rect" data-label="" data-x="0.27999999999999997" data-y="0.89" x="320.75471698113205" y="158.1132075471698" width="30.188679245283026" height="67.9245283018868" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.006625000000000001" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="1.7800000000000002" data-y="0.99" x="564.5229681978799" y="161.3427561837456" width="28.26855123674909" height="63.60424028268554" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0070750000000000006" />
+    <rect data-type="rect" data-label="" data-x="1.8050000000000002" data-y="0.765" x="532.0754716981131" y="195.84905660377356" width="67.92452830188688" height="30.188679245283026" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.006625000000000001" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="0.3540000000000001" data-y="-0.665" x="345.30035335689047" y="412.9328621908127" width="63.60424028268551" height="28.26855123674909" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0070750000000000006" />
+    <rect data-type="rect" data-label="" data-x="0.34" data-y="-0.44000000000000006" x="329.811320754717" y="358.86792452830184" width="30.188679245283026" height="67.92452830188677" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.006625000000000001" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="-1.806" data-y="0.765" x="40" y="210.81272084805656" width="63.60424028268554" height="28.26855123674912" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0070750000000000006" />
-  </g>
-  <g>
-    <rect data-type="rect" data-label="" data-x="1.706" data-y="-0.665" x="536.3957597173144" y="412.9328621908127" width="63.60424028268562" height="28.26855123674909" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0070750000000000006" />
-  </g>
-  <g>
-    <rect data-type="rect" data-label="" data-x="-0.254" data-y="0.765" x="259.36395759717317" y="210.81272084805656" width="63.60424028268551" height="28.26855123674912" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0070750000000000006" />
+    <rect data-type="rect" data-label="" data-x="1.63" data-y="-0.44000000000000006" x="524.5283018867924" y="358.86792452830184" width="30.188679245283083" height="67.92452830188677" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.006625000000000001" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
@@ -130,12 +124,12 @@ x+" data-x="1.48" data-y="-0.665" cx="536.2544169611307" cy="427.0671378091873" 
 
       // Calculate real coordinates using inverse transformation
       const matrix = {
-        "a": 141.34275618374556,
+        "a": 150.94339622641508,
         "c": 0,
-        "e": 327.0671378091873,
+        "e": 293.58490566037733,
         "b": 0,
-        "d": -141.34275618374556,
-        "f": 333.0742049469965
+        "d": -150.94339622641508,
+        "f": 326.4150943396226
       };
       // Manually invert and apply the affine transform
       // Since we only use translate and scale, we can directly compute:
