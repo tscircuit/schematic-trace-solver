@@ -1,7 +1,7 @@
 import type { InputProblem } from "lib/index"
 import { PipelineDebugger } from "site/components/PipelineDebugger"
 
-const inputProblem: InputProblem = {
+export const inputProblem: InputProblem = {
   chips: [
     {
       chipId: "schematic_component_0",

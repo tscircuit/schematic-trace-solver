@@ -98,11 +98,11 @@ export default () => <PipelineDebugger inputProblem={inputProblem} />
 import { GenericSolverDebugger } from "../components/GenericSolverDebugger"
 import { ${solverName} } from "lib/solvers/${solverName}/${solverName}"
 
-const input = ${JSON.stringify(params, null, 2)}
+export const inputProblem = ${JSON.stringify(params, null, 2)}
 
 export default () => {
   const solver = useMemo(() => {
-    return new ${solverName}(input as any)
+    return new ${solverName}(inputProblem as any)
   }, [])
   return <GenericSolverDebugger solver={solver} />
 }
@@ -138,6 +138,8 @@ test("${solverName} should solve problem correctly", () => {
   
   const solver = new ${solverName}(input as any)
   solver.solve()
+
+  expect(solver).toMatchSolverSnapshot(import.meta.path)
   
   // Add more specific assertions based on expected output
   // expect(solver.netLabelPlacementSolver!.netLabelPlacements).toMatchInlineSnapshot()
