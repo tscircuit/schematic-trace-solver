@@ -4,6 +4,7 @@ import { ConnectivityMap } from "connectivity-map"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 import type { GraphicsObject } from "graphics-debug"
+import { checkIfMspPairCanConnectDirectly } from "./checkIfMspPairCanConnectDirectly"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
@@ -75,24 +76,7 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     this.queuedDcNetIds = Object.keys(netConnMap.netMap)
   }
-  private canPinsConnect(
-    p1: InputPin & { chipId: string },
-    p2: InputPin & { chipId: string },
-  ): boolean {
-    if (p1.chipId !== p2.chipId) return true
-    const f1 = p1._facingDirection
-    const f2 = p2._facingDirection
-    if (!f1 || !f2) return true
-    if (
-      (f1 === "x-" && f2 === "x+") ||
-      (f1 === "x+" && f2 === "x-") ||
-      (f1 === "y-" && f2 === "y+") ||
-      (f1 === "y+" && f2 === "y-")
-    ) {
-      return false
-    }
-    return true
-  }
+
 
   override getConstructorParams(): ConstructorParameters<
     typeof MspConnectionPairSolver
@@ -121,9 +105,10 @@ export class MspConnectionPairSolver extends BaseSolver {
       const [pin1, pin2] = directlyConnectedPins
       const p1 = this.pinMap[pin1!]!
       const p2 = this.pinMap[pin2!]!
-      if (!this.canPinsConnect(p1, p2)) {
+         if (!checkIfMspPairCanConnectDirectly(this.chipMap, p1, p2)) {
         return
       }
+
       // Enforce max pair distance (use Manhattan to match orthogonal routing metric)
       const manhattanDist = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)
       if (manhattanDist > this.maxMspPairDistance) {
@@ -150,9 +135,14 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     const msp = getOrthogonalMinimumSpanningTree(
       directlyConnectedPins.map((p) => this.pinMap[p]!).filter(Boolean),
-      {
+        {
         maxDistance: this.maxMspPairDistance,
-        canConnect: (a, b) => this.canPinsConnect(a as any, b as any),
+        canConnect: (a, b) =>
+          checkIfMspPairCanConnectDirectly(
+            this.chipMap,
+            a as any,
+            b as any,
+          ),
       },
     )
 
