@@ -1,6 +1,6 @@
 import type { FacingDirection } from "lib/utils/dir"
 
-export const NET_LABEL_HORIZONTAL_WIDTH = 0.5
+export const NET_LABEL_HORIZONTAL_WIDTH = 0.45
 export const NET_LABEL_HORIZONTAL_HEIGHT = 0.2
 
 export function getDimsForOrientation(orientation: FacingDirection) {
