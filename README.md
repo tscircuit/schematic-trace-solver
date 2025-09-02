@@ -81,3 +81,18 @@ const solver = new SchematicTracePipelineSolver({
 
 solver.solve()
 ```
+
+## Development
+
+### Downloading input problems from tscircuit
+
+1. Create a test in [tscircuit/core](https://github.com/tscircuit/core)
+2. Set `DEBUG=Group_doInitialSchematicTraceRender`
+3. Run the test with `bun test`
+4. The console output will show the location of the input problem
+5. Copy the input problem and [paste it into the input debugger](https://schematic-trace-solver.vercel.app/?fixture=%7B%22path%22%3A%22site%2Fexamples%2Fexample01-basic.page.tsx%22%7D)
+
+### Updating Test Snapshots
+
+1. `export BUN_UPDATE_SNAPSHOTS=1`
+2. `bun test`
