@@ -191,7 +191,8 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       const pts = curr.tracePath.slice()
       // Always prioritize horizontal labels by scanning vertical segments first
       const segmentIndices: number[] = []
-      for (let segIdx = 0; segIdx < pts.length - 1; segIdx++) segmentIndices.push(segIdx)
+      for (let segIdx = 0; segIdx < pts.length - 1; segIdx++)
+        segmentIndices.push(segIdx)
       const verticalSegmentIndices: number[] = []
       const horizontalSegmentIndices: number[] = []
       for (const segIdx of segmentIndices) {
@@ -202,7 +203,10 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         if (isVertical) verticalSegmentIndices.push(segIdx)
         else if (isHorizontal) horizontalSegmentIndices.push(segIdx)
       }
-      const orderedSegmentIndices = [...verticalSegmentIndices, ...horizontalSegmentIndices]
+      const orderedSegmentIndices = [
+        ...verticalSegmentIndices,
+        ...horizontalSegmentIndices,
+      ]
 
       for (const si of orderedSegmentIndices) {
         const a = pts[si]!
