@@ -6,6 +6,7 @@ import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPin
 import type { GraphicsObject } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 
 export type MspConnectionPairId = string
 
@@ -44,8 +45,11 @@ export class MspConnectionPairSolver extends BaseSolver {
     this.pinMap = {}
     for (const chip of inputProblem.chips) {
       for (const pin of chip.pins) {
-        this.pinMap[pin.pinId] = { ...pin, chipId: chip.chipId }
-      }
+ this.pinMap[pin.pinId] = {
+          ...pin,
+          chipId: chip.chipId,
+          _facingDirection: pin._facingDirection ?? getPinDirection(pin, chip),
+        }      }
     }
 
     this.chipMap = {}
@@ -70,42 +74,25 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     this.queuedDcNetIds = Object.keys(netConnMap.netMap)
   }
-
-  private getPinSide(
-    pin: InputPin & { chipId: string },
-    chip: InputChip,
-  ): "left" | "right" | "top" | "bottom" | null {
-    const dx = pin.x - chip.center.x
-    const dy = pin.y - chip.center.y
-    const halfW = chip.width / 2
-    const halfH = chip.height / 2
-    if (dx <= -halfW) return "left"
-    if (dx >= halfW) return "right"
-    if (dy >= halfH) return "top"
-    if (dy <= -halfH) return "bottom"
-    return null
-  }
-
   private canPinsConnect(
     p1: InputPin & { chipId: string },
     p2: InputPin & { chipId: string },
   ): boolean {
     if (p1.chipId !== p2.chipId) return true
-    const chip = this.chipMap[p1.chipId]
-    if (!chip) return true
-    const side1 = this.getPinSide(p1, chip)
-    const side2 = this.getPinSide(p2, chip)
-    if (!side1 || !side2) return true
+    const f1 = p1._facingDirection
+    const f2 = p2._facingDirection
+    if (!f1 || !f2) return true
     if (
-      (side1 === "left" && side2 === "right") ||
-      (side1 === "right" && side2 === "left") ||
-      (side1 === "top" && side2 === "bottom") ||
-      (side1 === "bottom" && side2 === "top")
+      (f1 === "x-" && f2 === "x+") ||
+      (f1 === "x+" && f2 === "x-") ||
+      (f1 === "y-" && f2 === "y+") ||
+      (f1 === "y+" && f2 === "y-")
     ) {
       return false
     }
     return true
   }
+
 
   override getConstructorParams(): ConstructorParameters<
     typeof MspConnectionPairSolver
@@ -134,7 +121,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       const [pin1, pin2] = directlyConnectedPins
       const p1 = this.pinMap[pin1!]!
       const p2 = this.pinMap[pin2!]!
-      if (!this.canPinsConnect(p1, p2)) {
+        if (!this.canPinsConnect(p1, p2)) {
         return
       }
       // Enforce max pair distance (use Manhattan to match orthogonal routing metric)
@@ -165,7 +152,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       directlyConnectedPins.map((p) => this.pinMap[p]!).filter(Boolean),
       {
         maxDistance: this.maxMspPairDistance,
-        canConnect: (a, b) => this.canPinsConnect(a as any, b as any),
+                canConnect: (a, b) => this.canPinsConnect(a as any, b as any),
       },
     )
 
