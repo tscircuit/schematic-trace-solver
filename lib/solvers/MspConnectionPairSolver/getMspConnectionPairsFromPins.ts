@@ -86,16 +86,13 @@ export function getOrthogonalMinimumSpanningTree(
     for (let v = 0; v < n; v++) {
       if (!inTree[v]) {
         const d0 = manhattan(pins[u], pins[v])
-        const d =
-          d0 > maxDistance || (canConnect && !canConnect(pins[u], pins[v]))
-            ? Number.POSITIVE_INFINITY
-            : d0
+        if (d0 > maxDistance) continue
+        if (canConnect && !canConnect(pins[u], pins[v])) continue
         if (
-          d !== Number.POSITIVE_INFINITY &&
-          (d < bestDist[v] ||
-            (d === bestDist[v] && pins[u].pinId < pins[parent[v]]?.pinId))
+          d0 < bestDist[v] ||
+          (d0 === bestDist[v] && pins[u].pinId < pins[parent[v]]?.pinId)
         ) {
-          bestDist[v] = d
+          bestDist[v] = d0
           parent[v] = u
         }
       }
