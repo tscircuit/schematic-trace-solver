@@ -53,10 +53,12 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
 
   // Find pin coordinates
   let pin: { x: number; y: number } | null = null
+  let pinChip: (typeof inputProblem.chips)[number] | null = null
   for (const chip of inputProblem.chips) {
     const p = chip.pins.find((pp) => pp.pinId === pinId)
     if (p) {
       pin = { x: p.x, y: p.y }
+      pinChip = chip
       break
     }
   }
@@ -83,6 +85,9 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
           ? { x: 0, y: 1 }
           : { x: 0, y: -1 }
 
+  const LABEL_OFFSET = 1e-3
+  const CHIP_CLEARANCE = 1e-3
+
   const testedCandidates: Array<{
     center: { x: number; y: number }
     width: number
@@ -94,32 +99,40 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     hostSegIndex: number
   }> = []
 
-  for (const orientation of orientations) {
+  // Helper to try placing a label at a given anchor
+  const tryPlaceAtAnchor = (
+    anchorX: number,
+    anchorY: number,
+    orientation: FacingDirection,
+  ) => {
     const { width, height } = getDimsForOrientation(orientation)
-    // Place label fully outside the chip: shift center slightly outward
-    const baseCenter = getCenterFromAnchor(anchor, orientation, width, height)
     const outward = outwardOf(orientation)
-    const offset = 1e-3
+    const unshiftedCenter = getCenterFromAnchor(
+      { x: anchorX, y: anchorY },
+      orientation,
+      width,
+      height,
+    )
     const center = {
-      x: baseCenter.x + outward.x * offset,
-      y: baseCenter.y + outward.y * offset,
+      x: unshiftedCenter.x + outward.x * LABEL_OFFSET,
+      y: unshiftedCenter.y + outward.y * LABEL_OFFSET,
     }
     const bounds = getRectBounds(center, width, height)
 
     // Chip collision check
-    const chips = chipObstacleSpatialIndex.getChipsInBounds(bounds)
-    if (chips.length > 0) {
+    const chipHits = chipObstacleSpatialIndex.getChipsInBounds(bounds)
+    if (chipHits.length > 0) {
       testedCandidates.push({
         center,
         width,
         height,
         bounds,
-        anchor,
+        anchor: { x: anchorX, y: anchorY },
         orientation,
         status: "chip-collision",
         hostSegIndex: -1,
       })
-      continue
+      return { placement: null as NetLabelPlacement | null, width, height }
     }
 
     // Trace collision check
@@ -136,12 +149,12 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
         width,
         height,
         bounds,
-        anchor,
+        anchor: { x: anchorX, y: anchorY },
         orientation,
         status: "trace-collision",
         hostSegIndex: -1,
       })
-      continue
+      return { placement: null as NetLabelPlacement | null, width, height }
     }
 
     // Found a valid placement
@@ -150,7 +163,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
       width,
       height,
       bounds,
-      anchor,
+      anchor: { x: anchorX, y: anchorY },
       orientation,
       status: "ok",
       hostSegIndex: -1,
@@ -163,13 +176,55 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
       mspConnectionPairIds: [],
       pinIds: [pinId],
       orientation,
-      anchorPoint: anchor,
+      anchorPoint: { x: anchorX, y: anchorY },
       width,
       height,
       center,
     }
+    return { placement, width, height }
+  }
 
-    return { placement, testedCandidates }
+  const hasAvailabaleNetLabelOrientation = orientations.length === 1
+  for (const orientation of orientations) {
+    // 1) Try with the original anchor as-is
+    const firstTry = tryPlaceAtAnchor(anchor.x, anchor.y, orientation)
+    if (firstTry.placement)
+      return { placement: firstTry.placement, testedCandidates }
+
+    // 2) If a single specific orientation is required and it's vertical,
+    //    allow a horizontal nudge to clear the chip.
+    if (
+      hasAvailabaleNetLabelOrientation &&
+      (orientation === "y+" || orientation === "y-") &&
+      pinChip
+    ) {
+      const halfWidth = pinChip.width / 2
+      const chipMinX = pinChip.center.x - halfWidth
+      const chipMaxX = pinChip.center.x + halfWidth
+      const onLeftHalf = pin.x <= pinChip.center.x
+      const width = firstTry.width
+
+      let shiftedAnchorX = anchor.x
+      if (onLeftHalf) {
+        // Keep label entirely to the left of the chip with clearance
+        const maxAllowedCenterX = chipMinX - CHIP_CLEARANCE - width / 2
+        shiftedAnchorX = Math.min(anchor.x, maxAllowedCenterX)
+      } else {
+        // Keep label entirely to the right of the chip with clearance
+        const minAllowedCenterX = chipMaxX + CHIP_CLEARANCE + width / 2
+        shiftedAnchorX = Math.max(anchor.x, minAllowedCenterX)
+      }
+
+      if (Math.abs(shiftedAnchorX - anchor.x) > 1e-9) {
+        const secondTry = tryPlaceAtAnchor(
+          shiftedAnchorX,
+          anchor.y,
+          orientation,
+        )
+        if (secondTry.placement)
+          return { placement: secondTry.placement, testedCandidates }
+      }
+    }
   }
 
   return {
