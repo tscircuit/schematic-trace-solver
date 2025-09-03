@@ -162,7 +162,6 @@ export class TraceOverlapIssueSolver extends BaseSolver {
         graphics.lines!.push({
           points: [segStart, segEnd],
           strokeColor: "red",
-          strokeWidth: 0.006,
         })
       }
     }
@@ -173,7 +172,6 @@ export class TraceOverlapIssueSolver extends BaseSolver {
         points: trace.tracePath,
         strokeColor: "blue",
         strokeDash: "4 2",
-        strokeWidth: 0.004,
       })
     }
 

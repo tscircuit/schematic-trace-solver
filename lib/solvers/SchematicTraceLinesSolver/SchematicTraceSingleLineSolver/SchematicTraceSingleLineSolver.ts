@@ -241,7 +241,6 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
         graphics.lines!.push({
           points: this.queuedCandidatePaths[0],
           strokeColor: "orange",
-          strokeWidth: boundsWidth * 0.005,
         })
       }
 

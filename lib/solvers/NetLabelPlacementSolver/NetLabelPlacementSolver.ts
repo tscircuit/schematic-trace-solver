@@ -306,7 +306,6 @@ export class NetLabelPlacementSolver extends BaseSolver {
       graphics.lines!.push({
         points: trace.tracePath,
         strokeColor: "purple",
-        strokeWidth: 0.005,
       })
     }
 

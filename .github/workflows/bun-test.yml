@@ -26,3 +26,11 @@ jobs:
 
       - name: Run tests
         run: bun test
+
+      - name: Upload test diff artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-diff-images
+          path: "**/*.diff.png"
+          if-no-files-found: ignore

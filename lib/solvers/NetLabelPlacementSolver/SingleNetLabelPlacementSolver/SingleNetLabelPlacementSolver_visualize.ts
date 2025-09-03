@@ -26,7 +26,6 @@ export function visualizeSingleNetLabelPlacementSolver(
     graphics.lines!.push({
       points: trace.tracePath,
       strokeColor: isHost ? groupStroke : groupFill,
-      strokeWidth: isHost ? 0.006 : 0.003,
       strokeDash: isHost ? undefined : "4 2",
     } as any)
   }
