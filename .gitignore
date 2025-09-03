@@ -36,3 +36,5 @@ bun.lock
 .vscode
 .vercel
 .aider*
+
+*.diff.png

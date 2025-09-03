@@ -132,7 +132,6 @@ export class SchematicTraceLinesSolver extends BaseSolver {
     for (const { mspPairId, tracePath } of this.solvedTracePaths) {
       graphics.lines!.push({
         points: tracePath,
-        strokeWidth: 0.005,
         strokeColor: "green",
       })
     }
@@ -146,7 +145,6 @@ export class SchematicTraceLinesSolver extends BaseSolver {
         ],
         strokeColor: "red",
         strokeDash: "4 2",
-        strokeWidth: 0.004,
       })
     }
 
