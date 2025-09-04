@@ -171,8 +171,11 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
         hasYPos?: boolean
         hasYNeg?: boolean
         center: { x: number; y: number }
+        counts?: { xPos: number; xNeg: number; yPos: number; yNeg: number }
       }
     >()
+
+    const chipsOfFacingPins = new Set<string>(this.pins.map((p) => p.chipId))
 
     for (const pinId of relatedPinIds) {
       const pin = this.pinIdMap.get(pinId)
@@ -183,6 +186,17 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       let entry = chipFacingMap.get(chip.chipId)
       if (!entry) {
         entry = { center: chip.center }
+
+        const counts = { xPos: 0, xNeg: 0, yPos: 0, yNeg: 0 }
+        for (const cp of chip.pins) {
+          const cpFacing = cp._facingDirection ?? getPinDirection(cp, chip)
+          if (cpFacing === "x+") counts.xPos++
+          if (cpFacing === "x-") counts.xNeg++
+          if (cpFacing === "y+") counts.yPos++
+          if (cpFacing === "y-") counts.yNeg++
+        }
+        entry.counts = counts
+
         chipFacingMap.set(chip.chipId, entry)
       }
       if (facing === "x+") entry.hasXPos = true
@@ -196,14 +210,31 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     for (const [chipId, faces] of chipFacingMap) {
       const axes = new Set<string>()
       const rc: { x?: number; y?: number; axes: Set<string> } = { axes }
-      if (faces.hasXPos && faces.hasXNeg) {
-        rc.x = faces.center.x
-        axes.add("x")
+
+      // determine whether any side on this chip has more than one pin
+      const counts = faces.counts
+      const anySideHasMultiplePins = !!(
+        counts &&
+        (counts.xPos > 1 ||
+          counts.xNeg > 1 ||
+          counts.yPos > 1 ||
+          counts.yNeg > 1)
+      )
+
+      const skipCenterRestriction =
+        !anySideHasMultiplePins && chipsOfFacingPins.has(chipId)
+
+      if (!skipCenterRestriction) {
+        if (faces.hasXPos && faces.hasXNeg) {
+          rc.x = faces.center.x
+          axes.add("x")
+        }
+        if (faces.hasYPos && faces.hasYNeg) {
+          rc.y = faces.center.y
+          axes.add("y")
+        }
       }
-      if (faces.hasYPos && faces.hasYNeg) {
-        rc.y = faces.center.y
-        axes.add("y")
-      }
+
       if (axes.size > 0) {
         restrictedCenters.set(chipId, rc)
       }
