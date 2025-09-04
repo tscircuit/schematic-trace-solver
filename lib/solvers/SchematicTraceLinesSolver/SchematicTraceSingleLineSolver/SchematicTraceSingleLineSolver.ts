@@ -31,6 +31,9 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
 
   solvedTracePath: { x: number; y: number }[] | null = null
 
+  // map of pinId -> pin (with chipId attached)
+  pinIdMap: Map<string, any> = new Map()
+
   constructor(params: {
     pins: MspConnectionPair["pins"]
     guidelines: Guideline[]
@@ -49,6 +52,13 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     if (!this.inputProblem._chipObstacleSpatialIndex) {
       this.inputProblem._chipObstacleSpatialIndex =
         this.chipObstacleSpatialIndex
+    }
+
+    // Build a lookup of all pins by id and attach chipId to each pin entry
+    for (const chip of this.inputProblem.chips) {
+      for (const pin of chip.pins) {
+        this.pinIdMap.set(pin.pinId, { ...pin, chipId: chip.chipId })
+      }
     }
 
     for (const pin of this.pins) {
@@ -118,12 +128,106 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
 
     const nextCandidatePath = this.queuedCandidatePaths.shift()!
 
+    // Determine set of related pin IDs (closure over directConnections) for both endpoints
+    const collectDirectClosure = (startPinId: string) => {
+      const visited = new Set<string>()
+      const queue: string[] = [startPinId]
+      visited.add(startPinId)
+      const directConns = this.inputProblem.directConnections || []
+      while (queue.length) {
+        const cur = queue.shift()!
+        for (const dc of directConns) {
+          if (dc.pinIds.includes(cur)) {
+            for (const p of dc.pinIds) {
+              if (!visited.has(p)) {
+                visited.add(p)
+                queue.push(p)
+              }
+            }
+          }
+        }
+      }
+      return visited
+    }
+
+    const p0 = this.pins[0].pinId
+    const p1 = this.pins[1].pinId
+    const relatedPinIds = new Set<string>([
+      ...collectDirectClosure(p0),
+      ...collectDirectClosure(p1),
+    ])
+
+    const restrictedCenters = new Map<
+      string,
+      { x?: number; y?: number; axes: Set<string> }
+    >()
+
+    // Collect facing-signs per chip
+    const chipFacingMap = new Map<
+      string,
+      {
+        hasXPos?: boolean
+        hasXNeg?: boolean
+        hasYPos?: boolean
+        hasYNeg?: boolean
+        center: { x: number; y: number }
+      }
+    >()
+
+    for (const pinId of relatedPinIds) {
+      const pin = this.pinIdMap.get(pinId)
+      if (!pin) continue
+      const chip = this.chipMap[pin.chipId]
+      if (!chip) continue
+      const facing = pin._facingDirection ?? getPinDirection(pin, chip)
+      let entry = chipFacingMap.get(chip.chipId)
+      if (!entry) {
+        entry = { center: chip.center }
+        chipFacingMap.set(chip.chipId, entry)
+      }
+      if (facing === "x+") entry.hasXPos = true
+      if (facing === "x-") entry.hasXNeg = true
+      if (facing === "y+") entry.hasYPos = true
+      if (facing === "y-") entry.hasYNeg = true
+    }
+
+    // Only mark a center as restricted on an axis if both signs for that axis
+    // are present among related pins on the chip.
+    for (const [chipId, faces] of chipFacingMap) {
+      const axes = new Set<string>()
+      const rc: { x?: number; y?: number; axes: Set<string> } = { axes }
+      if (faces.hasXPos && faces.hasXNeg) {
+        rc.x = faces.center.x
+        axes.add("x")
+      }
+      if (faces.hasYPos && faces.hasYNeg) {
+        rc.y = faces.center.y
+        axes.add("y")
+      }
+      if (axes.size > 0) {
+        restrictedCenters.set(chipId, rc)
+      }
+    }
+
     for (let i = 0; i < nextCandidatePath.length - 1; i++) {
       const start = nextCandidatePath[i]
       const end = nextCandidatePath[i + 1]
 
       // Determine which chips to exclude for this specific segment
       let excludeChipIds: string[] = []
+
+      // If this segment would cross any restricted center line, reject the candidate path.
+      const EPS = 1e-9
+      for (const [, rc] of restrictedCenters) {
+        if (rc.axes.has("x") && typeof rc.x === "number") {
+          // segment strictly crosses vertical center line
+          if ((start.x - rc.x) * (end.x - rc.x) < -EPS) return
+        }
+        if (rc.axes.has("y") && typeof rc.y === "number") {
+          // segment strictly crosses horizontal center line
+          if ((start.y - rc.y) * (end.y - rc.y) < -EPS) return
+        }
+      }
 
       // Always exclude chips that contain the start or end points of this segment
       // if those points are actually pin locations
