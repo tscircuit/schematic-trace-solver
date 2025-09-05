@@ -8,6 +8,6 @@ test("SingleNetLabelPlacementSolver01 issue reproduction (should pass)", () => {
 
   solver.solve()
 
-  // TODO: Fix the test
-  // expect(solver.solved).toBe(true)
+  console.log("tested candidates", solver.testedCandidates)
+  expect(solver.solved).toBe(true)
 })
