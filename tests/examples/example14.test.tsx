@@ -98,6 +98,48 @@ const inputProblem = {
         },
       ],
     },
+    {
+      chipId: "schematic_component_3",
+      center: {
+        x: -1.7577928249999983,
+        y: -2.7512907000000002,
+      },
+      width: 0.3155856499999966,
+      height: 1.0583332999999997,
+      pins: [
+        {
+          pinId: "R12.1",
+          x: -1.7580660749999977,
+          y: -3.3025814000000002,
+        },
+        {
+          pinId: "R12.2",
+          x: -1.757519574999999,
+          y: -2.2,
+        },
+      ],
+    },
+    {
+      chipId: "schematic_component_4",
+      center: {
+        x: 1.7577928249999983,
+        y: -2.7512907000000002,
+      },
+      width: 0.3155856499999966,
+      height: 1.0583332999999997,
+      pins: [
+        {
+          pinId: "R13.1",
+          x: 1.7580660749999977,
+          y: -3.3025814000000002,
+        },
+        {
+          pinId: "R13.2",
+          x: 1.757519574999999,
+          y: -2.2,
+        },
+      ],
+    },
   ],
   directConnections: [
     {
@@ -111,6 +153,10 @@ const inputProblem = {
     {
       pinIds: ["R11.2", "U3.1"],
       netId: "resistor.R11 > port.pin2 to .U3 > .N_CS",
+    },
+    {
+      pinIds: ["R13.2", "R12.2"],
+      netId: "resistor.R11 > port.pin1 to resistor.R12 > port.pin1",
     },
   ],
   netConnections: [
