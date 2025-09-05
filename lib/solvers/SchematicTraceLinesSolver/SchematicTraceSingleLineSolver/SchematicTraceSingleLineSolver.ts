@@ -4,7 +4,13 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { Guideline } from "lib/solvers/GuidelinesSolver/GuidelinesSolver"
 import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import type { InputChip, InputProblem } from "lib/types/InputProblem"
+import type {
+  ChipId,
+  InputChip,
+  InputPin,
+  InputProblem,
+  PinId,
+} from "lib/types/InputProblem"
 import { calculateElbow } from "calculate-elbow"
 import { getPinDirection } from "./getPinDirection"
 import {
@@ -15,6 +21,9 @@ import type { Point } from "@tscircuit/math-utils"
 import { visualizeGuidelines } from "lib/solvers/GuidelinesSolver/visualizeGuidelines"
 import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
 import { getColorFromString } from "lib/utils/getColorFromString"
+import { getRestrictedCenterLines } from "./getRestrictedCenterLines"
+
+type ChipPin = InputPin & { chipId: ChipId }
 
 export class SchematicTraceSingleLineSolver extends BaseSolver {
   pins: MspConnectionPair["pins"]
@@ -30,6 +39,9 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
   chipObstacleSpatialIndex: ChipObstacleSpatialIndex
 
   solvedTracePath: { x: number; y: number }[] | null = null
+
+  // map of pinId -> pin (with chipId attached)
+  pinIdMap: Map<PinId, ChipPin> = new Map()
 
   constructor(params: {
     pins: MspConnectionPair["pins"]
@@ -49,6 +61,13 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     if (!this.inputProblem._chipObstacleSpatialIndex) {
       this.inputProblem._chipObstacleSpatialIndex =
         this.chipObstacleSpatialIndex
+    }
+
+    // Build a lookup of all pins by id and attach chipId to each pin entry
+    for (const chip of this.inputProblem.chips) {
+      for (const pin of chip.pins) {
+        this.pinIdMap.set(pin.pinId, { ...pin, chipId: chip.chipId })
+      }
     }
 
     for (const pin of this.pins) {
@@ -118,12 +137,32 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
 
     const nextCandidatePath = this.queuedCandidatePaths.shift()!
 
+    const restrictedCenterLines = getRestrictedCenterLines({
+      pins: this.pins,
+      inputProblem: this.inputProblem,
+      pinIdMap: this.pinIdMap,
+      chipMap: this.chipMap,
+    })
+
     for (let i = 0; i < nextCandidatePath.length - 1; i++) {
       const start = nextCandidatePath[i]
       const end = nextCandidatePath[i + 1]
 
       // Determine which chips to exclude for this specific segment
       let excludeChipIds: string[] = []
+
+      // If this segment would cross any restricted center line, reject the candidate path.
+      const EPS = 1e-9
+      for (const [, rcl] of restrictedCenterLines) {
+        if (rcl.axes.has("x") && typeof rcl.x === "number") {
+          // segment strictly crosses vertical center line
+          if ((start.x - rcl.x) * (end.x - rcl.x) < -EPS) return
+        }
+        if (rcl.axes.has("y") && typeof rcl.y === "number") {
+          // segment strictly crosses horizontal center line
+          if ((start.y - rcl.y) * (end.y - rcl.y) < -EPS) return
+        }
+      }
 
       // Always exclude chips that contain the start or end points of this segment
       // if those points are actually pin locations
