@@ -4,8 +4,10 @@ import { ConnectivityMap } from "connectivity-map"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 import type { GraphicsObject } from "graphics-debug"
+import { checkIfMspPairCanConnectDirectly } from "./checkIfMspPairCanConnectDirectly"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 
 export type MspConnectionPairId = string
 
@@ -44,7 +46,11 @@ export class MspConnectionPairSolver extends BaseSolver {
     this.pinMap = {}
     for (const chip of inputProblem.chips) {
       for (const pin of chip.pins) {
-        this.pinMap[pin.pinId] = { ...pin, chipId: chip.chipId }
+        this.pinMap[pin.pinId] = {
+          ...pin,
+          chipId: chip.chipId,
+          _facingDirection: pin._facingDirection ?? getPinDirection(pin, chip),
+        }
       }
     }
 
@@ -98,6 +104,10 @@ export class MspConnectionPairSolver extends BaseSolver {
       const [pin1, pin2] = directlyConnectedPins
       const p1 = this.pinMap[pin1!]!
       const p2 = this.pinMap[pin2!]!
+      if (!checkIfMspPairCanConnectDirectly(this.chipMap, p1, p2)) {
+        return
+      }
+
       // Enforce max pair distance (use Manhattan to match orthogonal routing metric)
       const manhattanDist = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)
       if (manhattanDist > this.maxMspPairDistance) {
@@ -124,7 +134,11 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     const msp = getOrthogonalMinimumSpanningTree(
       directlyConnectedPins.map((p) => this.pinMap[p]!).filter(Boolean),
-      { maxDistance: this.maxMspPairDistance },
+      {
+        maxDistance: this.maxMspPairDistance,
+        canConnect: (a, b) =>
+          checkIfMspPairCanConnectDirectly(this.chipMap, a as any, b as any),
+      },
     )
 
     for (const [pin1, pin2] of msp) {
