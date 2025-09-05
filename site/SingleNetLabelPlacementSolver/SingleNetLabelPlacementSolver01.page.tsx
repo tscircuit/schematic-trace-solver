@@ -563,7 +563,7 @@ export const input = {
     netId: "GND",
     portOnlyPinId: "U1.1",
   },
-  availableOrientations: ["y-"],
+  availableOrientations: ["x+", "x-", "y+", "y-"],
 }
 
 export default () => {
