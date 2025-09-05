@@ -87,6 +87,17 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       new ChipObstacleSpatialIndex(params.inputProblem.chips)
   }
 
+  override getConstructorParams(): ConstructorParameters<
+    typeof SingleNetLabelPlacementSolver
+  >[0] {
+    return {
+      inputProblem: this.inputProblem,
+      inputTraceMap: this.inputTraceMap,
+      overlappingSameNetTraceGroup: this.overlappingSameNetTraceGroup,
+      availableOrientations: this.availableOrientations,
+    }
+  }
+
   override _step() {
     if (this.netLabelPlacement) {
       this.solved = true
