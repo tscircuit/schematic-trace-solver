@@ -83,7 +83,7 @@ x+" data-x="3.41" data-y="0.01999999999999985" cx="587.8524945770065" cy="220.72
     <rect data-type="rect" data-label="" data-x="1.8499999999999996" data-y="-2.0194553499999994" x="386.20390455531447" y="441.13828590021683" width="24.295010845987008" height="54.66377440347071" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008232142857142858" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="3.41" data-y="-0.6260000000000001" x="575.704989154013" y="271.868221691974" width="24.295010845987008" height="54.66377440347071" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008232142857142858" />
+    <rect data-type="rect" data-label="" data-x="3.41" data-y="-0.6350000000000001" x="575.704989154013" y="272.9614971800434" width="24.295010845987008" height="54.66377440347071" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008232142857142858" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />

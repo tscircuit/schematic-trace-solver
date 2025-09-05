@@ -14,6 +14,8 @@ import {
 } from "./geometry"
 import { rectIntersectsAnyTrace } from "./collisions"
 
+const NET_LABEL_EDGE_OFFSET = 0.01
+
 export function solveNetLabelPlacementForPortOnlyPin(params: {
   inputProblem: InputProblem
   inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
@@ -120,6 +122,10 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
             ? chipBounds.maxY - pin.y
             : pin.y - chipBounds.minY
 
+    const baseCenter = getCenterFromAnchor(anchor, orientation, width, height)
+    const outward = outwardOf(orientation)
+    const offset = distanceToEdge + NET_LABEL_EDGE_OFFSET
+
     console.debug(
       "[solvePortOnlyPin] orientation",
       orientation,
@@ -127,12 +133,10 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
       anchor,
       "distanceToEdge",
       distanceToEdge,
+      "offset",
+      offset,
     )
 
-    // Place label fully outside the chip: shift center outward past chip edge
-    const baseCenter = getCenterFromAnchor(anchor, orientation, width, height)
-    const outward = outwardOf(orientation)
-    const offset = distanceToEdge + 1e-3
     const center = {
       x: baseCenter.x + outward.x * offset,
       y: baseCenter.y + outward.y * offset,
