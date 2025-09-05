@@ -51,16 +51,22 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     }
   }
 
-  // Find pin coordinates
+  // Find pin coordinates and chip bounds
   let pin: { x: number; y: number } | null = null
+  let pinChip: {
+    center: { x: number; y: number }
+    width: number
+    height: number
+  } | null = null
   for (const chip of inputProblem.chips) {
     const p = chip.pins.find((pp) => pp.pinId === pinId)
     if (p) {
       pin = { x: p.x, y: p.y }
+      pinChip = { center: chip.center, width: chip.width, height: chip.height }
       break
     }
   }
-  if (!pin) {
+  if (!pin || !pinChip) {
     return {
       placement: null,
       testedCandidates: [],
@@ -73,7 +79,6 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
       ? availableOrientations
       : (["x+", "x-", "y+", "y-"] as FacingDirection[])
 
-  const anchor = { x: pin.x, y: pin.y }
   const outwardOf = (o: FacingDirection) =>
     o === "x+"
       ? { x: 1, y: 0 }
@@ -94,17 +99,47 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     hostSegIndex: number
   }> = []
 
+  const chipBounds = {
+    minX: pinChip.center.x - pinChip.width / 2,
+    maxX: pinChip.center.x + pinChip.width / 2,
+    minY: pinChip.center.y - pinChip.height / 2,
+    maxY: pinChip.center.y + pinChip.height / 2,
+  }
+
   for (const orientation of orientations) {
     const { width, height } = getDimsForOrientation(orientation)
-    // Place label fully outside the chip: shift center slightly outward
+
+    const anchor: { x: number; y: number } = { x: pin.x, y: pin.y }
+
+    const distanceToEdge =
+      orientation === "x+"
+        ? chipBounds.maxX - pin.x
+        : orientation === "x-"
+          ? pin.x - chipBounds.minX
+          : orientation === "y+"
+            ? chipBounds.maxY - pin.y
+            : pin.y - chipBounds.minY
+
+    console.debug(
+      "[solvePortOnlyPin] orientation",
+      orientation,
+      "anchor",
+      anchor,
+      "distanceToEdge",
+      distanceToEdge,
+    )
+
+    // Place label fully outside the chip: shift center outward past chip edge
     const baseCenter = getCenterFromAnchor(anchor, orientation, width, height)
     const outward = outwardOf(orientation)
-    const offset = 1e-3
+    const offset = distanceToEdge + 1e-3
     const center = {
       x: baseCenter.x + outward.x * offset,
       y: baseCenter.y + outward.y * offset,
     }
     const bounds = getRectBounds(center, width, height)
+
+    console.debug("[solvePortOnlyPin] center", center, "bounds", bounds)
 
     // Chip collision check
     const chips = chipObstacleSpatialIndex.getChipsInBounds(bounds)
@@ -119,6 +154,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
         status: "chip-collision",
         hostSegIndex: -1,
       })
+      console.debug("[solvePortOnlyPin] chip collision")
       continue
     }
 
@@ -141,6 +177,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
         status: "trace-collision",
         hostSegIndex: -1,
       })
+      console.debug("[solvePortOnlyPin] trace collision")
       continue
     }
 
@@ -155,6 +192,8 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
       status: "ok",
       hostSegIndex: -1,
     })
+
+    console.debug("[solvePortOnlyPin] found valid placement")
 
     const placement: NetLabelPlacement = {
       globalConnNetId: overlappingSameNetTraceGroup.globalConnNetId,
