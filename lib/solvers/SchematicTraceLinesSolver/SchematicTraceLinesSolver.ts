@@ -20,7 +20,6 @@ export interface SolvedTracePath extends MspConnectionPair {
 
 export class SchematicTraceLinesSolver extends BaseSolver {
   inputProblem: InputProblem
-  guidelines: Guideline[]
   mspConnectionPairs: MspConnectionPair[]
 
   dcConnMap: ConnectivityMap
@@ -42,14 +41,12 @@ export class SchematicTraceLinesSolver extends BaseSolver {
     dcConnMap: ConnectivityMap
     globalConnMap: ConnectivityMap
     inputProblem: InputProblem
-    guidelines: Guideline[]
   }) {
     super()
     this.inputProblem = params.inputProblem
     this.mspConnectionPairs = params.mspConnectionPairs
     this.dcConnMap = params.dcConnMap
     this.globalConnMap = params.globalConnMap
-    this.guidelines = params.guidelines
     this.chipMap = params.chipMap
 
     this.queuedConnectionPairs = [...this.mspConnectionPairs]
@@ -64,7 +61,6 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       mspConnectionPairs: this.mspConnectionPairs,
       dcConnMap: this.dcConnMap,
       globalConnMap: this.globalConnMap,
-      guidelines: this.guidelines,
     }
   }
 
@@ -126,8 +122,6 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       chipAlpha: 0.1,
       connectionAlpha: 0.1,
     })
-
-    visualizeGuidelines({ guidelines: this.guidelines, graphics })
 
     for (const { mspPairId, tracePath } of this.solvedTracePaths) {
       graphics.lines!.push({
