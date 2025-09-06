@@ -83,38 +83,87 @@ export class TraceOverlapIssueSolver extends BaseSolver {
 
         const segIdxs = Array.from(segIdxSet).sort((a, b) => a - b)
 
-        // Track per-point adjustments to avoid double-shifting shared joints
-        const appliedX = new Set<number>()
-        const appliedY = new Set<number>()
+        const segIdxsRev = Array.from(segIdxSet)
+          .sort((a, b) => a - b)
+          .reverse()
 
-        for (const si of segIdxs) {
+        const JOG_SIZE = this.SHIFT_DISTANCE
+
+        // Process from end to start to keep indices valid after splicing
+        for (const si of segIdxsRev) {
           if (si < 0 || si >= pts.length - 1) continue
-          // Do not move the first or last segment since they connect directly to pins
-          if (si === 0 || si === pts.length - 2) continue
+
           const start = pts[si]!
           const end = pts[si + 1]!
           const isVertical = Math.abs(start.x - end.x) < EPS
           const isHorizontal = Math.abs(start.y - end.y) < EPS
-
           if (!isVertical && !isHorizontal) continue
 
-          if (isVertical) {
-            if (!appliedX.has(si)) {
+          if (si === 0) {
+            const segDir = isVertical
+              ? end.y > start.y
+                ? 1
+                : -1
+              : end.x > start.x
+                ? 1
+                : -1
+            if (isVertical) {
+              const jogY = start.y + segDir * JOG_SIZE
+              pts.splice(
+                1,
+                1,
+                { x: start.x, y: jogY },
+                { x: start.x + offset, y: jogY },
+                { x: end.x + offset, y: end.y },
+              )
+            } else {
+              // Horizontal
+              const jogX = start.x + segDir * JOG_SIZE
+              pts.splice(
+                1,
+                1,
+                { x: jogX, y: start.y },
+                { x: jogX, y: start.y + offset },
+                { x: end.x, y: end.y + offset },
+              )
+            }
+          } else if (si === pts.length - 2) {
+            const segDir = isVertical
+              ? end.y > start.y
+                ? 1
+                : -1
+              : end.x > start.x
+                ? 1
+                : -1
+            if (isVertical) {
+              const jogY = end.y - segDir * JOG_SIZE
+              pts.splice(
+                si,
+                1,
+                { x: start.x + offset, y: start.y },
+                { x: end.x + offset, y: jogY },
+                { x: end.x, y: jogY },
+              )
+            } else {
+              // Horizontal
+              const jogX = end.x - segDir * JOG_SIZE
+              pts.splice(
+                si,
+                1,
+                { x: start.x, y: start.y + offset },
+                { x: jogX, y: end.y + offset },
+                { x: jogX, y: end.y },
+              )
+            }
+          } else {
+            // Internal segment - shift both points
+            if (isVertical) {
               start.x += offset
-              appliedX.add(si)
-            }
-            if (!appliedX.has(si + 1)) {
               end.x += offset
-              appliedX.add(si + 1)
-            }
-          } else if (isHorizontal) {
-            if (!appliedY.has(si)) {
+            } else {
+              // Horizontal
               start.y += offset
-              appliedY.add(si)
-            }
-            if (!appliedY.has(si + 1)) {
               end.y += offset
-              appliedY.add(si + 1)
             }
           }
         }
