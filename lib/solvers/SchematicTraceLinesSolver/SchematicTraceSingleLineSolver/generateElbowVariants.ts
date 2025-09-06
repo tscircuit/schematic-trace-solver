@@ -397,7 +397,7 @@ export const generateElbowVariants = ({
     if (!seen.has(key)) {
       seen.add(key)
       elbowVariants.push(variant)
-      
+
       // Stop if we've hit the maximum number of variants
       if (elbowVariants.length >= maxVariants) {
         break
