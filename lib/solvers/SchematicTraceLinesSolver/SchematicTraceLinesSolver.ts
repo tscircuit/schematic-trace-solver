@@ -7,7 +7,7 @@ import type {
   MspConnectionPairId,
 } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 import type { ConnectivityMap } from "connectivity-map"
-import { SchematicTraceSingleLineSolver } from "./SchematicTraceSingleLineSolver/SchematicTraceSingleLineSolver"
+import { SchematicTraceSingleLineSolver2 } from "./SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
 import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
 import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
 import type { Point } from "@tscircuit/math-utils"
@@ -34,7 +34,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
   solvedTracePaths: Array<SolvedTracePath> = []
   failedConnectionPairs: Array<MspConnectionPair & { error?: string }> = []
 
-  declare activeSubSolver: SchematicTraceSingleLineSolver | null
+  declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
 
   constructor(params: {
     mspConnectionPairs: MspConnectionPair[]
@@ -111,11 +111,10 @@ export class SchematicTraceLinesSolver extends BaseSolver {
 
     const { pins } = connectionPair
 
-    this.activeSubSolver = new SchematicTraceSingleLineSolver({
+    this.activeSubSolver = new SchematicTraceSingleLineSolver2({
       inputProblem: this.inputProblem,
       pins,
       chipMap: this.chipMap,
-      guidelines: this.guidelines,
     })
   }
 
