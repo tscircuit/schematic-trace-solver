@@ -3,6 +3,7 @@ import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/Ms
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { FacingDirection } from "lib/utils/dir"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
+import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import type {
   NetLabelPlacement,
   OverlappingSameNetTraceGroup,
@@ -51,16 +52,18 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     }
   }
 
-  // Find pin coordinates
+  // Find pin coordinates and facing direction
   let pin: { x: number; y: number } | null = null
+  let pinFacingDirection: FacingDirection | null = null
   for (const chip of inputProblem.chips) {
     const p = chip.pins.find((pp) => pp.pinId === pinId)
     if (p) {
       pin = { x: p.x, y: p.y }
+      pinFacingDirection = p._facingDirection || getPinDirection(p, chip)
       break
     }
   }
-  if (!pin) {
+  if (!pin || !pinFacingDirection) {
     return {
       placement: null,
       testedCandidates: [],
@@ -123,14 +126,13 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     }
 
     // Trace collision check
-    if (
-      rectIntersectsAnyTrace(
-        bounds,
-        inputTraceMap,
-        "" as MspConnectionPairId,
-        -1,
-      )
-    ) {
+    const traceIntersectionResult = rectIntersectsAnyTrace(
+      bounds,
+      inputTraceMap,
+      "" as MspConnectionPairId,
+      -1,
+    )
+    if (traceIntersectionResult.hasIntersection) {
       testedCandidates.push({
         center,
         width,
@@ -172,9 +174,34 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     return { placement, testedCandidates }
   }
 
-  return {
-    placement: null,
-    testedCandidates,
-    error: "Could not place net label at port without collisions",
+  // If no valid placements found, return placement using pin's facing direction
+  const fallbackOrientation = pinFacingDirection
+  const { width, height } = getDimsForOrientation(fallbackOrientation)
+  const baseCenter = getCenterFromAnchor(
+    anchor,
+    fallbackOrientation,
+    width,
+    height,
+  )
+  const outward = outwardOf(fallbackOrientation)
+  const offset = 1e-3
+  const fallbackCenter = {
+    x: baseCenter.x + outward.x * offset,
+    y: baseCenter.y + outward.y * offset,
   }
+
+  const fallbackPlacement: NetLabelPlacement = {
+    globalConnNetId: overlappingSameNetTraceGroup.globalConnNetId,
+    dcConnNetId: undefined,
+    netId: overlappingSameNetTraceGroup.netId,
+    mspConnectionPairIds: [],
+    pinIds: [pinId],
+    orientation: fallbackOrientation,
+    anchorPoint: anchor,
+    width,
+    height,
+    center: fallbackCenter,
+  }
+
+  return { placement: fallbackPlacement, testedCandidates }
 }

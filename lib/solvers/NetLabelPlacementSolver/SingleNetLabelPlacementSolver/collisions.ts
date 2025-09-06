@@ -33,13 +33,20 @@ export function rectIntersectsAnyTrace(
   inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>,
   hostPathId?: MspConnectionPairId,
   hostSegIndex?: number,
-): boolean {
+):
+  | {
+      hasIntersection: true
+      mspPairId: MspConnectionPairId
+      segIndex: number
+    }
+  | { hasIntersection: false } {
   for (const [pairId, solved] of Object.entries(inputTraceMap)) {
     const pts = solved.tracePath
     for (let i = 0; i < pts.length - 1; i++) {
       if (pairId === hostPathId && i === hostSegIndex) continue
-      if (segmentIntersectsRect(pts[i]!, pts[i + 1]!, bounds)) return true
+      if (segmentIntersectsRect(pts[i]!, pts[i + 1]!, bounds))
+        return { hasIntersection: true, mspPairId: pairId, segIndex: i }
     }
   }
-  return false
+  return { hasIntersection: false }
 }

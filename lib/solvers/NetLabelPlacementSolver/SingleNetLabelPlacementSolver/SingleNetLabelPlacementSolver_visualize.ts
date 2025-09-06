@@ -21,12 +21,11 @@ export function visualizeSingleNetLabelPlacementSolver(
   const groupFill = getColorFromString(groupId, 0.5)
 
   for (const trace of Object.values(solver.inputTraceMap)) {
-    if (trace.globalConnNetId !== groupId) continue
     const isHost = host ? trace.mspPairId === host.mspPairId : false
     graphics.lines!.push({
       points: trace.tracePath,
-      strokeColor: isHost ? groupStroke : groupFill,
-      strokeDash: isHost ? undefined : "4 2",
+      // strokeColor: isHost ? groupStroke : groupFill,
+      // strokeDash: isHost ? undefined : "4 2",
     } as any)
   }
 
