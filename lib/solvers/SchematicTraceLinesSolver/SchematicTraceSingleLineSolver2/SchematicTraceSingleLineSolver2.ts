@@ -2,11 +2,16 @@ import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { InputChip, InputProblem, PinId } from "lib/types/InputProblem"
+import type {
+  ChipId,
+  InputChip,
+  InputProblem,
+  PinId,
+} from "lib/types/InputProblem"
 import type { Point } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
 import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
-import { getObstacleRects, type Rect } from "./rect"
+import { getObstacleRects, type ChipWithBounds } from "./rect"
 import { findFirstCollision, isHorizontal, isVertical } from "./collisions"
 import {
   aabbFromPoints,
@@ -16,29 +21,23 @@ import {
 } from "./mid"
 import { pathKey, shiftSegmentOrth } from "./pathOps"
 
-type ChipPin = {
-  pinId: PinId
-  x: number
-  y: number
-  chipId: string
-  _facingDirection?: "x+" | "x-" | "y+" | "y-"
-}
+type PathKey = string
 
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
   inputProblem: InputProblem
   chipMap: Record<string, InputChip>
 
-  obstacles: Rect[]
-  rectById: Map<string, Rect>
+  obstacles: ChipWithBounds[]
+  rectById: Map<string, ChipWithBounds>
   aabb: { minX: number; maxX: number; minY: number; maxY: number }
 
   baseElbow: Point[]
 
   solvedTracePath: Point[] | null = null
 
-  private queue: Array<{ path: Point[]; collisionRectIds: Set<string> }> = []
-  private visited: Set<string> = new Set()
+  private queue: Array<{ path: Point[]; collisionChipIds: Set<ChipId> }> = []
+  private visited: Set<PathKey> = new Set()
 
   constructor(params: {
     pins: MspConnectionPair["pins"]
@@ -60,7 +59,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     // Build obstacle rects from chips
     this.obstacles = getObstacleRects(this.inputProblem)
-    this.rectById = new Map(this.obstacles.map((r) => [r.id, r]))
+    this.rectById = new Map(this.obstacles.map((r) => [r.chipId, r]))
 
     // Build initial elbow path
     const [pin1, pin2] = this.pins
@@ -85,7 +84,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     )
 
     // Seed search
-    this.queue.push({ path: this.baseElbow, collisionRectIds: new Set() })
+    this.queue.push({ path: this.baseElbow, collisionChipIds: new Set() })
     this.visited.add(pathKey(this.baseElbow))
   }
 
@@ -98,17 +97,6 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       inputProblem: this.inputProblem,
     }
   }
-
-  private excludeRectIdsForSegment =
-    (pts: Point[]) =>
-    (segIndex: number): Set<string> => {
-      const set = new Set<string>()
-      const firstSeg = segIndex === 0
-      const lastSeg = segIndex === pts.length - 2
-      if (firstSeg) set.add(this.pins[0].chipId)
-      if (lastSeg) set.add(this.pins[1].chipId)
-      return set
-    }
 
   private axisOfSegment(a: Point, b: Point): Axis | null {
     if (isVertical(a, b)) return "x"
@@ -139,11 +127,9 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       return
     }
 
-    const { path, collisionRectIds } = state
+    const { path, collisionChipIds } = state
 
-    const collision = findFirstCollision(path, this.obstacles, {
-      excludeRectIdsForSegment: this.excludeRectIdsForSegment(path),
-    })
+    const collision = findFirstCollision(path, this.obstacles)
 
     if (!collision) {
       this.solvedTracePath = path
@@ -184,7 +170,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     const [PA, PB] = this.pins
     const candidates: number[] = []
 
-    if (collisionRectIds.size === 0) {
+    if (collisionChipIds.size === 0) {
       // First collision on this search branch: use mid(PA, C) and mid(PB, C)
       const m1 = midBetweenPointAndRect(axis, { x: PA.x, y: PA.y }, rect)
       const m2 = midBetweenPointAndRect(axis, { x: PB.x, y: PB.y }, rect)
@@ -199,7 +185,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         axis,
         rect,
         this.rectById,
-        collisionRectIds,
+        collisionChipIds,
         this.aabb,
       )
       candidates.push(...mids)
@@ -218,15 +204,15 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       const key = pathKey(newPath)
       if (this.visited.has(key)) continue
       this.visited.add(key)
-      const nextSet = new Set(collisionRectIds)
-      nextSet.add(rect.id)
+      const nextSet = new Set(collisionChipIds)
+      nextSet.add(rect.chipId)
       const len = this.pathLength(newPath)
       newStates.push({ path: newPath, collisionRectIds: nextSet, len })
     }
 
     newStates.sort((a, b) => a.len - b.len)
     for (const st of newStates) {
-      this.queue.push({ path: st.path, collisionRectIds: st.collisionRectIds })
+      this.queue.push({ path: st.path, collisionChipIds: st.collisionRectIds })
     }
   }
 
@@ -237,7 +223,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     })
 
     // Draw all the new candidates
-    for (const { path, collisionRectIds } of this.queue) {
+    for (const { path, collisionChipIds: collisionRectIds } of this.queue) {
       g.lines!.push({ points: path, strokeColor: "teal", strokeDash: "2 2" })
     }
 

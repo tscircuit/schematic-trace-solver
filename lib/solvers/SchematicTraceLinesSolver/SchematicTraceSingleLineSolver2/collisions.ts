@@ -1,5 +1,5 @@
 import type { Point } from "@tscircuit/math-utils"
-import type { Rect } from "./rect"
+import type { ChipWithBounds } from "./rect"
 
 const EPS = 1e-9
 
@@ -11,7 +11,7 @@ export const isHorizontal = (a: Point, b: Point, eps = EPS) =>
 export const segmentIntersectsRect = (
   a: Point,
   b: Point,
-  r: Rect,
+  r: ChipWithBounds,
   eps = EPS,
 ): boolean => {
   const vert = isVertical(a, b, eps)
@@ -37,17 +37,17 @@ export const segmentIntersectsRect = (
 
 export const findFirstCollision = (
   pts: Point[],
-  rects: Rect[],
+  rects: ChipWithBounds[],
   opts: {
     excludeRectIdsForSegment?: (segIndex: number) => Set<string>
   } = {},
-): { segIndex: number; rect: Rect } | null => {
+): { segIndex: number; rect: ChipWithBounds } | null => {
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i]!
     const b = pts[i + 1]!
     const excluded = opts.excludeRectIdsForSegment?.(i) ?? new Set<string>()
     for (const r of rects) {
-      if (excluded.has(r.id)) continue
+      if (excluded.has(r.chipId)) continue
       if (segmentIntersectsRect(a, b, r)) {
         return { segIndex: i, rect: r }
       }
