@@ -177,7 +177,12 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
   // If no valid placements found, return placement using pin's facing direction
   const fallbackOrientation = pinFacingDirection
   const { width, height } = getDimsForOrientation(fallbackOrientation)
-  const baseCenter = getCenterFromAnchor(anchor, fallbackOrientation, width, height)
+  const baseCenter = getCenterFromAnchor(
+    anchor,
+    fallbackOrientation,
+    width,
+    height,
+  )
   const outward = outwardOf(fallbackOrientation)
   const offset = 1e-3
   const fallbackCenter = {
