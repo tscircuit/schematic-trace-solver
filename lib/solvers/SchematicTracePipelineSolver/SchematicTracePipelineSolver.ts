@@ -48,7 +48,7 @@ function definePipelineStep<
 
 export class SchematicTracePipelineSolver extends BaseSolver {
   mspConnectionPairSolver?: MspConnectionPairSolver
-  guidelinesSolver?: GuidelinesSolver
+  // guidelinesSolver?: GuidelinesSolver
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
@@ -69,18 +69,18 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         onSolved: (mspSolver) => {},
       },
     ),
-    definePipelineStep(
-      "guidelinesSolver",
-      GuidelinesSolver,
-      () => [
-        {
-          inputProblem: this.inputProblem,
-        },
-      ],
-      {
-        onSolved: (guidelinesSolver) => {},
-      },
-    ),
+    // definePipelineStep(
+    //   "guidelinesSolver",
+    //   GuidelinesSolver,
+    //   () => [
+    //     {
+    //       inputProblem: this.inputProblem,
+    //     },
+    //   ],
+    //   {
+    //     onSolved: (guidelinesSolver) => {},
+    //   },
+    // ),
     definePipelineStep(
       "schematicTraceLinesSolver",
       SchematicTraceLinesSolver,
@@ -90,7 +90,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           dcConnMap: this.mspConnectionPairSolver!.dcConnMap,
           globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
           inputProblem: this.inputProblem,
-          guidelines: this.guidelinesSolver!.guidelines,
+          // guidelines: this.guidelinesSolver!.guidelines,
           chipMap: this.mspConnectionPairSolver!.chipMap,
         },
       ],

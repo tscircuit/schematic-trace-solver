@@ -487,4 +487,5 @@ const inputProblem: InputProblem = {
 test("SchematicTracePipelineSolver_repro03 - infinite loop fixed", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
+  expect(solver.solved).toBe(true)
 })

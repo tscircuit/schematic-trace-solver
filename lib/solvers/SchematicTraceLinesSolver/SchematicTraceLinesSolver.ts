@@ -7,7 +7,7 @@ import type {
   MspConnectionPairId,
 } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 import type { ConnectivityMap } from "connectivity-map"
-import { SchematicTraceSingleLineSolver } from "./SchematicTraceSingleLineSolver/SchematicTraceSingleLineSolver"
+import { SchematicTraceSingleLineSolver2 } from "./SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
 import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
 import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
 import type { Point } from "@tscircuit/math-utils"
@@ -20,7 +20,6 @@ export interface SolvedTracePath extends MspConnectionPair {
 
 export class SchematicTraceLinesSolver extends BaseSolver {
   inputProblem: InputProblem
-  guidelines: Guideline[]
   mspConnectionPairs: MspConnectionPair[]
 
   dcConnMap: ConnectivityMap
@@ -34,7 +33,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
   solvedTracePaths: Array<SolvedTracePath> = []
   failedConnectionPairs: Array<MspConnectionPair & { error?: string }> = []
 
-  declare activeSubSolver: SchematicTraceSingleLineSolver | null
+  declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
 
   constructor(params: {
     mspConnectionPairs: MspConnectionPair[]
@@ -42,14 +41,12 @@ export class SchematicTraceLinesSolver extends BaseSolver {
     dcConnMap: ConnectivityMap
     globalConnMap: ConnectivityMap
     inputProblem: InputProblem
-    guidelines: Guideline[]
   }) {
     super()
     this.inputProblem = params.inputProblem
     this.mspConnectionPairs = params.mspConnectionPairs
     this.dcConnMap = params.dcConnMap
     this.globalConnMap = params.globalConnMap
-    this.guidelines = params.guidelines
     this.chipMap = params.chipMap
 
     this.queuedConnectionPairs = [...this.mspConnectionPairs]
@@ -64,7 +61,6 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       mspConnectionPairs: this.mspConnectionPairs,
       dcConnMap: this.dcConnMap,
       globalConnMap: this.globalConnMap,
-      guidelines: this.guidelines,
     }
   }
 
@@ -111,11 +107,10 @@ export class SchematicTraceLinesSolver extends BaseSolver {
 
     const { pins } = connectionPair
 
-    this.activeSubSolver = new SchematicTraceSingleLineSolver({
+    this.activeSubSolver = new SchematicTraceSingleLineSolver2({
       inputProblem: this.inputProblem,
       pins,
       chipMap: this.chipMap,
-      guidelines: this.guidelines,
     })
   }
 
@@ -127,8 +122,6 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       chipAlpha: 0.1,
       connectionAlpha: 0.1,
     })
-
-    visualizeGuidelines({ guidelines: this.guidelines, graphics })
 
     for (const { mspPairId, tracePath } of this.solvedTracePaths) {
       graphics.lines!.push({
