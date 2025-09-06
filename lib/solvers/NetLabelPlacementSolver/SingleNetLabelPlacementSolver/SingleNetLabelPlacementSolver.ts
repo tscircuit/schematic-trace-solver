@@ -261,14 +261,13 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
             }
 
             // Trace collision check (ignore the host segment)
-            if (
-              rectIntersectsAnyTrace(
-                bounds,
-                this.inputTraceMap,
-                curr.mspPairId,
-                si,
-              )
-            ) {
+            const traceIntersectionResult = rectIntersectsAnyTrace(
+              bounds,
+              this.inputTraceMap,
+              curr.mspPairId,
+              si,
+            )
+            if (traceIntersectionResult.hasIntersection) {
               this.testedCandidates.push({
                 center: testCenter,
                 width,

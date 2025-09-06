@@ -123,14 +123,13 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     }
 
     // Trace collision check
-    if (
-      rectIntersectsAnyTrace(
-        bounds,
-        inputTraceMap,
-        "" as MspConnectionPairId,
-        -1,
-      )
-    ) {
+    const traceIntersectionResult = rectIntersectsAnyTrace(
+      bounds,
+      inputTraceMap,
+      "" as MspConnectionPairId,
+      -1,
+    )
+    if (traceIntersectionResult.hasIntersection) {
       testedCandidates.push({
         center,
         width,
