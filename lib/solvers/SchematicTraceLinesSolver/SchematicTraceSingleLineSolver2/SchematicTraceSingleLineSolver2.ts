@@ -152,11 +152,11 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     }
 
     let { segIndex, rect } = collision
-    
+
     // Never move the first or last segments - move adjacent segment instead
     const isFirstSegment = segIndex === 0
     const isLastSegment = segIndex === path.length - 2
-    
+
     if (isFirstSegment) {
       // If first segment collides, move the second segment instead
       if (path.length < 3) {
@@ -172,7 +172,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       }
       segIndex = path.length - 3
     }
-    
+
     const a = path[segIndex]!
     const b = path[segIndex + 1]!
     const axis = this.axisOfSegment(a, b)
@@ -188,7 +188,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       // First collision on this search branch: use mid(PA, C) and mid(PB, C)
       const m1 = midBetweenPointAndRect(axis, { x: PA.x, y: PA.y }, rect)
       const m2 = midBetweenPointAndRect(axis, { x: PB.x, y: PB.y }, rect)
-      
+
       // Combine and deduplicate candidates
       const allCandidates = [...m1, ...m2]
       const uniqueCandidates = [...new Set(allCandidates)]
