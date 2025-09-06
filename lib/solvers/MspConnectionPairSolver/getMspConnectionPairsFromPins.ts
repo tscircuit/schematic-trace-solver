@@ -18,7 +18,10 @@ import type { InputPin, PinId } from "lib/types/InputProblem"
  */
 export function getOrthogonalMinimumSpanningTree(
   pins: InputPin[],
-  opts: { maxDistance?: number; forbidEdge?: (a: InputPin, b: InputPin) => boolean } = {},
+  opts: {
+    maxDistance?: number
+    forbidEdge?: (a: InputPin, b: InputPin) => boolean
+  } = {},
 ): Array<[PinId, PinId]> {
   const n = pins.length
   const maxDistance = opts?.maxDistance ?? Number.POSITIVE_INFINITY

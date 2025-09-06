@@ -1,5 +1,10 @@
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { InputChip, InputPin, InputProblem, PinId } from "lib/types/InputProblem"
+import type {
+  InputChip,
+  InputPin,
+  InputProblem,
+  PinId,
+} from "lib/types/InputProblem"
 import { ConnectivityMap } from "connectivity-map"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
