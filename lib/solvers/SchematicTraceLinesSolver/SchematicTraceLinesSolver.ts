@@ -101,12 +101,13 @@ export class SchematicTraceLinesSolver extends BaseSolver {
     }
 
     const connectionPair = this.queuedConnectionPairs.shift()
-    this.currentConnectionPair = connectionPair!
 
     if (!connectionPair) {
       this.solved = true
       return
     }
+
+    this.currentConnectionPair = connectionPair
 
     const { pins } = connectionPair
 
