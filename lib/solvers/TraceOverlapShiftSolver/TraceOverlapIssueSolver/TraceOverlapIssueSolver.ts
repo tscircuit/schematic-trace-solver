@@ -2,6 +2,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { applyJogToTerminalSegment } from "./applyJogToTrace"
 
 type ConnNetId = string
 
@@ -83,38 +84,39 @@ export class TraceOverlapIssueSolver extends BaseSolver {
 
         const segIdxs = Array.from(segIdxSet).sort((a, b) => a - b)
 
-        // Track per-point adjustments to avoid double-shifting shared joints
-        const appliedX = new Set<number>()
-        const appliedY = new Set<number>()
+        const segIdxsRev = Array.from(segIdxSet)
+          .sort((a, b) => a - b)
+          .reverse()
 
-        for (const si of segIdxs) {
+        const JOG_SIZE = this.SHIFT_DISTANCE
+
+        // Process from end to start to keep indices valid after splicing
+        for (const si of segIdxsRev) {
           if (si < 0 || si >= pts.length - 1) continue
-          // Do not move the first or last segment since they connect directly to pins
-          if (si === 0 || si === pts.length - 2) continue
-          const start = pts[si]!
-          const end = pts[si + 1]!
-          const isVertical = Math.abs(start.x - end.x) < EPS
-          const isHorizontal = Math.abs(start.y - end.y) < EPS
 
-          if (!isVertical && !isHorizontal) continue
+          if (si === 0 || si === pts.length - 2) {
+            applyJogToTerminalSegment({
+              pts,
+              segmentIndex: si,
+              offset,
+              JOG_SIZE,
+              EPS,
+            })
+          } else {
+            // Internal segment - shift both points
+            const start = pts[si]!
+            const end = pts[si + 1]!
+            const isVertical = Math.abs(start.x - end.x) < EPS
+            const isHorizontal = Math.abs(start.y - end.y) < EPS
+            if (!isVertical && !isHorizontal) continue
 
-          if (isVertical) {
-            if (!appliedX.has(si)) {
+            if (isVertical) {
               start.x += offset
-              appliedX.add(si)
-            }
-            if (!appliedX.has(si + 1)) {
               end.x += offset
-              appliedX.add(si + 1)
-            }
-          } else if (isHorizontal) {
-            if (!appliedY.has(si)) {
+            } else {
+              // Horizontal
               start.y += offset
-              appliedY.add(si)
-            }
-            if (!appliedY.has(si + 1)) {
               end.y += offset
-              appliedY.add(si + 1)
             }
           }
         }

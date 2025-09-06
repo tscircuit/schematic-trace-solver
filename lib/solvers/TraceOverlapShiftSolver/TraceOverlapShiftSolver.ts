@@ -89,7 +89,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     overlappingTraceSegments: Array<OverlappingTraceSegmentLocator>
   } | null {
     // Detect the next set of overlapping segments between two different net islands.
-    const EPS = 1e-6
+    const EPS = 2e-3
 
     const netIds = Object.keys(this.traceNetIslands)
     // Compare each pair of different nets
