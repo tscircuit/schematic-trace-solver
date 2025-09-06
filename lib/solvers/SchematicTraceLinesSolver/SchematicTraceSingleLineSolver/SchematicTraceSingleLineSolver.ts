@@ -97,6 +97,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     const { elbowVariants, movableSegments } = generateElbowVariants({
       baseElbow: this.baseElbow,
       guidelines: this.guidelines,
+      maxVariants: 1000,
     })
 
     this.movableSegments = movableSegments
@@ -144,6 +145,9 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       chipMap: this.chipMap,
     })
 
+    // Check if this candidate path is valid
+    let pathIsValid = true
+
     for (let i = 0; i < nextCandidatePath.length - 1; i++) {
       const start = nextCandidatePath[i]
       const end = nextCandidatePath[i + 1]
@@ -156,13 +160,21 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       for (const [, rcl] of restrictedCenterLines) {
         if (rcl.axes.has("x") && typeof rcl.x === "number") {
           // segment strictly crosses vertical center line
-          if ((start.x - rcl.x) * (end.x - rcl.x) < -EPS) return
+          if ((start.x - rcl.x) * (end.x - rcl.x) < -EPS) {
+            pathIsValid = false
+            break
+          }
         }
         if (rcl.axes.has("y") && typeof rcl.y === "number") {
           // segment strictly crosses horizontal center line
-          if ((start.y - rcl.y) * (end.y - rcl.y) < -EPS) return
+          if ((start.y - rcl.y) * (end.y - rcl.y) < -EPS) {
+            pathIsValid = false
+            break
+          }
         }
       }
+
+      if (!pathIsValid) break
 
       // Always exclude chips that contain the start or end points of this segment
       // if those points are actually pin locations
@@ -197,12 +209,17 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
             (onRight && dx < -EPS) ||
             (onBottom && dy > EPS) ||
             (onTop && dy < -EPS)
-          if (entersInterior) return
+          if (entersInterior) {
+            pathIsValid = false
+            break
+          }
           if (!excludeChipIds.includes(startPin.chipId)) {
             excludeChipIds.push(startPin.chipId)
           }
         }
       }
+
+      if (!pathIsValid) break
 
       if (isEndPin) {
         const endPin = this.pins.find(
@@ -224,12 +241,17 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
             (onRight && dx < -EPS) ||
             (onBottom && dy > EPS) ||
             (onTop && dy < -EPS)
-          if (entersInterior) return
+          if (entersInterior) {
+            pathIsValid = false
+            break
+          }
           if (!excludeChipIds.includes(endPin.chipId)) {
             excludeChipIds.push(endPin.chipId)
           }
         }
       }
+
+      if (!pathIsValid) break
 
       const obstacleOps = { excludeChipIds }
       const intersects =
@@ -237,11 +259,19 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
           [start, end],
           obstacleOps,
         )
-      if (intersects) return
+      if (intersects) {
+        pathIsValid = false
+        break
+      }
     }
 
-    this.solvedTracePath = nextCandidatePath
-    this.solved = true
+    // If this path is valid, use it as the solution
+    if (pathIsValid) {
+      this.solvedTracePath = nextCandidatePath
+      this.solved = true
+    }
+    // If this path is invalid, continue to next step to try the next candidate
+    // The next _step() call will try the next candidate path
   }
 
   override visualize(): GraphicsObject {

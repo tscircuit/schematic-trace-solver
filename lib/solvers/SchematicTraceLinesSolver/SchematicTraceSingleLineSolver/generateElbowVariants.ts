@@ -260,9 +260,11 @@ const cartesian = <T>(arrays: T[][]): T[][] =>
 export const generateElbowVariants = ({
   baseElbow,
   guidelines,
+  maxVariants = 10000,
 }: {
   baseElbow: Point[]
   guidelines: Guideline[]
+  maxVariants?: number
 }): {
   elbowVariants: Array<Point[]>
   movableSegments: Array<MovableSegment>
@@ -395,6 +397,11 @@ export const generateElbowVariants = ({
     if (!seen.has(key)) {
       seen.add(key)
       elbowVariants.push(variant)
+
+      // Stop if we've hit the maximum number of variants
+      if (elbowVariants.length >= maxVariants) {
+        break
+      }
     }
   }
 
