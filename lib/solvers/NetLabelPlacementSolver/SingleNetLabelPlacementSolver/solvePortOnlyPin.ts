@@ -98,7 +98,10 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
   }> = []
 
   for (const orientation of orientations) {
-    const { width, height } = getDimsForOrientation(orientation)
+    const labelText =
+      overlappingSameNetTraceGroup.netId ??
+      overlappingSameNetTraceGroup.globalConnNetId
+    const { width, height } = getDimsForOrientation(orientation, labelText)
     // Place label fully outside the chip: shift center slightly outward
     const baseCenter = getCenterFromAnchor(anchor, orientation, width, height)
     const outward = outwardOf(orientation)

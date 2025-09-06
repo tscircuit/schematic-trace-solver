@@ -20,10 +20,7 @@ import { anchorsForSegment } from "./anchors"
 import { solveNetLabelPlacementForPortOnlyPin } from "./solvePortOnlyPin"
 import { visualizeSingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver_visualize"
 
-export {
-  NET_LABEL_HORIZONTAL_WIDTH,
-  NET_LABEL_HORIZONTAL_HEIGHT,
-} from "./geometry"
+export { NET_LABEL_HORIZONTAL_HEIGHT } from "./geometry"
 // NOTE: net labels, when in the y+/y- orientation, are rotated and therefore
 // the width/height are swapped
 
@@ -85,6 +82,13 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     this.chipObstacleSpatialIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
       new ChipObstacleSpatialIndex(params.inputProblem.chips)
+  }
+
+  private getLabelText(): string {
+    return (
+      this.overlappingSameNetTraceGroup.netId ??
+      this.overlappingSameNetTraceGroup.globalConnNetId
+    )
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -220,7 +224,10 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         const anchors = anchorsForSegment(a, b)
         for (const anchor of anchors) {
           for (const orientation of candidateOrients) {
-            const { width, height } = getDimsForOrientation(orientation)
+            const { width, height } = getDimsForOrientation(
+              orientation,
+              this.getLabelText(),
+            )
             const center = getCenterFromAnchor(
               anchor,
               orientation,
