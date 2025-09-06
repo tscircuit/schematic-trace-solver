@@ -116,6 +116,16 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     return null
   }
 
+  private pathLength(pts: Point[]): number {
+    let sum = 0
+    for (let i = 0; i < pts.length - 1; i++) {
+      sum +=
+        Math.abs(pts[i + 1]!.x - pts[i]!.x) +
+        Math.abs(pts[i + 1]!.y - pts[i]!.y)
+    }
+    return sum
+  }
+
   override _step() {
     if (this.solvedTracePath) {
       this.solved = true
@@ -195,7 +205,13 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       candidates.push(...mids)
     }
 
-    // Generate new shifted paths
+    // Generate new shifted paths, order by total path length (shorter first)
+    const newStates: Array<{
+      path: Point[]
+      collisionRectIds: Set<string>
+      len: number
+    }> = []
+
     for (const coord of candidates) {
       const newPath = shiftSegmentOrth(path, segIndex, axis, coord)
       if (!newPath) continue
@@ -204,7 +220,13 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       this.visited.add(key)
       const nextSet = new Set(collisionRectIds)
       nextSet.add(rect.id)
-      this.queue.push({ path: newPath, collisionRectIds: nextSet })
+      const len = this.pathLength(newPath)
+      newStates.push({ path: newPath, collisionRectIds: nextSet, len })
+    }
+
+    newStates.sort((a, b) => a.len - b.len)
+    for (const st of newStates) {
+      this.queue.push({ path: st.path, collisionRectIds: st.collisionRectIds })
     }
   }
 
