@@ -107,6 +107,13 @@ export class NetLabelPlacementSolver extends BaseSolver {
       this.inputProblem,
     )
 
+    const pinIdToPinMap = new Map<string, unknown>()
+    for (const chip of this.inputProblem.chips) {
+      for (const pin of chip.pins) {
+        pinIdToPinMap.set(pin.pinId, pin)
+      }
+    }
+
     // Map pins to user-provided netIds (if any)
     const userNetIdByPinId: Record<string, string | undefined> = {}
     for (const dc of this.inputProblem.directConnections) {
@@ -124,11 +131,24 @@ export class NetLabelPlacementSolver extends BaseSolver {
 
     const groups: Array<OverlappingSameNetTraceGroup> = []
 
+    const allPinIds = this.inputProblem.chips.flatMap((c) =>
+      c.pins.map((p) => p.pinId),
+    )
+
+    const allGlobalConnNetIds = new Set<string>()
+    for (const pinId of allPinIds) {
+      const netId = netConnMap.getNetConnectedToId(pinId)
+      if (netId) {
+        allGlobalConnNetIds.add(netId)
+      }
+    }
+
     // Consider every global connectivity net id
-    for (const globalConnNetId of Object.keys((netConnMap as any).netMap)) {
-      const pinsInNet = netConnMap.getIdsConnectedToNet(
+    for (const globalConnNetId of allGlobalConnNetIds) {
+      const allIdsInNet = netConnMap.getIdsConnectedToNet(
         globalConnNetId,
       ) as string[]
+      const pinsInNet = allIdsInNet.filter((id) => pinIdToPinMap.has(id))
 
       // Build adjacency from solved traces (edges)
       const adj: Record<string, Set<string>> = {}
@@ -205,12 +225,13 @@ export class NetLabelPlacementSolver extends BaseSolver {
             ),
           )
 
-          groups.push({
+          const group = {
             globalConnNetId,
             netId: userNetId,
             overlappingTraces: rep,
             mspConnectionPairIds,
-          })
+          }
+          groups.push(group)
         } else {
           // No traces in this component: place label at each pin that has a user net id
           for (const p of component) {
