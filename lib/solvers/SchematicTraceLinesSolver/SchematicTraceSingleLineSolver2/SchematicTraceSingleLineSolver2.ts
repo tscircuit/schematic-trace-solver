@@ -222,6 +222,14 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       connectionAlpha: 0.1,
     })
 
+    // Draw the base elbow
+
+    g.lines!.push({
+      points: this.baseElbow,
+      strokeColor: "red",
+      strokeDash: "4 4",
+    })
+
     // Draw the MSP pair connection with a dashed line
     const [pin1, pin2] = this.pins
     g.lines!.push({
