@@ -222,6 +222,25 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       connectionAlpha: 0.1,
     })
 
+    // Draw the base elbow
+
+    g.lines!.push({
+      points: this.baseElbow,
+      strokeColor: "red",
+      strokeDash: "4 4",
+    })
+
+    // Draw the MSP pair connection with a dashed line
+    const [pin1, pin2] = this.pins
+    g.lines!.push({
+      points: [
+        { x: pin1.x, y: pin1.y },
+        { x: pin2.x, y: pin2.y },
+      ],
+      strokeColor: "blue",
+      strokeDash: "5 5",
+    })
+
     // Draw all the new candidates
     for (const { path, collisionChipIds: collisionRectIds } of this.queue) {
       g.lines!.push({ points: path, strokeColor: "teal", strokeDash: "2 2" })
