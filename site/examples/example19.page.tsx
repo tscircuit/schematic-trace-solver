@@ -1,9 +1,7 @@
-import { expect } from "bun:test"
-import { test } from "bun:test"
-import { SchematicTracePipelineSolver, type InputProblem } from "lib/index"
-import "tests/fixtures/matcher"
+import { PipelineDebugger } from "site/components/PipelineDebugger"
+import type { InputProblem } from "lib/types/InputProblem"
 
-const inputProblem = {
+const inputProblem: InputProblem = {
   chips: [
     {
       chipId: "schematic_component_0",
@@ -166,10 +164,6 @@ const inputProblem = {
   ],
   availableNetLabelOrientations: {},
   maxMspPairDistance: 5,
-} as InputProblem
+}
 
-test("example16", () => {
-  const solver = new SchematicTracePipelineSolver(inputProblem)
-  solver.solve()
-  expect(solver).toMatchSolverSnapshot(import.meta.path)
-})
+export default () => <PipelineDebugger inputProblem={inputProblem} />
