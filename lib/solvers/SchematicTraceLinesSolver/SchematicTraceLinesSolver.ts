@@ -11,6 +11,7 @@ import { SchematicTraceSingleLineSolver2 } from "./SchematicTraceSingleLineSolve
 import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
 import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
 import type { Point } from "@tscircuit/math-utils"
+import { isOrthogonalPath } from "lib/utils/isOrthogonalPath"
 
 export interface SolvedTracePath extends MspConnectionPair {
   tracePath: Point[]
@@ -66,15 +67,24 @@ export class SchematicTraceLinesSolver extends BaseSolver {
 
   override _step() {
     if (this.activeSubSolver?.solved) {
-      this.solvedTracePaths.push({
-        ...this.currentConnectionPair!,
-        tracePath: this.activeSubSolver!.solvedTracePath!,
-        mspConnectionPairIds: [this.currentConnectionPair!.mspPairId],
-        pinIds: [
-          this.currentConnectionPair!.pins[0].pinId,
-          this.currentConnectionPair!.pins[1].pinId,
-        ],
-      })
+      const tracePath = this.activeSubSolver!.solvedTracePath!
+      if (isOrthogonalPath(tracePath)) {
+        this.solvedTracePaths.push({
+          ...this.currentConnectionPair!,
+          tracePath,
+          mspConnectionPairIds: [this.currentConnectionPair!.mspPairId],
+          pinIds: [
+            this.currentConnectionPair!.pins[0].pinId,
+            this.currentConnectionPair!.pins[1].pinId,
+          ],
+        })
+      } else {
+        // If a non-orthogonal path was produced, treat it as a failure for this pair
+        this.failedConnectionPairs.push({
+          ...this.currentConnectionPair!,
+          error: "non-orthogonal trace",
+        })
+      }
       this.activeSubSolver = null
       this.currentConnectionPair = null
     }

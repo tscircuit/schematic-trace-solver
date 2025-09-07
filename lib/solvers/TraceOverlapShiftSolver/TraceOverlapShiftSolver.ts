@@ -8,6 +8,7 @@ import {
   type OverlappingTraceSegmentLocator,
 } from "./TraceOverlapIssueSolver/TraceOverlapIssueSolver"
 import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
+import { isOrthogonalPath } from "lib/utils/isOrthogonalPath"
 
 type ConnNetId = string
 
@@ -216,7 +217,9 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       for (const [mspPairId, newTrace] of Object.entries(
         this.activeSubSolver.correctedTraceMap,
       )) {
-        this.correctedTraceMap[mspPairId] = newTrace
+        if (isOrthogonalPath(newTrace.tracePath)) {
+          this.correctedTraceMap[mspPairId] = newTrace
+        }
       }
       this.activeSubSolver = null
       this.traceNetIslands = this.computeTraceNetIslands()

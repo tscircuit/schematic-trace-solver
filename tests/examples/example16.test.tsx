@@ -1,6 +1,7 @@
 import { expect } from "bun:test"
 import { test } from "bun:test"
 import { SchematicTracePipelineSolver, type InputProblem } from "lib/index"
+import { isOrthogonalPath } from "lib/utils/isOrthogonalPath"
 import "tests/fixtures/matcher"
 
 const inputProblem: InputProblem = {
@@ -109,5 +110,14 @@ const inputProblem: InputProblem = {
 test("example16", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
+  for (const { tracePath } of solver.schematicTraceLinesSolver!
+    .solvedTracePaths) {
+    expect(isOrthogonalPath(tracePath)).toBe(true)
+  }
+  for (const { tracePath } of Object.values(
+    solver.traceOverlapShiftSolver?.correctedTraceMap ?? {},
+  )) {
+    expect(isOrthogonalPath(tracePath)).toBe(true)
+  }
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
