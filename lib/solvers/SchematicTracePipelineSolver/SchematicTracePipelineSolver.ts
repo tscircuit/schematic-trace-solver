@@ -10,6 +10,7 @@ import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectio
 import { SchematicTraceLinesSolver } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { NetLabelTraceShiftSolver } from "../NetLabelTraceShiftSolver/NetLabelTraceShiftSolver"
 import { visualizeInputProblem } from "./visualizeInputProblem"
 import { GuidelinesSolver } from "../GuidelinesSolver/GuidelinesSolver"
 import { getInputChipBounds } from "../GuidelinesSolver/getInputChipBounds"
@@ -52,6 +53,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
+  netLabelTraceShiftSolver?: NetLabelTraceShiftSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -132,6 +134,20 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         onSolved: (_solver) => {
           // TODO
         },
+      },
+    ),
+    definePipelineStep(
+      "netLabelTraceShiftSolver",
+      NetLabelTraceShiftSolver,
+      () => [
+        {
+          inputProblem: this.inputProblem,
+          inputTraceMap: this.netLabelPlacementSolver!.inputTraceMap,
+          netLabelPlacements: this.netLabelPlacementSolver!.netLabelPlacements,
+        },
+      ],
+      {
+        onSolved: (_solver) => {},
       },
     ),
   ]
