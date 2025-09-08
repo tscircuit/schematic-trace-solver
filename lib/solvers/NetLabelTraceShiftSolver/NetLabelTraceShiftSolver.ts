@@ -116,10 +116,22 @@ export class NetLabelTraceShiftSolver extends BaseSolver {
           })
         }
 
-        const { elbowVariants } = generateElbowVariants({
-          baseElbow,
-          guidelines,
+        const isOrthogonal = baseElbow.every((p, i) => {
+          if (i === 0) return true
+          const prev = baseElbow[i - 1]!
+          return Math.abs(p.x - prev.x) < EPS || Math.abs(p.y - prev.y) < EPS
         })
+        if (!isOrthogonal) break
+
+        let elbowVariants: Point[][]
+        try {
+          elbowVariants = generateElbowVariants({
+            baseElbow,
+            guidelines,
+          }).elbowVariants
+        } catch {
+          break
+        }
 
         let replaced = false
         for (const variant of elbowVariants.slice(1)) {
@@ -147,4 +159,3 @@ export class NetLabelTraceShiftSolver extends BaseSolver {
     this.solved = true
   }
 }
-
