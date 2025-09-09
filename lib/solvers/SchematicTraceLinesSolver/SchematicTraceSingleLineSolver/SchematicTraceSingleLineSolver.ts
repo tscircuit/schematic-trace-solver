@@ -91,7 +91,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       const intersects =
         this.chipObstacleSpatialIndex.doesOrthogonalLineIntersectChip(
           directPath,
-          { excludeChipIds },
+          { excludeChipIds, eps: EPS },
         )
       if (!intersects) {
         this.solvedTracePath = directPath
@@ -173,6 +173,8 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
 
     // Check if this candidate path is valid
     let pathIsValid = true
+
+    const COLLISION_EPS = 1e-6
 
     for (let i = 0; i < nextCandidatePath.length - 1; i++) {
       const start = nextCandidatePath[i]
@@ -279,7 +281,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
 
       if (!pathIsValid) break
 
-      const obstacleOps = { excludeChipIds }
+      const obstacleOps = { excludeChipIds, eps: COLLISION_EPS }
       const intersects =
         this.chipObstacleSpatialIndex.doesOrthogonalLineIntersectChip(
           [start, end],

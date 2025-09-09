@@ -28,18 +28,26 @@ test("SchematicTraceSingleLineSolver2 traces direct horizontal line when possibl
       },
     ],
   }
+  const chipC = {
+    chipId: "C",
+    center: { x: 1.5, y: 0.5 },
+    width: 1,
+    height: 1,
+    pins: [],
+  }
 
   const input = {
     chipMap: {
       A: chipA,
       B: chipB,
+      C: chipC,
     },
     pins: [
       { pinId: "A.1", x: 0.5, y: 0, chipId: "A" },
       { pinId: "B.1", x: 2.5, y: 0, chipId: "B" },
     ],
     inputProblem: {
-      chips: [chipA, chipB],
+      chips: [chipA, chipB, chipC],
     },
   }
 

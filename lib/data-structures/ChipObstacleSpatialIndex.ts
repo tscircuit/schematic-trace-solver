@@ -51,20 +51,46 @@ export class ChipObstacleSpatialIndex {
     line: [Point, Point],
     opts: {
       excludeChipIds?: string[]
+      eps?: number
     } = {},
   ): boolean {
     const excludeChipIds = opts.excludeChipIds ?? []
+    const eps = opts.eps ?? 0
     const [p1, p2] = line
     const { x: x1, y: y1 } = p1
     const { x: x2, y: y2 } = p2
 
+    const minX = Math.min(x1, x2)
+    const minY = Math.min(y1, y2)
+    const maxX = Math.max(x1, x2)
+    const maxY = Math.max(y1, y2)
+
     const chips = this.getChipsInBounds({
-      minX: Math.min(x1, x2),
-      minY: Math.min(y1, y2),
-      maxX: Math.max(x1, x2),
-      maxY: Math.max(y1, y2),
+      minX: minX - eps,
+      minY: minY - eps,
+      maxX: maxX + eps,
+      maxY: maxY + eps,
     }).filter((chip) => !excludeChipIds.includes(chip.chipId))
 
-    return chips.length > 0
+    const isVertical = Math.abs(x1 - x2) < eps
+    const isHorizontal = Math.abs(y1 - y2) < eps
+
+    for (const chip of chips) {
+      const { minX: cMinX, minY: cMinY, maxX: cMaxX, maxY: cMaxY } = chip.bounds
+
+      if (isVertical) {
+        const x = x1
+        if (x <= cMinX + eps || x >= cMaxX - eps) continue
+        const overlap = Math.min(maxY, cMaxY) - Math.max(minY, cMinY)
+        if (overlap > eps) return true
+      } else if (isHorizontal) {
+        const y = y1
+        if (y <= cMinY + eps || y >= cMaxY - eps) continue
+        const overlap = Math.min(maxX, cMaxX) - Math.max(minX, cMinX)
+        if (overlap > eps) return true
+      }
+    }
+
+    return false
   }
 }
