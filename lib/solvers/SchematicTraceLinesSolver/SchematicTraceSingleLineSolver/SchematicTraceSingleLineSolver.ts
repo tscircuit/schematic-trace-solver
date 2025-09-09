@@ -83,7 +83,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     const isDirectVertical = Math.abs(pin1.x - pin2.x) < EPS
     const isDirectHorizontal = Math.abs(pin1.y - pin2.y) < EPS
     if (isDirectVertical || isDirectHorizontal) {
-      const directPath = [
+      const directPath: [Point, Point] = [
         { x: pin1.x, y: pin1.y },
         { x: pin2.x, y: pin2.y },
       ]
@@ -91,6 +91,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       const intersects =
         this.chipObstacleSpatialIndex.doesOrthogonalLineIntersectChip(
           directPath,
+          -EPS,
           { excludeChipIds, eps: EPS },
         )
       if (!intersects) {
@@ -285,6 +286,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       const intersects =
         this.chipObstacleSpatialIndex.doesOrthogonalLineIntersectChip(
           [start, end],
+          0,
           obstacleOps,
         )
       if (intersects) {
