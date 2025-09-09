@@ -67,11 +67,12 @@ export class ChipObstacleSpatialIndex {
       maxY: Math.max(y1, y2),
     }
 
-    if (margin > 0) {
-      searchBounds.minX -= margin
-      searchBounds.minY -= margin
-      searchBounds.maxX += margin
-      searchBounds.maxY += margin
+    if (margin !== 0) {
+      const absMargin = Math.abs(margin)
+      searchBounds.minX -= absMargin
+      searchBounds.minY -= absMargin
+      searchBounds.maxX += absMargin
+      searchBounds.maxY += absMargin
     }
 
     const chips = this.getChipsInBounds(searchBounds).filter(

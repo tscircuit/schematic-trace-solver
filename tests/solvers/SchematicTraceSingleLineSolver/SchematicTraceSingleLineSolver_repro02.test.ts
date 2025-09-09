@@ -891,9 +891,9 @@ test("SchematicTraceSingleLineSolver should solve problem correctly", () => {
 
   // There should be no orthogonal paths even considered as candidates
   for (const path of solver.allCandidatePaths) {
-    for (let i = 0; i < path.length - 1; i++) {
-      const start = path[i]
-      const end = path[i + 1]
+    for (let i = 0; i < path.points.length - 1; i++) {
+      const start = path.points[i]
+      const end = path.points[i + 1]
       const dx = end.x - start.x
       const dy = end.y - start.y
       const isHorizontal = Math.abs(dy) < 1e-6
