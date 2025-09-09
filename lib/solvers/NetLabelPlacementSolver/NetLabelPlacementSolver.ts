@@ -273,11 +273,17 @@ export class NetLabelPlacementSolver extends BaseSolver {
         this.currentGroup
       ) {
         this.triedAnyOrientationFallbackForCurrentGroup = true
+        const netLabelWidth = this.currentGroup.netId
+          ? this.inputProblem.netConnections.find(
+              (nc) => nc.netId === this.currentGroup!.netId,
+            )?.netLabelWidth
+          : undefined
         this.activeSubSolver = new SingleNetLabelPlacementSolver({
           inputProblem: this.inputProblem,
           inputTraceMap: this.inputTraceMap,
           overlappingSameNetTraceGroup: this.currentGroup,
           availableOrientations: fullOrients,
+          netLabelWidth,
         })
         return
       }
@@ -307,6 +313,12 @@ export class NetLabelPlacementSolver extends BaseSolver {
     this.currentGroup = nextOverlappingSameNetTraceGroup
     this.triedAnyOrientationFallbackForCurrentGroup = false
 
+    const netLabelWidth = this.currentGroup.netId
+      ? this.inputProblem.netConnections.find(
+          (nc) => nc.netId === this.currentGroup!.netId,
+        )?.netLabelWidth
+      : undefined
+
     this.activeSubSolver = new SingleNetLabelPlacementSolver({
       inputProblem: this.inputProblem,
       inputTraceMap: this.inputTraceMap,
@@ -314,6 +326,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
       availableOrientations: this.inputProblem.availableNetLabelOrientations[
         netId
       ] ?? ["x+", "x-", "y+", "y-"],
+      netLabelWidth,
     })
   }
 
