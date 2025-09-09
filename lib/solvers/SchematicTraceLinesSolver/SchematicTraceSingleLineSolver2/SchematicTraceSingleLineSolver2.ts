@@ -33,11 +33,13 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   aabb: { minX: number; maxX: number; minY: number; maxY: number }
 
   baseElbow: Point[]
+  private straightCandidate: Point[] | null = null
 
   solvedTracePath: Point[] | null = null
 
   private queue: Array<{ path: Point[]; collisionChipIds: Set<ChipId> }> = []
   private visited: Set<PathKey> = new Set()
+  private triedStraight = false
 
   constructor(params: {
     pins: MspConnectionPair["pins"]
@@ -65,28 +67,9 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     const start = { x: pin1.x, y: pin1.y }
     const end = { x: pin2.x, y: pin2.y }
 
-    // Attempt direct straight-line trace if pins align horizontally or vertically
     const EPS = 1e-6
     if (isVertical(start, end, EPS) || isHorizontal(start, end, EPS)) {
-      const margin = -1e-3
-      const excludeIds = new Set<ChipId>([pin1.chipId, pin2.chipId])
-      const shrunkObstacles = this.obstacles
-        .filter((r) => !excludeIds.has(r.chipId))
-        .map((r) => ({
-          ...r,
-          minX: r.minX - margin,
-          minY: r.minY - margin,
-          maxX: r.maxX + margin,
-          maxY: r.maxY + margin,
-        }))
-      const collision = findFirstCollision([start, end], shrunkObstacles)
-      if (!collision) {
-        this.baseElbow = [start, end]
-        this.aabb = aabbFromPoints(start, end)
-        this.solvedTracePath = [start, end]
-        this.solved = true
-        return
-      }
+      this.straightCandidate = [start, end]
     }
 
     // Build initial elbow path
@@ -144,12 +127,37 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       return
     }
 
-    const state = this.queue.shift()
-    if (!state) {
+    if (this.queue.length === 0) {
+      if (!this.triedStraight && this.straightCandidate) {
+        this.triedStraight = true
+        const [pin1, pin2] = this.pins
+        const margin = -1e-3
+        const excludeIds = new Set<ChipId>([pin1.chipId, pin2.chipId])
+        const shrunkObstacles = this.obstacles
+          .filter((r) => !excludeIds.has(r.chipId))
+          .map((r) => ({
+            ...r,
+            minX: r.minX - margin,
+            minY: r.minY - margin,
+            maxX: r.maxX + margin,
+            maxY: r.maxY + margin,
+          }))
+        const collision = findFirstCollision(
+          this.straightCandidate,
+          shrunkObstacles,
+        )
+        if (!collision) {
+          this.solvedTracePath = this.straightCandidate
+          this.solved = true
+          return
+        }
+      }
       this.failed = true
       this.error = "No collision-free path found"
       return
     }
+
+    const state = this.queue.shift()!
 
     const { path, collisionChipIds } = state
 

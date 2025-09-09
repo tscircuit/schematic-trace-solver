@@ -117,7 +117,15 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       return len
     }
 
-    const candidates: CandidatePath[] = []
+    const elbowCandidates: CandidatePath[] = [
+      { points: this.baseElbow, margin: 0 },
+      ...elbowVariants.map((v) => ({ points: v, margin: 0 })),
+    ]
+
+    this.queuedCandidatePaths = [...elbowCandidates].sort(
+      (a, b) => getPathLength(a.points) - getPathLength(b.points),
+    )
+    this.allCandidatePaths = [...this.queuedCandidatePaths]
 
     const EPS = 1e-6
     const dx = Math.abs(pin1.x - pin2.x)
@@ -134,17 +142,14 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
           },
         )
       if (noCollision) {
-        candidates.push({ points: [start, end], margin: -1e-3 })
+        const straightCandidate: CandidatePath = {
+          points: [start, end],
+          margin: -1e-3,
+        }
+        this.allCandidatePaths.push(straightCandidate)
+        this.queuedCandidatePaths.push(straightCandidate)
       }
     }
-
-    candidates.push({ points: this.baseElbow, margin: 0 })
-    candidates.push(...elbowVariants.map((v) => ({ points: v, margin: 0 })))
-
-    this.allCandidatePaths = candidates
-    this.queuedCandidatePaths = [...this.allCandidatePaths].sort(
-      (a, b) => getPathLength(a.points) - getPathLength(b.points),
-    )
   }
 
   override getConstructorParams(): ConstructorParameters<
