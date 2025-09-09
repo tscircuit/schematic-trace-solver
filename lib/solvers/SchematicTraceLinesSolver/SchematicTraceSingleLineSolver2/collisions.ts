@@ -20,14 +20,14 @@ export const segmentIntersectsRect = (
 
   if (vert) {
     const x = a.x
-    if (x < r.minX - eps || x > r.maxX + eps) return false
+    if (x <= r.minX + eps || x >= r.maxX - eps) return false
     const segMinY = Math.min(a.y, b.y)
     const segMaxY = Math.max(a.y, b.y)
     const overlap = Math.min(segMaxY, r.maxY) - Math.max(segMinY, r.minY)
     return overlap > eps
   } else {
     const y = a.y
-    if (y < r.minY - eps || y > r.maxY + eps) return false
+    if (y <= r.minY + eps || y >= r.maxY - eps) return false
     const segMinX = Math.min(a.x, b.x)
     const segMaxX = Math.max(a.x, b.x)
     const overlap = Math.min(segMaxX, r.maxX) - Math.max(segMinX, r.minX)
@@ -40,15 +40,17 @@ export const findFirstCollision = (
   rects: ChipWithBounds[],
   opts: {
     excludeRectIdsForSegment?: (segIndex: number) => Set<string>
+    eps?: number
   } = {},
 ): { segIndex: number; rect: ChipWithBounds } | null => {
+  const eps = opts.eps ?? EPS
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i]!
     const b = pts[i + 1]!
     const excluded = opts.excludeRectIdsForSegment?.(i) ?? new Set<string>()
     for (const r of rects) {
       if (excluded.has(r.chipId)) continue
-      if (segmentIntersectsRect(a, b, r)) {
+      if (segmentIntersectsRect(a, b, r, eps)) {
         return { segIndex: i, rect: r }
       }
     }

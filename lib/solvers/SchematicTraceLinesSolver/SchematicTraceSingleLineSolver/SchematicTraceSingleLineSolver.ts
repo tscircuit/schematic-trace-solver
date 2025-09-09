@@ -76,8 +76,35 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
         pin._facingDirection = getPinDirection(pin, chip)
       }
     }
-
     const [pin1, pin2] = this.pins
+
+    // Attempt direct straight-line connection if pins are aligned
+    const EPS = 1e-6
+    const isDirectVertical = Math.abs(pin1.x - pin2.x) < EPS
+    const isDirectHorizontal = Math.abs(pin1.y - pin2.y) < EPS
+    if (isDirectVertical || isDirectHorizontal) {
+      const directPath: [Point, Point] = [
+        { x: pin1.x, y: pin1.y },
+        { x: pin2.x, y: pin2.y },
+      ]
+      const excludeChipIds = Array.from(new Set(this.pins.map((p) => p.chipId)))
+      const intersects =
+        this.chipObstacleSpatialIndex.doesOrthogonalLineIntersectChip(
+          directPath,
+          -EPS,
+          { excludeChipIds, eps: EPS },
+        )
+      if (!intersects) {
+        this.solvedTracePath = directPath
+        this.solved = true
+        this.baseElbow = directPath
+        this.movableSegments = []
+        this.allCandidatePaths = [directPath]
+        this.queuedCandidatePaths = [directPath]
+        return
+      }
+    }
+
     this.baseElbow = calculateElbow(
       {
         x: pin1.x,
@@ -147,6 +174,8 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
 
     // Check if this candidate path is valid
     let pathIsValid = true
+
+    const COLLISION_EPS = 1e-6
 
     for (let i = 0; i < nextCandidatePath.length - 1; i++) {
       const start = nextCandidatePath[i]
@@ -253,10 +282,11 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
 
       if (!pathIsValid) break
 
-      const obstacleOps = { excludeChipIds }
+      const obstacleOps = { excludeChipIds, eps: COLLISION_EPS }
       const intersects =
         this.chipObstacleSpatialIndex.doesOrthogonalLineIntersectChip(
           [start, end],
+          0,
           obstacleOps,
         )
       if (intersects) {

@@ -23,6 +23,8 @@ import { pathKey, shiftSegmentOrth } from "./pathOps"
 
 type PathKey = string
 
+const EPS = 1e-6
+
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
   inputProblem: InputProblem
@@ -61,8 +63,28 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     this.obstacles = getObstacleRects(this.inputProblem)
     this.rectById = new Map(this.obstacles.map((r) => [r.chipId, r]))
 
-    // Build initial elbow path
     const [pin1, pin2] = this.pins
+
+    // Attempt direct straight-line connection if pins are aligned
+    const isDirectVertical = Math.abs(pin1.x - pin2.x) < EPS
+    const isDirectHorizontal = Math.abs(pin1.y - pin2.y) < EPS
+    if (isDirectVertical || isDirectHorizontal) {
+      const directPath: Point[] = [
+        { x: pin1.x, y: pin1.y },
+        { x: pin2.x, y: pin2.y },
+      ]
+      const collision = findFirstCollision(directPath, this.obstacles, {
+        eps: EPS,
+      })
+      if (!collision) {
+        this.solvedTracePath = directPath
+        this.solved = true
+        this.baseElbow = directPath
+        this.aabb = aabbFromPoints(directPath[0]!, directPath[1]!)
+        return
+      }
+    }
+    // Build initial elbow path
     this.baseElbow = calculateElbow(
       {
         x: pin1.x,
@@ -129,7 +151,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     const { path, collisionChipIds } = state
 
-    const collision = findFirstCollision(path, this.obstacles)
+    const collision = findFirstCollision(path, this.obstacles, { eps: EPS })
 
     if (!collision) {
       this.solvedTracePath = path
