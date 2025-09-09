@@ -130,11 +130,11 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
           [start, end],
           {
             excludeChipIds: [pin1.chipId, pin2.chipId],
-            margin: -1e-6,
+            margin: -1e-3,
           },
         )
       if (noCollision) {
-        candidates.push({ points: [start, end], margin: -1e-6 })
+        candidates.push({ points: [start, end], margin: -1e-3 })
       }
     }
 

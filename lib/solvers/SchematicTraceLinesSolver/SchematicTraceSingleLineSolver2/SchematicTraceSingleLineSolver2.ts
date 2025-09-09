@@ -61,8 +61,35 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     this.obstacles = getObstacleRects(this.inputProblem)
     this.rectById = new Map(this.obstacles.map((r) => [r.chipId, r]))
 
-    // Build initial elbow path
     const [pin1, pin2] = this.pins
+    const start = { x: pin1.x, y: pin1.y }
+    const end = { x: pin2.x, y: pin2.y }
+
+    // Attempt direct straight-line trace if pins align horizontally or vertically
+    const EPS = 1e-6
+    if (isVertical(start, end, EPS) || isHorizontal(start, end, EPS)) {
+      const margin = -1e-3
+      const excludeIds = new Set<ChipId>([pin1.chipId, pin2.chipId])
+      const shrunkObstacles = this.obstacles
+        .filter((r) => !excludeIds.has(r.chipId))
+        .map((r) => ({
+          ...r,
+          minX: r.minX - margin,
+          minY: r.minY - margin,
+          maxX: r.maxX + margin,
+          maxY: r.maxY + margin,
+        }))
+      const collision = findFirstCollision([start, end], shrunkObstacles)
+      if (!collision) {
+        this.baseElbow = [start, end]
+        this.aabb = aabbFromPoints(start, end)
+        this.solvedTracePath = [start, end]
+        this.solved = true
+        return
+      }
+    }
+
+    // Build initial elbow path
     this.baseElbow = calculateElbow(
       {
         x: pin1.x,
@@ -78,10 +105,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     )
 
     // Bounds defined by PA and PB
-    this.aabb = aabbFromPoints(
-      { x: pin1.x, y: pin1.y },
-      { x: pin2.x, y: pin2.y },
-    )
+    this.aabb = aabbFromPoints(start, end)
 
     // Seed search
     this.queue.push({ path: this.baseElbow, collisionChipIds: new Set() })
