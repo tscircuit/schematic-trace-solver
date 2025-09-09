@@ -58,6 +58,9 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
   chipObstacleSpatialIndex: ChipObstacleSpatialIndex
 
+  // Optional override for the width of the net label (per netId)
+  netLabelWidth?: number
+
   netLabelPlacement: NetLabelPlacement | null = null
   testedCandidates: Array<{
     center: { x: number; y: number }
@@ -75,12 +78,14 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
     overlappingSameNetTraceGroup: OverlappingSameNetTraceGroup
     availableOrientations: FacingDirection[]
+    netLabelWidth?: number
   }) {
     super()
     this.inputProblem = params.inputProblem
     this.inputTraceMap = params.inputTraceMap
     this.overlappingSameNetTraceGroup = params.overlappingSameNetTraceGroup
     this.availableOrientations = params.availableOrientations
+    this.netLabelWidth = params.netLabelWidth
 
     this.chipObstacleSpatialIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
@@ -95,6 +100,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       inputTraceMap: this.inputTraceMap,
       overlappingSameNetTraceGroup: this.overlappingSameNetTraceGroup,
       availableOrientations: this.availableOrientations,
+      netLabelWidth: this.netLabelWidth,
     }
   }
 
@@ -112,6 +118,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         chipObstacleSpatialIndex: this.chipObstacleSpatialIndex,
         overlappingSameNetTraceGroup: this.overlappingSameNetTraceGroup,
         availableOrientations: this.availableOrientations,
+        netLabelWidth: this.netLabelWidth,
       })
       this.testedCandidates.push(...res.testedCandidates)
       if (res.placement) {
@@ -220,7 +227,10 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         const anchors = anchorsForSegment(a, b)
         for (const anchor of anchors) {
           for (const orientation of candidateOrients) {
-            const { width, height } = getDimsForOrientation(orientation)
+            const { width, height } = getDimsForOrientation({
+              orientation,
+              netLabelWidth: this.netLabelWidth,
+            })
             const center = getCenterFromAnchor(
               anchor,
               orientation,

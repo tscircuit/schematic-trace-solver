@@ -27,6 +27,7 @@ export interface InputDirectConnection {
 export interface InputNetConnection {
   netId: string
   pinIds: Array<PinId>
+  netLabelWidth?: number
 }
 
 export interface InputProblem {

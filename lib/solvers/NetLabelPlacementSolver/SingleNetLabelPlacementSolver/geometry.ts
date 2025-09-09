@@ -3,15 +3,25 @@ import type { FacingDirection } from "lib/utils/dir"
 export const NET_LABEL_HORIZONTAL_WIDTH = 0.45
 export const NET_LABEL_HORIZONTAL_HEIGHT = 0.2
 
-export function getDimsForOrientation(orientation: FacingDirection) {
+export function getDimsForOrientation(params: {
+  orientation: FacingDirection
+  netLabelWidth?: number
+}) {
+  const { orientation, netLabelWidth } = params
+  const horizWidth =
+    typeof netLabelWidth === "number"
+      ? netLabelWidth
+      : NET_LABEL_HORIZONTAL_WIDTH
+
   if (orientation === "y+" || orientation === "y-") {
     return {
+      // Rotated, so width/height swap
       width: NET_LABEL_HORIZONTAL_HEIGHT,
-      height: NET_LABEL_HORIZONTAL_WIDTH,
+      height: horizWidth,
     }
   }
   return {
-    width: NET_LABEL_HORIZONTAL_WIDTH,
+    width: horizWidth,
     height: NET_LABEL_HORIZONTAL_HEIGHT,
   }
 }
