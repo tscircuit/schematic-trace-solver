@@ -51,20 +51,74 @@ export class ChipObstacleSpatialIndex {
     line: [Point, Point],
     opts: {
       excludeChipIds?: string[]
+      margin?: number
     } = {},
   ): boolean {
     const excludeChipIds = opts.excludeChipIds ?? []
+    const margin = opts.margin ?? 0
     const [p1, p2] = line
     const { x: x1, y: y1 } = p1
     const { x: x2, y: y2 } = p2
 
-    const chips = this.getChipsInBounds({
+    const searchBounds = {
       minX: Math.min(x1, x2),
       minY: Math.min(y1, y2),
       maxX: Math.max(x1, x2),
       maxY: Math.max(y1, y2),
-    }).filter((chip) => !excludeChipIds.includes(chip.chipId))
+    }
 
-    return chips.length > 0
+    if (margin > 0) {
+      searchBounds.minX -= margin
+      searchBounds.minY -= margin
+      searchBounds.maxX += margin
+      searchBounds.maxY += margin
+    }
+
+    const chips = this.getChipsInBounds(searchBounds).filter(
+      (chip) => !excludeChipIds.includes(chip.chipId),
+    )
+
+    if (margin === 0) {
+      return chips.length > 0
+    }
+
+    const xMin = Math.min(x1, x2)
+    const xMax = Math.max(x1, x2)
+    const yMin = Math.min(y1, y2)
+    const yMax = Math.max(y1, y2)
+
+    for (const chip of chips) {
+      const bounds = chip.bounds
+      const expanded = {
+        minX: bounds.minX - margin,
+        minY: bounds.minY - margin,
+        maxX: bounds.maxX + margin,
+        maxY: bounds.maxY + margin,
+      }
+
+      if (Math.abs(x1 - x2) < 1e-9) {
+        if (
+          x1 >= expanded.minX &&
+          x1 <= expanded.maxX &&
+          yMax >= expanded.minY &&
+          yMin <= expanded.maxY
+        ) {
+          return true
+        }
+      } else if (Math.abs(y1 - y2) < 1e-9) {
+        if (
+          y1 >= expanded.minY &&
+          y1 <= expanded.maxY &&
+          xMax >= expanded.minX &&
+          xMin <= expanded.maxX
+        ) {
+          return true
+        }
+      } else {
+        throw new Error("Line must be orthogonal")
+      }
+    }
+
+    return false
   }
 }

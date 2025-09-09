@@ -25,6 +25,11 @@ import { getRestrictedCenterLines } from "./getRestrictedCenterLines"
 
 type ChipPin = InputPin & { chipId: ChipId }
 
+interface CandidatePath {
+  points: Point[]
+  margin?: number
+}
+
 export class SchematicTraceSingleLineSolver extends BaseSolver {
   pins: MspConnectionPair["pins"]
   inputProblem: InputProblem
@@ -33,8 +38,8 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
   movableSegments: Array<MovableSegment>
   baseElbow: Point[]
 
-  allCandidatePaths: Array<Point[]>
-  queuedCandidatePaths: Array<Point[]>
+  allCandidatePaths: Array<CandidatePath>
+  queuedCandidatePaths: Array<CandidatePath>
 
   chipObstacleSpatialIndex: ChipObstacleSpatialIndex
 
@@ -112,9 +117,33 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       return len
     }
 
-    this.allCandidatePaths = [this.baseElbow, ...elbowVariants]
+    const candidates: CandidatePath[] = []
+
+    const EPS = 1e-6
+    const dx = Math.abs(pin1.x - pin2.x)
+    const dy = Math.abs(pin1.y - pin2.y)
+    if (dx < EPS || dy < EPS) {
+      const start = { x: pin1.x, y: pin1.y }
+      const end = { x: pin2.x, y: pin2.y }
+      const noCollision =
+        !this.chipObstacleSpatialIndex.doesOrthogonalLineIntersectChip(
+          [start, end],
+          {
+            excludeChipIds: [pin1.chipId, pin2.chipId],
+            margin: -1e-6,
+          },
+        )
+      if (noCollision) {
+        candidates.push({ points: [start, end], margin: -1e-6 })
+      }
+    }
+
+    candidates.push({ points: this.baseElbow, margin: 0 })
+    candidates.push(...elbowVariants.map((v) => ({ points: v, margin: 0 })))
+
+    this.allCandidatePaths = candidates
     this.queuedCandidatePaths = [...this.allCandidatePaths].sort(
-      (a, b) => getPathLength(a) - getPathLength(b),
+      (a, b) => getPathLength(a.points) - getPathLength(b.points),
     )
   }
 
@@ -148,9 +177,9 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     // Check if this candidate path is valid
     let pathIsValid = true
 
-    for (let i = 0; i < nextCandidatePath.length - 1; i++) {
-      const start = nextCandidatePath[i]
-      const end = nextCandidatePath[i + 1]
+    for (let i = 0; i < nextCandidatePath.points.length - 1; i++) {
+      const start = nextCandidatePath.points[i]
+      const end = nextCandidatePath.points[i + 1]
 
       // Determine which chips to exclude for this specific segment
       let excludeChipIds: string[] = []
@@ -253,7 +282,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
 
       if (!pathIsValid) break
 
-      const obstacleOps = { excludeChipIds }
+      const obstacleOps = { excludeChipIds, margin: nextCandidatePath.margin }
       const intersects =
         this.chipObstacleSpatialIndex.doesOrthogonalLineIntersectChip(
           [start, end],
@@ -267,7 +296,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
 
     // If this path is valid, use it as the solution
     if (pathIsValid) {
-      this.solvedTracePath = nextCandidatePath
+      this.solvedTracePath = nextCandidatePath.points
       this.solved = true
     }
     // If this path is invalid, continue to next step to try the next candidate
@@ -308,7 +337,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     if (!this.solvedTracePath) {
       if (this.queuedCandidatePaths.length > 0) {
         graphics.lines!.push({
-          points: this.queuedCandidatePaths[0],
+          points: this.queuedCandidatePaths[0].points,
           strokeColor: "orange",
         })
       }
@@ -318,12 +347,12 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
         const candidatePath = this.queuedCandidatePaths[i]
         const pi = i / this.queuedCandidatePaths.length
         graphics.lines!.push({
-          points: candidatePath.map((p) => ({
+          points: candidatePath.points.map((p) => ({
             x: p.x + pi * boundsWidth * 0.005,
             y: p.y + pi * boundsHeight * 0.005,
           })),
           strokeColor: getColorFromString(
-            `${candidatePath.reduce((acc, p) => `${acc},${p.x},${p.y}`, "")}`,
+            `${candidatePath.points.reduce((acc, p) => `${acc},${p.x},${p.y}`, "")}`,
             0.5,
           ),
           strokeDash: "8 8",
