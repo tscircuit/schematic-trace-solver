@@ -55,3 +55,20 @@ export const findFirstCollision = (
   }
   return null
 }
+
+/**
+ * Checks if a given path has any intersections with a set of chip obstacles.
+ */
+export const isPathCollidingWithObstacles = (
+  path: Point[],
+  obstacles: ChipWithBounds[],
+): boolean => {
+  for (let i = 0; i < path.length - 1; i++) {
+    for (const obstacle of obstacles) {
+      if (segmentIntersectsRect(path[i], path[i + 1], obstacle)) {
+        return true // Found a collision
+      }
+    }
+  }
+  return false // No collisions found
+}
