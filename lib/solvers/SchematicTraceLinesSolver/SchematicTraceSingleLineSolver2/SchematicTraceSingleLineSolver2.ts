@@ -132,7 +132,13 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     const collision = findFirstCollision(path, this.obstacles)
 
     if (!collision) {
-      this.solvedTracePath = path
+      // Ensure the path endpoints match the pin coordinates exactly
+      const [startPin, endPin] = this.pins
+      const correctedPath = [...path]
+      correctedPath[0] = { x: startPin.x, y: startPin.y }
+      correctedPath[correctedPath.length - 1] = { x: endPin.x, y: endPin.y }
+
+      this.solvedTracePath = correctedPath
       this.solved = true
       return
     }
