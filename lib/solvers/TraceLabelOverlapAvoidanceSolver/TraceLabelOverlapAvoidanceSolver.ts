@@ -1,13 +1,13 @@
 import { BaseSolver } from "../BaseSolver/BaseSolver"
-import type { InputProblem } from "../../types/InputProblem"
-import { detectTraceLabelOverlap } from "./detectTraceLabelOverlap.ts"
-import { rerouteCollidingTrace } from "./rerouteCollidingTrace.ts"
+import { detectTraceLabelOverlap } from "./detectTraceLabelOverlap"
+import { rerouteCollidingTrace } from "./rerouteCollidingTrace"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { getRectBounds } from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import { getColorFromString } from "lib/utils/getColorFromString.ts"
+import { getColorFromString } from "lib/utils/getColorFromString"
+import type { InputProblem } from "lib/types/InputProblem"
 
 interface TraceLabelOverlapAvoidanceSolverParams {
   inputProblem: InputProblem
@@ -22,6 +22,8 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   private netLabelPlacements: NetLabelPlacement[]
   public updatedTraces: SolvedTracePath[]
   private mergedLabelNetIdMap: Map<string, Set<string>>
+  private detourCountByLabel: Map<string, number>
+  private readonly PADDING_BUFFER = 0.025
 
   constructor(params: TraceLabelOverlapAvoidanceSolverParams) {
     super()
@@ -29,6 +31,7 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
     this.traces = params.traces
     this.updatedTraces = [...params.traces]
     this.mergedLabelNetIdMap = new Map()
+    this.detourCountByLabel = new Map()
 
     const originalLabels = params.netLabelPlacements
     this.netLabelPlacements = originalLabels
@@ -93,17 +96,17 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   }
 
   override _step() {
-    if (!this.traces || this.traces.length === 0) {
-      this.solved = true
-      return
-    }
     if (
+      !this.traces ||
+      this.traces.length === 0 ||
       !this.netTempLabelPlacements ||
       this.netTempLabelPlacements.length === 0
     ) {
       this.solved = true
       return
     }
+
+    this.detourCountByLabel.clear()
 
     const overlaps = detectTraceLabelOverlap(
       this.traces,
@@ -143,12 +146,20 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
       }
 
       const currentTraceState = updatedTracesMap.get(overlap.trace.mspPairId)!
+      const labelId = overlap.label.globalConnNetId
+      const detourCount = this.detourCountByLabel.get(labelId) || 0
 
       const newTrace = rerouteCollidingTrace(
         currentTraceState,
         overlap.label,
         this.problem,
+        this.PADDING_BUFFER,
+        detourCount,
       )
+
+      if (newTrace.tracePath !== currentTraceState.tracePath) {
+        this.detourCountByLabel.set(labelId, detourCount + 1)
+      }
 
       updatedTracesMap.set(currentTraceState.mspPairId, newTrace)
       processedTraceIds.add(currentTraceState.mspPairId)

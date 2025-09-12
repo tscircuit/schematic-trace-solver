@@ -136,7 +136,7 @@ const inputProblem = {
   maxMspPairDistance: 6.5,
 } as InputProblem
 
-test("example21", () => {
+test("example25", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
   expect(solver).toMatchSolverSnapshot(import.meta.path)
