@@ -214,8 +214,8 @@ const tryFourPointDetour = (
     label.width,
     label.height,
   )
-  
-  const effectivePadding = paddingBuffer + (detourCount * paddingBuffer);
+
+  const effectivePadding = paddingBuffer + detourCount * paddingBuffer
 
   if (isVertical(pA, pB)) {
     const xCandidates = [
@@ -276,7 +276,6 @@ const tryFourPointDetour = (
   }
   return null
 }
-
 
 export const rerouteCollidingTrace = (
   trace: SolvedTracePath,
