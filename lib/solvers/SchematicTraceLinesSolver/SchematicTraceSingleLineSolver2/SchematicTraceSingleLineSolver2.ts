@@ -129,11 +129,23 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     const { path, collisionChipIds } = state
 
+    const [PA, PB] = this.pins
     const collision = findFirstCollision(path, this.obstacles)
 
     if (!collision) {
-      this.solvedTracePath = path
-      this.solved = true
+      // Sanity check: ensure path still connects PA -> PB
+      const first = path[0]!
+      const last = path[path.length - 1]!
+      const EPS = 1e-9
+      const samePoint = (p: Point, q: Point) =>
+        Math.abs(p.x - q.x) < EPS && Math.abs(p.y - q.y) < EPS
+      if (
+        samePoint(first, { x: PA.x, y: PA.y }) &&
+        samePoint(last, { x: PB.x, y: PB.y })
+      ) {
+        this.solvedTracePath = path
+        this.solved = true
+      }
       return
     }
 
@@ -167,7 +179,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       return
     }
 
-    const [PA, PB] = this.pins
+    // Note: PA and PB are already defined above
     const candidates: number[] = []
 
     if (collisionChipIds.size === 0) {
