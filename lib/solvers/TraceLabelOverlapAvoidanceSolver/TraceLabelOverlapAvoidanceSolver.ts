@@ -77,44 +77,59 @@ const minimizeTurns = (
     return candidates
   }
 
-  const recognizeStairStepPattern = (pathToCheck: Point[], startIdx: number): number => {
+  const recognizeStairStepPattern = (
+    pathToCheck: Point[],
+    startIdx: number,
+  ): number => {
     if (startIdx >= pathToCheck.length - 3) return -1
-    
+
     let endIdx = startIdx
     let isStairStep = true
-    
-    for (let i = startIdx; i < pathToCheck.length - 2 && i < startIdx + 10; i++) {
+
+    for (
+      let i = startIdx;
+      i < pathToCheck.length - 2 && i < startIdx + 10;
+      i++
+    ) {
       if (i + 2 >= pathToCheck.length) break
-      
+
       const p1 = pathToCheck[i]
       const p2 = pathToCheck[i + 1]
       const p3 = pathToCheck[i + 2]
-      
+
       const seg1Vertical = p1.x === p2.x
       const seg2Vertical = p2.x === p3.x
-      
+
       if (seg1Vertical === seg2Vertical) {
         break
       }
-      
-      const seg1Direction = seg1Vertical ? Math.sign(p2.y - p1.y) : Math.sign(p2.x - p1.x)
-      
+
+      const seg1Direction = seg1Vertical
+        ? Math.sign(p2.y - p1.y)
+        : Math.sign(p2.x - p1.x)
+
       if (i > startIdx) {
         const prevP = pathToCheck[i - 1]
         const prevSegVertical = prevP.x === p1.x
-        const prevDirection = prevSegVertical ? Math.sign(p1.y - prevP.y) : Math.sign(p1.x - prevP.x)
-        
-        if ((seg1Vertical && prevSegVertical && seg1Direction !== prevDirection) ||
-            (!seg1Vertical && !prevSegVertical && seg1Direction !== prevDirection)) {
+        const prevDirection = prevSegVertical
+          ? Math.sign(p1.y - prevP.y)
+          : Math.sign(p1.x - prevP.x)
+
+        if (
+          (seg1Vertical &&
+            prevSegVertical &&
+            seg1Direction !== prevDirection) ||
+          (!seg1Vertical && !prevSegVertical && seg1Direction !== prevDirection)
+        ) {
           isStairStep = false
           break
         }
       }
-      
+
       endIdx = i + 2
     }
-    
-    return (isStairStep && endIdx - startIdx >= 3) ? endIdx : -1
+
+    return isStairStep && endIdx - startIdx >= 3 ? endIdx : -1
   }
 
   let optimizedPath = [...path]
@@ -127,34 +142,37 @@ const minimizeTurns = (
     // First try to identify and replace stair-step patterns
     for (let startIdx = 0; startIdx < optimizedPath.length - 3; startIdx++) {
       const stairEndIdx = recognizeStairStepPattern(optimizedPath, startIdx)
-      
+
       if (stairEndIdx > 0) {
         const startPoint = optimizedPath[startIdx]
         const endPoint = optimizedPath[stairEndIdx]
-        
+
         const connectionOptions = tryConnectPoints(startPoint, endPoint)
-        
+
         for (const connection of connectionOptions) {
           const testPath = [
             ...optimizedPath.slice(0, startIdx + 1),
             ...connection.slice(1, -1),
             ...optimizedPath.slice(stairEndIdx),
           ]
-          
+
           const collidesWithObstacles = hasCollisions(connection, obstacles)
-          const collidesWithLabels = hasCollisionsWithLabels(connection, labelBounds)
-          
+          const collidesWithLabels = hasCollisionsWithLabels(
+            connection,
+            labelBounds,
+          )
+
           if (!collidesWithObstacles && !collidesWithLabels) {
             const newTurns = countTurns(testPath)
             const turnsRemoved = stairEndIdx - startIdx - 1
-            
+
             optimizedPath = testPath
             currentTurns = newTurns
             improved = true
             break
           }
         }
-        
+
         if (improved) break
       }
     }
@@ -185,8 +203,14 @@ const minimizeTurns = (
             ]
 
             const connectionSegments = connection
-            const collidesWithObstacles = hasCollisions(connectionSegments, obstacles)
-            const collidesWithLabels = hasCollisionsWithLabels(connectionSegments, labelBounds)
+            const collidesWithObstacles = hasCollisions(
+              connectionSegments,
+              obstacles,
+            )
+            const collidesWithLabels = hasCollisionsWithLabels(
+              connectionSegments,
+              labelBounds,
+            )
 
             if (!collidesWithObstacles && !collidesWithLabels) {
               const newTurns = countTurns(testPath)
@@ -226,7 +250,10 @@ const minimizeTurns = (
           ]
 
           const collidesWithObstacles = hasCollisions([p1, p3], obstacles)
-          const collidesWithLabels = hasCollisionsWithLabels([p1, p3], labelBounds)
+          const collidesWithLabels = hasCollisionsWithLabels(
+            [p1, p3],
+            labelBounds,
+          )
 
           if (!collidesWithObstacles && !collidesWithLabels) {
             optimizedPath = testPath
@@ -247,168 +274,205 @@ const minimizeTurnsWithFilteredLabels = (
   problem: InputProblem,
   allLabelPlacements: NetLabelPlacement[],
   mergedLabelNetIdMap: Map<string, Set<string>>,
-  paddingBuffer: number
+  paddingBuffer: number,
 ): SolvedTracePath[] | null => {
-  let changesMade = false;
-  const obstacles = getObstacleRects(problem);
-  
-  const newTraces = traces.map(trace => {
-    const originalPath = trace.tracePath;
-    const filteredLabels = allLabelPlacements.filter(label => {
-      const originalNetIds = mergedLabelNetIdMap.get(label.globalConnNetId);
+  let changesMade = false
+  const obstacles = getObstacleRects(problem)
+
+  const newTraces = traces.map((trace) => {
+    const originalPath = trace.tracePath
+    const filteredLabels = allLabelPlacements.filter((label) => {
+      const originalNetIds = mergedLabelNetIdMap.get(label.globalConnNetId)
       if (originalNetIds) {
-        return !originalNetIds.has(trace.globalConnNetId);
+        return !originalNetIds.has(trace.globalConnNetId)
       }
-      return label.globalConnNetId !== trace.globalConnNetId;
-    });
-    
-    const labelBounds = filteredLabels.map(nl => ({
-      minX: nl.center.x - nl.width/2 - paddingBuffer,
-      maxX: nl.center.x + nl.width/2 + paddingBuffer,
-      minY: nl.center.y - nl.height/2 - paddingBuffer,
-      maxY: nl.center.y + nl.height/2 + paddingBuffer
-    }));
+      return label.globalConnNetId !== trace.globalConnNetId
+    })
 
-    const newPath = minimizeTurns(originalPath, obstacles, labelBounds);
+    const labelBounds = filteredLabels.map((nl) => ({
+      minX: nl.center.x - nl.width / 2 - paddingBuffer,
+      maxX: nl.center.x + nl.width / 2 + paddingBuffer,
+      minY: nl.center.y - nl.height / 2 - paddingBuffer,
+      maxY: nl.center.y + nl.height / 2 + paddingBuffer,
+    }))
 
-    if (newPath.length !== originalPath.length || 
-        newPath.some((p, i) => p.x !== originalPath[i].x || p.y !== originalPath[i].y)) {
-      changesMade = true;
+    const newPath = minimizeTurns(originalPath, obstacles, labelBounds)
+
+    if (
+      newPath.length !== originalPath.length ||
+      newPath.some(
+        (p, i) => p.x !== originalPath[i].x || p.y !== originalPath[i].y,
+      )
+    ) {
+      changesMade = true
     }
-    
+
     return {
       ...trace,
-      tracePath: newPath
-    };
-  });
+      tracePath: newPath,
+    }
+  })
 
   if (changesMade) {
-    return newTraces;
+    return newTraces
   } else {
-    return null;
+    return null
   }
-};
+}
 
 const balanceLShapes = (
   traces: SolvedTracePath[],
   problem: InputProblem,
-  allLabelPlacements: NetLabelPlacement[]
+  allLabelPlacements: NetLabelPlacement[],
 ): SolvedTracePath[] | null => {
-  const TOLERANCE = 1e-5;
-  console.log(`[balanceLShapes] Starting Z-shape balancing pass (v6) with tolerance: ${TOLERANCE}`);
-  let changesMade = false;
+  const TOLERANCE = 1e-5
+  console.log(
+    `[balanceLShapes] Starting Z-shape balancing pass (v6) with tolerance: ${TOLERANCE}`,
+  )
+  let changesMade = false
 
-  const obstacles = getObstacleRects(problem).map(obs => ({
-      ...obs,
-      minX: obs.minX + TOLERANCE,
-      maxX: obs.maxX - TOLERANCE,
-      minY: obs.minY + TOLERANCE,
-      maxY: obs.maxY - TOLERANCE,
-  }));
+  const obstacles = getObstacleRects(problem).map((obs) => ({
+    ...obs,
+    minX: obs.minX + TOLERANCE,
+    maxX: obs.maxX - TOLERANCE,
+    minY: obs.minY + TOLERANCE,
+    maxY: obs.maxY - TOLERANCE,
+  }))
 
-  const segmentIntersectsAnyRect = (p1: Point, p2: Point, rects: any[]): boolean => {
+  const segmentIntersectsAnyRect = (
+    p1: Point,
+    p2: Point,
+    rects: any[],
+  ): boolean => {
     for (const rect of rects) {
       if (segmentIntersectsRect(p1, p2, rect)) {
-        return true;
+        return true
       }
     }
-    return false;
-  };
+    return false
+  }
 
   const getLabelBounds = (labels: NetLabelPlacement[], traceNetId: string) => {
-    const filteredLabels = labels.filter(label => label.globalConnNetId !== traceNetId);
-    
-    return filteredLabels.map(nl => ({
-      minX: (nl.center.x - nl.width/2) + TOLERANCE,
-      maxX: (nl.center.x + nl.width/2) - TOLERANCE,
-      minY: (nl.center.y - nl.height/2) + TOLERANCE,
-      maxY: (nl.center.y + nl.height/2) - TOLERANCE,
-    }));
-  };
+    const filteredLabels = labels.filter(
+      (label) => label.globalConnNetId !== traceNetId,
+    )
 
-  const newTraces = traces.map(trace => {
-    console.log(`[balanceLShapes] Processing trace: ${trace.mspPairId}`);
-    const newPath = [...trace.tracePath];
+    return filteredLabels.map((nl) => ({
+      minX: nl.center.x - nl.width / 2 + TOLERANCE,
+      maxX: nl.center.x + nl.width / 2 - TOLERANCE,
+      minY: nl.center.y - nl.height / 2 + TOLERANCE,
+      maxY: nl.center.y + nl.height / 2 - TOLERANCE,
+    }))
+  }
+
+  const newTraces = traces.map((trace) => {
+    console.log(`[balanceLShapes] Processing trace: ${trace.mspPairId}`)
+    const newPath = [...trace.tracePath]
 
     if (newPath.length < 6) {
-        console.log(`[balanceLShapes] Path too short to have non-anchor Z-shapes. Skipping.`);
-        return { ...trace };
+      console.log(
+        `[balanceLShapes] Path too short to have non-anchor Z-shapes. Skipping.`,
+      )
+      return { ...trace }
     }
 
-    const labelBounds = getLabelBounds(allLabelPlacements, trace.globalConnNetId);
+    const labelBounds = getLabelBounds(
+      allLabelPlacements,
+      trace.globalConnNetId,
+    )
 
     for (let i = 1; i < newPath.length - 4; i++) {
-      const p1 = newPath[i];
-      const p2 = newPath[i+1];
-      const p3 = newPath[i+2];
-      const p4 = newPath[i+3];
+      const p1 = newPath[i]
+      const p2 = newPath[i + 1]
+      const p3 = newPath[i + 2]
+      const p4 = newPath[i + 3]
 
-      const is_H_V_H_Z_shape = p1.y === p2.y && p2.x === p3.x && p3.y === p4.y;
-      const is_V_H_V_Z_shape = p1.x === p2.x && p2.y === p3.y && p3.x === p4.x;
+      const is_H_V_H_Z_shape = p1.y === p2.y && p2.x === p3.x && p3.y === p4.y
+      const is_V_H_V_Z_shape = p1.x === p2.x && p2.y === p3.y && p3.x === p4.x
 
       if (!is_H_V_H_Z_shape && !is_V_H_V_Z_shape) {
-        continue;
+        continue
       }
-      
-      console.log(`[balanceLShapes] Found Z-shape at index ${i}:`, JSON.stringify([p1, p2, p3, p4]));
 
-      let p2_new: Point, p3_new: Point;
-      const len1_original = is_H_V_H_Z_shape ? Math.abs(p1.x - p2.x) : Math.abs(p1.y - p2.y);
-      const len2_original = is_H_V_H_Z_shape ? Math.abs(p3.x - p4.x) : Math.abs(p3.y - p4.y);
+      console.log(
+        `[balanceLShapes] Found Z-shape at index ${i}:`,
+        JSON.stringify([p1, p2, p3, p4]),
+      )
+
+      let p2_new: Point, p3_new: Point
+      const len1_original = is_H_V_H_Z_shape
+        ? Math.abs(p1.x - p2.x)
+        : Math.abs(p1.y - p2.y)
+      const len2_original = is_H_V_H_Z_shape
+        ? Math.abs(p3.x - p4.x)
+        : Math.abs(p3.y - p4.y)
 
       if (Math.abs(len1_original - len2_original) < 0.001) {
-          console.log(`[balanceLShapes] Z-shape is already balanced. Skipping.`);
-          continue;
+        console.log(`[balanceLShapes] Z-shape is already balanced. Skipping.`)
+        continue
       }
 
       if (is_H_V_H_Z_shape) {
-        const ideal_x = (p1.x + p4.x) / 2;
-        p2_new = { x: ideal_x, y: p2.y };
-        p3_new = { x: ideal_x, y: p3.y };
+        const ideal_x = (p1.x + p4.x) / 2
+        p2_new = { x: ideal_x, y: p2.y }
+        p3_new = { x: ideal_x, y: p3.y }
       } else {
-        const ideal_y = (p1.y + p4.y) / 2;
-        p2_new = { x: p2.x, y: ideal_y };
-        p3_new = { x: p3.x, y: ideal_y };
+        const ideal_y = (p1.y + p4.y) / 2
+        p2_new = { x: p2.x, y: ideal_y }
+        p3_new = { x: p3.x, y: ideal_y }
       }
-      
-      console.log(`[balanceLShapes] Proposing new points: p2_new=${JSON.stringify(p2_new)}, p3_new=${JSON.stringify(p3_new)}`);
-      
-      const collides = 
+
+      console.log(
+        `[balanceLShapes] Proposing new points: p2_new=${JSON.stringify(p2_new)}, p3_new=${JSON.stringify(p3_new)}`,
+      )
+
+      const collides =
         segmentIntersectsAnyRect(p1, p2_new, obstacles) ||
         segmentIntersectsAnyRect(p2_new, p3_new, obstacles) ||
         segmentIntersectsAnyRect(p3_new, p4, obstacles) ||
         segmentIntersectsAnyRect(p1, p2_new, labelBounds) ||
         segmentIntersectsAnyRect(p2_new, p3_new, labelBounds) ||
-        segmentIntersectsAnyRect(p3_new, p4, labelBounds);
+        segmentIntersectsAnyRect(p3_new, p4, labelBounds)
 
       if (!collides) {
-        console.log(`[balanceLShapes] No collisions found. Applying new points.`);
-        newPath[i+1] = p2_new;
-        newPath[i+2] = p3_new;
-        changesMade = true;
-        i = 0;
+        console.log(
+          `[balanceLShapes] No collisions found. Applying new points.`,
+        )
+        newPath[i + 1] = p2_new
+        newPath[i + 2] = p3_new
+        changesMade = true
+        i = 0
       } else {
-        console.log(`[balanceLShapes] Collision detected. Cannot apply new points.`);
+        console.log(
+          `[balanceLShapes] Collision detected. Cannot apply new points.`,
+        )
       }
     }
 
-    const finalSimplifiedPath = simplifyPath(newPath);
-    console.log(`[balanceLShapes] Final simplified path for trace ${trace.mspPairId}:`, JSON.stringify(finalSimplifiedPath));
+    const finalSimplifiedPath = simplifyPath(newPath)
+    console.log(
+      `[balanceLShapes] Final simplified path for trace ${trace.mspPairId}:`,
+      JSON.stringify(finalSimplifiedPath),
+    )
 
     return {
       ...trace,
       tracePath: finalSimplifiedPath,
-    };
-  });
-  
+    }
+  })
+
   if (changesMade) {
-    console.log("[balanceLShapes] Z-shape balancing pass finished. Changes were made.");
-    return newTraces;
+    console.log(
+      "[balanceLShapes] Z-shape balancing pass finished. Changes were made.",
+    )
+    return newTraces
   } else {
-    console.log("[balanceLShapes] Z-shape balancing pass finished. No changes were made.");
-    return null;
+    console.log(
+      "[balanceLShapes] Z-shape balancing pass finished. No changes were made.",
+    )
+    return null
   }
-};
+}
 
 export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   private problem: InputProblem
@@ -565,21 +629,21 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
     const minimizedTraces = minimizeTurnsWithFilteredLabels(
       this.updatedTraces,
       this.problem,
-      this.netTempLabelPlacements,  // Use temp labels which include merged ones
+      this.netTempLabelPlacements, // Use temp labels which include merged ones
       this.mergedLabelNetIdMap,
       this.PADDING_BUFFER,
-    );
+    )
     if (minimizedTraces) {
-      this.updatedTraces = minimizedTraces;
+      this.updatedTraces = minimizedTraces
     }
 
     const balancedTraces = balanceLShapes(
       this.updatedTraces,
       this.problem,
-      this.netLabelPlacements
-    );
+      this.netLabelPlacements,
+    )
     if (balancedTraces) {
-      this.updatedTraces = balancedTraces;
+      this.updatedTraces = balancedTraces
     }
 
     this.solved = true
