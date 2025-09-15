@@ -6,11 +6,15 @@ import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTrac
 import { segmentIntersectsRect } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { countTurns, hasCollisions, simplifyPath } from "./pathUtils"
 
-const minimizeTurns = (
-  path: Point[],
-  obstacles: any[],
-  labelBounds: any[],
-): Point[] => {
+const minimizeTurns = ({
+  path,
+  obstacles,
+  labelBounds,
+}: {
+  path: Point[]
+  obstacles: any[]
+  labelBounds: any[]
+}): Point[] => {
   if (path.length <= 2) {
     return path
   }
@@ -237,13 +241,19 @@ const minimizeTurns = (
   return finalSimplifiedPath
 }
 
-export const minimizeTurnsWithFilteredLabels = (
-  traces: SolvedTracePath[],
-  problem: InputProblem,
-  allLabelPlacements: NetLabelPlacement[],
-  mergedLabelNetIdMap: Map<string, Set<string>>,
-  paddingBuffer: number,
-): SolvedTracePath[] | null => {
+export const minimizeTurnsWithFilteredLabels = ({
+  traces,
+  problem,
+  allLabelPlacements,
+  mergedLabelNetIdMap,
+  paddingBuffer,
+}: {
+  traces: SolvedTracePath[]
+  problem: InputProblem
+  allLabelPlacements: NetLabelPlacement[]
+  mergedLabelNetIdMap: Map<string, Set<string>>
+  paddingBuffer: number
+}): SolvedTracePath[] | null => {
   let changesMade = false
   const obstacles = getObstacleRects(problem)
 
@@ -264,7 +274,11 @@ export const minimizeTurnsWithFilteredLabels = (
       maxY: nl.center.y + nl.height / 2 + paddingBuffer,
     }))
 
-    const newPath = minimizeTurns(originalPath, obstacles, labelBounds)
+    const newPath = minimizeTurns({
+      path: originalPath,
+      obstacles,
+      labelBounds,
+    })
 
     if (
       newPath.length !== originalPath.length ||

@@ -11,7 +11,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { minimizeTurnsWithFilteredLabels } from "./turnMinimization"
 import { balanceLShapes } from "./zShapeBalancing"
 
-interface TraceLabelOverlapAvoidanceSolverParams {
+interface TraceLabelOverlapAvoidanceSolverInput {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
@@ -22,20 +22,22 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   private traces: SolvedTracePath[]
   private netTempLabelPlacements: NetLabelPlacement[]
   private netLabelPlacements: NetLabelPlacement[]
-  public updatedTraces: SolvedTracePath[]
+  private updatedTraces: SolvedTracePath[]
+  private updatedTracesMap: Map<string, SolvedTracePath>
   private mergedLabelNetIdMap: Map<string, Set<string>>
   private detourCountByLabel: Map<string, number>
   private readonly PADDING_BUFFER = 0.1
 
-  constructor(params: TraceLabelOverlapAvoidanceSolverParams) {
+  constructor(solverInput: TraceLabelOverlapAvoidanceSolverInput) {
     super()
-    this.problem = params.inputProblem
-    this.traces = params.traces
-    this.updatedTraces = [...params.traces]
+    this.problem = solverInput.inputProblem
+    this.traces = solverInput.traces
+    this.updatedTraces = [...solverInput.traces]
+    this.updatedTracesMap = new Map()
     this.mergedLabelNetIdMap = new Map()
     this.detourCountByLabel = new Map()
 
-    const originalLabels = params.netLabelPlacements
+    const originalLabels = solverInput.netLabelPlacements
     this.netLabelPlacements = originalLabels
     if (!originalLabels || originalLabels.length === 0) {
       this.netTempLabelPlacements = []
@@ -151,13 +153,13 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
       const labelId = overlap.label.globalConnNetId
       const detourCount = this.detourCountByLabel.get(labelId) || 0
 
-      const newTrace = rerouteCollidingTrace(
-        currentTraceState,
-        overlap.label,
-        this.problem,
-        this.PADDING_BUFFER,
+      const newTrace = rerouteCollidingTrace({
+        trace: currentTraceState,
+        label: overlap.label,
+        problem: this.problem,
+        paddingBuffer: this.PADDING_BUFFER,
         detourCount,
-      )
+      })
 
       if (newTrace.tracePath !== currentTraceState.tracePath) {
         this.detourCountByLabel.set(labelId, detourCount + 1)
@@ -169,27 +171,40 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
 
     this.updatedTraces = Array.from(updatedTracesMap.values())
 
-    const minimizedTraces = minimizeTurnsWithFilteredLabels(
-      this.updatedTraces,
-      this.problem,
-      this.netTempLabelPlacements,
-      this.mergedLabelNetIdMap,
-      this.PADDING_BUFFER,
-    )
+    const minimizedTraces = minimizeTurnsWithFilteredLabels({
+      traces: this.updatedTraces,
+      problem: this.problem,
+      allLabelPlacements: this.netTempLabelPlacements, // Use temp labels which include merged ones
+      mergedLabelNetIdMap: this.mergedLabelNetIdMap,
+      paddingBuffer: this.PADDING_BUFFER,
+    })
     if (minimizedTraces) {
       this.updatedTraces = minimizedTraces
     }
 
-    const balancedTraces = balanceLShapes(
-      this.updatedTraces,
-      this.problem,
-      this.netLabelPlacements,
-    )
+    const balancedTraces = balanceLShapes({
+      traces: this.updatedTraces,
+      problem: this.problem,
+      allLabelPlacements: this.netLabelPlacements,
+    })
     if (balancedTraces) {
       this.updatedTraces = balancedTraces
     }
 
+    this.updatedTracesMap.clear()
+    for (const trace of this.updatedTraces) {
+      this.updatedTracesMap.set(trace.mspPairId, trace)
+    }
+
     this.solved = true
+  }
+
+  getOutputTraces(): SolvedTracePath[] {
+    return this.updatedTraces
+  }
+
+  getOutputTraceMap(): Map<string, SolvedTracePath> {
+    return this.updatedTracesMap
   }
 
   override visualize(): GraphicsObject {

@@ -9,13 +9,19 @@ import {
 import { simplifyPath } from "./pathUtils"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 
-export const trySnipAndReconnect = (
-  initialTrace: SolvedTracePath,
-  firstInsideIndex: number,
-  lastInsideIndex: number,
-  labelBounds: any,
-  obstacles: any[],
-): SolvedTracePath | null => {
+export const trySnipAndReconnect = ({
+  initialTrace,
+  firstInsideIndex,
+  lastInsideIndex,
+  labelBounds,
+  obstacles,
+}: {
+  initialTrace: SolvedTracePath
+  firstInsideIndex: number
+  lastInsideIndex: number
+  labelBounds: any
+  obstacles: any[]
+}): SolvedTracePath | null => {
   if (
     firstInsideIndex <= 0 ||
     lastInsideIndex >= initialTrace.tracePath.length - 1
@@ -117,14 +123,21 @@ export const trySnipAndReconnect = (
   return null
 }
 
-export const tryFourPointDetour = (
-  initialTrace: SolvedTracePath,
-  label: NetLabelPlacement,
-  labelBounds: any,
-  obstacles: any[],
-  paddingBuffer: number,
-  detourCount: number,
-): SolvedTracePath | null => {
+export const tryFourPointDetour = ({
+  initialTrace,
+  label,
+  labelBounds,
+  obstacles,
+  paddingBuffer,
+  detourCount,
+}: {
+  initialTrace: SolvedTracePath
+  label: NetLabelPlacement
+  labelBounds: any
+  obstacles: any[]
+  paddingBuffer: number
+  detourCount: number
+}): SolvedTracePath | null => {
   let collidingSegIndex = -1
   for (let i = 0; i < initialTrace.tracePath.length - 1; i++) {
     if (

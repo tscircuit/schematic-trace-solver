@@ -6,11 +6,15 @@ import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTrac
 import { segmentIntersectsRect } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { simplifyPath } from "./pathUtils"
 
-export const balanceLShapes = (
-  traces: SolvedTracePath[],
-  problem: InputProblem,
-  allLabelPlacements: NetLabelPlacement[],
-): SolvedTracePath[] | null => {
+export const balanceLShapes = ({
+  traces,
+  problem,
+  allLabelPlacements,
+}: {
+  traces: SolvedTracePath[]
+  problem: InputProblem
+  allLabelPlacements: NetLabelPlacement[]
+}): SolvedTracePath[] | null => {
   const TOLERANCE = 1e-5
   let changesMade = false
 
@@ -66,46 +70,46 @@ export const balanceLShapes = (
       const p3 = newPath[i + 2]
       const p4 = newPath[i + 3]
 
-      const is_H_V_H_Z_shape = p1.y === p2.y && p2.x === p3.x && p3.y === p4.y
-      const is_V_H_V_Z_shape = p1.x === p2.x && p2.y === p3.y && p3.x === p4.x
+      const isHVHZShape = p1.y === p2.y && p2.x === p3.x && p3.y === p4.y
+      const isVHVZShape = p1.x === p2.x && p2.y === p3.y && p3.x === p4.x
 
-      if (!is_H_V_H_Z_shape && !is_V_H_V_Z_shape) {
+      if (!isHVHZShape && !isVHVZShape) {
         continue
       }
 
-      let p2_new: Point, p3_new: Point
-      const len1_original = is_H_V_H_Z_shape
+      let p2New: Point, p3New: Point
+      const len1Original = isHVHZShape
         ? Math.abs(p1.x - p2.x)
         : Math.abs(p1.y - p2.y)
-      const len2_original = is_H_V_H_Z_shape
+      const len2Original = isHVHZShape
         ? Math.abs(p3.x - p4.x)
         : Math.abs(p3.y - p4.y)
 
-      if (Math.abs(len1_original - len2_original) < 0.001) {
+      if (Math.abs(len1Original - len2Original) < 0.001) {
         continue
       }
 
-      if (is_H_V_H_Z_shape) {
-        const ideal_x = (p1.x + p4.x) / 2
-        p2_new = { x: ideal_x, y: p2.y }
-        p3_new = { x: ideal_x, y: p3.y }
+      if (isHVHZShape) {
+        const idealX = (p1.x + p4.x) / 2
+        p2New = { x: idealX, y: p2.y }
+        p3New = { x: idealX, y: p3.y }
       } else {
-        const ideal_y = (p1.y + p4.y) / 2
-        p2_new = { x: p2.x, y: ideal_y }
-        p3_new = { x: p3.x, y: ideal_y }
+        const idealY = (p1.y + p4.y) / 2
+        p2New = { x: p2.x, y: idealY }
+        p3New = { x: p3.x, y: idealY }
       }
 
       const collides =
-        segmentIntersectsAnyRect(p1, p2_new, obstacles) ||
-        segmentIntersectsAnyRect(p2_new, p3_new, obstacles) ||
-        segmentIntersectsAnyRect(p3_new, p4, obstacles) ||
-        segmentIntersectsAnyRect(p1, p2_new, labelBounds) ||
-        segmentIntersectsAnyRect(p2_new, p3_new, labelBounds) ||
-        segmentIntersectsAnyRect(p3_new, p4, labelBounds)
+        segmentIntersectsAnyRect(p1, p2New, obstacles) ||
+        segmentIntersectsAnyRect(p2New, p3New, obstacles) ||
+        segmentIntersectsAnyRect(p3New, p4, obstacles) ||
+        segmentIntersectsAnyRect(p1, p2New, labelBounds) ||
+        segmentIntersectsAnyRect(p2New, p3New, labelBounds) ||
+        segmentIntersectsAnyRect(p3New, p4, labelBounds)
 
       if (!collides) {
-        newPath[i + 1] = p2_new
-        newPath[i + 2] = p3_new
+        newPath[i + 1] = p2New
+        newPath[i + 2] = p3New
         changesMade = true
         i = 0
       }

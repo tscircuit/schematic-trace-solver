@@ -7,13 +7,19 @@ import { simplifyPath } from "./pathUtils"
 import { findTraceViolationZone } from "./violation"
 import { tryFourPointDetour, trySnipAndReconnect } from "./detour"
 
-export const rerouteCollidingTrace = (
-  trace: SolvedTracePath,
-  label: NetLabelPlacement,
-  problem: InputProblem,
-  paddingBuffer: number,
-  detourCount: number,
-): SolvedTracePath => {
+export const rerouteCollidingTrace = ({
+  trace,
+  label,
+  problem,
+  paddingBuffer,
+  detourCount,
+}: {
+  trace: SolvedTracePath
+  label: NetLabelPlacement
+  problem: InputProblem
+  paddingBuffer: number
+  detourCount: number
+}): SolvedTracePath => {
   const initialTrace = { ...trace, tracePath: simplifyPath(trace.tracePath) }
 
   if (trace.globalConnNetId === label.globalConnNetId) {
@@ -31,14 +37,14 @@ export const rerouteCollidingTrace = (
     chipId: `netlabel-${label.netId}`,
   }
 
-  const fourPointResult = tryFourPointDetour(
+  const fourPointResult = tryFourPointDetour({
     initialTrace,
     label,
     labelBounds,
     obstacles,
     paddingBuffer,
     detourCount,
-  )
+  })
   if (fourPointResult) {
     initialTrace.tracePath = fourPointResult.tracePath
   }
@@ -47,13 +53,13 @@ export const rerouteCollidingTrace = (
     labelBounds,
   )
 
-  const snipReconnectResult = trySnipAndReconnect(
+  const snipReconnectResult = trySnipAndReconnect({
     initialTrace,
     firstInsideIndex,
     lastInsideIndex,
     labelBounds,
     obstacles,
-  )
+  })
 
   if (snipReconnectResult) {
     return snipReconnectResult
