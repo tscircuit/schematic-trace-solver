@@ -10,6 +10,7 @@ import { getColorFromString } from "lib/utils/getColorFromString"
 import type { InputProblem } from "lib/types/InputProblem"
 import { minimizeTurnsWithFilteredLabels } from "./turnMinimization"
 import { balanceLShapes } from "./balanceLShapes"
+import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 
 interface TraceLabelOverlapAvoidanceSolverInput {
   inputProblem: InputProblem
@@ -204,11 +205,22 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
       this.updatedTracesMap.set(trace.mspPairId, trace)
     }
 
+    const finalLabelPlacementSolver = new NetLabelPlacementSolver({
+      inputProblem: this.problem,
+      inputTraceMap: Object.fromEntries(this.updatedTracesMap),
+    })
+    finalLabelPlacementSolver.solve()
+    this.netLabelPlacements = finalLabelPlacementSolver.netLabelPlacements
+
     this.solved = true
   }
 
   getOutputTraces(): SolvedTracePath[] {
     return this.updatedTraces
+  }
+
+  getOutputNetLabelPlacements(): NetLabelPlacement[] {
+    return this.netLabelPlacements
   }
 
   getOutputTraceMap(): Map<string, SolvedTracePath> {

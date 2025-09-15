@@ -51,7 +51,7 @@ x-" data-x="1.6" data-y="1.7049999999999998" cx="353.6" cy="244.12000000000006" 
     <circle data-type="point" data-label="" data-x="1.6" data-y="1.7049999999999998" cx="353.6" cy="244.12000000000006" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="1.4000000000000001" data-y="2.105" cx="331.20000000000005" cy="199.32000000000005" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="1.049" data-y="2.105" cx="291.88800000000003" cy="199.32000000000005" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="1.2000000000000002,-0.30000000000000004 1.6,1.7049999999999998" data-type="line" data-label="" points="308.80000000000007,468.68000000000006 353.6,244.12000000000006" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
@@ -75,7 +75,7 @@ x-" data-x="1.6" data-y="1.7049999999999998" cx="353.6" cy="244.12000000000006" 
     <rect data-type="rect" data-label="" data-x="1.374" data-y="1.7049999999999998" x="303.088" y="232.92000000000004" width="50.400000000000034" height="22.400000000000034" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008928571428571428" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="1.4000000000000001" data-y="2.33" x="320" y="148.92000000000002" width="22.40000000000009" height="50.400000000000034" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008928571428571428" />
+    <rect data-type="rect" data-label="" data-x="1.049" data-y="2.33" x="280.68800000000005" y="148.92000000000002" width="22.399999999999977" height="50.400000000000034" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008928571428571428" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />

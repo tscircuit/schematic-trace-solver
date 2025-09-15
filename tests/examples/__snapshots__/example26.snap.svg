@@ -53,10 +53,10 @@ y-" data-x="-0.4" data-y="0.5" cx="296.3855421686747" cy="311.566265060241" r="3
 y-" data-x="0.4" data-y="0.5" cx="350.3614457831325" cy="311.566265060241" r="3" fill="hsl(203, 100%, 50%, 0.8)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="-1.5999999999999999" data-y="-0.30000000000000004" cx="215.42168674698797" cy="365.5421686746988" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="-0.8749999999999999" data-y="-0.30000000000000004" cx="264.33734939759034" cy="365.5421686746988" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="1.7" data-y="0.2" cx="438.0722891566265" cy="331.8072289156627" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="1.25" data-y="0.2" cx="407.71084337349396" cy="331.8072289156627" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="" data-x="-0.4" data-y="0.5" cx="296.3855421686747" cy="311.566265060241" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
@@ -86,10 +86,10 @@ y-" data-x="0.4" data-y="0.5" cx="350.3614457831325" cy="311.566265060241" r="3"
     <rect data-type="rect" data-label="schematic_component_2" data-x="0" data-y="1" x="289.6385542168675" y="244.0963855421687" width="67.46987951807228" height="67.4698795180723" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.01482142857142857" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="-1.5999999999999999" data-y="-0.525" x="208.67469879518075" y="365.5421686746988" width="13.493975903614455" height="30.361445783132524" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01482142857142857" />
+    <rect data-type="rect" data-label="" data-x="-0.8749999999999999" data-y="-0.525" x="257.5903614457832" y="365.5421686746988" width="13.493975903614398" height="30.361445783132524" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01482142857142857" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="1.7" data-y="0.42500000000000004" x="431.32530120481925" y="301.44578313253015" width="13.493975903614512" height="30.361445783132524" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01482142857142857" />
+    <rect data-type="rect" data-label="" data-x="1.25" data-y="0.42500000000000004" x="400.96385542168673" y="301.44578313253015" width="13.493975903614455" height="30.361445783132524" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01482142857142857" />
   </g>
   <g>
     <rect data-type="rect" data-label="" data-x="-0.4" data-y="0.274" x="289.6385542168675" y="311.63373493975905" width="13.493975903614455" height="30.361445783132524" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01482142857142857" />
