@@ -326,9 +326,6 @@ const balanceLShapes = (
   allLabelPlacements: NetLabelPlacement[],
 ): SolvedTracePath[] | null => {
   const TOLERANCE = 1e-5
-  console.log(
-    `[balanceLShapes] Starting Z-shape balancing pass (v6) with tolerance: ${TOLERANCE}`,
-  )
   let changesMade = false
 
   const obstacles = getObstacleRects(problem).map((obs) => ({
@@ -366,13 +363,9 @@ const balanceLShapes = (
   }
 
   const newTraces = traces.map((trace) => {
-    console.log(`[balanceLShapes] Processing trace: ${trace.mspPairId}`)
     const newPath = [...trace.tracePath]
 
     if (newPath.length < 6) {
-      console.log(
-        `[balanceLShapes] Path too short to have non-anchor Z-shapes. Skipping.`,
-      )
       return { ...trace }
     }
 
@@ -394,11 +387,6 @@ const balanceLShapes = (
         continue
       }
 
-      console.log(
-        `[balanceLShapes] Found Z-shape at index ${i}:`,
-        JSON.stringify([p1, p2, p3, p4]),
-      )
-
       let p2_new: Point, p3_new: Point
       const len1_original = is_H_V_H_Z_shape
         ? Math.abs(p1.x - p2.x)
@@ -408,7 +396,6 @@ const balanceLShapes = (
         : Math.abs(p3.y - p4.y)
 
       if (Math.abs(len1_original - len2_original) < 0.001) {
-        console.log(`[balanceLShapes] Z-shape is already balanced. Skipping.`)
         continue
       }
 
@@ -422,10 +409,6 @@ const balanceLShapes = (
         p3_new = { x: p3.x, y: ideal_y }
       }
 
-      console.log(
-        `[balanceLShapes] Proposing new points: p2_new=${JSON.stringify(p2_new)}, p3_new=${JSON.stringify(p3_new)}`,
-      )
-
       const collides =
         segmentIntersectsAnyRect(p1, p2_new, obstacles) ||
         segmentIntersectsAnyRect(p2_new, p3_new, obstacles) ||
@@ -435,25 +418,14 @@ const balanceLShapes = (
         segmentIntersectsAnyRect(p3_new, p4, labelBounds)
 
       if (!collides) {
-        console.log(
-          `[balanceLShapes] No collisions found. Applying new points.`,
-        )
         newPath[i + 1] = p2_new
         newPath[i + 2] = p3_new
         changesMade = true
         i = 0
-      } else {
-        console.log(
-          `[balanceLShapes] Collision detected. Cannot apply new points.`,
-        )
       }
     }
 
     const finalSimplifiedPath = simplifyPath(newPath)
-    console.log(
-      `[balanceLShapes] Final simplified path for trace ${trace.mspPairId}:`,
-      JSON.stringify(finalSimplifiedPath),
-    )
 
     return {
       ...trace,
@@ -462,14 +434,8 @@ const balanceLShapes = (
   })
 
   if (changesMade) {
-    console.log(
-      "[balanceLShapes] Z-shape balancing pass finished. Changes were made.",
-    )
     return newTraces
   } else {
-    console.log(
-      "[balanceLShapes] Z-shape balancing pass finished. No changes were made.",
-    )
     return null
   }
 }
