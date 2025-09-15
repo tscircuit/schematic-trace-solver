@@ -181,13 +181,14 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
     if (minimizedTraces) {
       this.updatedTraces = minimizedTraces
     }
-    console.log(this.updatedTraces.map(e => {
-      return {
-        "len": e.tracePath.length,
-        "PairIds": e.globalConnNetId
-      }
-    }));
-    
+    console.log(
+      this.updatedTraces.map((e) => {
+        return {
+          len: e.tracePath.length,
+          PairIds: e.globalConnNetId,
+        }
+      }),
+    )
 
     const balancedTraces = balanceLShapes({
       traces: this.updatedTraces,
