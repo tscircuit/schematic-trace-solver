@@ -6,8 +6,8 @@ import {
   isVertical,
   segmentIntersectsRect,
 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
-import { simplifyPath } from "./pathUtils"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { simplifyPath } from "./simplifyPath"
 
 export const trySnipAndReconnect = ({
   initialTrace,

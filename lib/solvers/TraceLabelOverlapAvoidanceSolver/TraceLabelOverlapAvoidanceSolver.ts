@@ -9,7 +9,7 @@ import { getRectBounds } from "../NetLabelPlacementSolver/SingleNetLabelPlacemen
 import { getColorFromString } from "lib/utils/getColorFromString"
 import type { InputProblem } from "lib/types/InputProblem"
 import { minimizeTurnsWithFilteredLabels } from "./turnMinimization"
-import { balanceLShapes } from "./zShapeBalancing"
+import { balanceLShapes } from "./balanceLShapes"
 
 interface TraceLabelOverlapAvoidanceSolverInput {
   inputProblem: InputProblem

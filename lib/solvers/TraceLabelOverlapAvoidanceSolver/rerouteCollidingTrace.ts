@@ -3,9 +3,9 @@ import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlace
 import { getRectBounds } from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { getObstacleRects } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { InputProblem } from "lib/types/InputProblem"
-import { simplifyPath } from "./pathUtils"
 import { findTraceViolationZone } from "./violation"
-import { tryFourPointDetour, trySnipAndReconnect } from "./detour"
+import { tryFourPointDetour, trySnipAndReconnect } from "./trySnipAndReconnect"
+import { simplifyPath } from "./simplifyPath"
 
 export const rerouteCollidingTrace = ({
   trace,

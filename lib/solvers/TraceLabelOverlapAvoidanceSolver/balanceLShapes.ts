@@ -4,7 +4,7 @@ import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlace
 import { getObstacleRects } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { segmentIntersectsRect } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
-import { simplifyPath } from "./pathUtils"
+import { simplifyPath } from "./simplifyPath"
 
 export const balanceLShapes = ({
   traces,

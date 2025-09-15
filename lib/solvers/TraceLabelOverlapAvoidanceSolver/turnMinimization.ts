@@ -4,7 +4,9 @@ import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlace
 import { getObstacleRects } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { segmentIntersectsRect } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
-import { countTurns, hasCollisions, simplifyPath } from "./pathUtils"
+import { hasCollisions } from "./hasCollisions"
+import { countTurns } from "./countTurns"
+import { simplifyPath } from "./simplifyPath"
 
 const minimizeTurns = ({
   path,
