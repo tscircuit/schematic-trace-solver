@@ -206,16 +206,11 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
     this.solved = true
   }
 
-  getOutputTraces(): SolvedTracePath[] {
-    return this.updatedTraces
-  }
-
-  getOutputNetLabelPlacements(): NetLabelPlacement[] {
-    return this.netLabelPlacements
-  }
-
-  getOutputTraceMap(): Map<string, SolvedTracePath> {
-    return this.updatedTracesMap
+  getOutput() {
+    return {
+      traceMap: this.updatedTracesMap,
+      netLabelPlacements: this.netLabelPlacements,
+    }
   }
 
   override visualize(): GraphicsObject {

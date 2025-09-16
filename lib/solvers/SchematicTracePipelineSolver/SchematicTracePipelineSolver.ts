@@ -161,7 +161,17 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
       {
-        onSolved: (_solver) => {},
+        onSolved: (instance) => {
+          if (
+            instance.traceLabelOverlapAvoidanceSolver &&
+            instance.netLabelPlacementSolver
+          ) {
+            const { netLabelPlacements } =
+              instance.traceLabelOverlapAvoidanceSolver.getOutput()
+            instance.netLabelPlacementSolver.netLabelPlacements =
+              netLabelPlacements
+          }
+        },
       },
     ),
   ]
