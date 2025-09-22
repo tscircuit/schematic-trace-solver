@@ -306,49 +306,24 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   }
 
   getOutput(): SchematicTracePipelineSolverResult | null {
-    // The first solver's output is always needed, so check for it first.
-    if (!this.mspConnectionPairSolver) {
+    if (!this.solved) {
       return null
     }
-    const { globalConnMap } = this.mspConnectionPairSolver
 
-    // Start from the LAST and most complete solver. If it exists, return its output.
-    if (this.traceLabelOverlapAvoidanceSolver) {
-      const { traceMap: avoidanceTraceMap, netLabelPlacements } =
-        this.traceLabelOverlapAvoidanceSolver.getOutput()
+    const { globalConnMap } = this.mspConnectionPairSolver!
 
-      const baseTraceMap = this.traceOverlapShiftSolver
-        ? this.traceOverlapShiftSolver.correctedTraceMap
-        : Object.fromEntries(
-            this.schematicTraceLinesSolver!.solvedTracePaths.map((p) => [
-              p.mspPairId,
-              p,
-            ]),
-          )
+    const { traceMap: avoidanceTraceMap, netLabelPlacements } =
+      this.traceLabelOverlapAvoidanceSolver!.getOutput()
 
-      const finalTraceMap = {
-        ...baseTraceMap,
-        ...Object.fromEntries(avoidanceTraceMap),
-      }
+    const baseTraceMap = this.traceOverlapShiftSolver!.correctedTraceMap
 
-      return {
-        traceMap: finalTraceMap,
-        netLabelPlacements,
-        globalConnMap,
-      }
+    const finalTraceMap = {
+      ...baseTraceMap,
+      ...Object.fromEntries(avoidanceTraceMap),
     }
 
-    // Otherwise, construct the output from the previous solvers.
-    // These variables are now constants, not mutated variables.
-    const traceMap = this.traceOverlapShiftSolver
-      ? this.traceOverlapShiftSolver.correctedTraceMap
-      : {}
-    const netLabelPlacements = this.netLabelPlacementSolver
-      ? this.netLabelPlacementSolver.netLabelPlacements
-      : []
-
     return {
-      traceMap,
+      traceMap: finalTraceMap,
       netLabelPlacements,
       globalConnMap,
     }
