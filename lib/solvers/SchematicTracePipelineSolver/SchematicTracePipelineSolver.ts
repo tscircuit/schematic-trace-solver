@@ -318,7 +318,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     return super.preview()
   }
 
-  getOuput(): SchematicTracePipelineSolverResult | null {
+  getOutput(): SchematicTracePipelineSolverResult | null {
     let traceMap: Record<string, SolvedTracePath> = {}
     let netLabelPlacements: NetLabelPlacement[] = []
     let globalConnMap: ConnectivityMap | null = null
