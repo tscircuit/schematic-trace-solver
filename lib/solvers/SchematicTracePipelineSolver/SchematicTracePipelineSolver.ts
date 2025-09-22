@@ -173,19 +173,6 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           },
         ]
       },
-      {
-        onSolved: (instance) => {
-          if (
-            instance.traceLabelOverlapAvoidanceSolver &&
-            instance.netLabelPlacementSolver
-          ) {
-            const { netLabelPlacements } =
-              instance.traceLabelOverlapAvoidanceSolver.getOutput()
-            instance.netLabelPlacementSolver.netLabelPlacements =
-              netLabelPlacements
-          }
-        },
-      },
     ),
   ]
 
@@ -319,31 +306,46 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   }
 
   getOutput(): SchematicTracePipelineSolverResult | null {
-    let traceMap: Record<string, SolvedTracePath> = {}
-    let netLabelPlacements: NetLabelPlacement[] = []
-    let globalConnMap: ConnectivityMap | null = null
-
-    if (this.mspConnectionPairSolver) {
-      globalConnMap = this.mspConnectionPairSolver.globalConnMap
-    } else {
+    // The first solver's output is always needed, so check for it first.
+    if (!this.mspConnectionPairSolver) {
       return null
     }
+    const { globalConnMap } = this.mspConnectionPairSolver
 
-    if (this.traceOverlapShiftSolver) {
-      traceMap = this.traceOverlapShiftSolver.correctedTraceMap
-    }
-
-    if (this.netLabelPlacementSolver) {
-      netLabelPlacements = this.netLabelPlacementSolver.netLabelPlacements
-    }
-
+    // Start from the LAST and most complete solver. If it exists, return its output.
     if (this.traceLabelOverlapAvoidanceSolver) {
-      traceMap = Object.fromEntries(
-        this.traceLabelOverlapAvoidanceSolver.getOutput().traceMap,
-      )
-      netLabelPlacements =
-        this.traceLabelOverlapAvoidanceSolver.getOutput().netLabelPlacements
+      const { traceMap: avoidanceTraceMap, netLabelPlacements } =
+        this.traceLabelOverlapAvoidanceSolver.getOutput()
+
+      const baseTraceMap = this.traceOverlapShiftSolver
+        ? this.traceOverlapShiftSolver.correctedTraceMap
+        : Object.fromEntries(
+            this.schematicTraceLinesSolver!.solvedTracePaths.map((p) => [
+              p.mspPairId,
+              p,
+            ]),
+          )
+
+      const finalTraceMap = {
+        ...baseTraceMap,
+        ...Object.fromEntries(avoidanceTraceMap),
+      }
+
+      return {
+        traceMap: finalTraceMap,
+        netLabelPlacements,
+        globalConnMap,
+      }
     }
+
+    // Otherwise, construct the output from the previous solvers.
+    // These variables are now constants, not mutated variables.
+    const traceMap = this.traceOverlapShiftSolver
+      ? this.traceOverlapShiftSolver.correctedTraceMap
+      : {}
+    const netLabelPlacements = this.netLabelPlacementSolver
+      ? this.netLabelPlacementSolver.netLabelPlacements
+      : []
 
     return {
       traceMap,
