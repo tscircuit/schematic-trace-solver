@@ -7,15 +7,28 @@ import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectionPairSolver"
-import { SchematicTraceLinesSolver } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import {
+  SchematicTraceLinesSolver,
+  type SolvedTracePath,
+} from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
-import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import {
+  NetLabelPlacementSolver,
+  type NetLabelPlacement,
+} from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { visualizeInputProblem } from "./visualizeInputProblem"
 import { GuidelinesSolver } from "../GuidelinesSolver/GuidelinesSolver"
 import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
 import { getInputChipBounds } from "../GuidelinesSolver/getInputChipBounds"
 import { correctPinsInsideChips } from "./correctPinsInsideChip"
 import { expandChipsToFitPins } from "./expandChipsToFitPins"
+import type { ConnectivityMap } from "connectivity-map"
+
+type SchematicTracePipelineSolverResult = {
+  traceMap: Record<string, SolvedTracePath>
+  netLabelPlacements: NetLabelPlacement[]
+  globalConnMap: ConnectivityMap
+}
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -303,5 +316,39 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     }
 
     return super.preview()
+  }
+
+  getOuput(): SchematicTracePipelineSolverResult | null {
+    let traceMap: Record<string, SolvedTracePath> = {}
+    let netLabelPlacements: NetLabelPlacement[] = []
+    let globalConnMap: ConnectivityMap | null = null
+
+    if (this.mspConnectionPairSolver) {
+      globalConnMap = this.mspConnectionPairSolver.globalConnMap
+    } else {
+      return null
+    }
+
+    if (this.traceOverlapShiftSolver) {
+      traceMap = this.traceOverlapShiftSolver.correctedTraceMap
+    }
+
+    if (this.netLabelPlacementSolver) {
+      netLabelPlacements = this.netLabelPlacementSolver.netLabelPlacements
+    }
+
+    if (this.traceLabelOverlapAvoidanceSolver) {
+      traceMap = Object.fromEntries(
+        this.traceLabelOverlapAvoidanceSolver.getOutput().traceMap,
+      )
+      netLabelPlacements =
+        this.traceLabelOverlapAvoidanceSolver.getOutput().netLabelPlacements
+    }
+
+    return {
+      traceMap,
+      netLabelPlacements,
+      globalConnMap,
+    }
   }
 }
