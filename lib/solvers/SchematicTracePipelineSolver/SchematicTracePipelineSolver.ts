@@ -1,6 +1,57 @@
 /**
  * Pipeline solver that runs a series of solvers to find the best schematic layout.
- * Coordinates the entire layout process from chip partitioning through final packing.
+ * Coordinates the entire layout process fr      },
+      {
+        onSolved: (_solver) => {
+          // TODO
+        },
+      },
+    ),
+    definePipelineStep(
+      "netlabelTraceOverlapAvoidanceSolver",
+      NetlabelTraceOverlapAvoidanceSolver,
+      (instance) => {
+        const traceMap =
+          instance.traceOverlapShiftSolver?.correctedTraceMap ??
+          Object.fromEntries(
+            instance.schematicTraceLinesSolver!.solvedTracePaths.map((p) => [
+              p.mspPairId,
+              p,
+            ]),
+          )
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            inputTraceMap: traceMap,
+            failedNetlabelPlacements: instance.netLabelPlacementSolver!.failedPlacementAttempts,
+          },
+        ]
+      },
+      {
+        onSolved: (instance) => {
+          if (
+            instance.netlabelTraceOverlapAvoidanceSolver &&
+            instance.netLabelPlacementSolver
+          ) {
+            const { modifiedTraceMap, successfullyPlacedNetlabels } =
+              instance.netlabelTraceOverlapAvoidanceSolver.getOutput()
+            
+            // Update traces if they were modified
+            if (instance.traceOverlapShiftSolver) {
+              instance.traceOverlapShiftSolver.correctedTraceMap = {
+                ...instance.traceOverlapShiftSolver.correctedTraceMap,
+                ...modifiedTraceMap
+              }
+            }
+            
+            // Add successfully placed netlabels
+            instance.netLabelPlacementSolver.netLabelPlacements.push(...successfullyPlacedNetlabels)
+          }
+        },
+      },
+    ),
+    definePipelineStep(partitioning through final packing.
  */
 
 import type { GraphicsObject } from "graphics-debug"
@@ -13,6 +64,7 @@ import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlac
 import { visualizeInputProblem } from "./visualizeInputProblem"
 import { GuidelinesSolver } from "../GuidelinesSolver/GuidelinesSolver"
 import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
+import { NetlabelTraceOverlapAvoidanceSolver } from "../NetlabelTraceOverlapAvoidanceSolver/NetlabelTraceOverlapAvoidanceSolver"
 import { getInputChipBounds } from "../GuidelinesSolver/getInputChipBounds"
 import { correctPinsInsideChips } from "./correctPinsInsideChip"
 import { expandChipsToFitPins } from "./expandChipsToFitPins"
@@ -53,6 +105,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
+  netlabelTraceOverlapAvoidanceSolver?: NetlabelTraceOverlapAvoidanceSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
 
   startTimeOfPhase: Record<string, number>
@@ -140,7 +193,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       "traceLabelOverlapAvoidanceSolver",
       TraceLabelOverlapAvoidanceSolver,
       (instance) => {
+        // Use modified trace map if it exists, otherwise use the original
         const traceMap =
+          instance.netlabelTraceOverlapAvoidanceSolver?.getOutput().modifiedTraceMap ??
           instance.traceOverlapShiftSolver?.correctedTraceMap ??
           Object.fromEntries(
             instance.schematicTraceLinesSolver!.solvedTracePaths.map((p) => [

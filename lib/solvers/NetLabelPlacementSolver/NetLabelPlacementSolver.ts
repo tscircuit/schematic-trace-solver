@@ -74,6 +74,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
   declare activeSubSolver: SingleNetLabelPlacementSolver | null
 
   netLabelPlacements: Array<NetLabelPlacement> = []
+  failedPlacementAttempts: Array<OverlappingSameNetTraceGroup> = []
   currentGroup: OverlappingSameNetTraceGroup | null = null
   triedAnyOrientationFallbackForCurrentGroup = false
 
@@ -288,8 +289,13 @@ export class NetLabelPlacementSolver extends BaseSolver {
         return
       }
 
-      this.failed = true
-      this.error = this.activeSubSolver.error
+      // Instead of failing, track this as a failed placement attempt and continue
+      if (this.currentGroup) {
+        this.failedPlacementAttempts.push(this.currentGroup)
+      }
+      this.activeSubSolver = null
+      this.currentGroup = null
+      this.triedAnyOrientationFallbackForCurrentGroup = false
       return
     }
 
