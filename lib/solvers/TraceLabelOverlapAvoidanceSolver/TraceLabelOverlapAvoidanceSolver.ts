@@ -194,7 +194,9 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
       ),
     })
     finalLabelPlacementSolver.solve()
-    this.netLabelPlacements = finalLabelPlacementSolver.netLabelPlacements
+    if (!finalLabelPlacementSolver.failed) {
+      this.netLabelPlacements = finalLabelPlacementSolver.netLabelPlacements
+    }
 
     this.solved = true
   }
