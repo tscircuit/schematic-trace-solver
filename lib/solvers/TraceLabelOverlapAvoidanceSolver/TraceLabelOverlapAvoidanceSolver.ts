@@ -8,7 +8,7 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import { getRectBounds } from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import type { InputProblem } from "lib/types/InputProblem"
-import { minimizeTurnsWithFilteredLabels } from "./turnMinimization"
+import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
 import { balanceLShapes } from "./balanceLShapes"
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 
@@ -24,9 +24,8 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   private netTempLabelPlacements: NetLabelPlacement[]
   private netLabelPlacements: NetLabelPlacement[]
   private updatedTraces: SolvedTracePath[]
-  private updatedTracesMap: Map<string, SolvedTracePath>
-  private mergedLabelNetIdMap: Map<string, Set<string>>
-  private detourCountByLabel: Map<string, number>
+  private mergedLabelNetIdMap: Record<string, Set<string>>
+  private detourCountByLabel: Record<string, number>
   private readonly PADDING_BUFFER = 0.1
 
   constructor(solverInput: TraceLabelOverlapAvoidanceSolverInput) {
@@ -34,9 +33,8 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
     this.problem = solverInput.inputProblem
     this.traces = solverInput.traces
     this.updatedTraces = [...solverInput.traces]
-    this.updatedTracesMap = new Map()
-    this.mergedLabelNetIdMap = new Map()
-    this.detourCountByLabel = new Map()
+    this.mergedLabelNetIdMap = {}
+    this.detourCountByLabel = {}
 
     const originalLabels = solverInput.netLabelPlacements
     this.netLabelPlacements = originalLabels
@@ -45,21 +43,21 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
       return
     }
 
-    const labelGroups = new Map<string, NetLabelPlacement[]>()
+    const labelGroups: Record<string, NetLabelPlacement[]> = {}
 
     for (const p of originalLabels) {
       if (p.pinIds.length === 0) continue
       const chipId = p.pinIds[0].split(".")[0]
       if (!chipId) continue
       const key = `${chipId}-${p.orientation}`
-      if (!labelGroups.has(key)) {
-        labelGroups.set(key, [])
+      if (!(key in labelGroups)) {
+        labelGroups[key] = []
       }
-      labelGroups.get(key)!.push(p)
+      labelGroups[key]!.push(p)
     }
 
     const finalPlacements: NetLabelPlacement[] = []
-    for (const [key, group] of labelGroups.entries()) {
+    for (const [key, group] of Object.entries(labelGroups)) {
       if (group.length <= 1) {
         finalPlacements.push(...group)
         continue
@@ -82,7 +80,7 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
       const template = group[0]!
       const syntheticId = `merged-group-${key}`
       const originalNetIds = new Set(group.map((p) => p.globalConnNetId))
-      this.mergedLabelNetIdMap.set(syntheticId, originalNetIds)
+      this.mergedLabelNetIdMap[syntheticId] = originalNetIds
 
       finalPlacements.push({
         ...template,
@@ -111,7 +109,7 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
       return
     }
 
-    this.detourCountByLabel.clear()
+    this.detourCountByLabel = {}
 
     const overlaps = detectTraceLabelOverlap(
       this.traces,
@@ -124,9 +122,7 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
     }
 
     const unfriendlyOverlaps = overlaps.filter((o) => {
-      const originalNetIds = this.mergedLabelNetIdMap.get(
-        o.label.globalConnNetId,
-      )
+      const originalNetIds = this.mergedLabelNetIdMap[o.label.globalConnNetId]
       if (originalNetIds) {
         return !originalNetIds.has(o.trace.globalConnNetId)
       }
@@ -138,9 +134,9 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
       return
     }
 
-    const updatedTracesMap = new Map<string, SolvedTracePath>()
+    const updatedTracesMap: Record<string, SolvedTracePath> = {}
     for (const trace of this.traces) {
-      updatedTracesMap.set(trace.mspPairId, trace)
+      updatedTracesMap[trace.mspPairId] = trace
     }
 
     const processedTraceIds = new Set<string>()
@@ -150,9 +146,9 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
         continue
       }
 
-      const currentTraceState = updatedTracesMap.get(overlap.trace.mspPairId)!
+      const currentTraceState = updatedTracesMap[overlap.trace.mspPairId]!
       const labelId = overlap.label.globalConnNetId
-      const detourCount = this.detourCountByLabel.get(labelId) || 0
+      const detourCount = this.detourCountByLabel[labelId] || 0
 
       const newTrace = rerouteCollidingTrace({
         trace: currentTraceState,
@@ -163,14 +159,14 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
       })
 
       if (newTrace.tracePath !== currentTraceState.tracePath) {
-        this.detourCountByLabel.set(labelId, detourCount + 1)
+        this.detourCountByLabel[labelId] = detourCount + 1
       }
 
-      updatedTracesMap.set(currentTraceState.mspPairId, newTrace)
+      updatedTracesMap[currentTraceState.mspPairId] = newTrace
       processedTraceIds.add(currentTraceState.mspPairId)
     }
 
-    this.updatedTraces = Array.from(updatedTracesMap.values())
+    this.updatedTraces = Object.values(updatedTracesMap)
 
     const minimizedTraces = minimizeTurnsWithFilteredLabels({
       traces: this.updatedTraces,
@@ -191,14 +187,11 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
       this.updatedTraces = balancedTraces
     }
 
-    this.updatedTracesMap.clear()
-    for (const trace of this.updatedTraces) {
-      this.updatedTracesMap.set(trace.mspPairId, trace)
-    }
-
     const finalLabelPlacementSolver = new NetLabelPlacementSolver({
       inputProblem: this.problem,
-      inputTraceMap: Object.fromEntries(this.updatedTracesMap),
+      inputTraceMap: Object.fromEntries(
+        this.updatedTraces.map((trace) => [trace.mspPairId, trace]),
+      ),
     })
     finalLabelPlacementSolver.solve()
     this.netLabelPlacements = finalLabelPlacementSolver.netLabelPlacements
@@ -208,7 +201,7 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
 
   getOutput() {
     return {
-      traceMap: this.updatedTracesMap,
+      traces: this.updatedTraces,
       netLabelPlacements: this.netLabelPlacements,
     }
   }
@@ -221,7 +214,7 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
     if (!graphics.texts) graphics.texts = []
     if (!graphics.rects) graphics.rects = []
 
-    for (const trace of Object.values(this.updatedTraces)) {
+    for (const trace of this.updatedTraces) {
       graphics.lines!.push({
         points: trace.tracePath,
         strokeColor: "purple",

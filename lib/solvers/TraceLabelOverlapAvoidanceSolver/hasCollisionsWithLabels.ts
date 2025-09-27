@@ -1,22 +1,19 @@
-import type { Point } from "graphics-debug"
+import type { Point } from "@tscircuit/math-utils"
 import { segmentIntersectsRect } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
-export const hasCollisions = (
+export const hasCollisionsWithLabels = (
   pathSegments: Point[],
-  obstacles: any[],
+  labels: any[],
 ): boolean => {
-  // Check each segment of the path
   for (let i = 0; i < pathSegments.length - 1; i++) {
     const p1 = pathSegments[i]
     const p2 = pathSegments[i + 1]
 
-    // Check collision with each obstacle
-    for (const obstacle of obstacles) {
-      if (segmentIntersectsRect(p1, p2, obstacle)) {
+    for (const label of labels) {
+      if (segmentIntersectsRect(p1, p2, label)) {
         return true
       }
     }
   }
-
   return false
 }
