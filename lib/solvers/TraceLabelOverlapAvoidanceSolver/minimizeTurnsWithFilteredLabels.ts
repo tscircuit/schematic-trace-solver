@@ -1,9 +1,7 @@
 import type { InputProblem } from "dist"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import {
-  getObstacleRects,
-} from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import { getObstacleRects } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { minimizeTurns } from "./turnMinimization"
 
 export const minimizeTurnsWithFilteredLabels = ({

@@ -1,7 +1,5 @@
 import type { Point } from "graphics-debug"
-import {
-  segmentIntersectsRect,
-} from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { segmentIntersectsRect } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
 export const hasCollisions = (
   pathSegments: Point[],
