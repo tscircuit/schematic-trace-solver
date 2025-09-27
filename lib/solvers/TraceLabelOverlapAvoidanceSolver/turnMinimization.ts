@@ -1,14 +1,11 @@
 import type { Point } from "graphics-debug"
-import type { InputProblem } from "lib/types/InputProblem"
-import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { getObstacleRects } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { segmentIntersectsRect } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { hasCollisions } from "./hasCollisions"
 import { countTurns } from "./countTurns"
 import { simplifyPath } from "./simplifyPath"
+import { tryConnectPoints } from "./tryConnectPoints"
+import { hasCollisionsWithLabels } from "./hasCollisionsWithLabels"
 
-const minimizeTurns = ({
+export const minimizeTurns = ({
   path,
   obstacles,
   labelBounds,
@@ -19,36 +16,6 @@ const minimizeTurns = ({
 }): Point[] => {
   if (path.length <= 2) {
     return path
-  }
-
-  const hasCollisionsWithLabels = (
-    pathSegments: Point[],
-    labels: any[],
-  ): boolean => {
-    for (let i = 0; i < pathSegments.length - 1; i++) {
-      const p1 = pathSegments[i]
-      const p2 = pathSegments[i + 1]
-
-      for (const label of labels) {
-        if (segmentIntersectsRect(p1, p2, label)) {
-          return true
-        }
-      }
-    }
-    return false
-  }
-
-  const tryConnectPoints = (start: Point, end: Point): Point[][] => {
-    const candidates: Point[][] = []
-
-    if (start.x === end.x || start.y === end.y) {
-      candidates.push([start, end])
-    } else {
-      candidates.push([start, { x: end.x, y: start.y }, end])
-      candidates.push([start, { x: start.x, y: end.y }, end])
-    }
-
-    return candidates
   }
 
   const recognizeStairStepPattern = (
@@ -241,65 +208,4 @@ const minimizeTurns = ({
 
   const finalSimplifiedPath = simplifyPath(optimizedPath)
   return finalSimplifiedPath
-}
-
-export const minimizeTurnsWithFilteredLabels = ({
-  traces,
-  problem,
-  allLabelPlacements,
-  mergedLabelNetIdMap,
-  paddingBuffer,
-}: {
-  traces: SolvedTracePath[]
-  problem: InputProblem
-  allLabelPlacements: NetLabelPlacement[]
-  mergedLabelNetIdMap: Map<string, Set<string>>
-  paddingBuffer: number
-}): SolvedTracePath[] | null => {
-  let changesMade = false
-  const obstacles = getObstacleRects(problem)
-
-  const newTraces = traces.map((trace) => {
-    const originalPath = trace.tracePath
-    const filteredLabels = allLabelPlacements.filter((label) => {
-      const originalNetIds = mergedLabelNetIdMap.get(label.globalConnNetId)
-      if (originalNetIds) {
-        return !originalNetIds.has(trace.globalConnNetId)
-      }
-      return label.globalConnNetId !== trace.globalConnNetId
-    })
-
-    const labelBounds = filteredLabels.map((nl) => ({
-      minX: nl.center.x - nl.width / 2 - paddingBuffer,
-      maxX: nl.center.x + nl.width / 2 + paddingBuffer,
-      minY: nl.center.y - nl.height / 2 - paddingBuffer,
-      maxY: nl.center.y + nl.height / 2 + paddingBuffer,
-    }))
-
-    const newPath = minimizeTurns({
-      path: originalPath,
-      obstacles,
-      labelBounds,
-    })
-
-    if (
-      newPath.length !== originalPath.length ||
-      newPath.some(
-        (p, i) => p.x !== originalPath[i].x || p.y !== originalPath[i].y,
-      )
-    ) {
-      changesMade = true
-    }
-
-    return {
-      ...trace,
-      tracePath: newPath,
-    }
-  })
-
-  if (changesMade) {
-    return newTraces
-  } else {
-    return null
-  }
 }

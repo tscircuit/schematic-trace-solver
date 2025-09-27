@@ -1,7 +1,5 @@
 import type { Point } from "graphics-debug"
 import {
-  isVertical,
-  isHorizontal,
   segmentIntersectsRect,
 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
