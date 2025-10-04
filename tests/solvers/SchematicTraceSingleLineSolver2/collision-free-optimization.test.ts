@@ -19,7 +19,7 @@ test("collision-free base elbow should be used directly without pathfinding", ()
         ],
       },
       {
-        chipId: "chip2", 
+        chipId: "chip2",
         center: { x: 2, y: 0 },
         width: 1,
         height: 1,
@@ -51,7 +51,7 @@ test("collision-free base elbow should be used directly without pathfinding", ()
       _facingDirection: "x+" as const,
     },
     {
-      pinId: "pin2", 
+      pinId: "pin2",
       x: 1.5,
       y: 0,
       chipId: "chip2",
