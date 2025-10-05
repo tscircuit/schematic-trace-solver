@@ -5,6 +5,7 @@ import type {
   InputProblem,
   PinId,
 } from "lib/types/InputProblem"
+import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
 import { getPinDirection } from "./getPinDirection"
 
 type ChipPin = InputPin & { chipId: ChipId }
@@ -19,6 +20,7 @@ export type RestrictedCenterLine = {
   x?: number
   y?: number
   axes: Set<"x" | "y">
+  bounds: ReturnType<typeof getInputChipBounds>
 }
 
 export const getRestrictedCenterLines = (params: {
@@ -107,7 +109,10 @@ export const getRestrictedCenterLines = (params: {
   // are present among related pins on the chip.
   for (const [chipId, faces] of chipFacingMap) {
     const axes = new Set<"x" | "y">()
-    const rcl: RestrictedCenterLine = { axes }
+    const chip = chipMap[chipId]
+    if (!chip) continue
+    const bounds = getInputChipBounds(chip)
+    const rcl: RestrictedCenterLine = { axes, bounds }
 
     // determine whether any side on this chip has more than one pin
     const counts = faces.counts
