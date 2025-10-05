@@ -116,28 +116,16 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     this.queuedCandidatePaths = [...this.allCandidatePaths].sort(
       (a, b) => getPathLength(a) - getPathLength(b),
     )
-  }
 
-  override getConstructorParams(): ConstructorParameters<
-    typeof SchematicTraceSingleLineSolver
-  >[0] {
-    return {
-      chipMap: this.chipMap,
-      pins: this.pins,
-      guidelines: this.guidelines,
-      inputProblem: this.inputProblem,
+    // Allow long traces that don't cross any other traces
+    if (this.isPathValid(this.baseElbow)) {
+      this.solvedTracePath = this.baseElbow
+      this.solved = true
+      this.queuedCandidatePaths = []
     }
   }
 
-  override _step() {
-    if (this.queuedCandidatePaths.length === 0) {
-      this.failed = true
-      this.error = "No more candidate elbows, everything had collisions"
-      return
-    }
-
-    const nextCandidatePath = this.queuedCandidatePaths.shift()!
-
+  private isPathValid(pathToEvaluate: Point[]) {
     const restrictedCenterLines = getRestrictedCenterLines({
       pins: this.pins,
       inputProblem: this.inputProblem,
@@ -148,9 +136,9 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     // Check if this candidate path is valid
     let pathIsValid = true
 
-    for (let i = 0; i < nextCandidatePath.length - 1; i++) {
-      const start = nextCandidatePath[i]
-      const end = nextCandidatePath[i + 1]
+    for (let i = 0; i < pathToEvaluate.length - 1; i++) {
+      const start = pathToEvaluate[i]
+      const end = pathToEvaluate[i + 1]
 
       // Determine which chips to exclude for this specific segment
       let excludeChipIds: string[] = []
@@ -264,9 +252,32 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
         break
       }
     }
+    return pathIsValid
+  }
+
+  override getConstructorParams(): ConstructorParameters<
+    typeof SchematicTraceSingleLineSolver
+  >[0] {
+    return {
+      chipMap: this.chipMap,
+      pins: this.pins,
+      guidelines: this.guidelines,
+      inputProblem: this.inputProblem,
+    }
+  }
+
+  override _step() {
+    if (this.solved) return
+    if (this.queuedCandidatePaths.length === 0) {
+      this.failed = true
+      this.error = "No more candidate elbows, everything had collisions"
+      return
+    }
+
+    const nextCandidatePath = this.queuedCandidatePaths.shift()!
 
     // If this path is valid, use it as the solution
-    if (pathIsValid) {
+    if (this.isPathValid(nextCandidatePath)) {
       this.solvedTracePath = nextCandidatePath
       this.solved = true
     }

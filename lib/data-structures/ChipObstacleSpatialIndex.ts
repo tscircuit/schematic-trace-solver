@@ -21,6 +21,9 @@ export class ChipObstacleSpatialIndex {
     }))
 
     this.spatialIndexIdToChip = new Map()
+
+    if (chips.length === 0) return
+
     this.spatialIndex = new Flatbush(chips.length)
 
     for (const chip of this.chips) {

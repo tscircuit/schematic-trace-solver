@@ -1,0 +1,54 @@
+{
+  "pins": [
+    {
+      "pinId": "pin1",
+      "chipId": "chip1",
+      "x": 0,
+      "y": 0,
+      "_facingDirection": "up"
+    },
+    {
+      "pinId": "pin2",
+      "chipId": "chip2",
+      "x": 100,
+      "y": 100,
+      "_facingDirection": "down"
+    }
+  ],
+  "guidelines": [],
+  "inputProblem": {
+    "chips": [
+      {
+        "chipId": "chip1",
+        "center": { "x": -10, "y": 0 },
+        "width": 10,
+        "height": 10,
+        "pins": []
+      },
+      {
+        "chipId": "chip2",
+        "center": { "x": 110, "y": 100 },
+        "width": 10,
+        "height": 10,
+        "pins": []
+      }
+    ],
+    "connections": []
+  },
+  "chipMap": {
+    "chip1": {
+      "chipId": "chip1",
+      "center": { "x": -10, "y": 0 },
+      "width": 10,
+      "height": 10,
+      "pins": []
+    },
+    "chip2": {
+      "chipId": "chip2",
+      "center": { "x": 110, "y": 100 },
+      "width": 10,
+      "height": 10,
+      "pins": []
+    }
+  }
+}
