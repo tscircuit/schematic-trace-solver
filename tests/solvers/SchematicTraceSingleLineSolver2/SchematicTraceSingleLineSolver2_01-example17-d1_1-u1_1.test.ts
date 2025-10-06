@@ -321,3 +321,87 @@ test("SchematicTraceSingleLineSolver2 should solve problem correctly", () => {
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
+
+test("SchematicTraceSingleLineSolver2 collision-free optimization", () => {
+  const input = {
+    chipMap: {
+      chip1: {
+        chipId: "chip1",
+        center: { x: -2, y: -1 },
+        width: 1,
+        height: 1,
+        pins: [{ pinId: "pin1", x: -1.5, y: -1 }],
+      },
+      chip2: {
+        chipId: "chip2",
+        center: { x: 2, y: 1 },
+        width: 1,
+        height: 1,
+        pins: [{ pinId: "pin2", x: 1.5, y: 1 }],
+      },
+      chip3: {
+        chipId: "chip3",
+        center: { x: 0, y: -3 },
+        width: 1,
+        height: 1,
+        pins: [],
+      },
+    },
+    pins: [
+      {
+        pinId: "pin1",
+        x: -1.5,
+        y: -1,
+        chipId: "chip1",
+        _facingDirection: "x+" as const,
+      },
+      {
+        pinId: "pin2",
+        x: 1.5,
+        y: 1,
+        chipId: "chip2",
+        _facingDirection: "x-" as const,
+      },
+    ],
+    inputProblem: {
+      chips: [
+        {
+          chipId: "chip1",
+          center: { x: -2, y: -1 },
+          width: 1,
+          height: 1,
+          pins: [{ pinId: "pin1", x: -1.5, y: -1 }],
+        },
+        {
+          chipId: "chip2",
+          center: { x: 2, y: 1 },
+          width: 1,
+          height: 1,
+          pins: [{ pinId: "pin2", x: 1.5, y: 1 }],
+        },
+        {
+          chipId: "chip3",
+          center: { x: 0, y: -3 },
+          width: 1,
+          height: 1,
+          pins: [],
+        },
+      ],
+      directConnections: [],
+      netConnections: [],
+      availableNetLabelOrientations: {},
+    },
+  }
+
+  const solver = new SchematicTraceSingleLineSolver2(input as any)
+
+  // Should be solved immediately via collision-free optimization
+  expect(solver.solved).toBe(true)
+  expect(solver.solvedTracePath).not.toBeNull()
+
+  solver.solve()
+  expect(solver).toMatchSolverSnapshot(
+    import.meta.path,
+    "collision-free-optimization",
+  )
+})
