@@ -94,6 +94,8 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       },
     )
 
+    const directPath = this.generateDirectPath()
+
     const { elbowVariants, movableSegments } = generateElbowVariants({
       baseElbow: this.baseElbow,
       guidelines: this.guidelines,
@@ -113,16 +115,30 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     }
 
     this.allCandidatePaths = [this.baseElbow, ...elbowVariants]
+    if (directPath) {
+      this.allCandidatePaths.push(directPath)
+    }
+
     this.queuedCandidatePaths = [...this.allCandidatePaths].sort(
       (a, b) => getPathLength(a) - getPathLength(b),
     )
 
-    // Allow long traces that don't cross any other traces
-    if (this.isPathValid(this.baseElbow)) {
-      this.solvedTracePath = this.baseElbow
+    if (directPath && this.isPathValid(directPath)) {
+      this.solvedTracePath = directPath
       this.solved = true
-      this.queuedCandidatePaths = []
     }
+  }
+
+  private generateDirectPath(): Point[] | null {
+    const [pin1, pin2] = this.pins
+
+    // Try a straight line first
+    const straightPath = [pin1, pin2]
+    if (this.isPathValid(straightPath)) {
+      return straightPath
+    }
+
+    return null
   }
 
   private isPathValid(pathToEvaluate: Point[]) {

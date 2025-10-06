@@ -33,7 +33,9 @@
         "pins": []
       }
     ],
-    "connections": []
+    "connections": [],
+    "directConnections": [],
+    "netConnections": []
   },
   "chipMap": {
     "chip1": {

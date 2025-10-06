@@ -58,14 +58,9 @@ test("SchematicTraceSingleLineSolver chooses shortest candidate path", () => {
   solver.solve()
   expect(solver.solved).toBe(true)
 
-  const baseElbow = calculateElbow(
-    { x: pins[0].x, y: pins[0].y, facingDirection: pins[0]._facingDirection },
-    { x: pins[1].x, y: pins[1].y, facingDirection: pins[1]._facingDirection },
-    { overshoot: 0.2 },
+  const shortestLength = Math.min(
+    ...solver.allCandidatePaths.map(pathLength),
   )
-  const { elbowVariants } = generateElbowVariants({ baseElbow, guidelines })
-  const candidates = [baseElbow, ...elbowVariants]
-  const shortestLength = Math.min(...candidates.map(pathLength))
 
   expect(pathLength(solver.solvedTracePath!)).toBe(shortestLength)
 })
