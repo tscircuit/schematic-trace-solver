@@ -1,11 +1,5 @@
 <svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
   <g>
-    <polyline data-points="50,0 50,50 50,100" data-type="line" data-label="" points="320,535.3846153846154 320,320 320,104.61538461538458" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="1" stroke-dasharray="2 2" />
-  </g>
-  <g>
-    <polyline data-points="50,50 60,50" data-type="line" data-label="" points="320,320 363.0769230769231,320" fill="none" stroke="rgba(0,0,255,0.5)" stroke-width="1" stroke-dasharray="2 2" />
-  </g>
-  <g>
     <polyline data-points="0,0 100,100" data-type="line" data-label="" points="104.61538461538461,535.3846153846154 535.3846153846154,104.61538461538458" fill="none" stroke="green" stroke-width="1" />
   </g>
   <g>

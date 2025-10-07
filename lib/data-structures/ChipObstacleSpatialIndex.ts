@@ -51,6 +51,59 @@ export class ChipObstacleSpatialIndex {
     return chipSpatialIndexIds.map((id) => this.spatialIndexIdToChip.get(id)!)
   }
 
+  private _lineIntersectsRect(p1: Point, p2: Point, rect: Bounds): boolean {
+    let t0 = 0
+    let t1 = 1
+    const dx = p2.x - p1.x
+    const dy = p2.y - p1.y
+
+    const check = (p: number, q: number) => {
+      if (Math.abs(p) < 1e-9) {
+        if (q < 0) return false
+        return true
+      }
+      const t = q / p
+      if (p < 0) {
+        if (t > t1) return false
+        if (t > t0) t0 = t
+      } else {
+        if (t < t0) return false
+        if (t < t1) t1 = t
+      }
+      return true
+    }
+
+    if (!check(-dx, p1.x - rect.minX)) return false
+    if (!check(dx, rect.maxX - p1.x)) return false
+    if (!check(-dy, p1.y - rect.minY)) return false
+    if (!check(dy, rect.maxY - p1.y)) return false
+
+    return t0 < t1
+  }
+
+  hasObstacleAlongLine(
+    p1: Point,
+    p2: Point,
+    opts: {
+      excludeChipIds?: string[]
+    } = {},
+  ): boolean {
+    const excludeChipIds = opts.excludeChipIds ?? []
+    const chipsInBounds = this.getChipsInBounds({
+      minX: Math.min(p1.x, p2.x),
+      minY: Math.min(p1.y, p2.y),
+      maxX: Math.max(p1.x, p2.x),
+      maxY: Math.max(p1.y, p2.y),
+    }).filter((chip) => !excludeChipIds.includes(chip.chipId))
+
+    for (const chip of chipsInBounds) {
+      if (this._lineIntersectsRect(p1, p2, chip.bounds)) {
+        return true
+      }
+    }
+    return false
+  }
+
   doesOrthogonalLineIntersectChip(
     line: [Point, Point],
     opts: {
@@ -61,8 +114,6 @@ export class ChipObstacleSpatialIndex {
     const [p1, p2] = line
     const { x: x1, y: y1 } = p1
     const { x: x2, y: y2 } = p2
-
-    if (!this.spatialIndex) return false
 
     const chips = this.getChipsInBounds({
       minX: Math.min(x1, x2),
