@@ -44,8 +44,5 @@ test("SchematicTraceSingleLineSolver uses baseElbow if valid", async () => {
   expect(solver.solved).toBe(true)
   expect(solver.solvedTracePath).toEqual(solver.baseElbow)
 
-  await expect(solver).toMatchSolverSnapshot(
-    import.meta.path,
-    "direct_trace",
-  )
+  await expect(solver).toMatchSolverSnapshot(import.meta.path, "direct_trace")
 })
