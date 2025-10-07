@@ -94,6 +94,15 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       },
     )
 
+    if (this._isPathValid(this.baseElbow)) {
+      this.solvedTracePath = this.baseElbow
+      this.solved = true
+      this.allCandidatePaths = [this.baseElbow]
+      this.queuedCandidatePaths = []
+      this.movableSegments = []
+      return
+    }
+
     const { elbowVariants, movableSegments } = generateElbowVariants({
       baseElbow: this.baseElbow,
       guidelines: this.guidelines,
@@ -129,15 +138,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     }
   }
 
-  override _step() {
-    if (this.queuedCandidatePaths.length === 0) {
-      this.failed = true
-      this.error = "No more candidate elbows, everything had collisions"
-      return
-    }
-
-    const nextCandidatePath = this.queuedCandidatePaths.shift()!
-
+  _isPathValid(pathToEvaluate: Point[]) {
     const restrictedCenterLines = getRestrictedCenterLines({
       pins: this.pins,
       inputProblem: this.inputProblem,
@@ -148,9 +149,9 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     // Check if this candidate path is valid
     let pathIsValid = true
 
-    for (let i = 0; i < nextCandidatePath.length - 1; i++) {
-      const start = nextCandidatePath[i]
-      const end = nextCandidatePath[i + 1]
+    for (let i = 0; i < pathToEvaluate.length - 1; i++) {
+      const start = pathToEvaluate[i]
+      const end = pathToEvaluate[i + 1]
 
       // Determine which chips to exclude for this specific segment
       let excludeChipIds: string[] = []
@@ -264,9 +265,20 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
         break
       }
     }
+    return pathIsValid
+  }
+
+  override _step() {
+    if (this.queuedCandidatePaths.length === 0) {
+      this.failed = true
+      this.error = "No more candidate elbows, everything had collisions"
+      return
+    }
+
+    const nextCandidatePath = this.queuedCandidatePaths.shift()!
 
     // If this path is valid, use it as the solution
-    if (pathIsValid) {
+    if (this._isPathValid(nextCandidatePath)) {
       this.solvedTracePath = nextCandidatePath
       this.solved = true
     }
