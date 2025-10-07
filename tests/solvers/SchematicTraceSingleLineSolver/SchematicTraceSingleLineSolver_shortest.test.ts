@@ -58,9 +58,7 @@ test("SchematicTraceSingleLineSolver chooses shortest candidate path", () => {
   solver.solve()
   expect(solver.solved).toBe(true)
 
-  const shortestLength = Math.min(
-    ...solver.allCandidatePaths.map(pathLength),
-  )
+  const shortestLength = Math.min(...solver.allCandidatePaths.map(pathLength))
 
   expect(pathLength(solver.solvedTracePath!)).toBe(shortestLength)
 })
