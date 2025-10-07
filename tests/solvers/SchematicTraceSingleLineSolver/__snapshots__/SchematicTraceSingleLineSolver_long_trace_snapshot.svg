@@ -1,6 +1,6 @@
 <svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
   <g>
-    <polyline data-points="0,0 100,100" data-type="line" data-label="" points="104.61538461538461,535.3846153846154 535.3846153846154,104.61538461538458" fill="none" stroke="green" stroke-width="1" />
+    <polyline data-points="0,0 50,0 50,100 100,100" data-type="line" data-label="" points="104.61538461538461,535.3846153846154 320,535.3846153846154 320,104.61538461538458 535.3846153846154,104.61538461538458" fill="none" stroke="green" stroke-width="1" />
   </g>
   <g>
     <rect data-type="rect" data-label="chip1" data-x="-10" data-y="0" x="40" y="513.8461538461538" width="43.07692307692308" height="43.076923076923094" fill="hsl(229, 100%, 50%, 0.1)" stroke="black" stroke-width="0.23214285714285715" />

@@ -25,16 +25,6 @@ import { getRestrictedCenterLines } from "./getRestrictedCenterLines"
 
 type ChipPin = InputPin & { chipId: ChipId }
 
-const getPathLength = (pts: Point[]) => {
-  let len = 0
-  for (let i = 0; i < pts.length - 1; i++) {
-    const dx = pts[i + 1].x - pts[i].x
-    const dy = pts[i + 1].y - pts[i].y
-    len += Math.sqrt(dx * dx + dy * dy)
-  }
-  return len
-}
-
 export class SchematicTraceSingleLineSolver extends BaseSolver {
   pins: MspConnectionPair["pins"]
   inputProblem: InputProblem
@@ -43,8 +33,8 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
   movableSegments: Array<MovableSegment>
   baseElbow: Point[]
 
-  allCandidatePaths: Array<Point[]> = []
-  queuedCandidatePaths: Array<Point[]> = []
+  allCandidatePaths: Array<Point[]>
+  queuedCandidatePaths: Array<Point[]>
 
   chipObstacleSpatialIndex: ChipObstacleSpatialIndex
 
@@ -87,15 +77,6 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       }
     }
 
-    // First, try a direct path
-    const directPath = [this.pins[0], this.pins[1]]
-    if (this.isPathValid(directPath)) {
-      this.solvedTracePath = directPath
-      this.solved = true
-      this.allCandidatePaths = [directPath]
-      return
-    }
-
     const [pin1, pin2] = this.pins
     this.baseElbow = calculateElbow(
       {
@@ -113,6 +94,15 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       },
     )
 
+    if (this.isPathValid(this.baseElbow)) {
+      this.solvedTracePath = this.baseElbow
+      this.solved = true
+      this.allCandidatePaths = [this.baseElbow]
+      this.queuedCandidatePaths = []
+      this.movableSegments = []
+      return
+    }
+
     const { elbowVariants, movableSegments } = generateElbowVariants({
       baseElbow: this.baseElbow,
       guidelines: this.guidelines,
@@ -120,6 +110,16 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     })
 
     this.movableSegments = movableSegments
+
+    const getPathLength = (pts: Point[]) => {
+      let len = 0
+      for (let i = 0; i < pts.length - 1; i++) {
+        const dx = pts[i + 1].x - pts[i].x
+        const dy = pts[i + 1].y - pts[i].y
+        len += Math.sqrt(dx * dx + dy * dy)
+      }
+      return len
+    }
 
     this.allCandidatePaths = [this.baseElbow, ...elbowVariants]
 
@@ -136,6 +136,9 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       chipMap: this.chipMap,
     })
 
+    // Check if this candidate path is valid
+    let pathIsValid = true
+
     for (let i = 0; i < pathToEvaluate.length - 1; i++) {
       const start = pathToEvaluate[i]
       const end = pathToEvaluate[i + 1]
@@ -149,16 +152,20 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
         if (rcl.axes.has("x") && typeof rcl.x === "number") {
           // segment strictly crosses vertical center line
           if ((start.x - rcl.x) * (end.x - rcl.x) < -EPS) {
-            return false
+            pathIsValid = false
+            break
           }
         }
         if (rcl.axes.has("y") && typeof rcl.y === "number") {
           // segment strictly crosses horizontal center line
           if ((start.y - rcl.y) * (end.y - rcl.y) < -EPS) {
-            return false
+            pathIsValid = false
+            break
           }
         }
       }
+
+      if (!pathIsValid) break
 
       // Always exclude chips that contain the start or end points of this segment
       // if those points are actually pin locations
@@ -194,13 +201,16 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
             (onBottom && dy > EPS) ||
             (onTop && dy < -EPS)
           if (entersInterior) {
-            return false
+            pathIsValid = false
+            break
           }
           if (!excludeChipIds.includes(startPin.chipId)) {
             excludeChipIds.push(startPin.chipId)
           }
         }
       }
+
+      if (!pathIsValid) break
 
       if (isEndPin) {
         const endPin = this.pins.find(
@@ -223,7 +233,8 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
             (onBottom && dy > EPS) ||
             (onTop && dy < -EPS)
           if (entersInterior) {
-            return false
+            pathIsValid = false
+            break
           }
           if (!excludeChipIds.includes(endPin.chipId)) {
             excludeChipIds.push(endPin.chipId)
@@ -231,15 +242,20 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
         }
       }
 
-      if (
-        this.chipObstacleSpatialIndex.hasObstacleAlongLine(start, end, {
-          excludeChipIds,
-        })
-      ) {
-        return false
+      if (!pathIsValid) break
+
+      const obstacleOps = { excludeChipIds }
+      const intersects =
+        this.chipObstacleSpatialIndex.doesOrthogonalLineIntersectChip(
+          [start, end],
+          obstacleOps,
+        )
+      if (intersects) {
+        pathIsValid = false
+        break
       }
     }
-    return true
+    return pathIsValid
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -263,10 +279,13 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
 
     const nextCandidatePath = this.queuedCandidatePaths.shift()!
 
+    // If this path is valid, use it as the solution
     if (this.isPathValid(nextCandidatePath)) {
       this.solvedTracePath = nextCandidatePath
       this.solved = true
     }
+    // If this path is invalid, continue to next step to try the next candidate
+    // The next _step() call will try the next candidate path
   }
 
   override visualize(): GraphicsObject {
@@ -281,24 +300,22 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     visualizeGuidelines({ guidelines: this.guidelines, graphics })
 
     // Visualize movable segments
-    if (this.movableSegments) {
-      for (const { start, end, dir } of this.movableSegments) {
-        const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 }
-        const dist = Math.sqrt((start.x - end.x) ** 2 + (start.y - end.y) ** 2)
-        graphics.lines!.push({
-          points: [start, mid, end],
-          strokeColor: "rgba(0,0,255,0.5)",
-          strokeDash: "2 2",
-        })
-        graphics.lines!.push({
-          points: [
-            mid,
-            { x: mid.x + dir.x * dist * 0.1, y: mid.y + dir.y * dist * 0.1 },
-          ],
-          strokeColor: "rgba(0,0,255,0.5)",
-          strokeDash: "2 2",
-        })
-      }
+    for (const { start, end, dir } of this.movableSegments) {
+      const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 }
+      const dist = Math.sqrt((start.x - end.x) ** 2 + (start.y - end.y) ** 2)
+      graphics.lines!.push({
+        points: [start, mid, end],
+        strokeColor: "rgba(0,0,255,0.5)",
+        strokeDash: "2 2",
+      })
+      graphics.lines!.push({
+        points: [
+          mid,
+          { x: mid.x + dir.x * dist * 0.1, y: mid.y + dir.y * dist * 0.1 },
+        ],
+        strokeColor: "rgba(0,0,255,0.5)",
+        strokeDash: "2 2",
+      })
     }
 
     // Draw the next candidate path in orange
