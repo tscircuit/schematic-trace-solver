@@ -32,6 +32,7 @@ export class LongDistancePairSolver extends BaseSolver {
   private inputProblem: InputProblem
   private netConnMap: ConnectivityMap
   private newlyConnectedPinIds = new Set<PinId>()
+  private allSolvedTraces: SolvedTracePath[] = []
 
   constructor(
     private params: {
@@ -42,9 +43,11 @@ export class LongDistancePairSolver extends BaseSolver {
   ) {
     super()
 
-    const { inputProblem, primaryMspConnectionPairs } = this.params
+    const { inputProblem, primaryMspConnectionPairs, alreadySolvedTraces } =
+      this.params
 
     this.inputProblem = inputProblem
+    this.allSolvedTraces = [...alreadySolvedTraces]
 
     // 1. Create initial maps and sets for efficient lookup
     const primaryConnectedPinIds = new Set<PinId>()
@@ -127,7 +130,7 @@ export class LongDistancePairSolver extends BaseSolver {
       if (newTracePath && this.currentCandidatePair) {
         const isTraceClear = !doesTraceOverlapWithExistingTraces(
           newTracePath,
-          this.params.alreadySolvedTraces,
+          this.allSolvedTraces,
         )
 
         if (isTraceClear) {
@@ -135,7 +138,7 @@ export class LongDistancePairSolver extends BaseSolver {
           const globalConnNetId = this.netConnMap.getNetConnectedToId(p1.pinId)!
           const mspPairId = `${p1.pinId}-${p2.pinId}`
 
-          this.solvedLongDistanceTraces.push({
+          const newSolvedTrace: SolvedTracePath = {
             mspPairId,
             dcConnNetId: globalConnNetId,
             globalConnNetId,
@@ -143,7 +146,10 @@ export class LongDistancePairSolver extends BaseSolver {
             tracePath: newTracePath,
             mspConnectionPairIds: [mspPairId],
             pinIds: [p1.pinId, p2.pinId],
-          })
+          }
+
+          this.solvedLongDistanceTraces.push(newSolvedTrace)
+          this.allSolvedTraces.push(newSolvedTrace)
 
           this.newlyConnectedPinIds.add(p1.pinId)
           this.newlyConnectedPinIds.add(p2.pinId)
