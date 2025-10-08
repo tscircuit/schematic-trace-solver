@@ -16,6 +16,7 @@ import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceS
 import { getInputChipBounds } from "../GuidelinesSolver/getInputChipBounds"
 import { correctPinsInsideChips } from "./correctPinsInsideChip"
 import { expandChipsToFitPins } from "./expandChipsToFitPins"
+import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -24,6 +25,7 @@ type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
     instance: SchematicTracePipelineSolver,
   ) => ConstructorParameters<T>
   onSolved?: (instance: SchematicTracePipelineSolver) => void
+  shouldSkip?: (instance: SchematicTracePipelineSolver) => boolean
 }
 
 function definePipelineStep<
@@ -37,6 +39,7 @@ function definePipelineStep<
   getConstructorParams: (instance: SchematicTracePipelineSolver) => P,
   opts: {
     onSolved?: (instance: SchematicTracePipelineSolver) => void
+    shouldSkip?: (instance: SchematicTracePipelineSolver) => boolean
   } = {},
 ): PipelineStep<T> {
   return {
@@ -44,13 +47,20 @@ function definePipelineStep<
     solverClass,
     getConstructorParams,
     onSolved: opts.onSolved,
+    shouldSkip: opts.shouldSkip,
   }
+}
+
+export interface SchematicTracePipelineSolverParams {
+  inputProblem: InputProblem
+  allowLongDistanceTraces?: boolean
 }
 
 export class SchematicTracePipelineSolver extends BaseSolver {
   mspConnectionPairSolver?: MspConnectionPairSolver
   // guidelinesSolver?: GuidelinesSolver
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
+  longDistancePairSolver?: LongDistancePairSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
@@ -96,6 +106,19 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           chipMap: this.mspConnectionPairSolver!.chipMap,
         },
       ],
+    ),
+    definePipelineStep(
+      "longDistancePairSolver",
+      LongDistancePairSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          primaryMspConnectionPairs:
+            instance.mspConnectionPairSolver!.mspConnectionPairs,
+          alreadySolvedTraces:
+            instance.schematicTraceLinesSolver!.solvedTracePaths,
+        },
+      ],
       {
         onSolved: (schematicTraceLinesSolver) => {},
       },
@@ -106,7 +129,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       () => [
         {
           inputProblem: this.inputProblem,
-          inputTracePaths: this.schematicTraceLinesSolver!.solvedTracePaths,
+          inputTracePaths:
+            this.longDistancePairSolver?.getOutput().allTracesMerged!,
           globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
         },
       ],
@@ -123,10 +147,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           inputTraceMap:
             this.traceOverlapShiftSolver?.correctedTraceMap ??
             Object.fromEntries(
-              this.schematicTraceLinesSolver!.solvedTracePaths.map((p) => [
-                p.mspPairId,
-                p,
-              ]),
+              this.longDistancePairSolver!.getOutput().allTracesMerged.map(
+                (p) => [p.mspPairId, p],
+              ),
             ),
         },
       ],
@@ -143,10 +166,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         const traceMap =
           instance.traceOverlapShiftSolver?.correctedTraceMap ??
           Object.fromEntries(
-            instance.schematicTraceLinesSolver!.solvedTracePaths.map((p) => [
-              p.mspPairId,
-              p,
-            ]),
+            instance
+              .longDistancePairSolver!.getOutput()
+              .allTracesMerged.map((p) => [p.mspPairId, p]),
           )
         const traces = Object.values(traceMap)
         const netLabelPlacements =
