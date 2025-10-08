@@ -194,12 +194,26 @@ export class LongDistancePairSolver extends BaseSolver {
   }
 
   override visualize() {
+    if (this.subSolver) {
+      return this.subSolver.visualize()
+    }
+
     const graphics = visualizeInputProblem(this.inputProblem)
 
+    // Draw solved long-distance traces
     for (const trace of this.solvedLongDistanceTraces) {
       graphics.lines!.push({
         points: trace.tracePath,
         strokeColor: "purple",
+      })
+    }
+
+    // Draw queued candidate pairs
+    for (const [p1, p2] of this.queuedCandidatePairs) {
+      graphics.lines!.push({
+        points: [p1, p2],
+        strokeColor: "gray",
+        strokeDash: "4 4",
       })
     }
 
