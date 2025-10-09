@@ -16,8 +16,7 @@ import { getRectBounds } from "../NetLabelPlacementSolver/SingleNetLabelPlacemen
 
 export class NetLabelTraceOverlapSolver extends BaseSolver {
   inputProblem: InputProblem
-  traceOverlapShiftSolver: TraceOverlapShiftSolver | undefined
-  schematicTraceLinesSolver: SchematicTraceLinesSolver
+  inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
 
   correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath>
   activeNetLabelPlacementSolver: InternalNetLabelPlacementSolver
@@ -25,22 +24,13 @@ export class NetLabelTraceOverlapSolver extends BaseSolver {
 
   constructor(params: {
     inputProblem: InputProblem
-    traceOverlapShiftSolver: TraceOverlapShiftSolver | undefined
-    schematicTraceLinesSolver: SchematicTraceLinesSolver
+    inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
   }) {
     super()
     this.inputProblem = params.inputProblem
-    this.traceOverlapShiftSolver = params.traceOverlapShiftSolver
-    this.schematicTraceLinesSolver = params.schematicTraceLinesSolver
+    this.inputTraceMap = params.inputTraceMap
 
-    this.correctedTraceMap =
-      this.traceOverlapShiftSolver?.correctedTraceMap ??
-      Object.fromEntries(
-        this.schematicTraceLinesSolver.solvedTracePaths.map((p) => [
-          p.mspPairId,
-          p,
-        ]),
-      )
+    this.correctedTraceMap = structuredClone(this.inputTraceMap)
 
     this.chipObstacleSpatialIndex = new ChipObstacleSpatialIndex(
       this.inputProblem.chips,
