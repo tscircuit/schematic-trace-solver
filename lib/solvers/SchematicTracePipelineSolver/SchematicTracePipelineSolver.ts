@@ -9,7 +9,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 import { SchematicTraceLinesSolver } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
-import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { NetLabelTraceOverlapSolver } from "../NetLabelTraceOverlapSolver/NetLabelTraceOverlapSolver"
 import { visualizeInputProblem } from "./visualizeInputProblem"
 import { GuidelinesSolver } from "../GuidelinesSolver/GuidelinesSolver"
 import { getInputChipBounds } from "../GuidelinesSolver/getInputChipBounds"
@@ -51,7 +51,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   // guidelinesSolver?: GuidelinesSolver
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
-  netLabelPlacementSolver?: NetLabelPlacementSolver
+  netLabelTraceOverlapSolver?: NetLabelTraceOverlapSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -113,19 +113,13 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
-      "netLabelPlacementSolver",
-      NetLabelPlacementSolver,
+      "netLabelTraceOverlapSolver",
+      NetLabelTraceOverlapSolver,
       () => [
         {
           inputProblem: this.inputProblem,
-          inputTraceMap:
-            this.traceOverlapShiftSolver?.correctedTraceMap ??
-            Object.fromEntries(
-              this.schematicTraceLinesSolver!.solvedTracePaths.map((p) => [
-                p.mspPairId,
-                p,
-              ]),
-            ),
+          schematicTraceLinesSolver: this.schematicTraceLinesSolver!,
+          traceOverlapShiftSolver: this.traceOverlapShiftSolver,
         },
       ],
       {

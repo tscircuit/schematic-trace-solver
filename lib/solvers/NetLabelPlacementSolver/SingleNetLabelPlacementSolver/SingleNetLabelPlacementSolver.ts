@@ -71,6 +71,8 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     orientation: FacingDirection
     status: "ok" | "chip-collision" | "trace-collision" | "parallel-to-segment"
     hostSegIndex: number
+    collidingMspPairId?: MspConnectionPairId
+    collidingSegmentIndex?: number
   }> = []
 
   constructor(params: {
@@ -287,6 +289,8 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
                 orientation,
                 status: "trace-collision",
                 hostSegIndex: si,
+                collidingMspPairId: traceIntersectionResult.mspPairId,
+                collidingSegmentIndex: traceIntersectionResult.segIndex,
               })
               continue
             }
