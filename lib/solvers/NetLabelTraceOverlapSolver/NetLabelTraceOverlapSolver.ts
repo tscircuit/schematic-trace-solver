@@ -136,14 +136,19 @@ export class NetLabelTraceOverlapSolver extends BaseSolver {
       }
 
       if (
-        rectIntersectsAnyTrace(variantBounds, this.correctedTraceMap, collidingMspPairId)
-          .hasIntersection
+        rectIntersectsAnyTrace(
+          variantBounds,
+          this.correctedTraceMap,
+          collidingMspPairId,
+        ).hasIntersection
       ) {
         continue
       }
 
       // Check for new collisions with chips
-      if (this.chipObstacleSpatialIndex.getChipsInBounds(variantBounds).length > 0) {
+      if (
+        this.chipObstacleSpatialIndex.getChipsInBounds(variantBounds).length > 0
+      ) {
         continue
       }
 
