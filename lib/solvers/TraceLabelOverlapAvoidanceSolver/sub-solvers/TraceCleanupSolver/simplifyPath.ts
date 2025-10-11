@@ -1,8 +1,6 @@
 import type { Point } from "graphics-debug"
-import {
-  isHorizontal,
-  isVertical,
-} from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { isHorizontal, isVertical } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+
 
 export const simplifyPath = (path: Point[]): Point[] => {
   if (path.length < 3) return path

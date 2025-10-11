@@ -1,17 +1,17 @@
 import type { Point } from "@tscircuit/math-utils"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { InputProblem } from "lib/types/InputProblem"
-import { generateRerouteCandidates } from "./rerouteCollidingTrace"
-import { getObstacleRects } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
-import { isPathCollidingWithObstacles } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
-import { simplifyPath } from "../TraceCleanupSolver/simplifyPath"
 import type { GraphicsObject } from "graphics-debug"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import { getRectBounds } from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import { getRectBounds } from "../../../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
+import { simplifyPath } from "../TraceCleanupSolver/simplifyPath"
 
-interface TraceLabelOverlapAvoidanceSubSolverInput {
+interface SingleOverlapSolverInput {
   trace: SolvedTracePath
   label: NetLabelPlacement
   problem: InputProblem
@@ -24,7 +24,7 @@ interface TraceLabelOverlapAvoidanceSubSolverInput {
  * overlapping with a net label. It tries various candidate paths until it
  * finds one that does not introduce new collisions.
  */
-export class TraceLabelOverlapAvoidanceSubSolver extends BaseSolver {
+export class SingleOverlapSolver extends BaseSolver {
   queuedCandidatePaths: Point[][]
   solvedTracePath: Point[] | null = null
   initialTrace: SolvedTracePath
@@ -32,7 +32,7 @@ export class TraceLabelOverlapAvoidanceSubSolver extends BaseSolver {
   obstacles: ReturnType<typeof getObstacleRects>
   label: NetLabelPlacement
 
-  constructor(solverInput: TraceLabelOverlapAvoidanceSubSolverInput) {
+  constructor(solverInput: SingleOverlapSolverInput) {
     super()
     this.initialTrace = solverInput.trace
     this.problem = solverInput.problem

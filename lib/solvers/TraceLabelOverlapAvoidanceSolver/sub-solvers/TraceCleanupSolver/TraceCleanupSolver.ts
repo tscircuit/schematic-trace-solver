@@ -1,9 +1,9 @@
-import { BaseSolver } from "../BaseSolver/BaseSolver"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputProblem } from "lib/types/InputProblem"
-import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
 import { balanceLShapes } from "./balanceLShapes"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 
 interface TraceCleanupSolverInput {
   problem: InputProblem
@@ -14,6 +14,10 @@ interface TraceCleanupSolverInput {
   paddingBuffer: number
 }
 
+/**
+ * Cleans up traces by minimizing turns and balancing L-shapes to improve
+ * the overall aesthetics and readability of the schematic.
+ */
 export class TraceCleanupSolver extends BaseSolver {
   private input: TraceCleanupSolverInput
   private outputTraces: SolvedTracePath[]

@@ -1,6 +1,6 @@
-import { BaseSolver } from "../BaseSolver/BaseSolver"
-import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { getRectBounds } from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { getRectBounds } from "../../../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { GraphicsObject } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
 
@@ -13,6 +13,10 @@ interface LabelMergingSolverOutput {
   mergedLabelNetIdMap: Record<string, Set<string>>
 }
 
+/**
+ * Merges multiple net labels into a single, larger label if they are on the
+ * same side of the same chip, reducing schematic clutter.
+ */
 export class LabelMergingSolver extends BaseSolver {
   private input: LabelMergingSolverInput
   private output!: LabelMergingSolverOutput
