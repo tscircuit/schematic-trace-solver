@@ -34,6 +34,7 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
 
   private subSolver: TraceLabelOverlapAvoidanceSubSolver | null = null
   private overlapQueue: Overlap[] = []
+  private recentlyFailed: Set<string> = new Set()
 
   constructor(solverInput: TraceLabelOverlapAvoidanceSolverInput) {
     super()
@@ -59,8 +60,10 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
           }
         }
         this.subSolver = null
+        this.recentlyFailed.clear() // Successfully fixed one, clear the failed list
       } else if (this.subSolver.failed) {
-        // TODO: What to do if a sub-solver fails? For now, just move on
+        const overlapId = `${this.subSolver.initialTrace.mspPairId}-${this.subSolver.label.globalConnNetId}`
+        this.recentlyFailed.add(overlapId)
         this.subSolver = null
       }
       return // Wait for sub-solver to finish
@@ -92,7 +95,17 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
       return
     }
 
-    this.overlapQueue = overlaps
+    const nonFailedOverlaps = overlaps.filter((o) => {
+      const overlapId = `${o.trace.mspPairId}-${o.label.globalConnNetId}`
+      return !this.recentlyFailed.has(overlapId)
+    })
+
+    if (nonFailedOverlaps.length === 0) {
+      this.solved = true
+      return
+    }
+
+    this.overlapQueue = nonFailedOverlaps
 
     const nextOverlap = this.overlapQueue.shift()
 
