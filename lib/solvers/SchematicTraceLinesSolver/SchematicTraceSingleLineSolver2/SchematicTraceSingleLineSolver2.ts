@@ -83,9 +83,41 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       { x: pin2.x, y: pin2.y },
     )
 
-    // Seed search
-    this.queue.push({ path: this.baseElbow, collisionChipIds: new Set() })
-    this.visited.add(pathKey(this.baseElbow))
+    // Optimization: Use base elbow directly if collision-free
+    const baseCollision = findFirstCollision(this.baseElbow, this.obstacles)
+    if (!baseCollision && this.baseElbow.length >= 2) {
+      const first = this.baseElbow[0]!
+      const last = this.baseElbow[this.baseElbow.length - 1]!
+      const EPS = 1e-9
+      const samePoint = (p: Point, q: Point) =>
+        Math.abs(p.x - q.x) < EPS && Math.abs(p.y - q.y) < EPS
+
+      // Verify path is orthogonal and connects pins correctly
+      let isOrthogonal = true
+      for (let i = 0; i < this.baseElbow.length - 1; i++) {
+        const a = this.baseElbow[i]!
+        const b = this.baseElbow[i + 1]!
+        if (!isHorizontal(a, b) && !isVertical(a, b)) {
+          isOrthogonal = false
+          break
+        }
+      }
+
+      if (
+        isOrthogonal &&
+        samePoint(first, { x: pin1.x, y: pin1.y }) &&
+        samePoint(last, { x: pin2.x, y: pin2.y })
+      ) {
+        this.solvedTracePath = this.baseElbow
+        this.solved = true
+      }
+    }
+
+    // Fallback: Use pathfinding if optimization didn't solve it
+    if (!this.solved) {
+      this.queue.push({ path: this.baseElbow, collisionChipIds: new Set() })
+      this.visited.add(pathKey(this.baseElbow))
+    }
   }
 
   override getConstructorParams(): ConstructorParameters<
