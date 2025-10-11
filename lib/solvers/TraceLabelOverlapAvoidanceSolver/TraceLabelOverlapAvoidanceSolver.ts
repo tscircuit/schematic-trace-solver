@@ -6,8 +6,8 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import type { InputProblem } from "../../types/InputProblem"
 import { LabelMergingSolver } from "./sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "./sub-solvers/TraceCleanupSolver/TraceCleanupSolver"
-import { getColorFromString } from "lib/utils/getColorFromString";
-import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver";
+import { getColorFromString } from "lib/utils/getColorFromString"
+import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { SingleOverlapSolver } from "./sub-solvers/SingleOverlapSolver/SingleOverlapSolver"
 import { detectTraceLabelOverlap } from "./detectTraceLabelOverlap"
 
@@ -27,7 +27,6 @@ interface OverlapCollectionSolverInput {
   netLabelPlacements: NetLabelPlacement[]
   mergedLabelNetIdMap: Record<string, Set<string>>
 }
-
 
 /**
  * This solver is a pipeline that runs a series of sub-solvers to resolve
