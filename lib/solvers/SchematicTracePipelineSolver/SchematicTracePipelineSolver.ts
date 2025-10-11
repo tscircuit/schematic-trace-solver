@@ -7,16 +7,19 @@ import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectionPairSolver"
-import { SchematicTraceLinesSolver } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import {
+  SchematicTraceLinesSolver,
+  type SolvedTracePath,
+} from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { visualizeInputProblem } from "./visualizeInputProblem"
-import { GuidelinesSolver } from "../GuidelinesSolver/GuidelinesSolver"
 import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
-import { getInputChipBounds } from "../GuidelinesSolver/getInputChipBounds"
 import { correctPinsInsideChips } from "./correctPinsInsideChip"
 import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
+import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
+import { TraceCleanupSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/TraceCleanupSolver/TraceCleanupSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -63,7 +66,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   longDistancePairSolver?: LongDistancePairSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
+  labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
+  traceCleanupSolver?: TraceCleanupSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -182,18 +187,23 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           },
         ]
       },
-      {
-        onSolved: (instance) => {
-          if (
-            instance.traceLabelOverlapAvoidanceSolver &&
-            instance.netLabelPlacementSolver
-          ) {
-            const { netLabelPlacements } =
-              instance.traceLabelOverlapAvoidanceSolver.getOutput()
-            instance.netLabelPlacementSolver.netLabelPlacements =
-              netLabelPlacements
-          }
-        },
+    ),
+    definePipelineStep(
+      "netLabelPlacementSolver",
+      NetLabelPlacementSolver,
+      (instance) => {
+        const traces =
+          instance.traceCleanupSolver?.getOutput().traces ??
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            inputTraceMap: Object.fromEntries(
+              traces.map((trace: SolvedTracePath) => [trace.mspPairId, trace]),
+            ),
+          },
+        ]
       },
     ),
   ]
@@ -303,16 +313,19 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         }) as GraphicsObject[]),
     ]
 
-    if (visualizations.length === 1) return visualizations[0]!
+    if (visualizations.length === 1) {
+      return visualizations[0]!
+    }
 
     // Simple combination of visualizations
-    return {
+    const finalGraphics = {
       points: visualizations.flatMap((v) => v.points || []),
       rects: visualizations.flatMap((v) => v.rects || []),
       lines: visualizations.flatMap((v) => v.lines || []),
       circles: visualizations.flatMap((v) => v.circles || []),
       texts: visualizations.flatMap((v) => v.texts || []),
     }
+    return finalGraphics
   }
 
   /**

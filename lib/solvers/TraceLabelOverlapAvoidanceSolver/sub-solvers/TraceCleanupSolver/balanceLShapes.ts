@@ -1,18 +1,18 @@
 import type { Point } from "graphics-debug"
 import type { InputProblem } from "lib/types/InputProblem"
-import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { getObstacleRects } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { segmentIntersectsRect } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { simplifyPath } from "./simplifyPath"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 
 export const balanceLShapes = ({
   traces,
-  problem,
+  inputProblem,
   allLabelPlacements,
 }: {
   traces: SolvedTracePath[]
-  problem: InputProblem
+  inputProblem: InputProblem
   allLabelPlacements: NetLabelPlacement[]
 }): SolvedTracePath[] | null => {
   const TOLERANCE = 1e-5
@@ -46,7 +46,7 @@ export const balanceLShapes = ({
     }
   }
 
-  const obstacles = getObstacleRects(problem).map((obs) => ({
+  const obstacles = getObstacleRects(inputProblem).map((obs) => ({
     ...obs,
     minX: obs.minX + TOLERANCE,
     maxX: obs.maxX - TOLERANCE,
@@ -81,7 +81,7 @@ export const balanceLShapes = ({
   }
 
   const newTraces = traces.map((trace) => {
-    let newPath = [...trace.tracePath]
+    const newPath = [...trace.tracePath]
 
     if (newPath.length < 4) {
       return { ...trace }
@@ -94,7 +94,8 @@ export const balanceLShapes = ({
 
     if (newPath.length === 4) {
       const [p0, p1, p2, p3] = newPath
-      let p1New: Point, p2New: Point
+      let p1New: Point
+      let p2New: Point
 
       const isHVHShape = p0.y === p1.y && p1.x === p2.x && p2.y === p3.y
 
@@ -154,7 +155,8 @@ export const balanceLShapes = ({
         continue
       }
 
-      let p2New: Point, p3New: Point
+      let p2New: Point
+      let p3New: Point
       const len1Original = isHVHZShape
         ? Math.abs(p1.x - p2.x)
         : Math.abs(p1.y - p2.y)

@@ -1,24 +1,24 @@
 import type { InputProblem } from "lib/types/InputProblem"
-import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { getObstacleRects } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { minimizeTurns } from "./turnMinimization"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 
 export const minimizeTurnsWithFilteredLabels = ({
   traces,
-  problem,
+  inputProblem,
   allLabelPlacements,
   mergedLabelNetIdMap,
   paddingBuffer,
 }: {
   traces: SolvedTracePath[]
-  problem: InputProblem
+  inputProblem: InputProblem
   allLabelPlacements: NetLabelPlacement[]
   mergedLabelNetIdMap: Record<string, Set<string>>
   paddingBuffer: number
 }): SolvedTracePath[] | null => {
   let changesMade = false
-  const obstacles = getObstacleRects(problem)
+  const obstacles = getObstacleRects(inputProblem)
 
   const newTraces = traces.map((trace) => {
     const originalPath = trace.tracePath
