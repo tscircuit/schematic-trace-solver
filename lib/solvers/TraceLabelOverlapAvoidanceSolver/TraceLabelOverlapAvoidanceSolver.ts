@@ -16,6 +16,11 @@ interface TraceLabelOverlapAvoidanceSolverInput {
   mergedLabelNetIdMap: Record<string, Set<string>>
 }
 
+/**
+ * This solver identifies and resolves overlaps between traces and net labels.
+ * It acts as a manager, delegating the actual rerouting of a single trace
+ * to the TraceLabelOverlapAvoidanceSubSolver.
+ */
 export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   private problem: InputProblem
   private netLabelPlacements: NetLabelPlacement[]

@@ -20,6 +20,11 @@ interface TraceLabelOverlapAvoidanceSubSolverInput {
   detourCount: number
 }
 
+/**
+ * This solver attempts to find a valid rerouting for a single trace that is
+ * overlapping with a net label. It tries various candidate paths until it
+ * finds one that does not introduce new collisions.
+ */
 export class TraceLabelOverlapAvoidanceSubSolver extends BaseSolver {
   queuedCandidatePaths: Point[][]
   solvedTracePath: Point[] | null = null
