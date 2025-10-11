@@ -17,7 +17,6 @@ interface TraceLabelOverlapAvoidanceSolverInput {
   problem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
-  mergedLabelNetIdMap: Record<string, Set<string>>
 }
 
 // Define a type for the input of the internal overlap solver to avoid conflicts
@@ -36,7 +35,6 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   problem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
-  mergedLabelNetIdMap: Record<string, Set<string>>
 
   // sub-solver instances
   labelMergingSolver?: LabelMergingSolver
@@ -49,7 +47,6 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
     this.problem = solverInput.problem
     this.traces = solverInput.traces
     this.netLabelPlacements = solverInput.netLabelPlacements
-    this.mergedLabelNetIdMap = solverInput.mergedLabelNetIdMap
   }
 
   override _step() {
