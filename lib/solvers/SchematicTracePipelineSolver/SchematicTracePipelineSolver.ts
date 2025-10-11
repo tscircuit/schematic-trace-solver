@@ -164,16 +164,12 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       },
     ),
-    definePipelineStep(
-      "labelMergingSolver",
-      LabelMergingSolver,
-      (instance) => [
-        {
-          netLabelPlacements:
-            instance.netLabelPlacementSolver!.netLabelPlacements,
-        },
-      ],
-    ),
+    definePipelineStep("labelMergingSolver", LabelMergingSolver, (instance) => [
+      {
+        netLabelPlacements:
+          instance.netLabelPlacementSolver!.netLabelPlacements,
+      },
+    ]),
     definePipelineStep(
       "traceLabelOverlapAvoidanceSolver",
       TraceLabelOverlapAvoidanceSolver,
