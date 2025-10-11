@@ -154,7 +154,7 @@ export class LabelMergingSolver extends BaseSolver {
                 points: [p1, p2, p3, p4, p1],
                 strokeColor: color,
                 strokeDash: "4 4",
-              })  
+              })
               // Draw line from original to new center
               graphics.lines.push({
                 points: [originalLabel.center, finalLabel.center],
