@@ -1,4 +1,3 @@
-
 import type { Point } from "@tscircuit/math-utils"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
