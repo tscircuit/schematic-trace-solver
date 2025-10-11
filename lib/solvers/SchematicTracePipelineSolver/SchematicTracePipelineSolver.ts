@@ -184,7 +184,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           {
             problem: instance.inputProblem,
             traces,
-            netLabelPlacements
+            netLabelPlacements,
           },
         ]
       },
