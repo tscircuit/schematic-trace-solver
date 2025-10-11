@@ -17,6 +17,8 @@ import { getInputChipBounds } from "../GuidelinesSolver/getInputChipBounds"
 import { correctPinsInsideChips } from "./correctPinsInsideChip"
 import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
+import { LabelMergingSolver } from "../LabelMergingSolver/LabelMergingSolver"
+import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -63,7 +65,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   longDistancePairSolver?: LongDistancePairSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
+  labelMergingSolver?: LabelMergingSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
+  traceCleanupSolver?: TraceCleanupSolver
+  finalNetLabelPlacementSolver?: NetLabelPlacementSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -160,6 +165,16 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
+      "labelMergingSolver",
+      LabelMergingSolver,
+      (instance) => [
+        {
+          netLabelPlacements:
+            instance.netLabelPlacementSolver!.netLabelPlacements,
+        },
+      ],
+    ),
+    definePipelineStep(
       "traceLabelOverlapAvoidanceSolver",
       TraceLabelOverlapAvoidanceSolver,
       (instance) => {
@@ -171,27 +186,70 @@ export class SchematicTracePipelineSolver extends BaseSolver {
               .allTracesMerged.map((p) => [p.mspPairId, p]),
           )
         const traces = Object.values(traceMap)
-        const netLabelPlacements =
-          instance.netLabelPlacementSolver!.netLabelPlacements
+        const { netLabelPlacements, mergedLabelNetIdMap } =
+          instance.labelMergingSolver!.getOutput()
+
+        return [
+          {
+            problem: instance.inputProblem,
+            traces,
+            netLabelPlacements,
+            mergedLabelNetIdMap,
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
+      "traceCleanupSolver",
+      TraceCleanupSolver,
+      (instance) => {
+        const { allTraces, modifiedTraces } =
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput()
+        const { netLabelPlacements, mergedLabelNetIdMap } =
+          instance.labelMergingSolver!.getOutput()
+
+        return [
+          {
+            problem: instance.inputProblem,
+            allTraces,
+            targetTraceIds: new Set(modifiedTraces.map((t) => t.mspPairId)),
+            allLabelPlacements: netLabelPlacements,
+            mergedLabelNetIdMap,
+            paddingBuffer: 0.01,
+          },
+        ]
+      },
+      {
+        shouldSkip: (instance) =>
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput().modifiedTraces
+            .length === 0,
+      },
+    ),
+    definePipelineStep(
+      "finalNetLabelPlacementSolver",
+      NetLabelPlacementSolver,
+      (instance) => {
+        const traces =
+          instance.traceCleanupSolver?.getOutput().traces ??
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput().allTraces
 
         return [
           {
             inputProblem: instance.inputProblem,
-            traces,
-            netLabelPlacements,
+            inputTraceMap: Object.fromEntries(
+              traces.map((trace) => [trace.mspPairId, trace]),
+            ),
           },
         ]
       },
       {
         onSolved: (instance) => {
           if (
-            instance.traceLabelOverlapAvoidanceSolver &&
+            instance.finalNetLabelPlacementSolver &&
             instance.netLabelPlacementSolver
           ) {
-            const { netLabelPlacements } =
-              instance.traceLabelOverlapAvoidanceSolver.getOutput()
             instance.netLabelPlacementSolver.netLabelPlacements =
-              netLabelPlacements
+              instance.finalNetLabelPlacementSolver.netLabelPlacements
           }
         },
       },
@@ -303,16 +361,19 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         }) as GraphicsObject[]),
     ]
 
-    if (visualizations.length === 1) return visualizations[0]!
+    if (visualizations.length === 1) {
+      return visualizations[0]!
+    }
 
     // Simple combination of visualizations
-    return {
+    const finalGraphics = {
       points: visualizations.flatMap((v) => v.points || []),
       rects: visualizations.flatMap((v) => v.rects || []),
       lines: visualizations.flatMap((v) => v.lines || []),
       circles: visualizations.flatMap((v) => v.circles || []),
       texts: visualizations.flatMap((v) => v.texts || []),
     }
+    return finalGraphics
   }
 
   /**

@@ -5,7 +5,7 @@ import { getObstacleRects } from "../SchematicTraceLinesSolver/SchematicTraceSin
 import type { InputProblem } from "lib/types/InputProblem"
 import { findTraceViolationZone } from "./violation"
 import { tryFourPointDetour, trySnipAndReconnect } from "./trySnipAndReconnect"
-import { simplifyPath } from "./simplifyPath"
+import { simplifyPath } from "../TraceCleanupSolver/simplifyPath"
 
 export const rerouteCollidingTrace = ({
   trace,
