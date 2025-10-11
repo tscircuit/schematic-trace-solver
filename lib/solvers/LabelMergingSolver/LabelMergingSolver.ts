@@ -1,6 +1,8 @@
 import { BaseSolver } from "../BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { getRectBounds } from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import type { GraphicsObject } from "graphics-debug"
+import { getColorFromString } from "lib/utils/getColorFromString"
 
 interface LabelMergingSolverInput {
   netLabelPlacements: NetLabelPlacement[]
@@ -18,6 +20,11 @@ export class LabelMergingSolver extends BaseSolver {
   constructor(solverInput: LabelMergingSolverInput) {
     super()
     this.input = solverInput
+    // Initialize output to a default state to allow visualization before the first step
+    this.output = {
+      netLabelPlacements: solverInput.netLabelPlacements,
+      mergedLabelNetIdMap: {},
+    }
   }
 
   override _step() {
@@ -94,5 +101,81 @@ export class LabelMergingSolver extends BaseSolver {
 
   getOutput(): LabelMergingSolverOutput {
     return this.output
+  }
+
+  override visualize(): GraphicsObject {
+    const graphics: Pick<
+      Required<GraphicsObject>,
+      "rects" | "lines" | "points" | "texts"
+    > = {
+      rects: [],
+      lines: [],
+      points: [],
+      texts: [],
+    }
+
+    const originalLabelsById = new Map<string, NetLabelPlacement>()
+    for (const label of this.input.netLabelPlacements) {
+      originalLabelsById.set(label.globalConnNetId, label)
+    }
+
+    for (const finalLabel of this.output.netLabelPlacements) {
+      const isMerged = finalLabel.globalConnNetId.startsWith("merged-group-")
+      const color = getColorFromString(finalLabel.globalConnNetId)
+
+      if (isMerged) {
+        // Draw the new merged label
+        graphics.rects.push({
+          center: finalLabel.center,
+          width: finalLabel.width,
+          height: finalLabel.height,
+          fill: color.replace(/, 1\)/, ", 0.2)"), // semi-transparent
+          stroke: color,
+          label: finalLabel.globalConnNetId,
+        })
+
+        const originalNetIds =
+          this.output.mergedLabelNetIdMap[finalLabel.globalConnNetId]
+        if (originalNetIds) {
+          for (const originalNetId of originalNetIds) {
+            const originalLabel = originalLabelsById.get(originalNetId)
+            if (originalLabel) {
+              // Draw the original label as a dashed box
+              const bounds = getRectBounds(
+                originalLabel.center,
+                originalLabel.width,
+                originalLabel.height,
+              )
+              const p1 = { x: bounds.minX, y: bounds.minY }
+              const p2 = { x: bounds.maxX, y: bounds.minY }
+              const p3 = { x: bounds.maxX, y: bounds.maxY }
+              const p4 = { x: bounds.minX, y: bounds.maxY }
+              graphics.lines.push({
+                points: [p1, p2, p3, p4, p1],
+                strokeColor: color,
+                strokeDash: "4 4",
+              })  
+              // Draw line from original to new center
+              graphics.lines.push({
+                points: [originalLabel.center, finalLabel.center],
+                strokeColor: color,
+                strokeDash: "2 2",
+              })
+            }
+          }
+        }
+      } else {
+        // Draw un-merged labels
+        graphics.rects.push({
+          center: finalLabel.center,
+          width: finalLabel.width,
+          height: finalLabel.height,
+          stroke: color,
+          label: finalLabel.globalConnNetId,
+        })
+      }
+    }
+
+    return graphics
   }
 }
