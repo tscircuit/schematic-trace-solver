@@ -9,6 +9,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 import { SchematicTraceLinesSolver } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
+import { TraceMergerSolver } from "../TraceMergerSolver/TraceMergerSolver"
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { visualizeInputProblem } from "./visualizeInputProblem"
 import { GuidelinesSolver } from "../GuidelinesSolver/GuidelinesSolver"
@@ -62,6 +63,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   longDistancePairSolver?: LongDistancePairSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
+  traceMergerSolver?: TraceMergerSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
 
@@ -139,12 +141,32 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
+      "traceMergerSolver",
+      TraceMergerSolver,
+      () => [
+        {
+          inputProblem: this.inputProblem,
+          inputTraceMap:
+            this.traceOverlapShiftSolver?.correctedTraceMap ??
+            Object.fromEntries(
+              this.longDistancePairSolver!.getOutput().allTracesMerged.map(
+                (p) => [p.mspPairId, p],
+              ),
+            ),
+        },
+      ],
+      {
+        onSolved: (_solver) => {},
+      },
+    ),
+    definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
       () => [
         {
           inputProblem: this.inputProblem,
           inputTraceMap:
+            this.traceMergerSolver?.mergedTraceMap ??
             this.traceOverlapShiftSolver?.correctedTraceMap ??
             Object.fromEntries(
               this.longDistancePairSolver!.getOutput().allTracesMerged.map(
@@ -164,6 +186,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       TraceLabelOverlapAvoidanceSolver,
       (instance) => {
         const traceMap =
+          instance.traceMergerSolver?.mergedTraceMap ??
           instance.traceOverlapShiftSolver?.correctedTraceMap ??
           Object.fromEntries(
             instance
