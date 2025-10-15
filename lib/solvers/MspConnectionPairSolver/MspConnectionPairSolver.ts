@@ -94,6 +94,16 @@ export class MspConnectionPairSolver extends BaseSolver {
     const dcNetId = this.queuedDcNetIds.shift()!
 
     const allIds = this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[]
+
+    // Find the user-facing net ID (if any) to check for exclusion
+    const firstPinId = allIds.find((id) => !!this.pinMap[id])
+    if (firstPinId) {
+      const userNetId = this.userNetIdByPinId[firstPinId]
+      if (userNetId === "GND" || userNetId === "VCC") {
+        return
+      }
+    }
+
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
     if (directlyConnectedPins.length <= 1) {

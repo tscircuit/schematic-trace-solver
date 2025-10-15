@@ -72,8 +72,13 @@ export class LongDistancePairSolver extends BaseSolver {
     > = []
     const addedPairKeys = new Set<string>()
 
-    for (const netId of Object.keys(netConnMap.netMap)) {
-      const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
+    for (const internalNetId of Object.keys(netConnMap.netMap)) {
+      const [originalNetId, ...allPinIdsInNet] = netConnMap.getIdsConnectedToNet(internalNetId)
+
+      if (originalNetId === "GND" || originalNetId === "VCC") {
+        continue
+      }
+
       if (allPinIdsInNet.length < 2) continue
 
       const unconnectedPinIds = allPinIdsInNet.filter(
