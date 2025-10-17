@@ -28,9 +28,7 @@ const inputProblem: InputProblem = {
     },
   ],
   // Two nets: NET_A is horizontal across y=0, NET_B is a labeled net with y- orientation near the middle.
-  directConnections: [
-    { pinIds: ["U1.1", "U1.2"], netId: "NET_A" },
-  ],
+  directConnections: [{ pinIds: ["U1.1", "U1.2"], netId: "NET_A" }],
   netConnections: [
     { netId: "NET_B", pinIds: ["U2.1", "U2.2"], netLabelWidth: 0.45 },
   ],
