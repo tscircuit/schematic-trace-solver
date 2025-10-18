@@ -69,20 +69,20 @@ export const visualizeInputProblem = (
   }
 
   for (const netConn of inputProblem.netConnections) {
+    // For each net, only connect adjacent pins in the array
+    // This avoids creating a fully connected graph for nets
     const pins = netConn.pinIds.map((pinId) => pinIdMap.get(pinId)!)
     for (let i = 0; i < pins.length - 1; i++) {
-      for (let j = i + 1; j < pins.length; j++) {
-        const pin1 = pins[i]!
-        const pin2 = pins[j]!
-        graphics.lines.push({
-          points: [
-            { x: pin1.x, y: pin1.y },
-            { x: pin2.x, y: pin2.y },
-          ],
-          strokeColor: getColorFromString(netConn.netId, connectionAlpha),
-          strokeDash: "4 2",
-        })
-      }
+      const pin1 = pins[i]!
+      const pin2 = pins[i + 1]!
+      graphics.lines.push({
+        points: [
+          { x: pin1.x, y: pin1.y },
+          { x: pin2.x, y: pin2.y },
+        ],
+        strokeColor: getColorFromString(netConn.netId, connectionAlpha),
+        strokeDash: "4 2",
+      })
     }
   }
 

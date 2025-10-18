@@ -59,9 +59,6 @@ y-" data-x="-4" data-y="-0.5" cx="67.72277227722776" cy="356.03960396039605" r="
     <polyline data-points="-0.8,-0.2 -4,-0.5" data-type="line" data-label="" points="422.5742574257426,322.7722772277228 67.72277227722776,356.03960396039605" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
   </g>
   <g>
-    <polyline data-points="-0.8,-0.2 -2,-0.5" data-type="line" data-label="" points="422.5742574257426,322.7722772277228 289.50495049504957,356.03960396039605" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
-  </g>
-  <g>
     <polyline data-points="-4,-0.5 -2,-0.5" data-type="line" data-label="" points="67.72277227722776,356.03960396039605 289.50495049504957,356.03960396039605" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
   </g>
   <g>

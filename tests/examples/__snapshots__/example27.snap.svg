@@ -156,9 +156,6 @@ x-" data-x="3.4" data-y="0.3" cx="526.9565217391305" cy="295.6521739130435" r="3
     <polyline data-points="0,-1.4 -3.4,-0.8999999999999999" data-type="line" data-label="" points="320,399.1304347826087 113.04347826086953,368.69565217391306" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
   </g>
   <g>
-    <polyline data-points="0,-1.4 3.4,-0.8999999999999999" data-type="line" data-label="" points="320,399.1304347826087 526.9565217391305,368.69565217391306" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
-  </g>
-  <g>
     <polyline data-points="-3.4,-0.8999999999999999 3.4,-0.8999999999999999" data-type="line" data-label="" points="113.04347826086953,368.69565217391306 526.9565217391305,368.69565217391306" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
   </g>
   <g>

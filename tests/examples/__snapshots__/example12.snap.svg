@@ -50,9 +50,6 @@ x+" data-x="3.41" data-y="0.01999999999999985" cx="549.090909090909" cy="227.750
     <polyline data-points="1.1,-0.2 1.6499999999999997,-1.7944553499999996" data-type="line" data-label="" points="288.33702882483374,252.5846607538803 350.4212860310421,432.5675263051804" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
   </g>
   <g>
-    <polyline data-points="1.1,-0.2 3.41,0.01999999999999985" data-type="line" data-label="" points="288.33702882483374,252.5846607538803 549.090909090909,227.75095787139696" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
-  </g>
-  <g>
     <polyline data-points="1.6499999999999997,-1.7944553499999996 3.41,0.01999999999999985" data-type="line" data-label="" points="350.4212860310421,432.5675263051804 549.090909090909,227.75095787139696" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
   </g>
   <g>

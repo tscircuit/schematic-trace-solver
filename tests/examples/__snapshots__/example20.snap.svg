@@ -95,28 +95,10 @@ y+" data-x="1.757519574999999" data-y="-2.2" cx="479.91860312291124" cy="509.268
     <polyline data-points="-1.4,0.42500000000000004 1.4,-0.3" data-type="line" data-label="" points="220.08485425212754,293.25559941049465 450.49815163863525,352.9161853409297" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
   </g>
   <g>
-    <polyline data-points="-1.4,0.42500000000000004 1.4,-0.5" data-type="line" data-label="" points="220.08485425212754,293.25559941049465 450.49815163863525,369.37427801139455" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
-  </g>
-  <g>
-    <polyline data-points="-1.4,0.42500000000000004 -2.3148566499999994,0.5512093000000002" data-type="line" data-label="" points="220.08485425212754,293.25559941049465 144.8008766226725,282.86977763412216" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
-  </g>
-  <g>
-    <polyline data-points="-1.4,0.42500000000000004 1.7580660749999977,2.3025814000000002" data-type="line" data-label="" points="220.08485425212754,293.25559941049465 479.96357486113317,138.7485560227891" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
-  </g>
-  <g>
     <polyline data-points="1.4,-0.3 1.4,-0.5" data-type="line" data-label="" points="450.49815163863525,352.9161853409297 450.49815163863525,369.37427801139455" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
   </g>
   <g>
-    <polyline data-points="1.4,-0.3 -2.3148566499999994,0.5512093000000002" data-type="line" data-label="" points="450.49815163863525,352.9161853409297 144.8008766226725,282.86977763412216" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
-  </g>
-  <g>
-    <polyline data-points="1.4,-0.3 1.7580660749999977,2.3025814000000002" data-type="line" data-label="" points="450.49815163863525,352.9161853409297 479.96357486113317,138.7485560227891" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
-  </g>
-  <g>
     <polyline data-points="1.4,-0.5 -2.3148566499999994,0.5512093000000002" data-type="line" data-label="" points="450.49815163863525,369.37427801139455 144.8008766226725,282.86977763412216" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
-  </g>
-  <g>
-    <polyline data-points="1.4,-0.5 1.7580660749999977,2.3025814000000002" data-type="line" data-label="" points="450.49815163863525,369.37427801139455 479.96357486113317,138.7485560227891" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
   </g>
   <g>
     <polyline data-points="-2.3148566499999994,0.5512093000000002 1.7580660749999977,2.3025814000000002" data-type="line" data-label="" points="144.8008766226725,282.86977763412216 479.96357486113317,138.7485560227891" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
