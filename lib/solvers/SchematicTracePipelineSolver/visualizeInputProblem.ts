@@ -70,7 +70,7 @@ export const visualizeInputProblem = (
 
   for (const netConn of inputProblem.netConnections) {
     // For each net, only connect adjacent pins in the array
-    // This avoids creating a fully connected graph for nets
+    // This avoids creating a fully connected-graph for nets
     const pins = netConn.pinIds.map((pinId) => pinIdMap.get(pinId)!)
     for (let i = 0; i < pins.length - 1; i++) {
       const pin1 = pins[i]!
