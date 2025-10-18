@@ -158,18 +158,31 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       // If this segment would cross any restricted center line, reject the candidate path.
       const EPS = 1e-9
       for (const [, rcl] of restrictedCenterLines) {
+        const bounds = rcl.bounds
         if (rcl.axes.has("x") && typeof rcl.x === "number") {
-          // segment strictly crosses vertical center line
+          // segment strictly crosses vertical center line near the chip bounds
           if ((start.x - rcl.x) * (end.x - rcl.x) < -EPS) {
-            pathIsValid = false
-            break
+            const segMinY = Math.min(start.y, end.y)
+            const segMaxY = Math.max(start.y, end.y)
+            const overlapY =
+              Math.min(segMaxY, bounds.maxY) - Math.max(segMinY, bounds.minY)
+            if (overlapY > EPS) {
+              pathIsValid = false
+              break
+            }
           }
         }
         if (rcl.axes.has("y") && typeof rcl.y === "number") {
-          // segment strictly crosses horizontal center line
+          // segment strictly crosses horizontal center line near the chip bounds
           if ((start.y - rcl.y) * (end.y - rcl.y) < -EPS) {
-            pathIsValid = false
-            break
+            const segMinX = Math.min(start.x, end.x)
+            const segMaxX = Math.max(start.x, end.x)
+            const overlapX =
+              Math.min(segMaxX, bounds.maxX) - Math.max(segMinX, bounds.minX)
+            if (overlapX > EPS) {
+              pathIsValid = false
+              break
+            }
           }
         }
       }
