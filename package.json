@@ -14,7 +14,7 @@
     "@react-hook/resize-observer": "^2.0.2",
     "@tscircuit/math-utils": "^0.0.19",
     "@types/bun": "^1.2.21",
-    "bun-match-svg": "^0.0.13",
+  "bun-match-svg": "^0.0.9",
     "calculate-elbow": "^0.0.12",
     "connectivity-map": "^1.0.0",
     "flatbush": "^4.5.0",
