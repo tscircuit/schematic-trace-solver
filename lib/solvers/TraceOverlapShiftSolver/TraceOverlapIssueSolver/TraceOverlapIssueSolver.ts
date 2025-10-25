@@ -9,15 +9,15 @@ type Point = { x: number; y: number }
 
 // Configuration for the trace overlap solver
 interface TraceOffsetConfig {
-  maxBruteForceSize: number  // Maximum number of traces to use brute force approach
-  shiftDistance: number      // How far to shift traces to avoid overlap
-  strategy: 'brute-force' | 'greedy'  // Which algorithm to use
+  maxBruteForceSize: number // Maximum number of traces to use brute force approach
+  shiftDistance: number // How far to shift traces to avoid overlap
+  strategy: "brute-force" | "greedy" // Which algorithm to use
 }
 
 // Represents a single solution's offsets and how good it is
 interface OffsetAssignment {
-  offsets: number[]  // How much to shift each trace
-  score: number      // Lower is better (crossings * 1000 + total_offset)
+  offsets: number[] // How much to shift each trace
+  score: number // Lower is better (crossings * 1000 + total_offset)
 }
 
 export interface OverlappingTraceSegmentLocator {
@@ -97,12 +97,12 @@ export class TraceOverlapIssueSolver extends BaseSolver {
   private findOffsetsGreedy(shiftDistance: number): number[] {
     const n = this.overlappingTraceSegments.length
     const offsets = new Array(n).fill(0)
-    
+
     // Handle each trace one by one
     for (let i = 0; i < n; i++) {
       let bestScore = Infinity
       let bestOffset = 0
-      
+
       // Try each possible offset for this trace
       for (const mult of [-1, 0, 1]) {
         offsets[i] = mult * shiftDistance
@@ -112,11 +112,11 @@ export class TraceOverlapIssueSolver extends BaseSolver {
           bestOffset = offsets[i]
         }
       }
-      
+
       // Keep the best offset we found for this trace
       offsets[i] = bestOffset
     }
-    
+
     return offsets
   }
 
@@ -127,32 +127,35 @@ export class TraceOverlapIssueSolver extends BaseSolver {
 
     // Apply these offsets temporarily to count crossings
     const simulatedPaths = new Map<string, Point[]>()
-    
+
     this.overlappingTraceSegments.forEach((group, idx) => {
       const offset = offsets[idx]!
       totalOffset += Math.abs(offset)
-      
+
       // Simulate moving each trace by its offset
-      group.pathsWithOverlap.forEach(({solvedTracePathIndex, traceSegmentIndex}) => {
-        const original = this.traceNetIslands[group.connNetId][solvedTracePathIndex]!
-        const path = original.tracePath.map(p => ({...p}))
-        
-        // Move the overlapping segment
-        const start = path[traceSegmentIndex]!
-        const end = path[traceSegmentIndex + 1]!
-        
-        if (Math.abs(start.x - end.x) < this.EPS) {
-          // Vertical segment - shift horizontally
-          start.x += offset
-          end.x += offset
-        } else {
-          // Horizontal segment - shift vertically
-          start.y += offset
-          end.y += offset
-        }
-        
-        simulatedPaths.set(`${group.connNetId}-${solvedTracePathIndex}`, path)
-      })
+      group.pathsWithOverlap.forEach(
+        ({ solvedTracePathIndex, traceSegmentIndex }) => {
+          const original =
+            this.traceNetIslands[group.connNetId][solvedTracePathIndex]!
+          const path = original.tracePath.map((p) => ({ ...p }))
+
+          // Move the overlapping segment
+          const start = path[traceSegmentIndex]!
+          const end = path[traceSegmentIndex + 1]!
+
+          if (Math.abs(start.x - end.x) < this.EPS) {
+            // Vertical segment - shift horizontally
+            start.x += offset
+            end.x += offset
+          } else {
+            // Horizontal segment - shift vertically
+            start.y += offset
+            end.y += offset
+          }
+
+          simulatedPaths.set(`${group.connNetId}-${solvedTracePathIndex}`, path)
+        },
+      )
     })
 
     // Count how many times traces cross each other
@@ -187,20 +190,29 @@ export class TraceOverlapIssueSolver extends BaseSolver {
   }
 
   // Do two line segments intersect?
-  private segmentsIntersect(a1: Point, a2: Point, b1: Point, b2: Point): boolean {
+  private segmentsIntersect(
+    a1: Point,
+    a2: Point,
+    b1: Point,
+    b2: Point,
+  ): boolean {
     // Quick check for parallel segments (they can't cross)
     if (Math.abs(a1.x - a2.x) < this.EPS && Math.abs(b1.x - b2.x) < this.EPS) {
-      return false  // Both vertical
+      return false // Both vertical
     }
     if (Math.abs(a1.y - a2.y) < this.EPS && Math.abs(b1.y - b2.y) < this.EPS) {
-      return false  // Both horizontal
+      return false // Both horizontal
     }
 
     // Check if their bounding boxes overlap
-    const ax1 = Math.min(a1.x, a2.x), ax2 = Math.max(a1.x, a2.x)
-    const ay1 = Math.min(a1.y, a2.y), ay2 = Math.max(a1.y, a2.y)
-    const bx1 = Math.min(b1.x, b2.x), bx2 = Math.max(b1.x, b2.x)
-    const by1 = Math.min(b1.y, b2.y), by2 = Math.max(b1.y, b2.y)
+    const ax1 = Math.min(a1.x, a2.x),
+      ax2 = Math.max(a1.x, a2.x)
+    const ay1 = Math.min(a1.y, a2.y),
+      ay2 = Math.max(a1.y, a2.y)
+    const bx1 = Math.min(b1.x, b2.x),
+      bx2 = Math.max(b1.x, b2.x)
+    const by1 = Math.min(b1.y, b2.y),
+      by2 = Math.max(b1.y, b2.y)
 
     return !(ax2 < bx1 || bx2 < ax1 || ay2 < by1 || by2 < ay1)
   }
@@ -208,16 +220,18 @@ export class TraceOverlapIssueSolver extends BaseSolver {
   override _step() {
     // Our configuration - we can make this adjustable later
     const config: TraceOffsetConfig = {
-      maxBruteForceSize: 10,    // Try all combinations for up to 10 traces
+      maxBruteForceSize: 10, // Try all combinations for up to 10 traces
       shiftDistance: this.SHIFT_DISTANCE,
-      strategy: 'brute-force'    // Start with brute force, fall back to greedy
+      strategy: "brute-force", // Start with brute force, fall back to greedy
     }
 
     // Choose which algorithm to use based on problem size
     let offsets: number[]
     if (this.overlappingTraceSegments.length <= config.maxBruteForceSize) {
       // Small enough for brute force - try all combinations
-      const bestAssignment = this.findBestOffsetsBruteForce(config.shiftDistance)
+      const bestAssignment = this.findBestOffsetsBruteForce(
+        config.shiftDistance,
+      )
       offsets = bestAssignment.offsets
     } else {
       // Too many traces - use faster greedy approach
