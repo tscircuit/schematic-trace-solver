@@ -102,9 +102,13 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     ) => !!p && !!q && eq(p.x, q.x) && eq(p.y, q.y)
 
     const byPath: Map<number, Set<number>> = new Map()
-    for (const loc of group.pathsWithOverlap) {
+    const pathIdxToOffsetIdx: Map<number, number> = new Map()
+
+    for (let i = 0; i < group.pathsWithOverlap.length; i++) {
+      const loc = group.pathsWithOverlap[i]
       if (!byPath.has(loc.solvedTracePathIndex)) {
         byPath.set(loc.solvedTracePathIndex, new Set())
+        pathIdxToOffsetIdx.set(loc.solvedTracePathIndex, i)
       }
       byPath.get(loc.solvedTracePathIndex)!.add(loc.traceSegmentIndex)
     }
@@ -115,7 +119,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     for (const [pathIdx, segIdxSet] of byPath) {
       const original = this.traceNetIslands[group.connNetId][pathIdx]!
       const pts = original.tracePath.map((p) => ({ ...p }))
-      const offset = offsets[pathIdx]!
+      const offset = offsets[pathIdxToOffsetIdx.get(pathIdx)!]!
 
       const segIdxsRev = Array.from(segIdxSet)
         .sort((a, b) => a - b)
