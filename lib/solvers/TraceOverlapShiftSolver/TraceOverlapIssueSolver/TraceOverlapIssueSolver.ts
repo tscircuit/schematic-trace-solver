@@ -191,8 +191,35 @@ export class TraceOverlapIssueSolver extends BaseSolver {
         (_, idx) => (idx - (numTraces - 1) / 2) * stepSize * 2,
       )
 
-      // Apply offsets (use default ordering for now to maintain test compatibility)
-      const finalTraces = this.applyOffsetsToGroup(group, offsetValues)
+      // Try all permutations to find minimum crossings
+      let bestOffsets = offsetValues
+      let minCrossings = Infinity
+
+      if (numTraces <= config.maxBruteForceSize) {
+        const permute = (arr: number[]): number[][] => {
+          if (arr.length <= 1) return [arr]
+          const result: number[][] = []
+          for (let i = 0; i < arr.length; i++) {
+            const rest = [...arr.slice(0, i), ...arr.slice(i + 1)]
+            for (const p of permute(rest)) {
+              result.push([arr[i], ...p])
+            }
+          }
+          return result
+        }
+
+        for (const offsets of permute(offsetValues)) {
+          const traces = this.applyOffsetsToGroup(group, offsets)
+          const crossings = this.countCrossings(traces)
+          if (crossings < minCrossings) {
+            minCrossings = crossings
+            bestOffsets = offsets
+          }
+        }
+      }
+
+      // Apply best offsets
+      const finalTraces = this.applyOffsetsToGroup(group, bestOffsets)
       for (const trace of finalTraces) {
         this.correctedTraceMap[trace.mspPairId] = trace
       }
