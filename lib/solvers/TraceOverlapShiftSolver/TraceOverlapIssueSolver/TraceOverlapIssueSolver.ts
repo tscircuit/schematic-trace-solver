@@ -18,7 +18,7 @@ export interface OverlappingTraceSegmentLocator {
 interface TraceOffsetConfig {
   maxBruteForceSize: number
   shiftDistance: number
-  strategy: 'brute-force' | 'greedy'
+  strategy: "brute-force" | "greedy"
 }
 
 export class TraceOverlapIssueSolver extends BaseSolver {
@@ -39,20 +39,29 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     this.traceNetIslands = params.traceNetIslands
   }
 
-  private segmentsIntersect(a1: Point, a2: Point, b1: Point, b2: Point): boolean {
+  private segmentsIntersect(
+    a1: Point,
+    a2: Point,
+    b1: Point,
+    b2: Point,
+  ): boolean {
     // Quick check for parallel segments (they can't cross)
     if (Math.abs(a1.x - a2.x) < this.EPS && Math.abs(b1.x - b2.x) < this.EPS) {
-      return false  // Both vertical
+      return false // Both vertical
     }
     if (Math.abs(a1.y - a2.y) < this.EPS && Math.abs(b1.y - b2.y) < this.EPS) {
-      return false  // Both horizontal
+      return false // Both horizontal
     }
 
     // Check if their bounding boxes overlap
-    const ax1 = Math.min(a1.x, a2.x), ax2 = Math.max(a1.x, a2.x)
-    const ay1 = Math.min(a1.y, a2.y), ay2 = Math.max(a1.y, a2.y)
-    const bx1 = Math.min(b1.x, b2.x), bx2 = Math.max(b1.x, b2.x)
-    const by1 = Math.min(b1.y, b2.y), by2 = Math.max(b1.y, b2.y)
+    const ax1 = Math.min(a1.x, a2.x),
+      ax2 = Math.max(a1.x, a2.x)
+    const ay1 = Math.min(a1.y, a2.y),
+      ay2 = Math.max(a1.y, a2.y)
+    const bx1 = Math.min(b1.x, b2.x),
+      bx2 = Math.max(b1.x, b2.x)
+    const by1 = Math.min(b1.y, b2.y),
+      by2 = Math.max(b1.y, b2.y)
 
     return !(ax2 < bx1 || bx2 < ax1 || ay2 < by1 || by2 < ay1)
   }
@@ -62,23 +71,23 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     const config: TraceOffsetConfig = {
       maxBruteForceSize: 10,
       shiftDistance: this.SHIFT_DISTANCE,
-      strategy: 'brute-force'
+      strategy: "brute-force",
     }
 
     const eq = (a: number, b: number) => Math.abs(a - b) < this.EPS
     const samePoint = (
       p: { x: number; y: number } | undefined,
-      q: { x: number; y: number } | undefined
+      q: { x: number; y: number } | undefined,
     ) => !!p && !!q && eq(p.x, q.x) && eq(p.y, q.y)
 
     // For each net island group, shift only its overlapping segments and adjust adjacent joints
     this.overlappingTraceSegments.forEach((group, gidx) => {
       const numTraces = group.pathsWithOverlap.length
       const stepSize = config.shiftDistance
-      
+
       // Calculate offsets to spread traces evenly
-      const offsets = group.pathsWithOverlap.map((_, idx) => 
-        (idx - (numTraces - 1) / 2) * stepSize * 2 // Double step size for better separation
+      const offsets = group.pathsWithOverlap.map(
+        (_, idx) => (idx - (numTraces - 1) / 2) * stepSize * 2, // Double step size for better separation
       )
 
       // Gather unique segment indices per path
@@ -113,7 +122,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
               segmentIndex: si,
               offset,
               JOG_SIZE,
-              EPS: this.EPS
+              EPS: this.EPS,
             })
           } else {
             // Internal segment - shift both points
@@ -137,14 +146,17 @@ export class TraceOverlapIssueSolver extends BaseSolver {
         // Remove consecutive duplicate points that might appear after shifts
         const cleaned: typeof pts = []
         for (const p of pts) {
-          if (cleaned.length === 0 || !samePoint(cleaned[cleaned.length - 1], p)) {
+          if (
+            cleaned.length === 0 ||
+            !samePoint(cleaned[cleaned.length - 1], p)
+          ) {
             cleaned.push(p)
           }
         }
 
         this.correctedTraceMap[original.mspPairId] = {
           ...current,
-          tracePath: cleaned
+          tracePath: cleaned,
         }
       }
     })
@@ -157,18 +169,22 @@ export class TraceOverlapIssueSolver extends BaseSolver {
       lines: [],
       points: [],
       rects: [],
-      circles: []
+      circles: [],
     }
 
     // Draw overlapped segments in red
     for (const group of this.overlappingTraceSegments) {
-      for (const { solvedTracePathIndex, traceSegmentIndex } of group.pathsWithOverlap) {
-        const path = this.traceNetIslands[group.connNetId][solvedTracePathIndex]!
+      for (const {
+        solvedTracePathIndex,
+        traceSegmentIndex,
+      } of group.pathsWithOverlap) {
+        const path =
+          this.traceNetIslands[group.connNetId][solvedTracePathIndex]!
         const segStart = path.tracePath[traceSegmentIndex]!
         const segEnd = path.tracePath[traceSegmentIndex + 1]!
         graphics.lines!.push({
           points: [segStart, segEnd],
-          strokeColor: "red"
+          strokeColor: "red",
         })
       }
     }
@@ -178,7 +194,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
       graphics.lines!.push({
         points: trace.tracePath,
         strokeColor: "blue",
-        strokeDash: "4 2"
+        strokeDash: "4 2",
       })
     }
 
