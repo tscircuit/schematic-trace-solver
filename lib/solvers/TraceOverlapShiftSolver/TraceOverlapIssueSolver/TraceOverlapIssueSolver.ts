@@ -170,6 +170,12 @@ export class TraceOverlapIssueSolver extends BaseSolver {
   }
 
   override _step() {
+    // If no overlaps, nothing to do
+    if (this.overlappingTraceSegments.length === 0) {
+      this.solved = true
+      return
+    }
+
     const config: TraceOffsetConfig = {
       maxBruteForceSize: 10,
       shiftDistance: this.SHIFT_DISTANCE,
