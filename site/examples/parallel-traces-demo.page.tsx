@@ -103,8 +103,8 @@ export default function ParallelTracesDemo() {
       <div className="border p-4 bg-white">
         <svg width="400" height="400" viewBox="0 -10 200 200">
           {/* Draw original traces in light gray */}
-          {graphics.lines!
-            .filter((l) => l.strokeColor === "#cccccc")
+          {graphics
+            .lines!.filter((l) => l.strokeColor === "#cccccc")
             .map((line, i) => (
               <polyline
                 key={`orig-${i}`}
@@ -116,8 +116,8 @@ export default function ParallelTracesDemo() {
             ))}
 
           {/* Draw optimized traces in blue */}
-          {graphics.lines!
-            .filter((l) => l.strokeColor === "blue")
+          {graphics
+            .lines!.filter((l) => l.strokeColor === "blue")
             .map((line, i) => (
               <polyline
                 key={`opt-${i}`}
@@ -125,7 +125,11 @@ export default function ParallelTracesDemo() {
                 fill="none"
                 stroke={line.strokeColor}
                 strokeWidth="1"
-                strokeDasharray={typeof line.strokeDash === 'string' ? line.strokeDash : undefined}
+                strokeDasharray={
+                  typeof line.strokeDash === "string"
+                    ? line.strokeDash
+                    : undefined
+                }
               />
             ))}
         </svg>
