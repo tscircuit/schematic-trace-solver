@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest"
+import { describe, expect, test } from "bun:test"
 import { TraceOverlapIssueSolver } from "../../../lib/solvers/TraceOverlapShiftSolver/TraceOverlapIssueSolver/TraceOverlapIssueSolver"
 import type { SolvedTracePath } from "../../../lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 
