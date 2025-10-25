@@ -66,138 +66,92 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     return !(ax2 < bx1 || bx2 < ax1 || ay2 < by1 || by2 < ay1)
   }
 
-  private countCrossings(traces: SolvedTracePath[]): number {
-    let count = 0
-    for (let i = 0; i < traces.length; i++) {
-      for (let j = i + 1; j < traces.length; j++) {
-        const path1 = traces[i].tracePath
-        const path2 = traces[j].tracePath
-        for (let k = 0; k < path1.length - 1; k++) {
-          for (let l = 0; l < path2.length - 1; l++) {
-            if (
-              this.segmentsIntersect(
-                path1[k],
-                path1[k + 1],
-                path2[l],
-                path2[l + 1],
-              )
-            ) {
-              count++
-            }
-          }
-        }
-      }
-    }
-    return count
-  }
-
-  private applyOffsetsToGroup(
-    group: OverlappingTraceSegmentLocator,
-    offsets: number[],
-  ): SolvedTracePath[] {
-    const eq = (a: number, b: number) => Math.abs(a - b) < this.EPS
-    const samePoint = (
-      p: { x: number; y: number } | undefined,
-      q: { x: number; y: number } | undefined,
-    ) => !!p && !!q && eq(p.x, q.x) && eq(p.y, q.y)
-
-    const byPath: Map<number, Set<number>> = new Map()
-    const pathIdxToOffsetIdx: Map<number, number> = new Map()
-
-    for (let i = 0; i < group.pathsWithOverlap.length; i++) {
-      const loc = group.pathsWithOverlap[i]
-      if (!byPath.has(loc.solvedTracePathIndex)) {
-        byPath.set(loc.solvedTracePathIndex, new Set())
-        pathIdxToOffsetIdx.set(loc.solvedTracePathIndex, i)
-      }
-      byPath.get(loc.solvedTracePathIndex)!.add(loc.traceSegmentIndex)
-    }
-
-    const result: SolvedTracePath[] = []
-    const JOG_SIZE = this.SHIFT_DISTANCE
-
-    for (const [pathIdx, segIdxSet] of byPath) {
-      const original = this.traceNetIslands[group.connNetId][pathIdx]!
-      const pts = original.tracePath.map((p) => ({ ...p }))
-      const offset = offsets[pathIdxToOffsetIdx.get(pathIdx)!]!
-
-      const segIdxsRev = Array.from(segIdxSet)
-        .sort((a, b) => a - b)
-        .reverse()
-
-      for (const si of segIdxsRev) {
-        if (si < 0 || si >= pts.length - 1) continue
-
-        if (si === 0 || si === pts.length - 2) {
-          applyJogToTerminalSegment({
-            pts,
-            segmentIndex: si,
-            offset,
-            JOG_SIZE,
-            EPS: this.EPS,
-          })
-        } else {
-          const start = pts[si]!
-          const end = pts[si + 1]!
-          const isVertical = Math.abs(start.x - end.x) < this.EPS
-          const isHorizontal = Math.abs(start.y - end.y) < this.EPS
-          if (!isVertical && !isHorizontal) continue
-
-          if (isVertical) {
-            start.x += offset
-            end.x += offset
-          } else {
-            start.y += offset
-            end.y += offset
-          }
-        }
-      }
-
-      const cleaned: typeof pts = []
-      for (const p of pts) {
-        if (
-          cleaned.length === 0 ||
-          !samePoint(cleaned[cleaned.length - 1], p)
-        ) {
-          cleaned.push(p)
-        }
-      }
-
-      result.push({ ...original, tracePath: cleaned })
-    }
-
-    return result
-  }
-
   override _step() {
-    // If no overlaps, nothing to do
-    if (this.overlappingTraceSegments.length === 0) {
-      this.solved = true
-      return
-    }
-
     const config: TraceOffsetConfig = {
       maxBruteForceSize: 10,
       shiftDistance: this.SHIFT_DISTANCE,
       strategy: "brute-force",
     }
 
-    for (const group of this.overlappingTraceSegments) {
+    const eq = (a: number, b: number) => Math.abs(a - b) < this.EPS
+    const samePoint = (
+      p: { x: number; y: number } | undefined,
+      q: { x: number; y: number } | undefined,
+    ) => !!p && !!q && eq(p.x, q.x) && eq(p.y, q.y)
+
+    this.overlappingTraceSegments.forEach((group, gidx) => {
       const numTraces = group.pathsWithOverlap.length
       const stepSize = config.shiftDistance
 
-      // Generate offset values
-      const offsetValues = group.pathsWithOverlap.map(
+      const offsets = group.pathsWithOverlap.map(
         (_, idx) => (idx - (numTraces - 1) / 2) * stepSize * 2,
       )
 
-      // Apply offsets with default ordering
-      // This maintains test compatibility while still solving overlaps
-      const finalTraces = this.applyOffsetsToGroup(group, offsetValues)
-      for (const trace of finalTraces) {
-        this.correctedTraceMap[trace.mspPairId] = trace
+      const byPath: Map<number, Set<number>> = new Map()
+      for (const loc of group.pathsWithOverlap) {
+        if (!byPath.has(loc.solvedTracePathIndex)) {
+          byPath.set(loc.solvedTracePathIndex, new Set())
+        }
+        byPath.get(loc.solvedTracePathIndex)!.add(loc.traceSegmentIndex)
       }
-    }
+
+      const offset = offsets[gidx]!
+
+      for (const [pathIdx, segIdxSet] of byPath) {
+        const original = this.traceNetIslands[group.connNetId][pathIdx]!
+        const current = this.correctedTraceMap[original.mspPairId] ?? original
+        const pts = current.tracePath.map((p) => ({ ...p }))
+
+        const segIdxsRev = Array.from(segIdxSet)
+          .sort((a, b) => a - b)
+          .reverse()
+
+        const JOG_SIZE = this.SHIFT_DISTANCE
+
+        for (const si of segIdxsRev) {
+          if (si < 0 || si >= pts.length - 1) continue
+
+          if (si === 0 || si === pts.length - 2) {
+            applyJogToTerminalSegment({
+              pts,
+              segmentIndex: si,
+              offset,
+              JOG_SIZE,
+              EPS: this.EPS,
+            })
+          } else {
+            const start = pts[si]!
+            const end = pts[si + 1]!
+            const isVertical = Math.abs(start.x - end.x) < this.EPS
+            const isHorizontal = Math.abs(start.y - end.y) < this.EPS
+            if (!isVertical && !isHorizontal) continue
+
+            if (isVertical) {
+              start.x += offset
+              end.x += offset
+            } else {
+              start.y += offset
+              end.y += offset
+            }
+          }
+        }
+
+        const cleaned: typeof pts = []
+        for (const p of pts) {
+          if (
+            cleaned.length === 0 ||
+            !samePoint(cleaned[cleaned.length - 1], p)
+          ) {
+            cleaned.push(p)
+          }
+        }
+
+        this.correctedTraceMap[original.mspPairId] = {
+          ...current,
+          tracePath: cleaned,
+        }
+      }
+    })
 
     this.solved = true
   }
