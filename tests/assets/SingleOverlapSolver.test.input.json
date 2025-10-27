@@ -1,66 +1,65 @@
 {
   "trace": {
-    "mspPairId": "U1.3-R3.1",
-    "dcConnNetId": "connectivity_net3",
-    "globalConnNetId": "connectivity_net3",
-    "userNetId": "U1.OUT to R3.pin1",
+    "mspPairId": "U1.1-J1.3",
+    "dcConnNetId": "connectivity_net0",
+    "globalConnNetId": "connectivity_net0",
+    "userNetId": "GND",
     "pins": [
       {
-        "pinId": "U1.3",
+        "pinId": "U1.1",
         "x": 1.2000000000000002,
-        "y": 0.09999999999999998,
+        "y": -0.30000000000000004,
         "chipId": "schematic_component_0",
         "_facingDirection": "x+"
       },
       {
-        "pinId": "R3.1",
-        "x": 1.2000000000000002,
-        "y": 1.1500000000000001,
-        "chipId": "schematic_component_5",
-        "_facingDirection": "y-"
+        "pinId": "J1.3",
+        "x": 1.6,
+        "y": -2.295,
+        "chipId": "schematic_component_1",
+        "_facingDirection": "x-"
       }
     ],
     "tracePath": [
       {
         "x": 1.2000000000000002,
-        "y": 0.09999999999999998
+        "y": -0.30000000000000004
       },
       {
         "x": 1.4000000000000001,
-        "y": 0.09999999999999998
+        "y": -0.30000000000000004
       },
       {
         "x": 1.4000000000000001,
-        "y": 0.625
+        "y": -1.2974999999999999
       },
       {
-        "x": 1.2000000000000002,
-        "y": 0.625
+        "x": 1.4000000000000001,
+        "y": -2.295
       },
       {
-        "x": 1.2000000000000002,
-        "y": 1.1500000000000001
+        "x": 1.6,
+        "y": -2.295
       }
     ],
-    "mspConnectionPairIds": ["U1.3-R3.1"],
-    "pinIds": ["U1.3", "R3.1"]
+    "mspConnectionPairIds": ["U1.1-J1.3"],
+    "pinIds": ["U1.1", "J1.3"]
   },
   "label": {
-    "globalConnNetId": "merged-group-U1-y+",
-    "dcConnNetId": "connectivity_net5",
+    "globalConnNetId": "merged-group-J1-x-",
     "netId": "VCC",
-    "mspConnectionPairIds": ["U1.8-R1.1", "U1.5-C2.1"],
-    "pinIds": ["U1.8", "R1.1", "U1.5", "C2.1"],
-    "orientation": "y+",
+    "mspConnectionPairIds": [],
+    "pinIds": ["J1.1", "J1.2"],
+    "orientation": "x-",
     "anchorPoint": {
-      "x": 2.2,
-      "y": 0.30000000000000004
+      "x": 1.6,
+      "y": -1.895
     },
-    "width": 3.9500000000000006,
-    "height": 0.6499999999999999,
+    "width": 0.4500000000000002,
+    "height": 0.40000000000000036,
     "center": {
-      "x": 0.32499999999999996,
-      "y": 0.42500000000000004
+      "x": 1.374,
+      "y": -1.995
     }
   },
   "problem": {
@@ -119,152 +118,50 @@
       {
         "chipId": "schematic_component_1",
         "center": {
-          "x": 2.45,
-          "y": -0.10000000000000009
+          "x": 2.7,
+          "y": -2.095
         },
-        "width": 1.0999999999999996,
-        "height": 0.388910699999999,
+        "width": 2.2,
+        "height": 0.8,
         "pins": [
           {
-            "pinId": "R1.1",
-            "x": 3,
-            "y": -0.10000000000000016
+            "pinId": "J1.1",
+            "x": 1.6,
+            "y": -1.895
           },
           {
-            "pinId": "R1.2",
-            "x": 1.9000000000000004,
-            "y": -0.10000000000000002
-          }
-        ]
-      },
-      {
-        "chipId": "schematic_component_2",
-        "center": {
-          "x": 0.6500000000000001,
-          "y": -1.2944553500000002
-        },
-        "width": 1.1,
-        "height": 0.388910699999999,
-        "pins": [
-          {
-            "pinId": "R2.1",
-            "x": 1.2000000000000002,
-            "y": -1.2944553500000002
+            "pinId": "J1.2",
+            "x": 1.6,
+            "y": -2.095
           },
           {
-            "pinId": "R2.2",
-            "x": 0.10000000000000009,
-            "y": -1.2944553500000002
-          }
-        ]
-      },
-      {
-        "chipId": "schematic_component_3",
-        "center": {
-          "x": -1.2000000000000002,
-          "y": -1.7000000000000002
-        },
-        "width": 1.06,
-        "height": 1.1,
-        "pins": [
-          {
-            "pinId": "C1.1",
-            "x": -1.2000000000000002,
-            "y": -1.1500000000000001
-          },
-          {
-            "pinId": "C1.2",
-            "x": -1.2000000000000002,
-            "y": -2.25
-          }
-        ]
-      },
-      {
-        "chipId": "schematic_component_4",
-        "center": {
-          "x": -2.45,
-          "y": 0.10000000000000009
-        },
-        "width": 1.0999999999999996,
-        "height": 0.84,
-        "pins": [
-          {
-            "pinId": "C2.1",
-            "x": -1.9000000000000004,
-            "y": 0.10000000000000002
-          },
-          {
-            "pinId": "C2.2",
-            "x": -3,
-            "y": 0.10000000000000016
-          }
-        ]
-      },
-      {
-        "chipId": "schematic_component_5",
-        "center": {
-          "x": 1.2000000000000002,
-          "y": 1.7000000000000002
-        },
-        "width": 1.06,
-        "height": 1.1,
-        "pins": [
-          {
-            "pinId": "R3.1",
-            "x": 1.2000000000000002,
-            "y": 1.1500000000000001
-          },
-          {
-            "pinId": "R3.2",
-            "x": 1.2000000000000002,
-            "y": 2.25
+            "pinId": "J1.3",
+            "x": 1.6,
+            "y": -2.295
           }
         ]
       }
     ],
-    "directConnections": [
-      {
-        "pinIds": ["U1.5", "C2.1"],
-        "netId": "U1.CTRL to C2.pin1"
-      },
-      {
-        "pinIds": ["U1.6", "U1.2"],
-        "netId": "U1.THRES to U1.TRIG"
-      },
-      {
-        "pinIds": ["R1.2", "U1.7"],
-        "netId": "R1.pin2 to U1.DISCH"
-      },
-      {
-        "pinIds": ["U1.7", "R2.1"],
-        "netId": "U1.DISCH to R2.pin1"
-      },
-      {
-        "pinIds": ["R2.2", "U1.6"],
-        "netId": "R2.pin2 to U1.THRES"
-      },
-      {
-        "pinIds": ["U1.6", "C1.1"],
-        "netId": "U1.THRES to C1.pin1"
-      },
-      {
-        "pinIds": ["U1.3", "R3.1"],
-        "netId": "U1.OUT to R3.pin1"
-      }
-    ],
+    "directConnections": [],
     "netConnections": [
       {
         "netId": "GND",
-        "pinIds": ["U1.1", "C1.2", "C2.2"]
+        "pinIds": ["U1.1", "J1.3"]
       },
       {
         "netId": "VCC",
-        "pinIds": ["U1.4", "U1.8", "R1.1"]
+        "pinIds": ["U1.8", "J1.1"]
+      },
+      {
+        "netId": "MMM",
+        "pinIds": ["J1.2"]
       }
     ],
     "availableNetLabelOrientations": {
-      "VCC": ["y+"],
-      "GND": ["y-"]
+      "VCC": ["y-"],
+      "OUT": ["x-", "x+"],
+      "GND": ["y-"],
+      "MMM": ["x+", "x-"]
     },
     "maxMspPairDistance": 2.4
   },

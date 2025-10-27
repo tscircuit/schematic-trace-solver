@@ -58,6 +58,7 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
         this.labelMergingSolver = new MergedNetLabelObstacleSolver({
           netLabelPlacements: this.netLabelPlacements,
           inputProblem: this.inputProblem,
+          traces: this.traces,
         })
         this.activeSubSolver = this.labelMergingSolver
         break

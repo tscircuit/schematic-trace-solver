@@ -173,7 +173,55 @@
         "MMM": ["x+", "x-"]
       },
       "maxMspPairDistance": 2.4
-    }
+    },
+    "traces": [
+      {
+        "mspPairId": "U1.1-J1.3",
+        "dcConnNetId": "connectivity_net0",
+        "globalConnNetId": "connectivity_net0",
+        "userNetId": "GND",
+        "pins": [
+          {
+            "pinId": "U1.1",
+            "x": 1.2000000000000002,
+            "y": -0.30000000000000004,
+            "chipId": "schematic_component_0",
+            "_facingDirection": "x+"
+          },
+          {
+            "pinId": "J1.3",
+            "x": 1.6,
+            "y": -2.295,
+            "chipId": "schematic_component_1",
+            "_facingDirection": "x-"
+          }
+        ],
+        "tracePath": [
+          {
+            "x": 1.2000000000000002,
+            "y": -0.30000000000000004
+          },
+          {
+            "x": 1.4000000000000001,
+            "y": -0.30000000000000004
+          },
+          {
+            "x": 1.4000000000000001,
+            "y": -1.2974999999999999
+          },
+          {
+            "x": 1.4000000000000001,
+            "y": -2.295
+          },
+          {
+            "x": 1.6,
+            "y": -2.295
+          }
+        ],
+        "mspConnectionPairIds": ["U1.1-J1.3"],
+        "pinIds": ["U1.1", "J1.3"]
+      }
+    ]
   },
   "netLabelPlacementSolver": {
     "inputProblem": {

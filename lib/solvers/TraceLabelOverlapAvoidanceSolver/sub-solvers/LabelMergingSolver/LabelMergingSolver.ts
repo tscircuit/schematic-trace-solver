@@ -1,7 +1,8 @@
+import type { SolvedTracePath } from "../../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { getRectBounds } from "../../../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import type { GraphicsObject } from "graphics-debug"
+import type { GraphicsObject, Line } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -9,6 +10,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 interface LabelMergingSolverInput {
   netLabelPlacements: NetLabelPlacement[]
   inputProblem: InputProblem
+  traces: SolvedTracePath[]
 }
 
 interface LabelMergingSolverOutput {
@@ -24,11 +26,15 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
   private input: LabelMergingSolverInput
   private output!: LabelMergingSolverOutput
   private inputProblem: InputProblem
+  private traces: SolvedTracePath[]
 
   constructor(solverInput: LabelMergingSolverInput) {
+    // console.log(JSON.stringify(solverInput));
+
     super()
     this.input = solverInput
     this.inputProblem = solverInput.inputProblem
+    this.traces = solverInput.traces
 
     // Initialize output to a default state to allow visualization before the first step
     this.output = {
@@ -127,6 +133,14 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
     const originalLabelsById = new Map<string, NetLabelPlacement>()
     for (const label of this.input.netLabelPlacements) {
       originalLabelsById.set(label.globalConnNetId, label)
+    }
+
+    for (const trace of this.traces) {
+      const line: Line = {
+        points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
+        strokeColor: "blue",
+      }
+      graphics.lines!.push(line)
     }
 
     for (const finalLabel of this.output.netLabelPlacements) {
