@@ -1,16 +1,16 @@
+import type { Point } from "@tscircuit/math-utils"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { getRectBounds } from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import { getObstacleRects } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { InputProblem } from "lib/types/InputProblem"
 import { findTraceViolationZone } from "./violation"
-import { tryFourPointDetour, trySnipAndReconnect } from "./trySnipAndReconnect"
-import { simplifyPath } from "./simplifyPath"
+import { generateSnipAndReconnectCandidates } from "./trySnipAndReconnect"
+import { simplifyPath } from "./sub-solvers/TraceCleanupSolver/simplifyPath"
+import { generateFourPointDetourCandidates } from "./tryFourPointDetour"
 
-export const rerouteCollidingTrace = ({
+export const generateRerouteCandidates = ({
   trace,
   label,
-  problem,
   paddingBuffer,
   detourCount,
 }: {
@@ -19,14 +19,13 @@ export const rerouteCollidingTrace = ({
   problem: InputProblem
   paddingBuffer: number
   detourCount: number
-}): SolvedTracePath => {
+}): Point[][] => {
   const initialTrace = { ...trace, tracePath: simplifyPath(trace.tracePath) }
 
   if (trace.globalConnNetId === label.globalConnNetId) {
-    return initialTrace
+    return [initialTrace.tracePath]
   }
 
-  const obstacles = getObstacleRects(problem)
   const labelPadding = paddingBuffer
   const labelBoundsRaw = getRectBounds(label.center, label.width, label.height)
   const labelBounds = {
@@ -37,37 +36,27 @@ export const rerouteCollidingTrace = ({
     chipId: `netlabel-${label.netId}`,
   }
 
-  const fourPointResult = tryFourPointDetour({
+  const fourPointCandidates = generateFourPointDetourCandidates({
     initialTrace,
     label,
     labelBounds,
-    obstacles,
     paddingBuffer,
     detourCount,
   })
-  if (fourPointResult) {
-    initialTrace.tracePath = fourPointResult.tracePath
-  }
+
   const { firstInsideIndex, lastInsideIndex } = findTraceViolationZone(
     initialTrace.tracePath,
     labelBounds,
   )
 
-  const snipReconnectResult = trySnipAndReconnect({
+  const snipReconnectCandidates = generateSnipAndReconnectCandidates({
     initialTrace,
     firstInsideIndex,
     lastInsideIndex,
     labelBounds,
-    obstacles,
+    paddingBuffer,
+    detourCount,
   })
 
-  if (snipReconnectResult) {
-    return snipReconnectResult
-  }
-
-  if (fourPointResult) {
-    return fourPointResult
-  }
-
-  return initialTrace
+  return [...fourPointCandidates, ...snipReconnectCandidates]
 }

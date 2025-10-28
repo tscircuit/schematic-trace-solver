@@ -105,8 +105,6 @@ export const minimizeTurns = ({
 
           if (!collidesWithObstacles && !collidesWithLabels) {
             const newTurns = countTurns(testPath)
-            const turnsRemoved = stairEndIdx - startIdx - 1
-
             optimizedPath = testPath
             currentTurns = newTurns
             improved = true

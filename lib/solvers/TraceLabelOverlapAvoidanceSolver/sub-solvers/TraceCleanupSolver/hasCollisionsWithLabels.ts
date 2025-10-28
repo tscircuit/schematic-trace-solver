@@ -1,5 +1,5 @@
 import type { Point } from "@tscircuit/math-utils"
-import { segmentIntersectsRect } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
 export const hasCollisionsWithLabels = (
   pathSegments: Point[],

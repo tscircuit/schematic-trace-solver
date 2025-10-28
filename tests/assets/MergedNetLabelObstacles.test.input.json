@@ -1,0 +1,154 @@
+{
+  "netLabelPlacements": [
+    {
+      "globalConnNetId": "connectivity_net0",
+      "dcConnNetId": "connectivity_net0",
+      "netId": "GND",
+      "mspConnectionPairIds": ["U1.1-J1.3"],
+      "pinIds": ["U1.1", "J1.3"],
+      "orientation": "y-",
+      "anchorPoint": { "x": 1.4000000000000001, "y": -2.295 },
+      "width": 0.2,
+      "height": 0.45,
+      "center": { "x": 1.4000000000000001, "y": -2.52 }
+    },
+    {
+      "globalConnNetId": "connectivity_net1",
+      "netId": "VCC",
+      "mspConnectionPairIds": [],
+      "pinIds": ["U1.8"],
+      "orientation": "x+",
+      "anchorPoint": { "x": 1.2000000000000002, "y": 0.30000000000000004 },
+      "width": 0.45,
+      "height": 0.2,
+      "center": { "x": 1.4260000000000002, "y": 0.30000000000000004 }
+    },
+    {
+      "globalConnNetId": "connectivity_net1",
+      "netId": "VCC",
+      "mspConnectionPairIds": [],
+      "pinIds": ["J1.1"],
+      "orientation": "x-",
+      "anchorPoint": { "x": 1.6, "y": -1.895 },
+      "width": 0.45,
+      "height": 0.2,
+      "center": { "x": 1.374, "y": -1.895 }
+    },
+    {
+      "globalConnNetId": "connectivity_net2",
+      "netId": "MMM",
+      "mspConnectionPairIds": [],
+      "pinIds": ["J1.2"],
+      "orientation": "x-",
+      "anchorPoint": { "x": 1.6, "y": -2.095 },
+      "width": 0.45,
+      "height": 0.2,
+      "center": { "x": 1.374, "y": -2.095 }
+    }
+  ],
+  "inputProblem": {
+    "chips": [
+      {
+        "chipId": "schematic_component_0",
+        "center": { "x": 0, "y": 0 },
+        "width": 2.4000000000000004,
+        "height": 1,
+        "pins": [
+          {
+            "pinId": "U1.1",
+            "x": 1.2000000000000002,
+            "y": -0.30000000000000004
+          },
+          {
+            "pinId": "U1.2",
+            "x": -1.2000000000000002,
+            "y": -0.30000000000000004
+          },
+          {
+            "pinId": "U1.3",
+            "x": 1.2000000000000002,
+            "y": 0.09999999999999998
+          },
+          {
+            "pinId": "U1.4",
+            "x": -1.2000000000000002,
+            "y": 0.30000000000000004
+          },
+          {
+            "pinId": "U1.5",
+            "x": -1.2000000000000002,
+            "y": 0.10000000000000003
+          },
+          {
+            "pinId": "U1.6",
+            "x": -1.2000000000000002,
+            "y": -0.09999999999999998
+          },
+          {
+            "pinId": "U1.7",
+            "x": 1.2000000000000002,
+            "y": -0.10000000000000003
+          },
+          { "pinId": "U1.8", "x": 1.2000000000000002, "y": 0.30000000000000004 }
+        ]
+      },
+      {
+        "chipId": "schematic_component_1",
+        "center": { "x": 2.7, "y": -2.095 },
+        "width": 2.2,
+        "height": 0.8,
+        "pins": [
+          { "pinId": "J1.1", "x": 1.6, "y": -1.895 },
+          { "pinId": "J1.2", "x": 1.6, "y": -2.095 },
+          { "pinId": "J1.3", "x": 1.6, "y": -2.295 }
+        ]
+      }
+    ],
+    "directConnections": [],
+    "netConnections": [
+      { "netId": "GND", "pinIds": ["U1.1", "J1.3"] },
+      { "netId": "VCC", "pinIds": ["U1.8", "J1.1"] },
+      { "netId": "MMM", "pinIds": ["J1.2"] }
+    ],
+    "availableNetLabelOrientations": {
+      "VCC": ["y-"],
+      "OUT": ["x-", "x+"],
+      "GND": ["y-"],
+      "MMM": ["x+", "x-"]
+    },
+    "maxMspPairDistance": 2.4
+  },
+  "traces": [
+    {
+      "mspPairId": "U1.1-J1.3",
+      "dcConnNetId": "connectivity_net0",
+      "globalConnNetId": "connectivity_net0",
+      "userNetId": "GND",
+      "pins": [
+        {
+          "pinId": "U1.1",
+          "x": 1.2000000000000002,
+          "y": -0.30000000000000004,
+          "chipId": "schematic_component_0",
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J1.3",
+          "x": 1.6,
+          "y": -2.295,
+          "chipId": "schematic_component_1",
+          "_facingDirection": "x-"
+        }
+      ],
+      "tracePath": [
+        { "x": 1.2000000000000002, "y": -0.30000000000000004 },
+        { "x": 1.4000000000000001, "y": -0.30000000000000004 },
+        { "x": 1.4000000000000001, "y": -1.2974999999999999 },
+        { "x": 1.4000000000000001, "y": -2.295 },
+        { "x": 1.6, "y": -2.295 }
+      ],
+      "mspConnectionPairIds": ["U1.1-J1.3"],
+      "pinIds": ["U1.1", "J1.3"]
+    }
+  ]
+}
