@@ -5,8 +5,8 @@ import {
   stackGraphicsHorizontally,
 } from "graphics-debug"
 import { SingleOverlapSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/SingleOverlapSolver/SingleOverlapSolver"
-import { TraceCleanupSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/TraceCleanupSolver/TraceCleanupSolver"
 import inputData from "../../../assets/3.input.json"
+import { TraceCleanupSolver } from "lib/solvers/TraceCleanupSolver/TraceCleanupSolver"
 
 test("SingleOverlapSolver-to-TraceCleanupSolver snapshot", () => {
   // Convert targetTraceIds to Set

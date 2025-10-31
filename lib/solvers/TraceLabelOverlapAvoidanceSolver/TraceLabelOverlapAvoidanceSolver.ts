@@ -5,7 +5,6 @@ import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem } from "../../types/InputProblem"
 import { MergedNetLabelObstacleSolver } from "./sub-solvers/LabelMergingSolver/LabelMergingSolver"
-import { TraceCleanupSolver } from "./sub-solvers/TraceCleanupSolver/TraceCleanupSolver"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { OverlapAvoidanceStepSolver } from "./sub-solvers/OverlapAvoidanceStepSolver/OverlapAvoidanceStepSolver"
 
@@ -27,7 +26,6 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   // sub-solver instances
   labelMergingSolver?: MergedNetLabelObstacleSolver
   overlapAvoidanceSolver?: OverlapAvoidanceStepSolver
-  traceCleanupSolver?: TraceCleanupSolver
   pipelineStepIndex = 0
 
   constructor(solverInput: TraceLabelOverlapAvoidanceSolverInput) {
@@ -75,24 +73,6 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
         this.activeSubSolver = this.overlapAvoidanceSolver
         break
 
-      case 2:
-        this.traceCleanupSolver = new TraceCleanupSolver({
-          inputProblem: this.inputProblem,
-          allTraces: this.overlapAvoidanceSolver!.getOutput().allTraces,
-          targetTraceIds: new Set(
-            this.overlapAvoidanceSolver!.getOutput().modifiedTraces.map(
-              (t) => t.mspPairId,
-            ),
-          ),
-          allLabelPlacements:
-            this.labelMergingSolver!.getOutput().netLabelPlacements,
-          mergedLabelNetIdMap:
-            this.labelMergingSolver!.getOutput().mergedLabelNetIdMap,
-          paddingBuffer: 0.01,
-        })
-        this.activeSubSolver = this.traceCleanupSolver
-        break
-
       default:
         this.solved = true
         break
@@ -101,7 +81,7 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
 
   getOutput() {
     return {
-      traces: this.traceCleanupSolver?.getOutput().traces ?? this.traces,
+      traces: this.overlapAvoidanceSolver?.getOutput().allTraces ?? this.traces,
       netLabelPlacements:
         this.labelMergingSolver?.getOutput().netLabelPlacements ??
         this.netLabelPlacements,
