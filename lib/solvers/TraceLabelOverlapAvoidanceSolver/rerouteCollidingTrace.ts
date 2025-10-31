@@ -5,8 +5,8 @@ import { getRectBounds } from "../NetLabelPlacementSolver/SingleNetLabelPlacemen
 import type { InputProblem } from "lib/types/InputProblem"
 import { findTraceViolationZone } from "./violation"
 import { generateSnipAndReconnectCandidates } from "./trySnipAndReconnect"
-import { simplifyPath } from "./sub-solvers/TraceCleanupSolver/simplifyPath"
 import { generateFourPointDetourCandidates } from "./tryFourPointDetour"
+import { simplifyPath } from "../TraceCleanupSolver/simplifyPath"
 
 export const generateRerouteCandidates = ({
   trace,

@@ -19,7 +19,7 @@ import { correctPinsInsideChips } from "./correctPinsInsideChip"
 import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
-import { TraceCleanupSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/TraceCleanupSolver/TraceCleanupSolver"
+import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -188,6 +188,25 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
+    definePipelineStep("traceCleanupSolver", TraceCleanupSolver, (instance) => {
+      const prevSolverOutput =
+        instance.traceLabelOverlapAvoidanceSolver!.getOutput()
+      const traces = prevSolverOutput.traces
+
+      const labelMergingOutput =
+        instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput()
+
+      return [
+        {
+          inputProblem: instance.inputProblem,
+          allTraces: traces,
+          targetTraceIds: new Set(traces.map((t) => t.mspPairId)),
+          allLabelPlacements: labelMergingOutput.netLabelPlacements,
+          mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
+          paddingBuffer: 0.1,
+        },
+      ]
+    }),
     definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,

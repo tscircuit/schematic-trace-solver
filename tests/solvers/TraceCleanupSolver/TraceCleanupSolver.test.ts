@@ -1,7 +1,7 @@
 import { expect } from "bun:test"
 import { test } from "bun:test"
-import { TraceCleanupSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/TraceCleanupSolver/TraceCleanupSolver"
-import inputData from "../../../assets/TraceCleanupSolver.test.input.json"
+import inputData from "../../assets/TraceCleanupSolver.test.input.json"
+import { TraceCleanupSolver } from "lib/solvers/TraceCleanupSolver/TraceCleanupSolver"
 
 test("TraceCleanupSolver snapshot", () => {
   const solver = new TraceCleanupSolver({

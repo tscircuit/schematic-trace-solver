@@ -8,7 +8,7 @@ import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSol
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
-import { simplifyPath } from "../TraceCleanupSolver/simplifyPath"
+import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath
