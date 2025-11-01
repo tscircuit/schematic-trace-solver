@@ -42,6 +42,8 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
   correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath> = {}
 
+  cleanupPhase: "diagonals" | "done" | null = null
+
   constructor(params: {
     inputProblem: InputProblem
     inputTracePaths: Array<SolvedTracePath>
@@ -211,6 +213,62 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     return null
   }
 
+  private findNextDiagonalSegment() {
+    const EPS = 2e-3
+    for (const mspPairId in this.correctedTraceMap) {
+      const tracePath = this.correctedTraceMap[mspPairId]!.tracePath
+      for (let i = 0; i < tracePath.length - 1; i++) {
+        const p1 = tracePath[i]!
+        const p2 = tracePath[i + 1]!
+
+        const isHorizontal = Math.abs(p1.y - p2.y) < EPS
+        const isVertical = Math.abs(p1.x - p2.x) < EPS
+
+        if (!isHorizontal && !isVertical) {
+          return { mspPairId, tracePath, i, p1, p2 }
+        }
+      }
+    }
+    return null
+  }
+
+  private findAndFixNextDiagonalSegment(): boolean {
+    const diagonalInfo = this.findNextDiagonalSegment()
+
+    if (!diagonalInfo) {
+      return false // No diagonal segments found
+    }
+
+    const { mspPairId, tracePath, i, p1, p2 } = diagonalInfo
+    const EPS = 2e-3
+
+    const p0 = i > 0 ? tracePath[i - 1] : null
+    const p3 = i + 2 < tracePath.length ? tracePath[i + 2] : null
+
+    const prevIsVertical = p0 ? Math.abs(p0.x - p1.x) < EPS : false
+    const prevIsHorizontal = p0 ? Math.abs(p0.y - p1.y) < EPS : false
+
+    const nextIsVertical = p3 ? Math.abs(p2.x - p3.x) < EPS : false
+    const nextIsHorizontal = p3 ? Math.abs(p2.y - p3.y) < EPS : false
+
+    const elbow1 = { x: p1.x, y: p2.y } // vertical from p1
+    const elbow2 = { x: p2.x, y: p1.y } // horizontal from p1
+
+    let score1 = 0
+    if (prevIsVertical) score1++
+    if (nextIsHorizontal) score1++
+
+    let score2 = 0
+    if (prevIsHorizontal) score2++
+    if (nextIsVertical) score2++
+
+    const elbowPoint = score1 < score2 ? elbow1 : elbow2
+
+    // Replace [p1, p2] with [p1, elbowPoint, p2]
+    tracePath.splice(i + 1, 0, elbowPoint)
+    return true // Fixed one diagonal, return true to re-evaluate in next step
+  }
+
   override _step() {
     if (this.activeSubSolver?.solved) {
       for (const [mspPairId, newTrace] of Object.entries(
@@ -231,6 +289,19 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     const overlapIssue = this.findNextOverlapIssue()
 
     if (overlapIssue === null) {
+      if (this.cleanupPhase === null) {
+        this.cleanupPhase = "diagonals"
+      }
+
+      if (this.cleanupPhase === "diagonals") {
+        const fixedDiagonal = this.findAndFixNextDiagonalSegment()
+        if (!fixedDiagonal) {
+          this.cleanupPhase = "done"
+          this.solved = true
+        }
+        return
+      }
+      // If cleanupPhase is "done", then the solver is truly solved.
       this.solved = true
       return
     }
@@ -249,6 +320,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     }
 
     const graphics = visualizeInputProblem(this.inputProblem)
+    graphics.circles = graphics.circles || []
 
     // Draw current corrected traces
     for (const trace of Object.values(this.correctedTraceMap)) {
@@ -256,6 +328,17 @@ export class TraceOverlapShiftSolver extends BaseSolver {
         points: trace.tracePath,
         strokeColor: "purple",
       })
+    }
+
+    if (this.cleanupPhase === "diagonals") {
+      const diagonalInfo = this.findNextDiagonalSegment()
+      if (diagonalInfo) {
+        graphics.lines!.push({
+          points: [diagonalInfo.p1, diagonalInfo.p2],
+          strokeColor: "red",
+          strokeWidth: 0.05,
+        })
+      }
     }
 
     return graphics
