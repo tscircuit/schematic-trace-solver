@@ -8,6 +8,12 @@ export type CollisionInfo = {
   collisionPoint?: Point
 }
 
+/**
+ * Checks if a given path collides with any other traces in a list of solved trace paths.
+ * It iterates through each segment of the input path and compares it against every segment
+ * of all other traces (excluding a specified trace to avoid self-collision checks).
+ * If an intersection is found between any segments, it indicates a collision.
+ */
 export const isPathColliding = (
   path: Point[],
   allTraces: SolvedTracePath[],

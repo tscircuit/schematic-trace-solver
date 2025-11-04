@@ -1,5 +1,9 @@
 import type { Point } from "@tscircuit/math-utils"
 
+/**
+ * Represents an L-shaped turn in a trace path, defined by three consecutive points.
+ * p1 and p3 are the endpoints of the L-shape, and p2 is the corner point.
+ */
 export interface LShape {
   p1: Point
   p2: Point // The corner
@@ -7,6 +11,12 @@ export interface LShape {
   traceId?: string
 }
 
+/**
+ * Identifies and returns all L-shaped turns within a given trace path.
+ * An L-shaped turn is detected when two consecutive segments are orthogonal (one vertical, one horizontal)
+ * and both segments have a minimum length. This function iterates through the trace path,
+ * checking every sequence of three points to see if they form an L-shape.
+ */
 export const findAllLShapedTurns = (tracePath: Point[]): LShape[] => {
   const lShapes: LShape[] = []
   if (tracePath.length < 3) {

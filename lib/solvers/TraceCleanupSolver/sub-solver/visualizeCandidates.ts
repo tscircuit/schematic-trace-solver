@@ -1,6 +1,11 @@
 import type { GraphicsObject } from "graphics-debug"
 import type { Point } from "@tscircuit/math-utils"
 
+/**
+ * Visualizes a set of candidate paths and optional intersection points.
+ * It draws each candidate path as a line with a specified color and marks intersection points with green circles.
+ * This function is useful for debugging and understanding the rerouting process.
+ */
 export const visualizeCandidates = (
   candidates: Point[][],
   color = "gray",

@@ -1,5 +1,9 @@
 import type { Point } from "graphics-debug"
 
+/**
+ * Determines if a given segment (p1-p2) is either the first or the last segment of an original path.
+ * This is useful for identifying segments that are at the extremities of a trace.
+ */
 export const isSegmentAnEndpointSegment = (
   p1: Point,
   p2: Point,

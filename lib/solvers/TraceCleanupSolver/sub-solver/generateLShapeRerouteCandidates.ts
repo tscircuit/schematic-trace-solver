@@ -4,8 +4,18 @@ import type { Rectangle } from "./generateRectangleCandidates"
 
 const EPS = 1e-6
 
+/**
+ * Checks if a segment defined by two points is vertical.
+ * It considers a segment vertical if the absolute difference between their x-coordinates is less than a small epsilon.
+ */
 const isVertical = (a: Point, b: Point, eps = EPS) => Math.abs(a.x - b.x) < eps
 
+/**
+ * Generates candidate reroutes for an L-shaped turn within a given rectangular area.
+ * This function calculates a new path that attempts to smooth out the L-shape by routing around the corner
+ * through the provided rectangle, adding padding to avoid immediate collisions.
+ * It considers different orientations of the L-shape relative to the rectangle to determine the appropriate rerouting points.
+ */
 export const generateLShapeRerouteCandidates = (
   lShape: LShape,
   rectangle: Rectangle,

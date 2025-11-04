@@ -1,6 +1,11 @@
 import type { LShape } from "./findAllLShapedTurns"
 import type { GraphicsObject } from "graphics-debug"
 
+/**
+ * Visualizes L-shaped turns by drawing a blue circle at the corner point (p2)
+ * and light blue lines connecting p1, p2, and p3.
+ * This function can visualize a single L-shape or an array of L-shapes.
+ */
 export const visualizeLSapes = (lShapes: LShape[] | LShape): GraphicsObject => {
   const graphics: GraphicsObject = { circles: [], lines: [] }
 

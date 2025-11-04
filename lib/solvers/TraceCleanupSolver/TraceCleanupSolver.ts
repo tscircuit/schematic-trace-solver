@@ -7,6 +7,9 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 
+/**
+ * Defines the input structure for the TraceCleanupSolver.
+ */
 interface TraceCleanupSolverInput {
   inputProblem: InputProblem
   allTraces: SolvedTracePath[]
@@ -18,14 +21,21 @@ interface TraceCleanupSolverInput {
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
 
+/**
+ * Represents the different stages or steps within the trace cleanup pipeline.
+ */
 type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
 
 /**
- * Cleans up traces by minimizing turns and balancing L-shapes to improve
- * the overall aesthetics and readability of the schematic.
+ * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
+ * It operates in a multi-step pipeline:
+ * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
+ * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
+ * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
+ * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
  */
 export class TraceCleanupSolver extends BaseSolver {
   private input: TraceCleanupSolverInput

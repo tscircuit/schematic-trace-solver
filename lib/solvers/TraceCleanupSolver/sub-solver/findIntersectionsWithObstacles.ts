@@ -2,6 +2,10 @@ import type { Point } from "@tscircuit/math-utils"
 import { getSegmentIntersection } from "@tscircuit/math-utils/line-intersections"
 import type { TraceObstacle } from "./getTraceObstacles"
 
+/**
+ * Finds all intersection points between a given line segment (p1-p2) and a list of trace obstacles.
+ * It iterates through each segment of every obstacle and checks for intersections with the input segment.
+ */
 export const findIntersectionsWithObstacles = (
   p1: Point,
   p2: Point,

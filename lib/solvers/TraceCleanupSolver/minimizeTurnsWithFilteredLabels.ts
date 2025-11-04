@@ -4,6 +4,13 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 
+/**
+ * Minimizes the turns of a target trace while considering other traces and labels as obstacles.
+ * This function first identifies the target trace and separates it from other traces, which are then treated as obstacles.
+ * It also filters out labels that belong to the target trace's net, so they don't act as obstacles.
+ * The function then combines static obstacles (from the input problem) with the other traces and filtered labels to create a comprehensive set of obstacles.
+ * Finally, it uses a turn minimization algorithm to find a new path for the target trace that avoids these combined obstacles.
+ */
 export const minimizeTurnsWithFilteredLabels = ({
   targetMspConnectionPairId,
   traces,

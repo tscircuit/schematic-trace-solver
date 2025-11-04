@@ -13,6 +13,12 @@ export interface RectangleCandidate {
   i2: Point
 }
 
+/**
+ * Generates potential rectangular areas from two sets of intersection points.
+ * This function takes two arrays of points, typically representing intersections along two segments of an L-shape.
+ * It pairs up points from each array to form diagonals of potential rectangles.
+ * Only rectangles with a non-zero area are considered valid candidates.
+ */
 export const generateRectangleCandidates = (
   intersections1: Point[],
   intersections2: Point[],
