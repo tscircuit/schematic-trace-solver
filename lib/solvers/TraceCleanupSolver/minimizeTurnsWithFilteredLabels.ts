@@ -44,7 +44,16 @@ export const minimizeTurnsWithFilteredLabels = ({
     }),
   )
 
-  const staticObstacles = getObstacleRects(inputProblem)
+  const staticObstaclesRaw = getObstacleRects(inputProblem)
+  const PADDING = 0.01
+  const staticObstacles = staticObstaclesRaw.map((obs) => ({
+    ...obs,
+    minX: obs.minX - PADDING,
+    minY: obs.minY - PADDING,
+    maxX: obs.maxX + PADDING,
+    maxY: obs.maxY + PADDING,
+  }))
+
   const combinedObstacles = [...staticObstacles, ...traceObstacles]
 
   const originalPath = targetTrace.tracePath
@@ -67,6 +76,7 @@ export const minimizeTurnsWithFilteredLabels = ({
     path: originalPath,
     obstacles: combinedObstacles,
     labelBounds,
+    originalPath: originalPath,
   })
 
   return {

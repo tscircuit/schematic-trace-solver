@@ -4,73 +4,22 @@ import { countTurns } from "./countTurns"
 import { simplifyPath } from "./simplifyPath"
 import { tryConnectPoints } from "./tryConnectPoints"
 import { hasCollisionsWithLabels } from "./hasCollisionsWithLabels"
+import { recognizeStairStepPattern } from "./recognizeStairStepPattern"
+import { isSegmentAnEndpointSegment } from "./isSegmentAnEndpointSegment"
 
 export const minimizeTurns = ({
   path,
   obstacles,
   labelBounds,
+  originalPath,
 }: {
   path: Point[]
   obstacles: any[]
   labelBounds: any[]
+  originalPath: Point[]
 }): Point[] => {
   if (path.length <= 2) {
     return path
-  }
-
-  const recognizeStairStepPattern = (
-    pathToCheck: Point[],
-    startIdx: number,
-  ): number => {
-    if (startIdx >= pathToCheck.length - 3) return -1
-
-    let endIdx = startIdx
-    let isStairStep = true
-
-    for (
-      let i = startIdx;
-      i < pathToCheck.length - 2 && i < startIdx + 10;
-      i++
-    ) {
-      if (i + 2 >= pathToCheck.length) break
-
-      const p1 = pathToCheck[i]
-      const p2 = pathToCheck[i + 1]
-      const p3 = pathToCheck[i + 2]
-
-      const seg1Vertical = p1.x === p2.x
-      const seg2Vertical = p2.x === p3.x
-
-      if (seg1Vertical === seg2Vertical) {
-        break
-      }
-
-      const seg1Direction = seg1Vertical
-        ? Math.sign(p2.y - p1.y)
-        : Math.sign(p2.x - p1.x)
-
-      if (i > startIdx) {
-        const prevP = pathToCheck[i - 1]
-        const prevSegVertical = prevP.x === p1.x
-        const prevDirection = prevSegVertical
-          ? Math.sign(p1.y - prevP.y)
-          : Math.sign(p1.x - prevP.x)
-
-        if (
-          (seg1Vertical &&
-            prevSegVertical &&
-            seg1Direction !== prevDirection) ||
-          (!seg1Vertical && !prevSegVertical && seg1Direction !== prevDirection)
-        ) {
-          isStairStep = false
-          break
-        }
-      }
-
-      endIdx = i + 2
-    }
-
-    return isStairStep && endIdx - startIdx >= 3 ? endIdx : -1
   }
 
   let optimizedPath = [...path]
@@ -85,6 +34,21 @@ export const minimizeTurns = ({
       const stairEndIdx = recognizeStairStepPattern(optimizedPath, startIdx)
 
       if (stairEndIdx > 0) {
+        if (
+          isSegmentAnEndpointSegment(
+            optimizedPath[startIdx],
+            optimizedPath[startIdx + 1],
+            originalPath,
+          ) ||
+          isSegmentAnEndpointSegment(
+            optimizedPath[stairEndIdx - 1],
+            optimizedPath[stairEndIdx],
+            originalPath,
+          )
+        ) {
+          continue
+        }
+
         const startPoint = optimizedPath[startIdx]
         const endPoint = optimizedPath[stairEndIdx]
 
@@ -128,6 +92,21 @@ export const minimizeTurns = ({
           const endIdx = startIdx + removeCount + 1
 
           if (endIdx >= optimizedPath.length) continue
+
+          if (
+            isSegmentAnEndpointSegment(
+              optimizedPath[startIdx],
+              optimizedPath[startIdx + 1],
+              originalPath,
+            ) ||
+            isSegmentAnEndpointSegment(
+              optimizedPath[endIdx - 1],
+              optimizedPath[endIdx],
+              originalPath,
+            )
+          ) {
+            continue
+          }
 
           const startPoint = optimizedPath[startIdx]
           const endPoint = optimizedPath[endIdx]
@@ -178,6 +157,13 @@ export const minimizeTurns = ({
         const p1 = optimizedPath[i]
         const p2 = optimizedPath[i + 1]
         const p3 = optimizedPath[i + 2]
+
+        if (
+          isSegmentAnEndpointSegment(p1, p2, originalPath) ||
+          isSegmentAnEndpointSegment(p2, p3, originalPath)
+        ) {
+          continue
+        }
 
         const allVertical = p1.x === p2.x && p2.x === p3.x
         const allHorizontal = p1.y === p2.y && p2.y === p3.y

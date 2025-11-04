@@ -1,9 +1,9 @@
-import type { Point } from "graphics-debug"
-import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import type { Point } from "@tscircuit/math-utils"
+import { segmentToBoxMinDistance } from "@tscircuit/math-utils"
 
 export const hasCollisions = (
   pathSegments: Point[],
-  obstacles: any[],
+  obstacles: Array<{ minX: number; maxX: number; minY: number; maxY: number }>,
 ): boolean => {
   // Check each segment of the path
   for (let i = 0; i < pathSegments.length - 1; i++) {
@@ -12,7 +12,15 @@ export const hasCollisions = (
 
     // Check collision with each obstacle
     for (const obstacle of obstacles) {
-      if (segmentIntersectsRect(p1, p2, obstacle)) {
+      const box = {
+        center: {
+          x: obstacle.minX + (obstacle.maxX - obstacle.minX) / 2,
+          y: obstacle.minY + (obstacle.maxY - obstacle.minY) / 2,
+        },
+        width: obstacle.maxX - obstacle.minX,
+        height: obstacle.maxY - obstacle.minY,
+      }
+      if (segmentToBoxMinDistance(p1, p2, box) <= 0) {
         return true
       }
     }
