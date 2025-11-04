@@ -200,7 +200,6 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         {
           inputProblem: instance.inputProblem,
           allTraces: traces,
-          targetTraceIds: new Set(traces.map((t) => t.mspPairId)),
           allLabelPlacements: labelMergingOutput.netLabelPlacements,
           mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
           paddingBuffer: 0.1,
