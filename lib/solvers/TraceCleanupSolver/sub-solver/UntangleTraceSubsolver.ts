@@ -195,13 +195,13 @@ export class UntangleTraceSubsolver extends BaseSolver {
       this.rectangleCandidates[this.currentRectangleIndex]
     this.tightRectangle = rect
 
-    this.candidates = generateLShapeRerouteCandidates(
-      this.currentLShape!,
-      this.tightRectangle!,
-      2 * this.input.paddingBuffer,
-      i1,
-      i2,
-    )
+    this.candidates = generateLShapeRerouteCandidates({
+      lShape: this.currentLShape!,
+      rectangle: this.tightRectangle!,
+      padding: 2 * this.input.paddingBuffer,
+      interactionPoint1: i1,
+      interactionPoint2: i2,
+    })
     this.currentCandidateIndex = 0
     this.lastCollision = null
     this.collidingCandidate = null

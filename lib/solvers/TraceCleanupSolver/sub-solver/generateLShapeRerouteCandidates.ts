@@ -16,34 +16,40 @@ const isVertical = (a: Point, b: Point, eps = EPS) => Math.abs(a.x - b.x) < eps
  * through the provided rectangle, adding padding to avoid immediate collisions.
  * It considers different orientations of the L-shape relative to the rectangle to determine the appropriate rerouting points.
  */
-export const generateLShapeRerouteCandidates = (
-  lShape: LShape,
-  rectangle: Rectangle,
+export const generateLShapeRerouteCandidates = ({
+  lShape,
+  rectangle,
   padding = 0.5,
-  i1: Point,
-  i2: Point,
-): Point[][] => {
+  interactionPoint1,
+  interactionPoint2,
+}: {
+  lShape: LShape
+  rectangle: Rectangle
+  padding: number
+  interactionPoint1: Point
+  interactionPoint2: Point
+}): Point[][] => {
   const { p1, p2, p3 } = lShape
   const { x, y, width, height } = rectangle
 
   let c2: Point
-  let i1_padded: Point = i1
-  let i2_padded: Point = i2
+  let i1_padded: Point = interactionPoint1
+  let i2_padded: Point = interactionPoint2
 
   if (Math.abs(p2.x - x) < EPS && Math.abs(p2.y - (y + height)) < EPS) {
     c2 = { x: x + width + padding, y: y - padding }
 
     if (isVertical(p1, p2)) {
-      i1_padded = { x: i1.x, y: i1.y - padding }
+      i1_padded = { x: interactionPoint1.x, y: interactionPoint1.y - padding }
     } else {
       // isHorizontal(p1, p2)
-      i1_padded = { x: i1.x + padding, y: i1.y }
+      i1_padded = { x: interactionPoint1.x + padding, y: interactionPoint1.y }
     }
     if (isVertical(p2, p3)) {
-      i2_padded = { x: i2.x, y: i2.y - padding }
+      i2_padded = { x: interactionPoint2.x, y: interactionPoint2.y - padding }
     } else {
       // isHorizontal(p2, p3)
-      i2_padded = { x: i2.x + padding, y: i2.y }
+      i2_padded = { x: interactionPoint2.x + padding, y: interactionPoint2.y }
     }
   } else if (
     Math.abs(p2.x - (x + width)) < EPS &&
@@ -52,46 +58,46 @@ export const generateLShapeRerouteCandidates = (
     c2 = { x: x - padding, y: y - padding }
 
     if (isVertical(p1, p2)) {
-      i1_padded = { x: i1.x, y: i1.y - padding }
+      i1_padded = { x: interactionPoint1.x, y: interactionPoint1.y - padding }
     } else {
       // isHorizontal(p1, p2)
-      i1_padded = { x: i1.x - padding, y: i1.y }
+      i1_padded = { x: interactionPoint1.x - padding, y: interactionPoint1.y }
     }
     if (isVertical(p2, p3)) {
-      i2_padded = { x: i2.x, y: i2.y - padding }
+      i2_padded = { x: interactionPoint2.x, y: interactionPoint2.y - padding }
     } else {
       // isHorizontal(p2, p3)
-      i2_padded = { x: i2.x - padding, y: i2.y }
+      i2_padded = { x: interactionPoint2.x - padding, y: interactionPoint2.y }
     }
   } else if (Math.abs(p2.x - x) < EPS && Math.abs(p2.y - y) < EPS) {
     c2 = { x: x + width + padding, y: y + height + padding }
 
     if (isVertical(p1, p2)) {
-      i1_padded = { x: i1.x, y: i1.y + padding }
+      i1_padded = { x: interactionPoint1.x, y: interactionPoint1.y + padding }
     } else {
       // isHorizontal(p1, p2)
-      i1_padded = { x: i1.x + padding, y: i1.y }
+      i1_padded = { x: interactionPoint1.x + padding, y: interactionPoint1.y }
     }
     if (isVertical(p2, p3)) {
-      i2_padded = { x: i2.x, y: i2.y + padding }
+      i2_padded = { x: interactionPoint2.x, y: interactionPoint2.y + padding }
     } else {
       // isHorizontal(p2, p3)
-      i2_padded = { x: i2.x + padding, y: i2.y }
+      i2_padded = { x: interactionPoint2.x + padding, y: interactionPoint2.y }
     }
   } else if (Math.abs(p2.x - (x + width)) < EPS && Math.abs(p2.y - y) < EPS) {
     c2 = { x: x - padding, y: y + height + padding }
 
     if (isVertical(p1, p2)) {
-      i1_padded = { x: i1.x, y: i1.y + padding }
+      i1_padded = { x: interactionPoint1.x, y: interactionPoint1.y + padding }
     } else {
       // isHorizontal(p1, p2)
-      i1_padded = { x: i1.x - padding, y: i1.y }
+      i1_padded = { x: interactionPoint1.x - padding, y: interactionPoint1.y }
     }
     if (isVertical(p2, p3)) {
-      i2_padded = { x: i2.x, y: i2.y + padding }
+      i2_padded = { x: interactionPoint2.x, y: interactionPoint2.y + padding }
     } else {
       // isHorizontal(p2, p3)
-      i2_padded = { x: i2.x - padding, y: i2.y }
+      i2_padded = { x: interactionPoint2.x - padding, y: interactionPoint2.y }
     }
   } else {
     return []
