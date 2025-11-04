@@ -2,7 +2,7 @@
 
 export class UntanglingSolver {
   solve(traces: TraceLine[]): TraceLine[] {
-    return traces.map(trace => {
+    return traces.map((trace) => {
       const dx = Math.abs(trace.start.x - trace.end.x)
       const dy = Math.abs(trace.start.y - trace.end.y)
 
@@ -15,8 +15,8 @@ export class UntanglingSolver {
           path: [
             trace.start,
             { x: midX, y: trace.start.y + offset },
-            trace.end
-          ]
+            trace.end,
+          ],
         }
       }
       return trace
