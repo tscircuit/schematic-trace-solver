@@ -8,9 +8,12 @@ import { generateSnipAndReconnectCandidates } from "./trySnipAndReconnect"
 import { generateFourPointDetourCandidates } from "./tryFourPointDetour"
 import { simplifyPath } from "../TraceCleanupSolver/simplifyPath"
 
+import { generateMoveTraceSegmentsCandidates } from "./tryMoveTraceSegments"
+
 export const generateRerouteCandidates = ({
   trace,
   label,
+  problem,
   paddingBuffer,
   detourCount,
 }: {
@@ -58,5 +61,13 @@ export const generateRerouteCandidates = ({
     detourCount,
   })
 
-  return [...fourPointCandidates, ...snipReconnectCandidates]
+  const moveTraceSegmentsCandidates = generateMoveTraceSegmentsCandidates({
+    initialTrace,
+    label,
+    labelBounds,
+    paddingBuffer,
+    detourCount,
+  })
+
+  return [...fourPointCandidates, ...snipReconnectCandidates, ...moveTraceSegmentsCandidates]
 }
