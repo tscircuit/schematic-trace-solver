@@ -69,5 +69,9 @@ export const generateRerouteCandidates = ({
     detourCount,
   })
 
-  return [...fourPointCandidates, ...snipReconnectCandidates, ...moveTraceSegmentsCandidates]
+  return [
+    ...fourPointCandidates,
+    ...snipReconnectCandidates,
+    ...moveTraceSegmentsCandidates,
+  ]
 }
