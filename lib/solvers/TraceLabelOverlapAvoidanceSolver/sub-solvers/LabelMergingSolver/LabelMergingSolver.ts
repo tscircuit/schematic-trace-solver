@@ -6,6 +6,9 @@ import type { GraphicsObject, Line } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem } from "lib/types/InputProblem"
+import { groupLabelsByChipAndOrientation } from "./groupLabelsByChipAndOrientation"
+import { mergeLabelGroup } from "./mergeLabelGroup"
+import { filterLabelsAtTraceEdges } from "./filterLabelsAtTraceEdges"
 
 interface LabelMergingSolverInput {
   netLabelPlacements: NetLabelPlacement[]
@@ -18,9 +21,15 @@ interface LabelMergingSolverOutput {
   mergedLabelNetIdMap: Record<string, Set<string>>
 }
 
+type PipelineStep =
+  | "filtering_labels"
+  | "grouping_labels"
+  | "merging_groups"
+  | "finalizing"
+
 /**
  * Merges multiple net labels into a single, larger label if they are on the
- * same side of the same chip, reducing schematic clutter.
+ * same side of the same chip and physically adjacent.
  */
 export class MergedNetLabelObstacleSolver extends BaseSolver {
   private input: LabelMergingSolverInput
@@ -28,15 +37,21 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
   private inputProblem: InputProblem
   private traces: SolvedTracePath[]
 
-  constructor(solverInput: LabelMergingSolverInput) {
-    // console.log(JSON.stringify(solverInput));
+  // State for the new pipeline
+  private pipelineStep: PipelineStep = "filtering_labels"
+  private filteredLabels: NetLabelPlacement[] = []
+  private labelGroups: Record<string, NetLabelPlacement[]> = {}
+  private groupKeysToProcess: string[] = []
+  private finalPlacements: NetLabelPlacement[] = []
+  private mergedLabelNetIdMap: Record<string, Set<string>> = {}
+  private activeMergingGroupKey: string | null = null
 
+  constructor(solverInput: LabelMergingSolverInput) {
     super()
     this.input = solverInput
     this.inputProblem = solverInput.inputProblem
     this.traces = solverInput.traces
 
-    // Initialize output to a default state to allow visualization before the first step
     this.output = {
       netLabelPlacements: solverInput.netLabelPlacements,
       mergedLabelNetIdMap: {},
@@ -44,75 +59,67 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
   }
 
   override _step() {
-    const originalLabels = this.input.netLabelPlacements
-    const mergedLabelNetIdMap: Record<string, Set<string>> = {}
+    switch (this.pipelineStep) {
+      case "filtering_labels":
+        this.filteredLabels = filterLabelsAtTraceEdges(
+          this.input.netLabelPlacements,
+          this.traces,
+        )
+        this.pipelineStep = "grouping_labels"
+        break
 
-    if (!originalLabels || originalLabels.length === 0) {
-      this.output = {
-        netLabelPlacements: [],
-        mergedLabelNetIdMap: {},
-      }
-      this.solved = true
-      return
+      case "grouping_labels":
+        this.labelGroups = groupLabelsByChipAndOrientation(
+          this.filteredLabels,
+          this.inputProblem.chips,
+        )
+        this.groupKeysToProcess = Object.keys(this.labelGroups)
+        this.pipelineStep = "merging_groups"
+        break
+
+      case "merging_groups":
+        if (this.groupKeysToProcess.length === 0) {
+          this.pipelineStep = "finalizing"
+          this.activeMergingGroupKey = null
+          break
+        }
+
+        const groupKey = this.groupKeysToProcess.pop()!
+        this.activeMergingGroupKey = groupKey
+        const group = this.labelGroups[groupKey]!
+
+        if (group.length > 1) {
+          const { mergedLabel, originalNetIds } = mergeLabelGroup(
+            group,
+            groupKey,
+          )
+          this.finalPlacements.push(mergedLabel)
+          this.mergedLabelNetIdMap[mergedLabel.globalConnNetId] = originalNetIds
+        } else {
+          this.finalPlacements.push(...group)
+        }
+        break
+
+      case "finalizing":
+        // Any labels that were filtered out and not part of any group should be added back
+        const processedOriginalIds = new Set(
+          this.finalPlacements.flatMap((p) =>
+            this.mergedLabelNetIdMap[p.globalConnNetId]
+              ? [...this.mergedLabelNetIdMap[p.globalConnNetId]!]
+              : [p.globalConnNetId],
+          ),
+        )
+        const unprocessedLabels = this.input.netLabelPlacements.filter(
+          (l) => !processedOriginalIds.has(l.globalConnNetId),
+        )
+
+        this.output = {
+          netLabelPlacements: [...this.finalPlacements, ...unprocessedLabels],
+          mergedLabelNetIdMap: this.mergedLabelNetIdMap,
+        }
+        this.solved = true
+        break
     }
-
-    const labelGroups: Record<string, NetLabelPlacement[]> = {}
-
-    for (const p of originalLabels) {
-      if (p.pinIds.length === 0) continue
-      const chipId = p.pinIds[0].split(".")[0]
-      if (!chipId) continue
-      const key = `${chipId}-${p.orientation}`
-      if (!(key in labelGroups)) {
-        labelGroups[key] = []
-      }
-      labelGroups[key]!.push(p)
-    }
-
-    const finalPlacements: NetLabelPlacement[] = []
-    for (const [key, group] of Object.entries(labelGroups)) {
-      if (group.length <= 1) {
-        finalPlacements.push(...group)
-        continue
-      }
-
-      let minX = Infinity
-      let minY = Infinity
-      let maxX = -Infinity
-      let maxY = -Infinity
-      for (const p of group) {
-        const bounds = getRectBounds(p.center, p.width, p.height)
-        minX = Math.min(minX, bounds.minX)
-        minY = Math.min(minY, bounds.minY)
-        maxX = Math.max(maxX, bounds.maxX)
-        maxY = Math.max(maxY, bounds.maxY)
-      }
-
-      const newWidth = maxX - minX
-      const newHeight = maxY - minY
-      const template = group[0]!
-      const syntheticId = `merged-group-${key}`
-      const originalNetIds = new Set(group.map((p) => p.globalConnNetId))
-      mergedLabelNetIdMap[syntheticId] = originalNetIds
-
-      finalPlacements.push({
-        ...template,
-        globalConnNetId: syntheticId,
-        width: newWidth,
-        height: newHeight,
-        center: { x: minX + newWidth / 2, y: minY + newHeight / 2 },
-        pinIds: [...new Set(group.flatMap((p) => p.pinIds))],
-        mspConnectionPairIds: [
-          ...new Set(group.flatMap((p) => p.mspConnectionPairIds)),
-        ],
-      })
-    }
-
-    this.output = {
-      netLabelPlacements: finalPlacements,
-      mergedLabelNetIdMap,
-    }
-    this.solved = true
   }
 
   getOutput(): LabelMergingSolverOutput {
@@ -143,17 +150,33 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
       graphics.lines!.push(line)
     }
 
+    // Highlight the active sub-group being merged
+    if (
+      this.activeMergingGroupKey &&
+      this.labelGroups[this.activeMergingGroupKey]
+    ) {
+      const activeGroup = this.labelGroups[this.activeMergingGroupKey]!
+      for (const label of activeGroup) {
+        graphics.rects.push({
+          center: label.center,
+          width: label.width,
+          height: label.height,
+          fill: "rgba(255, 165, 0, 0.5)", // Orange highlight
+          stroke: "orange",
+        })
+      }
+    }
+
     for (const finalLabel of this.output.netLabelPlacements) {
       const isMerged = finalLabel.globalConnNetId.startsWith("merged-group-")
       const color = getColorFromString(finalLabel.globalConnNetId)
 
       if (isMerged) {
-        // Draw the new merged label
         graphics.rects.push({
           center: finalLabel.center,
           width: finalLabel.width,
           height: finalLabel.height,
-          fill: color.replace(/, 1\)/, ", 0.2)"), // semi-transparent
+          fill: color.replace(/, 1\)/, ", 0.2)"),
           stroke: color,
           label: finalLabel.globalConnNetId,
         })
@@ -164,7 +187,6 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
           for (const originalNetId of originalNetIds) {
             const originalLabel = originalLabelsById.get(originalNetId)
             if (originalLabel) {
-              // Draw the original label as a dashed box
               const bounds = getRectBounds(
                 originalLabel.center,
                 originalLabel.width,
@@ -179,7 +201,6 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
                 strokeColor: color,
                 strokeDash: "4 4",
               })
-              // Draw line from original to new center
               graphics.lines.push({
                 points: [originalLabel.center, finalLabel.center],
                 strokeColor: color,
@@ -189,7 +210,6 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
           }
         }
       } else {
-        // Draw un-merged labels
         graphics.rects.push({
           center: finalLabel.center,
           width: finalLabel.width,

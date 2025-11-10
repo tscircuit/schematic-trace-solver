@@ -6,14 +6,17 @@ import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/
 import type { InputProblem } from "lib/types/InputProblem"
 import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
 import { SingleOverlapSolver } from "../SingleOverlapSolver/SingleOverlapSolver"
+import { isPointInsideLabel } from "./isPointInsideLabel"
+import { visualizeDecomposition } from "./visualizeDecomposition"
 
 type Overlap = ReturnType<typeof detectTraceLabelOverlap>[0]
 
 // Define a type for the input of the internal overlap solver to avoid conflicts
-interface OverlapCollectionSolverInput {
+export interface OverlapCollectionSolverInput {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
-  netLabelPlacements: NetLabelPlacement[]
+  originalNetLabelPlacements: NetLabelPlacement[]
+  mergedNetLabelPlacements: NetLabelPlacement[]
   mergedLabelNetIdMap: Record<string, Set<string>>
 }
 
@@ -23,7 +26,8 @@ interface OverlapCollectionSolverInput {
  */
 export class OverlapAvoidanceStepSolver extends BaseSolver {
   inputProblem: InputProblem
-  netLabelPlacements: NetLabelPlacement[]
+  originalNetLabelPlacements: NetLabelPlacement[]
+  mergedNetLabelPlacements: NetLabelPlacement[]
   mergedLabelNetIdMap: Record<string, Set<string>>
 
   allTraces: SolvedTracePath[]
@@ -36,15 +40,21 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
   private overlapQueue: Overlap[] = []
   private recentlyFailed: Set<string> = new Set()
 
+  private currentlyProcessingOverlap: Overlap | null = null
+  private decomposedChildLabels: NetLabelPlacement[] | null = null
+
   constructor(solverInput: OverlapCollectionSolverInput) {
     super()
     this.inputProblem = solverInput.inputProblem
-    this.netLabelPlacements = solverInput.netLabelPlacements
+    this.originalNetLabelPlacements = solverInput.originalNetLabelPlacements
+    this.mergedNetLabelPlacements = solverInput.mergedNetLabelPlacements
     this.mergedLabelNetIdMap = solverInput.mergedLabelNetIdMap
     this.allTraces = [...solverInput.traces]
   }
 
   override _step() {
+    this.currentlyProcessingOverlap = null
+    this.decomposedChildLabels = null
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
 
@@ -65,26 +75,22 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
         const overlapId = `${this.activeSubSolver.initialTrace.mspPairId}-${this.activeSubSolver.label.globalConnNetId}`
         this.recentlyFailed.add(overlapId)
         this.activeSubSolver = null
+      } else {
       }
       return
     }
 
     const overlaps = detectTraceLabelOverlap(
       this.allTraces,
-      this.netLabelPlacements,
-    ).filter((o) => {
-      const originalNetIds = this.mergedLabelNetIdMap[o.label.globalConnNetId]
-      if (originalNetIds) {
-        return !originalNetIds.has(o.trace.globalConnNetId)
-      }
-      return o.trace.globalConnNetId !== o.label.globalConnNetId
-    })
+      this.mergedNetLabelPlacements,
+    )
 
     if (overlaps.length === 0) {
       this.solved = true
       return
     }
 
+    // Filter out overlaps that have recently failed to avoid infinite loops
     const nonFailedOverlaps = overlaps.filter((o) => {
       const overlapId = `${o.trace.mspPairId}-${o.label.globalConnNetId}`
       return !this.recentlyFailed.has(overlapId)
@@ -98,24 +104,105 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
     this.overlapQueue = nonFailedOverlaps
 
     const nextOverlap = this.overlapQueue.shift()
+    this.currentlyProcessingOverlap = nextOverlap ?? null
 
     if (nextOverlap) {
       const traceToFix = this.allTraces.find(
         (t) => t.mspPairId === nextOverlap.trace.mspPairId,
-      )
-      if (traceToFix) {
-        const labelId = nextOverlap.label.globalConnNetId
-        const detourCount = this.detourCountByLabel[labelId] || 0
-        this.detourCountByLabel[labelId] = detourCount + 1
+      )!
+      const labelToAvoid = nextOverlap.label
+      const traceStartPoint = traceToFix.tracePath[0]
 
-        this.activeSubSolver = new SingleOverlapSolver({
-          trace: traceToFix,
-          label: nextOverlap.label,
-          problem: this.inputProblem,
-          paddingBuffer: this.PADDING_BUFFER,
-          detourCount,
-        })
+      const originalNetIds =
+        this.mergedLabelNetIdMap[labelToAvoid.globalConnNetId]
+      const isSelfOverlap = originalNetIds?.has(traceToFix.globalConnNetId)
+
+      if (isSelfOverlap) {
+        const childLabels = this.originalNetLabelPlacements.filter((l) =>
+          originalNetIds.has(l.globalConnNetId),
+        )
+        this.decomposedChildLabels = childLabels
+        let actualOverlapLabel: NetLabelPlacement | null = null
+
+        for (const childLabel of childLabels) {
+          if (childLabel.globalConnNetId === traceToFix.globalConnNetId) {
+            continue
+          }
+
+          const overlapsWithChild = detectTraceLabelOverlap(
+            [traceToFix],
+            [childLabel],
+          )
+          if (overlapsWithChild.length > 0) {
+            actualOverlapLabel = childLabel
+            break
+          }
+        }
+
+        if (actualOverlapLabel) {
+          const labelId = actualOverlapLabel.globalConnNetId
+          const detourCount = this.detourCountByLabel[labelId] || 0
+          this.detourCountByLabel[labelId] = detourCount + 1
+          this.activeSubSolver = new SingleOverlapSolver({
+            trace: traceToFix,
+            label: actualOverlapLabel,
+            problem: this.inputProblem,
+            paddingBuffer: this.PADDING_BUFFER,
+            detourCount,
+          })
+        } else {
+          const overlapId = `${traceToFix.mspPairId}-${labelToAvoid.globalConnNetId}`
+          this.recentlyFailed.add(overlapId)
+        }
+        return
       }
+
+      if (originalNetIds && isPointInsideLabel(traceStartPoint, labelToAvoid)) {
+        const childLabels = this.originalNetLabelPlacements.filter((l) =>
+          originalNetIds.has(l.globalConnNetId),
+        )
+        this.decomposedChildLabels = childLabels
+        let actualOverlapLabel: NetLabelPlacement | null = null
+
+        for (const childLabel of childLabels) {
+          const overlapsWithChild = detectTraceLabelOverlap(
+            [traceToFix],
+            [childLabel],
+          )
+          if (overlapsWithChild.length > 0) {
+            actualOverlapLabel = childLabel
+            break
+          }
+        }
+
+        if (actualOverlapLabel) {
+          const labelId = actualOverlapLabel.globalConnNetId
+          const detourCount = this.detourCountByLabel[labelId] || 0
+          this.detourCountByLabel[labelId] = detourCount + 1
+          this.activeSubSolver = new SingleOverlapSolver({
+            trace: traceToFix,
+            label: actualOverlapLabel,
+            problem: this.inputProblem,
+            paddingBuffer: this.PADDING_BUFFER,
+            detourCount,
+          })
+        } else {
+          const overlapId = `${traceToFix.mspPairId}-${labelToAvoid.globalConnNetId}`
+          this.recentlyFailed.add(overlapId)
+        }
+        return
+      }
+
+      const labelId = labelToAvoid.globalConnNetId
+      const detourCount = this.detourCountByLabel[labelId] || 0
+      this.detourCountByLabel[labelId] = detourCount + 1
+      this.activeSubSolver = new SingleOverlapSolver({
+        trace: traceToFix,
+        label: labelToAvoid,
+        problem: this.inputProblem,
+        paddingBuffer: this.PADDING_BUFFER,
+        detourCount,
+      })
     }
   }
 
@@ -130,7 +217,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
     if (this.activeSubSolver) {
       return this.activeSubSolver.visualize()
     }
-    // When idle, show all the traces
+
     const graphics = visualizeInputProblem(this.inputProblem)
     if (!graphics.lines) graphics.lines = []
     for (const trace of this.allTraces) {
@@ -139,6 +226,43 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
         strokeColor: "purple",
       })
     }
+
+    if (this.currentlyProcessingOverlap) {
+      const { trace, label } = this.currentlyProcessingOverlap
+
+      // Highlight the colliding trace
+      graphics.lines!.push({
+        points: trace.tracePath,
+        strokeColor: "red",
+      })
+
+      if (this.decomposedChildLabels) {
+        visualizeDecomposition({
+          decomposedChildLabels: this.decomposedChildLabels,
+          collidingTrace: trace,
+          mergedLabel: label,
+          graphics,
+        })
+      } else {
+        // Standard case: highlight the entire label
+        if (!graphics.rects) graphics.rects = []
+        graphics.rects.push({
+          center: label.center,
+          width: label.width,
+          height: label.height,
+          fill: "yellow",
+        })
+        if (!graphics.texts) graphics.texts = []
+        graphics.texts.push({
+          x: label.center.x,
+          y: label.center.y + label.height / 2 + 0.5,
+          text: `COLLISION: Trace ${trace.mspPairId} vs Label ${label.globalConnNetId}`,
+          fontSize: 0.3,
+          color: "red",
+        })
+      }
+    }
+
     return graphics
   }
 }

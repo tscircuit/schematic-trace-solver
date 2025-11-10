@@ -8,31 +8,47 @@ export interface TraceLabelOverlap {
   label: NetLabelPlacement
 }
 
+/**
+ * Detects overlaps between a set of traces and a set of net labels.
+ * It identifies instances where a trace segment intersects with a label's bounding box.
+ * Self-attachments (where a trace and label belong to the same net) are explicitly ignored
+ * as they are not considered true overlaps for avoidance purposes.
+ *
+ * @param traces - An array of SolvedTracePath objects to check for overlaps.
+ * @param netLabels - An array of NetLabelPlacement objects representing the labels.
+ * @returns An array of TraceLabelOverlap objects, each indicating an overlap
+ *          between a trace and a label.
+ */
 export const detectTraceLabelOverlap = (
   traces: SolvedTracePath[],
-  netLabels: NetLabelPlacement[],
+  netLabels: NetLabelPlacement[] = [],
 ): TraceLabelOverlap[] => {
   const overlaps: TraceLabelOverlap[] = []
 
-  for (const trace of traces) {
-    for (const label of netLabels) {
+  let traceIndex = 0
+  while (traceIndex < traces.length) {
+    const trace = traces[traceIndex]
+
+    let labelIndex = 0
+    while (labelIndex < netLabels.length) {
+      const label = netLabels[labelIndex]
       const labelBounds = getRectBounds(label.center, label.width, label.height)
 
-      for (let i = 0; i < trace.tracePath.length - 1; i++) {
-        const p1 = trace.tracePath[i]
-        const p2 = trace.tracePath[i + 1]
+      for (let j = 0; j < trace.tracePath.length - 1; j++) {
+        const p1 = trace.tracePath[j]
+        const p2 = trace.tracePath[j + 1]
 
         if (segmentIntersectsRect(p1, p2, labelBounds)) {
-          // Check if the trace and label belong to the same net.
-          // If so, it's a self-attachment, not a collision.
           if (trace.globalConnNetId === label.globalConnNetId) {
-            break // Move to the next label
+            break
           }
           overlaps.push({ trace, label })
-          break // Move to the next label
+          break
         }
       }
+      labelIndex++
     }
+    traceIndex++
   }
   return overlaps
 }

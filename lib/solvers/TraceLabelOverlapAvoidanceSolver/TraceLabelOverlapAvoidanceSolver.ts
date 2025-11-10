@@ -15,8 +15,21 @@ interface TraceLabelOverlapAvoidanceSolverInput {
 }
 
 /**
- * This solver is a pipeline that runs a series of sub-solvers to resolve
- * trace-label overlaps and clean up the resulting traces.
+ * A pipeline solver responsible for resolving overlaps between schematic traces and net labels.
+ *
+ * This solver orchestrates a sequence of sub-solvers to achieve its goal:
+ * 1. **MergedNetLabelObstacleSolver**: This solver first merges labels that are
+ *    close to each other to form larger "obstacle" groups. This simplifies the
+ *    problem by reducing the number of individual obstacles the traces need to avoid.
+ * 2. **OverlapAvoidanceStepSolver**: This solver then takes the output of the merging
+ *    step and iteratively attempts to reroute traces to avoid the merged label obstacles.
+ *    It handles one overlap at a time, making it a step-by-step process.
+ *
+ * The final output is a set of modified traces that have been rerouted to avoid
+ * labels, and the set of merged labels that were used as obstacles.
+ *
+ * @param {TraceLabelOverlapAvoidanceSolverInput} solverInput - The input for the solver,
+ *   containing the initial traces, label placements, and the input problem definition.
  */
 export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -65,7 +78,8 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
         this.overlapAvoidanceSolver = new OverlapAvoidanceStepSolver({
           inputProblem: this.inputProblem,
           traces: this.traces,
-          netLabelPlacements:
+          originalNetLabelPlacements: this.netLabelPlacements, // The original, unfiltered list
+          mergedNetLabelPlacements:
             this.labelMergingSolver!.getOutput().netLabelPlacements,
           mergedLabelNetIdMap:
             this.labelMergingSolver!.getOutput().mergedLabelNetIdMap,
