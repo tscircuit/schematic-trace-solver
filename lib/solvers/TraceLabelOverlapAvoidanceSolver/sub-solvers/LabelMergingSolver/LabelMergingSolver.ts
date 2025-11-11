@@ -61,18 +61,18 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
   override _step() {
     switch (this.pipelineStep) {
       case "filtering_labels":
-        this.filteredLabels = filterLabelsAtTraceEdges(
-          this.input.netLabelPlacements,
-          this.traces,
-        )
+        this.filteredLabels = filterLabelsAtTraceEdges({
+          labels: this.input.netLabelPlacements,
+          traces: this.traces,
+        })
         this.pipelineStep = "grouping_labels"
         break
 
       case "grouping_labels":
-        this.labelGroups = groupLabelsByChipAndOrientation(
-          this.filteredLabels,
-          this.inputProblem.chips,
-        )
+        this.labelGroups = groupLabelsByChipAndOrientation({
+          labels: this.filteredLabels,
+          chips: this.inputProblem.chips,
+        })
         this.groupKeysToProcess = Object.keys(this.labelGroups)
         this.pipelineStep = "merging_groups"
         break

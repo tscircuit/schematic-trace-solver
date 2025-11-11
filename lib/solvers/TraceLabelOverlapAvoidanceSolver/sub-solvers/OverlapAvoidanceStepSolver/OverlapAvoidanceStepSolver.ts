@@ -15,7 +15,7 @@ type Overlap = ReturnType<typeof detectTraceLabelOverlap>[0]
 export interface OverlapCollectionSolverInput {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
-  originalNetLabelPlacements: NetLabelPlacement[]
+  initialNetLabelPlacements: NetLabelPlacement[]
   mergedNetLabelPlacements: NetLabelPlacement[]
   mergedLabelNetIdMap: Record<string, Set<string>>
 }
@@ -26,7 +26,7 @@ export interface OverlapCollectionSolverInput {
  */
 export class OverlapAvoidanceStepSolver extends BaseSolver {
   inputProblem: InputProblem
-  originalNetLabelPlacements: NetLabelPlacement[]
+  initialNetLabelPlacements: NetLabelPlacement[]
   mergedNetLabelPlacements: NetLabelPlacement[]
   mergedLabelNetIdMap: Record<string, Set<string>>
 
@@ -46,7 +46,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
   constructor(solverInput: OverlapCollectionSolverInput) {
     super()
     this.inputProblem = solverInput.inputProblem
-    this.originalNetLabelPlacements = solverInput.originalNetLabelPlacements
+    this.initialNetLabelPlacements = solverInput.initialNetLabelPlacements
     this.mergedNetLabelPlacements = solverInput.mergedNetLabelPlacements
     this.mergedLabelNetIdMap = solverInput.mergedLabelNetIdMap
     this.allTraces = [...solverInput.traces]
@@ -80,10 +80,10 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
       return
     }
 
-    const overlaps = detectTraceLabelOverlap(
-      this.allTraces,
-      this.mergedNetLabelPlacements,
-    )
+    const overlaps = detectTraceLabelOverlap({
+      traces: this.allTraces,
+      netLabels: this.mergedNetLabelPlacements,
+    })
 
     if (overlaps.length === 0) {
       this.solved = true
@@ -118,21 +118,17 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
       const isSelfOverlap = originalNetIds?.has(traceToFix.globalConnNetId)
 
       if (isSelfOverlap) {
-        const childLabels = this.originalNetLabelPlacements.filter((l) =>
+        const childLabels = this.initialNetLabelPlacements.filter((l) =>
           originalNetIds.has(l.globalConnNetId),
         )
         this.decomposedChildLabels = childLabels
         let actualOverlapLabel: NetLabelPlacement | null = null
 
         for (const childLabel of childLabels) {
-          if (childLabel.globalConnNetId === traceToFix.globalConnNetId) {
-            continue
-          }
-
-          const overlapsWithChild = detectTraceLabelOverlap(
-            [traceToFix],
-            [childLabel],
-          )
+          const overlapsWithChild = detectTraceLabelOverlap({
+            traces: [traceToFix],
+            netLabels: [childLabel],
+          })
           if (overlapsWithChild.length > 0) {
             actualOverlapLabel = childLabel
             break
@@ -157,18 +153,21 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
         return
       }
 
-      if (originalNetIds && isPointInsideLabel(traceStartPoint, labelToAvoid)) {
-        const childLabels = this.originalNetLabelPlacements.filter((l) =>
+      if (
+        originalNetIds &&
+        isPointInsideLabel({ point: traceStartPoint, label: labelToAvoid })
+      ) {
+        const childLabels = this.initialNetLabelPlacements.filter((l) =>
           originalNetIds.has(l.globalConnNetId),
         )
         this.decomposedChildLabels = childLabels
         let actualOverlapLabel: NetLabelPlacement | null = null
 
         for (const childLabel of childLabels) {
-          const overlapsWithChild = detectTraceLabelOverlap(
-            [traceToFix],
-            [childLabel],
-          )
+          const overlapsWithChild = detectTraceLabelOverlap({
+            traces: [traceToFix],
+            netLabels: [childLabel],
+          })
           if (overlapsWithChild.length > 0) {
             actualOverlapLabel = childLabel
             break

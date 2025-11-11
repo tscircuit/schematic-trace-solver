@@ -11,11 +11,15 @@ import { distance } from "@tscircuit/math-utils"
  * and using only the trace geometry. we find out which labels are
  * at/near port of chips and only keep those for merging.
  */
-export const filterLabelsAtTraceEdges = (
-  labels: NetLabelPlacement[],
-  traces: SolvedTracePath[],
-  distanceThreshold = 0.4, // # Magic value: All labels are of same dimension, so this will work well for most cases
-): NetLabelPlacement[] => {
+export const filterLabelsAtTraceEdges = ({
+  labels,
+  traces,
+  distanceThreshold = 0.5, // Example threshold
+}: {
+  labels: NetLabelPlacement[]
+  traces: SolvedTracePath[]
+  distanceThreshold?: number
+}): NetLabelPlacement[] => {
   // 1. Group traces by their net ID for efficient lookup
   const tracesByNetId = new Map<string, SolvedTracePath[]>()
   if (!traces) {

@@ -11,10 +11,13 @@ import type { InputProblem } from "lib/types/InputProblem"
  * @returns A record where keys are in the format "chipId-orientation" (e.g., "U1-left")
  *          and values are arrays of NetLabelPlacement objects belonging to that group.
  */
-export const groupLabelsByChipAndOrientation = (
-  labels: NetLabelPlacement[],
-  chips: InputProblem["chips"],
-): Record<string, NetLabelPlacement[]> => {
+export const groupLabelsByChipAndOrientation = ({
+  labels,
+  chips,
+}: {
+  labels: NetLabelPlacement[]
+  chips: InputProblem["chips"]
+}): Record<string, NetLabelPlacement[]> => {
   const groupedLabels: Record<string, NetLabelPlacement[]> = {}
 
   for (const label of labels) {

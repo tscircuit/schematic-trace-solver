@@ -5,10 +5,13 @@ import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabe
 /**
  * Checks if a point is inside the bounding box of a net label.
  */
-export const isPointInsideLabel = (
-  point: Point,
-  label: NetLabelPlacement,
-): boolean => {
+export const isPointInsideLabel = ({
+  point,
+  label,
+}: {
+  point: Point
+  label: NetLabelPlacement
+}): boolean => {
   const bounds = getRectBounds(label.center, label.width, label.height)
 
   return (

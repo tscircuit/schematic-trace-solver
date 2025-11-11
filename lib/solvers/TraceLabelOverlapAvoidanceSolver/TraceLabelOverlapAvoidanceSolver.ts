@@ -78,7 +78,7 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
         this.overlapAvoidanceSolver = new OverlapAvoidanceStepSolver({
           inputProblem: this.inputProblem,
           traces: this.traces,
-          originalNetLabelPlacements: this.netLabelPlacements, // The original, unfiltered list
+          initialNetLabelPlacements: this.netLabelPlacements, // The original, unfiltered list
           mergedNetLabelPlacements:
             this.labelMergingSolver!.getOutput().netLabelPlacements,
           mergedLabelNetIdMap:

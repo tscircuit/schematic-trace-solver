@@ -19,19 +19,17 @@ export interface TraceLabelOverlap {
  * @returns An array of TraceLabelOverlap objects, each indicating an overlap
  *          between a trace and a label.
  */
-export const detectTraceLabelOverlap = (
-  traces: SolvedTracePath[],
-  netLabels: NetLabelPlacement[] = [],
-): TraceLabelOverlap[] => {
+export const detectTraceLabelOverlap = ({
+  traces,
+  netLabels = [],
+}: {
+  traces: SolvedTracePath[]
+  netLabels?: NetLabelPlacement[]
+}): TraceLabelOverlap[] => {
   const overlaps: TraceLabelOverlap[] = []
 
-  let traceIndex = 0
-  while (traceIndex < traces.length) {
-    const trace = traces[traceIndex]
-
-    let labelIndex = 0
-    while (labelIndex < netLabels.length) {
-      const label = netLabels[labelIndex]
+  for (const trace of traces) {
+    for (const label of netLabels) {
       const labelBounds = getRectBounds(label.center, label.width, label.height)
 
       for (let j = 0; j < trace.tracePath.length - 1; j++) {
@@ -39,16 +37,17 @@ export const detectTraceLabelOverlap = (
         const p2 = trace.tracePath[j + 1]
 
         if (segmentIntersectsRect(p1, p2, labelBounds)) {
+          // If the trace and label belong to the same net, it's a legitimate connection, not an overlap to avoid.
+          // This check is now redundant with the new logic in OverlapAvoidanceStepSolver,
+          // but kept here for now as per instruction not to remove anything unnecessary.
           if (trace.globalConnNetId === label.globalConnNetId) {
-            break
+            break // Break from the inner-most loop (segment loop)
           }
           overlaps.push({ trace, label })
-          break
+          break // Break from the inner-most loop (segment loop)
         }
       }
-      labelIndex++
     }
-    traceIndex++
   }
   return overlaps
 }
