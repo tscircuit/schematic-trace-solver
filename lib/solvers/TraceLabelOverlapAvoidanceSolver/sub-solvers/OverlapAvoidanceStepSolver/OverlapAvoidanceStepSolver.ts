@@ -31,10 +31,17 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
 
   private detourCountByLabel: Record<string, number> = {}
   private readonly PADDING_BUFFER = 0.1
+  private readonly MAX_ATTEMPTS_PER_OVERLAP = 25
+  private overlapAttemptCounts: Record<string, number> = {}
 
   public override activeSubSolver: SingleOverlapSolver | null = null
   private overlapQueue: Overlap[] = []
   private recentlyFailed: Set<string> = new Set()
+  private currentOverlapId: string | null = null
+
+  private getOverlapId(overlap: Overlap) {
+    return `${overlap.trace.mspPairId}-${overlap.label.globalConnNetId}`
+  }
 
   constructor(solverInput: OverlapCollectionSolverInput) {
     super()
@@ -61,10 +68,14 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
         }
         this.activeSubSolver = null
         this.recentlyFailed.clear()
+        this.currentOverlapId = null
       } else if (this.activeSubSolver.failed) {
-        const overlapId = `${this.activeSubSolver.initialTrace.mspPairId}-${this.activeSubSolver.label.globalConnNetId}`
+        const overlapId =
+          this.currentOverlapId ??
+          `${this.activeSubSolver.initialTrace.mspPairId}-${this.activeSubSolver.label.globalConnNetId}`
         this.recentlyFailed.add(overlapId)
         this.activeSubSolver = null
+        this.currentOverlapId = null
       }
       return
     }
@@ -80,13 +91,19 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
       return o.trace.globalConnNetId !== o.label.globalConnNetId
     })
 
-    if (overlaps.length === 0) {
+    const viableOverlaps = overlaps.filter((o) => {
+      const overlapId = this.getOverlapId(o)
+      const attempts = this.overlapAttemptCounts[overlapId] ?? 0
+      return attempts < this.MAX_ATTEMPTS_PER_OVERLAP
+    })
+
+    if (viableOverlaps.length === 0) {
       this.solved = true
       return
     }
 
-    const nonFailedOverlaps = overlaps.filter((o) => {
-      const overlapId = `${o.trace.mspPairId}-${o.label.globalConnNetId}`
+    const nonFailedOverlaps = viableOverlaps.filter((o) => {
+      const overlapId = this.getOverlapId(o)
       return !this.recentlyFailed.has(overlapId)
     })
 
@@ -100,6 +117,10 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
     const nextOverlap = this.overlapQueue.shift()
 
     if (nextOverlap) {
+      const overlapId = this.getOverlapId(nextOverlap)
+      const attemptCount = this.overlapAttemptCounts[overlapId] ?? 0
+      this.overlapAttemptCounts[overlapId] = attemptCount + 1
+      this.currentOverlapId = overlapId
       const traceToFix = this.allTraces.find(
         (t) => t.mspPairId === nextOverlap.trace.mspPairId,
       )
