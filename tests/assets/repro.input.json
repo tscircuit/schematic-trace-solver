@@ -1,0 +1,57 @@
+{
+  "netLabelPlacements": [
+    {
+      "globalConnNetId": "connectivity_net1",
+      "dcConnNetId": "connectivity_net1",
+      "netId": ".L1 > .pin2 to .M1 > .drain",
+      "mspConnectionPairIds": ["L1.2-D1.1"],
+      "pinIds": ["L1.2", "D1.1"],
+      "orientation": "y+",
+      "anchorPoint": {
+        "x": 0.78,
+        "y": 2.97
+      },
+      "width": 0.2,
+      "height": 0.45,
+      "center": {
+        "x": 1.53,
+        "y": 2.97
+      }
+    }
+  ],
+  "traces": [
+    {
+      "mspPairId": "V1.1-L1.1",
+      "dcConnNetId": "connectivity_net0",
+      "globalConnNetId": "connectivity_net0",
+      "pins": [
+        {
+          "pinId": "V1.1",
+          "x": -5.005,
+          "y": 2.54,
+          "chipId": "schematic_component_0",
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "L1.1",
+          "x": -0.58,
+          "y": 2.98,
+          "_facingDirection": "x-",
+          "chipId": "schematic_component_1"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": 0,
+          "y": 2.97
+        },
+        {
+          "x": 2,
+          "y": 2.97
+        }
+      ],
+      "mspConnectionPairIds": ["V1.1-L1.1"],
+      "pinIds": ["V1.1", "L1.1"]
+    }
+  ]
+}
