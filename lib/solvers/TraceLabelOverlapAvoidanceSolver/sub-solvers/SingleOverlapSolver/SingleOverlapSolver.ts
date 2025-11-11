@@ -4,11 +4,18 @@ import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabe
 import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject } from "graphics-debug"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
-import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import {
+  isPathCollidingWithObstacles,
+  segmentIntersectsRect,
+} from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import {
+  getObstacleRects,
+  type ChipWithBounds,
+} from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath
@@ -30,12 +37,15 @@ export class SingleOverlapSolver extends BaseSolver {
   problem: InputProblem
   obstacles: ReturnType<typeof getObstacleRects>
   label: NetLabelPlacement
+  paddingBuffer: number
+  labelBounds: ChipWithBounds
 
   constructor(solverInput: SingleOverlapSolverInput) {
     super()
     this.initialTrace = solverInput.trace
     this.problem = solverInput.problem
     this.label = solverInput.label
+    this.paddingBuffer = solverInput.paddingBuffer
 
     const candidates = generateRerouteCandidates({
       ...solverInput,
@@ -55,6 +65,19 @@ export class SingleOverlapSolver extends BaseSolver {
       (a, b) => getPathLength(a) - getPathLength(b),
     )
     this.obstacles = getObstacleRects(this.problem)
+
+    const labelBounds = getRectBounds(
+      this.label.center,
+      this.label.width,
+      this.label.height,
+    )
+    this.labelBounds = {
+      chipId: `netlabel-${this.label.netId}`,
+      minX: labelBounds.minX - this.paddingBuffer,
+      minY: labelBounds.minY - this.paddingBuffer,
+      maxX: labelBounds.maxX + this.paddingBuffer,
+      maxY: labelBounds.maxY + this.paddingBuffer,
+    }
   }
 
   override _step() {
@@ -66,10 +89,24 @@ export class SingleOverlapSolver extends BaseSolver {
     const nextCandidatePath = this.queuedCandidatePaths.shift()!
     const simplifiedPath = simplifyPath(nextCandidatePath)
 
-    if (!isPathCollidingWithObstacles(simplifiedPath, this.obstacles)) {
+    if (
+      !isPathCollidingWithObstacles(simplifiedPath, this.obstacles) &&
+      !this.doesPathOverlapLabel(simplifiedPath)
+    ) {
       this.solvedTracePath = simplifiedPath
       this.solved = true
     }
+  }
+
+  private doesPathOverlapLabel(path: Point[]): boolean {
+    for (let i = 0; i < path.length - 1; i++) {
+      const start = path[i]!
+      const end = path[i + 1]!
+      if (segmentIntersectsRect(start, end, this.labelBounds)) {
+        return true
+      }
+    }
+    return false
   }
 
   override visualize(): GraphicsObject {
