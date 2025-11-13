@@ -36,7 +36,8 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   unprocessedTraces: SolvedTracePath[] = []
   cleanTraces: SolvedTracePath[] = []
   subSolvers: OverlapAvoidanceStepSolver[] = []
-  private phase: "dispatch" | "execution" = "dispatch"
+  private phase: "searching_for_overlaps" | "fixing_overlaps" =
+    "searching_for_overlaps"
   detourCounts: Map<string, number> = new Map()
 
   labelMergingSolver?: MergedNetLabelObstacleSolver
@@ -51,12 +52,12 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   }
 
   override _step() {
-    if (this.phase === "dispatch") {
+    if (this.phase === "searching_for_overlaps") {
       if (this.unprocessedTraces.length === 0) {
         console.log(
           `Dispatch phase complete. Created ${this.subSolvers.length} sub-solvers.`,
         )
-        this.phase = "execution"
+        this.phase = "fixing_overlaps"
         return
       }
 
@@ -90,7 +91,7 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
         })
         this.subSolvers.push(subSolver)
       }
-    } else if (this.phase === "execution") {
+    } else if (this.phase === "fixing_overlaps") {
       if (this.subSolvers.every((s) => s.solved || s.failed)) {
         console.log("All sub-solvers finished.")
         // Final merge for pipeline compatibility
