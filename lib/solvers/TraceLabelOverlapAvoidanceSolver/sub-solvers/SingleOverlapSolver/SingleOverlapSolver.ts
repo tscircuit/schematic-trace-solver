@@ -18,6 +18,8 @@ interface SingleOverlapSolverInput {
   detourCount: number
 }
 
+const MAX_TRIES = 5
+
 /**
  * This solver attempts to find a valid rerouting for a single trace that is
  * overlapping with a net label. It tries various candidate paths until it
@@ -30,6 +32,7 @@ export class SingleOverlapSolver extends BaseSolver {
   problem: InputProblem
   obstacles: ReturnType<typeof getObstacleRects>
   label: NetLabelPlacement
+  _tried: number = 0
 
   constructor(solverInput: SingleOverlapSolverInput) {
     super()
@@ -37,8 +40,14 @@ export class SingleOverlapSolver extends BaseSolver {
     this.problem = solverInput.problem
     this.label = solverInput.label
 
+    // Calculate an effective padding for this specific run based on the detourCount.
+    const effectivePadding =
+      solverInput.paddingBuffer +
+      solverInput.detourCount * solverInput.paddingBuffer
+
     const candidates = generateRerouteCandidates({
       ...solverInput,
+      paddingBuffer: effectivePadding, // Use the calculated, larger padding
     })
 
     const getPathLength = (pts: Point[]) => {
@@ -58,11 +67,13 @@ export class SingleOverlapSolver extends BaseSolver {
   }
 
   override _step() {
-    if (this.queuedCandidatePaths.length === 0) {
+    // Failure conditions: no more candidates or exceeded max tries
+    if (this.queuedCandidatePaths.length === 0 || this._tried >= MAX_TRIES) {
       this.failed = true
       return
     }
 
+    this._tried++
     const nextCandidatePath = this.queuedCandidatePaths.shift()!
     const simplifiedPath = simplifyPath(nextCandidatePath)
 
@@ -70,6 +81,7 @@ export class SingleOverlapSolver extends BaseSolver {
       this.solvedTracePath = simplifiedPath
       this.solved = true
     }
+    // If the path collides, we simply do nothing and let the next step try another candidate.
   }
 
   override visualize(): GraphicsObject {

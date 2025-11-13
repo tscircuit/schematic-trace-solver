@@ -7,6 +7,7 @@ import type { InputProblem } from "../../types/InputProblem"
 import { MergedNetLabelObstacleSolver } from "./sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { OverlapAvoidanceStepSolver } from "./sub-solvers/OverlapAvoidanceStepSolver/OverlapAvoidanceStepSolver"
+import { detectTraceLabelOverlap } from "./detectTraceLabelOverlap"
 
 interface TraceLabelOverlapAvoidanceSolverInput {
   inputProblem: InputProblem
@@ -15,87 +16,109 @@ interface TraceLabelOverlapAvoidanceSolverInput {
 }
 
 /**
- * A pipeline solver responsible for resolving overlaps between schematic traces and net labels.
+ * Resolves overlaps between schematic traces and net labels using a two-phase,
+ * "fire-and-forget" dispatching strategy.
  *
- * This solver orchestrates a sequence of sub-solvers to achieve its goal:
- * 1. **MergedNetLabelObstacleSolver**: This solver first merges labels that are
- *    close to each other to form larger "obstacle" groups. This simplifies the
- *    problem by reducing the number of individual obstacles the traces need to avoid.
- * 2. **OverlapAvoidanceStepSolver**: This solver then takes the output of the merging
- *    step and iteratively attempts to reroute traces to avoid the merged label obstacles.
- *    It handles one overlap at a time, making it a step-by-step process.
+ * This solver operates in two distinct phases:
  *
- * The final output is a set of modified traces that have been rerouted to avoid
- * labels, and the set of merged labels that were used as obstacles.
+ * 1.  **Dispatch Phase**: Iterates through traces, identifying clean ones and dispatching
+ *     colliding ones to dedicated `OverlapAvoidanceStepSolver` instances.
  *
- * @param {TraceLabelOverlapAvoidanceSolverInput} solverInput - The input for the solver,
- *   containing the initial traces, label placements, and the input problem definition.
+ * 2.  **Execution Phase**: Steps through all dispatched sub-solvers until they complete.
+ *
+ * The final output combines clean traces with results from sub-solvers. A final
+ * `MergedNetLabelObstacleSolver` ensures pipeline compatibility.
  */
 export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   inputProblem: InputProblem
-  traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
 
-  // sub-solver instances
+  unprocessedTraces: SolvedTracePath[] = []
+  cleanTraces: SolvedTracePath[] = []
+  subSolvers: OverlapAvoidanceStepSolver[] = []
+  private phase: "dispatch" | "execution" = "dispatch"
+  detourCounts: Map<string, number> = new Map()
+
   labelMergingSolver?: MergedNetLabelObstacleSolver
-  overlapAvoidanceSolver?: OverlapAvoidanceStepSolver
-  pipelineStepIndex = 0
 
   constructor(solverInput: TraceLabelOverlapAvoidanceSolverInput) {
     super()
     this.inputProblem = solverInput.inputProblem
-    this.traces = solverInput.traces
+    this.unprocessedTraces = [...solverInput.traces]
     this.netLabelPlacements = solverInput.netLabelPlacements
+    this.cleanTraces = []
+    this.subSolvers = []
   }
 
   override _step() {
-    // If a sub-solver is active, step it and check for completion.
-    if (this.activeSubSolver) {
-      this.activeSubSolver.step()
-
-      if (this.activeSubSolver.solved) {
-        this.activeSubSolver = null
-        this.pipelineStepIndex++
-      } else if (this.activeSubSolver.failed) {
-        this.failed = true // If any sub-solver fails, the whole thing fails
-        this.activeSubSolver = null
+    if (this.phase === "dispatch") {
+      if (this.unprocessedTraces.length === 0) {
+        console.log(
+          `Dispatch phase complete. Created ${this.subSolvers.length} sub-solvers.`,
+        )
+        this.phase = "execution"
+        return
       }
-      return // Return to allow the sub-solver to run
-    }
 
-    // If no sub-solver is active, create the next one in the pipeline.
-    switch (this.pipelineStepIndex) {
-      case 0:
-        this.labelMergingSolver = new MergedNetLabelObstacleSolver({
-          netLabelPlacements: this.netLabelPlacements,
+      const currentTargetTrace = this.unprocessedTraces.shift()!
+
+      const localOverlaps = detectTraceLabelOverlap({
+        traces: [currentTargetTrace],
+        netLabels: this.netLabelPlacements,
+      })
+
+      if (localOverlaps.length === 0) {
+        this.cleanTraces.push(currentTargetTrace)
+      } else {
+        // Dispatch a new sub-solver for this dirty trace
+        const collidingLabels = localOverlaps.map((o) => o.label)
+        const labelMerger = new MergedNetLabelObstacleSolver({
+          netLabelPlacements: collidingLabels,
           inputProblem: this.inputProblem,
-          traces: this.traces,
+          traces: [currentTargetTrace],
         })
-        this.activeSubSolver = this.labelMergingSolver
-        break
+        labelMerger.solve()
+        const mergingOutput = labelMerger.getOutput()
 
-      case 1:
-        this.overlapAvoidanceSolver = new OverlapAvoidanceStepSolver({
+        const subSolver = new OverlapAvoidanceStepSolver({
           inputProblem: this.inputProblem,
-          traces: this.traces,
-          initialNetLabelPlacements: this.netLabelPlacements, // The original, unfiltered list
-          mergedNetLabelPlacements:
-            this.labelMergingSolver!.getOutput().netLabelPlacements,
-          mergedLabelNetIdMap:
-            this.labelMergingSolver!.getOutput().mergedLabelNetIdMap,
+          traces: [currentTargetTrace],
+          initialNetLabelPlacements: this.netLabelPlacements,
+          mergedNetLabelPlacements: mergingOutput.netLabelPlacements,
+          mergedLabelNetIdMap: mergingOutput.mergedLabelNetIdMap,
+          detourCounts: this.detourCounts,
         })
-        this.activeSubSolver = this.overlapAvoidanceSolver
-        break
-
-      default:
+        this.subSolvers.push(subSolver)
+      }
+    } else if (this.phase === "execution") {
+      if (this.subSolvers.every((s) => s.solved || s.failed)) {
+        console.log("All sub-solvers finished.")
+        // Final merge for pipeline compatibility
+        if (!this.labelMergingSolver) {
+          this.labelMergingSolver = new MergedNetLabelObstacleSolver({
+            netLabelPlacements: this.netLabelPlacements,
+            inputProblem: this.inputProblem,
+            traces: this.getOutput().traces,
+          })
+          this.labelMergingSolver.solve()
+        }
         this.solved = true
-        break
+        return
+      }
+
+      // Step through all active sub-solvers
+      for (const solver of this.subSolvers) {
+        if (!solver.solved && !solver.failed) {
+          solver.step()
+        }
+      }
     }
   }
 
   getOutput() {
+    const solvedTraces = this.subSolvers.flatMap((s) => s.getOutput().allTraces)
     return {
-      traces: this.overlapAvoidanceSolver?.getOutput().allTraces ?? this.traces,
+      traces: [...this.cleanTraces, ...solvedTraces],
       netLabelPlacements:
         this.labelMergingSolver?.getOutput().netLabelPlacements ??
         this.netLabelPlacements,
@@ -103,26 +126,30 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   }
 
   override visualize(): GraphicsObject {
-    if (this.activeSubSolver) {
-      return this.activeSubSolver.visualize()
-    }
-
-    // When no sub-solver is active, show the current state of the pipeline
     const graphics = visualizeInputProblem(this.inputProblem)
     if (!graphics.lines) graphics.lines = []
     if (!graphics.rects) graphics.rects = []
 
-    const output = this.getOutput()
-
-    for (const trace of output.traces) {
+    // Show clean traces in purple
+    for (const trace of this.cleanTraces) {
       graphics.lines!.push({
         points: trace.tracePath,
         strokeColor: "purple",
       })
     }
 
-    for (const label of output.netLabelPlacements) {
-      const color = getColorFromString(label.globalConnNetId, 0.3)
+    // Delegate visualization to sub-solvers
+    for (const solver of this.subSolvers) {
+      const solverGraphics = solver.visualize()
+      graphics.lines!.push(...(solverGraphics.lines ?? []))
+      graphics.rects!.push(...(solverGraphics.rects ?? []))
+      // graphics.texts!.push(...(solverGraphics.texts ?? []))
+      graphics.points!.push(...(solverGraphics.points ?? []))
+    }
+
+    // Also show original labels
+    for (const label of this.netLabelPlacements) {
+      const color = getColorFromString(label.globalConnNetId, 0.3) // Make fill opaque
       graphics.rects!.push({
         center: label.center,
         width: label.width,

@@ -8,6 +8,18 @@ import { generateSnipAndReconnectCandidates } from "./trySnipAndReconnect"
 import { generateFourPointDetourCandidates } from "./tryFourPointDetour"
 import { simplifyPath } from "../TraceCleanupSolver/simplifyPath"
 
+/**
+ * Generates a list of candidate rerouted paths for a given trace that is
+ * colliding with a net label.
+ *
+ * This function employs multiple strategies to propose alternative paths:
+ * 1.  **Four-Point Detour:** Creates a rectangular detour around the label.
+ * 2.  **Snip and Reconnect:** Attempts to remove the colliding segment and
+ *     reconnect the trace around the obstacle.
+ *
+ * The candidates are generated with increasing padding based on `detourCount`
+ * to explore progressively wider detours.
+ */
 export const generateRerouteCandidates = ({
   trace,
   label,
@@ -26,13 +38,12 @@ export const generateRerouteCandidates = ({
     return [initialTrace.tracePath]
   }
 
-  const labelPadding = paddingBuffer
   const labelBoundsRaw = getRectBounds(label.center, label.width, label.height)
   const labelBounds = {
-    minX: labelBoundsRaw.minX - labelPadding,
-    minY: labelBoundsRaw.minY - labelPadding,
-    maxX: labelBoundsRaw.maxX + labelPadding,
-    maxY: labelBoundsRaw.maxY + labelPadding,
+    minX: labelBoundsRaw.minX,
+    minY: labelBoundsRaw.minY,
+    maxX: labelBoundsRaw.maxX,
+    maxY: labelBoundsRaw.maxY,
     chipId: `netlabel-${label.netId}`,
   }
 
