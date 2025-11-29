@@ -7,6 +7,9 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 
+import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
+import { is4PointRectangle } from "./is4PointRectangle"
+
 /**
  * Defines the input structure for the TraceCleanupSolver.
  */
@@ -18,24 +21,13 @@ interface TraceCleanupSolverInput {
   paddingBuffer: number
 }
 
-import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
-import { is4PointRectangle } from "./is4PointRectangle"
+type PipelineStep = "untangling_traces" | "minimizing_turns" | "balancing_l_shapes"
 
 /**
- * Represents the different stages or steps within the trace cleanup pipeline.
- */
-type PipelineStep =
-  | "minimizing_turns"
-  | "balancing_l_shapes"
-  | "untangling_traces"
-
-/**
- * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
- * It operates in a multi-step pipeline:
- * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
- * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
- * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
- * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
+ * The TraceCleanupSolver improves trace readability through:
+ * 1. Untangling complex overlaps
+ * 2. Minimizing turns
+ * 3. Balancing L-shaped segments
  */
 export class TraceCleanupSolver extends BaseSolver {
   private input: TraceCleanupSolverInput
@@ -43,7 +35,10 @@ export class TraceCleanupSolver extends BaseSolver {
   private traceIdQueue: string[]
   private tracesMap: Map<string, SolvedTracePath>
   private pipelineStep: PipelineStep = "untangling_traces"
-  private activeTraceId: string | null = null // New property
+
+  /** 👉 NEW: Keep track of which trace is being processed */
+  private activeTraceId: string | null = null
+
   override activeSubSolver: BaseSolver | null = null
 
   constructor(solverInput: TraceCleanupSolverInput) {
@@ -51,18 +46,14 @@ export class TraceCleanupSolver extends BaseSolver {
     this.input = solverInput
     this.outputTraces = [...solverInput.allTraces]
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
-    this.traceIdQueue = Array.from(
-      solverInput.allTraces.map((e) => e.mspPairId),
-    )
+    this.traceIdQueue = Array.from(solverInput.allTraces.map((e) => e.mspPairId))
   }
 
   override _step() {
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
       if (this.activeSubSolver.solved) {
-        const output = (
-          this.activeSubSolver as UntangleTraceSubsolver
-        ).getOutput()
+        const output = (this.activeSubSolver as UntangleTraceSubsolver).getOutput()
         this.outputTraces = output.traces
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
@@ -97,9 +88,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
       this.pipelineStep = "balancing_l_shapes"
-      this.traceIdQueue = Array.from(
-        this.input.allTraces.map((e) => e.mspPairId),
-      )
+      this.traceIdQueue = Array.from(this.input.allTraces.map((e) => e.mspPairId))
       return
     }
 
@@ -117,64 +106,65 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
     const targetMspConnectionPairId = this.traceIdQueue.shift()!
-    this.activeTraceId = targetMspConnectionPairId
-    const originalTrace = this.tracesMap.get(targetMspConnectionPairId)!
 
-    if (is4PointRectangle(originalTrace.tracePath)) {
-      return
-    }
+    /** 👉 NEW: highlight this trace visually */
+    this.activeTraceId = targetMspConnectionPairId
+
+    const originalTrace = this.tracesMap.get(targetMspConnectionPairId)!
+    if (is4PointRectangle(originalTrace.tracePath)) return
 
     const allTraces = Array.from(this.tracesMap.values())
 
-    let updatedTrace: SolvedTracePath
-
-    if (step === "minimizing_turns") {
-      updatedTrace = minimizeTurnsWithFilteredLabels({
-        ...this.input,
-        targetMspConnectionPairId,
-        traces: allTraces,
-      })
-    } else {
-      updatedTrace = balanceZShapes({
-        ...this.input,
-        targetMspConnectionPairId,
-        traces: allTraces,
-      })
-    }
+    const updatedTrace =
+      step === "minimizing_turns"
+        ? minimizeTurnsWithFilteredLabels({
+            ...this.input,
+            targetMspConnectionPairId,
+            traces: allTraces,
+          })
+        : balanceZShapes({
+            ...this.input,
+            targetMspConnectionPairId,
+            traces: allTraces,
+          })
 
     this.tracesMap.set(targetMspConnectionPairId, updatedTrace)
     this.outputTraces = Array.from(this.tracesMap.values())
   }
 
   getOutput() {
-    return {
-      traces: this.outputTraces,
-    }
+    return { traces: this.outputTraces }
   }
 
   override visualize(): GraphicsObject {
-    if (this.activeSubSolver) {
-      return this.activeSubSolver.visualize()
-    }
+    if (this.activeSubSolver) return this.activeSubSolver.visualize()
 
     const graphics = visualizeInputProblem(this.input.inputProblem, {
       chipAlpha: 0.1,
       connectionAlpha: 0.1,
     })
 
-    if (!graphics.lines) graphics.lines = []
-    if (!graphics.points) graphics.points = []
-    if (!graphics.rects) graphics.rects = []
-    if (!graphics.circles) graphics.circles = []
-    if (!graphics.texts) graphics.texts = []
+    graphics.lines ||= []
+    graphics.points ||= []
+    graphics.rects ||= []
+    graphics.circles ||= []
+    graphics.texts ||= []
 
     for (const trace of this.outputTraces) {
+      const isActive = trace.mspPairId === this.activeTraceId
+
       const line: Line = {
         points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
-        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue", // Highlight active trace
+
+        /** 👉 NEW: highlight active trace */
+        strokeColor: isActive ? "red" : "blue",
+        strokeWidth: isActive ? 2 : 1,
       }
+
       graphics.lines!.push(line)
     }
+
     return graphics
   }
 }
+
