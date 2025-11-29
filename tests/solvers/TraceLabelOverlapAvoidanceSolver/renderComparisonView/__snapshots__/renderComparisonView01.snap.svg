@@ -155,13 +155,13 @@ x-" data-x="7.850000000000001" data-y="-2.295" cx="490.488888888889" cy="385.364
     <rect data-type="rect" data-label="schematic_component_1" data-x="8.950000000000001" data-y="-2.095" x="490.488888888889" y="355.4977777777778" width="109.511111111111" height="39.82222222222225" fill="hsl(24, 100%, 50%, 0.1)" stroke="black" stroke-width="0.020089285714285712" />
   </g>
   <g>
-    <rect data-type="rect" data-label="connectivity_net0" data-x="7.650000000000001" data-y="-2.52" x="475.55555555555566" y="385.3644444444445" width="9.95555555555552" height="22.400000000000034" fill="none" stroke="hsl(40, 100%, 50%, 1)" stroke-width="0.020089285714285712" />
+    <rect data-type="rect" data-label="merged-group-J1-x-" data-x="7.6240000000000006" data-y="-1.995" x="468.0391111111112" y="360.47555555555556" width="22.39999999999992" height="19.911111111111154" fill="hsl(296, 100%, 50%, 0.2)" stroke="hsl(296, 100%, 50%, 1)" stroke-width="0.020089285714285712" />
   </g>
   <g>
     <rect data-type="rect" data-label="connectivity_net1" data-x="7.676000000000001" data-y="0.30000000000000004" x="470.62755555555566" y="251.21333333333337" width="22.399999999999977" height="9.95555555555552" fill="none" stroke="hsl(40, 100%, 50%, 1)" stroke-width="0.020089285714285712" />
   </g>
   <g>
-    <rect data-type="rect" data-label="merged-group-J1-x-" data-x="7.6240000000000006" data-y="-1.995" x="468.0391111111112" y="360.47555555555556" width="22.39999999999992" height="19.911111111111154" fill="hsl(296, 100%, 50%, 0.2)" stroke="hsl(296, 100%, 50%, 1)" stroke-width="0.020089285714285712" />
+    <rect data-type="rect" data-label="connectivity_net0" data-x="7.650000000000001" data-y="-2.52" x="475.55555555555566" y="385.3644444444445" width="9.95555555555552" height="22.400000000000034" fill="none" stroke="hsl(40, 100%, 50%, 1)" stroke-width="0.020089285714285712" />
   </g><text data-type="text" data-label="NetLabelPlacementSolver" data-x="1.3" data-y="0.78125" x="164.44444444444446" y="232.23555555555558" fill="black" font-size="14" font-family="sans-serif" text-anchor="middle" dominant-baseline="text-after-edge">NetLabelPlacementSolver</text><text data-type="text" data-label="MergedNetLabelObstacles" data-x="7.550000000000001" data-y="0.78125" x="475.5555555555556" y="232.23555555555558" fill="black" font-size="14" font-family="sans-serif" text-anchor="middle" dominant-baseline="text-after-edge">MergedNetLabelObstacles</text>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
