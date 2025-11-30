@@ -11,8 +11,8 @@ export default {
 
     useEffect(() => {
       const s = new TraceCleanupSolver({
-        inputProblem: demoInput.inputProblem,
-        allTraces: demoInput.allTraces,
+        inputProblem: demoInput.inputProblem as any,
+        allTraces: demoInput.allTraces as any,
         allLabelPlacements: demoInput.allLabelPlacements,
         mergedLabelNetIdMap: demoInput.mergedLabelNetIdMap || {},
         paddingBuffer: 5,
@@ -52,8 +52,8 @@ export default {
 
     const reset = () => {
       const s = new TraceCleanupSolver({
-        inputProblem: demoInput.inputProblem,
-        allTraces: demoInput.allTraces,
+        inputProblem: demoInput.inputProblem as any,
+        allTraces: demoInput.allTraces as any,
         allLabelPlacements: demoInput.allLabelPlacements,
         mergedLabelNetIdMap: demoInput.mergedLabelNetIdMap || {},
         paddingBuffer: 5,
