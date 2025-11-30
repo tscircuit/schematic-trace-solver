@@ -1,5 +1,5 @@
-import type { InputProblem } from "lib/index";
-import { PipelineDebugger } from "site/components/PipelineDebugger";
+import type { InputProblem } from "lib/index"
+import { PipelineDebugger } from "site/components/PipelineDebugger"
 
 export const inputProblem: InputProblem = {
   chips: [
@@ -210,6 +210,6 @@ export const inputProblem: InputProblem = {
     },
   ],
   availableNetLabelOrientations: {},
-};
+}
 
-export default () => <PipelineDebugger inputProblem={inputProblem} />;
+export default () => <PipelineDebugger inputProblem={inputProblem} />

@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { GenericSolverDebugger } from "../components/GenericSolverDebugger";
-import { SingleNetLabelPlacementSolver } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/SingleNetLabelPlacementSolver";
+import { useMemo } from "react"
+import { GenericSolverDebugger } from "../components/GenericSolverDebugger"
+import { SingleNetLabelPlacementSolver } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/SingleNetLabelPlacementSolver"
 
 export const input = {
   inputProblem: {
@@ -564,11 +564,11 @@ export const input = {
     portOnlyPinId: "U1.1",
   },
   availableOrientations: ["x+", "x-", "y+", "y-"],
-};
+}
 
 export default () => {
   const solver = useMemo(() => {
-    return new SingleNetLabelPlacementSolver(input as any);
-  }, []);
-  return <GenericSolverDebugger solver={solver} />;
-};
+    return new SingleNetLabelPlacementSolver(input as any)
+  }, [])
+  return <GenericSolverDebugger solver={solver} />
+}

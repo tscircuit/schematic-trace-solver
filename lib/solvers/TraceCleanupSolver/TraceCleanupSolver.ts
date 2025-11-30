@@ -21,7 +21,10 @@ interface TraceCleanupSolverInput {
   paddingBuffer: number
 }
 
-type PipelineStep = "untangling_traces" | "minimizing_turns" | "balancing_l_shapes"
+type PipelineStep =
+  | "untangling_traces"
+  | "minimizing_turns"
+  | "balancing_l_shapes"
 
 /**
  * The TraceCleanupSolver improves trace readability through:
@@ -46,14 +49,18 @@ export class TraceCleanupSolver extends BaseSolver {
     this.input = solverInput
     this.outputTraces = [...solverInput.allTraces]
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
-    this.traceIdQueue = Array.from(solverInput.allTraces.map((e) => e.mspPairId))
+    this.traceIdQueue = Array.from(
+      solverInput.allTraces.map((e) => e.mspPairId),
+    )
   }
 
   override _step() {
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
       if (this.activeSubSolver.solved) {
-        const output = (this.activeSubSolver as UntangleTraceSubsolver).getOutput()
+        const output = (
+          this.activeSubSolver as UntangleTraceSubsolver
+        ).getOutput()
         this.outputTraces = output.traces
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
@@ -88,7 +95,9 @@ export class TraceCleanupSolver extends BaseSolver {
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
       this.pipelineStep = "balancing_l_shapes"
-      this.traceIdQueue = Array.from(this.input.allTraces.map((e) => e.mspPairId))
+      this.traceIdQueue = Array.from(
+        this.input.allTraces.map((e) => e.mspPairId),
+      )
       return
     }
 
@@ -167,4 +176,3 @@ export class TraceCleanupSolver extends BaseSolver {
     return graphics
   }
 }
-

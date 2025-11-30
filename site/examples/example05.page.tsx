@@ -1,5 +1,5 @@
-import type { InputProblem } from "lib/index";
-import { PipelineDebugger } from "site/components/PipelineDebugger";
+import type { InputProblem } from "lib/index"
+import { PipelineDebugger } from "site/components/PipelineDebugger"
 
 export const inputProblem: InputProblem = {
   chips: [
@@ -175,8 +175,8 @@ export const inputProblem: InputProblem = {
   netConnections: [],
   availableNetLabelOrientations: {},
   maxMspPairDistance: 10,
-};
+}
 
 export default function Example05Page() {
-  return <PipelineDebugger inputProblem={inputProblem} />;
+  return <PipelineDebugger inputProblem={inputProblem} />
 }
