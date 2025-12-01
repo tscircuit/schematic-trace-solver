@@ -1,0 +1,23 @@
+console.log(">>> STO USANDO IL FILE GIUSTO <<<");
+throw new Error("FILE USATO >>> TRACE DEMO IN SITE/TraceCleanupSolver <<<");
+import React from "react";
+import { TraceCleanupSolver } from "../../lib/solvers/TraceCleanupSolver/TraceCleanupSolver";
+import rawInput from "../demoInput/traceCleanupInput.json";
+
+export default function TraceCleanupDemo() {
+  const input = {
+    chips: rawInput.chips ?? [],
+    labels: rawInput.labels ?? [],
+    allTraces: rawInput.traces ?? []
+  };
+
+  const solver = new TraceCleanupSolver(input);
+  const result = solver.solve();
+
+  return (
+    <div style={{ padding: 20 }}>
+      <h2>Trace Cleanup Demo</h2>
+      <pre>{JSON.stringify(result, null, 2)}</pre>
+    </div>
+  );
+}
