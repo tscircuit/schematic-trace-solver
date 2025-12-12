@@ -5,7 +5,12 @@ describe("simplifyPath", () => {
   test("should return path unchanged if less than 3 points", () => {
     expect(simplifyPath([])).toEqual([])
     expect(simplifyPath([{ x: 0, y: 0 }])).toEqual([{ x: 0, y: 0 }])
-    expect(simplifyPath([{ x: 0, y: 0 }, { x: 1, y: 1 }])).toEqual([
+    expect(
+      simplifyPath([
+        { x: 0, y: 0 },
+        { x: 1, y: 1 },
+      ]),
+    ).toEqual([
       { x: 0, y: 0 },
       { x: 1, y: 1 },
     ])
