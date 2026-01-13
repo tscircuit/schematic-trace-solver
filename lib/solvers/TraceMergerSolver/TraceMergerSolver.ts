@@ -101,10 +101,7 @@ export class TraceMergerSolver extends BaseSolver {
   /**
    * Extract all segments from a trace path
    */
-  private getSegments(
-    tracePath: Point[],
-    traceIndex: number
-  ): TraceSegment[] {
+  private getSegments(tracePath: Point[], traceIndex: number): TraceSegment[] {
     const segments: TraceSegment[] = []
     const EPS = TraceMergerSolver.EPS
 
@@ -158,10 +155,14 @@ export class TraceMergerSolver extends BaseSolver {
           const xDiff = Math.abs(seg1.start.x - seg2.start.x)
           if (xDiff > EPS && xDiff < THRESHOLD) {
             // Check if Y ranges overlap
-            if (this.rangesOverlap(
-              seg1.start.y, seg1.end.y,
-              seg2.start.y, seg2.end.y
-            )) {
+            if (
+              this.rangesOverlap(
+                seg1.start.y,
+                seg1.end.y,
+                seg2.start.y,
+                seg2.end.y,
+              )
+            ) {
               // Merge to average X position
               const mergedX = (seg1.start.x + seg2.start.x) / 2
               candidates.push({
@@ -177,10 +178,14 @@ export class TraceMergerSolver extends BaseSolver {
           const yDiff = Math.abs(seg1.start.y - seg2.start.y)
           if (yDiff > EPS && yDiff < THRESHOLD) {
             // Check if X ranges overlap
-            if (this.rangesOverlap(
-              seg1.start.x, seg1.end.x,
-              seg2.start.x, seg2.end.x
-            )) {
+            if (
+              this.rangesOverlap(
+                seg1.start.x,
+                seg1.end.x,
+                seg2.start.x,
+                seg2.end.x,
+              )
+            ) {
               // Merge to average Y position
               const mergedY = (seg1.start.y + seg2.start.y) / 2
               candidates.push({
@@ -205,8 +210,10 @@ export class TraceMergerSolver extends BaseSolver {
    * Check if two 1D ranges overlap
    */
   private rangesOverlap(
-    a1: number, a2: number,
-    b1: number, b2: number
+    a1: number,
+    a2: number,
+    b1: number,
+    b2: number,
   ): boolean {
     const minA = Math.min(a1, a2)
     const maxA = Math.max(a1, a2)
@@ -220,7 +227,7 @@ export class TraceMergerSolver extends BaseSolver {
    */
   private applyMerge(
     traces: SolvedTracePath[],
-    candidate: MergeCandidate
+    candidate: MergeCandidate,
   ): void {
     const { segment1, segment2, mergedPosition } = candidate
 
@@ -267,7 +274,7 @@ export class TraceMergerSolver extends BaseSolver {
         // Update merged trace paths
         for (const trace of netTraces) {
           const idx = this.mergedTracePaths.findIndex(
-            (t) => t.mspPairId === trace.mspPairId
+            (t) => t.mspPairId === trace.mspPairId,
           )
           if (idx !== -1) {
             this.mergedTracePaths[idx] = trace

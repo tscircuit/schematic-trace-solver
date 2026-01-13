@@ -153,11 +153,11 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           inputProblem: this.inputProblem,
           inputTracePaths: Object.values(
             this.traceOverlapShiftSolver?.correctedTraceMap ??
-            Object.fromEntries(
-              this.longDistancePairSolver!.getOutput().allTracesMerged.map(
-                (p) => [p.mspPairId, p],
+              Object.fromEntries(
+                this.longDistancePairSolver!.getOutput().allTracesMerged.map(
+                  (p) => [p.mspPairId, p],
+                ),
               ),
-            ),
           ),
         },
       ],
@@ -171,17 +171,19 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       () => [
         {
           inputProblem: this.inputProblem,
-          inputTraceMap:
-            this.traceMergerSolver?.mergedTracePaths
-              ? Object.fromEntries(
-                  this.traceMergerSolver.mergedTracePaths.map((p) => [p.mspPairId, p]),
-                )
-              : this.traceOverlapShiftSolver?.correctedTraceMap ??
-                Object.fromEntries(
-                  this.longDistancePairSolver!.getOutput().allTracesMerged.map(
-                    (p) => [p.mspPairId, p],
-                  ),
+          inputTraceMap: this.traceMergerSolver?.mergedTracePaths
+            ? Object.fromEntries(
+                this.traceMergerSolver.mergedTracePaths.map((p) => [
+                  p.mspPairId,
+                  p,
+                ]),
+              )
+            : (this.traceOverlapShiftSolver?.correctedTraceMap ??
+              Object.fromEntries(
+                this.longDistancePairSolver!.getOutput().allTracesMerged.map(
+                  (p) => [p.mspPairId, p],
                 ),
+              )),
         },
       ],
       {

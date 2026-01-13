@@ -87,7 +87,9 @@ test("should merge same-net trace lines that are close together", () => {
   console.log("=== Before Merger (SchematicTraceLinesSolver) ===")
   console.log("Total traces count:", allTraces.length)
   for (const trace of allTraces) {
-    console.log(`Trace: globalConnNetId=${trace.globalConnNetId}, dcConnNetId=${trace.dcConnNetId}`)
+    console.log(
+      `Trace: globalConnNetId=${trace.globalConnNetId}, dcConnNetId=${trace.dcConnNetId}`,
+    )
     console.log("  Path:", JSON.stringify(trace.tracePath))
     console.log("  Pins:", trace.pinIds)
   }
