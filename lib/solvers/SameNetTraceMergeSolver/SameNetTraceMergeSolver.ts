@@ -77,12 +77,10 @@ export class SameNetTraceMergeSolver extends BaseSolver {
   private findMergeInfo(
     a: SolvedTracePath,
     b: SolvedTracePath,
-  ):
-    | {
-        orientation: Orientation
-        anchorCoord: number
-      }
-    | null {
+  ): {
+    orientation: Orientation
+    anchorCoord: number
+  } | null {
     const segmentsA = this.getSegments(a.tracePath)
     const segmentsB = this.getSegments(b.tracePath)
 
