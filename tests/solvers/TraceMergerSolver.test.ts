@@ -1,17 +1,25 @@
 import { test, expect } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { TraceMergerSolver } from "lib/solvers/TraceMergerSolver/TraceMergerSolver"
 import type { InputProblem } from "lib/types/InputProblem"
+import {
+  getSvgFromGraphicsObject,
+  stackGraphicsHorizontally,
+} from "graphics-debug"
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import "tests/fixtures/matcher"
 
 /**
  * Test for Issue #34: Merge same-net trace lines that are close together
  *
- * This test creates a scenario where multiple traces belong to the same net
- * and are positioned close together (nearly parallel). The expected behavior
- * is that these traces should be merged into a single path.
+ * This test demonstrates the problem where traces on the same net have
+ * parallel segments that are very close together (within MERGE_THRESHOLD).
+ * The TraceMergerSolver should merge these close parallel lines into one.
  */
 
 // Input problem that creates close parallel traces on the same net
+// The GND net connects multiple pins, creating traces with segments
+// that can be close together and should be merged
 const inputProblem: InputProblem = {
   chips: [
     {
@@ -50,7 +58,7 @@ const inputProblem: InputProblem = {
     },
   ],
   // Multiple pins connected to the same GND net
-  // This should create traces that could be merged
+  // This creates traces that may have close parallel segments
   netConnections: [
     {
       pinIds: ["U1.3", "C1.2", "C2.1"],
@@ -75,41 +83,78 @@ const inputProblem: InputProblem = {
   maxMspPairDistance: 5,
 }
 
-test("should merge same-net trace lines that are close together", () => {
+/**
+ * Helper to visualize traces on an input problem
+ */
+function visualizeWithTraces(
+  problem: InputProblem,
+  traces: Array<{ tracePath: Array<{ x: number; y: number }> }>,
+  color: string,
+) {
+  const graphics = visualizeInputProblem(problem)
+  graphics.lines = graphics.lines || []
+
+  for (const trace of traces) {
+    graphics.lines.push({
+      points: trace.tracePath,
+      strokeColor: color,
+    })
+  }
+
+  return graphics
+}
+
+test("TraceMergerSolver: before/after comparison showing merge of close parallel traces", () => {
+  // Run the full pipeline solver
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
 
-  // Get all traces and analyze them
+  // Get the traces before merger (from SchematicTraceLinesSolver)
   const traceLinesSolver = solver.schematicTraceLinesSolver!
-  const allTraces = traceLinesSolver.solvedTracePaths
+  const tracesBeforeMerger = traceLinesSolver.solvedTracePaths
 
-  // Log all trace information for debugging
-  console.log("=== Before Merger (SchematicTraceLinesSolver) ===")
-  console.log("Total traces count:", allTraces.length)
-  for (const trace of allTraces) {
-    console.log(
-      `Trace: globalConnNetId=${trace.globalConnNetId}, dcConnNetId=${trace.dcConnNetId}`,
-    )
-    console.log("  Path:", JSON.stringify(trace.tracePath))
-    console.log("  Pins:", trace.pinIds)
-  }
+  // Get the traces after merger
+  const traceMergerSolver = solver.traceMergerSolver!
+  const tracesAfterMerger = traceMergerSolver.mergedTracePaths
 
-  // Get merged traces
-  const traceMergerSolver = solver.traceMergerSolver
-  if (traceMergerSolver) {
-    console.log("\n=== After Merger (TraceMergerSolver) ===")
-    const mergedTraces = traceMergerSolver.mergedTracePaths
-    console.log("Total merged traces count:", mergedTraces.length)
-    for (const trace of mergedTraces) {
-      console.log(`Trace: globalConnNetId=${trace.globalConnNetId}`)
-      console.log("  Path:", JSON.stringify(trace.tracePath))
-    }
-  }
+  // Create before visualization (red traces)
+  const beforeGraphics = visualizeWithTraces(
+    inputProblem,
+    tracesBeforeMerger,
+    "red",
+  )
 
-  // Check if there are traces that could be merged
-  // (traces on the same net with segments close together)
+  // Create after visualization (green traces)
+  const afterGraphics = visualizeWithTraces(
+    inputProblem,
+    tracesAfterMerger,
+    "green",
+  )
+
+  // Stack side by side for comparison
+  const sideBySide = getSvgFromGraphicsObject(
+    stackGraphicsHorizontally([beforeGraphics, afterGraphics], {
+      titles: ["Before Merger (red)", "After Merger (green)"],
+    }),
+    {
+      backgroundColor: "white",
+    },
+  )
+
+  // Snapshot the comparison
+  expect(sideBySide).toMatchSvgSnapshot(
+    import.meta.path,
+    "before_after_comparison",
+  )
+
+  // Verify the solver completed successfully
   expect(solver.solved).toBe(true)
+})
 
-  // Visual snapshot for before/after comparison
+test("TraceMergerSolver: pipeline solver snapshot", () => {
+  const solver = new SchematicTracePipelineSolver(inputProblem)
+  solver.solve()
+
+  expect(solver.solved).toBe(true)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
