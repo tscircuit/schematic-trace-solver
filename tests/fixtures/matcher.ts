@@ -50,12 +50,11 @@ async function toMatchSolverSnapshot(
   maybeOpts?: { includeAirwires?: boolean },
 ): Promise<MatcherResult> {
   const graphicsObject = received.visualize()
-  const svgName =
-    typeof svgNameOrOpts === "string" ? svgNameOrOpts : undefined
+  const svgName = typeof svgNameOrOpts === "string" ? svgNameOrOpts : undefined
   const opts =
     typeof svgNameOrOpts === "object" && svgNameOrOpts !== null
       ? svgNameOrOpts
-      : maybeOpts ?? {}
+      : (maybeOpts ?? {})
 
   const allElms = getAllElms(graphicsObject)
   const lastStep = allElms.reduce((acc, elm) => {

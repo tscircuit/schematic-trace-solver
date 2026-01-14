@@ -255,7 +255,11 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   }
 
   private filterStatesByBoxes(
-    states: Array<{ path: Point[]; collisionRectIds: Set<string>; len: number }>,
+    states: Array<{
+      path: Point[]
+      collisionRectIds: Set<string>
+      len: number
+    }>,
   ) {
     if (this.componentBoxes.length === 0) return states
 
@@ -271,7 +275,10 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     if (safe.length === 0) {
       // Keep original candidates to avoid routing failure; indicates generator needs more variants.
-      if (typeof console !== "undefined" && process?.env?.NODE_ENV !== "production") {
+      if (
+        typeof console !== "undefined" &&
+        process?.env?.NODE_ENV !== "production"
+      ) {
         console.warn(
           "[SchematicTraceSingleLineSolver2] No box-safe candidates; falling back to original list.",
         )
@@ -314,14 +321,16 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       if (x <= minX + EPS || x >= maxX - EPS) return false
       const segMinY = Math.min(a.y, b.y)
       const segMaxY = Math.max(a.y, b.y)
-      const overlap = Math.min(segMaxY, maxY - EPS) - Math.max(segMinY, minY + EPS)
+      const overlap =
+        Math.min(segMaxY, maxY - EPS) - Math.max(segMinY, minY + EPS)
       return overlap > EPS
     } else {
       const y = a.y
       if (y <= minY + EPS || y >= maxY - EPS) return false
       const segMinX = Math.min(a.x, b.x)
       const segMaxX = Math.max(a.x, b.x)
-      const overlap = Math.min(segMaxX, maxX - EPS) - Math.max(segMinX, minX + EPS)
+      const overlap =
+        Math.min(segMaxX, maxX - EPS) - Math.max(segMinX, minX + EPS)
       return overlap > EPS
     }
   }

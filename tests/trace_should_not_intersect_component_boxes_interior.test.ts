@@ -11,13 +11,17 @@ type ComponentBox = {
   chipId?: string
 }
 
-type Intersection =
-  | {
-      segment: { a: Point; b: Point }
-      box: { minX: number; maxX: number; minY: number; maxY: number; chipId?: string }
-      netId?: string
-    }
-  | null
+type Intersection = {
+  segment: { a: Point; b: Point }
+  box: {
+    minX: number
+    maxX: number
+    minY: number
+    maxY: number
+    chipId?: string
+  }
+  netId?: string
+} | null
 
 const findBoxIntersection = (
   path: Point[],
@@ -44,7 +48,8 @@ const findBoxIntersection = (
       if (x <= minX + EPS || x >= maxX - EPS) return false
       const segMinY = Math.min(a.y, b.y)
       const segMaxY = Math.max(a.y, b.y)
-      const overlap = Math.min(segMaxY, maxY - EPS) - Math.max(segMinY, minY + EPS)
+      const overlap =
+        Math.min(segMaxY, maxY - EPS) - Math.max(segMinY, minY + EPS)
       return overlap > EPS
     }
 
@@ -52,7 +57,8 @@ const findBoxIntersection = (
     if (y <= minY + EPS || y >= maxY - EPS) return false
     const segMinX = Math.min(a.x, b.x)
     const segMaxX = Math.max(a.x, b.x)
-    const overlap = Math.min(segMaxX, maxX - EPS) - Math.max(segMinX, minX + EPS)
+    const overlap =
+      Math.min(segMaxX, maxX - EPS) - Math.max(segMinX, minX + EPS)
     return overlap > EPS
   }
 
@@ -430,12 +436,14 @@ test("traces do not intersect component box interiors (examples 18/19)", () => {
     const pipeline = new SchematicTracePipelineSolver(input)
     pipeline.solve()
 
-    const componentBoxes: ComponentBox[] = pipeline.inputProblem.chips.map((chip) => ({
-      center: chip.center,
-      width: chip.width,
-      height: chip.height,
-      chipId: chip.chipId,
-    }))
+    const componentBoxes: ComponentBox[] = pipeline.inputProblem.chips.map(
+      (chip) => ({
+        center: chip.center,
+        width: chip.width,
+        height: chip.height,
+        chipId: chip.chipId,
+      }),
+    )
 
     const stageTraces: Array<{ stage: string; traces: SolvedTracePath[] }> = [
       {
@@ -450,7 +458,8 @@ test("traces do not intersect component box interiors (examples 18/19)", () => {
       },
       {
         stage: "traceLabelOverlapAvoidance",
-        traces: pipeline.traceLabelOverlapAvoidanceSolver?.getOutput().traces ?? [],
+        traces:
+          pipeline.traceLabelOverlapAvoidanceSolver?.getOutput().traces ?? [],
       },
       {
         stage: "traceCleanup",
@@ -462,23 +471,21 @@ test("traces do not intersect component box interiors (examples 18/19)", () => {
       },
       {
         stage: "final",
-        traces: Object.values(pipeline.netLabelPlacementSolver?.inputTraceMap ?? {}),
+        traces: Object.values(
+          pipeline.netLabelPlacementSolver?.inputTraceMap ?? {},
+        ),
       },
     ]
 
     for (const { stage, traces } of stageTraces) {
       for (const trace of traces) {
         const boxesToCheck = componentBoxes
-        const violation = findBoxIntersection(
-          trace.tracePath,
-          boxesToCheck,
-          trace.netId,
-        )
+        const violation = findBoxIntersection(trace.tracePath, boxesToCheck)
 
         if (violation) {
-          const { segment, box, netId } = violation
+          const { segment, box } = violation
           console.error(
-            `[${id}] stage=${stage} net=${netId ?? "unknown"} segment ${segment.a.x},${segment.a.y} -> ${segment.b.x},${segment.b.y} crosses box x[${box.minX},${box.maxX}] y[${box.minY},${box.maxY}] chip=${box.chipId}`,
+            `[${id}] stage=${stage} segment ${segment.a.x},${segment.a.y} -> ${segment.b.x},${segment.b.y} crosses box x[${box.minX},${box.maxX}] y[${box.minY},${box.maxY}] chip=${box.chipId}`,
           )
           throw new Error(
             `[${id}] stage=${stage} segment intersects component box interior: ${segment.a.x},${segment.a.y} -> ${segment.b.x},${segment.b.y}`,

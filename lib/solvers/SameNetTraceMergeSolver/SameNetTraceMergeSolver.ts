@@ -135,10 +135,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
           const anchorCoord = sa.start.x
           const willShift = xDiff > EPS
           if (willShift && this.componentBoxes.length === 0) continue
-          if (
-            willShift &&
-            !this.isShiftSafe("vertical", anchorCoord, sa, sb)
-          ) {
+          if (willShift && !this.isShiftSafe("vertical", anchorCoord, sa, sb)) {
             continue
           }
           const overlap = this.rangesOverlap(
@@ -367,11 +364,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
         for (let j = i + 1; j < working.length; j++) {
           const info = this.findMergeInfo(working[i]!, working[j]!)
           if (!info) continue
-          const merged = this.tryMergeTracePair(
-            working[i]!,
-            working[j]!,
-            info,
-          )
+          const merged = this.tryMergeTracePair(working[i]!, working[j]!, info)
           if (!merged) continue
           working.splice(j, 1)
           working[i] = merged
