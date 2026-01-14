@@ -12,13 +12,50 @@ const getAllElms = (graphicsObject: GraphicsObject) => {
   ]
 }
 
+const renderGraphicsToSvg = (
+  graphicsObject: GraphicsObject,
+  opts?: { includeAirwires?: boolean },
+) => {
+  const includeAirwires = opts?.includeAirwires ?? true
+
+  const filteredGraphics: GraphicsObject = includeAirwires
+    ? graphicsObject
+    : {
+        ...graphicsObject,
+        lines: (graphicsObject.lines ?? []).filter(
+          (line) =>
+            !(
+              typeof line.strokeColor === "string" &&
+              line.strokeColor.startsWith("hsl(")
+            ),
+        ),
+      }
+
+  const svg = getSvgFromGraphicsObject(filteredGraphics, {
+    backgroundColor: "white",
+  })
+
+  if (!includeAirwires) {
+    return svg.replace(/data-type="line"/g, 'data-type="trace"')
+  }
+
+  return svg
+}
+
 async function toMatchSolverSnapshot(
   this: any,
   received: BaseSolver,
   testPathOriginal: string,
-  svgName?: string,
+  svgNameOrOpts?: string | { includeAirwires?: boolean },
+  maybeOpts?: { includeAirwires?: boolean },
 ): Promise<MatcherResult> {
   const graphicsObject = received.visualize()
+  const svgName =
+    typeof svgNameOrOpts === "string" ? svgNameOrOpts : undefined
+  const opts =
+    typeof svgNameOrOpts === "object" && svgNameOrOpts !== null
+      ? svgNameOrOpts
+      : maybeOpts ?? {}
 
   const allElms = getAllElms(graphicsObject)
   const lastStep = allElms.reduce((acc, elm) => {
@@ -43,8 +80,12 @@ async function toMatchSolverSnapshot(
     )
   }
 
-  const svg = getSvgFromGraphicsObject(graphicsObject, {
-    backgroundColor: "white",
+  const isExampleTest =
+    testPathOriginal.includes("/examples/") ||
+    testPathOriginal.includes("\\examples\\")
+
+  const svg = renderGraphicsToSvg(graphicsObject, {
+    includeAirwires: opts.includeAirwires ?? !isExampleTest,
   })
 
   return expect(svg).toMatchSvgSnapshot(testPathOriginal, svgName)
@@ -58,7 +99,8 @@ declare module "bun:test" {
   interface Matchers<T = unknown> {
     toMatchSolverSnapshot(
       testPath: string,
-      svgName?: string,
+      svgNameOrOpts?: string | { includeAirwires?: boolean },
+      opts?: { includeAirwires?: boolean },
     ): Promise<MatcherResult>
   }
 }

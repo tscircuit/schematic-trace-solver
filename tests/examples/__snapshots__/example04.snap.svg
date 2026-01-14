@@ -19,9 +19,6 @@ x-" data-x="-0.4467558855000001" data-y="-0.10250625000000019" cx="198.679395707
     <circle data-type="point" data-label="" data-x="0.31067575550000137" data-y="-0.5800832909999993" cx="404.36681333050564" cy="477.52686800158796" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <polyline data-points="0.30397715550000004,0.5800832909999993 0.31067575550000137,-0.5800832909999993" data-type="line" data-label="" points="402.5477478715151,162.47313199841204 404.36681333050564,477.52686800158796" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
-  </g>
-  <g>
     <rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="198.67939570751895" y="162.47313199841204" width="242.6412085849621" height="315.0537360031759" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.003682440324999998" />
   </g>
   <g>
