@@ -111,6 +111,12 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       pins,
       chipMap: this.chipMap,
+      componentBoxes: this.inputProblem.chips.map((chip) => ({
+        center: chip.center,
+        width: chip.width,
+        height: chip.height,
+        chipId: chip.chipId,
+      })),
     })
   }
 

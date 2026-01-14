@@ -22,11 +22,18 @@ import {
 import { pathKey, shiftSegmentOrth } from "./pathOps"
 
 type PathKey = string
+type ComponentBox = {
+  center: { x: number; y: number }
+  width: number
+  height: number
+  chipId?: string
+}
 
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
   inputProblem: InputProblem
   chipMap: Record<string, InputChip>
+  componentBoxes: ComponentBox[]
 
   obstacles: ChipWithBounds[]
   rectById: Map<string, ChipWithBounds>
@@ -38,16 +45,26 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
   private queue: Array<{ path: Point[]; collisionChipIds: Set<ChipId> }> = []
   private visited: Set<PathKey> = new Set()
+  private debugLogged = false
 
   constructor(params: {
     pins: MspConnectionPair["pins"]
     inputProblem: InputProblem
     chipMap: Record<string, InputChip>
+    componentBoxes?: ComponentBox[]
   }) {
     super()
     this.pins = params.pins
     this.inputProblem = params.inputProblem
     this.chipMap = params.chipMap
+    this.componentBoxes =
+      params.componentBoxes ??
+      this.inputProblem.chips.map((chip) => ({
+        center: chip.center,
+        width: chip.width,
+        height: chip.height,
+        chipId: chip.chipId,
+      }))
 
     // Ensure facing directions are present
     for (const pin of this.pins) {
@@ -95,6 +112,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       chipMap: this.chipMap,
       pins: this.pins,
       inputProblem: this.inputProblem,
+      componentBoxes: this.componentBoxes,
     }
   }
 
@@ -115,6 +133,12 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   }
 
   override _step() {
+    if (process.env.DEBUG_BOX_FILTER === "1" && !this.debugLogged) {
+      this.debugLogged = true
+      console.log("[Solver2] active")
+      console.log("[Solver2] boxes:", this.componentBoxes?.length ?? 0)
+    }
+
     if (this.solvedTracePath) {
       this.solved = true
       return
@@ -222,9 +246,83 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       newStates.push({ path: newPath, collisionRectIds: nextSet, len })
     }
 
-    newStates.sort((a, b) => a.len - b.len)
-    for (const st of newStates) {
+    const filteredStates = this.filterStatesByBoxes(newStates)
+
+    filteredStates.sort((a, b) => a.len - b.len)
+    for (const st of filteredStates) {
       this.queue.push({ path: st.path, collisionChipIds: st.collisionRectIds })
+    }
+  }
+
+  private filterStatesByBoxes(
+    states: Array<{ path: Point[]; collisionRectIds: Set<string>; len: number }>,
+  ) {
+    if (this.componentBoxes.length === 0) return states
+
+    const safe = states.filter(
+      (st) => !this.pathIntersectsAnyBoxInterior(st.path),
+    )
+    if (process.env.DEBUG_BOX_FILTER === "1") {
+      const droppedCount = states.length - safe.length
+      if (droppedCount > 0) {
+        console.log("[Solver2] dropped:", droppedCount)
+      }
+    }
+
+    if (safe.length === 0) {
+      // Keep original candidates to avoid routing failure; indicates generator needs more variants.
+      if (typeof console !== "undefined" && process?.env?.NODE_ENV !== "production") {
+        console.warn(
+          "[SchematicTraceSingleLineSolver2] No box-safe candidates; falling back to original list.",
+        )
+      }
+      return states
+    }
+
+    return safe
+  }
+
+  private pathIntersectsAnyBoxInterior(path: Point[]): boolean {
+    if (path.length < 2) return false
+    for (let i = 0; i < path.length - 1; i++) {
+      const a = path[i]!
+      const b = path[i + 1]!
+      for (const box of this.componentBoxes) {
+        if (this.segmentIntersectsBoxInterior(a, b, box)) return true
+      }
+    }
+    return false
+  }
+
+  private segmentIntersectsBoxInterior(
+    a: Point,
+    b: Point,
+    box: ComponentBox,
+  ): boolean {
+    const EPS = 1e-9
+    const minX = box.center.x - box.width / 2
+    const maxX = box.center.x + box.width / 2
+    const minY = box.center.y - box.height / 2
+    const maxY = box.center.y + box.height / 2
+
+    const vert = isVertical(a, b, EPS)
+    const horz = isHorizontal(a, b, EPS)
+    if (!vert && !horz) return false
+
+    if (vert) {
+      const x = a.x
+      if (x <= minX + EPS || x >= maxX - EPS) return false
+      const segMinY = Math.min(a.y, b.y)
+      const segMaxY = Math.max(a.y, b.y)
+      const overlap = Math.min(segMaxY, maxY - EPS) - Math.max(segMinY, minY + EPS)
+      return overlap > EPS
+    } else {
+      const y = a.y
+      if (y <= minY + EPS || y >= maxY - EPS) return false
+      const segMinX = Math.min(a.x, b.x)
+      const segMaxX = Math.max(a.x, b.x)
+      const overlap = Math.min(segMaxX, maxX - EPS) - Math.max(segMinX, minX + EPS)
+      return overlap > EPS
     }
   }
 

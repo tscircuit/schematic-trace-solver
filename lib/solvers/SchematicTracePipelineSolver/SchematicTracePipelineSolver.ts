@@ -216,6 +216,12 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           traces:
             instance.traceCleanupSolver?.getOutput().traces ??
             instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces,
+          componentBoxes: instance.inputProblem.chips.map((chip) => ({
+            center: chip.center,
+            width: chip.width,
+            height: chip.height,
+            chipId: chip.chipId,
+          })),
         },
       ],
     ),

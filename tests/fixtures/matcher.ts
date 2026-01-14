@@ -84,6 +84,28 @@ async function toMatchSolverSnapshot(
     testPathOriginal.includes("/examples/") ||
     testPathOriginal.includes("\\examples\\")
 
+  if (
+    process.env.DEBUG_BOX_FILTER === "1" &&
+    isExampleTest &&
+    graphicsObject.lines?.length
+  ) {
+    const exampleId =
+      testPathOriginal.match(/example\d+/i)?.[0] ?? testPathOriginal
+    const purpleLines = graphicsObject.lines.filter(
+      (line) => line.strokeColor === "purple",
+    )
+    for (const line of purpleLines) {
+      const pts = line.points ?? []
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = pts[i]!
+        const b = pts[i + 1]!
+        console.log(
+          `[Solver2][${exampleId}] segment ${a.x},${a.y} -> ${b.x},${b.y}`,
+        )
+      }
+    }
+  }
+
   const svg = renderGraphicsToSvg(graphicsObject, {
     includeAirwires: opts.includeAirwires ?? !isExampleTest,
   })
