@@ -109,6 +109,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
 
           const anchorCoord = sa.start.y
           const willShift = yDiff > EPS
+          if (willShift && this.componentBoxes.length === 0) continue
           if (
             willShift &&
             !this.isShiftSafe("horizontal", anchorCoord, sa, sb)
@@ -133,6 +134,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
 
           const anchorCoord = sa.start.x
           const willShift = xDiff > EPS
+          if (willShift && this.componentBoxes.length === 0) continue
           if (
             willShift &&
             !this.isShiftSafe("vertical", anchorCoord, sa, sb)
