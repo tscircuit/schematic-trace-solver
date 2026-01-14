@@ -13,7 +13,7 @@ type Segment = {
 }
 
 const EPS = 1e-6
-const MERGE_DISTANCE = 0.15
+const MERGE_DISTANCE = 0.05
 
 export class SameNetTraceMergeSolver extends BaseSolver {
   private inputTraces: SolvedTracePath[]
@@ -91,6 +91,15 @@ export class SameNetTraceMergeSolver extends BaseSolver {
         if (sa.orientation === "horizontal") {
           const yDiff = Math.abs(sa.start.y - sb.start.y)
           if (yDiff >= MERGE_DISTANCE) continue
+
+          const anchorCoord = sa.start.y
+          const isCollinear =
+            Math.abs(sa.start.y - sa.end.y) < EPS &&
+            Math.abs(sb.start.y - sb.end.y) < EPS &&
+            Math.abs(sa.start.y - sb.start.y) < MERGE_DISTANCE &&
+            Math.abs(sa.end.y - sb.end.y) < MERGE_DISTANCE
+          if (!isCollinear) continue
+
           const overlap = this.rangesOverlap(
             sa.start.x,
             sa.end.x,
@@ -100,11 +109,20 @@ export class SameNetTraceMergeSolver extends BaseSolver {
           if (!overlap) continue
           return {
             orientation: "horizontal",
-            anchorCoord: (sa.start.y + sb.start.y) / 2,
+            anchorCoord,
           }
         } else {
           const xDiff = Math.abs(sa.start.x - sb.start.x)
           if (xDiff >= MERGE_DISTANCE) continue
+
+          const anchorCoord = sa.start.x
+          const isCollinear =
+            Math.abs(sa.start.x - sa.end.x) < EPS &&
+            Math.abs(sb.start.x - sb.end.x) < EPS &&
+            Math.abs(sa.start.x - sb.start.x) < MERGE_DISTANCE &&
+            Math.abs(sa.end.x - sb.end.x) < MERGE_DISTANCE
+          if (!isCollinear) continue
+
           const overlap = this.rangesOverlap(
             sa.start.y,
             sa.end.y,
@@ -114,7 +132,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
           if (!overlap) continue
           return {
             orientation: "vertical",
-            anchorCoord: (sa.start.x + sb.start.x) / 2,
+            anchorCoord,
           }
         }
       }
