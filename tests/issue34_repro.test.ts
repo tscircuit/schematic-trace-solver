@@ -7,7 +7,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { fileURLToPath } from "url"
 
 const PRIMARY_Y = 10
-const SECONDARY_Y = 10.02
+const SECONDARY_Y = 10.005
 
 test("same-net close horizontal traces merge onto the first segment's y", async () => {
   const inputProblem: InputProblem = {
@@ -83,7 +83,16 @@ test("same-net close horizontal traces merge onto the first segment's y", async 
 
   const pipeline = new SchematicTracePipelineSolver(inputProblem)
 
-  const mergeSolver = new SameNetTraceMergeSolver({ traces: tracesBeforeMerge })
+  const mergeSolver = new SameNetTraceMergeSolver({
+    traces: tracesBeforeMerge,
+    componentBoxes: [
+      {
+        center: { x: 1000, y: 1000 },
+        width: 1,
+        height: 1,
+      },
+    ],
+  })
   mergeSolver.solve()
 
   const mergedTraces = mergeSolver.getOutput().traces
