@@ -25,12 +25,12 @@ const closeParallelTraces: SolvedTracePath[] = [
     globalConnNetId: "NET1",
     userNetId: "NET1",
     pins: [
-      { pinId: "A2", chipId: "C3", x: 0, y: 0.1 },
-      { pinId: "B2", chipId: "C4", x: 2, y: 0.1 },
+      { pinId: "A2", chipId: "C3", x: 0, y: 0.02 },
+      { pinId: "B2", chipId: "C4", x: 2, y: 0.02 },
     ],
     tracePath: [
-      { x: 0, y: 0.1 },
-      { x: 2, y: 0.1 },
+      { x: 0, y: 0.02 },
+      { x: 2, y: 0.02 },
     ],
     mspConnectionPairIds: ["trace-2"],
     pinIds: ["A2", "B2"],
