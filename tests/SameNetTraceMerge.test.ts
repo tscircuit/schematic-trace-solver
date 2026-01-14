@@ -73,7 +73,16 @@ const tracesCrossingBox: SolvedTracePath[] = [
 ]
 
 test("merges close parallel segments on the same net", () => {
-  const solver = new SameNetTraceMergeSolver({ traces: closeParallelTraces })
+  const solver = new SameNetTraceMergeSolver({
+    traces: closeParallelTraces,
+    componentBoxes: [
+      {
+        center: { x: 100, y: 100 },
+        width: 1,
+        height: 1,
+      },
+    ],
+  })
 
   solver.solve()
 
