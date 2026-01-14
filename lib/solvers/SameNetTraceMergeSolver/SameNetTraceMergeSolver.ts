@@ -14,15 +14,28 @@ type Segment = {
 
 const EPS = 1e-6
 const MERGE_DISTANCE = 0.05
+const MAX_SHIFT_FOR_MERGE = 0.01
+
+type ComponentBox = {
+  center: { x: number; y: number }
+  width: number
+  height: number
+  chipId?: string
+}
 
 export class SameNetTraceMergeSolver extends BaseSolver {
   private inputTraces: SolvedTracePath[]
   private outputTraces: SolvedTracePath[]
+  private componentBoxes: ComponentBox[]
 
-  constructor(params: { traces: SolvedTracePath[] }) {
+  constructor(params: {
+    traces: SolvedTracePath[]
+    componentBoxes?: ComponentBox[]
+  }) {
     super()
     this.inputTraces = params.traces
     this.outputTraces = []
+    this.componentBoxes = params.componentBoxes ?? []
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -30,6 +43,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
   >[0] {
     return {
       traces: this.inputTraces,
+      componentBoxes: this.componentBoxes,
     }
   }
 
@@ -91,8 +105,16 @@ export class SameNetTraceMergeSolver extends BaseSolver {
         if (sa.orientation === "horizontal") {
           const yDiff = Math.abs(sa.start.y - sb.start.y)
           if (yDiff >= MERGE_DISTANCE) continue
+          if (yDiff > MAX_SHIFT_FOR_MERGE) continue
 
           const anchorCoord = sa.start.y
+          const willShift = yDiff > EPS
+          if (
+            willShift &&
+            !this.isShiftSafe("horizontal", anchorCoord, sa, sb)
+          ) {
+            continue
+          }
           const overlap = this.rangesOverlap(
             sa.start.x,
             sa.end.x,
@@ -107,8 +129,16 @@ export class SameNetTraceMergeSolver extends BaseSolver {
         } else {
           const xDiff = Math.abs(sa.start.x - sb.start.x)
           if (xDiff >= MERGE_DISTANCE) continue
+          if (xDiff > MAX_SHIFT_FOR_MERGE) continue
 
           const anchorCoord = sa.start.x
+          const willShift = xDiff > EPS
+          if (
+            willShift &&
+            !this.isShiftSafe("vertical", anchorCoord, sa, sb)
+          ) {
+            continue
+          }
           const overlap = this.rangesOverlap(
             sa.start.y,
             sa.end.y,
@@ -125,6 +155,69 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     }
 
     return null
+  }
+
+  private isShiftSafe(
+    orientation: Orientation,
+    anchorCoord: number,
+    sa: Segment,
+    sb: Segment,
+  ): boolean {
+    if (this.componentBoxes.length === 0) return true
+
+    if (orientation === "horizontal") {
+      const minX = Math.min(sa.start.x, sa.end.x, sb.start.x, sb.end.x)
+      const maxX = Math.max(sa.start.x, sa.end.x, sb.start.x, sb.end.x)
+      return !this.componentBoxes.some((box) =>
+        this.horizontalSegmentIntersectsBox(anchorCoord, minX, maxX, box),
+      )
+    }
+
+    const minY = Math.min(sa.start.y, sa.end.y, sb.start.y, sb.end.y)
+    const maxY = Math.max(sa.start.y, sa.end.y, sb.start.y, sb.end.y)
+    return !this.componentBoxes.some((box) =>
+      this.verticalSegmentIntersectsBox(anchorCoord, minY, maxY, box),
+    )
+  }
+
+  private horizontalSegmentIntersectsBox(
+    y: number,
+    x1: number,
+    x2: number,
+    box: ComponentBox,
+  ): boolean {
+    const halfW = box.width / 2
+    const halfH = box.height / 2
+    const minX = box.center.x - halfW
+    const maxX = box.center.x + halfW
+    const minY = box.center.y - halfH
+    const maxY = box.center.y + halfH
+
+    if (y < minY - EPS || y > maxY + EPS) return false
+    const segMinX = Math.min(x1, x2)
+    const segMaxX = Math.max(x1, x2)
+    const overlap = Math.min(maxX, segMaxX) - Math.max(minX, segMinX)
+    return overlap > EPS
+  }
+
+  private verticalSegmentIntersectsBox(
+    x: number,
+    y1: number,
+    y2: number,
+    box: ComponentBox,
+  ): boolean {
+    const halfW = box.width / 2
+    const halfH = box.height / 2
+    const minX = box.center.x - halfW
+    const maxX = box.center.x + halfW
+    const minY = box.center.y - halfH
+    const maxY = box.center.y + halfH
+
+    if (x < minX - EPS || x > maxX + EPS) return false
+    const segMinY = Math.min(y1, y2)
+    const segMaxY = Math.max(y1, y2)
+    const overlap = Math.min(maxY, segMaxY) - Math.max(minY, segMinY)
+    return overlap > EPS
   }
 
   private dedupePoints(points: Point[]): Point[] {
@@ -195,11 +288,40 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     return this.dedupePoints(path)
   }
 
-  private mergeTracePair(
+  private pathIntersectsAnyBox(path: Point[]): boolean {
+    if (this.componentBoxes.length === 0) return false
+
+    const segments = this.getSegments(path)
+
+    for (const segment of segments) {
+      for (const box of this.componentBoxes) {
+        const intersects =
+          segment.orientation === "horizontal"
+            ? this.horizontalSegmentIntersectsBox(
+                segment.start.y,
+                segment.start.x,
+                segment.end.x,
+                box,
+              )
+            : this.verticalSegmentIntersectsBox(
+                segment.start.x,
+                segment.start.y,
+                segment.end.y,
+                box,
+              )
+
+        if (intersects) return true
+      }
+    }
+
+    return false
+  }
+
+  private tryMergeTracePair(
     a: SolvedTracePath,
     b: SolvedTracePath,
     info: { orientation: Orientation; anchorCoord: number },
-  ): SolvedTracePath {
+  ): SolvedTracePath | null {
     const pinMap = new Map<string, Point & { pinId: string; chipId?: string }>()
     for (const pin of [...a.pins, ...b.pins]) {
       pinMap.set(pin.pinId, pin)
@@ -218,6 +340,8 @@ export class SameNetTraceMergeSolver extends BaseSolver {
       info.orientation,
       info.anchorCoord,
     )
+
+    if (this.pathIntersectsAnyBox(mergedTracePath)) return null
 
     const mergedPairId = `merged-${Array.from(mergedMspIds).sort().join("--")}`
 
@@ -241,7 +365,12 @@ export class SameNetTraceMergeSolver extends BaseSolver {
         for (let j = i + 1; j < working.length; j++) {
           const info = this.findMergeInfo(working[i]!, working[j]!)
           if (!info) continue
-          const merged = this.mergeTracePair(working[i]!, working[j]!, info)
+          const merged = this.tryMergeTracePair(
+            working[i]!,
+            working[j]!,
+            info,
+          )
+          if (!merged) continue
           working.splice(j, 1)
           working[i] = merged
           changed = true
