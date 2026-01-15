@@ -168,18 +168,23 @@ export class SameNetTraceMergeSolver extends BaseSolver {
       const minX = Math.min(sa.start.x, sa.end.x, sb.start.x, sb.end.x)
       const maxX = Math.max(sa.start.x, sa.end.x, sb.start.x, sb.end.x)
       return !this.componentBoxes.some((box) =>
-        this.horizontalSegmentIntersectsBox(anchorCoord, minX, maxX, box),
+        this.horizontalSegmentIntersectsBoxInterior(
+          anchorCoord,
+          minX,
+          maxX,
+          box,
+        ),
       )
     }
 
     const minY = Math.min(sa.start.y, sa.end.y, sb.start.y, sb.end.y)
     const maxY = Math.max(sa.start.y, sa.end.y, sb.start.y, sb.end.y)
     return !this.componentBoxes.some((box) =>
-      this.verticalSegmentIntersectsBox(anchorCoord, minY, maxY, box),
+      this.verticalSegmentIntersectsBoxInterior(anchorCoord, minY, maxY, box),
     )
   }
 
-  private horizontalSegmentIntersectsBox(
+  private horizontalSegmentIntersectsBoxInterior(
     y: number,
     x1: number,
     x2: number,
@@ -192,14 +197,15 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     const minY = box.center.y - halfH
     const maxY = box.center.y + halfH
 
-    if (y < minY - EPS || y > maxY + EPS) return false
+    if (y <= minY + EPS || y >= maxY - EPS) return false
     const segMinX = Math.min(x1, x2)
     const segMaxX = Math.max(x1, x2)
-    const overlap = Math.min(maxX, segMaxX) - Math.max(minX, segMinX)
+    const overlap =
+      Math.min(maxX - EPS, segMaxX) - Math.max(minX + EPS, segMinX)
     return overlap > EPS
   }
 
-  private verticalSegmentIntersectsBox(
+  private verticalSegmentIntersectsBoxInterior(
     x: number,
     y1: number,
     y2: number,
@@ -212,10 +218,11 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     const minY = box.center.y - halfH
     const maxY = box.center.y + halfH
 
-    if (x < minX - EPS || x > maxX + EPS) return false
+    if (x <= minX + EPS || x >= maxX - EPS) return false
     const segMinY = Math.min(y1, y2)
     const segMaxY = Math.max(y1, y2)
-    const overlap = Math.min(maxY, segMaxY) - Math.max(minY, segMinY)
+    const overlap =
+      Math.min(maxY - EPS, segMaxY) - Math.max(minY + EPS, segMinY)
     return overlap > EPS
   }
 
@@ -296,13 +303,13 @@ export class SameNetTraceMergeSolver extends BaseSolver {
       for (const box of this.componentBoxes) {
         const intersects =
           segment.orientation === "horizontal"
-            ? this.horizontalSegmentIntersectsBox(
+            ? this.horizontalSegmentIntersectsBoxInterior(
                 segment.start.y,
                 segment.start.x,
                 segment.end.x,
                 box,
               )
-            : this.verticalSegmentIntersectsBox(
+            : this.verticalSegmentIntersectsBoxInterior(
                 segment.start.x,
                 segment.start.y,
                 segment.end.y,
