@@ -263,6 +263,11 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   ) {
     if (this.componentBoxes.length === 0) return states
 
+    const anyUnsafe = states.some((st) =>
+      this.pathIntersectsAnyBoxInterior(st.path),
+    )
+    if (!anyUnsafe) return states
+
     const safe = states.filter(
       (st) => !this.pathIntersectsAnyBoxInterior(st.path),
     )
