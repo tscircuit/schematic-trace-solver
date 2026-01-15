@@ -1,0 +1,231 @@
+# Algora Bounty Çalışması - Özet Rapor
+Tarih: 13 Ocak 2026
+
+## 1. Algora Platformu Araştırması
+
+Algora, açık kaynak projeler için bounty (ödül) platformudur. GitHub entegrasyonu ile çalışır.
+
+### Temel Özellikler:
+- GitHub issue'larına `/bounty $100` yazarak bounty oluşturulur
+- Geliştiriciler `/attempt #issue-number` ile bounty'ye başvurur
+- PR merge edilince `/claim #issue-number` ile ödül talep edilir
+- Ödeme Stripe üzerinden yapılır
+
+### Önemli Komutlar:
+- `/bounty $amount` - Bounty oluştur
+- `/attempt #issue` - Bounty'ye başvur
+- `/claim #issue` - Ödül talep et
+- `/tip @user $amount` - Bahşiş ver
+
+---
+
+## 2. Bounty Arama Süreci
+
+### İncelenen Bounty'ler:
+1. **Activepieces MCP bounty'leri** - Hepsi alınmış
+2. **ProjectDiscovery CVE templates** - Çok rekabetçi, hepsi alınmış
+3. **Archestra provider bounty'leri** - Alınmış
+4. **Coder templates** - Rekabetçi
+
+### Seçilen Bounty:
+- **Proje:** tscircuit/schematic-trace-solver
+- **Issue:** #34 - "Merge same-net trace lines that are close together"
+- **Ödül:** $100
+- **Durum:** Kullanıcı daha önce `/attempt #34` yapmıştı
+
+---
+
+## 3. tscircuit #34 Bounty Çalışması - Detaylı Analiz
+
+### 3.1 Problem Tanımı
+Şematik trace solver'da, aynı net'e (elektriksel bağlantı ağı) ait trace çizgileri birbirine çok yakın olduğunda (neredeyse paralel), bunların birleştirilmesi gerekiyordu. Bu, daha temiz şematik görünümler oluşturmak için önemliydi.
+
+### 3.2 Kodbase Analizi
+Öncelikle mevcut kod yapısını inceledik:
+
+```
+lib/solvers/
+├── BaseSolver/              # Tüm solver'ların temel sınıfı
+├── SchematicTracePipelineSolver/  # Ana pipeline koordinatörü
+├── SchematicTraceLinesSolver/     # Trace çizgilerini çözer
+├── TraceOverlapShiftSolver/       # Çakışan trace'leri kaydırır
+├── NetLabelPlacementSolver/       # Net etiketlerini yerleştirir
+└── ...
+```
+
+Pipeline yapısı: Her solver sırayla çalışır, bir öncekinin çıktısını alır.
+
+### 3.3 Çözüm Tasarımı
+
+**TraceMergerSolver** adında yeni bir solver oluşturduk:
+
+#### Algoritma:
+1. **Trace'leri Net'e Göre Grupla:** Tüm trace'ler `globalConnNetId`'ye göre gruplandı
+2. **Segment Çıkarma:** Her trace path'inden segment'ler (başlangıç-bitiş noktaları) çıkarıldı
+3. **Birleştirme Adaylarını Bul:**
+   - İki segment'in her ikisi de dikey (vertical) ise → X değerleri karşılaştırıldı
+   - İki segment'in her ikisi de yatay (horizontal) ise → Y değerleri karşılaştırıldı
+   - Eşik değeri: 0.15 birim (MERGE_THRESHOLD)
+   - Aralıkların örtüşüp örtüşmediği kontrol edildi
+4. **Birleştirme Uygula:** En yakın segment'ler ortalama pozisyona taşındı
+
+#### Kod Yapısı:
+```typescript
+export class TraceMergerSolver extends BaseSolver {
+  static readonly MERGE_THRESHOLD = 0.15  // Birleştirme eşiği
+  static readonly EPS = 1e-6              // Float karşılaştırma toleransı
+
+  // Ana metodlar:
+  groupTracesByNet()      // Net'e göre gruplama
+  getSegments()           // Segment çıkarma
+  findMergeCandidates()   // Birleştirme adayları bulma
+  rangesOverlap()         // 1D aralık örtüşme kontrolü
+  applyMerge()            // Birleştirme uygulama
+  _step()                 // Ana iterasyon döngüsü
+}
+```
+
+### 3.4 Oluşturulan Dosyalar
+
+#### 1. TraceMergerSolver.ts
+Konum: `lib/solvers/TraceMergerSolver/TraceMergerSolver.ts`
+
+```typescript
+// Temel yapı
+interface TraceSegment {
+  start: Point
+  end: Point
+  traceIndex: number
+  segmentIndex: number
+  isVertical: boolean
+  isHorizontal: boolean
+}
+
+interface MergeCandidate {
+  segment1: TraceSegment
+  segment2: TraceSegment
+  distance: number
+  mergedPosition: number
+}
+```
+
+#### 2. TraceMergerSolver.test.ts
+Konum: `tests/solvers/TraceMergerSolver.test.ts`
+
+Test senaryosu:
+- 3 chip: U1 (ana IC), C1 ve C2 (kapasitörler)
+- GND net'i: U1.3, C1.2, C2.1 pinlerini bağlıyor (3 pin = potansiyel birleştirme)
+- VCC ve SIG direct connection'ları
+
+### 3.5 Pipeline Entegrasyonu
+
+`SchematicTracePipelineSolver.ts` dosyasında:
+
+1. Import eklendi:
+```typescript
+import { TraceMergerSolver } from "../TraceMergerSolver/TraceMergerSolver"
+```
+
+2. Property eklendi:
+```typescript
+traceMergerSolver?: TraceMergerSolver
+```
+
+3. Pipeline step eklendi (TraceOverlapShiftSolver'dan sonra, NetLabelPlacementSolver'dan önce):
+```typescript
+definePipelineStep(
+  "traceMergerSolver",
+  TraceMergerSolver,
+  () => [{
+    inputProblem: this.inputProblem,
+    inputTracePaths: Object.values(
+      this.traceOverlapShiftSolver?.correctedTraceMap ?? ...
+    ),
+  }],
+)
+```
+
+---
+
+## 4. PR Süreci
+
+### 4.1 Git İşlemleri
+```bash
+# Fork'tan clone
+git clone https://github.com/Kemalyavas/schematic-trace-solver.git
+
+# Upstream ekleme
+git remote add upstream https://github.com/tscircuit/schematic-trace-solver.git
+
+# Yeni branch
+git checkout -b feature/trace-merger-solver
+
+# Değişiklikleri commit
+git add .
+git commit -m "feat: add TraceMergerSolver for merging close same-net traces"
+
+# Push
+git push origin feature/trace-merger-solver
+```
+
+### 4.2 CI Kontrolleri
+Tüm kontroller başarılı:
+- ✅ Format Check (biome)
+- ✅ Type Check (TypeScript)
+- ✅ Bun Test (29 test geçti)
+
+### 4.3 PR Detayları
+- **PR Numarası:** #103
+- **URL:** https://github.com/tscircuit/schematic-trace-solver/pull/103
+- **Başlık:** "feat: add TraceMergerSolver for merging close same-net traces (Issue #34)"
+- **Durum:** Review bekliyor
+
+### 4.4 PR Açıklaması
+```markdown
+## Summary
+- Implements TraceMergerSolver to merge same-net trace segments that are close together
+- Adds pipeline integration between TraceOverlapShiftSolver and NetLabelPlacementSolver
+- Includes comprehensive test with multi-pin net scenario
+
+## Test plan
+- [x] All existing tests pass (29 tests)
+- [x] New TraceMergerSolver test validates merge behavior
+- [x] Visual snapshot generated for before/after comparison
+```
+
+---
+
+## 5. Teknik Notlar
+
+### Karşılaşılan Sorunlar ve Çözümler:
+
+1. **bun not found:** PATH sorunu → `~/.bun/bin/bun` kullanıldı
+2. **unzip gerekli:** Kullanıcı sudo ile kurdu
+3. **Git author identity:** Kullanıcı git config ayarladı
+4. **Format check failed:** `bun run format` ile düzeltildi
+
+### Önemli Kurallar:
+- PR'larda "Claude tarafından oluşturuldu" yazılmamalı
+- PR'lar Kemalyavas hesabından açılmalı (ödeme için)
+
+---
+
+## 6. Mevcut Durum
+
+- **PR #103:** Açık, review bekliyor
+- **Sonraki adım:** Maintainer feedback'i bekle, gerekirse düzeltme yap
+- **Potansiyel yeni bounty:** tscircuit SparkFun MicroMod RP2040 ($500)
+
+---
+
+## 7. Öğrenilen Dersler
+
+1. Bounty'ler hızlı kapanıyor, rekabet yüksek
+2. Aynı ekosistemde kalmak avantajlı (kodbase tanıdık)
+3. CI kontrolleri önemli (format, type check, test)
+4. Maintainer'ların beklentilerini anlamak kritik
+5. Snapshot testleri görsel değişiklikleri takip etmek için kullanılıyor
+
+---
+
+Rapor Sonu
