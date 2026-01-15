@@ -277,7 +277,8 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       // Keep original candidates to avoid routing failure; indicates generator needs more variants.
       if (
         typeof console !== "undefined" &&
-        process?.env?.NODE_ENV !== "production"
+        process?.env?.NODE_ENV !== "production" &&
+        process?.env?.DEBUG_BOX_FILTER === "1"
       ) {
         console.warn(
           "[SchematicTraceSingleLineSolver2] No box-safe candidates; falling back to original list.",
