@@ -91,6 +91,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
   private findMergeInfo(
     a: SolvedTracePath,
     b: SolvedTracePath,
+    enforceBoxSafety = true,
   ): {
     orientation: Orientation
     anchorCoord: number
@@ -109,12 +110,20 @@ export class SameNetTraceMergeSolver extends BaseSolver {
 
           const anchorCoord = sa.start.y
           const willShift = yDiff > EPS
-          if (willShift && this.componentBoxes.length === 0) continue
-          if (
-            willShift &&
-            !this.isShiftSafe("horizontal", anchorCoord, sa, sb)
-          ) {
-            continue
+          if (enforceBoxSafety) {
+            if (willShift && this.componentBoxes.length === 0) continue
+            if (
+              willShift &&
+              !this.isShiftSafe(
+                "horizontal",
+                anchorCoord,
+                sa,
+                sb,
+                enforceBoxSafety,
+              )
+            ) {
+              continue
+            }
           }
           const overlap = this.rangesOverlap(
             sa.start.x,
@@ -134,9 +143,20 @@ export class SameNetTraceMergeSolver extends BaseSolver {
 
           const anchorCoord = sa.start.x
           const willShift = xDiff > EPS
-          if (willShift && this.componentBoxes.length === 0) continue
-          if (willShift && !this.isShiftSafe("vertical", anchorCoord, sa, sb)) {
-            continue
+          if (enforceBoxSafety) {
+            if (willShift && this.componentBoxes.length === 0) continue
+            if (
+              willShift &&
+              !this.isShiftSafe(
+                "vertical",
+                anchorCoord,
+                sa,
+                sb,
+                enforceBoxSafety,
+              )
+            ) {
+              continue
+            }
           }
           const overlap = this.rangesOverlap(
             sa.start.y,
@@ -161,8 +181,9 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     anchorCoord: number,
     sa: Segment,
     sb: Segment,
+    enforceBoxSafety: boolean,
   ): boolean {
-    if (this.componentBoxes.length === 0) return true
+    if (!enforceBoxSafety || this.componentBoxes.length === 0) return true
 
     if (orientation === "horizontal") {
       const minX = Math.min(sa.start.x, sa.end.x, sb.start.x, sb.end.x)
@@ -323,10 +344,30 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     return false
   }
 
+  private pathHasOnlyOrthogonalSegments(path: Point[]): boolean {
+    for (let i = 0; i < path.length - 1; i++) {
+      const a = path[i]!
+      const b = path[i + 1]!
+      const dx = Math.abs(a.x - b.x)
+      const dy = Math.abs(a.y - b.y)
+      const isVertical = dx < EPS && dy > EPS
+      const isHorizontal = dy < EPS && dx > EPS
+      if (!isVertical && !isHorizontal) return false
+    }
+    return true
+  }
+
+  private isPathValid(path: Point[]): boolean {
+    const avoidsInterior = !this.pathIntersectsAnyBox(path)
+    const orthogonal = this.pathHasOnlyOrthogonalSegments(path)
+    return avoidsInterior && orthogonal
+  }
+
   private tryMergeTracePair(
     a: SolvedTracePath,
     b: SolvedTracePath,
     info: { orientation: Orientation; anchorCoord: number },
+    enforceBoxSafety = true,
   ): SolvedTracePath | null {
     const pinMap = new Map<string, Point & { pinId: string; chipId?: string }>()
     for (const pin of [...a.pins, ...b.pins]) {
@@ -347,7 +388,8 @@ export class SameNetTraceMergeSolver extends BaseSolver {
       info.anchorCoord,
     )
 
-    if (this.pathIntersectsAnyBox(mergedTracePath)) return null
+    if (enforceBoxSafety && this.pathIntersectsAnyBox(mergedTracePath))
+      return null
 
     const mergedPairId = `merged-${Array.from(mergedMspIds).sort().join("--")}`
 
@@ -361,7 +403,10 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     }
   }
 
-  private mergeNetTraces(traces: SolvedTracePath[]): SolvedTracePath[] {
+  private mergeNetTraces(
+    traces: SolvedTracePath[],
+    enforceBoxSafety: boolean,
+  ): SolvedTracePath[] {
     const working = [...traces]
 
     let changed = true
@@ -369,9 +414,18 @@ export class SameNetTraceMergeSolver extends BaseSolver {
       changed = false
       outer: for (let i = 0; i < working.length; i++) {
         for (let j = i + 1; j < working.length; j++) {
-          const info = this.findMergeInfo(working[i]!, working[j]!)
+          const info = this.findMergeInfo(
+            working[i]!,
+            working[j]!,
+            enforceBoxSafety,
+          )
           if (!info) continue
-          const merged = this.tryMergeTracePair(working[i]!, working[j]!, info)
+          const merged = this.tryMergeTracePair(
+            working[i]!,
+            working[j]!,
+            info,
+            enforceBoxSafety,
+          )
           if (!merged) continue
           working.splice(j, 1)
           working[i] = merged
@@ -389,7 +443,16 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     const merged: SolvedTracePath[] = []
 
     for (const netId of Object.keys(grouped)) {
-      merged.push(...this.mergeNetTraces(grouped[netId]!))
+      const legacy = this.mergeNetTraces(grouped[netId]!, false)
+      const legacyValid = legacy.every((trace) =>
+        this.isPathValid(trace.tracePath),
+      )
+
+      if (legacyValid) {
+        merged.push(...legacy)
+      } else {
+        merged.push(...this.mergeNetTraces(grouped[netId]!, true))
+      }
     }
 
     return merged
