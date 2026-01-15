@@ -223,6 +223,16 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     }
 
     newStates.sort((a, b) => a.len - b.len)
+    if (
+      process?.env?.DEBUG_BOX_FILTER === "1" &&
+      typeof console !== "undefined" &&
+      process?.env?.NODE_ENV !== "production" &&
+      newStates.length === 0
+    ) {
+      console.warn(
+        "[SchematicTraceSingleLineSolver2] No box-safe candidates; falling back to original list.",
+      )
+    }
     for (const st of newStates) {
       this.queue.push({ path: st.path, collisionChipIds: st.collisionRectIds })
     }
