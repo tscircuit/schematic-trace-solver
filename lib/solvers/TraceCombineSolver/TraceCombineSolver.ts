@@ -90,64 +90,33 @@ export class TraceCombineSolver extends BaseSolver {
     t1: SolvedTracePath,
     t2: SolvedTracePath,
   ): SolvedTracePath | null {
-    // Try all 4 combinations of connectivity:
-    // End of t1 -> Start of t2
-    // End of t1 -> End of t2 (reverse t2)
-    // Start of t1 -> Start of t2 (reverse t1)
-    // Start of t1 -> End of t2 (reverse t1, reverse t2? or just t2->t1)
+    // 1. Try connecting end-to-end (touching)
+    let mergedPath = this.tryConnectTouchingTraces(t1.tracePath, t2.tracePath)
 
-    // Helper to check connection
-    const checkConnection = (
-      pathA: { x: number; y: number }[],
-      pathB: { x: number; y: number }[],
-    ) => {
-      // Check if pathA ends where pathB starts
-      // And potentially overlap
-      const endA = pathA[pathA.length - 1]
-      const startB = pathB[0]
-
-      if (
-        Math.abs(endA.x - startB.x) < 1e-4 &&
-        Math.abs(endA.y - startB.y) < 1e-4
-      ) {
-        return { type: "touch" }
-      }
-
-      // Check for overlap
-      // Iterate backwards from end of A, and forwards from start of B
-      // to find matching sequence.
-      // Simplified: Check if last segment of A overlaps first segment of B
-      // Just basic endpoint check for now as reproduction case just meets at a point/segment.
-
-      // If they share a segment:
-      // pathA: ... -> P_pre -> P_end
-      // pathB: P_start -> P_post -> ...
-      // If P_end == P_start AND P_pre == P_post, they overlap.
-
-      if (pathA.length > 1 && pathB.length > 1) {
-        const prevA = pathA[pathA.length - 2]
-        const nextB = pathB[1]
-
-        // Compare (prevA->endA) with (startB->nextB)
-        // If they are same segment, they overlap.
-        // We know endA approx startB? No we need to check if they overlap.
-        // If endA == nextB and prevA == startB? That's full overlap of segment.
-        // But typically we look for:
-        // A: ... -> X -> Y
-        // B: X -> Y -> ...
-        // OR
-        // A: ... -> X -> Y
-        // B: Y -> Z -> ... (Touch)
-
-        // Let's rely on points being identical for overlap.
-        // Find index in B where A ends?
-      }
-      return null
+    // 2. If not touching, try merging close parallel traces
+    if (!mergedPath) {
+      mergedPath = this.tryCombineParallelTraces(t1.tracePath, t2.tracePath)
     }
 
-    const p1 = t1.tracePath
-    const p2 = t2.tracePath
+    if (mergedPath) {
+      return {
+        ...t1,
+        tracePath: mergedPath,
+        mspConnectionPairIds: [
+          ...t1.mspConnectionPairIds,
+          ...t2.mspConnectionPairIds,
+        ],
+        pinIds: [...new Set([...t1.pinIds, ...t2.pinIds])],
+      }
+    }
 
+    return null
+  }
+
+  private tryConnectTouchingTraces(
+    p1: { x: number; y: number }[],
+    p2: { x: number; y: number }[],
+  ): { x: number; y: number }[] | null {
     // Define reverse paths
     const p1Rev = [...p1].reverse()
     const p2Rev = [...p2].reverse()
@@ -205,24 +174,91 @@ export class TraceCombineSolver extends BaseSolver {
       return null
     }
 
-    let mergedPath = tryMerge(p1, p2)
-    if (!mergedPath) mergedPath = tryMerge(p1, p2Rev)
-    if (!mergedPath) mergedPath = tryMerge(p1Rev, p2)
-    if (!mergedPath) mergedPath = tryMerge(p1Rev, p2Rev)
+    let merged = tryMerge(p1, p2)
+    if (!merged) merged = tryMerge(p1, p2Rev)
+    if (!merged) merged = tryMerge(p1Rev, p2)
+    if (!merged) merged = tryMerge(p1Rev, p2Rev)
 
-    if (mergedPath) {
-      return {
-        ...t1,
-        tracePath: mergedPath,
-        mspConnectionPairIds: [
-          ...t1.mspConnectionPairIds,
-          ...t2.mspConnectionPairIds,
-        ],
-        pinIds: [...new Set([...t1.pinIds, ...t2.pinIds])],
+    return merged
+  }
+
+  private tryCombineParallelTraces(
+    p1: { x: number; y: number }[],
+    p2: { x: number; y: number }[],
+  ): { x: number; y: number }[] | null {
+    const CLOSE_THRESHOLD = 0.05 // Threshold for "close together"
+
+    const isStraightLine = (path: { x: number; y: number }[]) => {
+      if (path.length < 2) return null
+
+      let isHoriz = true
+      let isVert = true
+      const y0 = path[0].y
+      const x0 = path[0].x
+
+      const xs = path.map((p) => p.x)
+      const ys = path.map((p) => p.y)
+
+      for (let i = 1; i < path.length; i++) {
+        if (Math.abs(path[i].y - y0) > 1e-4) isHoriz = false
+        if (Math.abs(path[i].x - x0) > 1e-4) isVert = false
       }
+
+      if (isHoriz) {
+        return {
+          type: "h" as const,
+          val: y0,
+          min: Math.min(...xs),
+          max: Math.max(...xs),
+        }
+      }
+      if (isVert) {
+        return {
+          type: "v" as const,
+          val: x0,
+          min: Math.min(...ys),
+          max: Math.max(...ys),
+        }
+      }
+      return null
     }
 
-    return null
+    const info1 = isStraightLine(p1)
+    const info2 = isStraightLine(p2)
+
+    if (!info1 || !info2 || info1.type !== info2.type) return null
+
+    // Check distance between parallel lines
+    if (Math.abs(info1.val - info2.val) > CLOSE_THRESHOLD) return null
+
+    // Check for overlap or touch (using small epsilon for touch)
+    const overlapStart = Math.max(info1.min, info2.min)
+    const overlapEnd = Math.min(info1.max, info2.max)
+
+    // Epsilon choice: 1e-4. If overlapEnd >= overlapStart - epsilon, they at least touch.
+    // If we want STRICTLY "close parallel" to imply some overlap:
+    // If they are just touching tip-to-tip, `tryConnectTouchingTraces` should have handled it?
+    // Not necessarily if they are slightly offset in Y (parallel offset but touching in X).
+    // So let's allow "touching in projection" too.
+    if (overlapEnd < overlapStart - 1e-4) return null
+
+    // Align to average center
+    const newVal = (info1.val + info2.val) / 2
+    const newMin = Math.min(info1.min, info2.min)
+    const newMax = Math.max(info1.max, info2.max)
+
+    const newPath =
+      info1.type === "h"
+        ? [
+          { x: newMin, y: newVal },
+          { x: newMax, y: newVal },
+        ]
+        : [
+          { x: newVal, y: newMin },
+          { x: newVal, y: newMax },
+        ]
+
+    return newPath
   }
 
   override visualize(): GraphicsObject {
