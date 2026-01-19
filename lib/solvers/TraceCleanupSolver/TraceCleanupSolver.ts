@@ -8,7 +8,7 @@ import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 
 /**
- * Defines the input structure for the TraceCleanupSolver.
+ * Defines the input structure for the TraceCleanupSolver .
  */
 interface TraceCleanupSolverInput {
   inputProblem: InputProblem
