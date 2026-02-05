@@ -188,3 +188,4 @@ export function mergeCollinearTraces(
 
   // Return merged traces + complex traces
   return [...mergedTraces, ...complexTraces]
+}
