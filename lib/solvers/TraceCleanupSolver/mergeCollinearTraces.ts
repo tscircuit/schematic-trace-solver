@@ -89,10 +89,7 @@ function canMergeSimpleTraces(
 /**
  * Merges two simple traces into one
  */
-function mergeSimpleTraces(
-  t1: SimpleTrace,
-  t2: SimpleTrace,
-): SolvedTracePath {
+function mergeSimpleTraces(t1: SimpleTrace, t2: SimpleTrace): SolvedTracePath {
   if (t1.isHorizontal) {
     const minX = Math.min(t1.start.x, t1.end.x, t2.start.x, t2.end.x)
     const maxX = Math.max(t1.start.x, t1.end.x, t2.start.x, t2.end.x)
