@@ -116,6 +116,47 @@ describe("Issue #34: Fragmented same-net trace lines", () => {
     expect(result).toMatchSnapshot()
   })
 
+  test("should merge overlapping collinear segments on the same net", () => {
+    /**
+     * Issue #29 reproduction (overlap case):
+     * Two horizontal segments on the same net that overlap on x=[4, 6].
+     * Expected result: single trace spanning (0, 0) to (10, 0).
+     */
+    const traces: SolvedTracePath[] = [
+      {
+        mspPairId: "trace1",
+        dcConnNetId: "OVERLAP",
+        globalConnNetId: "OVERLAP",
+        userNetId: "OVERLAP",
+        tracePath: [
+          { x: 0, y: 0 },
+          { x: 6, y: 0 },
+        ],
+        mspConnectionPairIds: ["pair1"],
+        pinIds: ["left"],
+        pins: [] as any,
+      },
+      {
+        mspPairId: "trace2",
+        dcConnNetId: "OVERLAP",
+        globalConnNetId: "OVERLAP",
+        userNetId: "OVERLAP",
+        tracePath: [
+          { x: 4, y: 0 },
+          { x: 10, y: 0 },
+        ],
+        mspConnectionPairIds: ["pair2"],
+        pinIds: ["right"],
+        pins: [] as any,
+      },
+    ]
+
+    const result = mergeCollinearTraces(traces)
+
+    // Snapshot proof: overlapping segments merge into a single line
+    expect(result).toMatchSnapshot()
+  })
+
   test("should handle mixed order of segments (not necessarily sequential)", () => {
     /**
      * This test ensures that merging works even when segments are provided
