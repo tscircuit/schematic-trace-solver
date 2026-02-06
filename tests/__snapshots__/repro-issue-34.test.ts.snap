@@ -1,0 +1,100 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`Issue #34: Fragmented same-net trace lines should merge three collinear horizontal trace segments into a single line 1`] = `
+[
+  {
+    "dcConnNetId": "SIGNAL",
+    "globalConnNetId": "SIGNAL",
+    "mspConnectionPairIds": [
+      "pair1",
+      "pair2",
+      "pair3",
+    ],
+    "mspPairId": "trace1",
+    "pinIds": [
+      "U1.1",
+      "intermediate1",
+      "intermediate1",
+      "intermediate2",
+      "intermediate2",
+      "U2.1",
+    ],
+    "pins": [],
+    "tracePath": [
+      {
+        "x": 0,
+        "y": 0,
+      },
+      {
+        "x": 10,
+        "y": 0,
+      },
+    ],
+    "userNetId": "SIGNAL",
+  },
+]
+`;
+
+exports[`Issue #34: Fragmented same-net trace lines should merge three collinear vertical trace segments into a single line 1`] = `
+[
+  {
+    "dcConnNetId": "VCC",
+    "globalConnNetId": "VCC",
+    "mspConnectionPairIds": [
+      "pair1",
+      "pair2",
+      "pair3",
+    ],
+    "mspPairId": "trace1",
+    "pinIds": [
+      "pin1",
+      "pin2",
+      "pin3",
+    ],
+    "pins": [],
+    "tracePath": [
+      {
+        "x": 0,
+        "y": 0,
+      },
+      {
+        "x": 0,
+        "y": 10,
+      },
+    ],
+    "userNetId": "VCC",
+  },
+]
+`;
+
+exports[`Issue #34: Fragmented same-net trace lines should handle mixed order of segments (not necessarily sequential) 1`] = `
+[
+  {
+    "dcConnNetId": "NET",
+    "globalConnNetId": "NET",
+    "mspConnectionPairIds": [
+      "pair2",
+      "pair3",
+      "pair1",
+    ],
+    "mspPairId": "trace2",
+    "pinIds": [
+      "mid1",
+      "mid2",
+      "start",
+    ],
+    "pins": [],
+    "tracePath": [
+      {
+        "x": 0,
+        "y": 0,
+      },
+      {
+        "x": 10,
+        "y": 0,
+      },
+    ],
+    "userNetId": "NET",
+  },
+]
+`;
