@@ -257,4 +257,99 @@ describe("mergeCollinearTraces", () => {
     // Should merge because gap is within threshold
     expect(result.length).toBeLessThanOrEqual(1)
   })
+
+  test("Issue #34: should merge three fragmented collinear segments", () => {
+    // Three adjacent segments on the same net that should merge into one
+    const traces: SolvedTracePath[] = [
+      {
+        mspPairId: "trace1",
+        dcConnNetId: "SIGNAL",
+        globalConnNetId: "SIGNAL",
+        userNetId: "SIGNAL",
+        tracePath: [
+          { x: 0, y: 0 },
+          { x: 2, y: 0 },
+        ],
+        mspConnectionPairIds: ["pair1"],
+        pinIds: ["start"],
+        pins: [] as any,
+      },
+      {
+        mspPairId: "trace2",
+        dcConnNetId: "SIGNAL",
+        globalConnNetId: "SIGNAL",
+        userNetId: "SIGNAL",
+        tracePath: [
+          { x: 2, y: 0 },
+          { x: 5, y: 0 },
+        ],
+        mspConnectionPairIds: ["pair2"],
+        pinIds: ["mid1"],
+        pins: [] as any,
+      },
+      {
+        mspPairId: "trace3",
+        dcConnNetId: "SIGNAL",
+        globalConnNetId: "SIGNAL",
+        userNetId: "SIGNAL",
+        tracePath: [
+          { x: 5, y: 0 },
+          { x: 10, y: 0 },
+        ],
+        mspConnectionPairIds: ["pair3"],
+        pinIds: ["end"],
+        pins: [] as any,
+      },
+    ]
+
+    const result = mergeCollinearTraces(traces)
+
+    // Should merge all three into one
+    expect(result.length).toBe(1)
+    const mergedTrace = result[0]
+    const xs = mergedTrace.tracePath.map((p) => p.x)
+    expect(Math.min(...xs)).toBe(0)
+    expect(Math.max(...xs)).toBe(10)
+  })
+
+  test("Issue #29: should merge overlapping collinear segments on same net", () => {
+    // Two overlapping horizontal segments that should merge into one
+    const traces: SolvedTracePath[] = [
+      {
+        mspPairId: "trace1",
+        dcConnNetId: "NET",
+        globalConnNetId: "NET",
+        userNetId: "NET",
+        tracePath: [
+          { x: 0, y: 0 },
+          { x: 6, y: 0 },
+        ],
+        mspConnectionPairIds: ["pair1"],
+        pinIds: ["left"],
+        pins: [] as any,
+      },
+      {
+        mspPairId: "trace2",
+        dcConnNetId: "NET",
+        globalConnNetId: "NET",
+        userNetId: "NET",
+        tracePath: [
+          { x: 4, y: 0 },
+          { x: 10, y: 0 },
+        ],
+        mspConnectionPairIds: ["pair2"],
+        pinIds: ["right"],
+        pins: [] as any,
+      },
+    ]
+
+    const result = mergeCollinearTraces(traces)
+
+    // Should merge overlapping segments into one
+    expect(result.length).toBe(1)
+    const mergedTrace = result[0]
+    const xs = mergedTrace.tracePath.map((p) => p.x)
+    expect(Math.min(...xs)).toBe(0)
+    expect(Math.max(...xs)).toBe(10)
+  })
 })
