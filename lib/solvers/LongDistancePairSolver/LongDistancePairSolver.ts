@@ -56,7 +56,8 @@ export class LongDistancePairSolver extends BaseSolver {
       primaryConnectedPinIds.add(pair.pins[1].pinId)
     }
 
-    const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
+    const { directConnMap, netConnMap } =
+      getConnectivityMapsFromInputProblem(inputProblem)
     this.netConnMap = netConnMap
     const pinMap = new Map<PinId, InputPin & { chipId: string }>()
     for (const chip of inputProblem.chips) {
@@ -72,8 +73,8 @@ export class LongDistancePairSolver extends BaseSolver {
     > = []
     const addedPairKeys = new Set<string>()
 
-    for (const netId of Object.keys(netConnMap.netMap)) {
-      const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
+    for (const netId of Object.keys(directConnMap.netMap)) {
+      const allPinIdsInNet = directConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
 
       const unconnectedPinIds = allPinIdsInNet.filter(
