@@ -20,6 +20,7 @@ export type OverlappingSameNetTraceGroup = {
   overlappingTraces?: SolvedTracePath
   portOnlyPinId?: string
   mspConnectionPairIds?: MspConnectionPairId[]
+  startTime: number
 }
 
 export interface NetLabelPlacement {

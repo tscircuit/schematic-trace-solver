@@ -66,7 +66,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
 
   override _step() {
     if (this.activeSubSolver?.solved) {
-      this.solvedTracePaths.push({
+      const solvedPath: SolvedTracePath = {
         ...this.currentConnectionPair!,
         tracePath: this.activeSubSolver!.solvedTracePath!,
         mspConnectionPairIds: [this.currentConnectionPair!.mspPairId],
@@ -74,8 +74,9 @@ export class SchematicTraceLinesSolver extends BaseSolver {
           this.currentConnectionPair!.pins[0].pinId,
           this.currentConnectionPair!.pins[1].pinId,
         ],
-      })
-      this.activeSubSolver = null
+      };
+      this.solvedTracePaths.push(solvedPath);
+      this.activeSubSolver = null;
       this.currentConnectionPair = null
     }
     if (this.activeSubSolver?.failed) {
@@ -84,9 +85,9 @@ export class SchematicTraceLinesSolver extends BaseSolver {
         this.failedConnectionPairs.push({
           ...this.currentConnectionPair,
           error: this.activeSubSolver.error || undefined,
-        })
+        });
       }
-      this.activeSubSolver = null
+      this.activeSubSolver = null;
       this.currentConnectionPair = null
       // Do not fail the whole solver; proceed to schedule the next pair
     }

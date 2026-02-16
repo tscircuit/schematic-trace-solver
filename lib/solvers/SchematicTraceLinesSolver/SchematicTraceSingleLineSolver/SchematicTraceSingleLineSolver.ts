@@ -12,16 +12,9 @@ import type {
   PinId,
 } from "lib/types/InputProblem"
 import { calculateElbow } from "calculate-elbow"
-import { getPinDirection } from "./getPinDirection"
-import {
-  generateElbowVariants,
-  type MovableSegment,
-} from "./generateElbowVariants"
+import { getPinDirection, generateElbowVariants, type MovableSegment } from "./generateElbowVariants"
+import { visualizeGuidelines, getInputChipBounds, getColorFromString, getRestrictedCenterLines } from "lib/utils/getColorFromString"
 import type { Point } from "@tscircuit/math-utils"
-import { visualizeGuidelines } from "lib/solvers/GuidelinesSolver/visualizeGuidelines"
-import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
-import { getColorFromString } from "lib/utils/getColorFromString"
-import { getRestrictedCenterLines } from "./getRestrictedCenterLines"
 
 type ChipPin = InputPin & { chipId: ChipId }
 
