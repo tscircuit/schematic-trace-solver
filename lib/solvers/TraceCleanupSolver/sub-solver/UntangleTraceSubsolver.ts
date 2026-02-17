@@ -23,6 +23,7 @@ import { visualizeTightRectangle } from "../visualizeTightRectangle"
 import { visualizeCandidates } from "./visualizeCandidates"
 import { mergeGraphicsObjects } from "../mergeGraphicsObjects"
 import { visualizeCollision } from "./visualizeCollision"
+import { simplifyPath } from "../simplifyPath"
 
 /**
  * Defines the input structure for the UntangleTraceSubsolver.
@@ -258,11 +259,14 @@ export class UntangleTraceSubsolver extends BaseSolver {
           p.x === this.currentLShape!.p2.x && p.y === this.currentLShape!.p2.y,
       )
       if (p2Index !== -1) {
-        const newTracePath = [
+        const rawTracePath = [
           ...originalTrace.tracePath.slice(0, p2Index),
           ...bestRoute,
           ...originalTrace.tracePath.slice(p2Index + 1),
         ]
+        // Simplify to remove redundant collinear points and duplicates
+        // introduced by the path concatenation
+        const newTracePath = simplifyPath(rawTracePath)
         this.input.allTraces[traceIndex] = {
           ...originalTrace,
           tracePath: newTracePath,
