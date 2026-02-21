@@ -20,6 +20,7 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { SameNetTraceMergeSolver } from "../SameNetTraceMergeSolver/SameNetTraceMergeSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -68,6 +69,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   netLabelPlacementSolver?: NetLabelPlacementSolver
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
+  sameNetTraceMergeSolver?: SameNetTraceMergeSolver
   traceCleanupSolver?: TraceCleanupSolver
 
   startTimeOfPhase: Record<string, number>
@@ -83,7 +85,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       MspConnectionPairSolver,
       () => [{ inputProblem: this.inputProblem }],
       {
-        onSolved: (mspSolver) => {},
+        onSolved: (mspSolver) => { },
       },
     ),
     // definePipelineStep(
@@ -125,7 +127,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       ],
       {
-        onSolved: (schematicTraceLinesSolver) => {},
+        onSolved: (schematicTraceLinesSolver) => { },
       },
     ),
     definePipelineStep(
@@ -140,7 +142,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       ],
       {
-        onSolved: (_solver) => {},
+        onSolved: (_solver) => { },
       },
     ),
     definePipelineStep(
@@ -188,9 +190,24 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
+    definePipelineStep(
+      "sameNetTraceMergeSolver",
+      SameNetTraceMergeSolver,
+      (instance) => {
+        const traces =
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            inputTracePaths: traces,
+            globalConnMap: instance.mspConnectionPairSolver!.globalConnMap,
+          },
+        ]
+      },
+    ),
     definePipelineStep("traceCleanupSolver", TraceCleanupSolver, (instance) => {
       const prevSolverOutput =
-        instance.traceLabelOverlapAvoidanceSolver!.getOutput()
+        instance.sameNetTraceMergeSolver!.getOutput()
       const traces = prevSolverOutput.traces
 
       const labelMergingOutput =
@@ -286,7 +303,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     const constructorParams = pipelineStepDef.getConstructorParams(this)
     // @ts-ignore
     this.activeSubSolver = new pipelineStepDef.solverClass(...constructorParams)
-    ;(this as any)[pipelineStepDef.solverName] = this.activeSubSolver
+      ; (this as any)[pipelineStepDef.solverName] = this.activeSubSolver
     this.timeSpentOnPhase[pipelineStepDef.solverName] = 0
     this.startTimeOfPhase[pipelineStepDef.solverName] = performance.now()
     this.firstIterationOfPhase[pipelineStepDef.solverName] = this.iterations
