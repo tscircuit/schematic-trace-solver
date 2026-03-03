@@ -59,6 +59,14 @@ export interface SchematicTracePipelineSolverParams {
   allowLongDistanceTraces?: boolean
 }
 
+export interface PostProcessedTraceLine {
+  mspPairId: string
+  globalConnNetId: string
+  dcConnNetId: string
+  userNetId?: string
+  points: [{ x: number; y: number }, { x: number; y: number }]
+}
+
 export class SchematicTracePipelineSolver extends BaseSolver {
   mspConnectionPairSolver?: MspConnectionPairSolver
   // guidelinesSolver?: GuidelinesSolver
@@ -356,5 +364,57 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     }
 
     return super.preview()
+  }
+
+  getPostProcessedTraceLines(): PostProcessedTraceLine[] {
+    const traces = this.getFinalTraces()
+    const dedupedLines: PostProcessedTraceLine[] = []
+    const seenSegments = new Set<string>()
+
+    for (const trace of traces) {
+      for (let i = 0; i < trace.tracePath.length - 1; i++) {
+        const p1 = trace.tracePath[i]!
+        const p2 = trace.tracePath[i + 1]!
+        const segmentKey = this.getNormalizedSegmentKey(p1, p2)
+        const key = `${trace.globalConnNetId}|${segmentKey}`
+        if (seenSegments.has(key)) continue
+
+        seenSegments.add(key)
+        dedupedLines.push({
+          mspPairId: trace.mspPairId,
+          globalConnNetId: trace.globalConnNetId,
+          dcConnNetId: trace.dcConnNetId,
+          userNetId: trace.userNetId,
+          points: [
+            { x: p1.x, y: p1.y },
+            { x: p2.x, y: p2.y },
+          ],
+        })
+      }
+    }
+
+    return dedupedLines
+  }
+
+  private getFinalTraces(): SolvedTracePath[] {
+    if (this.traceCleanupSolver?.solved) {
+      return this.traceCleanupSolver.getOutput().traces
+    }
+    if (this.traceLabelOverlapAvoidanceSolver?.solved) {
+      return this.traceLabelOverlapAvoidanceSolver.getOutput().traces
+    }
+    if (this.traceOverlapShiftSolver?.solved) {
+      return Object.values(this.traceOverlapShiftSolver.correctedTraceMap)
+    }
+    return this.longDistancePairSolver?.getOutput().allTracesMerged ?? []
+  }
+
+  private getNormalizedSegmentKey(
+    p1: { x: number; y: number },
+    p2: { x: number; y: number },
+  ): string {
+    const a = `${p1.x},${p1.y}`
+    const b = `${p2.x},${p2.y}`
+    return a < b ? `${a}|${b}` : `${b}|${a}`
   }
 }
