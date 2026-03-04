@@ -19,7 +19,7 @@ pins, there is guaranteed to be a routed trace between them.
 
 Net connections will not be routed, net labels are placed instead.
 
-The solver first constructs minimum spanning tree to determine what pin-pairs
+The solver first constructs a minimum spanning tree to determine what pin-pairs
 to draw via the `MspConnectionPairSolver`. If there are two pins A and B that both connect to C, this phase will
 determine how to route traces to minimize overlap or crossings. e.g. we may
 decide to route a trace from A to B, then B to C OR we may decide to route a
