@@ -12,7 +12,10 @@ import {
   type SolvedTracePath,
 } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
-import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import {
+  NetLabelPlacementSolver,
+  type NetLabelPlacement,
+} from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { visualizeInputProblem } from "./visualizeInputProblem"
 import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
 import { correctPinsInsideChips } from "./correctPinsInsideChip"
@@ -300,6 +303,28 @@ export class SchematicTracePipelineSolver extends BaseSolver {
 
   getCurrentPhase(): string {
     return this.pipelineDef[this.currentPipelineStepIndex]?.solverName ?? "none"
+  }
+
+  getOutput(): {
+    traces: SolvedTracePath[]
+    netLabelPlacements: NetLabelPlacement[]
+  } {
+    const traces =
+      this.traceCleanupSolver?.getOutput().traces ??
+      this.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
+      (this.traceOverlapShiftSolver
+        ? Object.values(this.traceOverlapShiftSolver.correctedTraceMap)
+        : undefined) ??
+      this.longDistancePairSolver?.getOutput().allTracesMerged ??
+      this.schematicTraceLinesSolver?.solvedTracePaths ??
+      []
+
+    const netLabelPlacements =
+      this.netLabelPlacementSolver?.netLabelPlacements ??
+      this.traceLabelOverlapAvoidanceSolver?.getOutput().netLabelPlacements ??
+      []
+
+    return { traces, netLabelPlacements }
   }
 
   override visualize(): GraphicsObject {
