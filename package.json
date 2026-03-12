@@ -4,8 +4,8 @@
   "version": "0.0.47",
   "type": "module",
   "scripts": {
-    "start": "cosmos",
-    "build": "tsup-node lib/index.ts --format esm --dts",
+    "start": "node init && cosmos",
+    "build": "node init && tsup-node lib/index.ts --format esm --dts",
     "format": "biome format --write .",
     "format:check": "biome format ."
   },
@@ -17,8 +17,10 @@
     "bun-match-svg": "^0.0.13",
     "calculate-elbow": "^0.0.12",
     "connectivity-map": "^1.0.0",
+    "dotenv": "^8.2.0",
     "flatbush": "^4.5.0",
     "graphics-debug": "^0.0.62",
+    "node-fetch": "^3.3.2",
     "react": "^19.1.1",
     "react-cosmos": "^7.0.0",
     "react-cosmos-plugin-vite": "^7.0.0",
