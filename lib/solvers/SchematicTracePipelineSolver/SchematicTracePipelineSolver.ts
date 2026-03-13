@@ -20,6 +20,7 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { mergeSameNetTraceLines } from "./merge-same-net-trace-lines"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -111,6 +112,14 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           chipMap: this.mspConnectionPairSolver!.chipMap,
         },
       ],
+      {
+        onSolved: (instance) => {
+          instance.schematicTraceLinesSolver!.solvedTracePaths =
+            mergeSameNetTraceLines(
+              instance.schematicTraceLinesSolver!.solvedTracePaths,
+            )
+        },
+      },
     ),
     definePipelineStep(
       "longDistancePairSolver",
