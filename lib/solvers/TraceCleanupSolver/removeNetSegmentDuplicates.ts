@@ -6,12 +6,7 @@ const EPSILON = 1e-9
  * Creates a canonical (direction-independent) key for a segment defined by two points.
  * Sorts the endpoints so that the key is the same regardless of traversal direction.
  */
-function getSegmentKey(
-  ax: number,
-  ay: number,
-  bx: number,
-  by: number,
-): string {
+function getSegmentKey(ax: number, ay: number, bx: number, by: number): string {
   // Sort endpoints: first by x, then by y
   if (ax < bx - EPSILON || (Math.abs(ax - bx) < EPSILON && ay < by - EPSILON)) {
     return `${ax.toFixed(9)},${ay.toFixed(9)}-${bx.toFixed(9)},${by.toFixed(9)}`
