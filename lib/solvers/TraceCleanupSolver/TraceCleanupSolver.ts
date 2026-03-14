@@ -53,13 +53,10 @@ export class TraceCleanupSolver extends BaseSolver {
     this.input = solverInput
 
     // Preprocessing: remove duplicate consecutive points (zero-length segments)
-    // and then remove cross-trace duplicate segments within each net
-    const cleanedTraces = removeNetSegmentDuplicates(
-      solverInput.allTraces.map((trace) => ({
-        ...trace,
-        tracePath: removeDuplicateConsecutivePoints(trace.tracePath),
-      })),
-    )
+    const cleanedTraces = solverInput.allTraces.map((trace) => ({
+      ...trace,
+      tracePath: removeDuplicateConsecutivePoints(trace.tracePath),
+    }))
 
     this.outputTraces = [...cleanedTraces]
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
