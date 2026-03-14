@@ -71,12 +71,7 @@ export function removeNetSegmentDuplicates(
 
       // Trim from the start: remove leading segments that are duplicates
       while (path.length >= 2) {
-        const key = getSegmentKey(
-          path[0].x,
-          path[0].y,
-          path[1].x,
-          path[1].y,
-        )
+        const key = getSegmentKey(path[0].x, path[0].y, path[1].x, path[1].y)
         if (claimedSegments.has(key)) {
           path.shift()
         } else {
