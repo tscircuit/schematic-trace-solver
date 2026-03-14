@@ -60,9 +60,7 @@ export class TraceCleanupSolver extends BaseSolver {
 
     this.outputTraces = [...cleanedTraces]
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
-    this.traceIdQueue = Array.from(
-      cleanedTraces.map((e) => e.mspPairId),
-    )
+    this.traceIdQueue = Array.from(cleanedTraces.map((e) => e.mspPairId))
   }
 
   override _step() {
