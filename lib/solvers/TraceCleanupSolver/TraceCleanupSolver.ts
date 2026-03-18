@@ -20,6 +20,7 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { removeNetSegmentDuplicates } from "./removeNetSegmentDuplicates"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -148,7 +149,7 @@ export class TraceCleanupSolver extends BaseSolver {
 
   getOutput() {
     return {
-      traces: this.outputTraces,
+      traces: removeNetSegmentDuplicates(this.outputTraces),
     }
   }
 

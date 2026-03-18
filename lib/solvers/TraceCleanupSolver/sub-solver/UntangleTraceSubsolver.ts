@@ -2,6 +2,7 @@ import { BaseSolver } from "../../BaseSolver/BaseSolver"
 import type { InputProblem } from "../../../types/InputProblem"
 import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { NetLabelPlacement } from "../../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { removeDuplicateConsecutivePoints } from "../simplifyPath"
 
 import { findAllLShapedTurns, type LShape } from "./findAllLShapedTurns"
 import { getTraceObstacles } from "./getTraceObstacles"
@@ -258,11 +259,11 @@ export class UntangleTraceSubsolver extends BaseSolver {
           p.x === this.currentLShape!.p2.x && p.y === this.currentLShape!.p2.y,
       )
       if (p2Index !== -1) {
-        const newTracePath = [
+        const newTracePath = removeDuplicateConsecutivePoints([
           ...originalTrace.tracePath.slice(0, p2Index),
           ...bestRoute,
           ...originalTrace.tracePath.slice(p2Index + 1),
-        ]
+        ])
         this.input.allTraces[traceIndex] = {
           ...originalTrace,
           tracePath: newTracePath,
