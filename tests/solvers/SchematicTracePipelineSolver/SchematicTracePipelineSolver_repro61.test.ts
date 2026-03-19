@@ -50,5 +50,7 @@ test("repro61: net-label-only connections produce no traces", () => {
   expect(solver.mspConnectionPairSolver!.mspConnectionPairs.length).toBe(0)
 
   // Net labels should still be placed
-  expect(solver.netLabelPlacementSolver!.netLabelPlacements.length).toBeGreaterThan(0)
+  expect(
+    solver.netLabelPlacementSolver!.netLabelPlacements.length,
+  ).toBeGreaterThan(0)
 })
