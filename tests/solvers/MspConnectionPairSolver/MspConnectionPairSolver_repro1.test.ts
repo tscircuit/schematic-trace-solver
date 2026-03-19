@@ -10,5 +10,7 @@ test("MspConnectionPairSolver_repro1", () => {
 
   solver.solve()
 
-  expect(solver.mspConnectionPairs.length).toBe(4)
+  // After fixing #79, GND (a netConnection) no longer produces MSP pairs.
+  // Only VCC and EN (directConnections) produce pairs → 2 total.
+  expect(solver.mspConnectionPairs.length).toBe(2)
 })
