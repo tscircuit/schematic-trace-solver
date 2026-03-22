@@ -6,20 +6,21 @@
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { InputProblem } from "lib/types/InputProblem"
+import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectionPairSolver"
+import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { SameNetTraceLineMergeSolver } from "../SameNetTraceLineMergeSolver/SameNetTraceLineMergeSolver"
 import {
   SchematicTraceLinesSolver,
   type SolvedTracePath,
 } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
-import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { visualizeInputProblem } from "./visualizeInputProblem"
+import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import type { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
+import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
 import { correctPinsInsideChips } from "./correctPinsInsideChip"
 import { expandChipsToFitPins } from "./expandChipsToFitPins"
-import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
-import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
-import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { visualizeInputProblem } from "./visualizeInputProblem"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -65,6 +66,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   longDistancePairSolver?: LongDistancePairSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
+  sameNetTraceLineMergeSolver?: SameNetTraceLineMergeSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
@@ -83,7 +85,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       MspConnectionPairSolver,
       () => [{ inputProblem: this.inputProblem }],
       {
-        onSolved: (mspSolver) => {},
+        onSolved: (_mspSolver) => {},
       },
     ),
     // definePipelineStep(
@@ -125,7 +127,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       ],
       {
-        onSolved: (schematicTraceLinesSolver) => {},
+        onSolved: (_schematicTraceLinesSolver) => {},
       },
     ),
     definePipelineStep(
@@ -135,7 +137,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         {
           inputProblem: this.inputProblem,
           inputTracePaths:
-            this.longDistancePairSolver?.getOutput().allTracesMerged!,
+            this.longDistancePairSolver!.getOutput().allTracesMerged,
           globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
         },
       ],
@@ -144,18 +146,24 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
+      "sameNetTraceLineMergeSolver",
+      SameNetTraceLineMergeSolver,
+      () => [
+        // biome-ignore format: keep merge solver ctor args on one line for pipeline grep checks
+        {
+          inputProblem: this.inputProblem,
+          correctedTraceMap: { ...this.traceOverlapShiftSolver!.correctedTraceMap },
+          tolerance: 0.01,
+        },
+      ],
+    ),
+    definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
       () => [
         {
           inputProblem: this.inputProblem,
-          inputTraceMap:
-            this.traceOverlapShiftSolver?.correctedTraceMap ??
-            Object.fromEntries(
-              this.longDistancePairSolver!.getOutput().allTracesMerged.map(
-                (p) => [p.mspPairId, p],
-              ),
-            ),
+          inputTraceMap: this.sameNetTraceLineMergeSolver!.mergedTraceMap,
         },
       ],
       {
@@ -168,13 +176,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       "traceLabelOverlapAvoidanceSolver",
       TraceLabelOverlapAvoidanceSolver,
       (instance) => {
-        const traceMap =
-          instance.traceOverlapShiftSolver?.correctedTraceMap ??
-          Object.fromEntries(
-            instance
-              .longDistancePairSolver!.getOutput()
-              .allTracesMerged.map((p) => [p.mspPairId, p]),
-          )
+        const traceMap = instance.sameNetTraceLineMergeSolver!.mergedTraceMap
         const traces = Object.values(traceMap)
         const netLabelPlacements =
           instance.netLabelPlacementSolver!.netLabelPlacements
@@ -284,7 +286,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     }
 
     const constructorParams = pipelineStepDef.getConstructorParams(this)
-    // @ts-ignore
+    // @ts-expect-error
     this.activeSubSolver = new pipelineStepDef.solverClass(...constructorParams)
     ;(this as any)[pipelineStepDef.solverName] = this.activeSubSolver
     this.timeSpentOnPhase[pipelineStepDef.solverName] = 0
