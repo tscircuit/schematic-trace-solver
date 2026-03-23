@@ -2,6 +2,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject, Line } from "graphics-debug"
 import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
 import { balanceZShapes } from "./balanceZShapes"
+import { mergeSameNetLines } from "./mergeSameNetLines"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
@@ -27,6 +28,7 @@ import { is4PointRectangle } from "./is4PointRectangle"
 type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
+  | "merging_same_net_lines"
   | "untangling_traces"
 
 /**
@@ -34,7 +36,9 @@ type PipelineStep =
  * It operates in a multi-step pipeline:
  * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
  * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
- * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
+ * 3. **Balancing L-Shapes**: It balances L-shaped trace segments to create more visually appealing and consistent layouts.
+ * 4. **Merging Same-Net Lines**: Finally, it merges same-net trace lines that are close together by aligning
+ *    them to the same Y (for horizontal segments) or same X (for vertical segments).
  * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
  */
 export class TraceCleanupSolver extends BaseSolver {
@@ -84,6 +88,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "merging_same_net_lines":
+        this._runMergeSameNetLinesStep()
+        break
     }
   }
 
@@ -108,11 +115,23 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "merging_same_net_lines"
       return
     }
 
     this._processTrace("balancing_l_shapes")
+  }
+
+  private _runMergeSameNetLinesStep() {
+    const mergedTraces = mergeSameNetLines({
+      traces: this.outputTraces,
+      inputProblem: this.input.inputProblem,
+      allLabelPlacements: this.input.allLabelPlacements,
+      mergedLabelNetIdMap: this.input.mergedLabelNetIdMap,
+    })
+    this.outputTraces = mergedTraces
+    this.tracesMap = new Map(mergedTraces.map((t) => [t.mspPairId, t]))
+    this.solved = true
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
