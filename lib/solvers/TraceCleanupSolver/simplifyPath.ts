@@ -4,7 +4,7 @@ const isCollinear = (a: Point, b: Point, c: Point): boolean => {
   const area = Math.abs(
     a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y),
   )
-  return area < 0.01
+  return area < 0.1
 }
 
 export const simplifyPath = (path: Point[]): Point[] => {
