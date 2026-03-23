@@ -20,6 +20,7 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { SameNetSegmentCombinerSolver } from "../SameNetSegmentCombinerSolver/SameNetSegmentCombinerSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -59,12 +60,33 @@ export interface SchematicTracePipelineSolverParams {
   allowLongDistanceTraces?: boolean
 }
 
+/**
+ * Helper to get the current trace map from the pipeline state.
+ * This is the trace map after overlap shifting and same-net combining.
+ */
+function getTracesAfterCombiner(
+  instance: SchematicTracePipelineSolver,
+): SolvedTracePath[] {
+  if (instance.sameNetSegmentCombinerSolver?.solved) {
+    return instance.sameNetSegmentCombinerSolver.getOutput().traces
+  }
+  const traceMap =
+    instance.traceOverlapShiftSolver?.correctedTraceMap ??
+    Object.fromEntries(
+      instance
+        .longDistancePairSolver!.getOutput()
+        .allTracesMerged.map((p) => [p.mspPairId, p]),
+    )
+  return Object.values(traceMap)
+}
+
 export class SchematicTracePipelineSolver extends BaseSolver {
   mspConnectionPairSolver?: MspConnectionPairSolver
   // guidelinesSolver?: GuidelinesSolver
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   longDistancePairSolver?: LongDistancePairSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
+  sameNetSegmentCombinerSolver?: SameNetSegmentCombinerSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
@@ -144,20 +166,41 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
+      "sameNetSegmentCombinerSolver",
+      SameNetSegmentCombinerSolver,
+      (instance) => {
+        const traceMap =
+          instance.traceOverlapShiftSolver?.correctedTraceMap ??
+          Object.fromEntries(
+            instance
+              .longDistancePairSolver!.getOutput()
+              .allTracesMerged.map((p) => [p.mspPairId, p]),
+          )
+        const traces = Object.values(traceMap)
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces,
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
-      () => [
-        {
-          inputProblem: this.inputProblem,
-          inputTraceMap:
-            this.traceOverlapShiftSolver?.correctedTraceMap ??
-            Object.fromEntries(
-              this.longDistancePairSolver!.getOutput().allTracesMerged.map(
-                (p) => [p.mspPairId, p],
-              ),
+      (instance) => {
+        const traces = getTracesAfterCombiner(instance)
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            inputTraceMap: Object.fromEntries(
+              traces.map((trace: SolvedTracePath) => [trace.mspPairId, trace]),
             ),
-        },
-      ],
+          },
+        ]
+      },
       {
         onSolved: (_solver) => {
           // TODO
@@ -168,14 +211,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       "traceLabelOverlapAvoidanceSolver",
       TraceLabelOverlapAvoidanceSolver,
       (instance) => {
-        const traceMap =
-          instance.traceOverlapShiftSolver?.correctedTraceMap ??
-          Object.fromEntries(
-            instance
-              .longDistancePairSolver!.getOutput()
-              .allTracesMerged.map((p) => [p.mspPairId, p]),
-          )
-        const traces = Object.values(traceMap)
+        const traces = getTracesAfterCombiner(instance)
         const netLabelPlacements =
           instance.netLabelPlacementSolver!.netLabelPlacements
 
