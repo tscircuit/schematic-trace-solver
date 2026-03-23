@@ -1,8 +1,10 @@
 import type { Point } from "graphics-debug"
 
-const isCollinear = (a: Point, b: Point, c: Point) => {
-  const area = Math.abs(a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
-  return area < 0.01; 
+const isCollinear = (a: Point, b: Point, c: Point): boolean => {
+  const area = Math.abs(
+    a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y),
+  )
+  return area < 0.01
 }
 
 export const simplifyPath = (path: Point[]): Point[] => {
@@ -18,12 +20,11 @@ export const simplifyPath = (path: Point[]): Point[] => {
     if (isCollinear(p1, p2, p3)) {
       continue
     }
-    
+
     finalPath.push(p2)
   }
 
   finalPath.push(path[path.length - 1])
-  
+
   return finalPath
 }
-
