@@ -74,19 +74,19 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    // Only queue nets that have direct connections (traces).
-    // Nets connected solely via netConnections (net labels) should not
-    // produce MSP pairs – they receive net labels instead of traces.
-    const directNetIds = new Set(Object.keys(directConnMap.netMap))
+    // Only queue nets where at least one pin participates in a direct
+    // wire connection (trace). Nets whose pins are connected *only* via
+    // net labels (netConnections) produce net-label annotations instead of
+    // routed traces, so they must not enter the MSP-pair queue.
+    const directlyConnectedPins = new Set<string>()
+    for (const dc of inputProblem.directConnections) {
+      for (const pid of dc.pinIds) {
+        directlyConnectedPins.add(pid)
+      }
+    }
     this.queuedDcNetIds = Object.keys(netConnMap.netMap).filter((netId) => {
-      // A net qualifies for tracing if at least one of its pins appears
-      // in the direct-connection map under the same global net.
       const allIds = netConnMap.getIdsConnectedToNet(netId) as string[]
-      const pins = allIds.filter((id) => !!this.pinMap[id])
-      return pins.some((pinId) => {
-        const dcNet = directConnMap.getNetConnectedToId(pinId)
-        return dcNet != null && directNetIds.has(dcNet)
-      })
+      return allIds.some((id) => directlyConnectedPins.has(id))
     })
   }
 
