@@ -6,6 +6,7 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { mergeCollinearTraces } from "./mergeCollinearTraces"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -28,13 +29,15 @@ type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
+  | "merging_collinear_traces"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
  * It operates in a multi-step pipeline:
  * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
  * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
- * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
+ * 3. **Balancing L-Shapes**: It balances L-shaped trace segments to create more visually appealing and consistent layouts.
+ * 4. **Merging Collinear Traces**: Finally, it merges same-net traces that run parallel and close together.
  * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
  */
 export class TraceCleanupSolver extends BaseSolver {
@@ -84,6 +87,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "merging_collinear_traces":
+        this._runMergeCollinearTracesStep()
+        break
     }
   }
 
@@ -108,11 +114,17 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "merging_collinear_traces"
       return
     }
 
     this._processTrace("balancing_l_shapes")
+  }
+
+  private _runMergeCollinearTracesStep() {
+    this.outputTraces = mergeCollinearTraces(this.outputTraces)
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.solved = true
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
