@@ -74,7 +74,20 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    // Only queue nets that have direct connections (traces).
+    // Nets connected solely via netConnections (net labels) should not
+    // produce MSP pairs – they receive net labels instead of traces.
+    const directNetIds = new Set(Object.keys(directConnMap.netMap))
+    this.queuedDcNetIds = Object.keys(netConnMap.netMap).filter((netId) => {
+      // A net qualifies for tracing if at least one of its pins appears
+      // in the direct-connection map under the same global net.
+      const allIds = netConnMap.getIdsConnectedToNet(netId) as string[]
+      const pins = allIds.filter((id) => !!this.pinMap[id])
+      return pins.some((pinId) => {
+        const dcNet = directConnMap.getNetConnectedToId(pinId)
+        return dcNet != null && directNetIds.has(dcNet)
+      })
+    })
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -92,7 +105,6 @@ export class MspConnectionPairSolver extends BaseSolver {
     }
 
     const dcNetId = this.queuedDcNetIds.shift()!
-
     const allIds = this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[]
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
