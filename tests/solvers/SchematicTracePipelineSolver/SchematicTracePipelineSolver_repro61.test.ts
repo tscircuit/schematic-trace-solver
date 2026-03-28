@@ -51,9 +51,7 @@ test("SchematicTracePipelineSolver_repro61: net-label-only connections produce n
   solver.solve()
 
   // No traces should be drawn — connections are only via net labels
-  expect(
-    solver.mspConnectionPairSolver!.mspConnectionPairs.length,
-  ).toBe(0)
+  expect(solver.mspConnectionPairSolver!.mspConnectionPairs.length).toBe(0)
 
   // Net labels should still be placed (at least one for VCC and one for GND)
   expect(
