@@ -74,7 +74,25 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    // Only queue nets that have at least one pin in a direct wire connection.
+    // Net-label-only connections (e.g. VCC/GND) should produce label annotations,
+    // not routed traces between pins.
+    //
+    // Note: directConnMap.netMap shares the same object reference as
+    // netConnMap.netMap (ConnectivityMap passes by ref), so we cannot use
+    // Object.keys(directConnMap.netMap) here — it already contains the
+    // net-label nets. Instead, build a flat set of pinIds that appear in at
+    // least one directConnection entry and use that to filter.
+    const directlyWiredPinIds = new Set<string>()
+    for (const dc of inputProblem.directConnections) {
+      for (const pid of dc.pinIds) {
+        directlyWiredPinIds.add(pid)
+      }
+    }
+    this.queuedDcNetIds = Object.keys(netConnMap.netMap).filter((netId) => {
+      const connectedIds = netConnMap.getIdsConnectedToNet(netId) as string[]
+      return connectedIds.some((id) => directlyWiredPinIds.has(id))
+    })
   }
 
   override getConstructorParams(): ConstructorParameters<
