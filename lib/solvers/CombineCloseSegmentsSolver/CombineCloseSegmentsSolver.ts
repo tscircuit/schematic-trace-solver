@@ -45,6 +45,10 @@ export class CombineCloseSegmentsSolver extends BaseSolver {
    * Main algorithm to combine close segments of the same net
    */
   private combineCloseSegments(traces: SolvedTracePath[]): SolvedTracePath[] {
+    if (!traces || traces.length === 0) {
+      return []
+    }
+
     // Group traces by their net
     const tracesByNet = this.groupTracesByNet(traces)
 
@@ -52,7 +56,7 @@ export class CombineCloseSegmentsSolver extends BaseSolver {
     const processedTraceIds = new Set<string>()
 
     // For each net group, try to combine close traces
-    for (const [netId, netTraces] of Object.entries(tracesByNet)) {
+    for (const [, netTraces] of Object.entries(tracesByNet)) {
       // Skip nets with only one trace
       if (netTraces.length <= 1) {
         combinedTraces.push(...netTraces)
@@ -61,18 +65,19 @@ export class CombineCloseSegmentsSolver extends BaseSolver {
 
       // Try to combine all close traces for this net
       const { combined, remaining } = this.combineTracesForNet(netTraces)
-      combinedTraces.push(...combined)
-
-      // Track processed trace IDs
+      
+      // Add combined traces
       for (const trace of combined) {
+        combinedTraces.push(trace)
         processedTraceIds.add(trace.mspPairId)
       }
-    }
-
-    // Add any traces that weren't combined (different nets or couldn't be combined)
-    for (const trace of traces) {
-      if (!processedTraceIds.has(trace.mspPairId)) {
-        combinedTraces.push(trace)
+      
+      // Add remaining traces that couldn't be combined
+      for (const trace of remaining) {
+        if (!processedTraceIds.has(trace.mspPairId)) {
+          combinedTraces.push(trace)
+          processedTraceIds.add(trace.mspPairId)
+        }
       }
     }
 
@@ -88,23 +93,26 @@ export class CombineCloseSegmentsSolver extends BaseSolver {
     const groups: Record<string, SolvedTracePath[]> = {}
 
     for (const trace of traces) {
+      // Skip invalid traces
+      if (!trace.mspPairId) continue
+      
       // Use the mspConnectionPairIds to determine the net
-      const netIds = this.getNetIdsForTrace(trace)
-
-      if (netIds.length === 0) {
-        // If no net found, use the mspPairId as a unique identifier
+      const traceIds = trace.mspConnectionPairIds ?? [trace.mspPairId]
+      
+      if (traceIds.length === 0) {
+        // If no net found, add to its own group
         const uniqueKey = `unique_${trace.mspPairId}`
         if (!groups[uniqueKey]) {
           groups[uniqueKey] = []
         }
         groups[uniqueKey].push(trace)
       } else {
-        // Group by each net ID
-        for (const netId of netIds) {
-          if (!groups[netId]) {
-            groups[netId] = []
+        // Group by each trace ID
+        for (const traceId of traceIds) {
+          if (!groups[traceId]) {
+            groups[traceId] = []
           }
-          groups[netId].push(trace)
+          groups[traceId].push(trace)
         }
       }
     }
@@ -222,7 +230,14 @@ export class CombineCloseSegmentsSolver extends BaseSolver {
     if (!trace.tracePath || trace.tracePath.length < 2) {
       return []
     }
-    return [trace.tracePath[0], trace.tracePath[trace.tracePath.length - 1]]
+    const first = trace.tracePath[0]
+    const last = trace.tracePath[trace.tracePath.length - 1]
+    
+    const endpoints: Point[] = []
+    if (first) endpoints.push(first)
+    if (last && last !== first) endpoints.push(last)
+    
+    return endpoints
   }
 
   /**
@@ -247,9 +262,10 @@ export class CombineCloseSegmentsSolver extends BaseSolver {
 
     // Sort traces by their first endpoint position
     const sorted = [...traces].sort((a, b) => {
-      const aStart = a.tracePath[0]
-      const bStart = b.tracePath[0]
-      return (aStart?.x ?? 0) - (bStart?.x ?? 0) || (aStart?.y ?? 0) - (bStart?.y ?? 0)
+      const aStart = a.tracePath?.[0]
+      const bStart = b.tracePath?.[0]
+      if (!aStart || !bStart) return 0
+      return aStart.x - bStart.x || aStart.y - bStart.y
     })
 
     // Build new trace path by connecting traces
@@ -262,11 +278,12 @@ export class CombineCloseSegmentsSolver extends BaseSolver {
       allPinIds.push(...(trace.pinIds ?? []))
     }
 
-    // Simple concatenation - in a more sophisticated implementation,
-    // we would find the optimal way to connect the traces
+    // Connect traces in order
     for (let i = 0; i < sorted.length; i++) {
       const trace = sorted[i]
       const path = trace.tracePath
+
+      if (!path || path.length === 0) continue
 
       if (i === 0) {
         newPath = [...path]
@@ -275,9 +292,8 @@ export class CombineCloseSegmentsSolver extends BaseSolver {
         const lastPoint = newPath[newPath.length - 1]
         const firstPoint = path[0]
 
-        // Add a connecting segment if needed
+        // Add a simple L-shaped connection if needed
         if (this.distance(lastPoint, firstPoint) > 0.1) {
-          // Add a simple L-shaped connection
           newPath.push({ x: firstPoint.x, y: lastPoint.y })
         }
 
@@ -289,8 +305,12 @@ export class CombineCloseSegmentsSolver extends BaseSolver {
     // Use the first trace as base and merge properties
     const baseTrace = sorted[0]
 
+    // Generate new mspPairId for merged trace (combine all source IDs)
+    const newMspPairId = `merged_${traces.map(t => t.mspPairId).join('_')}`
+
     return {
       ...baseTrace,
+      mspPairId: newMspPairId,
       tracePath: newPath,
       mspConnectionPairIds: allMspPairIds,
       pinIds: [...new Set(allPinIds)], // Remove duplicates
