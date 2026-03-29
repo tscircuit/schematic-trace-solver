@@ -16,6 +16,7 @@ import {
 
 import type { GraphicsObject } from "graphics-debug"
 import type { Point } from "@tscircuit/math-utils"
+import { removeDuplicateConsecutivePoints } from "lib/utils/removeDuplicateConsecutivePoints"
 
 import { visualizeLSapes } from "./visualizeLSapes"
 import { visualizeIntersectionPoints } from "./visualizeIntersectionPoints"
@@ -258,11 +259,11 @@ export class UntangleTraceSubsolver extends BaseSolver {
           p.x === this.currentLShape!.p2.x && p.y === this.currentLShape!.p2.y,
       )
       if (p2Index !== -1) {
-        const newTracePath = [
+        const newTracePath = removeDuplicateConsecutivePoints([
           ...originalTrace.tracePath.slice(0, p2Index),
           ...bestRoute,
           ...originalTrace.tracePath.slice(p2Index + 1),
-        ]
+        ])
         this.input.allTraces[traceIndex] = {
           ...originalTrace,
           tracePath: newTracePath,
