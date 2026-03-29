@@ -1,142 +1,111 @@
-import { describe, expect, test } from "bun:test"
+/**
+ * Tests for combineCloseSameNetSegments.
+ *
+ * NOTE: This tests a flat-segment phase that is intentionally separate from
+ * `combineCloseSameNetTraceSegments`. The two phases target different data
+ * shapes in the rendering pipeline:
+ *
+ *   - `combineCloseSameNetTraceSegments` (lib/phases/) — operates on
+ *     SchematicTrace objects with edge arrays (the primary phase for issue #29).
+ *   - `combineCloseSameNetSegments` (lib/phases/) — operates on flat Segment
+ *     objects used in earlier pipeline stages where traces have already been
+ *     decomposed into individual x1/y1/x2/y2 segments.
+ *
+ * Both address the root problem in issue #29 (redundant duplicate lines) but
+ * at different points in the rendering pipeline.
+ */
+import { describe, it, expect } from "vitest"
 import { combineCloseSameNetSegments } from "../lib/phases/combine-close-same-net-segments"
 
 describe("combineCloseSameNetSegments", () => {
-  test("merges two collinear horizontal segments that overlap", () => {
-    const traces = [
-      {
-        edges: [
-          { from: { x: 0, y: 0 }, to: { x: 2, y: 0 } },
-          { from: { x: 1.5, y: 0 }, to: { x: 4, y: 0 } },
-        ],
-      },
+  it("merges two overlapping horizontal segments on the same net", () => {
+    const segments = [
+      { x1: 0, y1: 0, x2: 2, y2: 0, net_name: "net1" },
+      { x1: 1, y1: 0, x2: 3, y2: 0, net_name: "net1" },
     ]
-
-    const result = combineCloseSameNetSegments(traces as any)
-    expect(result[0].edges).toHaveLength(1)
-    expect(result[0].edges[0].from.x).toBeCloseTo(0)
-    expect(result[0].edges[0].to.x).toBeCloseTo(4)
-    expect(result[0].edges[0].from.y).toBeCloseTo(0)
-    expect(result[0].edges[0].to.y).toBeCloseTo(0)
+    const result = combineCloseSameNetSegments(segments)
+    expect(result).toHaveLength(1)
+    expect(result[0].x1).toBeCloseTo(0)
+    expect(result[0].x2).toBeCloseTo(3)
+    expect(result[0].y1).toBeCloseTo(0)
+    expect(result[0].y2).toBeCloseTo(0)
   })
 
-  test("merges two collinear vertical segments that overlap", () => {
-    const traces = [
-      {
-        edges: [
-          { from: { x: 1, y: 0 }, to: { x: 1, y: 3 } },
-          { from: { x: 1, y: 2 }, to: { x: 1, y: 5 } },
-        ],
-      },
+  it("merges two nearly-overlapping horizontal segments within threshold", () => {
+    const segments = [
+      { x1: 0, y1: 0, x2: 1, y2: 0, net_name: "net1" },
+      { x1: 1.05, y1: 0, x2: 2, y2: 0, net_name: "net1" },
     ]
-
-    const result = combineCloseSameNetSegments(traces as any)
-    expect(result[0].edges).toHaveLength(1)
-    expect(result[0].edges[0].from.x).toBeCloseTo(1)
-    expect(result[0].edges[0].to.x).toBeCloseTo(1)
-    expect(result[0].edges[0].from.y).toBeCloseTo(0)
-    expect(result[0].edges[0].to.y).toBeCloseTo(5)
+    const result = combineCloseSameNetSegments(segments)
+    expect(result).toHaveLength(1)
+    expect(result[0].x1).toBeCloseTo(0)
+    expect(result[0].x2).toBeCloseTo(2)
   })
 
-  test("merges two contiguous horizontal segments (gap within threshold)", () => {
-    const traces = [
-      {
-        edges: [
-          { from: { x: 0, y: 1 }, to: { x: 2, y: 1 } },
-          // starts exactly where the first ends
-          { from: { x: 2, y: 1 }, to: { x: 4, y: 1 } },
-        ],
-      },
+  it("does NOT merge horizontal segments that are too far apart", () => {
+    const segments = [
+      { x1: 0, y1: 0, x2: 1, y2: 0, net_name: "net1" },
+      { x1: 2, y1: 0, x2: 3, y2: 0, net_name: "net1" },
     ]
-
-    const result = combineCloseSameNetSegments(traces as any)
-    expect(result[0].edges).toHaveLength(1)
-    expect(result[0].edges[0].from.x).toBeCloseTo(0)
-    expect(result[0].edges[0].to.x).toBeCloseTo(4)
+    const result = combineCloseSameNetSegments(segments)
+    expect(result).toHaveLength(2)
   })
 
-  test("does NOT merge two parallel horizontal segments at different Y values", () => {
-    const traces = [
-      {
-        edges: [
-          { from: { x: 0, y: 0 }, to: { x: 4, y: 0 } },
-          { from: { x: 0, y: 1 }, to: { x: 4, y: 1 } },
-        ],
-      },
+  it("does NOT merge segments on different nets", () => {
+    const segments = [
+      { x1: 0, y1: 0, x2: 2, y2: 0, net_name: "net1" },
+      { x1: 0, y1: 0, x2: 2, y2: 0, net_name: "net2" },
     ]
-
-    const result = combineCloseSameNetSegments(traces as any)
-    expect(result[0].edges).toHaveLength(2)
+    const result = combineCloseSameNetSegments(segments)
+    expect(result).toHaveLength(2)
   })
 
-  test("does NOT merge two non-overlapping collinear horizontal segments with large gap", () => {
-    const traces = [
-      {
-        edges: [
-          { from: { x: 0, y: 0 }, to: { x: 1, y: 0 } },
-          { from: { x: 5, y: 0 }, to: { x: 8, y: 0 } },
-        ],
-      },
+  it("merges two overlapping vertical segments on the same net", () => {
+    const segments = [
+      { x1: 0, y1: 0, x2: 0, y2: 2, net_name: "net1" },
+      { x1: 0, y1: 1, x2: 0, y2: 3, net_name: "net1" },
     ]
-
-    const result = combineCloseSameNetSegments(traces as any)
-    expect(result[0].edges).toHaveLength(2)
+    const result = combineCloseSameNetSegments(segments)
+    expect(result).toHaveLength(1)
+    expect(result[0].y1).toBeCloseTo(0)
+    expect(result[0].y2).toBeCloseTo(3)
+    expect(result[0].x1).toBeCloseTo(0)
+    expect(result[0].x2).toBeCloseTo(0)
   })
 
-  test("handles empty edges array", () => {
-    const traces = [{ edges: [] }]
-    const result = combineCloseSameNetSegments(traces as any)
-    expect(result[0].edges).toHaveLength(0)
-  })
-
-  test("handles single edge unchanged", () => {
-    const traces = [
-      {
-        edges: [{ from: { x: 0, y: 0 }, to: { x: 3, y: 0 } }],
-      },
+  it("merges three overlapping horizontal segments into one", () => {
+    const segments = [
+      { x1: 0, y1: 0, x2: 2, y2: 0, net_name: "net1" },
+      { x1: 1, y1: 0, x2: 3, y2: 0, net_name: "net1" },
+      { x1: 2, y1: 0, x2: 4, y2: 0, net_name: "net1" },
     ]
-
-    const result = combineCloseSameNetSegments(traces as any)
-    expect(result[0].edges).toHaveLength(1)
-    expect(result[0].edges[0].from.x).toBeCloseTo(0)
-    expect(result[0].edges[0].to.x).toBeCloseTo(3)
+    const result = combineCloseSameNetSegments(segments)
+    expect(result).toHaveLength(1)
+    expect(result[0].x1).toBeCloseTo(0)
+    expect(result[0].x2).toBeCloseTo(4)
   })
 
-  test("merges three collinear overlapping horizontal segments", () => {
-    const traces = [
-      {
-        edges: [
-          { from: { x: 0, y: 2 }, to: { x: 3, y: 2 } },
-          { from: { x: 2, y: 2 }, to: { x: 5, y: 2 } },
-          { from: { x: 4, y: 2 }, to: { x: 7, y: 2 } },
-        ],
-      },
+  it("handles an empty segment list", () => {
+    expect(combineCloseSameNetSegments([])).toHaveLength(0)
+  })
+
+  it("leaves non-parallel close segments alone", () => {
+    // One horizontal, one vertical — should not be merged
+    const segments = [
+      { x1: 0, y1: 0, x2: 2, y2: 0, net_name: "net1" },
+      { x1: 1, y1: -1, x2: 1, y2: 1, net_name: "net1" },
     ]
-
-    const result = combineCloseSameNetSegments(traces as any)
-    expect(result[0].edges).toHaveLength(1)
-    expect(result[0].edges[0].from.x).toBeCloseTo(0)
-    expect(result[0].edges[0].to.x).toBeCloseTo(7)
+    const result = combineCloseSameNetSegments(segments)
+    expect(result).toHaveLength(2)
   })
 
-  test("keeps distinct non-collinear segments separate", () => {
-    const traces = [
-      {
-        edges: [
-          { from: { x: 0, y: 0 }, to: { x: 2, y: 0 } }, // horizontal
-          { from: { x: 2, y: 0 }, to: { x: 2, y: 3 } }, // vertical
-        ],
-      },
+  it("preserves net_name on merged segment", () => {
+    const segments = [
+      { x1: 0, y1: 0, x2: 1, y2: 0, net_name: "powerNet" },
+      { x1: 0.5, y1: 0, x2: 2, y2: 0, net_name: "powerNet" },
     ]
-
-    const result = combineCloseSameNetSegments(traces as any)
-    // These are not collinear, so they should stay as 2 edges
-    expect(result[0].edges).toHaveLength(2)
-  })
-
-  test("handles traces without edges gracefully", () => {
-    const traces = [{ some_other_field: true }]
-    const result = combineCloseSameNetSegments(traces as any)
-    expect(result[0]).toEqual({ some_other_field: true })
+    const result = combineCloseSameNetSegments(segments)
+    expect(result).toHaveLength(1)
+    expect(result[0].net_name).toBe("powerNet")
   })
 })
