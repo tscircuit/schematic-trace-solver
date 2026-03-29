@@ -8,6 +8,7 @@ import { getTraceObstacles } from "./getTraceObstacles"
 import { findIntersectionsWithObstacles } from "./findIntersectionsWithObstacles"
 import { generateLShapeRerouteCandidates } from "./generateLShapeRerouteCandidates"
 import { isPathColliding, type CollisionInfo } from "./isPathColliding"
+import { removeDuplicateConsecutivePoints } from "../simplifyPath"
 import {
   generateRectangleCandidates,
   type Rectangle,
@@ -258,11 +259,15 @@ export class UntangleTraceSubsolver extends BaseSolver {
           p.x === this.currentLShape!.p2.x && p.y === this.currentLShape!.p2.y,
       )
       if (p2Index !== -1) {
-        const newTracePath = [
+        // Splice the rerouted segment into the original path.  When the
+        // slice boundaries coincide with points in bestRoute the concatenation
+        // produces consecutive duplicate points that render as spurious extra
+        // trace lines (issue #78).  Remove them before storing.
+        const newTracePath = removeDuplicateConsecutivePoints([
           ...originalTrace.tracePath.slice(0, p2Index),
           ...bestRoute,
           ...originalTrace.tracePath.slice(p2Index + 1),
-        ]
+        ])
         this.input.allTraces[traceIndex] = {
           ...originalTrace,
           tracePath: newTracePath,
