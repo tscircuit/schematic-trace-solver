@@ -1,231 +1,129 @@
-import type { SchematicTrace } from "../types"
-
 /**
- * Phase: Combine Close Same-Net Trace Segments
+ * combine-close-same-net-segments.ts
  *
- * This phase finds trace segments on the same net that are very close together
- * (nearly overlapping or nearly collinear) and merges them into single segments.
- * This cleans up visual artifacts where routing produces redundant parallel or
- * overlapping segments on the same net.
+ * NOTE: This phase is intentionally separate from `combineCloseSameNetTraceSegments`.
+ * While `combineCloseSameNetTraceSegments` works on the full SchematicTrace objects
+ * (with edge arrays), this phase operates on a flattened segment representation
+ * and is intended for use in pipeline stages where traces have already been
+ * decomposed into individual segments.
  *
- * Two segments are candidates for merging if:
- * 1. They belong to the same net
- * 2. They are either overlapping, collinear and contiguous, or nearly parallel
- *    and within a small distance threshold
+ * Related to issue #29.
  */
+import type { SchematicTrace } from "@tscircuit/props"
 
-interface Point {
-  x: number
-  y: number
-}
+const CLOSE_THRESHOLD = 0.1
 
 interface Segment {
-  start: Point
-  end: Point
-  netId?: string
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  net_name?: string
+  [key: string]: unknown
 }
 
-const CLOSE_DISTANCE_THRESHOLD = 0.001 // schematic units
-
-/**
- * Check if two numbers are approximately equal within tolerance
- */
-function approxEqual(a: number, b: number, tolerance = CLOSE_DISTANCE_THRESHOLD): boolean {
-  return Math.abs(a - b) <= tolerance
+function isClose(a: number, b: number): boolean {
+  return Math.abs(a - b) <= CLOSE_THRESHOLD
 }
 
-/**
- * Compute the squared distance between two points
- */
-function distSq(a: Point, b: Point): number {
-  return (a.x - b.x) ** 2 + (a.y - b.y) ** 2
-}
-
-/**
- * Distance between two points
- */
-function dist(a: Point, b: Point): number {
-  return Math.sqrt(distSq(a, b))
-}
-
-/**
- * Returns true if the segment is horizontal (within tolerance)
- */
 function isHorizontal(seg: Segment): boolean {
-  return approxEqual(seg.start.y, seg.end.y)
+  return Math.abs(seg.y1 - seg.y2) < 1e-9
 }
 
-/**
- * Returns true if the segment is vertical (within tolerance)
- */
 function isVertical(seg: Segment): boolean {
-  return approxEqual(seg.start.x, seg.end.x)
+  return Math.abs(seg.x1 - seg.x2) < 1e-9
 }
 
-/**
- * Get the minimum coordinate of a horizontal segment
- */
-function hMin(seg: Segment): number {
-  return Math.min(seg.start.x, seg.end.x)
+function horizontalSegmentsAreClose(a: Segment, b: Segment): boolean {
+  if (!isClose(a.y1, b.y1)) return false
+  const aX1 = Math.min(a.x1, a.x2)
+  const aX2 = Math.max(a.x1, a.x2)
+  const bX1 = Math.min(b.x1, b.x2)
+  const bX2 = Math.max(b.x1, b.x2)
+  return aX1 <= bX2 + CLOSE_THRESHOLD && bX1 <= aX2 + CLOSE_THRESHOLD
 }
 
-/**
- * Get the maximum coordinate of a horizontal segment
- */
-function hMax(seg: Segment): number {
-  return Math.max(seg.start.x, seg.end.x)
+function verticalSegmentsAreClose(a: Segment, b: Segment): boolean {
+  if (!isClose(a.x1, b.x1)) return false
+  const aY1 = Math.min(a.y1, a.y2)
+  const aY2 = Math.max(a.y1, a.y2)
+  const bY1 = Math.min(b.y1, b.y2)
+  const bY2 = Math.max(b.y1, b.y2)
+  return aY1 <= bY2 + CLOSE_THRESHOLD && bY1 <= aY2 + CLOSE_THRESHOLD
 }
 
-/**
- * Get the minimum coordinate of a vertical segment
- */
-function vMin(seg: Segment): number {
-  return Math.min(seg.start.y, seg.end.y)
-}
-
-/**
- * Get the maximum coordinate of a vertical segment
- */
-function vMax(seg: Segment): number {
-  return Math.max(seg.start.y, seg.end.y)
-}
-
-/**
- * Attempt to merge two horizontal segments that share (approximately) the same Y
- * and whose X ranges overlap or are contiguous.
- * Returns the merged segment or null if they can't be merged.
- */
-function tryMergeHorizontal(a: Segment, b: Segment): Segment | null {
-  if (!isHorizontal(a) || !isHorizontal(b)) return null
-  // Same Y?
-  if (!approxEqual(a.start.y, b.start.y)) return null
-
-  const aMin = hMin(a)
-  const aMax = hMax(a)
-  const bMin = hMin(b)
-  const bMax = hMax(b)
-
-  // Check overlap or contiguous (with a small gap tolerance)
-  if (bMin > aMax + CLOSE_DISTANCE_THRESHOLD) return null
-  if (aMin > bMax + CLOSE_DISTANCE_THRESHOLD) return null
-
-  // Merge: take the full span
-  const newMin = Math.min(aMin, bMin)
-  const newMax = Math.max(aMax, bMax)
-  const y = a.start.y
-
+function mergeHorizontal(a: Segment, b: Segment): Segment {
+  const avgY = (a.y1 + b.y1) / 2
+  const allX = [a.x1, a.x2, b.x1, b.x2]
   return {
-    start: { x: newMin, y },
-    end: { x: newMax, y },
-    netId: a.netId,
+    ...a,
+    x1: Math.min(...allX),
+    y1: avgY,
+    x2: Math.max(...allX),
+    y2: avgY,
+  }
+}
+
+function mergeVertical(a: Segment, b: Segment): Segment {
+  const avgX = (a.x1 + b.x1) / 2
+  const allY = [a.y1, a.y2, b.y1, b.y2]
+  return {
+    ...a,
+    x1: avgX,
+    y1: Math.min(...allY),
+    x2: avgX,
+    y2: Math.max(...allY),
   }
 }
 
 /**
- * Attempt to merge two vertical segments that share (approximately) the same X
- * and whose Y ranges overlap or are contiguous.
- * Returns the merged segment or null if they can't be merged.
+ * Phase: combineCloseSameNetSegments
+ *
+ * Merges close/overlapping horizontal and vertical segments that share the same
+ * net name. Unlike `combineCloseSameNetTraceSegments` which operates on
+ * SchematicTrace edge objects, this function works on flat Segment arrays.
+ *
+ * Related to issue #29.
  */
-function tryMergeVertical(a: Segment, b: Segment): Segment | null {
-  if (!isVertical(a) || !isVertical(b)) return null
-  // Same X?
-  if (!approxEqual(a.start.x, b.start.x)) return null
-
-  const aMin = vMin(a)
-  const aMax = vMax(a)
-  const bMin = vMin(b)
-  const bMax = vMax(b)
-
-  // Check overlap or contiguous (with a small gap tolerance)
-  if (bMin > aMax + CLOSE_DISTANCE_THRESHOLD) return null
-  if (aMin > bMax + CLOSE_DISTANCE_THRESHOLD) return null
-
-  // Merge: take the full span
-  const newMin = Math.min(aMin, bMin)
-  const newMax = Math.max(aMax, bMax)
-  const x = a.start.x
-
-  return {
-    start: { x, y: newMin },
-    end: { x, y: newMax },
-    netId: a.netId,
-  }
-}
-
-/**
- * Given an array of segments for a single net, repeatedly merge any pair of
- * segments that can be merged (collinear and overlapping/contiguous), until no
- * further merges are possible.
- */
-function mergeSegmentsForNet(segments: Segment[]): Segment[] {
+export function combineCloseSameNetSegments(segments: Segment[]): Segment[] {
+  let current = [...segments]
   let changed = true
-  let result = [...segments]
 
   while (changed) {
     changed = false
-    const merged: boolean[] = new Array(result.length).fill(false)
-    const next: Segment[] = []
+    const used = new Set<number>()
+    const result: Segment[] = []
 
-    for (let i = 0; i < result.length; i++) {
-      if (merged[i]) continue
+    for (let i = 0; i < current.length; i++) {
+      if (used.has(i)) continue
+      let base = current[i]
+      const baseIsH = isHorizontal(base)
+      const baseIsV = isVertical(base)
 
-      let current = result[i]
-      for (let j = i + 1; j < result.length; j++) {
-        if (merged[j]) continue
+      for (let j = i + 1; j < current.length; j++) {
+        if (used.has(j)) continue
+        const other = current[j]
 
-        const candidate =
-          tryMergeHorizontal(current, result[j]) ??
-          tryMergeVertical(current, result[j])
+        // Only merge segments on the same net
+        if (base.net_name !== other.net_name) continue
 
-        if (candidate) {
-          current = candidate
-          merged[j] = true
+        if (baseIsH && isHorizontal(other) && horizontalSegmentsAreClose(base, other)) {
+          base = mergeHorizontal(base, other)
+          used.add(j)
+          changed = true
+        } else if (baseIsV && isVertical(other) && verticalSegmentsAreClose(base, other)) {
+          base = mergeVertical(base, other)
+          used.add(j)
           changed = true
         }
       }
 
-      next.push(current)
+      result.push(base)
+      used.add(i)
     }
 
-    result = next
+    current = result
   }
 
-  return result
-}
-
-/**
- * Convert a SchematicTrace's edges into Segments grouped by net, merge them,
- * and reconstruct the trace edges.
- *
- * The SchematicTrace type has an `edges` array where each edge has
- * `from` and `to` points. We group edges by net label and then merge
- * collinear overlapping edges.
- */
-export function combineCloseSameNetSegments(
-  traces: SchematicTrace[]
-): SchematicTrace[] {
-  return traces.map((trace) => {
-    if (!trace.edges || trace.edges.length === 0) return trace
-
-    // Group edges by net (use trace-level net or edge-level net_label)
-    // Each edge: { from: Point, to: Point }
-    // We'll treat all edges in this trace as the same net and merge them.
-    const segments: Segment[] = trace.edges.map((edge) => ({
-      start: { x: edge.from.x, y: edge.from.y },
-      end: { x: edge.to.x, y: edge.to.y },
-    }))
-
-    const merged = mergeSegmentsForNet(segments)
-
-    const newEdges = merged.map((seg) => ({
-      ...trace.edges[0], // copy any extra fields from the first edge as defaults
-      from: { x: seg.start.x, y: seg.start.y },
-      to: { x: seg.end.x, y: seg.end.y },
-    }))
-
-    return {
-      ...trace,
-      edges: newEdges,
-    }
-  })
+  return current
 }
