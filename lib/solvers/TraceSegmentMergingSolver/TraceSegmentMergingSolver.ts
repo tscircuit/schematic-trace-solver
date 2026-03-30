@@ -82,19 +82,22 @@ export class TraceSegmentMergingSolver extends BaseSolver {
     }
 
     // Finally, simplify all paths
-    return currentTraces.map(t => ({
+    return currentTraces.map((t) => ({
       ...t,
-      tracePath: this.simplifyPath(t.tracePath)
+      tracePath: this.simplifyPath(t.tracePath),
     }))
   }
 
-  private tryMerge(a: SolvedTracePath, b: SolvedTracePath): SolvedTracePath | null {
+  private tryMerge(
+    a: SolvedTracePath,
+    b: SolvedTracePath,
+  ): SolvedTracePath | null {
     const pAStart = a.tracePath[0]
     const pAEnd = a.tracePath[a.tracePath.length - 1]
     const pBStart = b.tracePath[0]
     const pBEnd = b.tracePath[b.tracePath.length - 1]
 
-    const dist = (p1: Point, p2: Point) => 
+    const dist = (p1: Point, p2: Point) =>
       Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
 
     // Check all combinations of endpoints
@@ -108,22 +111,35 @@ export class TraceSegmentMergingSolver extends BaseSolver {
     }
     // A_Start to B_Start (Reverse B)
     if (dist(pAStart, pBStart) < this.mergingThreshold) {
-      return this.createCombinedTrace(a, b, [...[...a.tracePath].reverse(), ...b.tracePath])
+      return this.createCombinedTrace(a, b, [
+        ...[...a.tracePath].reverse(),
+        ...b.tracePath,
+      ])
     }
     // A_End to B_End (Reverse B)
     if (dist(pAEnd, pBEnd) < this.mergingThreshold) {
-        return this.createCombinedTrace(a, b, [...a.tracePath, ...[...b.tracePath].reverse()])
+      return this.createCombinedTrace(a, b, [
+        ...a.tracePath,
+        ...[...b.tracePath].reverse(),
+      ])
     }
 
     return null
   }
 
-  private createCombinedTrace(a: SolvedTracePath, b: SolvedTracePath, newPath: Point[]): SolvedTracePath {
+  private createCombinedTrace(
+    a: SolvedTracePath,
+    b: SolvedTracePath,
+    newPath: Point[],
+  ): SolvedTracePath {
     return {
       ...a,
       tracePath: newPath,
-      mspConnectionPairIds: [...(a.mspConnectionPairIds || []), ...(b.mspConnectionPairIds || [])],
-      pinIds: [...new Set([...(a.pinIds || []), ...(b.pinIds || [])])]
+      mspConnectionPairIds: [
+        ...(a.mspConnectionPairIds || []),
+        ...(b.mspConnectionPairIds || []),
+      ],
+      pinIds: [...new Set([...(a.pinIds || []), ...(b.pinIds || [])])],
     }
   }
 
@@ -147,13 +163,15 @@ export class TraceSegmentMergingSolver extends BaseSolver {
   private areCollinear(p1: Point, p2: Point, p3: Point): boolean {
     const threshold = 1e-6
     // Use the slope-based collinearity or cross-product (for numerical stability)
-    const area = Math.abs(p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y))
+    const area = Math.abs(
+      p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y),
+    )
     return area < threshold
   }
 
   getOutput() {
     return {
-      traces: this.outputTraces
+      traces: this.outputTraces,
     }
   }
 }
