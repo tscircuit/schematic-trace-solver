@@ -1,2 +1,1 @@
-export { combineCloseSameNetTraceSegments } from "./combine-close-same-net-trace-segments"
-export { combineCloseSameNetSegments } from "./combine-close-same-net-segments"
+export { mergeCloseSameNetTraces } from "./merge-close-same-net-traces"
