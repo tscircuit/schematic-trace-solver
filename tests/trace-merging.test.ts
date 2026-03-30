@@ -8,7 +8,7 @@ test("TraceSegmentMergingSolver should merge collinear touching segments", () =>
     chips: [],
     netConnections: [],
     directConnections: [],
-  }
+  } as any
 
   const traces: SolvedTracePath[] = [
     {
@@ -60,7 +60,7 @@ test("TraceSegmentMergingSolver should merge segments within threshold", () => {
     chips: [],
     netConnections: [],
     directConnections: [],
-  }
+  } as any
 
   const traces: SolvedTracePath[] = [
     {
