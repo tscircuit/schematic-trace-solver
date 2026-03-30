@@ -6,7 +6,6 @@ import type { InputProblem } from "lib/types/InputProblem"
 test("TraceSegmentMergingSolver should merge collinear touching segments", () => {
   const inputProblem: InputProblem = {
     chips: [],
-    connections: [],
     netConnections: [],
     directConnections: [],
   }
@@ -59,7 +58,6 @@ test("TraceSegmentMergingSolver should merge collinear touching segments", () =>
 test("TraceSegmentMergingSolver should merge segments within threshold", () => {
   const inputProblem: InputProblem = {
     chips: [],
-    connections: [],
     netConnections: [],
     directConnections: [],
   }
