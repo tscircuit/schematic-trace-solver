@@ -20,6 +20,7 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { TraceCombineSolver } from "../TraceCombineSolver/TraceCombineSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -69,6 +70,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
+  traceCombineSolver?: TraceCombineSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -188,10 +190,18 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
+    definePipelineStep("traceCombineSolver", TraceCombineSolver, (instance) => {
+      const traces =
+        instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+      return [
+        {
+          allTraces: traces,
+          distanceThreshold: 0.1, // Seuil de fusion
+        },
+      ]
+    }),
     definePipelineStep("traceCleanupSolver", TraceCleanupSolver, (instance) => {
-      const prevSolverOutput =
-        instance.traceLabelOverlapAvoidanceSolver!.getOutput()
-      const traces = prevSolverOutput.traces
+      const traces = instance.traceCombineSolver!.getOutput().traces
 
       const labelMergingOutput =
         instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput()
