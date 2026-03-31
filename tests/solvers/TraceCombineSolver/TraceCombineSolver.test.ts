@@ -43,11 +43,11 @@ test("TraceCombineSolver should merge close parallel segments of the same net", 
     allTraces: mockTraces,
     distanceThreshold: 0.2,
   })
-  
+
   solver.solve()
   const output = solver.getOutput()
-  
-  // Ce test doit échouer avec l'algorithme actuel 
+
+  // Ce test doit échouer avec l'algorithme actuel
   // car a.tracePath.length (3) !== b.tracePath.length (2)
   expect(output.traces.length).toBe(1)
 })

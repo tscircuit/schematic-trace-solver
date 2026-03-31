@@ -190,20 +190,16 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
-    definePipelineStep(
-      "traceCombineSolver",
-      TraceCombineSolver,
-      (instance) => {
-        const traces =
-          instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
-        return [
-          {
-            allTraces: traces,
-            distanceThreshold: 0.1, // Seuil de fusion
-          },
-        ]
-      },
-    ),
+    definePipelineStep("traceCombineSolver", TraceCombineSolver, (instance) => {
+      const traces =
+        instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+      return [
+        {
+          allTraces: traces,
+          distanceThreshold: 0.1, // Seuil de fusion
+        },
+      ]
+    }),
     definePipelineStep("traceCleanupSolver", TraceCleanupSolver, (instance) => {
       const traces = instance.traceCombineSolver!.getOutput().traces
 
