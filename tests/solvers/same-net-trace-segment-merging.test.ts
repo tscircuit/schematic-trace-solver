@@ -21,10 +21,12 @@ function makeTrace(
     dcConnNetId: overrides.dcConnNetId ?? overrides.globalConnNetId,
     globalConnNetId: overrides.globalConnNetId,
     mspPairId: overrides.mspPairId,
-    pins: overrides.pins ?? ([
-      { pinId: "p1", x: 0, y: 0, chipId: "c1" },
-      { pinId: "p2", x: 1, y: 0, chipId: "c2" },
-    ] as SolvedTracePath["pins"]),
+    pins:
+      overrides.pins ??
+      ([
+        { pinId: "p1", x: 0, y: 0, chipId: "c1" },
+        { pinId: "p2", x: 1, y: 0, chipId: "c2" },
+      ] as SolvedTracePath["pins"]),
     tracePath: overrides.tracePath,
     mspConnectionPairIds: overrides.mspConnectionPairIds ?? [
       overrides.mspPairId,
