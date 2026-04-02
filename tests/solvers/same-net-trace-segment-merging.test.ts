@@ -158,6 +158,209 @@ test("handles empty trace list without crashing", () => {
   expect(solver.getOutput().traces).toHaveLength(0)
 })
 
+test("single trace passes through unchanged", () => {
+  const traceA = makeTrace({
+    mspPairId: "pair1",
+    globalConnNetId: "net1",
+    tracePath: [
+      { x: 0, y: 0 },
+      { x: 3, y: 0 },
+      { x: 3, y: 2 },
+    ],
+  })
+
+  const solver = new SameNetTraceSegmentMergingSolver({
+    allTraces: [traceA],
+    inputProblem: emptyInputProblem,
+  })
+
+  solver.solve()
+  expect(solver.solved).toBe(true)
+
+  const output = solver.getOutput()
+  expect(output.traces).toHaveLength(1)
+  expect(output.traces[0].tracePath).toHaveLength(3)
+  expect(output.traces[0].tracePath[0]).toEqual({ x: 0, y: 0 })
+  expect(output.traces[0].tracePath[1]).toEqual({ x: 3, y: 0 })
+  expect(output.traces[0].tracePath[2]).toEqual({ x: 3, y: 2 })
+})
+
+test("merges overlapping horizontal same-net segments", () => {
+  const traceA = makeTrace({
+    mspPairId: "pair1",
+    globalConnNetId: "net1",
+    tracePath: [
+      { x: 0, y: 0 },
+      { x: 3, y: 0 }, // horizontal from 0 to 3 at y=0
+    ],
+  })
+
+  const traceB = makeTrace({
+    mspPairId: "pair2",
+    globalConnNetId: "net1",
+    tracePath: [
+      { x: 2, y: 0 },
+      { x: 5, y: 0 }, // horizontal from 2 to 5 at y=0 (overlaps at x=2..3)
+    ],
+  })
+
+  const solver = new SameNetTraceSegmentMergingSolver({
+    allTraces: [traceA, traceB],
+    inputProblem: emptyInputProblem,
+  })
+
+  solver.solve()
+  expect(solver.solved).toBe(true)
+
+  const output = solver.getOutput()
+  // The merged segment should span from x=0 to x=5
+  const xValues = output.traces[0].tracePath.map((p) => p.x)
+  expect(Math.min(...xValues)).toBe(0)
+  expect(Math.max(...xValues)).toBe(5)
+})
+
+test("does NOT merge perpendicular segments", () => {
+  const traceA = makeTrace({
+    mspPairId: "pair1",
+    globalConnNetId: "net1",
+    tracePath: [
+      { x: 0, y: 1 },
+      { x: 3, y: 1 }, // horizontal at y=1
+    ],
+  })
+
+  const traceB = makeTrace({
+    mspPairId: "pair2",
+    globalConnNetId: "net1",
+    tracePath: [
+      { x: 1.5, y: 0 },
+      { x: 1.5, y: 2 }, // vertical at x=1.5 (crosses traceA but perpendicular)
+    ],
+  })
+
+  const solver = new SameNetTraceSegmentMergingSolver({
+    allTraces: [traceA, traceB],
+    inputProblem: emptyInputProblem,
+  })
+
+  solver.solve()
+  expect(solver.solved).toBe(true)
+
+  const output = solver.getOutput()
+  // Both traces should remain as-is since they are perpendicular
+  expect(output.traces[0].tracePath[0]).toEqual({ x: 0, y: 1 })
+  expect(output.traces[0].tracePath[1]).toEqual({ x: 3, y: 1 })
+  expect(output.traces[1].tracePath[0]).toEqual({ x: 1.5, y: 0 })
+  expect(output.traces[1].tracePath[1]).toEqual({ x: 1.5, y: 2 })
+})
+
+test("merges three traces on the same net", () => {
+  const traceA = makeTrace({
+    mspPairId: "pair1",
+    globalConnNetId: "net1",
+    tracePath: [
+      { x: 0, y: 0 },
+      { x: 2, y: 0 }, // horizontal from 0 to 2
+    ],
+  })
+
+  const traceB = makeTrace({
+    mspPairId: "pair2",
+    globalConnNetId: "net1",
+    tracePath: [
+      { x: 2.05, y: 0 },
+      { x: 4, y: 0 }, // horizontal from 2.05 to 4 (gap=0.05)
+    ],
+  })
+
+  const traceC = makeTrace({
+    mspPairId: "pair3",
+    globalConnNetId: "net1",
+    tracePath: [
+      { x: 4.1, y: 0 },
+      { x: 6, y: 0 }, // horizontal from 4.1 to 6 (gap=0.1)
+    ],
+  })
+
+  const solver = new SameNetTraceSegmentMergingSolver({
+    allTraces: [traceA, traceB, traceC],
+    inputProblem: emptyInputProblem,
+  })
+
+  solver.solve()
+  expect(solver.solved).toBe(true)
+
+  const output = solver.getOutput()
+  // traceA should absorb traceB; traceB should absorb traceC via chain
+  // At minimum, the first trace should extend to cover a wider range
+  const allXValues = output.traces.flatMap((t) => t.tracePath.map((p) => p.x))
+  expect(Math.min(...allXValues)).toBe(0)
+  expect(Math.max(...allXValues)).toBe(6)
+})
+
+test("handles multiple independent nets correctly", () => {
+  const traceA = makeTrace({
+    mspPairId: "pair1",
+    globalConnNetId: "net1",
+    tracePath: [
+      { x: 0, y: 0 },
+      { x: 2, y: 0 },
+    ],
+  })
+
+  const traceB = makeTrace({
+    mspPairId: "pair2",
+    globalConnNetId: "net1",
+    tracePath: [
+      { x: 2.05, y: 0 },
+      { x: 4, y: 0 },
+    ],
+  })
+
+  const traceC = makeTrace({
+    mspPairId: "pair3",
+    globalConnNetId: "net2",
+    tracePath: [
+      { x: 0, y: 1 },
+      { x: 3, y: 1 },
+    ],
+  })
+
+  const traceD = makeTrace({
+    mspPairId: "pair4",
+    globalConnNetId: "net2",
+    tracePath: [
+      { x: 3.1, y: 1 },
+      { x: 5, y: 1 },
+    ],
+  })
+
+  const solver = new SameNetTraceSegmentMergingSolver({
+    allTraces: [traceA, traceB, traceC, traceD],
+    inputProblem: emptyInputProblem,
+  })
+
+  solver.solve()
+  expect(solver.solved).toBe(true)
+
+  const output = solver.getOutput()
+  expect(output.traces).toHaveLength(4)
+
+  // net1 traces should merge
+  const net1Xs = output.traces
+    .filter((_, i) => i < 2)
+    .flatMap((t) => t.tracePath.map((p) => p.x))
+  expect(Math.min(...net1Xs)).toBe(0)
+  expect(Math.max(...net1Xs)).toBe(4)
+
+  // net2 traces should also merge independently
+  const net2Xs = output.traces
+    .filter((_, i) => i >= 2)
+    .flatMap((t) => t.tracePath.map((p) => p.x))
+  expect(Math.min(...net2Xs)).toBe(0)
+  expect(Math.max(...net2Xs)).toBe(5)
+})
+
 test("merges vertical collinear same-net segments", () => {
   const traceA = makeTrace({
     mspPairId: "pair1",
