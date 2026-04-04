@@ -303,11 +303,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       return;
     }
 
-    const constructorParams = pipelineStepDef.getConstructorParams(this);
-    // @ts-ignore
-    this.activeSubSolver = new pipelineStepDef.solverClass(
-      ...constructorParams,
-    );
+    const constructorParams = pipelineStepDef.getConstructorParams(this)
+// @ts-ignore
+this.activeSubSolver = new pipelineStepDef.solverClass(constructorParams)
     (this as any)[pipelineStepDef.solverName] = this.activeSubSolver;
     this.timeSpentOnPhase[pipelineStepDef.solverName] = 0;
     this.startTimeOfPhase[pipelineStepDef.solverName] = performance.now();
