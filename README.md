@@ -38,10 +38,10 @@ If there is crowding at the pin, we look for an available spot along the trace c
 ## Usage
 
 ```tsx
-import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver"
+import { SchematicTracePipelineSolver } from "@tscircuit/schematic-trace-solver";
 
-type ChipId = string
-type PinId = string
+type ChipId = string;
+type PinId = string;
 
 const solver = new SchematicTracePipelineSolver({
   chips: {
@@ -77,9 +77,9 @@ const solver = new SchematicTracePipelineSolver({
     VCC: ["y+", "y-"],
     GND: ["y+", "y-"],
   },
-})
+});
 
-solver.solve()
+solver.solve();
 ```
 
 ## Development

@@ -1,5 +1,5 @@
-import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
-import { test, expect } from "bun:test"
+import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver";
+import { test, expect } from "bun:test";
 
 test("SchematicTracePipelineSolver should solve problem correctly", () => {
   const input = {
@@ -131,10 +131,10 @@ test("SchematicTracePipelineSolver should solve problem correctly", () => {
       GND: ["y-"],
     },
     maxMspPairDistance: 2,
-  }
+  };
 
-  const solver = new SchematicTracePipelineSolver(input as any)
-  solver.solve()
+  const solver = new SchematicTracePipelineSolver(input as any);
+  solver.solve();
 
   // console.log(solver.netLabelPlacementSolver!.netLabelPlacements)
-})
+});
