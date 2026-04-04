@@ -3,10 +3,10 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import type { ConnectivityMap } from "connectivity-map"
-import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import type { Point } from "@tscircuit/math-utils"
 
-const GAP_THRESHOLD = 0.15
+const GAP_THRESHOLD = 0.05
+const MIN_OVERLAP_RATIO = 0.5
 const EPS = 1e-9
 
 type ConnNetId = string
@@ -81,10 +81,6 @@ export class SameNetTraceMergeSolver extends BaseSolver {
   override _step() {
     const netId = this.netIdsToProcess.pop()
     if (!netId) {
-      // Final simplification pass
-      for (const trace of Object.values(this.correctedTraceMap)) {
-        trace.tracePath = simplifyPath(trace.tracePath)
-      }
       this.solved = true
       return
     }
@@ -151,15 +147,13 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     direction: "horizontal" | "vertical",
   ): boolean {
     if (direction === "horizontal") {
-      // Both are horizontal: check Y gap and X overlap
       const yGap = Math.abs(a.p1.y - b.p1.y)
       if (yGap > GAP_THRESHOLD || yGap < EPS) return false
-      return overlaps1D(a.p1.x, a.p2.x, b.p1.x, b.p2.x)
+      return hasSignificantOverlap(a.p1.x, a.p2.x, b.p1.x, b.p2.x)
     }
-    // Both are vertical: check X gap and Y overlap
     const xGap = Math.abs(a.p1.x - b.p1.x)
     if (xGap > GAP_THRESHOLD || xGap < EPS) return false
-    return overlaps1D(a.p1.y, a.p2.y, b.p1.y, b.p2.y)
+    return hasSignificantOverlap(a.p1.y, a.p2.y, b.p1.y, b.p2.y)
   }
 
   /**
@@ -204,12 +198,29 @@ function isVertical(a: Point, b: Point): boolean {
 }
 
 /**
- * Check if two 1D ranges [a1,a2] and [b1,b2] overlap (order-independent).
+ * Check if two 1D ranges overlap AND the overlapping portion is at least
+ * MIN_OVERLAP_RATIO of the shorter segment. This prevents merging segments
+ * that barely touch.
  */
-function overlaps1D(a1: number, a2: number, b1: number, b2: number): boolean {
+function hasSignificantOverlap(
+  a1: number,
+  a2: number,
+  b1: number,
+  b2: number,
+): boolean {
   const aMin = Math.min(a1, a2)
   const aMax = Math.max(a1, a2)
   const bMin = Math.min(b1, b2)
   const bMax = Math.max(b1, b2)
-  return aMin < bMax - EPS && bMin < aMax - EPS
+
+  const overlapStart = Math.max(aMin, bMin)
+  const overlapEnd = Math.min(aMax, bMax)
+  const overlapLen = overlapEnd - overlapStart
+
+  if (overlapLen < EPS) return false
+
+  const shorter = Math.min(aMax - aMin, bMax - bMin)
+  if (shorter < EPS) return false
+
+  return overlapLen / shorter >= MIN_OVERLAP_RATIO
 }
