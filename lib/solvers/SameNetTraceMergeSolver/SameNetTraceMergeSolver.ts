@@ -62,10 +62,7 @@ function simplifyPath(
     const prevCurrVert = Math.abs(prev.x - curr.x) < AXIS_TOL
     const currNextVert = Math.abs(curr.x - next.x) < AXIS_TOL
 
-    if (
-      (prevCurrHoriz && currNextHoriz) ||
-      (prevCurrVert && currNextVert)
-    ) {
+    if ((prevCurrHoriz && currNextHoriz) || (prevCurrVert && currNextVert)) {
       continue
     }
 
@@ -149,17 +146,13 @@ export class SameNetTraceMergeSolver extends BaseSolver {
         if (a.traceIdx === b.traceIdx) continue
 
         const aHoriz =
-          Math.abs(a.y1 - a.y2) < AXIS_TOL &&
-          Math.abs(a.x1 - a.x2) > AXIS_TOL
+          Math.abs(a.y1 - a.y2) < AXIS_TOL && Math.abs(a.x1 - a.x2) > AXIS_TOL
         const bHoriz =
-          Math.abs(b.y1 - b.y2) < AXIS_TOL &&
-          Math.abs(b.x1 - b.x2) > AXIS_TOL
+          Math.abs(b.y1 - b.y2) < AXIS_TOL && Math.abs(b.x1 - b.x2) > AXIS_TOL
         const aVert =
-          Math.abs(a.x1 - a.x2) < AXIS_TOL &&
-          Math.abs(a.y1 - a.y2) > AXIS_TOL
+          Math.abs(a.x1 - a.x2) < AXIS_TOL && Math.abs(a.y1 - a.y2) > AXIS_TOL
         const bVert =
-          Math.abs(b.x1 - b.x2) < AXIS_TOL &&
-          Math.abs(b.y1 - b.y2) > AXIS_TOL
+          Math.abs(b.x1 - b.x2) < AXIS_TOL && Math.abs(b.y1 - b.y2) > AXIS_TOL
 
         if (aHoriz && bHoriz) {
           this._tryMergeHorizontal(a, b)

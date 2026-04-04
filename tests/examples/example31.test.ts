@@ -57,10 +57,7 @@ test("SameNetTraceMergeSolver merges close horizontal segments on the same net",
   for (let i = 0; i < outB.tracePath.length - 1; i++) {
     const p1 = outB.tracePath[i]!
     const p2 = outB.tracePath[i + 1]!
-    if (
-      Math.abs(p1.y - p2.y) < 1e-9 &&
-      Math.abs(p1.x - p2.x) > 0.1
-    ) {
+    if (Math.abs(p1.y - p2.y) < 1e-9 && Math.abs(p1.x - p2.x) > 0.1) {
       mergedY = p1.y
       break
     }
@@ -115,10 +112,7 @@ test("SameNetTraceMergeSolver merges close vertical segments on the same net", (
   for (let i = 0; i < outB.tracePath.length - 1; i++) {
     const p1 = outB.tracePath[i]!
     const p2 = outB.tracePath[i + 1]!
-    if (
-      Math.abs(p1.x - p2.x) < 1e-9 &&
-      Math.abs(p1.y - p2.y) > 0.1
-    ) {
+    if (Math.abs(p1.x - p2.x) < 1e-9 && Math.abs(p1.y - p2.y) > 0.1) {
       mergedX = p1.x
       break
     }
