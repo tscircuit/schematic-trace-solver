@@ -99,7 +99,10 @@ export class TraceCombineSolver extends BaseSolver {
         for (let j = i + 1; j < horizontalSegments.length; j++) {
           const s1 = horizontalSegments[i]!
           const s2 = horizontalSegments[j]!
-          if (Math.abs(s1.y - s2.y) < COMBINE_THRESHOLD && Math.abs(s1.y - s2.y) > EPS) {
+          if (
+            Math.abs(s1.y - s2.y) < COMBINE_THRESHOLD &&
+            Math.abs(s1.y - s2.y) > EPS
+          ) {
             // Check if they overlap in X
             const overlapX = Math.min(s1.x2, s2.x2) - Math.max(s1.x1, s2.x1)
             if (overlapX > 0) {
@@ -118,7 +121,10 @@ export class TraceCombineSolver extends BaseSolver {
         for (let j = i + 1; j < verticalSegments.length; j++) {
           const s1 = verticalSegments[i]!
           const s2 = verticalSegments[j]!
-          if (Math.abs(s1.x - s2.x) < COMBINE_THRESHOLD && Math.abs(s1.x - s2.x) > EPS) {
+          if (
+            Math.abs(s1.x - s2.x) < COMBINE_THRESHOLD &&
+            Math.abs(s1.x - s2.x) > EPS
+          ) {
             // Check if they overlap in Y
             const overlapY = Math.min(s1.y2, s2.y2) - Math.max(s1.y1, s2.y1)
             if (overlapY > 0) {
@@ -144,7 +150,12 @@ export class TraceCombineSolver extends BaseSolver {
     }
   }
 
-  private snapSegment(traceId: string, segmentIndex: number, axis: "x" | "y", value: number) {
+  private snapSegment(
+    traceId: string,
+    segmentIndex: number,
+    axis: "x" | "y",
+    value: number,
+  ) {
     const trace = this.correctedTraceMap[traceId]!
     const newPath = [...trace.tracePath]
     const p1 = newPath[segmentIndex]!
@@ -161,9 +172,9 @@ export class TraceCombineSolver extends BaseSolver {
     // After snapping, we might have created "non-orthogonal" connections from the neighbor segments
     // But they will be fixed in the next snap if they were already horizontal/vertical
     // If not, they might become diagonal and need fixing.
-    // Actually, snapping horizontal segments to same Y maintains orthogonality for the neighbors 
+    // Actually, snapping horizontal segments to same Y maintains orthogonality for the neighbors
     // IF the neighbors were vertical.
-    
+
     this.correctedTraceMap[traceId] = {
       ...trace,
       tracePath: newPath,
@@ -183,7 +194,7 @@ export class TraceCombineSolver extends BaseSolver {
     })
 
     if (!graphics.lines) graphics.lines = []
-    
+
     for (const trace of Object.values(this.correctedTraceMap)) {
       graphics.lines.push({
         points: trace.tracePath,

@@ -145,17 +145,15 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         onSolved: (_solver) => {},
       },
     ),
-    definePipelineStep(
-      "traceCombineSolver",
-      TraceCombineSolver,
-      () => [
-        {
-          inputProblem: this.inputProblem,
-          inputTracePaths: Object.values(this.traceOverlapShiftSolver!.correctedTraceMap),
-          globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
-        },
-      ],
-    ),
+    definePipelineStep("traceCombineSolver", TraceCombineSolver, () => [
+      {
+        inputProblem: this.inputProblem,
+        inputTracePaths: Object.values(
+          this.traceOverlapShiftSolver!.correctedTraceMap,
+        ),
+        globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
+      },
+    ]),
     definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,

@@ -22,9 +22,7 @@ test("TraceCombineSolver merges parallel same-net traces", () => {
         center: { x: 4, y: 0 },
         width: 1,
         height: 1,
-        pins: [
-          { pinId: "U2.1", x: 3.5, y: -0.4 },
-        ],
+        pins: [{ pinId: "U2.1", x: 3.5, y: -0.4 }],
       },
     ],
     directConnections: [],
@@ -58,7 +56,7 @@ test("TraceCombineSolver merges parallel same-net traces", () => {
   combineSolver.solve()
 
   const output = combineSolver.getOutput()
-  
+
   // Verify that overlapping segments are snapped to the same coordinate
   // We expect at least one horizontal segment to have been modified if it was close but not identical
   expect(combineSolver.solved).toBe(true)
