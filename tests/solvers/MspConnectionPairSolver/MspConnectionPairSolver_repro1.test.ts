@@ -10,5 +10,8 @@ test("MspConnectionPairSolver_repro1", () => {
 
   solver.solve()
 
-  expect(solver.mspConnectionPairs.length).toBe(4)
+  // GND is only in netConnections (net label, no directConnections), so it
+  // no longer generates MSP pairs after the issue #79 fix. Only the 2 direct
+  // connections (VCC: U1.1↔C1.1, EN: U1.2↔C2.1) produce pairs.
+  expect(solver.mspConnectionPairs.length).toBe(2)
 })
