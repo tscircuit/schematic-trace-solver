@@ -127,8 +127,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         onSolved: (instance) => {
           // Replace the solved trace paths with merged ones for subsequent solvers
           if (instance.sameNetSegmentMergingSolver?.mergedTracePaths) {
-            instance.schematicTraceLinesSolver!.solvedTracePaths = 
-              instance.sameNetSegmentMergingSolver.mergedTracePaths as any
+            instance.schematicTraceLinesSolver!.solvedTracePaths = instance
+              .sameNetSegmentMergingSolver.mergedTracePaths as any
           }
         },
       },

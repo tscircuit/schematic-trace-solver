@@ -38,21 +38,21 @@ export class SameNetSegmentMergingSolver extends BaseSolver {
 
     // Group traces by netId (using netId from the trace's netId property or from pins)
     const tracesByNet = new Map<string, SolvedTracePath[]>()
-    
+
     for (const trace of this.solvedTracePaths) {
       // Try to get netId from different possible locations
       let netId: string | undefined = (trace as any).netId
-      
+
       if (!netId && (trace as any).pins && (trace as any).pins.length > 0) {
         // Try to infer netId from the first pin's connections
         netId = (trace as any).pins[0]?.netId
       }
-      
+
       if (!netId) {
         // Use a default group for traces without netId
         netId = "__ungrouped__"
       }
-      
+
       if (!tracesByNet.has(netId)) {
         tracesByNet.set(netId, [])
       }
@@ -70,9 +70,12 @@ export class SameNetSegmentMergingSolver extends BaseSolver {
     this.solved = true
   }
 
-  private mergeTracesForNet(traces: SolvedTracePath[], netId: string): MergedTracePath[] {
+  private mergeTracesForNet(
+    traces: SolvedTracePath[],
+    netId: string,
+  ): MergedTracePath[] {
     if (traces.length <= 1) {
-      return traces.map(t => ({ ...t, originalTracePaths: [t] }))
+      return traces.map((t) => ({ ...t, originalTracePaths: [t] }))
     }
 
     // Extract all segments from all traces
@@ -83,9 +86,9 @@ export class SameNetSegmentMergingSolver extends BaseSolver {
       index: number
       isHorizontal: boolean
     }
-    
+
     const allSegments: Segment[] = []
-    
+
     for (const trace of traces) {
       if (!trace.tracePath || trace.tracePath.length < 2) continue
       for (let i = 0; i < trace.tracePath.length - 1; i++) {
@@ -97,29 +100,35 @@ export class SameNetSegmentMergingSolver extends BaseSolver {
           start,
           end,
           index: i,
-          isHorizontal
+          isHorizontal,
         })
       }
     }
 
     if (allSegments.length === 0) {
-      return traces.map(t => ({ ...t, originalTracePaths: [t] }))
+      return traces.map((t) => ({ ...t, originalTracePaths: [t] }))
     }
 
     // Separate horizontal and vertical segments
-    const horizontalSegments = allSegments.filter(s => s.isHorizontal)
-    const verticalSegments = allSegments.filter(s => !s.isHorizontal)
+    const horizontalSegments = allSegments.filter((s) => s.isHorizontal)
+    const verticalSegments = allSegments.filter((s) => !s.isHorizontal)
 
     // Merge collinear segments
-    const mergedHorizontal = this.mergeCollinearSegments(horizontalSegments, 'horizontal')
-    const mergedVertical = this.mergeCollinearSegments(verticalSegments, 'vertical')
+    const mergedHorizontal = this.mergeCollinearSegments(
+      horizontalSegments,
+      "horizontal",
+    )
+    const mergedVertical = this.mergeCollinearSegments(
+      verticalSegments,
+      "vertical",
+    )
 
     // Combine merged segments
     const mergedSegments = [...mergedHorizontal, ...mergedVertical]
-    
+
     // If no merging happened, return original traces
     if (mergedSegments.length === allSegments.length) {
-      return traces.map(t => ({ ...t, originalTracePaths: [t] }))
+      return traces.map((t) => ({ ...t, originalTracePaths: [t] }))
     }
 
     // Group merged segments back by original trace
@@ -135,7 +144,7 @@ export class SameNetSegmentMergingSolver extends BaseSolver {
         // Check if we need to append or prepend
         const firstPoint = points[0]
         const lastPoint = points[points.length - 1]
-        
+
         if (this.pointsEqual(lastPoint, seg.start)) {
           points.push(seg.end)
         } else if (this.pointsEqual(lastPoint, seg.end)) {
@@ -155,7 +164,10 @@ export class SameNetSegmentMergingSolver extends BaseSolver {
     for (const [trace, points] of traceMap) {
       const uniquePoints: Point[] = []
       for (const point of points) {
-        if (uniquePoints.length === 0 || !this.pointsEqual(uniquePoints[uniquePoints.length - 1], point)) {
+        if (
+          uniquePoints.length === 0 ||
+          !this.pointsEqual(uniquePoints[uniquePoints.length - 1], point)
+        ) {
           uniquePoints.push(point)
         }
       }
@@ -169,12 +181,12 @@ export class SameNetSegmentMergingSolver extends BaseSolver {
         result.push({
           ...originalTrace,
           tracePath: mergedPoints,
-          originalTracePaths: [originalTrace]
+          originalTracePaths: [originalTrace],
         })
       } else {
         result.push({
           ...originalTrace,
-          originalTracePaths: [originalTrace]
+          originalTracePaths: [originalTrace],
         })
       }
     }
@@ -183,16 +195,22 @@ export class SameNetSegmentMergingSolver extends BaseSolver {
   }
 
   private mergeCollinearSegments(
-    segments: { trace: SolvedTracePath; start: Point; end: Point; index: number; isHorizontal: boolean }[],
-    orientation: 'horizontal' | 'vertical'
+    segments: {
+      trace: SolvedTracePath
+      start: Point
+      end: Point
+      index: number
+      isHorizontal: boolean
+    }[],
+    orientation: "horizontal" | "vertical",
   ): typeof segments {
     if (segments.length <= 1) return segments
 
     // Group by the fixed coordinate (Y for horizontal, X for vertical)
     const groups = new Map<number, typeof segments>()
-    
+
     for (const seg of segments) {
-      const key = orientation === 'horizontal' ? seg.start.y : seg.start.x
+      const key = orientation === "horizontal" ? seg.start.y : seg.start.x
       // Round to avoid floating point issues
       const roundedKey = Math.round(key * 1000) / 1000
       if (!groups.has(roundedKey)) {
@@ -202,35 +220,45 @@ export class SameNetSegmentMergingSolver extends BaseSolver {
     }
 
     const merged: typeof segments = []
-    
+
     for (const [_, group] of groups) {
       // Sort by the varying coordinate
       const sorted = [...group].sort((a, b) => {
-        const aStart = orientation === 'horizontal' ? a.start.x : a.start.y
-        const bStart = orientation === 'horizontal' ? b.start.x : b.start.y
+        const aStart = orientation === "horizontal" ? a.start.x : a.start.y
+        const bStart = orientation === "horizontal" ? b.start.x : b.start.y
         return aStart - bStart
       })
 
       // Merge overlapping or close segments
       let current = { ...sorted[0] }
-      
+
       for (let i = 1; i < sorted.length; i++) {
         const next = sorted[i]
-        const currentEnd = orientation === 'horizontal' ? current.end.x : current.end.y
-        const nextStart = orientation === 'horizontal' ? next.start.x : next.start.y
-        
+        const currentEnd =
+          orientation === "horizontal" ? current.end.x : current.end.y
+        const nextStart =
+          orientation === "horizontal" ? next.start.x : next.start.y
+
         if (nextStart - currentEnd <= this.mergeThreshold) {
           // Merge: extend current to next's end
-          if (orientation === 'horizontal') {
-            current.end = { ...current.end, x: Math.max(current.end.x, next.end.x) }
+          if (orientation === "horizontal") {
+            current.end = {
+              ...current.end,
+              x: Math.max(current.end.x, next.end.x),
+            }
           } else {
-            current.end = { ...current.end, y: Math.max(current.end.y, next.end.y) }
+            current.end = {
+              ...current.end,
+              y: Math.max(current.end.y, next.end.y),
+            }
           }
           // Also extend start if needed
-          const currentStart = orientation === 'horizontal' ? current.start.x : current.start.y
-          const nextStartVal = orientation === 'horizontal' ? next.start.x : next.start.y
+          const currentStart =
+            orientation === "horizontal" ? current.start.x : current.start.y
+          const nextStartVal =
+            orientation === "horizontal" ? next.start.x : next.start.y
           if (nextStartVal < currentStart) {
-            if (orientation === 'horizontal') {
+            if (orientation === "horizontal") {
               current.start = { ...current.start, x: nextStartVal }
             } else {
               current.start = { ...current.start, y: nextStartVal }
@@ -243,12 +271,14 @@ export class SameNetSegmentMergingSolver extends BaseSolver {
       }
       merged.push(current)
     }
-    
+
     return merged
   }
 
   private pointsEqual(p1: Point, p2: Point, tolerance: number = 1e-9): boolean {
-    return Math.abs(p1.x - p2.x) < tolerance && Math.abs(p1.y - p2.y) < tolerance
+    return (
+      Math.abs(p1.x - p2.x) < tolerance && Math.abs(p1.y - p2.y) < tolerance
+    )
   }
 
   override visualize() {
