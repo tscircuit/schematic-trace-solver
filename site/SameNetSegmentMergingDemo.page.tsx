@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import type { InputProblem } from "lib/types/InputProblem";
 import { SchematicTracePipelineSolver } from "lib/index";
 
-const inputProblem = {
+const inputProblem: InputProblem = {
   chips: [
     {
       chipId: "chip1",
@@ -36,8 +36,8 @@ const inputProblem = {
   ],
   netConnections: [],
   availableNetLabelOrientations: {},
-  maxMspPairDistance: 5,
-} as InputProblem;
+  maxMspPairDistance: 5,  // Required - must be defined
+};
 
 export default () => {
   const solver = useMemo(

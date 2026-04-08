@@ -11,6 +11,7 @@ import {
   SchematicTraceLinesSolver,
   type SolvedTracePath,
 } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver";
+import { SameNetSegmentMergingSolver } from "lib/solvers/SameNetSegmentMergingSolver/SameNetSegmentMergingSolver";
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver";
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver";
 import { visualizeInputProblem } from "./visualizeInputProblem";
@@ -20,7 +21,7 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins";
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver";
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver";
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver";
-import { SameNetSegmentMergingSolver } from "lib/solvers/SameNetSegmentMergingSolver/SameNetSegmentMergingSolver";
+
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string;
   solverClass: T;
@@ -59,7 +60,6 @@ export interface SchematicTracePipelineSolverParams {
 
 export class SchematicTracePipelineSolver extends BaseSolver {
   mspConnectionPairSolver?: MspConnectionPairSolver;
-  // guidelinesSolver?: GuidelinesSolver
   schematicTraceLinesSolver?: SchematicTraceLinesSolver;
   sameNetSegmentMergingSolver?: SameNetSegmentMergingSolver;
   longDistancePairSolver?: LongDistancePairSolver;
@@ -77,53 +77,47 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   inputProblem: InputProblem;
 
   pipelineDef = [
+    // Step 1: MSP Connection Pair Solver
     definePipelineStep(
       "mspConnectionPairSolver",
       MspConnectionPairSolver,
-      () => [{ inputProblem: this.inputProblem }],
+      (instance) => [{ inputProblem: instance.inputProblem }],
       {
-        onSolved: (mspSolver) => {},
+        onSolved: () => {},
       },
     ),
-    // definePipelineStep(
-    //   "guidelinesSolver",
-    //   GuidelinesSolver,
-    //   () => [
-    //     {
-    //       inputProblem: this.inputProblem,
-    //     },
-    //   ],
-    //   {
-    //     onSolved: (guidelinesSolver) => {},
-    //   },
-    // ),
+
+    // Step 2: Schematic Trace Lines Solver
     definePipelineStep(
       "schematicTraceLinesSolver",
       SchematicTraceLinesSolver,
-      () => [
+      (instance) => [
         {
-          mspConnectionPairs: this.mspConnectionPairSolver!.mspConnectionPairs,
-          dcConnMap: this.mspConnectionPairSolver!.dcConnMap,
-          globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
-          inputProblem: this.inputProblem,
-          // guidelines: this.guidelinesSolver!.guidelines,
-          chipMap: this.mspConnectionPairSolver!.chipMap,
+          mspConnectionPairs: instance.mspConnectionPairSolver!.mspConnectionPairs,
+          dcConnMap: instance.mspConnectionPairSolver!.dcConnMap,
+          globalConnMap: instance.mspConnectionPairSolver!.globalConnMap,
+          inputProblem: instance.inputProblem,
+          chipMap: instance.mspConnectionPairSolver!.chipMap,
         },
       ],
+      {
+        onSolved: () => {},
+      },
     ),
-    // ========== SAME NET SEGMENT MERGING SOLVER ==========
+
+    // Step 3: Same Net Segment Merging Solver
     definePipelineStep(
       "sameNetSegmentMergingSolver",
       SameNetSegmentMergingSolver,
-      () => [
+      (instance) => [
         {
-          solvedTracePaths: this.schematicTraceLinesSolver!.solvedTracePaths,
+          solvedTracePaths: instance.schematicTraceLinesSolver!.solvedTracePaths,
           mergeThreshold: 0.5,
+          alignThreshold: 0.5,
         },
       ],
       {
         onSolved: (instance) => {
-          // Replace the solved trace paths with merged ones for subsequent solvers
           if (instance.sameNetSegmentMergingSolver?.mergedTracePaths) {
             instance.schematicTraceLinesSolver!.solvedTracePaths = instance
               .sameNetSegmentMergingSolver.mergedTracePaths as any;
@@ -131,7 +125,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       },
     ),
-    // ========== END OF SAME NET SEGMENT MERGING SOLVER ==========
+
+    // Step 4: Long Distance Pair Solver
     definePipelineStep(
       "longDistancePairSolver",
       LongDistancePairSolver,
@@ -145,45 +140,49 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       ],
       {
-        onSolved: (schematicTraceLinesSolver) => {},
+        onSolved: () => {},
       },
     ),
+
+    // Step 5: Trace Overlap Shift Solver
     definePipelineStep(
       "traceOverlapShiftSolver",
       TraceOverlapShiftSolver,
-      () => [
+      (instance) => [
         {
-          inputProblem: this.inputProblem,
+          inputProblem: instance.inputProblem,
           inputTracePaths:
-            this.longDistancePairSolver?.getOutput().allTracesMerged!,
-          globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
+            instance.longDistancePairSolver!.getOutput().allTracesMerged,
+          globalConnMap: instance.mspConnectionPairSolver!.globalConnMap,
         },
       ],
       {
-        onSolved: (_solver) => {},
+        onSolved: () => {},
       },
     ),
+
+    // Step 6: Net Label Placement Solver (First Pass)
     definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
-      () => [
+      (instance) => [
         {
-          inputProblem: this.inputProblem,
+          inputProblem: instance.inputProblem,
           inputTraceMap:
-            this.traceOverlapShiftSolver?.correctedTraceMap ??
+            instance.traceOverlapShiftSolver?.correctedTraceMap ??
             Object.fromEntries(
-              this.longDistancePairSolver!.getOutput().allTracesMerged.map(
+              instance.longDistancePairSolver!.getOutput().allTracesMerged.map(
                 (p) => [p.mspPairId, p],
               ),
             ),
         },
       ],
       {
-        onSolved: (_solver) => {
-          // TODO
-        },
+        onSolved: () => {},
       },
     ),
+
+    // Step 7: Trace Label Overlap Avoidance Solver
     definePipelineStep(
       "traceLabelOverlapAvoidanceSolver",
       TraceLabelOverlapAvoidanceSolver,
@@ -207,25 +206,39 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           },
         ];
       },
+      {
+        onSolved: () => {},
+      },
     ),
-    definePipelineStep("traceCleanupSolver", TraceCleanupSolver, (instance) => {
-      const prevSolverOutput =
-        instance.traceLabelOverlapAvoidanceSolver!.getOutput();
-      const traces = prevSolverOutput.traces;
 
-      const labelMergingOutput =
-        instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput();
+    // Step 8: Trace Cleanup Solver
+    definePipelineStep(
+      "traceCleanupSolver",
+      TraceCleanupSolver,
+      (instance) => {
+        const prevSolverOutput =
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput();
+        const traces = prevSolverOutput.traces;
 
-      return [
-        {
-          inputProblem: instance.inputProblem,
-          allTraces: traces,
-          allLabelPlacements: labelMergingOutput.netLabelPlacements,
-          mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
-          paddingBuffer: 0.1,
-        },
-      ];
-    }),
+        const labelMergingOutput =
+          instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput();
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            allTraces: traces,
+            allLabelPlacements: labelMergingOutput.netLabelPlacements,
+            mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
+            paddingBuffer: 0.1,
+          },
+        ];
+      },
+      {
+        onSolved: () => {},
+      },
+    ),
+
+    // Step 9: Net Label Placement Solver (Second Pass - Final)
     definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
@@ -242,6 +255,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             ),
           },
         ];
+      },
+      {
+        onSolved: () => {},
       },
     ),
   ];
@@ -270,9 +286,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       _chipObstacleSpatialIndex: undefined,
     });
 
-    // First, expand chips so existing pin coordinates sit on or within their edges without shrinking.
     expandChipsToFitPins(cloned);
-    // Then, for any remaining pins that are still inside due to mixed extremes, snap them to the nearest edge.
     correctPinsInsideChips(cloned);
 
     return cloned;
@@ -282,6 +296,12 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     const pipelineStepDef = this.pipelineDef[this.currentPipelineStepIndex];
     if (!pipelineStepDef) {
       this.solved = true;
+      return;
+    }
+
+    // Check if this step should be skipped
+    if (pipelineStepDef.shouldSkip?.(this)) {
+      this.currentPipelineStepIndex++;
       return;
     }
 
@@ -303,9 +323,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       return;
     }
 
-    const constructorParams = pipelineStepDef.getConstructorParams(this)
-// @ts-ignore
-this.activeSubSolver = new pipelineStepDef.solverClass(constructorParams)
+    // Lazy evaluation of constructor parameters - this is the key fix
+    const constructorParams = pipelineStepDef.getConstructorParams(this);
+    // @ts-ignore
+    this.activeSubSolver = new pipelineStepDef.solverClass(...constructorParams);
     (this as any)[pipelineStepDef.solverName] = this.activeSubSolver;
     this.timeSpentOnPhase[pipelineStepDef.solverName] = 0;
     this.startTimeOfPhase[pipelineStepDef.solverName] = performance.now();
@@ -357,7 +378,6 @@ this.activeSubSolver = new pipelineStepDef.solverClass(constructorParams)
       return visualizations[0]!;
     }
 
-    // Simple combination of visualizations
     const finalGraphics = {
       points: visualizations.flatMap((v) => v.points || []),
       rects: visualizations.flatMap((v) => v.rects || []),
@@ -368,10 +388,6 @@ this.activeSubSolver = new pipelineStepDef.solverClass(constructorParams)
     return finalGraphics;
   }
 
-  /**
-   * A lightweight version of the visualize method that can be used to stream
-   * progress
-   */
   override preview(): GraphicsObject {
     if (this.activeSubSolver) {
       return this.activeSubSolver.preview();
