@@ -6,6 +6,7 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { SameNetTraceMergeSolver } from "../SameNetTraceMergeSolver/SameNetTraceMergeSolver"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -26,6 +27,7 @@ import { is4PointRectangle } from "./is4PointRectangle"
  */
 type PipelineStep =
   | "minimizing_turns"
+  | "merging_collinear_segments"
   | "balancing_l_shapes"
   | "untangling_traces"
 
@@ -81,6 +83,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "minimizing_turns":
         this._runMinimizeTurnsStep()
         break
+      case "merging_collinear_segments":
+        this._runMergeCollinearSegmentsStep()
+        break
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
@@ -96,14 +101,23 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
-      this.pipelineStep = "balancing_l_shapes"
-      this.traceIdQueue = Array.from(
-        this.input.allTraces.map((e) => e.mspPairId),
-      )
+      this.pipelineStep = "merging_collinear_segments"
       return
     }
 
     this._processTrace("minimizing_turns")
+  }
+
+  private _runMergeCollinearSegmentsStep() {
+    const mergeSolver = new SameNetTraceMergeSolver({ traces: this.outputTraces })
+    mergeSolver.solve()
+    this.outputTraces = mergeSolver.getOutput().traces
+
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.pipelineStep = "balancing_l_shapes"
+    this.traceIdQueue = Array.from(
+      this.input.allTraces.map((e) => e.mspPairId),
+    )
   }
 
   private _runBalanceLShapesStep() {
