@@ -1,4 +1,4 @@
-import type { Point } from "@tscircuit/math-utils"
+import type { Point } from "@tscircuit/math-utils";
 
 export const findTraceViolationZone = (
   path: Point[],
@@ -8,18 +8,18 @@ export const findTraceViolationZone = (
     p.x > labelBounds.minX &&
     p.x < labelBounds.maxX &&
     p.y > labelBounds.minY &&
-    p.y < labelBounds.maxY
+    p.y < labelBounds.maxY;
 
-  let firstInsideIndex = -1
-  let lastInsideIndex = -1
+  let firstInsideIndex = -1;
+  let lastInsideIndex = -1;
 
   for (let i = 0; i < path.length; i++) {
     if (isPointInside(path[i])) {
       if (firstInsideIndex === -1) {
-        firstInsideIndex = i
+        firstInsideIndex = i;
       }
-      lastInsideIndex = i
+      lastInsideIndex = i;
     }
   }
-  return { firstInsideIndex, lastInsideIndex }
-}
+  return { firstInsideIndex, lastInsideIndex };
+};

@@ -1,7 +1,7 @@
-import { GenericSolverDebugger } from "site/components/GenericSolverDebugger"
-import { useMemo } from "react"
-import type { InputProblem } from "lib/types/InputProblem"
-import { SchematicTracePipelineSolver } from "lib/index"
+import { GenericSolverDebugger } from "site/components/GenericSolverDebugger";
+import { useMemo } from "react";
+import type { InputProblem } from "lib/types/InputProblem";
+import { SchematicTracePipelineSolver } from "lib/index";
 
 const inputProblem = {
   chips: [
@@ -132,12 +132,12 @@ const inputProblem = {
     GND: ["y-"],
   },
   maxMspPairDistance: 5,
-} as InputProblem
+} as InputProblem;
 
 export default () => {
   const solver = useMemo(
     () => new SchematicTracePipelineSolver(inputProblem),
     [],
-  )
-  return <GenericSolverDebugger solver={solver} />
-}
+  );
+  return <GenericSolverDebugger solver={solver} />;
+};

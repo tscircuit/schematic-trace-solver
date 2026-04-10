@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'lib/**'
+      - "lib/**"
   workflow_dispatch:
 jobs:
   publish:

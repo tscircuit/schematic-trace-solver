@@ -20,7 +20,7 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
-
+import { SameNetSegmentMergingSolver } from "lib/solvers/SameNetSegmentMergingSolver/SameNetSegmentMergingSolver"
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
   solverClass: T
@@ -63,6 +63,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   mspConnectionPairSolver?: MspConnectionPairSolver
   // guidelinesSolver?: GuidelinesSolver
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
+  sameNetSegmentMergingSolver?: SameNetSegmentMergingSolver
   longDistancePairSolver?: LongDistancePairSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
@@ -112,6 +113,27 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       ],
     ),
+    // ========== SAME NET SEGMENT MERGING SOLVER ==========
+    definePipelineStep(
+      "sameNetSegmentMergingSolver",
+      SameNetSegmentMergingSolver,
+      () => [
+        {
+          solvedTracePaths: this.schematicTraceLinesSolver!.solvedTracePaths,
+          mergeThreshold: 0.5,
+        },
+      ],
+      {
+        onSolved: (instance) => {
+          // Replace the solved trace paths with merged ones for subsequent solvers
+          if (instance.sameNetSegmentMergingSolver?.mergedTracePaths) {
+            instance.schematicTraceLinesSolver!.solvedTracePaths = instance
+              .sameNetSegmentMergingSolver.mergedTracePaths as any
+          }
+        },
+      },
+    ),
+    // ========== END OF SAME NET SEGMENT MERGING SOLVER ==========
     definePipelineStep(
       "longDistancePairSolver",
       LongDistancePairSolver,
