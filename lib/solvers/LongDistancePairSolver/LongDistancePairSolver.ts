@@ -66,6 +66,16 @@ export class LongDistancePairSolver extends BaseSolver {
       }
     }
 
+    // Build helpers to skip nets that are handled by net labels only
+    // (mirrors the same logic in MspConnectionPairSolver).
+    const directlyWiredPinIds = new Set<PinId>()
+    for (const dc of inputProblem.directConnections) {
+      for (const pid of dc.pinIds) directlyWiredPinIds.add(pid)
+    }
+    const netLabelOrientedNets = new Set<string>(
+      Object.keys(inputProblem.availableNetLabelOrientations ?? {}),
+    )
+
     // 2. Generate candidate pairs using N-Nearest-Neighbors approach
     const candidatePairs: Array<
       [InputPin & { chipId: string }, InputPin & { chipId: string }]
@@ -76,8 +86,18 @@ export class LongDistancePairSolver extends BaseSolver {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
 
+      // Skip nets that are handled by net labels only — same logic as
+      // MspConnectionPairSolver: no direct-wired pin AND has a label orientation.
+      const hasDirect = allPinIdsInNet.some((id: string) =>
+        directlyWiredPinIds.has(id),
+      )
+      const hasLabel = allPinIdsInNet.some((id: string) =>
+        netLabelOrientedNets.has(id),
+      )
+      if (!hasDirect && hasLabel) continue
+
       const unconnectedPinIds = allPinIdsInNet.filter(
-        (pinId) => !primaryConnectedPinIds.has(pinId),
+        (pinId: string) => !primaryConnectedPinIds.has(pinId),
       )
 
       for (const unconnectedPinId of unconnectedPinIds) {

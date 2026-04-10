@@ -74,7 +74,40 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    // Build a set of all pinIds that have explicit direct wire connections.
+    const directlyWiredPinIds = new Set<string>()
+    for (const dc of inputProblem.directConnections) {
+      for (const pid of dc.pinIds) {
+        directlyWiredPinIds.add(pid)
+      }
+    }
+
+    // Build a set of nets that have configured net-label orientations.
+    // These nets will be represented by net labels in the schematic, not wire
+    // traces — but only when none of their pins appear in directConnections.
+    const netLabelOrientedNets = new Set<string>(
+      Object.keys(inputProblem.availableNetLabelOrientations ?? {}),
+    )
+
+    // Only queue nets that need wire traces:
+    //   • Nets with at least one directly-wired pin always need a trace.
+    //   • Nets with NO directly-wired pins but also NO label orientations still
+    //     need a trace (there is no other way to show the connection).
+    //   • Nets with NO directly-wired pins AND a label orientation are skipped
+    //     because NetLabelPlacementSolver will place the label instead.
+    this.queuedDcNetIds = Object.keys(netConnMap.netMap).filter((netId) => {
+      const connectedIds = netConnMap.getIdsConnectedToNet(netId) as string[]
+      const hasDirect = connectedIds.some((id) => directlyWiredPinIds.has(id))
+      if (hasDirect) return true
+      // connectedIds includes the user-provided net label string (e.g. "GND")
+      // because ConnectivityMap treats the net label as just another member of
+      // the group.  Check whether any connected ID is a net with a configured
+      // label orientation — if so, NetLabelPlacementSolver will handle it.
+      const hasLabelOrientation = connectedIds.some((id) =>
+        netLabelOrientedNets.has(id),
+      )
+      return !hasLabelOrientation
+    })
   }
 
   override getConstructorParams(): ConstructorParameters<
