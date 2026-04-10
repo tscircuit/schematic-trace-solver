@@ -23,10 +23,10 @@ const inputProblem: InputProblem = {
       width: 2.4,
       height: 1.0,
       pins: [
-        { pinId: "U1.1", x: -1.2, y: 0.3 },   // VCC
-        { pinId: "U1.2", x: -1.2, y: 0.1 },   // signal A
-        { pinId: "U1.3", x: -1.2, y: -0.3 },  // GND
-        { pinId: "U1.4", x: 1.2, y: 0.3 },    // signal B
+        { pinId: "U1.1", x: -1.2, y: 0.3 }, // VCC
+        { pinId: "U1.2", x: -1.2, y: 0.1 }, // signal A
+        { pinId: "U1.3", x: -1.2, y: -0.3 }, // GND
+        { pinId: "U1.4", x: 1.2, y: 0.3 }, // signal B
       ],
     },
     {
@@ -45,8 +45,8 @@ const inputProblem: InputProblem = {
       width: 0.5,
       height: 0.8,
       pins: [
-        { pinId: "C1.1", x: -2.5, y: 0.1 },   // VCC
-        { pinId: "C1.2", x: -2.5, y: -0.7 },  // GND
+        { pinId: "C1.1", x: -2.5, y: 0.1 }, // VCC
+        { pinId: "C1.2", x: -2.5, y: -0.7 }, // GND
       ],
     },
   ],
@@ -83,26 +83,18 @@ test("repro issue #79: no spurious traces for net-label-only power rails", () =>
     []
 
   // No trace should connect two VCC-only pins or two GND-only pins.
-  // A trace "connects" two pins if its path starts at one and ends at the other.
+  // SolvedTracePath.pins holds the two endpoint pin objects.
   for (const trace of traces) {
-    const pts = trace.route
-    if (!pts || pts.length < 2) continue
-
-    const startPinId = (trace as any).startPinId as string | undefined
-    const endPinId = (trace as any).endPinId as string | undefined
-
-    if (startPinId && endPinId) {
-      const isSpuriousVCC = vccPins.has(startPinId) && vccPins.has(endPinId)
-      const isSpuriousGND = gndPins.has(startPinId) && gndPins.has(endPinId)
-      expect(isSpuriousVCC).toBe(false)
-      expect(isSpuriousGND).toBe(false)
-    }
+    const pinIds = trace.pins.map((p) => p.pinId)
+    const isSpuriousVCC = pinIds.every((id) => vccPins.has(id))
+    const isSpuriousGND = pinIds.every((id) => gndPins.has(id))
+    expect(isSpuriousVCC).toBe(false)
+    expect(isSpuriousGND).toBe(false)
   }
 
   // Net labels for VCC and GND must have been placed
-  const labels =
-    solver.netLabelPlacementSolver?.netLabelPlacements ?? []
-  const labelNets = labels.map((l) => l.netId ?? l.pinId)
+  const labels = solver.netLabelPlacementSolver?.netLabelPlacements ?? []
+  const labelNets = labels.map((l) => l.netId)
 
   const hasVCCLabel = labelNets.some(
     (id) => typeof id === "string" && id.toLowerCase().includes("vcc"),

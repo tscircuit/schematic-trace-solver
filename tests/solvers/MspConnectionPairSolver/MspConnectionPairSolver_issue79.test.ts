@@ -40,12 +40,8 @@ test("issue #79: net-label-only nets should not generate MSP pairs", () => {
   // GND connects U1.3 and C1.2 via a net label — no wire trace should be drawn.
   const inputProblem: InputProblem = {
     chips: baseChips,
-    directConnections: [
-      { pinIds: ["U1.1", "C1.1"], netId: "VCC" },
-    ],
-    netConnections: [
-      { pinIds: ["U1.3", "C1.2"], netId: "GND" },
-    ],
+    directConnections: [{ pinIds: ["U1.1", "C1.1"], netId: "VCC" }],
+    netConnections: [{ pinIds: ["U1.3", "C1.2"], netId: "GND" }],
     availableNetLabelOrientations: {
       VCC: ["y+"],
       GND: ["y-"],
@@ -71,9 +67,7 @@ test("issue #79: net-only connections without label orientations still produce M
   const inputProblem: InputProblem = {
     chips: baseChips,
     directConnections: [],
-    netConnections: [
-      { pinIds: ["U1.2", "C1.1"], netId: "signal" },
-    ],
+    netConnections: [{ pinIds: ["U1.2", "C1.1"], netId: "signal" }],
     availableNetLabelOrientations: {},
     maxMspPairDistance: 5,
   }
@@ -90,12 +84,8 @@ test("issue #79: net with both directConnection and netConnection always keeps t
   // The direct wire must still be drawn.
   const inputProblem: InputProblem = {
     chips: baseChips,
-    directConnections: [
-      { pinIds: ["U1.1", "C1.1"], netId: "VCC" },
-    ],
-    netConnections: [
-      { pinIds: ["U1.1", "C1.1"], netId: "VCC" },
-    ],
+    directConnections: [{ pinIds: ["U1.1", "C1.1"], netId: "VCC" }],
+    netConnections: [{ pinIds: ["U1.1", "C1.1"], netId: "VCC" }],
     availableNetLabelOrientations: {
       VCC: ["y+"],
     },
