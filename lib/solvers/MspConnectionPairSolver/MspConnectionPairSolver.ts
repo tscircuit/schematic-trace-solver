@@ -74,7 +74,27 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    // Only queue nets that need wire traces.
+    // Nets that are handled exclusively via netConnections with a configured
+    // net-label orientation should be represented by net labels only — routing
+    // a wire trace on top of them produces the spurious extra lines in #79.
+    const directlyWiredPinIds = new Set<string>()
+    for (const dc of inputProblem.directConnections) {
+      for (const pid of dc.pinIds) {
+        directlyWiredPinIds.add(pid)
+      }
+    }
+    const netLabelOrientedNets = new Set<string>(
+      Object.keys(inputProblem.availableNetLabelOrientations ?? {}),
+    )
+    this.queuedDcNetIds = Object.keys(netConnMap.netMap).filter((netId) => {
+      const connectedIds = netConnMap.getIdsConnectedToNet(netId) as string[]
+      // Always route if any pin has a direct wire connection.
+      if (connectedIds.some((id) => directlyWiredPinIds.has(id))) return true
+      // Skip nets that have a label orientation and no direct connections —
+      // NetLabelPlacementSolver will place the label instead.
+      return !connectedIds.some((id) => netLabelOrientedNets.has(id))
+    })
   }
 
   override getConstructorParams(): ConstructorParameters<

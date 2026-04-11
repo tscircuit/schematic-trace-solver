@@ -56,6 +56,16 @@ export class LongDistancePairSolver extends BaseSolver {
       primaryConnectedPinIds.add(pair.pins[1].pinId)
     }
 
+    // Build helpers to skip nets handled by net labels only (mirrors the same
+    // logic added to MspConnectionPairSolver for issue #79).
+    const directlyWiredPinIds = new Set<string>()
+    for (const dc of inputProblem.directConnections) {
+      for (const pid of dc.pinIds) directlyWiredPinIds.add(pid)
+    }
+    const netLabelOrientedNets = new Set<string>(
+      Object.keys(inputProblem.availableNetLabelOrientations ?? {}),
+    )
+
     const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
     this.netConnMap = netConnMap
     const pinMap = new Map<PinId, InputPin & { chipId: string }>()
@@ -76,8 +86,18 @@ export class LongDistancePairSolver extends BaseSolver {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
 
+      // Skip nets that are represented by net labels only — they have no direct
+      // wire connections and have a configured label orientation.
+      const hasDirect = allPinIdsInNet.some((id: string) =>
+        directlyWiredPinIds.has(id),
+      )
+      const hasLabel = allPinIdsInNet.some((id: string) =>
+        netLabelOrientedNets.has(id),
+      )
+      if (!hasDirect && hasLabel) continue
+
       const unconnectedPinIds = allPinIdsInNet.filter(
-        (pinId) => !primaryConnectedPinIds.has(pinId),
+        (pinId: string) => !primaryConnectedPinIds.has(pinId),
       )
 
       for (const unconnectedPinId of unconnectedPinIds) {
