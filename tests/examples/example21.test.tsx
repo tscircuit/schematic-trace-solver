@@ -1,7 +1,7 @@
-import { expect } from "bun:test";
-import { test } from "bun:test";
-import { SchematicTracePipelineSolver, type InputProblem } from "lib/index";
-import "tests/fixtures/matcher";
+import { expect } from "bun:test"
+import { test } from "bun:test"
+import { SchematicTracePipelineSolver, type InputProblem } from "lib/index"
+import "tests/fixtures/matcher"
 
 const inputProblem = {
   chips: [
@@ -174,10 +174,10 @@ const inputProblem = {
     LDO_EN: ["x-", "x+"],
   },
   maxMspPairDistance: 2.4,
-} as InputProblem;
+} as InputProblem
 
 test("example21", () => {
-  const solver = new SchematicTracePipelineSolver(inputProblem);
-  solver.solve();
-  expect(solver).toMatchSolverSnapshot(import.meta.path);
-});
+  const solver = new SchematicTracePipelineSolver(inputProblem)
+  solver.solve()
+  expect(solver).toMatchSolverSnapshot(import.meta.path)
+})

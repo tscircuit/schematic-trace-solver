@@ -6,7 +6,10 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { mergeCloseParallelSegments, DEFAULT_MERGE_THRESHOLD } from "lib/utils/mergeCloseParallelSegments"
+import {
+  mergeCloseParallelSegments,
+  DEFAULT_MERGE_THRESHOLD,
+} from "lib/utils/mergeCloseParallelSegments"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.

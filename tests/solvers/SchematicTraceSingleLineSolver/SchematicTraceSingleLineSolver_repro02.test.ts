@@ -1,5 +1,5 @@
-import { SchematicTraceSingleLineSolver } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/SchematicTraceSingleLineSolver";
-import { test, expect } from "bun:test";
+import { SchematicTraceSingleLineSolver } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/SchematicTraceSingleLineSolver"
+import { test, expect } from "bun:test"
 
 test("SchematicTraceSingleLineSolver should solve problem correctly", () => {
   const input = {
@@ -884,21 +884,21 @@ test("SchematicTraceSingleLineSolver should solve problem correctly", () => {
       availableNetLabelOrientations: {},
       maxMspPairDistance: 2,
     },
-  };
+  }
 
-  const solver = new SchematicTraceSingleLineSolver(input as any);
-  solver.solve();
+  const solver = new SchematicTraceSingleLineSolver(input as any)
+  solver.solve()
 
   // There should be no orthogonal paths even considered as candidates
   for (const path of solver.allCandidatePaths) {
     for (let i = 0; i < path.length - 1; i++) {
-      const start = path[i];
-      const end = path[i + 1];
-      const dx = end.x - start.x;
-      const dy = end.y - start.y;
-      const isHorizontal = Math.abs(dy) < 1e-6;
-      const isVertical = Math.abs(dx) < 1e-6;
-      expect(isHorizontal || isVertical).toBe(true);
+      const start = path[i]
+      const end = path[i + 1]
+      const dx = end.x - start.x
+      const dy = end.y - start.y
+      const isHorizontal = Math.abs(dy) < 1e-6
+      const isVertical = Math.abs(dx) < 1e-6
+      expect(isHorizontal || isVertical).toBe(true)
     }
   }
-});
+})

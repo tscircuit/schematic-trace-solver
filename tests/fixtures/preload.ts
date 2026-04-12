@@ -1,2 +1,2 @@
-import "bun-match-svg";
-import "tests/fixtures/matcher";
+import "bun-match-svg"
+import "tests/fixtures/matcher"

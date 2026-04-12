@@ -1,35 +1,35 @@
-import { useState, useRef, useEffect } from "react";
-import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver";
+import { useState, useRef, useEffect } from "react"
+import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 
 interface DownloadDropdownProps {
-  solver: BaseSolver;
-  className?: string;
+  solver: BaseSolver
+  className?: string
 }
 
 const deepRemoveUnderscoreProperties = (obj: any): any => {
   if (obj === null || typeof obj !== "object") {
-    return obj;
+    return obj
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(deepRemoveUnderscoreProperties);
+    return obj.map(deepRemoveUnderscoreProperties)
   }
 
-  const result: any = {};
+  const result: any = {}
   for (const [key, value] of Object.entries(obj)) {
     if (!key.startsWith("_")) {
-      result[key] = deepRemoveUnderscoreProperties(value);
+      result[key] = deepRemoveUnderscoreProperties(value)
     }
   }
-  return result;
-};
+  return result
+}
 
 export const DownloadDropdown = ({
   solver,
   className = "",
 }: DownloadDropdownProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -37,53 +37,53 @@ export const DownloadDropdown = ({
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
-        setIsOpen(false);
+        setIsOpen(false)
       }
-    };
+    }
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   const downloadJSON = () => {
     try {
       if (typeof solver.getConstructorParams !== "function") {
         alert(
           `getConstructorParams() is not implemented for ${solver.constructor.name}`,
-        );
-        return;
+        )
+        return
       }
 
       const params = deepRemoveUnderscoreProperties(
         solver.getConstructorParams(),
-      );
+      )
       const blob = new Blob([JSON.stringify(params, null, 2)], {
         type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${solver.constructor.name}_params.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${solver.constructor.name}_params.json`
+      a.click()
+      URL.revokeObjectURL(url)
     } catch (error) {
       alert(
         `Error downloading params for ${solver.constructor.name}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      )
     }
-    setIsOpen(false);
-  };
+    setIsOpen(false)
+  }
 
   const downloadPageTsx = () => {
     try {
       const params = deepRemoveUnderscoreProperties(
         solver.getConstructorParams(),
-      );
-      const solverName = solver.constructor.name;
+      )
+      const solverName = solver.constructor.name
       const isSchematicTracePipelineSolver =
-        solverName === "SchematicTracePipelineSolver";
+        solverName === "SchematicTracePipelineSolver"
 
-      let content: string;
+      let content: string
 
       if (isSchematicTracePipelineSolver) {
         content = `import { PipelineDebugger } from "site/components/PipelineDebugger"
@@ -92,7 +92,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 const inputProblem: InputProblem = ${JSON.stringify(params, null, 2)}
 
 export default () => <PipelineDebugger inputProblem={inputProblem} />
-`;
+`
       } else {
         content = `import { useMemo } from "react"
 import { GenericSolverDebugger } from "../components/GenericSolverDebugger"
@@ -106,30 +106,30 @@ export default () => {
   }, [])
   return <GenericSolverDebugger solver={solver} />
 }
-`;
+`
       }
 
-      const blob = new Blob([content], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${solverName}.page.tsx`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const blob = new Blob([content], { type: "text/plain" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${solverName}.page.tsx`
+      a.click()
+      URL.revokeObjectURL(url)
     } catch (error) {
       alert(
         `Error generating page.tsx for ${solver.constructor.name}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      )
     }
-    setIsOpen(false);
-  };
+    setIsOpen(false)
+  }
 
   const downloadTestTs = () => {
     try {
       const params = deepRemoveUnderscoreProperties(
         solver.getConstructorParams(),
-      );
-      const solverName = solver.constructor.name;
+      )
+      const solverName = solver.constructor.name
 
       const content = `import { ${solverName} } from "lib/solvers/${solverName}/${solverName}\nimport { test, expect } from "bun:test"
 
@@ -144,22 +144,22 @@ test("${solverName} should solve problem correctly", () => {
   // Add more specific assertions based on expected output
   // expect(solver.netLabelPlacementSolver!.netLabelPlacements).toMatchInlineSnapshot()
 })
-`;
+`
 
-      const blob = new Blob([content], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${solverName}.test.ts`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const blob = new Blob([content], { type: "text/plain" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${solverName}.test.ts`
+      a.click()
+      URL.revokeObjectURL(url)
     } catch (error) {
       alert(
         `Error generating test.ts for ${solver.constructor.name}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      )
     }
-    setIsOpen(false);
-  };
+    setIsOpen(false)
+  }
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
@@ -194,5 +194,5 @@ test("${solverName} should solve problem correctly", () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}

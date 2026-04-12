@@ -1,7 +1,6 @@
-import { describe, it, expect } from "vitest"  // This will work with Bun's test runner
+import { describe, it, expect } from "vitest" // This will work with Bun's test runner
 import { mergeCloseParallelSegments } from "lib/utils/mergeCloseParallelSegments"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-
 
 const makeTrace = (
   id: string,
@@ -17,7 +16,7 @@ const makeTrace = (
     mspConnectionPairIds: [id],
     pinIds: [],
     userNetId: undefined,
-  } as any)
+  }) as any
 
 describe("mergeCloseParallelSegments", () => {
   it("snaps two close horizontal same-net segments to same Y", () => {

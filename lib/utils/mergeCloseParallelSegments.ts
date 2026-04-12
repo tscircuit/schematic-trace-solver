@@ -62,10 +62,7 @@ export function mergeCloseParallelSegments(
   })
 }
 
-function isHorizontalSeg(
-  a: number[],
-  b: number[],
-): boolean {
+function isHorizontalSeg(a: number[], b: number[]): boolean {
   return Math.abs(a[1]! - b[1]!) < EPS
 }
 
@@ -84,9 +81,7 @@ function intervalsOverlap(
   bMax: number,
   tol = EPS,
 ): boolean {
-  return (
-    Math.min(aMax, bMax) - Math.max(aMin, bMin) > tol
-  )
+  return Math.min(aMax, bMax) - Math.max(aMin, bMin) > tol
 }
 
 function mergeParallelSegmentsBetweenPaths(

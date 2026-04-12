@@ -1,5 +1,5 @@
-import { PipelineDebugger } from "../components/PipelineDebugger";
-import type { InputProblem } from "lib/types/InputProblem";
+import { PipelineDebugger } from "../components/PipelineDebugger"
+import type { InputProblem } from "lib/types/InputProblem"
 
 export const inputProblem: InputProblem = {
   chips: [
@@ -41,6 +41,6 @@ export const inputProblem: InputProblem = {
     V3_3: ["y+"],
   },
   maxMspPairDistance: 2,
-};
+}
 
-export default () => <PipelineDebugger inputProblem={inputProblem} />;
+export default () => <PipelineDebugger inputProblem={inputProblem} />
