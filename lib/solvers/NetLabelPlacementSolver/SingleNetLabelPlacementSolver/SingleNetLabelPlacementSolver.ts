@@ -1,29 +1,29 @@
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver";
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type {
   NetLabelPlacement,
   OverlappingSameNetTraceGroup,
-} from "../NetLabelPlacementSolver";
-import type { InputProblem, PinId } from "lib/types/InputProblem";
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver";
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver";
-import type { FacingDirection } from "lib/utils/dir";
-import type { GraphicsObject } from "graphics-debug";
-import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex";
+} from "../NetLabelPlacementSolver"
+import type { InputProblem, PinId } from "lib/types/InputProblem"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import type { FacingDirection } from "lib/utils/dir"
+import type { GraphicsObject } from "graphics-debug"
+import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import {
   getDimsForOrientation,
   getCenterFromAnchor,
   getRectBounds,
-} from "./geometry";
-import { rectIntersectsAnyTrace } from "./collisions";
-import { chooseHostTraceForGroup } from "./host";
-import { anchorsForSegment } from "./anchors";
-import { solveNetLabelPlacementForPortOnlyPin } from "./solvePortOnlyPin";
-import { visualizeSingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver_visualize";
+} from "./geometry"
+import { rectIntersectsAnyTrace } from "./collisions"
+import { chooseHostTraceForGroup } from "./host"
+import { anchorsForSegment } from "./anchors"
+import { solveNetLabelPlacementForPortOnlyPin } from "./solvePortOnlyPin"
+import { visualizeSingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver_visualize"
 
 export {
   NET_LABEL_HORIZONTAL_WIDTH,
   NET_LABEL_HORIZONTAL_HEIGHT,
-} from "./geometry";
+} from "./geometry"
 // NOTE: net labels, when in the y+/y- orientation, are rotated and therefore
 // the width/height are swapped
 
@@ -51,45 +51,45 @@ export {
  * order from the largest chip, is the location we return in netLabelPlacement
  */
 export class SingleNetLabelPlacementSolver extends BaseSolver {
-  inputProblem: InputProblem;
-  inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>;
-  overlappingSameNetTraceGroup: OverlappingSameNetTraceGroup;
-  availableOrientations: Array<FacingDirection>;
+  inputProblem: InputProblem
+  inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
+  overlappingSameNetTraceGroup: OverlappingSameNetTraceGroup
+  availableOrientations: Array<FacingDirection>
 
-  chipObstacleSpatialIndex: ChipObstacleSpatialIndex;
+  chipObstacleSpatialIndex: ChipObstacleSpatialIndex
 
   // Optional override for the width of the net label (per netId)
-  netLabelWidth?: number;
+  netLabelWidth?: number
 
-  netLabelPlacement: NetLabelPlacement | null = null;
+  netLabelPlacement: NetLabelPlacement | null = null
   testedCandidates: Array<{
-    center: { x: number; y: number };
-    width: number;
-    height: number;
-    bounds: { minX: number; minY: number; maxX: number; maxY: number };
-    anchor: { x: number; y: number };
-    orientation: FacingDirection;
-    status: "ok" | "chip-collision" | "trace-collision" | "parallel-to-segment";
-    hostSegIndex: number;
-  }> = [];
+    center: { x: number; y: number }
+    width: number
+    height: number
+    bounds: { minX: number; minY: number; maxX: number; maxY: number }
+    anchor: { x: number; y: number }
+    orientation: FacingDirection
+    status: "ok" | "chip-collision" | "trace-collision" | "parallel-to-segment"
+    hostSegIndex: number
+  }> = []
 
   constructor(params: {
-    inputProblem: InputProblem;
-    inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>;
-    overlappingSameNetTraceGroup: OverlappingSameNetTraceGroup;
-    availableOrientations: FacingDirection[];
-    netLabelWidth?: number;
+    inputProblem: InputProblem
+    inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
+    overlappingSameNetTraceGroup: OverlappingSameNetTraceGroup
+    availableOrientations: FacingDirection[]
+    netLabelWidth?: number
   }) {
-    super();
-    this.inputProblem = params.inputProblem;
-    this.inputTraceMap = params.inputTraceMap;
-    this.overlappingSameNetTraceGroup = params.overlappingSameNetTraceGroup;
-    this.availableOrientations = params.availableOrientations;
-    this.netLabelWidth = params.netLabelWidth;
+    super()
+    this.inputProblem = params.inputProblem
+    this.inputTraceMap = params.inputTraceMap
+    this.overlappingSameNetTraceGroup = params.overlappingSameNetTraceGroup
+    this.availableOrientations = params.availableOrientations
+    this.netLabelWidth = params.netLabelWidth
 
     this.chipObstacleSpatialIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
-      new ChipObstacleSpatialIndex(params.inputProblem.chips);
+      new ChipObstacleSpatialIndex(params.inputProblem.chips)
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -101,13 +101,13 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       overlappingSameNetTraceGroup: this.overlappingSameNetTraceGroup,
       availableOrientations: this.availableOrientations,
       netLabelWidth: this.netLabelWidth,
-    };
+    }
   }
 
   override _step() {
     if (this.netLabelPlacement) {
-      this.solved = true;
-      return;
+      this.solved = true
+      return
     }
 
     // Handle port-only island (no traces) by placing a label at the port
@@ -119,21 +119,21 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         overlappingSameNetTraceGroup: this.overlappingSameNetTraceGroup,
         availableOrientations: this.availableOrientations,
         netLabelWidth: this.netLabelWidth,
-      });
-      this.testedCandidates.push(...res.testedCandidates);
+      })
+      this.testedCandidates.push(...res.testedCandidates)
       if (res.placement) {
-        this.netLabelPlacement = res.placement;
-        this.solved = true;
-        return;
+        this.netLabelPlacement = res.placement
+        this.solved = true
+        return
       }
-      this.failed = true;
+      this.failed = true
       this.error =
-        res.error ?? "Could not place net label at port without collisions";
-      return;
+        res.error ?? "Could not place net label at port without collisions"
+      return
     }
 
     // Prefer starting from the trace connected to the "largest" chip (most pins)
-    const groupId = this.overlappingSameNetTraceGroup.globalConnNetId;
+    const groupId = this.overlappingSameNetTraceGroup.globalConnNetId
     let host = chooseHostTraceForGroup({
       inputProblem: this.inputProblem,
       inputTraceMap: this.inputTraceMap,
@@ -141,38 +141,38 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       fallbackTrace: this.overlappingSameNetTraceGroup.overlappingTraces,
       mspConnectionPairIds:
         this.overlappingSameNetTraceGroup.mspConnectionPairIds,
-    });
+    })
 
     if (!host) {
-      this.failed = true;
-      this.error = "No host trace found for net label placement";
-      return;
+      this.failed = true
+      this.error = "No host trace found for net label placement"
+      return
     }
 
     // Ensure we traverse the host path starting at the segment attached to the largest chip's pin
     const traceIdSet = new Set(
       this.overlappingSameNetTraceGroup.mspConnectionPairIds ?? [],
-    );
+    )
     const tracesToScanBase = Object.values(this.inputTraceMap).filter(
       (t) =>
         t.globalConnNetId === groupId &&
         (traceIdSet.size === 0 ||
           t.mspConnectionPairIds.some((id) => traceIdSet.has(id))),
-    );
+    )
     const tracesToScan =
       this.availableOrientations.length === 1
         ? [
             host,
             ...tracesToScanBase.filter((t) => t.mspPairId !== host!.mspPairId),
           ]
-        : [host];
+        : [host]
 
     const orientations =
       this.availableOrientations.length > 0
         ? this.availableOrientations
-        : (["x+", "x-", "y+", "y-"] as FacingDirection[]);
+        : (["x+", "x-", "y+", "y-"] as FacingDirection[])
 
-    const singleOrientationMode = this.availableOrientations.length === 1;
+    const singleOrientationMode = this.availableOrientations.length === 1
 
     // For axis-aligned comparisons (furthest-point selection)
     const scoreFor = (
@@ -181,62 +181,62 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     ) => {
       switch (orientation) {
         case "y+":
-          return anchor.y;
+          return anchor.y
         case "y-":
-          return -anchor.y;
+          return -anchor.y
         case "x+":
-          return anchor.x;
+          return anchor.x
         case "x-":
-          return -anchor.x;
+          return -anchor.x
       }
-    };
+    }
     let bestCandidate: {
-      anchor: { x: number; y: number };
-      orientation: FacingDirection;
-      width: number;
-      height: number;
-      center: { x: number; y: number };
-      hostSegIndex: number;
-      dcConnNetId: string;
-      mspPairId: MspConnectionPairId;
-      pinIds: PinId[];
-    } | null = null;
-    let bestScore = -Infinity;
+      anchor: { x: number; y: number }
+      orientation: FacingDirection
+      width: number
+      height: number
+      center: { x: number; y: number }
+      hostSegIndex: number
+      dcConnNetId: string
+      mspPairId: MspConnectionPairId
+      pinIds: PinId[]
+    } | null = null
+    let bestScore = -Infinity
 
-    const EPS = 1e-6;
+    const EPS = 1e-6
 
     for (const curr of tracesToScan) {
-      const pts = curr.tracePath.slice();
+      const pts = curr.tracePath.slice()
       for (let si = 0; si < pts.length - 1; si++) {
-        const a = pts[si]!;
-        const b = pts[si + 1]!;
-        const isH = Math.abs(a.y - b.y) < EPS;
-        const isV = Math.abs(a.x - b.x) < EPS;
-        if (!isH && !isV) continue;
+        const a = pts[si]!
+        const b = pts[si + 1]!
+        const isH = Math.abs(a.y - b.y) < EPS
+        const isV = Math.abs(a.x - b.x) < EPS
+        if (!isH && !isV) continue
 
         // Only consider orientations perpendicular to the segment to avoid
         // self-overlap with the host segment.
         const segmentAllowed: FacingDirection[] = isH
           ? (["y+", "y-"] as FacingDirection[])
-          : (["x+", "x-"] as FacingDirection[]);
+          : (["x+", "x-"] as FacingDirection[])
         const candidateOrients = orientations.filter((o) =>
           segmentAllowed.includes(o),
-        );
-        if (candidateOrients.length === 0) continue;
+        )
+        if (candidateOrients.length === 0) continue
 
-        const anchors = anchorsForSegment(a, b);
+        const anchors = anchorsForSegment(a, b)
         for (const anchor of anchors) {
           for (const orientation of candidateOrients) {
             const { width, height } = getDimsForOrientation({
               orientation,
               netLabelWidth: this.netLabelWidth,
-            });
+            })
             const center = getCenterFromAnchor(
               anchor,
               orientation,
               width,
               height,
-            );
+            )
 
             // Small outward offset to avoid counting the touching trace as a collision
             const outward =
@@ -246,17 +246,16 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
                   ? { x: -1, y: 0 }
                   : orientation === "y+"
                     ? { x: 0, y: 1 }
-                    : { x: 0, y: -1 };
-            const offset = 1e-4;
+                    : { x: 0, y: -1 }
+            const offset = 1e-4
             const testCenter = {
               x: center.x + outward.x * offset,
               y: center.y + outward.y * offset,
-            };
-            const bounds = getRectBounds(testCenter, width, height);
+            }
+            const bounds = getRectBounds(testCenter, width, height)
 
             // Chip collision check
-            const chips =
-              this.chipObstacleSpatialIndex.getChipsInBounds(bounds);
+            const chips = this.chipObstacleSpatialIndex.getChipsInBounds(bounds)
             if (chips.length > 0) {
               this.testedCandidates.push({
                 center: testCenter,
@@ -267,8 +266,8 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
                 orientation,
                 status: "chip-collision",
                 hostSegIndex: si,
-              });
-              continue;
+              })
+              continue
             }
 
             // Trace collision check (ignore the host segment)
@@ -277,7 +276,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
               this.inputTraceMap,
               curr.mspPairId,
               si,
-            );
+            )
             if (traceIntersectionResult.hasIntersection) {
               this.testedCandidates.push({
                 center: testCenter,
@@ -288,8 +287,8 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
                 orientation,
                 status: "trace-collision",
                 hostSegIndex: si,
-              });
-              continue;
+              })
+              continue
             }
 
             // Found a valid placement
@@ -302,12 +301,12 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
               orientation,
               status: "ok",
               hostSegIndex: si,
-            });
+            })
 
             if (singleOrientationMode) {
-              const s = scoreFor(orientation, anchor);
+              const s = scoreFor(orientation, anchor)
               if (s > bestScore + 1e-9) {
-                bestScore = s;
+                bestScore = s
                 bestCandidate = {
                   anchor,
                   orientation,
@@ -318,10 +317,10 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
                   dcConnNetId: curr.dcConnNetId,
                   mspPairId: curr.mspPairId,
                   pinIds: [curr.pins[0].pinId, curr.pins[1].pinId],
-                };
+                }
               }
               // Continue traversing to prioritize the furthest valid point
-              continue;
+              continue
             }
 
             this.netLabelPlacement = {
@@ -336,9 +335,9 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
               width,
               height,
               center,
-            };
-            this.solved = true;
-            return;
+            }
+            this.solved = true
+            return
           }
         }
       }
@@ -356,16 +355,16 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         width: bestCandidate.width,
         height: bestCandidate.height,
         center: bestCandidate.center,
-      };
-      this.solved = true;
-      return;
+      }
+      this.solved = true
+      return
     }
 
-    this.failed = true;
-    this.error = "Could not place net label without collisions";
+    this.failed = true
+    this.error = "Could not place net label without collisions"
   }
 
   override visualize(): GraphicsObject {
-    return visualizeSingleNetLabelPlacementSolver(this);
+    return visualizeSingleNetLabelPlacementSolver(this)
   }
 }
