@@ -1,4 +1,4 @@
-import { TraceCleanupSolver } from "../TraceCleanupSolver";
+import { TraceCleanupSolver } from "../TraceCleanupSolver"
 
 const input = {
   chips: [],
@@ -12,17 +12,17 @@ const input = {
         { x: 10, y: 0 },
         { x: 20, y: 0 },
         { x: 20, y: 10 },
-        { x: 20, y: 20 }
-      ]
-    }
-  ]
-};
+        { x: 20, y: 20 },
+      ],
+    },
+  ],
+}
 
-const solver = new TraceCleanupSolver(input);
-const result = solver.solve();
+const solver = new TraceCleanupSolver(input)
+const result = solver.solve()
 
-console.log("===== POW: BEFORE =====");
-console.log(JSON.stringify(input.allTraces, null, 2));
+console.log("===== POW: BEFORE =====")
+console.log(JSON.stringify(input.allTraces, null, 2))
 
-console.log("\n===== POW: AFTER =====");
-console.log(JSON.stringify(result.cleanedTraces, null, 2));
+console.log("\n===== POW: AFTER =====")
+console.log(JSON.stringify(result.cleanedTraces, null, 2))

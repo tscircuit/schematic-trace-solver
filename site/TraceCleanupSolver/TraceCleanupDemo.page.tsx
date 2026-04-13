@@ -1,5 +1,5 @@
-import React from "react";
-import { TraceCleanupSolver } from "../../lib/solvers/TraceCleanupSolver/TraceCleanupSolver";
+import React from "react"
+import { TraceCleanupSolver } from "../../lib/solvers/TraceCleanupSolver/TraceCleanupSolver"
 
 // Input di esempio – valido e identico alla struttura attesa dal solver
 const demoInput = {
@@ -18,14 +18,14 @@ const demoInput = {
       ],
     },
   ],
-};
+}
 
 export default function TraceCleanupDemo() {
-  console.log(">>> TraceCleanupDemo PAGE LOADED <<<");
+  console.log(">>> TraceCleanupDemo PAGE LOADED <<<")
 
   // esegui il solver
-  const solver = new TraceCleanupSolver(demoInput);
-  const result = solver.solve();
+  const solver = new TraceCleanupSolver(demoInput)
+  const result = solver.solve()
 
   return (
     <div style={{ padding: 20 }}>
@@ -37,5 +37,5 @@ export default function TraceCleanupDemo() {
       <h3>Output (solver.solve())</h3>
       <pre>{JSON.stringify(result, null, 2)}</pre>
     </div>
-  );
+  )
 }

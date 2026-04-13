@@ -1,4 +1,4 @@
-import { TraceCleanupSolver } from "../TraceCleanupSolver";
+import { TraceCleanupSolver } from "../TraceCleanupSolver"
 
 describe("POW: TraceCleanupSolver snapshot", () => {
   it("shows BEFORE and AFTER cleaned trace", () => {
@@ -15,19 +15,19 @@ describe("POW: TraceCleanupSolver snapshot", () => {
             { x: 10, y: 0 },
             { x: 20, y: 0 },
             { x: 20, y: 10 },
-            { x: 20, y: 20 }
-          ]
-        }
-      ]
-    };
+            { x: 20, y: 20 },
+          ],
+        },
+      ],
+    }
 
-    const solver = new TraceCleanupSolver(input);
-    const result = solver.solve();
+    const solver = new TraceCleanupSolver(input)
+    const result = solver.solve()
 
     // POW = Print Original & With-changes
     expect({
       BEFORE: input.allTraces,
       AFTER: result.cleanedTraces,
-    }).toMatchSnapshot();
-  });
-});
+    }).toMatchSnapshot()
+  })
+})
