@@ -1,7 +1,7 @@
-import { expect, test } from "bun:test"
+import inputParams from "site/MspConnectionPairSolver/MspConnectionPairSolver01_params.json"
+import { test, expect } from "bun:test"
 import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { InputProblem } from "lib/types/InputProblem"
-import inputParams from "site/MspConnectionPairSolver/MspConnectionPairSolver01_params.json"
 
 test("MspConnectionPairSolver_repro1", () => {
   const solver = new MspConnectionPairSolver({

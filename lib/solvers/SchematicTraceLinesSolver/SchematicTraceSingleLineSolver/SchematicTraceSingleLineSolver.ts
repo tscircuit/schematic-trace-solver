@@ -1,11 +1,7 @@
-import type { Point } from "@tscircuit/math-utils"
-import { calculateElbow } from "calculate-elbow"
-import { type GraphicsObject, getBounds } from "graphics-debug"
+import { getBounds, type GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { Guideline } from "lib/solvers/GuidelinesSolver/GuidelinesSolver"
-import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
-import { visualizeGuidelines } from "lib/solvers/GuidelinesSolver/visualizeGuidelines"
 import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type {
@@ -15,12 +11,16 @@ import type {
   InputProblem,
   PinId,
 } from "lib/types/InputProblem"
-import { getColorFromString } from "lib/utils/getColorFromString"
+import { calculateElbow } from "calculate-elbow"
+import { getPinDirection } from "./getPinDirection"
 import {
   generateElbowVariants,
   type MovableSegment,
 } from "./generateElbowVariants"
-import { getPinDirection } from "./getPinDirection"
+import type { Point } from "@tscircuit/math-utils"
+import { visualizeGuidelines } from "lib/solvers/GuidelinesSolver/visualizeGuidelines"
+import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
+import { getColorFromString } from "lib/utils/getColorFromString"
 import { getRestrictedCenterLines } from "./getRestrictedCenterLines"
 
 type ChipPin = InputPin & { chipId: ChipId }
@@ -153,7 +153,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
       const end = nextCandidatePath[i + 1]
 
       // Determine which chips to exclude for this specific segment
-      const excludeChipIds: string[] = []
+      let excludeChipIds: string[] = []
 
       // If this segment would cross any restricted center line, reject the candidate path.
       const EPS = 1e-9

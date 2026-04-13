@@ -1,5 +1,5 @@
-import { expect, test } from "bun:test"
 import { SchematicTraceSingleLineSolver } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/SchematicTraceSingleLineSolver"
+import { test, expect } from "bun:test"
 
 test("SchematicTraceSingleLineSolver should solve problem correctly", () => {
   const input = {

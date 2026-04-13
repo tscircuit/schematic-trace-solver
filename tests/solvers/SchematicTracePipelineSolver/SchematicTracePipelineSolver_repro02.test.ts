@@ -1,5 +1,5 @@
-import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { test, expect } from "bun:test"
 
 test("SchematicTracePipelineSolver should solve problem correctly", () => {
   const input = {

@@ -1,16 +1,16 @@
-import type { Point } from "@tscircuit/math-utils"
-import type { ConnectivityMap } from "connectivity-map"
-import { type GraphicsObject, getBounds } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import { getBounds, type GraphicsObject } from "graphics-debug"
 import type { InputChip, InputProblem, PinId } from "lib/types/InputProblem"
-import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
-import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
 import type {
   MspConnectionPair,
   MspConnectionPairId,
 } from "../MspConnectionPairSolver/MspConnectionPairSolver"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import type { ConnectivityMap } from "connectivity-map"
 import { SchematicTraceSingleLineSolver2 } from "./SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
+import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
+import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
+import type { Point } from "@tscircuit/math-utils"
 
 export interface SolvedTracePath extends MspConnectionPair {
   tracePath: Point[]

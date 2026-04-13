@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test"
+import { test, expect } from "bun:test"
 import type { InputProblem } from "lib/index"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import "tests/fixtures/matcher"

@@ -1,5 +1,6 @@
-import { expect, test } from "bun:test"
 import { OverlapAvoidanceStepSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/OverlapAvoidanceStepSolver/OverlapAvoidanceStepSolver"
+import { expect } from "bun:test"
+import { test } from "bun:test"
 import inputData from "../../../assets/OverlapAvoidanceStepSolver.test.input.json"
 
 test("OverlapAvoidanceStepSolver snapshot", () => {

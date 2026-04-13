@@ -1,13 +1,13 @@
-import type { GraphicsObject } from "graphics-debug"
-import { getColorFromString } from "lib/utils/getColorFromString"
-import type { InputProblem } from "../../types/InputProblem"
 import { BaseSolver } from "../BaseSolver/BaseSolver"
-import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import { detectTraceLabelOverlap } from "./detectTraceLabelOverlap"
+import type { InputProblem } from "../../types/InputProblem"
 import { MergedNetLabelObstacleSolver } from "./sub-solvers/LabelMergingSolver/LabelMergingSolver"
+import { getColorFromString } from "lib/utils/getColorFromString"
 import { OverlapAvoidanceStepSolver } from "./sub-solvers/OverlapAvoidanceStepSolver/OverlapAvoidanceStepSolver"
+import { detectTraceLabelOverlap } from "./detectTraceLabelOverlap"
 
 interface TraceLabelOverlapAvoidanceSolverInput {
   inputProblem: InputProblem

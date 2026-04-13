@@ -1,7 +1,7 @@
-import { expect, test } from "bun:test"
-import type { Point } from "@tscircuit/math-utils"
-import type { Guideline } from "lib/solvers/GuidelinesSolver/GuidelinesSolver"
 import { generateElbowVariants } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/generateElbowVariants"
+import { test, expect } from "bun:test"
+import type { Guideline } from "lib/solvers/GuidelinesSolver/GuidelinesSolver"
+import type { Point } from "@tscircuit/math-utils"
 
 test.skip("generateElbowVariants - simple horizontal segment", () => {
   const baseElbow: Point[] = [

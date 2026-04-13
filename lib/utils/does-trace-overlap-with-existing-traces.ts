@@ -1,6 +1,6 @@
 import type { Point } from "@tscircuit/math-utils"
-import { doSegmentsIntersect } from "@tscircuit/math-utils"
 import type { SolvedTracePath } from "../solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { doSegmentsIntersect } from "@tscircuit/math-utils"
 
 export function doesTraceOverlapWithExistingTraces(
   newTracePath: Point[],

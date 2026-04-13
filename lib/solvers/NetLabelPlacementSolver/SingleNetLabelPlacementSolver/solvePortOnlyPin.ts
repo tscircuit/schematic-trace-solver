@@ -1,19 +1,19 @@
-import type { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
+import type { InputProblem } from "lib/types/InputProblem"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
-import type { InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
+import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
+import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import type {
   NetLabelPlacement,
   OverlappingSameNetTraceGroup,
 } from "../NetLabelPlacementSolver"
-import { rectIntersectsAnyTrace } from "./collisions"
 import {
-  getCenterFromAnchor,
   getDimsForOrientation,
+  getCenterFromAnchor,
   getRectBounds,
 } from "./geometry"
+import { rectIntersectsAnyTrace } from "./collisions"
 
 export function solveNetLabelPlacementForPortOnlyPin(params: {
   inputProblem: InputProblem

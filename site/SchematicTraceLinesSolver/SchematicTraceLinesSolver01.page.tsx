@@ -1,6 +1,6 @@
-import { SchematicTraceLinesSolver } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { useMemo } from "react"
 import { GenericSolverDebugger } from "../components/GenericSolverDebugger"
+import { SchematicTraceLinesSolver } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 
 const input = {
   mspConnectionPairs: [

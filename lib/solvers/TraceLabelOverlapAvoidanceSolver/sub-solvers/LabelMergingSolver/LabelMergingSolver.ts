@@ -1,14 +1,14 @@
-import type { GraphicsObject, Line } from "graphics-debug"
+import type { SolvedTracePath } from "../../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import type { InputProblem } from "lib/types/InputProblem"
-import { getColorFromString } from "lib/utils/getColorFromString"
 import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { getRectBounds } from "../../../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import type { SolvedTracePath } from "../../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { filterLabelsAtTraceEdges } from "./filterLabelsAtTraceEdges"
+import type { GraphicsObject, Line } from "graphics-debug"
+import { getColorFromString } from "lib/utils/getColorFromString"
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type { InputProblem } from "lib/types/InputProblem"
 import { groupLabelsByChipAndOrientation } from "./groupLabelsByChipAndOrientation"
 import { mergeLabelGroup } from "./mergeLabelGroup"
+import { filterLabelsAtTraceEdges } from "./filterLabelsAtTraceEdges"
 
 interface LabelMergingSolverInput {
   netLabelPlacements: NetLabelPlacement[]
@@ -77,7 +77,7 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
         this.pipelineStep = "merging_groups"
         break
 
-      case "merging_groups": {
+      case "merging_groups":
         if (this.groupKeysToProcess.length === 0) {
           this.pipelineStep = "finalizing"
           this.activeMergingGroupKey = null
@@ -99,9 +99,8 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
           this.finalPlacements.push(...group)
         }
         break
-      }
 
-      case "finalizing": {
+      case "finalizing":
         // Any labels that were filtered out and not part of any group should be added back
         const processedOriginalIds = new Set(
           this.finalPlacements.flatMap((p) =>
@@ -120,7 +119,6 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
         }
         this.solved = true
         break
-      }
     }
   }
 

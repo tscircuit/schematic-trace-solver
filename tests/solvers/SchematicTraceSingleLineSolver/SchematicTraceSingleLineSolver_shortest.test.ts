@@ -1,9 +1,9 @@
-import { expect, test } from "bun:test"
-import { calculateElbow } from "calculate-elbow"
-import type { Guideline } from "lib/solvers/GuidelinesSolver/GuidelinesSolver"
-import { generateElbowVariants } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/generateElbowVariants"
+import { test, expect } from "bun:test"
 import { SchematicTraceSingleLineSolver } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/SchematicTraceSingleLineSolver"
+import { calculateElbow } from "calculate-elbow"
+import { generateElbowVariants } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/generateElbowVariants"
 import type { InputChip, InputProblem } from "lib/types/InputProblem"
+import type { Guideline } from "lib/solvers/GuidelinesSolver/GuidelinesSolver"
 
 const pathLength = (pts: { x: number; y: number }[]) => {
   let len = 0

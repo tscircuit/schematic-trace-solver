@@ -1,6 +1,6 @@
-import { SingleNetLabelPlacementSolver } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/SingleNetLabelPlacementSolver"
 import { useMemo } from "react"
 import { GenericSolverDebugger } from "../components/GenericSolverDebugger"
+import { SingleNetLabelPlacementSolver } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/SingleNetLabelPlacementSolver"
 
 export const input = {
   inputProblem: {

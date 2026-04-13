@@ -1,11 +1,11 @@
 import type { Point } from "graphics-debug"
-import { countTurns } from "./countTurns"
 import { hasCollisions } from "./hasCollisions"
-import { hasCollisionsWithLabels } from "./hasCollisionsWithLabels"
-import { isSegmentAnEndpointSegment } from "./isSegmentAnEndpointSegment"
-import { recognizeStairStepPattern } from "./recognizeStairStepPattern"
+import { countTurns } from "./countTurns"
 import { simplifyPath } from "./simplifyPath"
 import { tryConnectPoints } from "./tryConnectPoints"
+import { hasCollisionsWithLabels } from "./hasCollisionsWithLabels"
+import { recognizeStairStepPattern } from "./recognizeStairStepPattern"
+import { isSegmentAnEndpointSegment } from "./isSegmentAnEndpointSegment"
 
 /**
  * Minimizes the number of turns in a given path while avoiding collisions with obstacles and labels.

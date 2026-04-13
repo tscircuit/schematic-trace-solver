@@ -1,5 +1,3 @@
-import type { ConnectivityMap } from "connectivity-map"
-import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type {
   InputChip,
@@ -7,11 +5,13 @@ import type {
   InputProblem,
   PinId,
 } from "lib/types/InputProblem"
-import { getColorFromString } from "lib/utils/getColorFromString"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCenterLines"
+import { ConnectivityMap } from "connectivity-map"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
+import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCenterLines"
+import type { GraphicsObject } from "graphics-debug"
+import { getColorFromString } from "lib/utils/getColorFromString"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 
 export type MspConnectionPairId = string
 

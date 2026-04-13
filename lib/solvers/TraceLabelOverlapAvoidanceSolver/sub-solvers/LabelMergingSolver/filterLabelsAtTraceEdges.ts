@@ -1,7 +1,7 @@
-import { distance } from "@tscircuit/math-utils"
-import type { Point } from "graphics-debug"
 import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "../../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { Point } from "graphics-debug"
+import { distance } from "@tscircuit/math-utils"
 
 /**
  * Filters a list of labels, returning only those that are physically located

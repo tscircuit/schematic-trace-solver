@@ -1,6 +1,6 @@
-import { expect, test } from "bun:test"
-import { SchematicTraceSingleLineSolver } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/SchematicTraceSingleLineSolver"
+import { test, expect } from "bun:test"
 import input from "./SchematicTraceSingleLineSolver_repro01.json"
+import { SchematicTraceSingleLineSolver } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/SchematicTraceSingleLineSolver"
 
 test.skip("SchematicTraceSingleLineSolver_repro01", () => {
   const solver = new SchematicTraceSingleLineSolver(input as any)

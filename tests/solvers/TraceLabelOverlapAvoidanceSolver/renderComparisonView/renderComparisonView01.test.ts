@@ -1,10 +1,11 @@
-import { expect, test } from "bun:test"
+import { MergedNetLabelObstacleSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
+import { expect } from "bun:test"
+import { test } from "bun:test"
 import {
   getSvgFromGraphicsObject,
   stackGraphicsHorizontally,
 } from "graphics-debug"
 import { NetLabelPlacementSolver } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { MergedNetLabelObstacleSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import inputData from "../../../assets/1.input.json"
 
 test("NetLabelPlacementSolver-to-MergedNetLabelObstacles snapshot", () => {

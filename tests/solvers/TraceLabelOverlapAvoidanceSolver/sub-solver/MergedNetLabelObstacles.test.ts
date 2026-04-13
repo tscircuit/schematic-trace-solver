@@ -1,5 +1,6 @@
-import { expect, test } from "bun:test"
 import { MergedNetLabelObstacleSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
+import { expect } from "bun:test"
+import { test } from "bun:test"
 import inputData from "../../../assets/MergedNetLabelObstacles.test.input.json"
 
 test("LabelMergingSolver snapshot", () => {

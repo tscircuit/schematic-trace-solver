@@ -1,6 +1,6 @@
-import type { Point } from "graphics-debug" // Assuming Point is from graphics-debug or similar
 import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { getRectBounds } from "../../../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import type { Point } from "graphics-debug" // Assuming Point is from graphics-debug or similar
 
 /**
  * Merges a group of NetLabelPlacement objects into a single, larger NetLabelPlacement.

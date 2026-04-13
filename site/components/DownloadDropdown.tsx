@@ -1,5 +1,5 @@
+import { useState, useRef, useEffect } from "react"
 import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import { useEffect, useRef, useState } from "react"
 
 interface DownloadDropdownProps {
   solver: BaseSolver
