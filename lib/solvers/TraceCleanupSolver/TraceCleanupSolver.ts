@@ -1,38 +1,37 @@
-kimport type { Point } from "graphics-debug";
-import { simplifyPath } from "./simplifyPath";
+import type { Point } from "graphics-debug"
+import { simplifyPath } from "./simplifyPath"
 
 export type TraceCleanupInput = {
-  chips: any[];
-  labels: any[];
-  allTraces: { id: string; mspPairId?: string; tracePath: Point[] }[];
-};
+  chips: any[]
+  labels: any[]
+  allTraces: { id: string; mspPairId?: string; tracePath: Point[] }[]
+}
 
 export class TraceCleanupSolver {
-  private input: TraceCleanupInput;
+  private input: TraceCleanupInput
 
   constructor(input: TraceCleanupInput) {
-    this.input = input;
+    this.input = input
   }
 
   solve() {
-    console.log(">>> TRACE CLEANUP SOLVER AVVIATO <<<");
+    console.log(">>> TRACE CLEANUP SOLVER AVVIATO <<<")
 
     if (!this.input.allTraces) {
-      return { cleanedTraces: [] };
+      return { cleanedTraces: [] }
     }
 
     const cleanedTraces = this.input.allTraces.map((trace) => {
-      const original = trace.tracePath;
-      const cleaned = simplifyPath(original);
+      const original = trace.tracePath
+      const cleaned = simplifyPath(original)
 
       return {
         id: trace.id,
         original,
         cleaned,
-      };
-    });
+      }
+    })
 
-    return { cleanedTraces };
+    return { cleanedTraces }
   }
 }
-
