@@ -1,10 +1,17 @@
 import { mergeCollinearTraces } from "../utils/mergeCollinearTraces"
 
-interface Point { x: number; y: number }
-interface TracePath { points: Point[]; globalConnNetId?: string; [key: string]: any }
+interface Point {
+  x: number
+  y: number
+}
+interface TracePath {
+  points: Point[]
+  globalConnNetId?: string
+  [key: string]: any
+}
 
 export class SameNetTraceMergeSolver {
-  inputTraces:  TracePath[]
+  inputTraces: TracePath[]
   outputTraces: TracePath[] = []
   solved = false
 
@@ -18,7 +25,10 @@ export class SameNetTraceMergeSolver {
 
     for (const trace of this.inputTraces) {
       const netId = trace.globalConnNetId
-      if (!netId) { noNet.push(trace); continue }
+      if (!netId) {
+        noNet.push(trace)
+        continue
+      }
       if (!byNet.has(netId)) byNet.set(netId, [])
       byNet.get(netId)!.push(trace)
     }
@@ -31,8 +41,10 @@ export class SameNetTraceMergeSolver {
         const lines = []
         for (let i = 0; i < pts.length - 1; i++) {
           lines.push({
-            x1: pts[i].x,   y1: pts[i].y,
-            x2: pts[i+1].x, y2: pts[i+1].y,
+            x1: pts[i].x,
+            y1: pts[i].y,
+            x2: pts[i + 1].x,
+            y2: pts[i + 1].y,
             netId,
           })
         }

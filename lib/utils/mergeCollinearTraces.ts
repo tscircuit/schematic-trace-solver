@@ -15,8 +15,8 @@ function mergeSegments(
   if (segments.length === 0) return []
 
   const coordKey = axis === "horizontal" ? "y1" : "x1"
-  const minKey   = axis === "horizontal" ? "x1" : "y1"
-  const maxKey   = axis === "horizontal" ? "x2" : "y2"
+  const minKey = axis === "horizontal" ? "x1" : "y1"
+  const maxKey = axis === "horizontal" ? "x2" : "y2"
 
   const grouped = new Map<number, Segment[]>()
   for (const seg of segments) {
@@ -64,8 +64,8 @@ function mergeSegments(
 
 export function mergeCollinearTraces(traces: Segment[]): Segment[] {
   const horizontal: Segment[] = []
-  const vertical:   Segment[] = []
-  const diagonal:   Segment[] = []
+  const vertical: Segment[] = []
+  const diagonal: Segment[] = []
 
   for (const t of traces) {
     const norm: Segment = {
