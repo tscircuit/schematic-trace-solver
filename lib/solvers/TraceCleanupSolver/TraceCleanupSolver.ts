@@ -59,9 +59,7 @@ export class TraceCleanupSolver extends BaseSolver {
   reset() {
     this.outputTraces = [...this.input.allTraces]
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
-    this.traceIdQueue = Array.from(
-      this.input.allTraces.map((e) => e.mspPairId),
-    )
+    this.traceIdQueue = Array.from(this.input.allTraces.map((e) => e.mspPairId))
     this.pipelineStep = "untangling_traces"
     this.activeTraceId = null
     this.activeSubSolver = null
