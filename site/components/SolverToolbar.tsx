@@ -1,5 +1,5 @@
 import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import { useReducer, useRef, useEffect } from "react"
+import { useEffect, useReducer, useRef } from "react"
 import { SolverBreadcrumbInputDownloader } from "./SolverBreadcrumbInputDownloader"
 
 /**

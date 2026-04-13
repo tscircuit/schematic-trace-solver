@@ -1,5 +1,5 @@
-import { getSvgFromGraphicsObject, type GraphicsObject } from "graphics-debug"
 import { expect, type MatcherResult } from "bun:test"
+import { type GraphicsObject, getSvgFromGraphicsObject } from "graphics-debug"
 import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 
 const getAllElms = (graphicsObject: GraphicsObject) => {

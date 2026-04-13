@@ -1,5 +1,5 @@
+import { expect, test } from "bun:test"
 import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import { test, expect } from "bun:test"
 
 test("MspConnectionPairSolver should solve problem correctly", () => {
   const input = {

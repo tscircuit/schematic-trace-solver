@@ -1,12 +1,11 @@
-import { expect } from "bun:test"
-import { test } from "bun:test"
+import { expect, test } from "bun:test"
 import {
   getSvgFromGraphicsObject,
   stackGraphicsHorizontally,
 } from "graphics-debug"
+import { TraceCleanupSolver } from "lib/solvers/TraceCleanupSolver/TraceCleanupSolver"
 import { SingleOverlapSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/SingleOverlapSolver/SingleOverlapSolver"
 import inputData from "../../../assets/3.input.json"
-import { TraceCleanupSolver } from "lib/solvers/TraceCleanupSolver/TraceCleanupSolver"
 
 test("SingleOverlapSolver-to-TraceCleanupSolver snapshot", () => {
   // Convert targetTraceIds to Set

@@ -1,9 +1,9 @@
+import { InteractiveGraphics } from "graphics-debug/react"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { useMemo, useReducer } from "react"
-import { InteractiveGraphics } from "graphics-debug/react"
-import { SolverToolbar } from "./SolverToolbar"
 import { PipelineStageTable } from "./PipelineStageTable"
+import { SolverToolbar } from "./SolverToolbar"
 
 export const PipelineDebugger = ({
   inputProblem,

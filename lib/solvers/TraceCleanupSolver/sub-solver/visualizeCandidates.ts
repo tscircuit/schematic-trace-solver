@@ -1,5 +1,5 @@
-import type { GraphicsObject } from "graphics-debug"
 import type { Point } from "@tscircuit/math-utils"
+import type { GraphicsObject } from "graphics-debug"
 
 /**
  * Visualizes a set of candidate paths and optional intersection points.

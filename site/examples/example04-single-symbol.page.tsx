@@ -1,5 +1,5 @@
-import { PipelineDebugger } from "../components/PipelineDebugger"
 import type { InputProblem } from "lib/types/InputProblem"
+import { PipelineDebugger } from "../components/PipelineDebugger"
 
 export const inputProblem: InputProblem = {
   chips: [

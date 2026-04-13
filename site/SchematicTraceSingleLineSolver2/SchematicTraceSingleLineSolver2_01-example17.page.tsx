@@ -1,6 +1,6 @@
+import { SchematicTraceSingleLineSolver2 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
 import { useMemo } from "react"
 import { GenericSolverDebugger } from "../components/GenericSolverDebugger"
-import { SchematicTraceSingleLineSolver2 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
 
 export const inputProblem = {
   chipMap: {

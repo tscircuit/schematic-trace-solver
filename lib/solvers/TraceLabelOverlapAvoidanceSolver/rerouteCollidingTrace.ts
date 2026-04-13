@@ -1,12 +1,12 @@
 import type { Point } from "@tscircuit/math-utils"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { InputProblem } from "lib/types/InputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { getRectBounds } from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import type { InputProblem } from "lib/types/InputProblem"
-import { findTraceViolationZone } from "./violation"
-import { generateSnipAndReconnectCandidates } from "./trySnipAndReconnect"
-import { generateFourPointDetourCandidates } from "./tryFourPointDetour"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { simplifyPath } from "../TraceCleanupSolver/simplifyPath"
+import { generateFourPointDetourCandidates } from "./tryFourPointDetour"
+import { generateSnipAndReconnectCandidates } from "./trySnipAndReconnect"
+import { findTraceViolationZone } from "./violation"
 
 /**
  * Generates a list of candidate rerouted paths for a given trace that is

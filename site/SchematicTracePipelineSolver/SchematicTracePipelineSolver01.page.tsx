@@ -1,7 +1,7 @@
-import { GenericSolverDebugger } from "site/components/GenericSolverDebugger"
-import { useMemo } from "react"
-import type { InputProblem } from "lib/types/InputProblem"
 import { SchematicTracePipelineSolver } from "lib/index"
+import type { InputProblem } from "lib/types/InputProblem"
+import { useMemo } from "react"
+import { GenericSolverDebugger } from "site/components/GenericSolverDebugger"
 
 const inputProblem = {
   chips: [

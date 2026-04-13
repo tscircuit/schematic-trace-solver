@@ -1,25 +1,25 @@
+import type { Point } from "@tscircuit/math-utils"
+import { calculateElbow } from "calculate-elbow"
 import type { GraphicsObject } from "graphics-debug"
-import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type {
   ChipId,
   InputChip,
   InputProblem,
   PinId,
 } from "lib/types/InputProblem"
-import type { Point } from "@tscircuit/math-utils"
-import { calculateElbow } from "calculate-elbow"
 import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
-import { getObstacleRects, type ChipWithBounds } from "./rect"
 import { findFirstCollision, isHorizontal, isVertical } from "./collisions"
 import {
+  type Axis,
   aabbFromPoints,
   candidateMidsFromSet,
   midBetweenPointAndRect,
-  type Axis,
 } from "./mid"
 import { pathKey, shiftSegmentOrth } from "./pathOps"
+import { type ChipWithBounds, getObstacleRects } from "./rect"
 
 type PathKey = string
 

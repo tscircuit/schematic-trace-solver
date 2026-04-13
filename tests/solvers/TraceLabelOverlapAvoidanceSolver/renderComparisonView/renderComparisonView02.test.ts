@@ -1,10 +1,9 @@
-import { MergedNetLabelObstacleSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
-import { expect } from "bun:test"
-import { test } from "bun:test"
+import { expect, test } from "bun:test"
 import {
   getSvgFromGraphicsObject,
   stackGraphicsHorizontally,
 } from "graphics-debug"
+import { MergedNetLabelObstacleSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { SingleOverlapSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/SingleOverlapSolver/SingleOverlapSolver"
 import inputData from "../../../assets/2.input.json"
 

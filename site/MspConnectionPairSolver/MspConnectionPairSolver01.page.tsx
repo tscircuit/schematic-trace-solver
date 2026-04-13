@@ -1,8 +1,8 @@
 import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import inputParams from "./MspConnectionPairSolver01_params.json"
-import { GenericSolverDebugger } from "site/components/GenericSolverDebugger"
-import { useMemo } from "react"
 import type { InputProblem } from "lib/types/InputProblem"
+import { useMemo } from "react"
+import { GenericSolverDebugger } from "site/components/GenericSolverDebugger"
+import inputParams from "./MspConnectionPairSolver01_params.json"
 
 export default () => {
   const solver = useMemo(

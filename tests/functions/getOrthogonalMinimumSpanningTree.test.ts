@@ -1,5 +1,5 @@
+import { expect, test } from "bun:test"
 import { getOrthogonalMinimumSpanningTree } from "lib/solvers/MspConnectionPairSolver/getMspConnectionPairsFromPins"
-import { test, expect } from "bun:test"
 import type { InputPin } from "lib/types/InputProblem"
 
 test("getOrthogonalMinimumSpanningTree", () => {

@@ -1,12 +1,12 @@
+import { type GraphicsObject, getBounds } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import { getBounds, type GraphicsObject } from "graphics-debug"
 import { getGeneratorForAllChipPairs } from "./getGeneratorForAllChipPairs"
-import { getInputChipBounds } from "./getInputChipBounds"
 import { getHorizontalGuidelineY } from "./getHorizontalGuidelineY"
-import { getVerticalGuidelineX } from "./getVerticalGuidelineX"
+import { getInputChipBounds } from "./getInputChipBounds"
 import { getInputProblemBounds } from "./getInputProblemBounds"
+import { getVerticalGuidelineX } from "./getVerticalGuidelineX"
 
 export type Guideline =
   | {

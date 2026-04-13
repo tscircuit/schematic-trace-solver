@@ -1,7 +1,6 @@
-import { expect } from "bun:test"
-import { test } from "bun:test"
-import inputData from "../../assets/TraceCleanupSolver.test.input.json"
+import { expect, test } from "bun:test"
 import { TraceCleanupSolver } from "lib/solvers/TraceCleanupSolver/TraceCleanupSolver"
+import inputData from "../../assets/TraceCleanupSolver.test.input.json"
 
 test("TraceCleanupSolver snapshot", () => {
   const solver = new TraceCleanupSolver({

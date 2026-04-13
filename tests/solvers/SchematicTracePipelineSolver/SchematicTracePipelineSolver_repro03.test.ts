@@ -1,6 +1,6 @@
-import type { InputProblem } from "lib/types/InputProblem"
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/index"
+import type { InputProblem } from "lib/types/InputProblem"
 
 const inputProblem: InputProblem = {
   chips: [

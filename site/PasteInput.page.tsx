@@ -1,6 +1,6 @@
 import type { InputProblem } from "lib/types/InputProblem"
-import { PipelineDebugger } from "site/components/PipelineDebugger"
 import { useState } from "react"
+import { PipelineDebugger } from "site/components/PipelineDebugger"
 
 export default () => {
   const [inputText, setInputText] = useState("")
