@@ -6,6 +6,8 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
+import { is4PointRectangle } from "./is4PointRectangle"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -18,9 +20,6 @@ interface TraceCleanupSolverInput {
   paddingBuffer: number
 }
 
-import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
-import { is4PointRectangle } from "./is4PointRectangle"
-
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
@@ -28,14 +27,10 @@ type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
+  | "merging_close_traces"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
- * It operates in a multi-step pipeline:
- * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
- * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
- * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
- * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
  */
 export class TraceCleanupSolver extends BaseSolver {
   private input: TraceCleanupSolverInput
@@ -43,7 +38,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private traceIdQueue: string[]
   private tracesMap: Map<string, SolvedTracePath>
   private pipelineStep: PipelineStep = "untangling_traces"
-  private activeTraceId: string | null = null // New property
+  private activeTraceId: string | null = null
   override activeSubSolver: BaseSolver | null = null
 
   constructor(solverInput: TraceCleanupSolverInput) {
@@ -84,6 +79,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "merging_close_traces":
+        this._runMergeCloseTracesStep()
+        break
     }
   }
 
@@ -102,17 +100,57 @@ export class TraceCleanupSolver extends BaseSolver {
       )
       return
     }
-
     this._processTrace("minimizing_turns")
   }
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
+      this.pipelineStep = "merging_close_traces"
+      this.traceIdQueue = Array.from(
+        this.input.allTraces.map((e) => e.mspPairId),
+      )
+      return
+    }
+    this._processTrace("balancing_l_shapes")
+  }
+
+  private _runMergeCloseTracesStep() {
+    if (this.traceIdQueue.length === 0) {
       this.solved = true
       return
     }
 
-    this._processTrace("balancing_l_shapes")
+    const targetMspConnectionPairId = this.traceIdQueue.shift()!
+    this.activeTraceId = targetMspConnectionPairId
+    const trace = this.tracesMap.get(targetMspConnectionPairId)!
+
+    // EPSILON yaqinlik chegarasi. PaddingBuffer'dan foydalanamiz.
+    const EPSILON = this.input.paddingBuffer || 0.1
+
+    const updatedPath = trace.tracePath.map((point, index, array) => {
+      if (index === 0) return point
+      const prev = array[index - 1]
+
+      let newX = point.x
+      let newY = point.y
+
+      // X koordinatalari juda yaqin bo'lsa - vertikal tekislash
+      if (Math.abs(point.x - prev.x) < EPSILON) {
+        newX = prev.x
+      }
+      // Y koordinatalari juda yaqin bo'lsa - gorizontal tekislash
+      if (Math.abs(point.y - prev.y) < EPSILON) {
+        newY = prev.y
+      }
+
+      return { ...point, x: newX, y: newY }
+    })
+
+    this.tracesMap.set(targetMspConnectionPairId, {
+      ...trace,
+      tracePath: updatedPath,
+    })
+    this.outputTraces = Array.from(this.tracesMap.values())
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
@@ -125,7 +163,6 @@ export class TraceCleanupSolver extends BaseSolver {
     }
 
     const allTraces = Array.from(this.tracesMap.values())
-
     let updatedTrace: SolvedTracePath
 
     if (step === "minimizing_turns") {
@@ -163,15 +200,11 @@ export class TraceCleanupSolver extends BaseSolver {
     })
 
     if (!graphics.lines) graphics.lines = []
-    if (!graphics.points) graphics.points = []
-    if (!graphics.rects) graphics.rects = []
-    if (!graphics.circles) graphics.circles = []
-    if (!graphics.texts) graphics.texts = []
 
     for (const trace of this.outputTraces) {
       const line: Line = {
         points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
-        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue", // Highlight active trace
+        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue",
       }
       graphics.lines!.push(line)
     }
