@@ -78,10 +78,7 @@ test("issue #79: pipeline produces no traces for label-only nets", () => {
   expect(pipeline.solved).toBe(true)
 
   // Get all traces from the pipeline output
-  const traces =
-    pipeline.sameNetSegmentMergingSolver?.getOutput().traces ??
-    pipeline.traceCleanupSolver?.getOutput().traces ??
-    []
+  const traces = pipeline.traceCleanupSolver?.getOutput().traces ?? []
 
   // No trace should be for VCC or GND net IDs
   const vccOrGndTraces = traces.filter(
