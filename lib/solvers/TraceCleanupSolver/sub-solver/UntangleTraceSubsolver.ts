@@ -23,6 +23,7 @@ import { visualizeTightRectangle } from "../visualizeTightRectangle"
 import { visualizeCandidates } from "./visualizeCandidates"
 import { mergeGraphicsObjects } from "../mergeGraphicsObjects"
 import { visualizeCollision } from "./visualizeCollision"
+import { removeDuplicateConsecutivePoints } from "../simplifyPath"
 
 /**
  * Defines the input structure for the UntangleTraceSubsolver.
@@ -258,11 +259,14 @@ export class UntangleTraceSubsolver extends BaseSolver {
           p.x === this.currentLShape!.p2.x && p.y === this.currentLShape!.p2.y,
       )
       if (p2Index !== -1) {
-        const newTracePath = [
+        // Splice the rerouted segment into the trace path. The slice boundaries
+        // may share a coordinate with the first/last point of bestRoute, so we
+        // remove any duplicate consecutive points that arise at the junctions.
+        const newTracePath = removeDuplicateConsecutivePoints([
           ...originalTrace.tracePath.slice(0, p2Index),
           ...bestRoute,
           ...originalTrace.tracePath.slice(p2Index + 1),
-        ]
+        ])
         this.input.allTraces[traceIndex] = {
           ...originalTrace,
           tracePath: newTracePath,
@@ -280,18 +284,6 @@ export class UntangleTraceSubsolver extends BaseSolver {
   }
 
   override visualize(): GraphicsObject {
-    // console.log("VISUALIZE STATE:", {
-    //   step: this.lShapeProcessingStep,
-    //   vizMode: this.visualizationMode,
-    //   lShape: this.currentLShape?.traceId,
-    //   rectIdx: this.currentRectangleIndex,
-    //   rectCount: this.rectangleCandidates.length,
-    //   tightRect: this.tightRectangle,
-    //   pathIdx: this.currentCandidateIndex,
-    //   pathCount: this.candidates.length,
-    //   lastCollision: this.lastCollision?.isColliding,
-    // })
-
     switch (this.visualizationMode) {
       case "l_shapes":
         return visualizeLSapes(this.lShapesToProcess)
@@ -329,7 +321,7 @@ export class UntangleTraceSubsolver extends BaseSolver {
           for (let i = 0; i < trace.tracePath.length - 1; i++) {
             allTracesGraphics.lines!.push({
               points: [trace.tracePath[i], trace.tracePath[i + 1]],
-              strokeColor: "#ccc", // Light gray for other traces
+              strokeColor: "#ccc",
             })
           }
         }
