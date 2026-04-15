@@ -1,7 +1,7 @@
-import { describe, test, expect } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import {
-  simplifyPath,
   removeDuplicateConsecutivePoints,
+  simplifyPath,
 } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 
 describe("removeDuplicateConsecutivePoints", () => {
@@ -70,8 +70,9 @@ describe("simplifyPath", () => {
     ])
   })
 
-  test("removes duplicate consecutive points before collinear merge", () => {
-    // Duplicate junction from _applyBestRoute splice
+  test("removes duplicate junction point introduced by _applyBestRoute splice", () => {
+    // When _applyBestRoute splices a segment, the endpoint of the left slice
+    // can equal the first point of bestRoute, producing a zero-length segment.
     const path = [
       { x: 0, y: 0 },
       { x: 1, y: 0 },
@@ -80,10 +81,14 @@ describe("simplifyPath", () => {
       { x: 2, y: 1 },
     ]
     const result = simplifyPath(path)
-    // After dedup: [0,0]-[1,0]-[1,1]-[2,1] — an L-shape, no collinear removal
-    expect(result).not.toContainEqual({ x: 1, y: 0 })
-    // Final shape should be [0,0]-[1,0]-[1,1]-[2,1] or simplified
+    // Duplicate removed, path length should be smaller than input
     expect(result.length).toBeLessThan(path.length)
+    // No consecutive duplicates in the output
+    for (let i = 1; i < result.length; i++) {
+      expect(
+        result[i].x !== result[i - 1].x || result[i].y !== result[i - 1].y,
+      ).toBe(true)
+    }
   })
 
   test("path shorter than 3 points is returned as-is", () => {

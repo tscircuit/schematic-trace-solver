@@ -284,6 +284,18 @@ export class UntangleTraceSubsolver extends BaseSolver {
   }
 
   override visualize(): GraphicsObject {
+    // console.log("VISUALIZE STATE:", {
+    //   step: this.lShapeProcessingStep,
+    //   vizMode: this.visualizationMode,
+    //   lShape: this.currentLShape?.traceId,
+    //   rectIdx: this.currentRectangleIndex,
+    //   rectCount: this.rectangleCandidates.length,
+    //   tightRect: this.tightRectangle,
+    //   pathIdx: this.currentCandidateIndex,
+    //   pathCount: this.candidates.length,
+    //   lastCollision: this.lastCollision?.isColliding,
+    // })
+
     switch (this.visualizationMode) {
       case "l_shapes":
         return visualizeLSapes(this.lShapesToProcess)
@@ -321,7 +333,7 @@ export class UntangleTraceSubsolver extends BaseSolver {
           for (let i = 0; i < trace.tracePath.length - 1; i++) {
             allTracesGraphics.lines!.push({
               points: [trace.tracePath[i], trace.tracePath[i + 1]],
-              strokeColor: "#ccc",
+              strokeColor: "#ccc", // Light gray for other traces
             })
           }
         }
