@@ -23,7 +23,10 @@ const overlaps1D = (
   b1: number,
   b2: number,
   eps = EPS,
-) => Math.min(Math.max(a1, a2), Math.max(b1, b2)) - Math.max(Math.min(a1, a2), Math.min(b1, b2)) > eps
+) =>
+  Math.min(Math.max(a1, a2), Math.max(b1, b2)) -
+    Math.max(Math.min(a1, a2), Math.min(b1, b2)) >
+  eps
 
 const buildInternalSegmentRefs = (traces: SolvedTracePath[]): SegmentRef[] => {
   const refs: SegmentRef[] = []
@@ -112,8 +115,10 @@ export const mergeCloseSameNetSegments = (
           continue
         }
         if (a.orientation !== b.orientation) continue
-        if (a.pathIndex === b.pathIndex && a.segmentIndex === b.segmentIndex) continue
-        if (!overlaps1D(a.rangeStart, a.rangeEnd, b.rangeStart, b.rangeEnd)) continue
+        if (a.pathIndex === b.pathIndex && a.segmentIndex === b.segmentIndex)
+          continue
+        if (!overlaps1D(a.rangeStart, a.rangeEnd, b.rangeStart, b.rangeEnd))
+          continue
 
         const distance = Math.abs(a.coord - b.coord)
         if (distance < EPS || distance > mergeDistance) continue
