@@ -98,7 +98,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         {
           inputProblem: this.inputProblem,
           inputTracePaths:
-            this.longDistancePairSolver?.getOutput().allTracesMerged!,
+            this.longDistancePairSolver?.getOutput().allTracesMerged || [],
           globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
         },
       ],
@@ -112,9 +112,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           inputTraceMap:
             this.traceOverlapShiftSolver?.correctedTraceMap ??
             Object.fromEntries(
-              (this.longDistancePairSolver!.getOutput().allTracesMerged || []).map(
-                (p: any) => [p.mspPairId, p],
-              ),
+              (
+                this.longDistancePairSolver!.getOutput().allTracesMerged || []
+              ).map((p: any) => [p.mspPairId, p]),
             ),
         },
       ],
@@ -126,9 +126,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         const traceMap =
           instance.traceOverlapShiftSolver?.correctedTraceMap ??
           Object.fromEntries(
-            (instance.longDistancePairSolver!.getOutput().allTracesMerged || []).map(
-              (p: any) => [p.mspPairId, p],
-            ),
+            (
+              instance.longDistancePairSolver!.getOutput().allTracesMerged || []
+            ).map((p: any) => [p.mspPairId, p]),
           )
         const traces = Object.values(traceMap) as SolvedTracePath[]
         const netLabelPlacements =
@@ -166,7 +166,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => {
         const traces =
           instance.traceCleanupSolver?.getOutput().traces ??
-          instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces ?? []
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces ??
+          []
 
         return [
           {
@@ -185,7 +186,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     this.inputProblem = this.cloneAndCorrectInputProblem(inputProblem)
   }
 
-  override getConstructorParams() {
+  override getConstructorParams(): [InputProblem] {
     return [this.inputProblem]
   }
 
@@ -221,7 +222,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         this.activeSubSolver = null
         this.currentPipelineStepIndex++
       } else if (this.activeSubSolver.failed) {
-        this.error = this.activeSubSolver?.error
+        this.error = this.activeSubSolver.error
         this.failed = true
         this.activeSubSolver = null
       }
@@ -229,36 +230,24 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     }
 
     const constructorParams = pipelineStepDef.getConstructorParams(this)
+    const SolverClass = pipelineStepDef.solverClass
     // @ts-ignore
-    this.activeSubSolver = new pipelineStepDef.solverClass(...constructorParams)
+    this.activeSubSolver = new SolverClass(...constructorParams)
     ;(this as any)[pipelineStepDef.solverName] = this.activeSubSolver
     this.timeSpentOnPhase[pipelineStepDef.solverName] = 0
     this.startTimeOfPhase[pipelineStepDef.solverName] = performance.now()
     this.firstIterationOfPhase[pipelineStepDef.solverName] = this.iterations
   }
 
-  /**
-   * Returns the final solver output with cleanup applied to traces.
-   * Gracefully handles empty or null results.
-   */
   override getOutput() {
     if (!this.solved) return null
 
     const finalSolver = this.netLabelPlacementSolver
     if (!finalSolver) return null
 
-    // Safe handling of empty or missing inputTraceMap
     const traceMap = finalSolver.inputTraceMap || {}
     const traces = Object.values(traceMap) as SolvedTracePath[]
 
-    if (traces.length === 0) {
-      return {
-        traces: [],
-        netLabelPlacements: finalSolver.netLabelPlacements || [],
-      }
-    }
-
-    // Apply cleanup: merge collinear points
     const cleanedTraces = traces.map((trace) => ({
       ...trace,
       points: this.mergeCollinearSegments(trace.points || []),
@@ -270,24 +259,20 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     }
   }
 
-  /**
-   * Merges multiple points on the same line into a single segment.
-   * e.g. (10,10) -> (20,10) -> (30,10) becomes (10,10) -> (30,10)
-   */
   private mergeCollinearSegments(
     points: Array<{ x: number; y: number }>,
   ): Array<{ x: number; y: number }> {
     if (points.length <= 2) return points
 
-    const result: Array<{ x: number; y: number }> = [points[0]]
+    const result: Array<{ x: number; y: number }> = [points[0]!]
     for (let i = 1; i < points.length - 1; i++) {
       const prev = result[result.length - 1]!
       const curr = points[i]!
       const next = points[i + 1]!
 
-      // Schematic traces are usually orthogonal, so we check for same X or same Y
       const isCollinear =
-        (Math.abs(prev.x - curr.x) < 0.001 && Math.abs(curr.x - next.x) < 0.001) ||
+        (Math.abs(prev.x - curr.x) < 0.001 &&
+          Math.abs(curr.x - next.x) < 0.001) ||
         (Math.abs(prev.y - curr.y) < 0.001 && Math.abs(curr.y - next.y) < 0.001)
 
       if (!isCollinear) {
