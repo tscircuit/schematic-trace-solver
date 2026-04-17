@@ -2,7 +2,10 @@ import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "../BaseSolver/BaseSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectionPairSolver"
-import { SchematicTraceLinesSolver } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import {
+  SchematicTraceLinesSolver,
+  SolvedTracePath,
+} from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { visualizeInputProblem } from "./visualizeInputProblem"
@@ -11,11 +14,6 @@ import { correctPinsInsideChips } from "./correctPinsInsideChip"
 import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
-
-export interface SolvedTracePath {
-  mspPairId: string
-  points: Array<{ x: number; y: number }>
-}
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -160,7 +158,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       return [
         {
           inputProblem: instance.inputProblem,
-          allTraces: traces,
+          allTraces: (traces as any) as SolvedTracePath[],
           allLabelPlacements: labelMergingOutput.netLabelPlacements || [],
           mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap || {},
           paddingBuffer: 0.1,
@@ -180,7 +178,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           {
             inputProblem: instance.inputProblem,
             inputTraceMap: Object.fromEntries(
-              traces.map((trace: SolvedTracePath) => [trace.mspPairId, trace]),
+              (traces as SolvedTracePath[]).map((trace: SolvedTracePath) => [
+                trace.mspPairId,
+                trace,
+              ]),
             ),
           },
         ]
@@ -255,10 +256,13 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     const traceMap = finalSolver.inputTraceMap || {}
     const traces = Object.values(traceMap) as SolvedTracePath[]
 
-    const cleanedTraces = traces.map((trace) => ({
-      ...trace,
-      points: this.mergeCollinearSegments(trace.points || []),
-    }))
+    const cleanedTraces = traces.map((trace) => {
+      const points = (trace as any).points || []
+      return {
+        ...trace,
+        points: this.mergeCollinearSegments(points),
+      } as SolvedTracePath
+    })
 
     return {
       traces: cleanedTraces,
