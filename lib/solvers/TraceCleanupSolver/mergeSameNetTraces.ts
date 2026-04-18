@@ -1,206 +1,173 @@
-import type { Point } from "graphics-debug"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { simplifyPath } from "./simplifyPath"
 
-interface Segment {
-  traceIndex: number
-  segIndex: number
-  p1: Point
-  p2: Point
-  orientation: "horizontal" | "vertical"
-  coord: number
-  minSpan: number
-  maxSpan: number
+/**
+ * Merge distance threshold for considering two parallel same-net segments as
+ * candidates for merging.
+ */
+const MERGE_DISTANCE_THRESHOLD = 0.15
+
+/**
+ * Resolves the effective net id for a trace, taking into account merged label net ids.
+ */
+function getEffectiveNetId(
+  trace: SolvedTracePath,
+  mergedLabelNetIdMap: Record<string, Set<string>>,
+): string {
+  const netId = trace.globalConnNetId ?? trace.mspPairId
+  for (const [key, set] of Object.entries(mergedLabelNetIdMap)) {
+    if (set.has(netId)) return key
+  }
+  return netId
 }
 
-function getSegments(traces: SolvedTracePath[]): Segment[] {
-  const segments: Segment[] = []
-  for (let ti = 0; ti < traces.length; ti++) {
-    const path = traces[ti].tracePath
-    for (let si = 0; si < path.length - 1; si++) {
-      const p1 = path[si]
-      const p2 = path[si + 1]
-      const dx = Math.abs(p1.x - p2.x)
-      const dy = Math.abs(p1.y - p2.y)
-      if (dx < 1e-9 && dy < 1e-9) continue
-      if (dy < 1e-9) {
-        segments.push({
-          traceIndex: ti,
-          segIndex: si,
-          p1,
-          p2,
-          orientation: "horizontal",
-          coord: p1.y,
-          minSpan: Math.min(p1.x, p2.x),
-          maxSpan: Math.max(p1.x, p2.x),
-        })
-      } else if (dx < 1e-9) {
-        segments.push({
-          traceIndex: ti,
-          segIndex: si,
-          p1,
-          p2,
-          orientation: "vertical",
-          coord: p1.x,
-          minSpan: Math.min(p1.y, p2.y),
-          maxSpan: Math.max(p1.y, p2.y),
-        })
-      }
+/**
+ * Represents a single segment extracted from a trace path.
+ */
+interface TraceSegment {
+  traceId: string
+  segIndex: number
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  orientation: "horizontal" | "vertical"
+}
+
+/**
+ * Extract all horizontal and vertical segments from a trace path.
+ */
+function extractSegments(trace: SolvedTracePath): TraceSegment[] {
+  const segments: TraceSegment[] = []
+  const path = trace.tracePath
+  for (let i = 0; i < path.length - 1; i++) {
+    const p1 = path[i]
+    const p2 = path[i + 1]
+    if (!p1 || !p2) continue
+    const dx = Math.abs(p1.x - p2.x)
+    const dy = Math.abs(p1.y - p2.y)
+    if (dy < 1e-9 && dx > 1e-9) {
+      segments.push({
+        traceId: trace.mspPairId,
+        segIndex: i,
+        x1: Math.min(p1.x, p2.x),
+        y1: p1.y,
+        x2: Math.max(p1.x, p2.x),
+        y2: p1.y,
+        orientation: "horizontal",
+      })
+    } else if (dx < 1e-9 && dy > 1e-9) {
+      segments.push({
+        traceId: trace.mspPairId,
+        segIndex: i,
+        x1: p1.x,
+        y1: Math.min(p1.y, p2.y),
+        x2: p1.x,
+        y2: Math.max(p1.y, p2.y),
+        orientation: "vertical",
+      })
     }
   }
   return segments
 }
 
-function spansOverlap(
-  minA: number,
-  maxA: number,
-  minB: number,
-  maxB: number,
+/**
+ * Check if two ranges [a1, a2] and [b1, b2] overlap.
+ */
+function rangesOverlap(
+  a1: number,
+  a2: number,
+  b1: number,
+  b2: number,
 ): boolean {
-  return maxA > minB && maxB > minA
+  const overlapStart = Math.max(a1, b1)
+  const overlapEnd = Math.min(a2, b2)
+  return overlapEnd - overlapStart > 1e-9
 }
 
-interface MergeGroup {
-  segmentIndices: number[]
-  targetCoord: number
-  orientation: "horizontal" | "vertical"
-}
-
+/**
+ * Merge same-net traces that have parallel segments running close together.
+ */
 export function mergeSameNetTraces(
-  allTraces: SolvedTracePath[],
-  distanceThreshold: number = 0.15,
+  traces: SolvedTracePath[],
+  mergedLabelNetIdMap: Record<string, Set<string>>,
 ): SolvedTracePath[] {
-  const tracesByNet = new Map<string, number[]>()
-  for (let i = 0; i < allTraces.length; i++) {
-    const netId = allTraces[i].connectionNetId ?? allTraces[i].mspPairId
-    if (!tracesByNet.has(netId)) {
-      tracesByNet.set(netId, [])
+  // Group traces by effective net id
+  const netGroups = new Map<string, SolvedTracePath[]>()
+  for (const trace of traces) {
+    const netId = getEffectiveNetId(trace, mergedLabelNetIdMap)
+    if (!netGroups.has(netId)) {
+      netGroups.set(netId, [])
     }
-    tracesByNet.get(netId)!.push(i)
+    netGroups.get(netId)!.push(trace)
   }
 
-  const updatedPaths: Point[][] = allTraces.map((t) => [...t.tracePath])
+  const traceMap = new Map<string, SolvedTracePath>()
+  for (const trace of traces) {
+    traceMap.set(trace.mspPairId, trace)
+  }
 
-  for (const [_netId, traceIndices] of tracesByNet) {
-    if (traceIndices.length < 2) continue
+  // For each net group with more than one trace, look for mergeable segments
+  for (const [_netId, group] of netGroups) {
+    if (group.length < 2) continue
 
-    const netTraces = traceIndices.map((i) => ({
-      ...allTraces[i],
-      tracePath: updatedPaths[i],
-    }))
-
-    const segments = getSegments(
-      netTraces.map((t, localIdx) => ({
-        ...t,
-        _localIdx: localIdx,
-      })) as any,
-    )
-
-    const allSegs: (Segment & { globalTraceIndex: number })[] = []
-    for (let ti = 0; ti < netTraces.length; ti++) {
-      const path = updatedPaths[traceIndices[ti]]
-      for (let si = 0; si < path.length - 1; si++) {
-        const p1 = path[si]
-        const p2 = path[si + 1]
-        const dx = Math.abs(p1.x - p2.x)
-        const dy = Math.abs(p1.y - p2.y)
-        if (dx < 1e-9 && dy < 1e-9) continue
-        if (dy < 1e-9) {
-          allSegs.push({
-            traceIndex: ti,
-            globalTraceIndex: traceIndices[ti],
-            segIndex: si,
-            p1,
-            p2,
-            orientation: "horizontal",
-            coord: p1.y,
-            minSpan: Math.min(p1.x, p2.x),
-            maxSpan: Math.max(p1.x, p2.x),
-          })
-        } else if (dx < 1e-9) {
-          allSegs.push({
-            traceIndex: ti,
-            globalTraceIndex: traceIndices[ti],
-            segIndex: si,
-            p1,
-            p2,
-            orientation: "vertical",
-            coord: p1.x,
-            minSpan: Math.min(p1.y, p2.y),
-            maxSpan: Math.max(p1.y, p2.y),
-          })
-        }
-      }
+    const allSegments: TraceSegment[] = []
+    for (const trace of group) {
+      allSegments.push(...extractSegments(trace))
     }
 
-    const mergeGroups: MergeGroup[] = []
-    const merged = new Set<number>()
+    for (let i = 0; i < allSegments.length; i++) {
+      for (let j = i + 1; j < allSegments.length; j++) {
+        const segA = allSegments[i]
+        const segB = allSegments[j]
 
-    for (let i = 0; i < allSegs.length; i++) {
-      if (merged.has(i)) continue
-      const si = allSegs[i]
-      const group: number[] = [i]
+        if (segA.traceId === segB.traceId) continue
+        if (segA.orientation !== segB.orientation) continue
 
-      for (let j = i + 1; j < allSegs.length; j++) {
-        if (merged.has(j)) continue
-        const sj = allSegs[j]
-
-        if (si.orientation !== sj.orientation) continue
-        if (si.globalTraceIndex === sj.globalTraceIndex) continue
-
-        const coordDist = Math.abs(si.coord - sj.coord)
-        if (coordDist > distanceThreshold) continue
-        if (coordDist < 1e-9) continue
-
-        if (!spansOverlap(si.minSpan, si.maxSpan, sj.minSpan, sj.maxSpan))
-          continue
-
-        group.push(j)
-      }
-
-      if (group.length > 1) {
-        let sumCoord = 0
-        for (const idx of group) {
-          sumCoord += allSegs[idx].coord
-        }
-        const targetCoord = sumCoord / group.length
-
-        mergeGroups.push({
-          segmentIndices: group,
-          targetCoord,
-          orientation: si.orientation,
-        })
-
-        for (const idx of group) {
-          merged.add(idx)
-        }
-      }
-    }
-
-    for (const mg of mergeGroups) {
-      for (const segIdx of mg.segmentIndices) {
-        const seg = allSegs[segIdx]
-        const globalIdx = seg.globalTraceIndex
-        const path = updatedPaths[globalIdx]
-        const si = seg.segIndex
-
-        if (si >= path.length - 1) continue
-
-        if (mg.orientation === "horizontal") {
-          path[si] = { x: path[si].x, y: mg.targetCoord }
-          path[si + 1] = { x: path[si + 1].x, y: mg.targetCoord }
+        if (segA.orientation === "horizontal") {
+          const dist = Math.abs(segA.y1 - segB.y1)
+          if (dist < MERGE_DISTANCE_THRESHOLD && dist > 1e-9) {
+            if (rangesOverlap(segA.x1, segA.x2, segB.x1, segB.x2)) {
+              const avgY = (segA.y1 + segB.y1) / 2
+              const traceA = traceMap.get(segA.traceId)
+              const traceB = traceMap.get(segB.traceId)
+              if (traceA && traceA.tracePath[segA.segIndex] && traceA.tracePath[segA.segIndex + 1]) {
+                traceA.tracePath[segA.segIndex] = { ...traceA.tracePath[segA.segIndex], y: avgY }
+                traceA.tracePath[segA.segIndex + 1] = { ...traceA.tracePath[segA.segIndex + 1], y: avgY }
+              }
+              if (traceB && traceB.tracePath[segB.segIndex] && traceB.tracePath[segB.segIndex + 1]) {
+                traceB.tracePath[segB.segIndex] = { ...traceB.tracePath[segB.segIndex], y: avgY }
+                traceB.tracePath[segB.segIndex + 1] = { ...traceB.tracePath[segB.segIndex + 1], y: avgY }
+              }
+            }
+          }
         } else {
-          path[si] = { x: mg.targetCoord, y: path[si].y }
-          path[si + 1] = { x: mg.targetCoord, y: path[si + 1].y }
+          const dist = Math.abs(segA.x1 - segB.x1)
+          if (dist < MERGE_DISTANCE_THRESHOLD && dist > 1e-9) {
+            if (rangesOverlap(segA.y1, segA.y2, segB.y1, segB.y2)) {
+              const avgX = (segA.x1 + segB.x1) / 2
+              const traceA = traceMap.get(segA.traceId)
+              const traceB = traceMap.get(segB.traceId)
+              if (traceA && traceA.tracePath[segA.segIndex] && traceA.tracePath[segA.segIndex + 1]) {
+                traceA.tracePath[segA.segIndex] = { ...traceA.tracePath[segA.segIndex], x: avgX }
+                traceA.tracePath[segA.segIndex + 1] = { ...traceA.tracePath[segA.segIndex + 1], x: avgX }
+              }
+              if (traceB && traceB.tracePath[segB.segIndex] && traceB.tracePath[segB.segIndex + 1]) {
+                traceB.tracePath[segB.segIndex] = { ...traceB.tracePath[segB.segIndex], x: avgX }
+                traceB.tracePath[segB.segIndex + 1] = { ...traceB.tracePath[segB.segIndex + 1], x: avgX }
+              }
+            }
+          }
         }
       }
     }
   }
 
-  const result: SolvedTracePath[] = allTraces.map((trace, i) => ({
-    ...trace,
-    tracePath: simplifyPath(updatedPaths[i]),
-  }))
+  // Filter out any undefined points from all trace paths
+  for (const trace of traces) {
+    trace.tracePath = trace.tracePath.filter(
+      (p): p is { x: number; y: number } => p != null && typeof p.x === "number" && typeof p.y === "number",
+    )
+  }
 
-  return result
+  return traces
 }
