@@ -5,7 +5,6 @@ import type { NetLabelPlacement } from "../../NetLabelPlacementSolver/NetLabelPl
 
 import { findAllLShapedTurns, type LShape } from "./findAllLShapedTurns"
 import { removeDuplicateConsecutivePoints } from "../simplifyPath"
-import { removeDuplicateConsecutivePoints } from "../simplifyPath"
 import { getTraceObstacles } from "./getTraceObstacles"
 import { findIntersectionsWithObstacles } from "./findIntersectionsWithObstacles"
 import { generateLShapeRerouteCandidates } from "./generateLShapeRerouteCandidates"
