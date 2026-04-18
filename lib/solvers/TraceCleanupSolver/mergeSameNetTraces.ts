@@ -1,264 +1,191 @@
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 
-/**
- * Represents a single segment extracted from a trace path, with indices back to the original path.
- */
+interface Point {
+  x: number
+  y: number
+}
+
 interface TraceSegment {
-  traceId: string
   segIndex: number
-  x1: number
-  y1: number
-  x2: number
-  y2: number
-  orientation: "horizontal" | "vertical"
+  start: Point
+  end: Point
+  traceIndex: number
 }
 
-/**
- * Merge distance threshold for considering two parallel same-net segments as
- * candidates for merging.
- */
-const MERGE_DISTANCE_THRESHOLD = 0.15
+function pointsEqual(a: Point, b: Point, tolerance = 1e-6): boolean {
+  return (
+    Math.abs(a.x - b.x) < tolerance && Math.abs(a.y - b.y) < tolerance
+  )
+}
 
-/**
- * Resolves the effective net id for a trace, taking into account merged label net ids.
- */
-function getEffectiveNetId(
+function extractSegments(
   trace: SolvedTracePath,
-  mergedLabelNetIdMap: Record<string, Set<string>>,
-): string {
-  const netId = trace.globalConnNetId ?? trace.mspPairId
-  for (const [key, set] of Object.entries(mergedLabelNetIdMap)) {
-    if (set.has(netId)) return key
-  }
-  return netId
-}
-
-/**
- * Extract all horizontal and vertical segments from a trace path.
- */
-function extractSegments(trace: SolvedTracePath): TraceSegment[] {
+  traceIndex: number,
+): TraceSegment[] {
   const segments: TraceSegment[] = []
   const path = trace.tracePath
   for (let i = 0; i < path.length - 1; i++) {
-    const p1 = path[i]
-    const p2 = path[i + 1]
-    if (!p1 || !p2) continue
-    const dx = Math.abs(p1.x - p2.x)
-    const dy = Math.abs(p1.y - p2.y)
-    if (dy < 1e-9 && dx > 1e-9) {
-      segments.push({
-        traceId: trace.mspPairId,
-        segIndex: i,
-        x1: Math.min(p1.x, p2.x),
-        y1: p1.y,
-        x2: Math.max(p1.x, p2.x),
-        y2: p1.y,
-        orientation: "horizontal",
-      })
-    } else if (dx < 1e-9 && dy > 1e-9) {
-      segments.push({
-        traceId: trace.mspPairId,
-        segIndex: i,
-        x1: p1.x,
-        y1: Math.min(p1.y, p2.y),
-        x2: p1.x,
-        y2: Math.max(p1.y, p2.y),
-        orientation: "vertical",
-      })
-    }
+    const start = path[i]
+    const end = path[i + 1]
+    if (!start || !end) continue
+    segments.push({
+      segIndex: i,
+      start: { x: start.x, y: start.y },
+      end: { x: end.x, y: end.y },
+      traceIndex,
+    })
   }
   return segments
 }
 
-/**
- * Check if two ranges [a1, a2] and [b1, b2] overlap (with some minimum overlap).
- */
-function rangesOverlap(
-  a1: number,
-  a2: number,
-  b1: number,
-  b2: number,
+function getNetIdsForTrace(
+  trace: SolvedTracePath,
+  mergedLabelNetIdMap: Record<string, Set<string>>,
+): Set<string> {
+  const netIds = new Set<string>()
+  for (const connId of trace.mspConnectionPairIds) {
+    netIds.add(connId)
+    for (const [labelNetId, mergedSet] of Object.entries(
+      mergedLabelNetIdMap,
+    )) {
+      if (mergedSet.has(connId)) {
+        netIds.add(labelNetId)
+        for (const id of mergedSet) {
+          netIds.add(id)
+        }
+      }
+    }
+  }
+  return netIds
+}
+
+function tracesShareNet(
+  traceA: SolvedTracePath,
+  traceB: SolvedTracePath,
+  mergedLabelNetIdMap: Record<string, Set<string>>,
 ): boolean {
-  const overlapStart = Math.max(a1, b1)
-  const overlapEnd = Math.min(a2, b2)
-  return overlapEnd - overlapStart > 1e-9
+  const netIdsA = getNetIdsForTrace(traceA, mergedLabelNetIdMap)
+  const netIdsB = getNetIdsForTrace(traceB, mergedLabelNetIdMap)
+  for (const id of netIdsA) {
+    if (netIdsB.has(id)) return true
+  }
+  return false
+}
+
+function findConnectionPoint(
+  traceA: SolvedTracePath,
+  traceB: SolvedTracePath,
+): { pointA: "start" | "end"; pointB: "start" | "end" } | null {
+  const pathA = traceA.tracePath
+  const pathB = traceB.tracePath
+  if (pathA.length === 0 || pathB.length === 0) return null
+
+  const startA = pathA[0]
+  const endA = pathA[pathA.length - 1]
+  const startB = pathB[0]
+  const endB = pathB[pathB.length - 1]
+
+  if (!startA || !endA || !startB || !endB) return null
+
+  if (pointsEqual(endA, startB)) return { pointA: "end", pointB: "start" }
+  if (pointsEqual(endA, endB)) return { pointA: "end", pointB: "end" }
+  if (pointsEqual(startA, startB)) return { pointA: "start", pointB: "start" }
+  if (pointsEqual(startA, endB)) return { pointA: "start", pointB: "end" }
+
+  return null
+}
+
+function mergeTracePaths(
+  traceA: SolvedTracePath,
+  traceB: SolvedTracePath,
+  connection: { pointA: "start" | "end"; pointB: "start" | "end" },
+): Point[] {
+  let pathA = [...traceA.tracePath]
+  let pathB = [...traceB.tracePath]
+
+  if (connection.pointA === "start") {
+    pathA = pathA.reverse()
+  }
+  if (connection.pointB === "end") {
+    pathB = pathB.reverse()
+  }
+
+  // pathA ends where pathB starts, skip duplicate point
+  return [...pathA, ...pathB.slice(1)]
 }
 
 /**
- * Merge same-net traces that have parallel segments running close together.
- * For each group of traces sharing the same net, find parallel segments within
- * the merge threshold distance and snap them to a shared coordinate (average).
+ * Merges traces that belong to the same net and share connection points.
  */
 export function mergeSameNetTraces(
   traces: SolvedTracePath[],
   mergedLabelNetIdMap: Record<string, Set<string>>,
 ): SolvedTracePath[] {
-  // Group traces by effective net id
-  const netGroups = new Map<string, SolvedTracePath[]>()
-  for (const trace of traces) {
-    const netId = getEffectiveNetId(trace, mergedLabelNetIdMap)
-    if (!netGroups.has(netId)) {
-      netGroups.set(netId, [])
-    }
-    netGroups.get(netId)!.push(trace)
-  }
+  if (traces.length <= 1) return traces
 
-  // Track which trace paths have been modified so we can simplify them
-  const modifiedTraceIds = new Set<string>()
+  const result: SolvedTracePath[] = [...traces]
+  let merged = true
 
-  // Build a lookup from traceId to trace object
-  const traceById = new Map<string, SolvedTracePath>()
-  for (const trace of traces) {
-    traceById.set(trace.mspPairId, trace)
-  }
+  while (merged) {
+    merged = false
+    for (let i = 0; i < result.length; i++) {
+      const traceA = result[i]
+      if (!traceA) continue
 
-  // For each net group with more than one trace, look for mergeable segments
-  for (const [_netId, group] of netGroups) {
-    if (group.length < 2) continue
+      for (let j = i + 1; j < result.length; j++) {
+        const traceB = result[j]
+        if (!traceB) continue
 
-    // Extract all segments from all traces in this group
-    const allSegments: TraceSegment[] = []
-    for (const trace of group) {
-      allSegments.push(...extractSegments(trace))
-    }
+        if (!tracesShareNet(traceA, traceB, mergedLabelNetIdMap)) continue
 
-    // Find pairs of segments from different traces that are parallel and close
-    for (let i = 0; i < allSegments.length; i++) {
-      for (let j = i + 1; j < allSegments.length; j++) {
-        const segA = allSegments[i]
-        const segB = allSegments[j]
+        const connection = findConnectionPoint(traceA, traceB)
+        if (!connection) continue
 
-        // Must be from different traces
-        if (segA.traceId === segB.traceId) continue
+        const segmentsA = extractSegments(traceA, i)
+        const segmentsB = extractSegments(traceB, j)
 
-        // Must have same orientation
-        if (segA.orientation !== segB.orientation) continue
-
-        if (segA.orientation === "horizontal") {
-          // Both horizontal: check if y values are close and x ranges overlap
-          const dist = Math.abs(segA.y1 - segB.y1)
-          if (dist > MERGE_DISTANCE_THRESHOLD) continue
-          if (!rangesOverlap(segA.x1, segA.x2, segB.x1, segB.x2)) continue
-
-          // Snap both to the average y
-          const avgY = (segA.y1 + segB.y1) / 2
-
-          const traceA = traceById.get(segA.traceId)
-          const traceB = traceById.get(segB.traceId)
-          if (!traceA || !traceB) continue
-
-          // Bounds check before modifying traceA
-          if (
-            segA.segIndex >= 0 &&
-            segA.segIndex < traceA.tracePath.length
-          ) {
-            traceA.tracePath[segA.segIndex] = {
-              x: traceA.tracePath[segA.segIndex].x,
-              y: avgY,
-            }
+        // Validate segments are valid
+        let validA = true
+        for (const segA of segmentsA) {
+          if (segA.segIndex >= 0 && segA.segIndex < traceA.tracePath.length) {
+            // segment is valid
+          } else {
+            validA = false
           }
-          if (
-            segA.segIndex + 1 >= 0 &&
-            segA.segIndex + 1 < traceA.tracePath.length
-          ) {
-            traceA.tracePath[segA.segIndex + 1] = {
-              x: traceA.tracePath[segA.segIndex + 1].x,
-              y: avgY,
-            }
-          }
-
-          // Bounds check before modifying traceB
-          if (
-            segB.segIndex >= 0 &&
-            segB.segIndex < traceB.tracePath.length
-          ) {
-            traceB.tracePath[segB.segIndex] = {
-              x: traceB.tracePath[segB.segIndex].x,
-              y: avgY,
-            }
-          }
-          if (
-            segB.segIndex + 1 >= 0 &&
-            segB.segIndex + 1 < traceB.tracePath.length
-          ) {
-            traceB.tracePath[segB.segIndex + 1] = {
-              x: traceB.tracePath[segB.segIndex + 1].x,
-              y: avgY,
-            }
-          }
-
-          modifiedTraceIds.add(segA.traceId)
-          modifiedTraceIds.add(segB.traceId)
-        } else {
-          // Both vertical: check if x values are close and y ranges overlap
-          const dist = Math.abs(segA.x1 - segB.x1)
-          if (dist > MERGE_DISTANCE_THRESHOLD) continue
-          if (!rangesOverlap(segA.y1, segA.y2, segB.y1, segB.y2)) continue
-
-          // Snap both to the average x
-          const avgX = (segA.x1 + segB.x1) / 2
-
-          const traceA = traceById.get(segA.traceId)
-          const traceB = traceById.get(segB.traceId)
-          if (!traceA || !traceB) continue
-
-          // Bounds check before modifying traceA
-          if (
-            segA.segIndex >= 0 &&
-            segA.segIndex < traceA.tracePath.length
-          ) {
-            traceA.tracePath[segA.segIndex] = {
-              x: avgX,
-              y: traceA.tracePath[segA.segIndex].y,
-            }
-          }
-          if (
-            segA.segIndex + 1 >= 0 &&
-            segA.segIndex + 1 < traceA.tracePath.length
-          ) {
-            traceA.tracePath[segA.segIndex + 1] = {
-              x: avgX,
-              y: traceA.tracePath[segA.segIndex + 1].y,
-            }
-          }
-
-          // Bounds check before modifying traceB
-          if (
-            segB.segIndex >= 0 &&
-            segB.segIndex < traceB.tracePath.length
-          ) {
-            traceB.tracePath[segB.segIndex] = {
-              x: avgX,
-              y: traceB.tracePath[segB.segIndex].y,
-            }
-          }
-          if (
-            segB.segIndex + 1 >= 0 &&
-            segB.segIndex + 1 < traceB.tracePath.length
-          ) {
-            traceB.tracePath[segB.segIndex + 1] = {
-              x: avgX,
-              y: traceB.tracePath[segB.segIndex + 1].y,
-            }
-          }
-
-          modifiedTraceIds.add(segA.traceId)
-          modifiedTraceIds.add(segB.traceId)
         }
+
+        let validB = true
+        for (const segB of segmentsB) {
+          if (segB.segIndex >= 0 && segB.segIndex < traceB.tracePath.length) {
+            // segment is valid
+          } else {
+            validB = false
+          }
+        }
+
+        if (!validA || !validB) continue
+
+        const mergedPath = mergeTracePaths(traceA, traceB, connection)
+
+        const mergedTrace: SolvedTracePath = {
+          ...traceA,
+          tracePath: mergedPath,
+          mspConnectionPairIds: [
+            ...new Set([
+              ...traceA.mspConnectionPairIds,
+              ...traceB.mspConnectionPairIds,
+            ]),
+          ],
+        }
+
+        result[i] = mergedTrace
+        result.splice(j, 1)
+        merged = true
+        break
       }
+      if (merged) break
     }
   }
 
-  // Filter out any null/undefined entries that may have been introduced
-  return traces.map((trace) => {
-    const filteredPath = trace.tracePath.filter(
-      (p): p is { x: number; y: number } =>
-        p != null &&
-        typeof p.x === "number" &&
-        typeof p.y === "number" &&
-        !Number.isNaN(p.x) &&
-        !Number.isNaN(p.y),
-    )
-    return { ...trace, tracePath: filteredPath }
-  })
+  return result
 }
