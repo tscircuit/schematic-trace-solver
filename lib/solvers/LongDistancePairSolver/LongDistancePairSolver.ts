@@ -116,7 +116,27 @@ export class LongDistancePairSolver extends BaseSolver {
         }
       }
     }
-    this.queuedCandidatePairs = candidatePairs
+    // Filter out nets handled exclusively via net label orientations
+    // to avoid spurious extra trace lines (issue #79)
+    const directlyWiredPinIds = new Set<PinId>()
+    for (const dc of inputProblem.directConnections) {
+      for (const pid of dc.pinIds) {
+        directlyWiredPinIds.add(pid)
+      }
+    }
+    const netLabelOrientedNets = new Set<string>(
+      Object.keys(inputProblem.availableNetLabelOrientations ?? {}),
+    )
+    this.queuedCandidatePairs = candidatePairs.filter(([p1, p2]) => {
+      const netId1 = this.netConnMap.getNetConnectedToId(p1.pinId)
+      if (!netId1) return false
+      const connectedIds = this.netConnMap.getIdsConnectedToNet(netId1) as string[]
+      if (!connectedIds.some((id) => directlyWiredPinIds.has(id)) &&
+          connectedIds.some((id) => netLabelOrientedNets.has(id))) {
+        return false
+      }
+      return true
+    })
   }
 
   override getConstructorParams() {
