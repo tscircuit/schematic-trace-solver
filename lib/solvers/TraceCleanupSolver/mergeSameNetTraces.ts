@@ -1,6 +1,19 @@
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 
 /**
+ * Represents a single segment extracted from a trace path, with indices back to the original path.
+ */
+interface TraceSegment {
+  traceId: string
+  segIndex: number
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  orientation: "horizontal" | "vertical"
+}
+
+/**
  * Merge distance threshold for considering two parallel same-net segments as
  * candidates for merging.
  */
@@ -18,19 +31,6 @@ function getEffectiveNetId(
     if (set.has(netId)) return key
   }
   return netId
-}
-
-/**
- * Represents a single segment extracted from a trace path.
- */
-interface TraceSegment {
-  traceId: string
-  segIndex: number
-  x1: number
-  y1: number
-  x2: number
-  y2: number
-  orientation: "horizontal" | "vertical"
 }
 
 /**
@@ -71,7 +71,7 @@ function extractSegments(trace: SolvedTracePath): TraceSegment[] {
 }
 
 /**
- * Check if two ranges [a1, a2] and [b1, b2] overlap.
+ * Check if two ranges [a1, a2] and [b1, b2] overlap (with some minimum overlap).
  */
 function rangesOverlap(
   a1: number,
@@ -86,6 +86,8 @@ function rangesOverlap(
 
 /**
  * Merge same-net traces that have parallel segments running close together.
+ * For each group of traces sharing the same net, find parallel segments within
+ * the merge threshold distance and snap them to a shared coordinate (average).
  */
 export function mergeSameNetTraces(
   traces: SolvedTracePath[],
@@ -101,73 +103,162 @@ export function mergeSameNetTraces(
     netGroups.get(netId)!.push(trace)
   }
 
-  const traceMap = new Map<string, SolvedTracePath>()
+  // Track which trace paths have been modified so we can simplify them
+  const modifiedTraceIds = new Set<string>()
+
+  // Build a lookup from traceId to trace object
+  const traceById = new Map<string, SolvedTracePath>()
   for (const trace of traces) {
-    traceMap.set(trace.mspPairId, trace)
+    traceById.set(trace.mspPairId, trace)
   }
 
   // For each net group with more than one trace, look for mergeable segments
   for (const [_netId, group] of netGroups) {
     if (group.length < 2) continue
 
+    // Extract all segments from all traces in this group
     const allSegments: TraceSegment[] = []
     for (const trace of group) {
       allSegments.push(...extractSegments(trace))
     }
 
+    // Find pairs of segments from different traces that are parallel and close
     for (let i = 0; i < allSegments.length; i++) {
       for (let j = i + 1; j < allSegments.length; j++) {
         const segA = allSegments[i]
         const segB = allSegments[j]
 
+        // Must be from different traces
         if (segA.traceId === segB.traceId) continue
+
+        // Must have same orientation
         if (segA.orientation !== segB.orientation) continue
 
         if (segA.orientation === "horizontal") {
+          // Both horizontal: check if y values are close and x ranges overlap
           const dist = Math.abs(segA.y1 - segB.y1)
-          if (dist < MERGE_DISTANCE_THRESHOLD && dist > 1e-9) {
-            if (rangesOverlap(segA.x1, segA.x2, segB.x1, segB.x2)) {
-              const avgY = (segA.y1 + segB.y1) / 2
-              const traceA = traceMap.get(segA.traceId)
-              const traceB = traceMap.get(segB.traceId)
-              if (traceA && traceA.tracePath[segA.segIndex] && traceA.tracePath[segA.segIndex + 1]) {
-                traceA.tracePath[segA.segIndex] = { ...traceA.tracePath[segA.segIndex], y: avgY }
-                traceA.tracePath[segA.segIndex + 1] = { ...traceA.tracePath[segA.segIndex + 1], y: avgY }
-              }
-              if (traceB && traceB.tracePath[segB.segIndex] && traceB.tracePath[segB.segIndex + 1]) {
-                traceB.tracePath[segB.segIndex] = { ...traceB.tracePath[segB.segIndex], y: avgY }
-                traceB.tracePath[segB.segIndex + 1] = { ...traceB.tracePath[segB.segIndex + 1], y: avgY }
-              }
+          if (dist > MERGE_DISTANCE_THRESHOLD) continue
+          if (!rangesOverlap(segA.x1, segA.x2, segB.x1, segB.x2)) continue
+
+          // Snap both to the average y
+          const avgY = (segA.y1 + segB.y1) / 2
+
+          const traceA = traceById.get(segA.traceId)
+          const traceB = traceById.get(segB.traceId)
+          if (!traceA || !traceB) continue
+
+          // Bounds check before modifying traceA
+          if (
+            segA.segIndex >= 0 &&
+            segA.segIndex < traceA.tracePath.length
+          ) {
+            traceA.tracePath[segA.segIndex] = {
+              x: traceA.tracePath[segA.segIndex].x,
+              y: avgY,
             }
           }
+          if (
+            segA.segIndex + 1 >= 0 &&
+            segA.segIndex + 1 < traceA.tracePath.length
+          ) {
+            traceA.tracePath[segA.segIndex + 1] = {
+              x: traceA.tracePath[segA.segIndex + 1].x,
+              y: avgY,
+            }
+          }
+
+          // Bounds check before modifying traceB
+          if (
+            segB.segIndex >= 0 &&
+            segB.segIndex < traceB.tracePath.length
+          ) {
+            traceB.tracePath[segB.segIndex] = {
+              x: traceB.tracePath[segB.segIndex].x,
+              y: avgY,
+            }
+          }
+          if (
+            segB.segIndex + 1 >= 0 &&
+            segB.segIndex + 1 < traceB.tracePath.length
+          ) {
+            traceB.tracePath[segB.segIndex + 1] = {
+              x: traceB.tracePath[segB.segIndex + 1].x,
+              y: avgY,
+            }
+          }
+
+          modifiedTraceIds.add(segA.traceId)
+          modifiedTraceIds.add(segB.traceId)
         } else {
+          // Both vertical: check if x values are close and y ranges overlap
           const dist = Math.abs(segA.x1 - segB.x1)
-          if (dist < MERGE_DISTANCE_THRESHOLD && dist > 1e-9) {
-            if (rangesOverlap(segA.y1, segA.y2, segB.y1, segB.y2)) {
-              const avgX = (segA.x1 + segB.x1) / 2
-              const traceA = traceMap.get(segA.traceId)
-              const traceB = traceMap.get(segB.traceId)
-              if (traceA && traceA.tracePath[segA.segIndex] && traceA.tracePath[segA.segIndex + 1]) {
-                traceA.tracePath[segA.segIndex] = { ...traceA.tracePath[segA.segIndex], x: avgX }
-                traceA.tracePath[segA.segIndex + 1] = { ...traceA.tracePath[segA.segIndex + 1], x: avgX }
-              }
-              if (traceB && traceB.tracePath[segB.segIndex] && traceB.tracePath[segB.segIndex + 1]) {
-                traceB.tracePath[segB.segIndex] = { ...traceB.tracePath[segB.segIndex], x: avgX }
-                traceB.tracePath[segB.segIndex + 1] = { ...traceB.tracePath[segB.segIndex + 1], x: avgX }
-              }
+          if (dist > MERGE_DISTANCE_THRESHOLD) continue
+          if (!rangesOverlap(segA.y1, segA.y2, segB.y1, segB.y2)) continue
+
+          // Snap both to the average x
+          const avgX = (segA.x1 + segB.x1) / 2
+
+          const traceA = traceById.get(segA.traceId)
+          const traceB = traceById.get(segB.traceId)
+          if (!traceA || !traceB) continue
+
+          // Bounds check before modifying traceA
+          if (
+            segA.segIndex >= 0 &&
+            segA.segIndex < traceA.tracePath.length
+          ) {
+            traceA.tracePath[segA.segIndex] = {
+              x: avgX,
+              y: traceA.tracePath[segA.segIndex].y,
             }
           }
+          if (
+            segA.segIndex + 1 >= 0 &&
+            segA.segIndex + 1 < traceA.tracePath.length
+          ) {
+            traceA.tracePath[segA.segIndex + 1] = {
+              x: avgX,
+              y: traceA.tracePath[segA.segIndex + 1].y,
+            }
+          }
+
+          // Bounds check before modifying traceB
+          if (
+            segB.segIndex >= 0 &&
+            segB.segIndex < traceB.tracePath.length
+          ) {
+            traceB.tracePath[segB.segIndex] = {
+              x: avgX,
+              y: traceB.tracePath[segB.segIndex].y,
+            }
+          }
+          if (
+            segB.segIndex + 1 >= 0 &&
+            segB.segIndex + 1 < traceB.tracePath.length
+          ) {
+            traceB.tracePath[segB.segIndex + 1] = {
+              x: avgX,
+              y: traceB.tracePath[segB.segIndex + 1].y,
+            }
+          }
+
+          modifiedTraceIds.add(segA.traceId)
+          modifiedTraceIds.add(segB.traceId)
         }
       }
     }
   }
 
-  // Filter out any undefined points from all trace paths
-  for (const trace of traces) {
-    trace.tracePath = trace.tracePath.filter(
-      (p): p is { x: number; y: number } => p != null && typeof p.x === "number" && typeof p.y === "number",
+  // Filter out any null/undefined entries that may have been introduced
+  return traces.map((trace) => {
+    const filteredPath = trace.tracePath.filter(
+      (p): p is { x: number; y: number } =>
+        p != null &&
+        typeof p.x === "number" &&
+        typeof p.y === "number" &&
+        !Number.isNaN(p.x) &&
+        !Number.isNaN(p.y),
     )
-  }
-
-  return traces
+    return { ...trace, tracePath: filteredPath }
+  })
 }
