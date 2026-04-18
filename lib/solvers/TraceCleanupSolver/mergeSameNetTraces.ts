@@ -119,8 +119,8 @@ export function mergeSameNetTraces(
     const trace = traces[ti]
     if (!trace) continue
     allSegments.push(
-        ...extractSegments({ ...trace, tracePath: paths[ti]! }, ti),
-      )
+      ...extractSegments({ ...trace, tracePath: paths[ti]! }, ti),
+    )
   }
 
   // Find pairs of close parallel overlapping segments from same-net traces
