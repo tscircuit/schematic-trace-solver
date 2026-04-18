@@ -1,41 +1,43 @@
+interface Point {
+  x: number
+  y: number
+}
+
 /**
- * Simplifies a path by removing redundant collinear points and filtering out
- * any undefined or invalid entries.
+ * Simplifies a path by removing redundant collinear points.
+ * Points that lie on the same horizontal or vertical line between
+ * their neighbors are removed.
  */
-export function simplifyPath(
-  path: { x: number; y: number }[],
-): { x: number; y: number }[] {
-  // First, filter out any null/undefined entries
-  const cleanPath = path.filter(
-    (p): p is { x: number; y: number } =>
-      p != null && typeof p.x === "number" && typeof p.y === "number",
-  )
+export function simplifyPath(path: Point[]): Point[] {
+  if (path.length <= 2) return path
 
-  if (cleanPath.length <= 2) return cleanPath
+  const result: Point[] = [path[0]]
 
-  const result: { x: number; y: number }[] = [cleanPath[0]]
-
-  for (let i = 1; i < cleanPath.length - 1; i++) {
+  for (let i = 1; i < path.length - 1; i++) {
     const prev = result[result.length - 1]
-    const curr = cleanPath[i]
-    const next = cleanPath[i + 1]
+    const curr = path[i]
+    const next = path[i + 1]
 
-    // Check if prev, curr, next are collinear
-    const dx1 = curr.x - prev.x
-    const dy1 = curr.y - prev.y
-    const dx2 = next.x - curr.x
-    const dy2 = next.y - curr.y
+    if (!prev || !curr || !next) {
+      if (curr) result.push(curr)
+      continue
+    }
 
-    // Cross product to check collinearity
-    const cross = dx1 * dy2 - dy1 * dx2
+    // Check if curr is collinear between prev and next
+    const isCollinearHorizontal =
+      Math.abs(prev.y - curr.y) < 1e-6 && Math.abs(curr.y - next.y) < 1e-6
+    const isCollinearVertical =
+      Math.abs(prev.x - curr.x) < 1e-6 && Math.abs(curr.x - next.x) < 1e-6
 
-    if (Math.abs(cross) > 1e-9) {
-      // Not collinear, keep this point
+    if (!isCollinearHorizontal && !isCollinearVertical) {
       result.push(curr)
     }
   }
 
-  result.push(cleanPath[cleanPath.length - 1])
+  const lastPoint = path[path.length - 1]
+  if (lastPoint) {
+    result.push(lastPoint)
+  }
 
   return result
 }
