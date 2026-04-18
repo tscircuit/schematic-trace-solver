@@ -37,13 +37,15 @@ type PipelineStep =
  * including minimizing turns, balancing shapes, untangling, and merging
  * same-net traces.
  */
-export class TraceCleanupSolver extends BaseSolver<TraceCleanupSolverInput> {
+export class TraceCleanupSolver extends BaseSolver {
   cleanedTraces: SolvedTracePath[] = []
   currentStep: PipelineStep = "minimizing_turns"
   untangleSubsolver: UntangleTraceSubsolver | null = null
+  input: TraceCleanupSolverInput
 
   constructor(input: TraceCleanupSolverInput) {
-    super(input)
+    super()
+    this.input = input
   }
 
   _step() {
@@ -56,7 +58,7 @@ export class TraceCleanupSolver extends BaseSolver<TraceCleanupSolverInput> {
     } = this.input
 
     if (this.currentStep === "minimizing_turns") {
-      this.cleanedTraces = allTraces.map((trace) => {
+      this.cleanedTraces = allTraces.map((trace: SolvedTracePath) => {
         const newPath = minimizeTurnsWithFilteredLabels(
           trace.tracePath,
           allLabelPlacements,
@@ -68,9 +70,9 @@ export class TraceCleanupSolver extends BaseSolver<TraceCleanupSolverInput> {
     }
 
     if (this.currentStep === "balancing_l_shapes") {
-      this.cleanedTraces = this.cleanedTraces.map((trace) => {
+      this.cleanedTraces = this.cleanedTraces.map((trace: SolvedTracePath) => {
         const newPath = balanceZShapes({
-          targetMspConnectionPairId: trace.targetMspConnectionPairId,
+          targetMspConnectionPairId: trace.mspConnectionPairIds[0],
           traces: this.cleanedTraces,
           inputProblem,
           allLabelPlacements,
@@ -97,7 +99,7 @@ export class TraceCleanupSolver extends BaseSolver<TraceCleanupSolverInput> {
         this.untangleSubsolver._step()
         return
       }
-      this.cleanedTraces = this.untangleSubsolver.cleanedTraces
+      this.cleanedTraces = this.untangleSubsolver.getOutput().cleanedTraces
       this.currentStep = "merging_same_net_traces"
       return
     }
@@ -109,7 +111,7 @@ export class TraceCleanupSolver extends BaseSolver<TraceCleanupSolverInput> {
       )
 
       // Final simplification pass
-      this.cleanedTraces = this.cleanedTraces.map((trace) => {
+      this.cleanedTraces = this.cleanedTraces.map((trace: SolvedTracePath) => {
         const simplified = simplifyPath(trace.tracePath)
         return { ...trace, tracePath: simplified }
       })
