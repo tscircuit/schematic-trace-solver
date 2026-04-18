@@ -42,6 +42,10 @@ export class TraceCleanupSolver extends BaseSolver<TraceCleanupSolverInput> {
   currentStep: PipelineStep = "minimizing_turns"
   untangleSubsolver: UntangleTraceSubsolver | null = null
 
+  constructor(input: TraceCleanupSolverInput) {
+    super(input)
+  }
+
   _step() {
     const {
       inputProblem,
@@ -57,7 +61,7 @@ export class TraceCleanupSolver extends BaseSolver<TraceCleanupSolverInput> {
           trace.tracePath,
           allLabelPlacements,
         )
-        return { ...trace, tracePath: newPath }
+        return { ...trace, tracePath: newPath.tracePath }
       })
       this.currentStep = "balancing_l_shapes"
       return
@@ -65,7 +69,14 @@ export class TraceCleanupSolver extends BaseSolver<TraceCleanupSolverInput> {
 
     if (this.currentStep === "balancing_l_shapes") {
       this.cleanedTraces = this.cleanedTraces.map((trace) => {
-        const newPath = balanceZShapes(trace.tracePath)
+        const newPath = balanceZShapes({
+          targetMspConnectionPairId: trace.targetMspConnectionPairId,
+          traces: this.cleanedTraces,
+          inputProblem,
+          allLabelPlacements,
+          mergedLabelNetIdMap,
+          paddingBuffer,
+        })
         return { ...trace, tracePath: newPath }
       })
       this.currentStep = "untangling_traces"
@@ -77,6 +88,8 @@ export class TraceCleanupSolver extends BaseSolver<TraceCleanupSolverInput> {
         this.untangleSubsolver = new UntangleTraceSubsolver({
           inputProblem,
           allTraces: this.cleanedTraces,
+          allLabelPlacements,
+          mergedLabelNetIdMap,
           paddingBuffer,
         })
       }
@@ -135,7 +148,7 @@ export class TraceCleanupSolver extends BaseSolver<TraceCleanupSolverInput> {
           x2: p2.x,
           y2: p2.y,
           strokeColor: "blue",
-        } as Line)
+        } as unknown as Line)
       }
     }
 
