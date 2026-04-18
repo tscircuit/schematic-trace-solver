@@ -56,7 +56,10 @@ interface Segment {
   maxCoord: number
 }
 
-function extractSegments(trace: SolvedTracePath, traceIndex: number): Segment[] {
+function extractSegments(
+  trace: SolvedTracePath,
+  traceIndex: number,
+): Segment[] {
   const segments: Segment[] = []
   const path = trace.tracePath
   for (let i = 0; i < path.length - 1; i++) {
@@ -115,7 +118,9 @@ export function mergeSameNetTraces(
   for (let ti = 0; ti < traces.length; ti++) {
     const trace = traces[ti]
     if (!trace) continue
-    allSegments.push(...extractSegments({ ...trace, tracePath: paths[ti]! }, ti))
+    allSegments.push(
+        ...extractSegments({ ...trace, tracePath: paths[ti]! }, ti),
+      )
   }
 
   // Find pairs of close parallel overlapping segments from same-net traces
@@ -124,11 +129,22 @@ export function mergeSameNetTraces(
     for (let j = i + 1; j < allSegments.length; j++) {
       const segB = allSegments[j]!
       if (segA.traceIndex === segB.traceIndex) continue
-      if (!tracesShareNet(traces[segA.traceIndex]!, traces[segB.traceIndex]!, mergedLabelNetIdMap)) continue
+      if (
+        !tracesShareNet(
+          traces[segA.traceIndex]!,
+          traces[segB.traceIndex]!,
+          mergedLabelNetIdMap,
+        )
+      )
+        continue
 
       if (segA.isHorizontal && segB.isHorizontal) {
         const yDiff = Math.abs(segA.y! - segB.y!)
-        if (yDiff < SNAP_TOLERANCE && yDiff > 1e-9 && segmentsOverlap(segA, segB)) {
+        if (
+          yDiff < SNAP_TOLERANCE &&
+          yDiff > 1e-9 &&
+          segmentsOverlap(segA, segB)
+        ) {
           const avgY = (segA.y! + segB.y!) / 2
           // Snap all points in traceA with y == segA.y to avgY
           const pathA = paths[segA.traceIndex]!
@@ -146,7 +162,11 @@ export function mergeSameNetTraces(
         }
       } else if (segA.isVertical && segB.isVertical) {
         const xDiff = Math.abs(segA.x! - segB.x!)
-        if (xDiff < SNAP_TOLERANCE && xDiff > 1e-9 && segmentsOverlap(segA, segB)) {
+        if (
+          xDiff < SNAP_TOLERANCE &&
+          xDiff > 1e-9 &&
+          segmentsOverlap(segA, segB)
+        ) {
           const avgX = (segA.x! + segB.x!) / 2
           const pathA = paths[segA.traceIndex]!
           for (const p of pathA) {
