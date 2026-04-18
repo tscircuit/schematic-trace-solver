@@ -1,41 +1,43 @@
-import type { Point } from "graphics-debug"
-import {
-  isHorizontal,
-  isVertical,
-} from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+interface Point {
+  x: number
+  y: number
+}
 
-export const simplifyPath = (path: Point[]): Point[] => {
-  if (path.length < 3) return path
-  const newPath: Point[] = [path[0]]
+/**
+ * Simplifies a path by removing redundant collinear points.
+ * Points that lie on the same horizontal or vertical line between
+ * their neighbors are removed.
+ */
+export function simplifyPath(path: Point[]): Point[] {
+  if (path.length <= 2) return path
+
+  const result: Point[] = [path[0]]
+
   for (let i = 1; i < path.length - 1; i++) {
-    const p1 = newPath[newPath.length - 1]
-    const p2 = path[i]
-    const p3 = path[i + 1]
-    if (
-      (isVertical(p1, p2) && isVertical(p2, p3)) ||
-      (isHorizontal(p1, p2) && isHorizontal(p2, p3))
-    ) {
+    const prev = result[result.length - 1]
+    const curr = path[i]
+    const next = path[i + 1]
+
+    if (!prev || !curr || !next) {
+      if (curr) result.push(curr)
       continue
     }
-    newPath.push(p2)
-  }
-  newPath.push(path[path.length - 1])
 
-  if (newPath.length < 3) return newPath
-  const finalPath: Point[] = [newPath[0]]
-  for (let i = 1; i < newPath.length - 1; i++) {
-    const p1 = finalPath[finalPath.length - 1]
-    const p2 = newPath[i]
-    const p3 = newPath[i + 1]
-    if (
-      (isVertical(p1, p2) && isVertical(p2, p3)) ||
-      (isHorizontal(p1, p2) && isHorizontal(p2, p3))
-    ) {
-      continue
+    // Check if curr is collinear between prev and next
+    const isCollinearHorizontal =
+      Math.abs(prev.y - curr.y) < 1e-6 && Math.abs(curr.y - next.y) < 1e-6
+    const isCollinearVertical =
+      Math.abs(prev.x - curr.x) < 1e-6 && Math.abs(curr.x - next.x) < 1e-6
+
+    if (!isCollinearHorizontal && !isCollinearVertical) {
+      result.push(curr)
     }
-    finalPath.push(p2)
   }
-  finalPath.push(newPath[newPath.length - 1])
 
-  return finalPath
+  const lastPoint = path[path.length - 1]
+  if (lastPoint) {
+    result.push(lastPoint)
+  }
+
+  return result
 }
