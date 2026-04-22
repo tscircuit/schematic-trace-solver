@@ -356,7 +356,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
         x: p.anchorPoint.x,
         y: p.anchorPoint.y,
         color: getColorFromString(p.globalConnNetId, 0.9),
-        label: `ANCHOR\n${p.orientation}`,
+        label: `anchorPoint\norientation: ${p.orientation}`,
       } as any)
     }
 
