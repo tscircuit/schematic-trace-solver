@@ -1,11 +1,10 @@
 import { test, expect } from "bun:test"
-import type { InputProblem } from "lib/index"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { inputProblem } from "site/examples/example28.page"
 import "tests/fixtures/matcher"
-import inputProblem from "../../tests/assets/example25.json"
 
 test("example28", () => {
-  const solver = new SchematicTracePipelineSolver(inputProblem as any)
+  const solver = new SchematicTracePipelineSolver(inputProblem)
 
   solver.solve()
 
