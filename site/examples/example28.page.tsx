@@ -7,7 +7,7 @@ export const inputProblem: InputProblem = {
       chipId: "1",
       center: {
         x: 0,
-        y: 0
+        y: 0,
       },
       width: 0.6,
       height: 0.4,
@@ -36,26 +36,26 @@ export const inputProblem: InputProblem = {
           pinId: "NC",
           x: 0.3,
           y: 0,
-        }
-      ]
-    }
+        },
+      ],
+    },
   ],
   directConnections: [],
   netConnections: [
     {
       netId: "V5_IN",
-      pinIds: ["IN", "EN"]
+      pinIds: ["IN", "EN"],
     },
     {
       netId: "V3P3",
-      pinIds: ["OUT"]
+      pinIds: ["OUT"],
     },
     {
       netId: "GND",
-      pinIds: ["GND"]
-    }
+      pinIds: ["GND"],
+    },
   ],
-  availableNetLabelOrientations: {}
+  availableNetLabelOrientations: {},
 }
 
 export default () => <PipelineDebugger inputProblem={inputProblem} />
