@@ -275,8 +275,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
         this.triedAnyOrientationFallbackForCurrentGroup = true
         const netLabelWidth = this.currentGroup.netId
           ? this.inputProblem.netConnections.find(
-              (nc) => nc.netId === this.currentGroup!.netId,
-            )?.netLabelWidth
+            (nc) => nc.netId === this.currentGroup!.netId,
+          )?.netLabelWidth
           : undefined
         this.activeSubSolver = new SingleNetLabelPlacementSolver({
           inputProblem: this.inputProblem,
@@ -315,8 +315,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
 
     const netLabelWidth = this.currentGroup.netId
       ? this.inputProblem.netConnections.find(
-          (nc) => nc.netId === this.currentGroup!.netId,
-        )?.netLabelWidth
+        (nc) => nc.netId === this.currentGroup!.netId,
+      )?.netLabelWidth
       : undefined
 
     this.activeSubSolver = new SingleNetLabelPlacementSolver({
@@ -336,6 +336,12 @@ export class NetLabelPlacementSolver extends BaseSolver {
     }
     const graphics = visualizeInputProblem(this.inputProblem)
 
+    for (const rect of graphics.rects ?? []) {
+      if (rect.label) {
+        rect.label = `CHIP\n${rect.label}`
+      }
+    }
+
     for (const trace of Object.values(this.inputTraceMap)) {
       graphics.lines!.push({
         points: trace.tracePath,
@@ -350,11 +356,16 @@ export class NetLabelPlacementSolver extends BaseSolver {
         height: p.height,
         fill: getColorFromString(p.globalConnNetId, 0.35),
         strokeColor: getColorFromString(p.globalConnNetId, 0.9),
+        label:
+          p.netId && p.netId !== p.globalConnNetId
+            ? `PLACED NET LABEL\n${p.netId}\n${p.globalConnNetId}`
+            : `PLACED NET LABEL\n${p.netId ?? p.globalConnNetId}`,
       } as any)
       graphics.points!.push({
         x: p.anchorPoint.x,
         y: p.anchorPoint.y,
         color: getColorFromString(p.globalConnNetId, 0.9),
+        label: `ANCHOR\n${p.orientation}`,
       } as any)
     }
 

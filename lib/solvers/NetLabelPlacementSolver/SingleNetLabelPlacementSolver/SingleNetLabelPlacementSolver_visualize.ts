@@ -9,6 +9,12 @@ export function visualizeSingleNetLabelPlacementSolver(
 ): GraphicsObject {
   const graphics = visualizeInputProblem(solver.inputProblem)
 
+  for (const rect of graphics.rects ?? []) {
+    if (rect.label) {
+      rect.label = `CHIP\n${rect.label}`
+    }
+  }
+
   // Visualize the entire trace group for this net id
   const groupId = solver.overlappingSameNetTraceGroup.globalConnNetId
   const host = chooseHostTraceForGroup({
@@ -45,8 +51,16 @@ export function visualizeSingleNetLabelPlacementSolver(
         : c.status === "chip-collision"
           ? "red"
           : c.status === "trace-collision"
-            ? "orange"
-            : "gray"
+          ? "orange"
+          : "gray"
+    const candidateLabel =
+      c.status === "ok"
+        ? "VALID NET LABEL CANDIDATE"
+        : c.status === "chip-collision"
+          ? "CHIP COLLISION"
+          : c.status === "trace-collision"
+            ? "TRACE COLLISION"
+            : "PARALLEL TO SEGMENT"
 
     graphics.rects!.push({
       center: {
@@ -57,12 +71,14 @@ export function visualizeSingleNetLabelPlacementSolver(
       height: c.height,
       fill,
       strokeColor: stroke,
+      label: `${candidateLabel}\n${c.orientation}`,
     } as any)
 
     graphics.points!.push({
       x: c.anchor.x,
       y: c.anchor.y,
       color: stroke,
+      label: `ANCHOR\n${c.orientation}`,
     } as any)
   }
 
@@ -75,11 +91,16 @@ export function visualizeSingleNetLabelPlacementSolver(
       height: p.height,
       fill: "rgba(0, 128, 255, 0.35)",
       strokeColor: "blue",
+      label:
+        p.netId && p.netId !== p.globalConnNetId
+          ? `PLACED NET LABEL\n${p.netId}\n${p.globalConnNetId}`
+          : `PLACED NET LABEL\n${p.netId ?? p.globalConnNetId}`,
     } as any)
     graphics.points!.push({
       x: p.anchorPoint.x,
       y: p.anchorPoint.y,
       color: "blue",
+      label: `ANCHOR\n${p.orientation}`,
     } as any)
   }
 
