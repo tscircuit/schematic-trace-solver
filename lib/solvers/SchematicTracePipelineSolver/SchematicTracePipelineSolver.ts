@@ -25,6 +25,7 @@ import { Example28Solver } from "../Example28Solver/Example28Solver"
 import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
 import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
+import { mergeSameNetTraceLines } from "./merge-same-net-trace-lines"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -120,6 +121,14 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           chipMap: this.mspConnectionPairSolver!.chipMap,
         },
       ],
+      {
+        onSolved: (instance) => {
+          instance.schematicTraceLinesSolver!.solvedTracePaths =
+            mergeSameNetTraceLines(
+              instance.schematicTraceLinesSolver!.solvedTracePaths,
+            )
+        },
+      },
     ),
     definePipelineStep(
       "longDistancePairSolver",
