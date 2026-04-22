@@ -275,8 +275,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
         this.triedAnyOrientationFallbackForCurrentGroup = true
         const netLabelWidth = this.currentGroup.netId
           ? this.inputProblem.netConnections.find(
-            (nc) => nc.netId === this.currentGroup!.netId,
-          )?.netLabelWidth
+              (nc) => nc.netId === this.currentGroup!.netId,
+            )?.netLabelWidth
           : undefined
         this.activeSubSolver = new SingleNetLabelPlacementSolver({
           inputProblem: this.inputProblem,
@@ -315,8 +315,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
 
     const netLabelWidth = this.currentGroup.netId
       ? this.inputProblem.netConnections.find(
-        (nc) => nc.netId === this.currentGroup!.netId,
-      )?.netLabelWidth
+          (nc) => nc.netId === this.currentGroup!.netId,
+        )?.netLabelWidth
       : undefined
 
     this.activeSubSolver = new SingleNetLabelPlacementSolver({

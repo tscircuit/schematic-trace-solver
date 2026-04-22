@@ -51,8 +51,8 @@ export function visualizeSingleNetLabelPlacementSolver(
         : c.status === "chip-collision"
           ? "red"
           : c.status === "trace-collision"
-          ? "orange"
-          : "gray"
+            ? "orange"
+            : "gray"
     const candidateLabel =
       c.status === "ok"
         ? "VALID NET LABEL CANDIDATE"
