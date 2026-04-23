@@ -179,8 +179,12 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     return { placement, testedCandidates }
   }
 
-  // If no valid placements found, return placement using pin's facing direction
-  const fallbackOrientation = pinFacingDirection
+  // If no valid placements are found, keep the pin-facing direction only when
+  // it is allowed for this net. Otherwise fall back to the first permitted
+  // label orientation so the placement still respects input constraints.
+  const fallbackOrientation = orientations.includes(pinFacingDirection)
+    ? pinFacingDirection
+    : orientations[0]!
   const { width, height } = getDimsForOrientation({
     orientation: fallbackOrientation,
     netLabelWidth,

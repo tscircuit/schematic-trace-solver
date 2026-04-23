@@ -55,7 +55,9 @@ export const inputProblem: InputProblem = {
       pinIds: ["GND"],
     },
   ],
-  availableNetLabelOrientations: {},
+  availableNetLabelOrientations: {
+    GND: ["y-"],
+  },
 }
 
 export default () => <PipelineDebugger inputProblem={inputProblem} />

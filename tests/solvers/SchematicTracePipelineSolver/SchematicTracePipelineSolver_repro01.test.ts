@@ -107,5 +107,12 @@ test("SchematicTracePipelineSolver_repro01", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
 
-  // console.log(solver.schematicTraceLinesSolver!.solvedTracePaths)
+  const gndLabels = solver
+    .getOutput()
+    .netLabelPlacements.filter((placement) => placement.netId === "GND")
+
+  expect(gndLabels.length).toBeGreaterThan(0)
+  expect(gndLabels.every((placement) => placement.orientation === "y-")).toBe(
+    true,
+  )
 })

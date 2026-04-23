@@ -20,6 +20,8 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { SinglePortLabelTraceCollisionSolver } from "../SinglePortLabelTraceCollisionSolver/SinglePortLabelTraceCollisionSolver"
+import { getColorFromString } from "lib/utils/getColorFromString"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -29,6 +31,7 @@ type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   ) => ConstructorParameters<T>
   onSolved?: (instance: SchematicTracePipelineSolver) => void
   shouldSkip?: (instance: SchematicTracePipelineSolver) => boolean
+  visualizationGroup?: string
 }
 
 function definePipelineStep<
@@ -43,6 +46,7 @@ function definePipelineStep<
   opts: {
     onSolved?: (instance: SchematicTracePipelineSolver) => void
     shouldSkip?: (instance: SchematicTracePipelineSolver) => boolean
+    visualizationGroup?: string
   } = {},
 ): PipelineStep<T> {
   return {
@@ -51,6 +55,7 @@ function definePipelineStep<
     getConstructorParams,
     onSolved: opts.onSolved,
     shouldSkip: opts.shouldSkip,
+    visualizationGroup: opts.visualizationGroup,
   }
 }
 
@@ -65,15 +70,18 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   longDistancePairSolver?: LongDistancePairSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
-  netLabelPlacementSolver?: NetLabelPlacementSolver
+  initialNetLabelPlacementSolver?: NetLabelPlacementSolver
+  singlePortLabelTraceCollisionSolver?: SinglePortLabelTraceCollisionSolver
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
+  finalNetLabelPlacementSolver?: NetLabelPlacementSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
   timeSpentOnPhase: Record<string, number>
   firstIterationOfPhase: Record<string, number>
+  solverInstancesByPipelineStep: Array<BaseSolver | undefined>
 
   inputProblem: InputProblem
 
@@ -144,7 +152,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
-      "netLabelPlacementSolver",
+      "initialNetLabelPlacementSolver",
       NetLabelPlacementSolver,
       () => [
         {
@@ -162,6 +170,32 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         onSolved: (_solver) => {
           // TODO
         },
+        visualizationGroup: "initial-net-label-placement",
+      },
+    ),
+    definePipelineStep(
+      "singlePortLabelTraceCollisionSolver",
+      SinglePortLabelTraceCollisionSolver,
+      (instance) => {
+        const traces =
+          instance.traceOverlapShiftSolver?.correctedTraceMap ??
+          Object.fromEntries(
+            instance.longDistancePairSolver!.getOutput().allTracesMerged.map(
+              (trace) => [trace.mspPairId, trace],
+            ),
+          )
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            inputTraceMap: traces,
+            netLabelPlacements:
+              instance.initialNetLabelPlacementSolver!.netLabelPlacements,
+          },
+        ]
+      },
+      {
+        visualizationGroup: "initial-net-label-placement",
       },
     ),
     definePipelineStep(
@@ -169,15 +203,32 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       TraceLabelOverlapAvoidanceSolver,
       (instance) => {
         const traceMap =
-          instance.traceOverlapShiftSolver?.correctedTraceMap ??
-          Object.fromEntries(
-            instance
-              .longDistancePairSolver!.getOutput()
-              .allTracesMerged.map((p) => [p.mspPairId, p]),
-          )
+          instance.singlePortLabelTraceCollisionSolver
+            ? Object.fromEntries(
+                [
+                  ...Object.values(
+                    instance.traceOverlapShiftSolver?.correctedTraceMap ??
+                      Object.fromEntries(
+                        instance
+                          .longDistancePairSolver!.getOutput()
+                          .allTracesMerged.map((p) => [p.mspPairId, p]),
+                      ),
+                  ),
+                  ...instance.singlePortLabelTraceCollisionSolver.getOutput()
+                    .connectorTracePaths,
+                ].map((trace) => [trace.mspPairId, trace]),
+              )
+            : instance.traceOverlapShiftSolver?.correctedTraceMap ??
+              Object.fromEntries(
+                instance
+                  .longDistancePairSolver!.getOutput()
+                  .allTracesMerged.map((p) => [p.mspPairId, p]),
+              )
         const traces = Object.values(traceMap)
         const netLabelPlacements =
-          instance.netLabelPlacementSolver!.netLabelPlacements
+          instance.singlePortLabelTraceCollisionSolver?.getOutput()
+            .netLabelPlacements ??
+          instance.initialNetLabelPlacementSolver!.netLabelPlacements
 
         return [
           {
@@ -207,7 +258,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ]
     }),
     definePipelineStep(
-      "netLabelPlacementSolver",
+      "finalNetLabelPlacementSolver",
       NetLabelPlacementSolver,
       (instance) => {
         const traces =
@@ -223,6 +274,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           },
         ]
       },
+      {
+        visualizationGroup: "final-net-label-placement",
+      },
     ),
   ]
 
@@ -234,6 +288,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     this.endTimeOfPhase = {}
     this.timeSpentOnPhase = {}
     this.firstIterationOfPhase = {}
+    this.solverInstancesByPipelineStep = []
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -286,6 +341,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     const constructorParams = pipelineStepDef.getConstructorParams(this)
     // @ts-ignore
     this.activeSubSolver = new pipelineStepDef.solverClass(...constructorParams)
+    this.solverInstancesByPipelineStep[this.currentPipelineStepIndex] =
+      this.activeSubSolver
     ;(this as any)[pipelineStepDef.solverName] = this.activeSubSolver
     this.timeSpentOnPhase[pipelineStepDef.solverName] = 0
     this.startTimeOfPhase[pipelineStepDef.solverName] = performance.now()
@@ -302,33 +359,151 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     return this.pipelineDef[this.currentPipelineStepIndex]?.solverName ?? "none"
   }
 
+  getOutput() {
+    const traces =
+      this.traceCleanupSolver?.getOutput().traces ??
+      this.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
+      this.singlePortLabelTraceCollisionSolver?.getOutput().connectorTracePaths ??
+      Object.values(this.traceOverlapShiftSolver?.correctedTraceMap ?? {})
+    const singlePortCollisionOutput =
+      this.singlePortLabelTraceCollisionSolver?.getOutput()
+    const baseNetLabelPlacements =
+      this.finalNetLabelPlacementSolver?.netLabelPlacements ??
+      singlePortCollisionOutput?.netLabelPlacements ??
+      this.initialNetLabelPlacementSolver?.netLabelPlacements ??
+      []
+    const fixedSinglePortPlacements =
+      singlePortCollisionOutput?.fixedPlacements ?? []
+    const fixedSinglePortPinIds = new Set(
+      fixedSinglePortPlacements.flatMap((placement) => placement.pinIds),
+    )
+    const netLabelPlacements = [
+      ...baseNetLabelPlacements.filter((placement) => {
+        const uniquePinIds = [...new Set(placement.pinIds)]
+        const onlyFixedSinglePortPin =
+          uniquePinIds.length === 1 &&
+          fixedSinglePortPinIds.has(uniquePinIds[0]!)
+
+        return !onlyFixedSinglePortPin
+      }),
+      ...fixedSinglePortPlacements,
+    ]
+    const connectorTracePaths =
+      this.traceCleanupSolver || this.traceLabelOverlapAvoidanceSolver
+        ? []
+        : singlePortCollisionOutput?.connectorTracePaths ?? []
+
+    return {
+      traces: [...traces, ...connectorTracePaths],
+      netLabelPlacements,
+    }
+  }
+
+  private visualizeCanonicalOutput(): GraphicsObject {
+    const graphics = visualizeInputProblem(this.inputProblem)
+    const output = this.getOutput()
+
+    for (const rect of graphics.rects ?? []) {
+      if (rect.label) rect.label = `CHIP\n${rect.label}`
+    }
+
+    for (const trace of output.traces) {
+      graphics.lines!.push({
+        points: trace.tracePath,
+        strokeColor: "purple",
+      })
+    }
+
+    for (const placement of output.netLabelPlacements) {
+      const color = getColorFromString(placement.globalConnNetId, 0.9)
+      graphics.rects!.push({
+        center: placement.center,
+        width: placement.width,
+        height: placement.height,
+        fill: getColorFromString(placement.globalConnNetId, 0.35),
+        strokeColor: color,
+        label:
+          placement.netId && placement.netId !== placement.globalConnNetId
+            ? `PLACED NET LABEL\n${placement.netId}\n${placement.globalConnNetId}`
+            : `PLACED NET LABEL\n${placement.netId ?? placement.globalConnNetId}`,
+      } as any)
+      graphics.points!.push({
+        x: placement.anchorPoint.x,
+        y: placement.anchorPoint.y,
+        color,
+        label: `ANCHOR\n${placement.orientation}`,
+      } as any)
+    }
+
+    return graphics
+  }
+
   override visualize(): GraphicsObject {
     if (!this.solved && this.activeSubSolver)
       return this.activeSubSolver.visualize()
 
+    const hasGraphics = (graphics: GraphicsObject | null | undefined) =>
+      (graphics?.points?.length ?? 0) > 0 ||
+      (graphics?.rects?.length ?? 0) > 0 ||
+      (graphics?.lines?.length ?? 0) > 0 ||
+      (graphics?.circles?.length ?? 0) > 0 ||
+      (graphics?.texts?.length ?? 0) > 0
+
+    const groupedVisualizations = new Map<
+      string,
+      { stepIndex: number; viz: GraphicsObject }
+    >()
+    let nextVisualizationGroupIndex = 0
+
     const visualizations = [
       visualizeInputProblem(this.inputProblem),
-      ...(this.pipelineDef
-        .map((p) => (this as any)[p.solverName]?.visualize())
-        .filter(Boolean)
-        .map((viz, stepIndex) => {
-          for (const rect of viz!.rects ?? []) {
+      ...this.pipelineDef.flatMap((pipelineStep, pipelineStepIndex) => {
+        const solver = this.solverInstancesByPipelineStep[pipelineStepIndex]
+        if (!solver) return []
+
+        const viz =
+          pipelineStep.solverName === "finalNetLabelPlacementSolver"
+            ? this.visualizeCanonicalOutput()
+            : solver.visualize()
+        if (!hasGraphics(viz)) return []
+
+        const visualizationGroup =
+          pipelineStep.visualizationGroup ??
+          `${pipelineStepIndex}:${pipelineStep.solverName}`
+        let groupedVisualization = groupedVisualizations.get(visualizationGroup)
+        if (!groupedVisualization) {
+          groupedVisualization = {
+            stepIndex: nextVisualizationGroupIndex,
+            viz,
+          }
+          groupedVisualizations.set(visualizationGroup, groupedVisualization)
+          nextVisualizationGroupIndex += 1
+        } else {
+          groupedVisualization.viz = viz
+        }
+
+        return []
+      }),
+      ...Array.from(groupedVisualizations.values()).map(
+        ({ stepIndex, viz }) => {
+          for (const rect of viz.rects ?? []) {
             rect.step = stepIndex
           }
-          for (const point of viz!.points ?? []) {
+          for (const point of viz.points ?? []) {
             point.step = stepIndex
           }
-          for (const circle of viz!.circles ?? []) {
+          for (const circle of viz.circles ?? []) {
             circle.step = stepIndex
           }
-          for (const text of viz!.texts ?? []) {
+          for (const text of viz.texts ?? []) {
             text.step = stepIndex
           }
-          for (const line of viz!.lines ?? []) {
+          for (const line of viz.lines ?? []) {
             line.step = stepIndex
           }
           return viz
-        }) as GraphicsObject[]),
+        },
+      ),
     ]
 
     if (visualizations.length === 1) {

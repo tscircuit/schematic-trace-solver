@@ -8,5 +8,11 @@ test("example28", () => {
 
   solver.solve()
 
+  const gndLabels = solver
+    .getOutput()
+    .netLabelPlacements.filter((placement) => placement.netId === "GND")
+
+  expect(gndLabels).toHaveLength(1)
+  expect(gndLabels[0]?.orientation).toBe("y-")
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
