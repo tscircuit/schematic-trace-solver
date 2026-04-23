@@ -50,11 +50,11 @@ y-" data-x="1.4000000000000001" data-y="-2.295" cx="169.42222222222225" cy="385.
   </g>
   <g>
     <circle data-type="point" data-label="ANCHOR
-x+" data-x="1.2000000000000002" data-y="0.30000000000000004" cx="159.4666666666667" cy="256.1911111111111" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+y-" data-x="1.2000000000000002" data-y="0.30000000000000004" cx="159.4666666666667" cy="256.1911111111111" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="ANCHOR
-x-" data-x="1.6" data-y="-1.895" cx="179.3777777777778" cy="365.4533333333334" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+y-" data-x="1.6" data-y="-1.895" cx="179.3777777777778" cy="365.4533333333334" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="ANCHOR
@@ -150,12 +150,12 @@ connectivity_net0" data-x="1.4000000000000001" data-y="-2.52" x="164.44444444444
   <g>
     <rect data-type="rect" data-label="PLACED NET LABEL
 VCC
-connectivity_net1" data-x="1.4260000000000002" data-y="0.30000000000000004" x="159.51644444444446" y="251.21333333333337" width="22.400000000000034" height="9.95555555555552" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.020089285714285712" />
+connectivity_net1" data-x="1.2000000000000002" data-y="0.07400000000000004" x="154.4888888888889" y="256.2408888888889" width="9.955555555555549" height="22.400000000000034" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.020089285714285712" />
   </g>
   <g>
     <rect data-type="rect" data-label="PLACED NET LABEL
 VCC
-connectivity_net1" data-x="1.374" data-y="-1.895" x="156.92800000000003" y="360.47555555555556" width="22.400000000000006" height="9.955555555555577" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.020089285714285712" />
+connectivity_net1" data-x="1.6" data-y="-2.121" x="174.40000000000003" y="365.50311111111114" width="9.955555555555549" height="22.399999999999977" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.020089285714285712" />
   </g>
   <g>
     <rect data-type="rect" data-label="PLACED NET LABEL

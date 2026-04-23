@@ -180,9 +180,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         const traces =
           instance.traceOverlapShiftSolver?.correctedTraceMap ??
           Object.fromEntries(
-            instance.longDistancePairSolver!.getOutput().allTracesMerged.map(
-              (trace) => [trace.mspPairId, trace],
-            ),
+            instance
+              .longDistancePairSolver!.getOutput()
+              .allTracesMerged.map((trace) => [trace.mspPairId, trace]),
           )
 
         return [
@@ -202,28 +202,27 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       "traceLabelOverlapAvoidanceSolver",
       TraceLabelOverlapAvoidanceSolver,
       (instance) => {
-        const traceMap =
-          instance.singlePortLabelTraceCollisionSolver
-            ? Object.fromEntries(
-                [
-                  ...Object.values(
-                    instance.traceOverlapShiftSolver?.correctedTraceMap ??
-                      Object.fromEntries(
-                        instance
-                          .longDistancePairSolver!.getOutput()
-                          .allTracesMerged.map((p) => [p.mspPairId, p]),
-                      ),
-                  ),
-                  ...instance.singlePortLabelTraceCollisionSolver.getOutput()
-                    .connectorTracePaths,
-                ].map((trace) => [trace.mspPairId, trace]),
-              )
-            : instance.traceOverlapShiftSolver?.correctedTraceMap ??
-              Object.fromEntries(
-                instance
-                  .longDistancePairSolver!.getOutput()
-                  .allTracesMerged.map((p) => [p.mspPairId, p]),
-              )
+        const traceMap = instance.singlePortLabelTraceCollisionSolver
+          ? Object.fromEntries(
+              [
+                ...Object.values(
+                  instance.traceOverlapShiftSolver?.correctedTraceMap ??
+                    Object.fromEntries(
+                      instance
+                        .longDistancePairSolver!.getOutput()
+                        .allTracesMerged.map((p) => [p.mspPairId, p]),
+                    ),
+                ),
+                ...instance.singlePortLabelTraceCollisionSolver.getOutput()
+                  .connectorTracePaths,
+              ].map((trace) => [trace.mspPairId, trace]),
+            )
+          : (instance.traceOverlapShiftSolver?.correctedTraceMap ??
+            Object.fromEntries(
+              instance
+                .longDistancePairSolver!.getOutput()
+                .allTracesMerged.map((p) => [p.mspPairId, p]),
+            ))
         const traces = Object.values(traceMap)
         const netLabelPlacements =
           instance.singlePortLabelTraceCollisionSolver?.getOutput()
@@ -264,12 +263,19 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         const traces =
           instance.traceCleanupSolver?.getOutput().traces ??
           instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+        const tracesForFinalPlacement = traces.filter(
+          (trace: SolvedTracePath) =>
+            !trace.mspPairId.startsWith("netlabel_connector:"),
+        )
 
         return [
           {
             inputProblem: instance.inputProblem,
             inputTraceMap: Object.fromEntries(
-              traces.map((trace: SolvedTracePath) => [trace.mspPairId, trace]),
+              tracesForFinalPlacement.map((trace: SolvedTracePath) => [
+                trace.mspPairId,
+                trace,
+              ]),
             ),
           },
         ]
@@ -363,7 +369,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     const traces =
       this.traceCleanupSolver?.getOutput().traces ??
       this.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
-      this.singlePortLabelTraceCollisionSolver?.getOutput().connectorTracePaths ??
+      this.singlePortLabelTraceCollisionSolver?.getOutput()
+        .connectorTracePaths ??
       Object.values(this.traceOverlapShiftSolver?.correctedTraceMap ?? {})
     const singlePortCollisionOutput =
       this.singlePortLabelTraceCollisionSolver?.getOutput()
@@ -391,7 +398,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     const connectorTracePaths =
       this.traceCleanupSolver || this.traceLabelOverlapAvoidanceSolver
         ? []
-        : singlePortCollisionOutput?.connectorTracePaths ?? []
+        : (singlePortCollisionOutput?.connectorTracePaths ?? [])
 
     return {
       traces: [...traces, ...connectorTracePaths],

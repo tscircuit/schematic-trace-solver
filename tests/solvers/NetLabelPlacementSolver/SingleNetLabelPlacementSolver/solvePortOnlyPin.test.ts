@@ -70,7 +70,9 @@ test("single-port labels keep the original placement when there is no trace coll
 
   fallbackSolver.solve()
 
-  expect(fallbackSolver.getOutput().netLabelPlacements[0]).toBe(originalPlacement)
+  expect(fallbackSolver.getOutput().netLabelPlacements[0]).toBe(
+    originalPlacement,
+  )
   expect(fallbackSolver.getOutput().connectorTracePaths).toHaveLength(0)
 })
 
@@ -110,8 +112,14 @@ test("single-port label trace collision step upgrades colliding labels to the de
         globalConnNetId: "connectivity_net_other",
         pins: [] as any,
         tracePath: [
-          { x: originalPlacement.center.x - originalPlacement.width, y: collidingTraceY },
-          { x: originalPlacement.center.x + originalPlacement.width, y: collidingTraceY },
+          {
+            x: originalPlacement.center.x - originalPlacement.width,
+            y: collidingTraceY,
+          },
+          {
+            x: originalPlacement.center.x + originalPlacement.width,
+            y: collidingTraceY,
+          },
         ],
         mspConnectionPairIds: [],
         pinIds: [],
@@ -128,7 +136,76 @@ test("single-port label trace collision step upgrades colliding labels to the de
   expect(upgradedPlacement?.orientation).toBe("y-")
   expect(upgradedPlacement?.center.x).toBeLessThan(-0.3)
   expect(fallbackSolver.getOutput().connectorTracePaths).toHaveLength(1)
-  expect(fallbackSolver.getOutput().connectorTracePaths[0]?.tracePath.length).toBeGreaterThan(1)
+  expect(
+    fallbackSolver.getOutput().connectorTracePaths[0]?.tracePath.length,
+  ).toBeGreaterThan(1)
+})
+
+test("single-port label trace collision step exposes intermediate progress before solving", () => {
+  const inputProblem = createInputProblem({
+    pinId: "GND",
+    pin: { x: -0.3, y: 0, facingDirection: "x-" },
+    netId: "GND",
+    availableOrientations: ["y-"],
+  })
+
+  const initialSolver = new SingleNetLabelPlacementSolver({
+    inputProblem,
+    inputTraceMap: {},
+    overlappingSameNetTraceGroup: {
+      globalConnNetId: "connectivity_net_gnd",
+      netId: "GND",
+      portOnlyPinId: "GND",
+    },
+    availableOrientations: ["y-"],
+  })
+
+  initialSolver.solve()
+
+  const originalPlacement = initialSolver.netLabelPlacement!
+  const collidingTraceY = originalPlacement.center.y
+
+  const fallbackSolver = new SinglePortLabelTraceCollisionSolver({
+    inputProblem,
+    inputTraceMap: {
+      colliding_trace: {
+        mspPairId: "colliding_trace",
+        dcConnNetId: "dc_colliding_trace",
+        globalConnNetId: "connectivity_net_other",
+        pins: [] as any,
+        tracePath: [
+          {
+            x: originalPlacement.center.x - originalPlacement.width,
+            y: collidingTraceY,
+          },
+          {
+            x: originalPlacement.center.x + originalPlacement.width,
+            y: collidingTraceY,
+          },
+        ],
+        mspConnectionPairIds: [],
+        pinIds: [],
+      },
+    },
+    netLabelPlacements: [originalPlacement],
+  })
+
+  fallbackSolver.step()
+
+  expect(fallbackSolver.solved).toBe(false)
+  expect(fallbackSolver.currentPlacement?.pinIds).toEqual(["GND"])
+
+  let sawCandidates = fallbackSolver.testedCandidates.length > 0
+  while (!fallbackSolver.solved && !fallbackSolver.failed) {
+    fallbackSolver.step()
+    sawCandidates ||= fallbackSolver.testedCandidates.length > 0
+  }
+
+  expect(sawCandidates).toBe(true)
+  expect(fallbackSolver.iterations).toBeGreaterThan(1)
+  expect(fallbackSolver.getOutput().netLabelPlacements[0]?.orientation).toBe(
+    "y-",
+  )
 })
 
 test("single-port label placement respects constrained orientations for port-only pins", () => {

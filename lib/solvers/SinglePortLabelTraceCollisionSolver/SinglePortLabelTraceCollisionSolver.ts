@@ -187,6 +187,49 @@ const createConnectorTraceForPlacement = (params: {
   const pinId = placement.pinIds[0]
   if (!pinId || connectorPath.length < 2) return null
 
+  const bounds = getRectBounds(
+    placement.center,
+    placement.width,
+    placement.height,
+  )
+  const anchor = placement.anchorPoint
+  const EPS = 1e-6
+  const CONTACT_TOLERANCE = 2e-3
+  const anchorTouchesLabel =
+    anchor.x >= bounds.minX - EPS &&
+    anchor.x <= bounds.maxX + EPS &&
+    anchor.y >= bounds.minY - EPS &&
+    anchor.y <= bounds.maxY + EPS
+
+  if (anchorTouchesLabel) return null
+
+  const labelTouchesChip = inputProblem.chips.some((chip) => {
+    const chipBounds = {
+      minX: chip.center.x - chip.width / 2,
+      minY: chip.center.y - chip.height / 2,
+      maxX: chip.center.x + chip.width / 2,
+      maxY: chip.center.y + chip.height / 2,
+    }
+    const overlapsX =
+      bounds.maxX >= chipBounds.minX - EPS &&
+      bounds.minX <= chipBounds.maxX + EPS
+    const overlapsY =
+      bounds.maxY >= chipBounds.minY - CONTACT_TOLERANCE &&
+      bounds.minY <= chipBounds.maxY + CONTACT_TOLERANCE
+    const touchesVerticalEdge =
+      Math.abs(bounds.maxX - chipBounds.minX) <= CONTACT_TOLERANCE ||
+      Math.abs(bounds.minX - chipBounds.maxX) <= CONTACT_TOLERANCE
+    const touchesHorizontalEdge =
+      Math.abs(bounds.maxY - chipBounds.minY) <= CONTACT_TOLERANCE ||
+      Math.abs(bounds.minY - chipBounds.maxY) <= CONTACT_TOLERANCE
+
+    return (
+      (touchesVerticalEdge && overlapsY) || (touchesHorizontalEdge && overlapsX)
+    )
+  })
+
+  if (labelTouchesChip) return null
+
   for (const chip of inputProblem.chips) {
     const pin = chip.pins.find((candidate) => candidate.pinId === pinId)
     if (!pin) continue
@@ -280,6 +323,100 @@ const solveDetachedPortOnlyPin = (params: {
   const testedCenters = new Set<string>()
   const testedCandidates: PlacementCandidate[] = []
   const baseOffset = 1e-3
+  const chipBounds = {
+    minX: pinChip.center.x - pinChip.width / 2,
+    minY: pinChip.center.y - pinChip.height / 2,
+    maxX: pinChip.center.x + pinChip.width / 2,
+    maxY: pinChip.center.y + pinChip.height / 2,
+  }
+
+  const tryCandidateCenter = (params: {
+    orientation: FacingDirection
+    width: number
+    height: number
+    center: { x: number; y: number }
+  }) => {
+    const { orientation, width, height, center } = params
+    const centerKey = `${orientation}:${width}:${height}:${center.x.toFixed(6)},${center.y.toFixed(6)}`
+    if (testedCenters.has(centerKey)) return null
+    testedCenters.add(centerKey)
+
+    const bounds = getRectBounds(center, width, height)
+    const connectorPath = getConnectorPath({
+      anchor,
+      center,
+      width,
+      height,
+      orientation,
+      pinFacingDirection,
+    })
+
+    const chips = chipObstacleSpatialIndex.getChipsInBounds(bounds)
+    if (
+      chips.length > 0 ||
+      pathIntersectsAnyChip({
+        path: connectorPath,
+        chipObstacleSpatialIndex,
+      })
+    ) {
+      testedCandidates.push({
+        center,
+        width,
+        height,
+        bounds,
+        anchor,
+        orientation,
+        status: "chip-collision",
+        hostSegIndex: -1,
+      })
+      return null
+    }
+
+    const traceIntersectionResult = rectIntersectsAnyTrace(
+      bounds,
+      inputTraceMap,
+      "" as MspConnectionPairId,
+      -1,
+    )
+    if (traceIntersectionResult.hasIntersection) {
+      testedCandidates.push({
+        center,
+        width,
+        height,
+        bounds,
+        anchor,
+        orientation,
+        status: "trace-collision",
+        hostSegIndex: -1,
+      })
+      return null
+    }
+
+    testedCandidates.push({
+      center,
+      width,
+      height,
+      bounds,
+      anchor,
+      orientation,
+      status: "ok",
+      hostSegIndex: -1,
+    })
+
+    return {
+      placement: createPlacement({
+        group,
+        pinId,
+        anchor,
+        orientation,
+        width,
+        height,
+        center,
+      }),
+      connectorPath,
+      testedCandidates,
+    }
+  }
 
   for (const orientation of orientations) {
     const { width, height } = getDimsForOrientation({
@@ -315,86 +452,89 @@ const solveDetachedPortOnlyPin = (params: {
             outward.y * (baseOffset + outwardDistance) +
             tangent.y * slideOffset,
         }
-        const centerKey = `${orientation}:${width}:${height}:${center.x.toFixed(6)},${center.y.toFixed(6)}`
-        if (testedCenters.has(centerKey)) continue
-        testedCenters.add(centerKey)
-
-        const bounds = getRectBounds(center, width, height)
-        const connectorPath = getConnectorPath({
-          anchor,
-          center,
+        const result = tryCandidateCenter({
+          orientation,
           width,
           height,
-          orientation,
-          pinFacingDirection,
-        })
-
-        const chips = chipObstacleSpatialIndex.getChipsInBounds(bounds)
-        if (
-          chips.length > 0 ||
-          pathIntersectsAnyChip({
-            path: connectorPath,
-            chipObstacleSpatialIndex,
-          })
-        ) {
-          testedCandidates.push({
-            center,
-            width,
-            height,
-            bounds,
-            anchor,
-            orientation,
-            status: "chip-collision",
-            hostSegIndex: -1,
-          })
-          continue
-        }
-
-        const traceIntersectionResult = rectIntersectsAnyTrace(
-          bounds,
-          inputTraceMap,
-          "" as MspConnectionPairId,
-          -1,
-        )
-        if (traceIntersectionResult.hasIntersection) {
-          testedCandidates.push({
-            center,
-            width,
-            height,
-            bounds,
-            anchor,
-            orientation,
-            status: "trace-collision",
-            hostSegIndex: -1,
-          })
-          continue
-        }
-
-        testedCandidates.push({
           center,
-          width,
-          height,
-          bounds,
-          anchor,
-          orientation,
-          status: "ok",
-          hostSegIndex: -1,
         })
-
-        return {
-          placement: createPlacement({
-            group,
-            pinId,
-            anchor,
-            orientation,
-            width,
-            height,
-            center,
-          }),
-          connectorPath,
-          testedCandidates,
-        }
+        if (result) return result
       }
+    }
+  }
+
+  // If moving in the label-facing direction cannot clear the chip, search
+  // around the chip perimeter while preserving the requested orientation.
+  for (const orientation of orientations) {
+    const { width, height } = getDimsForOrientation({
+      orientation,
+      netLabelWidth,
+    })
+    const horizontalReach = pinChip.width / 2 + width + SEARCH_STEP
+    const verticalReach = pinChip.height / 2 + height + SEARCH_STEP
+    const xOffsets = [
+      0,
+      ...getSteppedDistances(horizontalReach)
+        .slice(1)
+        .flatMap((offset) => [offset, -offset]),
+    ]
+    const yOffsets = [
+      0,
+      ...getSteppedDistances(verticalReach)
+        .slice(1)
+        .flatMap((offset) => [offset, -offset]),
+    ]
+
+    for (const xOffset of xOffsets) {
+      const topCenter = {
+        x: anchor.x + xOffset,
+        y: chipBounds.maxY + height / 2 + baseOffset,
+      }
+      const topResult = tryCandidateCenter({
+        orientation,
+        width,
+        height,
+        center: topCenter,
+      })
+      if (topResult) return topResult
+
+      const bottomCenter = {
+        x: anchor.x + xOffset,
+        y: chipBounds.minY - height / 2 - baseOffset,
+      }
+      const bottomResult = tryCandidateCenter({
+        orientation,
+        width,
+        height,
+        center: bottomCenter,
+      })
+      if (bottomResult) return bottomResult
+    }
+
+    for (const yOffset of yOffsets) {
+      const rightCenter = {
+        x: chipBounds.maxX + width / 2 + baseOffset,
+        y: anchor.y + yOffset,
+      }
+      const rightResult = tryCandidateCenter({
+        orientation,
+        width,
+        height,
+        center: rightCenter,
+      })
+      if (rightResult) return rightResult
+
+      const leftCenter = {
+        x: chipBounds.minX - width / 2 - baseOffset,
+        y: anchor.y + yOffset,
+      }
+      const leftResult = tryCandidateCenter({
+        orientation,
+        width,
+        height,
+        center: leftCenter,
+      })
+      if (leftResult) return leftResult
     }
   }
 
@@ -410,16 +550,23 @@ export class SinglePortLabelTraceCollisionSolver extends BaseSolver {
   inputNetLabelPlacements: NetLabelPlacement[]
   chipObstacleSpatialIndex: ChipObstacleSpatialIndex
 
+  pendingPlacements: NetLabelPlacement[] = []
   netLabelPlacements: NetLabelPlacement[] = []
   connectorTracePaths: SolvedTracePath[] = []
   testedCandidates: PlacementCandidate[] = []
   fixedPlacements: NetLabelPlacement[] = []
+  currentPlacement: NetLabelPlacement | null = null
+  currentDetachedPlacement: ReturnType<typeof solveDetachedPortOnlyPin> | null =
+    null
+  currentCandidateIndex = -1
 
   constructor(params: SinglePortLabelTraceCollisionSolverInput) {
     super()
     this.inputProblem = params.inputProblem
     this.inputTraceMap = params.inputTraceMap
     this.inputNetLabelPlacements = params.netLabelPlacements
+    this.pendingPlacements = [...params.netLabelPlacements]
+    this.netLabelPlacements = []
     this.chipObstacleSpatialIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
       new ChipObstacleSpatialIndex(params.inputProblem.chips)
@@ -486,29 +633,85 @@ export class SinglePortLabelTraceCollisionSolver extends BaseSolver {
     ).hasIntersection
   }
 
-  override _step() {
-    const nextPlacements: NetLabelPlacement[] = []
-    const connectorTracePaths: SolvedTracePath[] = []
-    const testedCandidates: PlacementCandidate[] = []
-    const fixedPlacements: NetLabelPlacement[] = []
+  private hasChipCollision(placement: NetLabelPlacement) {
+    const bounds = getRectBounds(
+      placement.center,
+      placement.width,
+      placement.height,
+    )
+    return this.chipObstacleSpatialIndex.getChipsInBounds(bounds).length > 0
+  }
 
-    for (const placement of this.inputNetLabelPlacements) {
+  private appendPlacement(placement: NetLabelPlacement) {
+    this.netLabelPlacements.push(placement)
+  }
+
+  private finalizeCurrentPlacement() {
+    if (!this.currentPlacement) return
+
+    const detachedPlacement = this.currentDetachedPlacement
+
+    if (!detachedPlacement?.placement || !detachedPlacement.connectorPath) {
+      this.appendPlacement(this.currentPlacement)
+    } else {
+      this.appendPlacement(detachedPlacement.placement)
+      this.fixedPlacements.push(detachedPlacement.placement)
+      const connectorTrace = createConnectorTraceForPlacement({
+        inputProblem: this.inputProblem,
+        placement: detachedPlacement.placement,
+        connectorPath: detachedPlacement.connectorPath,
+      })
+      if (connectorTrace) {
+        this.connectorTracePaths.push(connectorTrace)
+      }
+    }
+
+    this.currentPlacement = null
+    this.currentDetachedPlacement = null
+    this.currentCandidateIndex = -1
+    this.testedCandidates = []
+  }
+
+  override _step() {
+    if (this.currentPlacement && this.currentDetachedPlacement) {
+      const candidates = this.currentDetachedPlacement.testedCandidates
+
+      if (
+        candidates.length === 0 ||
+        this.currentCandidateIndex >= candidates.length - 1
+      ) {
+        this.finalizeCurrentPlacement()
+        return
+      }
+
+      this.currentCandidateIndex += 1
+      this.testedCandidates = candidates.slice(
+        0,
+        this.currentCandidateIndex + 1,
+      )
+      return
+    }
+
+    while (this.pendingPlacements.length > 0) {
+      const placement = this.pendingPlacements.shift()!
+
       if (!this.isSinglePortLabel(placement)) {
-        nextPlacements.push(placement)
+        this.appendPlacement(placement)
         continue
       }
 
       const pinId = placement.pinIds[0]
       if (!pinId) {
-        nextPlacements.push(placement)
+        this.appendPlacement(placement)
         continue
       }
 
       const needsOrientationFix = this.hasDisallowedOrientation(placement)
       const hasTraceCollision = this.hasTraceCollision(placement)
+      const hasChipCollision = this.hasChipCollision(placement)
 
-      if (!needsOrientationFix && !hasTraceCollision) {
-        nextPlacements.push(placement)
+      if (!needsOrientationFix && !hasTraceCollision && !hasChipCollision) {
+        this.appendPlacement(placement)
         continue
       }
 
@@ -520,7 +723,8 @@ export class SinglePortLabelTraceCollisionSolver extends BaseSolver {
       const availableOrientations = this.getAvailableOrientations(placement)
       const netLabelWidth = this.getNetLabelWidth(placement)
 
-      const detachedPlacement = solveDetachedPortOnlyPin({
+      this.currentPlacement = placement
+      this.currentDetachedPlacement = solveDetachedPortOnlyPin({
         inputProblem: this.inputProblem,
         inputTraceMap: this.inputTraceMap,
         chipObstacleSpatialIndex: this.chipObstacleSpatialIndex,
@@ -528,30 +732,17 @@ export class SinglePortLabelTraceCollisionSolver extends BaseSolver {
         availableOrientations,
         netLabelWidth,
       })
+      this.currentCandidateIndex = -1
+      this.testedCandidates = []
 
-      testedCandidates.push(...detachedPlacement.testedCandidates)
-
-      if (!detachedPlacement.placement || !detachedPlacement.connectorPath) {
-        nextPlacements.push(placement)
+      if (this.currentDetachedPlacement.testedCandidates.length === 0) {
+        this.finalizeCurrentPlacement()
         continue
       }
 
-      nextPlacements.push(detachedPlacement.placement)
-      fixedPlacements.push(detachedPlacement.placement)
-      const connectorTrace = createConnectorTraceForPlacement({
-        inputProblem: this.inputProblem,
-        placement: detachedPlacement.placement,
-        connectorPath: detachedPlacement.connectorPath,
-      })
-      if (connectorTrace) {
-        connectorTracePaths.push(connectorTrace)
-      }
+      return
     }
 
-    this.netLabelPlacements = nextPlacements
-    this.connectorTracePaths = connectorTracePaths
-    this.testedCandidates = testedCandidates
-    this.fixedPlacements = fixedPlacements
     this.solved = true
   }
 
@@ -575,12 +766,22 @@ export class SinglePortLabelTraceCollisionSolver extends BaseSolver {
     if (
       !this.solved &&
       this.testedCandidates.length === 0 &&
-      this.connectorTracePaths.length === 0
+      this.connectorTracePaths.length === 0 &&
+      this.netLabelPlacements.length === 0 &&
+      !this.currentPlacement &&
+      this.pendingPlacements.length === 0
     ) {
       return {}
     }
 
     const graphics = visualizeInputProblem(this.inputProblem)
+    const placementsToRender =
+      !this.solved &&
+      this.netLabelPlacements.length === 0 &&
+      !this.currentPlacement &&
+      this.pendingPlacements.length > 0
+        ? this.inputNetLabelPlacements
+        : this.netLabelPlacements
 
     for (const rect of graphics.rects ?? []) {
       if (rect.label) {
@@ -621,6 +822,52 @@ export class SinglePortLabelTraceCollisionSolver extends BaseSolver {
       }
 
       return graphics
+    }
+
+    for (const placement of placementsToRender) {
+      const color = getColorFromString(placement.globalConnNetId, 0.9)
+      graphics.rects!.push({
+        center: placement.center,
+        width: placement.width,
+        height: placement.height,
+        fill: getColorFromString(placement.globalConnNetId, 0.18),
+        strokeColor: color,
+        label:
+          placement.netId && placement.netId !== placement.globalConnNetId
+            ? `PLACED NET LABEL\n${placement.netId}\n${placement.globalConnNetId}`
+            : `PLACED NET LABEL\n${placement.netId ?? placement.globalConnNetId}`,
+      } as any)
+      graphics.points!.push({
+        x: placement.anchorPoint.x,
+        y: placement.anchorPoint.y,
+        color,
+        label: `ANCHOR\n${placement.orientation}`,
+      } as any)
+    }
+
+    if (this.currentPlacement) {
+      const color = getColorFromString(
+        this.currentPlacement.globalConnNetId,
+        0.9,
+      )
+      graphics.rects!.push({
+        center: this.currentPlacement.center,
+        width: this.currentPlacement.width,
+        height: this.currentPlacement.height,
+        fill: "rgba(80, 80, 80, 0.15)",
+        strokeColor: color,
+        label:
+          this.currentPlacement.netId &&
+          this.currentPlacement.netId !== this.currentPlacement.globalConnNetId
+            ? `CURRENT NET LABEL\n${this.currentPlacement.netId}\n${this.currentPlacement.globalConnNetId}`
+            : `CURRENT NET LABEL\n${this.currentPlacement.netId ?? this.currentPlacement.globalConnNetId}`,
+      } as any)
+      graphics.points!.push({
+        x: this.currentPlacement.anchorPoint.x,
+        y: this.currentPlacement.anchorPoint.y,
+        color,
+        label: `CURRENT ANCHOR\n${this.currentPlacement.orientation}`,
+      } as any)
     }
 
     for (const c of this.testedCandidates) {
