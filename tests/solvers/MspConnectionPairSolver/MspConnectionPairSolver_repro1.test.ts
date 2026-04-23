@@ -10,5 +10,7 @@ test("MspConnectionPairSolver_repro1", () => {
 
   solver.solve()
 
-  expect(solver.mspConnectionPairs.length).toBe(4)
+  // Only directConnections produce MSP pairs (VCC: U1.1↔C1.1, EN: U1.2↔C2.1).
+  // GND is a netConnection and should only receive net labels, not traces.
+  expect(solver.mspConnectionPairs.length).toBe(2)
 })
