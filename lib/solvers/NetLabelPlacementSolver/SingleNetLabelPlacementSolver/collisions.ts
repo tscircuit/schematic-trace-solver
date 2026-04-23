@@ -1,5 +1,5 @@
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { MspConnectionPairId } from "../../MspConnectionPairSolver/MspConnectionPairSolver"
+import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver"
 import { getRectBounds } from "./geometry"
 

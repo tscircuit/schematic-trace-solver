@@ -1,4 +1,4 @@
-import { simplifyTracePath } from "lib/utils/simplifyTracePath"
+import { simplifyTracePath } from "../../utils/simplifyTracePath"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import {
   isHorizontal,

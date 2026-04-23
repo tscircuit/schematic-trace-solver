@@ -1,9 +1,9 @@
-import type { InputProblem } from "lib/types/InputProblem"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { FacingDirection } from "lib/utils/dir"
-import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
-import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
+import type { InputProblem } from "../../../types/InputProblem"
+import type { MspConnectionPairId } from "../../MspConnectionPairSolver/MspConnectionPairSolver"
+import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { FacingDirection } from "../../../utils/dir"
+import { ChipObstacleSpatialIndex } from "../../../data-structures/ChipObstacleSpatialIndex"
+import { getPinDirection } from "../../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import type {
   NetLabelPlacement,
   OverlappingSameNetTraceGroup,
