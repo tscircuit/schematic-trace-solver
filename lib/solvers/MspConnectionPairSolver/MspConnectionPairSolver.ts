@@ -74,7 +74,20 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    // Only queue nets where at least one pin participates in a direct
+    // wire connection (trace). Nets whose pins are connected *only* via
+    // net labels (netConnections) produce net-label annotations instead of
+    // routed traces, so they must not enter the MSP-pair queue.
+    const directlyConnectedPins = new Set<string>()
+    for (const dc of inputProblem.directConnections) {
+      for (const pid of dc.pinIds) {
+        directlyConnectedPins.add(pid)
+      }
+    }
+    this.queuedDcNetIds = Object.keys(netConnMap.netMap).filter((netId) => {
+      const allIds = netConnMap.getIdsConnectedToNet(netId) as string[]
+      return allIds.some((id) => directlyConnectedPins.has(id))
+    })
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -92,7 +105,6 @@ export class MspConnectionPairSolver extends BaseSolver {
     }
 
     const dcNetId = this.queuedDcNetIds.shift()!
-
     const allIds = this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[]
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
