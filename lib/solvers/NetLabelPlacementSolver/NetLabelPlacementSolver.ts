@@ -356,16 +356,13 @@ export class NetLabelPlacementSolver extends BaseSolver {
         height: p.height,
         fill: getColorFromString(p.globalConnNetId, 0.35),
         strokeColor: getColorFromString(p.globalConnNetId, 0.9),
-        label:
-          p.netId && p.netId !== p.globalConnNetId
-            ? `PLACED NET LABEL\n${p.netId}\n${p.globalConnNetId}`
-            : `PLACED NET LABEL\n${p.netId ?? p.globalConnNetId}`,
+        label: `netId: ${p.netId}\nglobalConnNetId: ${p.globalConnNetId}`,
       } as any)
       graphics.points!.push({
         x: p.anchorPoint.x,
         y: p.anchorPoint.y,
         color: getColorFromString(p.globalConnNetId, 0.9),
-        label: `ANCHOR\n${p.orientation}`,
+        label: `anchorPoint\norientation: ${p.orientation}`,
       } as any)
     }
 

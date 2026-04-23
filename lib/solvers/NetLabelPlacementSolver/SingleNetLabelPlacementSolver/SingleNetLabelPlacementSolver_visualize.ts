@@ -55,12 +55,12 @@ export function visualizeSingleNetLabelPlacementSolver(
             : "gray"
     const candidateLabel =
       c.status === "ok"
-        ? "VALID NET LABEL CANDIDATE"
+        ? "status: ok(valid net label candidate)"
         : c.status === "chip-collision"
-          ? "CHIP COLLISION"
+          ? "status: chip-collision"
           : c.status === "trace-collision"
-            ? "TRACE COLLISION"
-            : "PARALLEL TO SEGMENT"
+            ? "status: trace-collision"
+            : "status: parallel-to-segment"
 
     graphics.rects!.push({
       center: {
@@ -71,14 +71,14 @@ export function visualizeSingleNetLabelPlacementSolver(
       height: c.height,
       fill,
       strokeColor: stroke,
-      label: `${candidateLabel}\n${c.orientation}`,
+      label: `${candidateLabel}\norientation: ${c.orientation}`,
     } as any)
 
     graphics.points!.push({
       x: c.anchor.x,
       y: c.anchor.y,
       color: stroke,
-      label: `ANCHOR\n${c.orientation}`,
+      label: `anchor\norientation: ${c.orientation}`,
     } as any)
   }
 
@@ -91,16 +91,13 @@ export function visualizeSingleNetLabelPlacementSolver(
       height: p.height,
       fill: "rgba(0, 128, 255, 0.35)",
       strokeColor: "blue",
-      label:
-        p.netId && p.netId !== p.globalConnNetId
-          ? `PLACED NET LABEL\n${p.netId}\n${p.globalConnNetId}`
-          : `PLACED NET LABEL\n${p.netId ?? p.globalConnNetId}`,
+      label: `netId: ${p.netId}\nglobalConnNetId: ${p.globalConnNetId}`,
     } as any)
     graphics.points!.push({
       x: p.anchorPoint.x,
       y: p.anchorPoint.y,
       color: "blue",
-      label: `ANCHOR\n${p.orientation}`,
+      label: `anchor\norientation: ${p.orientation}`,
     } as any)
   }
 
