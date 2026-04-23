@@ -4,6 +4,28 @@ import {
   isVertical,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
+const EPSILON = 1e-9
+
+/**
+ * Removes consecutive duplicate points (zero-length segments) from a path.
+ * These can appear after path concatenation in the UntangleTraceSubsolver.
+ */
+export const removeDuplicateConsecutivePoints = (path: Point[]): Point[] => {
+  if (path.length <= 1) return path
+  const result: Point[] = [path[0]]
+  for (let i = 1; i < path.length; i++) {
+    const prev = result[result.length - 1]
+    const curr = path[i]
+    if (
+      Math.abs(prev.x - curr.x) > EPSILON ||
+      Math.abs(prev.y - curr.y) > EPSILON
+    ) {
+      result.push(curr)
+    }
+  }
+  return result
+}
+
 export const simplifyPath = (path: Point[]): Point[] => {
   if (path.length < 3) return path
   const newPath: Point[] = [path[0]]
