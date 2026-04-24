@@ -97,7 +97,7 @@ const inputProblem: InputProblem = {
     },
   ],
   availableNetLabelOrientations: {
-    VCC: ["y-"], // Changed to y- since trace now goes downward
+    VCC: ["y+"], // Changed to y- since trace now goes downward
     OUT: ["x-", "x+"],
     GND: ["y-"], // Changed to y- since trace now goes downward
     MMM: ["x+", "x-"],

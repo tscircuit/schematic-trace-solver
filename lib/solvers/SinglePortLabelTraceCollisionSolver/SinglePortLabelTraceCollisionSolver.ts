@@ -435,13 +435,86 @@ const solveDetachedPortOnlyPin = (params: {
 
     const outwardDistances = getSteppedDistances(outwardReach)
     const steppedSlideOffsets = getSteppedDistances(tangentReach).slice(1)
-    const slideOffsets = [
-      0,
-      ...steppedSlideOffsets.flatMap((offset) => [offset, -offset]),
-    ]
+
+    if (orientation === "y+" || orientation === "y-") {
+      for (const slideOffset of [
+        0,
+        ...steppedSlideOffsets.flatMap((offset) => [offset, -offset]),
+      ]) {
+        const center = {
+          x: baseCenter.x + tangent.x * slideOffset,
+          y: baseCenter.y + outward.y * baseOffset,
+        }
+        const result = tryCandidateCenter({
+          orientation,
+          width,
+          height,
+          center,
+        })
+        if (result) return result
+      }
+
+      for (const outwardDistance of outwardDistances.slice(1)) {
+        const center = {
+          x: baseCenter.x + outward.x * (baseOffset + outwardDistance),
+          y: baseCenter.y + outward.y * (baseOffset + outwardDistance),
+        }
+        const result = tryCandidateCenter({
+          orientation,
+          width,
+          height,
+          center,
+        })
+        if (result) return result
+      }
+
+      for (const outwardDistance of outwardDistances.slice(1)) {
+        for (const slideOffset of steppedSlideOffsets.flatMap((offset) => [
+          offset,
+          -offset,
+        ])) {
+          const center = {
+            x:
+              baseCenter.x +
+              outward.x * (baseOffset + outwardDistance) +
+              tangent.x * slideOffset,
+            y:
+              baseCenter.y +
+              outward.y * (baseOffset + outwardDistance) +
+              tangent.y * slideOffset,
+          }
+          const result = tryCandidateCenter({
+            orientation,
+            width,
+            height,
+            center,
+          })
+          if (result) return result
+        }
+      }
+
+      continue
+    }
 
     for (const outwardDistance of outwardDistances) {
-      for (const slideOffset of slideOffsets) {
+      const center = {
+        x: baseCenter.x + outward.x * (baseOffset + outwardDistance),
+        y: baseCenter.y + outward.y * (baseOffset + outwardDistance),
+      }
+      const result = tryCandidateCenter({
+        orientation,
+        width,
+        height,
+        center,
+      })
+      if (result) return result
+    }
+
+    for (const slideOffset of steppedSlideOffsets.flatMap((offset) => [
+      offset,
+      -offset,
+    ])) {
+      for (const outwardDistance of outwardDistances) {
         const center = {
           x:
             baseCenter.x +
@@ -465,6 +538,8 @@ const solveDetachedPortOnlyPin = (params: {
 
   // If moving in the label-facing direction cannot clear the chip, search
   // around the chip perimeter while preserving the requested orientation.
+  // First sweep along +/-x at the anchor y. Only after that horizontal reach
+  // is exhausted should we start trying alternate fixed y rows.
   for (const orientation of orientations) {
     const { width, height } = getDimsForOrientation({
       orientation,
@@ -478,63 +553,38 @@ const solveDetachedPortOnlyPin = (params: {
         .slice(1)
         .flatMap((offset) => [offset, -offset]),
     ]
-    const yOffsets = [
-      0,
-      ...getSteppedDistances(verticalReach)
-        .slice(1)
-        .flatMap((offset) => [offset, -offset]),
-    ]
 
     for (const xOffset of xOffsets) {
-      const topCenter = {
-        x: anchor.x + xOffset,
-        y: chipBounds.maxY + height / 2 + baseOffset,
-      }
-      const topResult = tryCandidateCenter({
+      const result = tryCandidateCenter({
         orientation,
         width,
         height,
-        center: topCenter,
+        center: {
+          x: anchor.x + xOffset,
+          y: anchor.y,
+        },
       })
-      if (topResult) return topResult
-
-      const bottomCenter = {
-        x: anchor.x + xOffset,
-        y: chipBounds.minY - height / 2 - baseOffset,
-      }
-      const bottomResult = tryCandidateCenter({
-        orientation,
-        width,
-        height,
-        center: bottomCenter,
-      })
-      if (bottomResult) return bottomResult
+      if (result) return result
     }
 
-    for (const yOffset of yOffsets) {
-      const rightCenter = {
-        x: chipBounds.maxX + width / 2 + baseOffset,
-        y: anchor.y + yOffset,
-      }
-      const rightResult = tryCandidateCenter({
-        orientation,
-        width,
-        height,
-        center: rightCenter,
-      })
-      if (rightResult) return rightResult
+    const yCenters = [
+      chipBounds.maxY + height / 2 + baseOffset,
+      chipBounds.minY - height / 2 - baseOffset,
+    ]
 
-      const leftCenter = {
-        x: chipBounds.minX - width / 2 - baseOffset,
-        y: anchor.y + yOffset,
+    for (const y of yCenters) {
+      for (const xOffset of xOffsets) {
+        const result = tryCandidateCenter({
+          orientation,
+          width,
+          height,
+          center: {
+            x: anchor.x + xOffset,
+            y,
+          },
+        })
+        if (result) return result
       }
-      const leftResult = tryCandidateCenter({
-        orientation,
-        width,
-        height,
-        center: leftCenter,
-      })
-      if (leftResult) return leftResult
     }
   }
 
@@ -593,8 +643,15 @@ export class SinglePortLabelTraceCollisionSolver extends BaseSolver {
     placement: NetLabelPlacement,
   ): FacingDirection[] {
     const netId = placement.netId ?? placement.globalConnNetId
+    const availableNetLabelOrientations =
+      this.inputProblem.availableNetLabelOrientations
+
+    if (!availableNetLabelOrientations) {
+      return ["x+", "x-"]
+    }
+
     return (
-      this.inputProblem.availableNetLabelOrientations[netId] ?? [
+      availableNetLabelOrientations[netId] ?? [
         "x+",
         "x-",
         "y+",
