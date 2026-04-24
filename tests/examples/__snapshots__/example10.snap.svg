@@ -25,16 +25,20 @@ y+" data-x="3.2144395444999985" data-y="0.5519250999999993" cx="509.779348272728
 x+" data-x="3.9061310649999994" data-y="0.004526300000001031" cx="564.3915149460504" cy="319.6426281909097" r="3" fill="hsl(81, 100%, 50%, 0.8)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="-2.2855604555" data-y="-0.6519250999999994" cx="75.52953054163507" cy="371.4724283362409" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: x-" data-x="-2.2855604555" data-y="-0.6519250999999994" cx="75.52953054163507" cy="371.4724283362409" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="-2.2855604555000015" data-y="0.6519250999999994" cx="75.52953054163495" cy="268.5275716637591" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: x-" data-x="-2.2855604555000015" data-y="0.6519250999999994" cx="75.52953054163495" cy="268.5275716637591" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="-1.5938689350000006" data-y="0.004526300000001031" cx="130.1416972149565" cy="319.6426281909097" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="-1.5938689350000006" data-y="0.004526300000001031" cx="130.1416972149565" cy="319.6426281909097" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="3.9061310649999994" data-y="0.004526300000001031" cx="564.3915149460504" cy="319.6426281909097" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="3.9061310649999994" data-y="0.004526300000001031" cx="564.3915149460504" cy="319.6426281909097" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="-2.2855604555,-0.5519250999999993 3.2144395445,-0.5519250999999993" data-type="line" data-label="" points="75.52953054163507,363.57697710476646 509.7793482727289,363.57697710476646" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
@@ -58,16 +62,20 @@ x+" data-x="3.9061310649999994" data-y="0.004526300000001031" cx="564.3915149460
     <rect data-type="rect" data-label="schematic_component_1" data-x="3.5" data-y="0" x="500.25975460016497" y="276.42302289523354" width="64.13176034588543" height="87.15395420953291" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.01266552057232143" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="-2.5105604555000003" data-y="-0.6519250999999994" x="40.000000000000085" y="363.57697710476646" width="35.52953054163498" height="15.79090246294885" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01266552057232143" />
+    <rect data-type="rect" data-label="netId: collector
+globalConnNetId: connectivity_net0" data-x="-2.5105604555000003" data-y="-0.6519250999999994" x="40.000000000000085" y="363.57697710476646" width="35.52953054163498" height="15.79090246294885" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01266552057232143" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="-2.5105604555000016" data-y="0.6519250999999994" x="40" y="260.6321204322847" width="35.529530541634955" height="15.79090246294885" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01266552057232143" />
+    <rect data-type="rect" data-label="netId: emitter
+globalConnNetId: connectivity_net1" data-x="-2.5105604555000016" data-y="0.6519250999999994" x="40" y="260.6321204322847" width="35.529530541634955" height="15.79090246294885" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01266552057232143" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="-1.3678689350000006" data-y="0.004526300000001031" x="130.22065172727125" y="311.74717695943525" width="35.529530541634955" height="15.79090246294885" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01266552057232143" />
+    <rect data-type="rect" data-label="netId: base
+globalConnNetId: connectivity_net2" data-x="-1.3678689350000006" data-y="0.004526300000001031" x="130.22065172727125" y="311.74717695943525" width="35.529530541634955" height="15.79090246294885" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01266552057232143" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="4.132131064999999" data-y="0.004526300000001031" x="564.4704694583651" y="311.74717695943525" width="35.52953054163493" height="15.79090246294885" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01266552057232143" />
+    <rect data-type="rect" data-label="netId: base
+globalConnNetId: connectivity_net2" data-x="4.132131064999999" data-y="0.004526300000001031" x="564.4704694583651" y="311.74717695943525" width="35.52953054163493" height="15.79090246294885" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01266552057232143" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />

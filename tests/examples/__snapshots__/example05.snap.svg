@@ -113,7 +113,8 @@ x-" data-x="1.4798754500000002" data-y="1.0005122999999987" cx="392.133726538461
 x+" data-x="2.52012455" data-y="0.9994877000000013" cx="504.16055269230765" cy="223.1320938461537" r="3" fill="hsl(58, 100%, 50%, 0.8)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="2.6201245500000003" data-y="0.9994877000000013" cx="514.9297834615385" cy="223.1320938461537" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: y-" data-x="2.6201245500000003" data-y="0.9994877000000013" cx="514.9297834615385" cy="223.1320938461537" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="2.52012455,0.9994877000000013 -0.9,0.7999999999999999" data-type="line" data-label="" points="504.16055269230765,223.1320938461537 135.8394473076923,244.61538461538464" fill="none" stroke="hsl(248, 100%, 50%, 0.8)" stroke-width="1" />
@@ -128,7 +129,8 @@ x+" data-x="2.52012455" data-y="0.9994877000000013" cx="504.16055269230765" cy="
     <rect data-type="rect" data-label="schematic_component_1" data-x="2" data-y="1" x="392.13372653846153" y="193.58589076923082" width="112.02682615384612" height="58.98206461538453" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.009285714285714286" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="2.6201245500000003" data-y="0.7744877000000013" x="504.1605526923077" y="223.1320938461537" width="21.538461538461604" height="48.46153846153848" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.009285714285714286" />
+    <rect data-type="rect" data-label="netId: .LED1 &gt; port.right to .U1 &gt; .pin20
+globalConnNetId: connectivity_net0" data-x="2.6201245500000003" data-y="0.7744877000000013" x="504.1605526923077" y="223.1320938461537" width="21.538461538461604" height="48.46153846153848" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.009285714285714286" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
