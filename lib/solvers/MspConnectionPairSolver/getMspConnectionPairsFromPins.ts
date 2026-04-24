@@ -18,10 +18,10 @@ import type { InputPin, PinId } from "lib/types/InputProblem"
  */
 export function getOrthogonalMinimumSpanningTree(
   pins: InputPin[],
-  opts: {
+  opts?: {
     maxDistance?: number
     forbidEdge?: (a: InputPin, b: InputPin) => boolean
-  } = {},
+  }
 ): Array<[PinId, PinId]> {
   const n = pins.length
   const maxDistance = opts?.maxDistance ?? Number.POSITIVE_INFINITY
@@ -33,8 +33,7 @@ export function getOrthogonalMinimumSpanningTree(
     const seen = new Set<string>()
     for (const p of pins) {
       if (seen.has(p.pinId)) {
-        throw new Error(`Duplicate pinId detected: "${p.pinId}"`)
-      }
+        throw new Error(`Duplicate pinId detected: "${p.pinId}"`)}
       seen.add(p.pinId)
     }
   }
