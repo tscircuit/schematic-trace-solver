@@ -124,43 +124,6 @@ export default () => {
     setIsOpen(false)
   }
 
-  const downloadTestTs = () => {
-    try {
-      const params = deepRemoveUnderscoreProperties(
-        solver.getConstructorParams(),
-      )
-      const solverName = solver.constructor.name
-
-      const content = `import { ${solverName} } from "lib/solvers/${solverName}/${solverName}\nimport { test, expect } from "bun:test"
-
-test("${solverName} should solve problem correctly", () => {
-  const input = ${JSON.stringify(params, null, 2)}
-  
-  const solver = new ${solverName}(input as any)
-  solver.solve()
-
-  expect(solver).toMatchSolverSnapshot(import.meta.path)
-  
-  // Add more specific assertions based on expected output
-  // expect(solver.netLabelPlacementSolver!.netLabelPlacements).toMatchInlineSnapshot()
-})
-`
-
-      const blob = new Blob([content], { type: "text/plain" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `${solverName}.test.ts`
-      a.click()
-      URL.revokeObjectURL(url)
-    } catch (error) {
-      alert(
-        `Error generating test.ts for ${solver.constructor.name}: ${error instanceof Error ? error.message : String(error)}`,
-      )
-    }
-    setIsOpen(false)
-  }
-
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       <button
@@ -184,12 +147,6 @@ test("${solverName} should solve problem correctly", () => {
             onClick={downloadPageTsx}
           >
             Download page.tsx
-          </button>
-          <button
-            className="w-full text-left px-3 py-2 hover:bg-gray-100 text-xs"
-            onClick={downloadTestTs}
-          >
-            Download test.ts
           </button>
         </div>
       )}
