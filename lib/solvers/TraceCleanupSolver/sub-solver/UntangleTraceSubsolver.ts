@@ -17,6 +17,28 @@ import {
 import type { GraphicsObject } from "graphics-debug"
 import type { Point } from "@tscircuit/math-utils"
 
+/**
+ * Deduplicates adjacent boundary points when joining two point arrays.
+ * If the last point of `a` is within epsilon of the first point of `b`,
+ * the duplicate is removed so no zero-length segment is created.
+ */
+function dedupeJoin<T extends { x: number; y: number }>(
+  a: T[],
+  b: T[],
+): T[] {
+  if (a.length > 0 && b.length > 0) {
+    const last = a[a.length - 1]
+    const first = b[0]
+    if (
+      Math.abs(last.x - first.x) < 1e-6 &&
+      Math.abs(last.y - first.y) < 1e-6
+    ) {
+      return [...a.slice(0, -1), ...b]
+    }
+  }
+  return [...a, ...b]
+}
+
 import { visualizeLSapes } from "./visualizeLSapes"
 import { visualizeIntersectionPoints } from "./visualizeIntersectionPoints"
 import { visualizeTightRectangle } from "../visualizeTightRectangle"
@@ -258,11 +280,9 @@ export class UntangleTraceSubsolver extends BaseSolver {
           p.x === this.currentLShape!.p2.x && p.y === this.currentLShape!.p2.y,
       )
       if (p2Index !== -1) {
-        const newTracePath = [
-          ...originalTrace.tracePath.slice(0, p2Index),
-          ...bestRoute,
-          ...originalTrace.tracePath.slice(p2Index + 1),
-        ]
+        const prefix = originalTrace.tracePath.slice(0, p2Index)
+        const suffix = originalTrace.tracePath.slice(p2Index + 1)
+        const newTracePath = dedupeJoin(dedupeJoin(prefix, bestRoute), suffix)
         this.input.allTraces[traceIndex] = {
           ...originalTrace,
           tracePath: newTracePath,
