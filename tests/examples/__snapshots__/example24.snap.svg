@@ -76,6 +76,9 @@ x-" data-x="1.6" data-y="-2.095" cx="353.6" cy="428.92" r="3" fill="hsl(40, 100%
     <polyline data-points="1.6,-1.895 1.3000000000000003,-1.895 1.3000000000000003,-1.896" data-type="line" data-label="" points="353.6,406.52 320.00000000000006,406.52 320.00000000000006,406.63199999999995" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
+    <polyline data-points="1.6,-2.095 1.399,-2.095" data-type="line" data-label="" points="353.6,428.92 331.088,428.92" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
     <rect data-type="rect" data-label="CHIP
 schematic_component_0" data-x="0" data-y="0" x="40" y="138.28" width="268.80000000000007" height="112" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.008928571428571428" />
   </g>
@@ -101,7 +104,7 @@ connectivity_net1" data-x="1.2000000000000002" data-y="-2.121" x="297.6" y="406.
   <g>
     <rect data-type="rect" data-label="PLACED NET LABEL
 MMM
-connectivity_net2" data-x="1.374" data-y="-2.495" x="303.088" y="462.52" width="50.400000000000034" height="22.40000000000009" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008928571428571428" />
+connectivity_net2" data-x="1.174" data-y="-2.095" x="280.68800000000005" y="417.72" width="50.39999999999998" height="22.399999999999977" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008928571428571428" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />

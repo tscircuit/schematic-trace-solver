@@ -172,6 +172,24 @@ x+" data-x="0.6000000000000001" data-y="0.10000000000000009" cx="432" cy="301.33
     <polyline data-points="-0.6000000000000001,0.4999999999999998 -0.8,0.4999999999999998 -0.8,-1.4999999999999998 0.8000000000000003,-1.4999999999999998 0.8000000000000003,-0.6999999999999998 0.6000000000000001,-0.6999999999999998" data-type="line" data-label="" points="207.99999999999997,226.66666666666669 170.66666666666666,226.66666666666669 170.66666666666666,600 469.33333333333337,600 469.33333333333337,450.66666666666663 432,450.66666666666663" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
+    <polyline data-points="-0.6000000000000001,0.2999999999999998 -0.801,0.2999999999999998" data-type="line" data-label="" points="207.99999999999997,264 170.48,264" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="0.6000000000000001,-0.8999999999999999 0.801,-0.8999999999999999" data-type="line" data-label="" points="432,488 469.52,488" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="-0.6000000000000001,0.09999999999999987 -0.801,0.09999999999999987" data-type="line" data-label="" points="207.99999999999997,301.33333333333337 170.48,301.33333333333337" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="0.6000000000000001,-1.0999999999999999 0.801,-1.0999999999999999" data-type="line" data-label="" points="432,525.3333333333334 469.52,525.3333333333334" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="-0.6000000000000001,-0.10000000000000009 -0.801,-0.10000000000000009" data-type="line" data-label="" points="207.99999999999997,338.6666666666667 170.48,338.6666666666667" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="0.6000000000000001,0.10000000000000009 0.801,0.10000000000000009" data-type="line" data-label="" points="432,301.3333333333333 469.52,301.3333333333333" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
     <rect data-type="rect" data-label="CHIP
 schematic_component_0" data-x="0" data-y="0" x="207.99999999999997" y="77.33333333333334" width="224.00000000000003" height="485.33333333333326" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.005357142857142856" />
   </g>
@@ -208,32 +226,32 @@ connectivity_net3" data-x="-0.8" data-y="0.7249999999999998" x="151.999999999999
   <g>
     <rect data-type="rect" data-label="PLACED NET LABEL
 P.pin5 to P.pin14
-connectivity_net4" data-x="-0.8260000000000001" data-y="0.6999999999999998" x="123.81333333333328" y="170.66666666666669" width="84.00000000000003" height="37.333333333333314" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005357142857142856" />
+connectivity_net4" data-x="-1.026" data-y="0.2999999999999998" x="86.47999999999996" y="245.33333333333337" width="84.00000000000003" height="37.333333333333314" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005357142857142856" />
   </g>
   <g>
     <rect data-type="rect" data-label="PLACED NET LABEL
 P.pin5 to P.pin14
-connectivity_net4" data-x="0.8260000000000001" data-y="-0.4999999999999999" x="432.1866666666667" y="394.66666666666663" width="84" height="37.33333333333337" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005357142857142856" />
+connectivity_net4" data-x="1.026" data-y="-0.8999999999999999" x="469.52" y="469.33333333333337" width="84" height="37.33333333333326" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005357142857142856" />
   </g>
   <g>
     <rect data-type="rect" data-label="PLACED NET LABEL
 P.pin6 to P.pin13
-connectivity_net5" data-x="-0.8260000000000001" data-y="0.6999999999999998" x="123.81333333333328" y="170.66666666666669" width="84.00000000000003" height="37.333333333333314" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005357142857142856" />
+connectivity_net5" data-x="-1.026" data-y="0.09999999999999987" x="86.47999999999996" y="282.6666666666667" width="84.00000000000003" height="37.333333333333314" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005357142857142856" />
   </g>
   <g>
     <rect data-type="rect" data-label="PLACED NET LABEL
 P.pin6 to P.pin13
-connectivity_net5" data-x="0.8260000000000001" data-y="-0.4999999999999999" x="432.1866666666667" y="394.66666666666663" width="84" height="37.33333333333337" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005357142857142856" />
+connectivity_net5" data-x="1.026" data-y="-1.0999999999999999" x="469.52" y="506.66666666666663" width="84" height="37.33333333333337" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005357142857142856" />
   </g>
   <g>
     <rect data-type="rect" data-label="PLACED NET LABEL
 P.pin7 to P.pin19
-connectivity_net6" data-x="-0.8260000000000001" data-y="0.7" x="123.81333333333328" y="170.66666666666666" width="84.00000000000003" height="37.33333333333334" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005357142857142856" />
+connectivity_net6" data-x="-1.026" data-y="-0.10000000000000009" x="86.47999999999996" y="320" width="84.00000000000003" height="37.33333333333337" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005357142857142856" />
   </g>
   <g>
     <rect data-type="rect" data-label="PLACED NET LABEL
 P.pin7 to P.pin19
-connectivity_net6" data-x="0.8260000000000001" data-y="-0.29999999999999993" x="432.1866666666667" y="357.3333333333333" width="84" height="37.333333333333314" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005357142857142856" />
+connectivity_net6" data-x="1.026" data-y="0.10000000000000009" x="469.52" y="282.66666666666663" width="84" height="37.33333333333337" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005357142857142856" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />

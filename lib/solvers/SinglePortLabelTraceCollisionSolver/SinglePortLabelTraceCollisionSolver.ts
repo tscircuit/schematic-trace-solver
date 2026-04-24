@@ -650,14 +650,7 @@ export class SinglePortLabelTraceCollisionSolver extends BaseSolver {
       return ["x+", "x-"]
     }
 
-    return (
-      availableNetLabelOrientations[netId] ?? [
-        "x+",
-        "x-",
-        "y+",
-        "y-",
-      ]
-    )
+    return availableNetLabelOrientations[netId] ?? ["x+", "x-", "y+", "y-"]
   }
 
   private hasDisallowedOrientation(placement: NetLabelPlacement) {
