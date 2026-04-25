@@ -101,9 +101,7 @@ export class SameNetTraceAlignmentSolver extends BaseSolver {
     return hi - lo
   }
 
-  private _alignSameNetSegments(
-    traces: SolvedTracePath[],
-  ): SolvedTracePath[] {
+  private _alignSameNetSegments(traces: SolvedTracePath[]): SolvedTracePath[] {
     const segments = this._buildSegments(traces)
 
     // Group by netKey + orientation for fast comparison
@@ -116,7 +114,12 @@ export class SameNetTraceAlignmentSolver extends BaseSolver {
     }
 
     // Collect snapping operations to apply: {traceIdx, pointIdx, axis, newValue}
-    type Snap = { traceIdx: number; pointIdx: number; axis: "x" | "y"; newValue: number }
+    type Snap = {
+      traceIdx: number
+      pointIdx: number
+      axis: "x" | "y"
+      newValue: number
+    }
     const snaps: Snap[] = []
     const snapped = new Set<string>() // avoid double-snapping
 
@@ -137,10 +140,22 @@ export class SameNetTraceAlignmentSolver extends BaseSolver {
           if (perpDiff < 1e-9 || perpDiff > SNAP_THRESHOLD) continue
 
           // Require some overlap along the shared axis
-          const aLo = Math.min(orientation === "H" ? a.x0 : a.y0, orientation === "H" ? a.x1 : a.y1)
-          const aHi = Math.max(orientation === "H" ? a.x0 : a.y0, orientation === "H" ? a.x1 : a.y1)
-          const bLo = Math.min(orientation === "H" ? b.x0 : b.y0, orientation === "H" ? b.x1 : b.y1)
-          const bHi = Math.max(orientation === "H" ? b.x0 : b.y0, orientation === "H" ? b.x1 : b.y1)
+          const aLo = Math.min(
+            orientation === "H" ? a.x0 : a.y0,
+            orientation === "H" ? a.x1 : a.y1,
+          )
+          const aHi = Math.max(
+            orientation === "H" ? a.x0 : a.y0,
+            orientation === "H" ? a.x1 : a.y1,
+          )
+          const bLo = Math.min(
+            orientation === "H" ? b.x0 : b.y0,
+            orientation === "H" ? b.x1 : b.y1,
+          )
+          const bHi = Math.max(
+            orientation === "H" ? b.x0 : b.y0,
+            orientation === "H" ? b.x1 : b.y1,
+          )
           const overlap = this._rangeOverlap(aLo, aHi, bLo, bHi)
           const minLen = Math.min(aHi - aLo, bHi - bLo)
           if (minLen < 1e-9 || overlap / minLen < 0.25) continue
@@ -153,7 +168,12 @@ export class SameNetTraceAlignmentSolver extends BaseSolver {
               const snapKey = `${seg.traceIdx}:${pidx}:${perpAxis}`
               if (!snapped.has(snapKey)) {
                 snapped.add(snapKey)
-                snaps.push({ traceIdx: seg.traceIdx, pointIdx: pidx, axis: perpAxis, newValue: avgPerp })
+                snaps.push({
+                  traceIdx: seg.traceIdx,
+                  pointIdx: pidx,
+                  axis: perpAxis,
+                  newValue: avgPerp,
+                })
               }
             }
           }
