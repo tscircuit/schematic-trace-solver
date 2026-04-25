@@ -22,10 +22,7 @@ import type { Point } from "@tscircuit/math-utils"
  * If the last point of `a` is within epsilon of the first point of `b`,
  * the duplicate is removed so no zero-length segment is created.
  */
-function dedupeJoin<T extends { x: number; y: number }>(
-  a: T[],
-  b: T[],
-): T[] {
+function dedupeJoin<T extends { x: number; y: number }>(a: T[], b: T[]): T[] {
   if (a.length > 0 && b.length > 0) {
     const last = a[a.length - 1]
     const first = b[0]

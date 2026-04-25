@@ -133,9 +133,7 @@ test("repro78: SchematicTracePipelineSolver pipeline produces no duplicate trace
       { pinIds: ["U1.1", "C1.1"], netId: "VCC" },
       { pinIds: ["U1.2", "C2.1"], netId: "EN" },
     ],
-    netConnections: [
-      { pinIds: ["U1.3", "C2.2", "C1.2"], netId: "GND" },
-    ],
+    netConnections: [{ pinIds: ["U1.3", "C2.2", "C1.2"], netId: "GND" }],
     availableNetLabelOrientations: {
       VCC: ["y+"],
       EN: ["x+", "x-"],
