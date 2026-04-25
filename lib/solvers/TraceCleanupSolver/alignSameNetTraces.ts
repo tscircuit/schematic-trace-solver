@@ -1,132 +1,172 @@
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 
+/** Snap threshold: maximum perpendicular distance to consider two
+ *  same-net segments as "close enough" to align. */
+const SNAP_THRESHOLD = 0.15
+
 /**
- * Aligns parallel trace segments belonging to the same net if they are within a certain threshold.
- * This helps in visually merging traces that should appear as a single continuous line.
- * Implements weighted averaging and overlap detection for superior stability.
+ * Aligns parallel trace segments belonging to the same net when they are
+ * within SNAP_THRESHOLD of each other AND overlap sufficiently along their
+ * shared axis. Snaps both to their average perpendicular coordinate.
+ *
+ * Returns a deep-cloned array — the original traces are never mutated.
  */
 export const alignSameNetTraces = (
   traces: SolvedTracePath[],
-  options: { snapThreshold?: number } = {},
+  _options: { snapThreshold?: number } = {},
 ): SolvedTracePath[] => {
-  const EPS = options.snapThreshold ?? 0.3
-  const COORD_EPS = 1e-6
+  const threshold = _options.snapThreshold ?? SNAP_THRESHOLD
 
-  const netGroups: Record<string, SolvedTracePath[]> = {}
-  for (const trace of traces) {
-    const netId = trace.globalConnNetId || "unknown"
-    if (!netGroups[netId]) netGroups[netId] = []
-    netGroups[netId].push(trace)
+  // --- 1. Extract axis-aligned segments with their trace/point indices ---
+  type Segment = {
+    traceIdx: number
+    p0idx: number
+    p1idx: number
+    x0: number
+    y0: number
+    x1: number
+    y1: number
+    orientation: "H" | "V"
   }
 
-  for (const netId in netGroups) {
-    if (netId === "unknown") continue
-    const group = netGroups[netId]!
-    if (group.length < 2) continue
+  const segments: Segment[] = []
 
-    // Collect all segments in the net
-    const segments: Array<{
-      traceIdx: number
-      segIdx: number
-      p1: { x: number; y: number }
-      p2: { x: number; y: number }
-      isVert: boolean
-      len: number
-    }> = []
-
-    for (let t = 0; t < group.length; t++) {
-      const trace = group[t]!
-      for (let s = 0; s < trace.tracePath.length - 1; s++) {
-        const p1 = trace.tracePath[s]!
-        const p2 = trace.tracePath[s + 1]!
-        const isVert = Math.abs(p1.x - p2.x) < COORD_EPS
-        const isHorz = Math.abs(p1.y - p2.y) < COORD_EPS
-        if (isVert || isHorz) {
-          segments.push({
-            traceIdx: t,
-            segIdx: s,
-            p1,
-            p2,
-            isVert,
-            len: isVert ? Math.abs(p1.y - p2.y) : Math.abs(p1.x - p2.x),
-          })
-        }
+  for (let ti = 0; ti < traces.length; ti++) {
+    const path = traces[ti]!.tracePath
+    for (let pi = 0; pi < path.length - 1; pi++) {
+      const a = path[pi]!
+      const b = path[pi + 1]!
+      const dx = Math.abs(a.x - b.x)
+      const dy = Math.abs(a.y - b.y)
+      if (dx < 1e-9) {
+        segments.push({
+          traceIdx: ti,
+          p0idx: pi,
+          p1idx: pi + 1,
+          x0: a.x,
+          y0: a.y,
+          x1: b.x,
+          y1: b.y,
+          orientation: "V",
+        })
+      } else if (dy < 1e-9) {
+        segments.push({
+          traceIdx: ti,
+          p0idx: pi,
+          p1idx: pi + 1,
+          x0: a.x,
+          y0: a.y,
+          x1: b.x,
+          y1: b.y,
+          orientation: "H",
+        })
       }
     }
+  }
 
-    // Cluster segments that are close and parallel
-    const clusters: Array<{
-      isVert: boolean
-      segments: typeof segments
-      avgPos: number
-    }> = []
+  // --- 2. Group segments by net ---
+  const netMap = new Map<string, number[]>()
+  for (let si = 0; si < segments.length; si++) {
+    const seg = segments[si]!
+    const netId =
+      traces[seg.traceIdx]!.globalConnNetId ??
+      traces[seg.traceIdx]!.dcConnNetId ??
+      ""
+    if (!netId) continue
+    let arr = netMap.get(netId)
+    if (!arr) {
+      arr = []
+      netMap.set(netId, arr)
+    }
+    arr.push(si)
+  }
 
-    for (const seg of segments) {
-      let added = false
-      for (const cluster of clusters) {
-        if (cluster.isVert === seg.isVert) {
-          const pos = seg.isVert ? seg.p1.x : seg.p1.y
-          if (Math.abs(cluster.avgPos - pos) < EPS) {
-            // Check for 1D overlap or near-proximity along the shared axis
-            const sMin = seg.isVert
-              ? Math.min(seg.p1.y, seg.p2.y)
-              : Math.min(seg.p1.x, seg.p2.x)
-            const sMax = seg.isVert
-              ? Math.max(seg.p1.y, seg.p2.y)
-              : Math.max(seg.p1.x, seg.p2.x)
+  // --- 3. For each net, find pairs to snap ---
+  type Snap = {
+    traceIdx: number
+    pointIdx: number
+    axis: "x" | "y"
+    newValue: number
+  }
+  const snaps: Snap[] = []
+  const snapped = new Set<string>()
 
-            const overlaps = cluster.segments.some((cs) => {
-              const csMin = cs.isVert
-                ? Math.min(cs.p1.y, cs.p2.y)
-                : Math.min(cs.p1.x, cs.p2.x)
-              const csMax = cs.isVert
-                ? Math.max(cs.p1.y, cs.p2.y)
-                : Math.max(cs.p1.x, cs.p2.x)
-              return Math.min(sMax, csMax) - Math.max(sMin, csMin) > -EPS
-            })
+  function rangeOverlap(
+    aLo: number,
+    aHi: number,
+    bLo: number,
+    bHi: number,
+  ): number {
+    return Math.max(0, Math.min(aHi, bHi) - Math.max(aLo, bLo))
+  }
 
-            if (overlaps) {
-              cluster.segments.push(seg)
-              // Recompute weighted average
-              const totalLen = cluster.segments.reduce(
-                (acc, s) => acc + s.len,
-                0,
-              )
-              cluster.avgPos =
-                cluster.segments.reduce(
-                  (acc, s) => acc + (s.isVert ? s.p1.x : s.p1.y) * s.len,
-                  0,
-                ) / totalLen
-              added = true
-              break
+  for (const [, segIndices] of netMap) {
+    for (let i = 0; i < segIndices.length; i++) {
+      const a = segments[segIndices[i]!]!
+      for (let j = i + 1; j < segIndices.length; j++) {
+        const b = segments[segIndices[j]!]!
+        if (a.orientation !== b.orientation) continue
+        // Skip segments from the same trace
+        if (a.traceIdx === b.traceIdx) continue
+
+        const perpAxis: "x" | "y" = a.orientation === "H" ? "y" : "x"
+        const aPerp = perpAxis === "x" ? a.x0 : a.y0
+        const bPerp = perpAxis === "x" ? b.x0 : b.y0
+
+        if (Math.abs(aPerp - bPerp) > threshold) continue
+
+        // Check overlap along the shared (parallel) axis
+        const aLo = Math.min(
+          a.orientation === "H" ? a.x0 : a.y0,
+          a.orientation === "H" ? a.x1 : a.y1,
+        )
+        const aHi = Math.max(
+          a.orientation === "H" ? a.x0 : a.y0,
+          a.orientation === "H" ? a.x1 : a.y1,
+        )
+        const bLo = Math.min(
+          b.orientation === "H" ? b.x0 : b.y0,
+          b.orientation === "H" ? b.x1 : b.y1,
+        )
+        const bHi = Math.max(
+          b.orientation === "H" ? b.x0 : b.y0,
+          b.orientation === "H" ? b.x1 : b.y1,
+        )
+        const overlap = rangeOverlap(aLo, aHi, bLo, bHi)
+        const minLen = Math.min(aHi - aLo, bHi - bLo)
+        if (minLen < 1e-9 || overlap / minLen < 0.25) continue
+
+        // Snap both to average perpendicular coordinate
+        const avgPerp = (aPerp + bPerp) / 2
+
+        for (const seg of [a, b]) {
+          for (const pidx of [seg.p0idx, seg.p1idx]) {
+            const snapKey = `${seg.traceIdx}:${pidx}:${perpAxis}`
+            if (!snapped.has(snapKey)) {
+              snapped.add(snapKey)
+              snaps.push({
+                traceIdx: seg.traceIdx,
+                pointIdx: pidx,
+                axis: perpAxis,
+                newValue: avgPerp,
+              })
             }
           }
         }
       }
-      if (!added) {
-        clusters.push({
-          isVert: seg.isVert,
-          segments: [seg],
-          avgPos: seg.isVert ? seg.p1.x : seg.p1.y,
-        })
-      }
-    }
-
-    // Apply averaged positions
-    for (const cluster of clusters) {
-      if (cluster.segments.length > 1) {
-        for (const seg of cluster.segments) {
-          if (seg.isVert) {
-            seg.p1.x = cluster.avgPos
-            seg.p2.x = cluster.avgPos
-          } else {
-            seg.p1.y = cluster.avgPos
-            seg.p2.y = cluster.avgPos
-          }
-        }
-      }
     }
   }
 
-  return traces
+  // --- 4. Apply snaps to a deep clone ---
+  const result: SolvedTracePath[] = traces.map((t) => ({
+    ...t,
+    tracePath: t.tracePath.map((p) => ({ ...p })),
+  }))
+  for (const snap of snaps) {
+    const pt = result[snap.traceIdx]!.tracePath[snap.pointIdx]!
+    if (snap.axis === "x") pt.x = snap.newValue
+    else pt.y = snap.newValue
+  }
+
+  return result
 }
