@@ -88,9 +88,15 @@ export class NetLabelPlacementSolver extends BaseSolver {
     this.overlappingSameNetTraceGroups =
       this.computeOverlappingSameNetTraceGroups()
 
+    // Place "port only" net labels first so they get prime positions and
+    // trace-based labels are forced to avoid them.
     this.queuedOverlappingSameNetTraceGroups = [
       ...this.overlappingSameNetTraceGroups,
-    ]
+    ].sort((a, b) => {
+      const aPort = a.portOnlyPinId ? 0 : 1
+      const bPort = b.portOnlyPinId ? 0 : 1
+      return aPort - bPort
+    })
   }
 
   computeOverlappingSameNetTraceGroups(): Array<OverlappingSameNetTraceGroup> {
@@ -284,6 +290,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
           overlappingSameNetTraceGroup: this.currentGroup,
           availableOrientations: fullOrients,
           netLabelWidth,
+          existingNetLabelPlacements: this.netLabelPlacements,
         })
         return
       }
@@ -327,6 +334,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
         netId
       ] ?? ["x+", "x-", "y+", "y-"],
       netLabelWidth,
+      existingNetLabelPlacements: this.netLabelPlacements,
     })
   }
 

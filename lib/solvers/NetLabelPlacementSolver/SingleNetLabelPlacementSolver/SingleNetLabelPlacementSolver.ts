@@ -14,7 +14,7 @@ import {
   getCenterFromAnchor,
   getRectBounds,
 } from "./geometry"
-import { rectIntersectsAnyTrace } from "./collisions"
+import { rectIntersectsAnyTrace, rectIntersectsAnyNetLabel } from "./collisions"
 import { chooseHostTraceForGroup } from "./host"
 import { anchorsForSegment } from "./anchors"
 import { solveNetLabelPlacementForPortOnlyPin } from "./solvePortOnlyPin"
@@ -62,6 +62,8 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
   netLabelWidth?: number
 
   netLabelPlacement: NetLabelPlacement | null = null
+  existingNetLabelPlacements: NetLabelPlacement[]
+
   testedCandidates: Array<{
     center: { x: number; y: number }
     width: number
@@ -69,7 +71,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     bounds: { minX: number; minY: number; maxX: number; maxY: number }
     anchor: { x: number; y: number }
     orientation: FacingDirection
-    status: "ok" | "chip-collision" | "trace-collision" | "parallel-to-segment"
+    status: "ok" | "chip-collision" | "trace-collision" | "netlabel-collision" | "parallel-to-segment"
     hostSegIndex: number
   }> = []
 
@@ -78,6 +80,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
     overlappingSameNetTraceGroup: OverlappingSameNetTraceGroup
     availableOrientations: FacingDirection[]
+    existingNetLabelPlacements?: NetLabelPlacement[]
     netLabelWidth?: number
   }) {
     super()
@@ -86,6 +89,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     this.overlappingSameNetTraceGroup = params.overlappingSameNetTraceGroup
     this.availableOrientations = params.availableOrientations
     this.netLabelWidth = params.netLabelWidth
+    this.existingNetLabelPlacements = params.existingNetLabelPlacements ?? []
 
     this.chipObstacleSpatialIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
@@ -101,6 +105,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       overlappingSameNetTraceGroup: this.overlappingSameNetTraceGroup,
       availableOrientations: this.availableOrientations,
       netLabelWidth: this.netLabelWidth,
+      existingNetLabelPlacements: this.existingNetLabelPlacements,
     }
   }
 
@@ -119,6 +124,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         overlappingSameNetTraceGroup: this.overlappingSameNetTraceGroup,
         availableOrientations: this.availableOrientations,
         netLabelWidth: this.netLabelWidth,
+        existingNetLabelPlacements: this.existingNetLabelPlacements,
       })
       this.testedCandidates.push(...res.testedCandidates)
       if (res.placement) {
@@ -286,6 +292,21 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
                 anchor,
                 orientation,
                 status: "trace-collision",
+                hostSegIndex: si,
+              })
+              continue
+            }
+
+            // Net label collision check
+            if (rectIntersectsAnyNetLabel(bounds, this.existingNetLabelPlacements)) {
+              this.testedCandidates.push({
+                center: testCenter,
+                width,
+                height,
+                bounds,
+                anchor,
+                orientation,
+                status: "netlabel-collision",
                 hostSegIndex: si,
               })
               continue

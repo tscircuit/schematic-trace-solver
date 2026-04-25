@@ -13,7 +13,7 @@ import {
   getCenterFromAnchor,
   getRectBounds,
 } from "./geometry"
-import { rectIntersectsAnyTrace } from "./collisions"
+import { rectIntersectsAnyTrace, rectIntersectsAnyNetLabel } from "./collisions"
 
 export function solveNetLabelPlacementForPortOnlyPin(params: {
   inputProblem: InputProblem
@@ -22,6 +22,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
   overlappingSameNetTraceGroup: OverlappingSameNetTraceGroup
   availableOrientations: FacingDirection[]
   netLabelWidth?: number
+  existingNetLabelPlacements?: NetLabelPlacement[]
 }): {
   placement: NetLabelPlacement | null
   testedCandidates: Array<{
@@ -31,7 +32,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     bounds: { minX: number; minY: number; maxX: number; maxY: number }
     anchor: { x: number; y: number }
     orientation: FacingDirection
-    status: "ok" | "chip-collision" | "trace-collision" | "parallel-to-segment"
+    status: "ok" | "chip-collision" | "trace-collision" | "netlabel-collision" | "parallel-to-segment"
     hostSegIndex: number
   }>
   error?: string
@@ -43,6 +44,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     overlappingSameNetTraceGroup,
     availableOrientations,
     netLabelWidth,
+    existingNetLabelPlacements = [],
   } = params
 
   const pinId = overlappingSameNetTraceGroup.portOnlyPinId
@@ -95,7 +97,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     bounds: { minX: number; minY: number; maxX: number; maxY: number }
     anchor: { x: number; y: number }
     orientation: FacingDirection
-    status: "ok" | "chip-collision" | "trace-collision" | "parallel-to-segment"
+    status: "ok" | "chip-collision" | "trace-collision" | "netlabel-collision" | "parallel-to-segment"
     hostSegIndex: number
   }> = []
 
@@ -146,6 +148,21 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
         anchor,
         orientation,
         status: "trace-collision",
+        hostSegIndex: -1,
+      })
+      continue
+    }
+
+    // Net label collision check
+    if (rectIntersectsAnyNetLabel(bounds, existingNetLabelPlacements)) {
+      testedCandidates.push({
+        center,
+        width,
+        height,
+        bounds,
+        anchor,
+        orientation,
+        status: "netlabel-collision" as any,
         hostSegIndex: -1,
       })
       continue

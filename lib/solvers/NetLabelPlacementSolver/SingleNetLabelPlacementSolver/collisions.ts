@@ -1,5 +1,7 @@
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { NetLabelPlacement } from "../NetLabelPlacementSolver"
+import { getRectBounds } from "./geometry"
 
 export function segmentIntersectsRect(
   p1: { x: number; y: number },
@@ -49,4 +51,21 @@ export function rectIntersectsAnyTrace(
     }
   }
   return { hasIntersection: false }
+}
+
+/**
+ * Returns true if the given bounds overlap with any already-placed net label.
+ */
+export function rectIntersectsAnyNetLabel(
+  bounds: { minX: number; minY: number; maxX: number; maxY: number },
+  existingNetLabelPlacements: NetLabelPlacement[],
+  EPS = 1e-3,
+): boolean {
+  for (const label of existingNetLabelPlacements) {
+    const lb = getRectBounds(label.center, label.width, label.height)
+    const overlapX = Math.min(bounds.maxX, lb.maxX) - Math.max(bounds.minX, lb.minX)
+    const overlapY = Math.min(bounds.maxY, lb.maxY) - Math.max(bounds.minY, lb.minY)
+    if (overlapX > EPS && overlapY > EPS) return true
+  }
+  return false
 }
