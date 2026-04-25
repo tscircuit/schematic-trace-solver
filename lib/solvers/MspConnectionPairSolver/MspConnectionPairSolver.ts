@@ -74,7 +74,9 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    this.queuedDcNetIds = Object.keys(netConnMap.netMap).filter(
+      (netId) => !this.inputProblem.availableNetLabelOrientations[netId],
+    )
   }
 
   override getConstructorParams(): ConstructorParameters<
