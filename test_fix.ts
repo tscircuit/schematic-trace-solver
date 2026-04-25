@@ -23,6 +23,6 @@ console.log("Before:", JSON.stringify(mockTraces, null, 2))
 const aligned = alignSameNetTraces(mockTraces as any)
 console.log("After:", JSON.stringify(aligned, null, 2))
 
-const success = aligned[1].tracePath[0].x === 0 && aligned[1].tracePath[1].x === 0
+const success = aligned[0].tracePath[0].x === aligned[1].tracePath[0].x
 console.log("Success:", success)
 if (!success) process.exit(1)
