@@ -1,0 +1,121 @@
+<svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="white" />
+  <g>
+    <circle data-type="point" data-label="U1.1
+x-" data-x="-0.8" data-y="0.3" cx="417.1428571428571" cy="285.7142857142857" r="3" fill="hsl(319, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U1.2
+x-" data-x="-0.8" data-y="-0.3" cx="417.1428571428571" cy="354.2857142857143" r="3" fill="hsl(320, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="R1.1
+x+" data-x="-2.9" data-y="0.3" cx="177.1428571428571" cy="285.7142857142857" r="3" fill="hsl(226, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="R2.1
+x+" data-x="-2.9" data-y="-0.28" cx="177.1428571428571" cy="352" r="3" fill="hsl(107, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="" data-x="-1" data-y="0.3" cx="394.2857142857143" cy="285.7142857142857" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="" data-x="-2.6999999999999997" data-y="0.3" cx="200" cy="285.7142857142857" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <polyline data-points="-0.8,0.3 -2.9,0.3" data-type="line" data-label="" points="417.1428571428571,285.7142857142857 177.1428571428571,285.7142857142857" fill="none" stroke="hsl(222, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
+  </g>
+  <g>
+    <polyline data-points="-0.8,0.3 -0.8,-0.3" data-type="line" data-label="" points="417.1428571428571,285.7142857142857 417.1428571428571,354.2857142857143" fill="none" stroke="hsl(222, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
+  </g>
+  <g>
+    <polyline data-points="-0.8,0.3 -2.9,-0.28" data-type="line" data-label="" points="417.1428571428571,285.7142857142857 177.1428571428571,352" fill="none" stroke="hsl(222, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
+  </g>
+  <g>
+    <polyline data-points="-2.9,0.3 -0.8,-0.3" data-type="line" data-label="" points="177.1428571428571,285.7142857142857 417.1428571428571,354.2857142857143" fill="none" stroke="hsl(222, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
+  </g>
+  <g>
+    <polyline data-points="-2.9,0.3 -2.9,-0.28" data-type="line" data-label="" points="177.1428571428571,285.7142857142857 177.1428571428571,352" fill="none" stroke="hsl(222, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
+  </g>
+  <g>
+    <polyline data-points="-0.8,-0.3 -2.9,-0.28" data-type="line" data-label="" points="417.1428571428571,354.2857142857143 177.1428571428571,352" fill="none" stroke="hsl(222, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
+  </g>
+  <g>
+    <polyline data-points="-2.9,-0.28 -2.6999999999999997,-0.28 -2.6999999999999997,0.3 -2.9,0.3" data-type="line" data-label="" points="177.1428571428571,352 200,352 200,285.7142857142857 177.1428571428571,285.7142857142857" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="-0.8,-0.3 -1,-0.3 -1,0.3 -0.8,0.3" data-type="line" data-label="" points="417.1428571428571,354.2857142857143 394.2857142857143,354.2857142857143 394.2857142857143,285.7142857142857 417.1428571428571,285.7142857142857" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="U1" data-x="0" data-y="0" x="417.1428571428571" y="251.42857142857144" width="182.8571428571429" height="137.1428571428571" fill="hsl(164, 100%, 50%, 0.8)" stroke="black" stroke-width="0.008749999999999999" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="R1" data-x="-3.5" data-y="0.3" x="40" y="262.85714285714283" width="137.1428571428571" height="45.71428571428572" fill="hsl(71, 100%, 50%, 0.8)" stroke="black" stroke-width="0.008749999999999999" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="R2" data-x="-3.5" data-y="-0.28" x="40" y="329.14285714285717" width="137.1428571428571" height="45.71428571428572" fill="hsl(72, 100%, 50%, 0.8)" stroke="black" stroke-width="0.008749999999999999" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-1" data-y="0.44999999999999996" x="382.85714285714283" y="251.42857142857144" width="22.857142857142833" height="34.28571428571428" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008749999999999999" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="" data-x="-2.6999999999999997" data-y="0.44999999999999996" x="188.57142857142856" y="251.42857142857144" width="22.85714285714289" height="34.28571428571428" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008749999999999999" />
+  </g>
+  <g id="crosshair" style="display: none">
+    <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
+    <line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5" /><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text>
+  </g>
+  <script>
+    <![CDATA[
+    document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const crosshair = svg.getElementById('crosshair');
+      const h = svg.getElementById('crosshair-h');
+      const v = svg.getElementById('crosshair-v');
+      const coords = svg.getElementById('coordinates');
+
+      crosshair.style.display = 'block';
+      h.setAttribute('x1', '0');
+      h.setAttribute('x2', '640');
+      h.setAttribute('y1', y);
+      h.setAttribute('y2', y);
+      v.setAttribute('x1', x);
+      v.setAttribute('x2', x);
+      v.setAttribute('y1', '0');
+      v.setAttribute('y2', '640');
+
+      // Calculate real coordinates using inverse transformation
+      const matrix = {
+        "a": 114.28571428571429,
+        "c": 0,
+        "e": 508.57142857142856,
+        "b": 0,
+        "d": -114.28571428571429,
+        "f": 320
+      };
+      // Manually invert and apply the affine transform
+      // Since we only use translate and scale, we can directly compute:
+      // x' = (x - tx) / sx
+      // y' = (y - ty) / sy
+      const sx = matrix.a;
+      const sy = matrix.d;
+      const tx = matrix.e;
+      const ty = matrix.f;
+      const realPoint = {
+        x: (x - tx) / sx,
+        y: (y - ty) / sy // Flip y back since we used negative scale
+      }
+
+      coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+      coords.setAttribute('x', (x + 5).toString());
+      coords.setAttribute('y', (y - 5).toString());
+    });
+    document.currentScript.parentElement.addEventListener('mouseleave', () => {
+      document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+    });
+    ]]>
+  </script>
+</svg>
