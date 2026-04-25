@@ -13,18 +13,14 @@ test("pins connected only via netConnections should not generate trace lines", (
         center: { x: 0, y: 0 },
         width: 1,
         height: 1,
-        pins: [
-          { pinId: "U1.1", x: -0.5, y: 0 },
-        ],
+        pins: [{ pinId: "U1.1", x: -0.5, y: 0 }],
       },
       {
         chipId: "U2",
         center: { x: 4, y: 0 },
         width: 1,
         height: 1,
-        pins: [
-          { pinId: "U2.1", x: 3.5, y: 0 },
-        ],
+        pins: [{ pinId: "U2.1", x: 3.5, y: 0 }],
       },
     ],
     // No direct connections between these two chips
@@ -46,5 +42,7 @@ test("pins connected only via netConnections should not generate trace lines", (
   solver.solve()
 
   // No MSP connection pairs should be generated since there are no direct connections
-  expect(solver.mspConnectionPairSolver?.mspConnectionPairs ?? []).toHaveLength(0)
+  expect(solver.mspConnectionPairSolver?.mspConnectionPairs ?? []).toHaveLength(
+    0,
+  )
 })
