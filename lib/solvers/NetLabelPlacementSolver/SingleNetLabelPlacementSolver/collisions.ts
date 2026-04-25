@@ -63,8 +63,10 @@ export function rectIntersectsAnyNetLabel(
 ): boolean {
   for (const label of existingNetLabelPlacements) {
     const lb = getRectBounds(label.center, label.width, label.height)
-    const overlapX = Math.min(bounds.maxX, lb.maxX) - Math.max(bounds.minX, lb.minX)
-    const overlapY = Math.min(bounds.maxY, lb.maxY) - Math.max(bounds.minY, lb.minY)
+    const overlapX =
+      Math.min(bounds.maxX, lb.maxX) - Math.max(bounds.minX, lb.minX)
+    const overlapY =
+      Math.min(bounds.maxY, lb.maxY) - Math.max(bounds.minY, lb.minY)
     if (overlapX > EPS && overlapY > EPS) return true
   }
   return false
