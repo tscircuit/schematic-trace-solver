@@ -21,6 +21,7 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { SameNetTraceAlignmentSolver } from "../SameNetTraceAlignmentSolver/SameNetTraceAlignmentSolver"
 import { Example28Solver } from "../Example28Solver/Example28Solver"
 import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
 import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
@@ -74,6 +75,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
+  sameNetTraceAlignmentSolver?: SameNetTraceAlignmentSolver
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
   vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
@@ -216,25 +218,23 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ]
     }),
     definePipelineStep(
-      "netLabelPlacementSolver",
-      NetLabelPlacementSolver,
+      "sameNetTraceAlignmentSolver",
+      SameNetTraceAlignmentSolver,
       (instance) => {
         const traces =
           instance.traceCleanupSolver?.getOutput().traces ??
           instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
-
         return [
           {
             inputProblem: instance.inputProblem,
-            inputTraceMap: Object.fromEntries(
-              traces.map((trace: SolvedTracePath) => [trace.mspPairId, trace]),
-            ),
+            traces,
           },
         ]
       },
     ),
     definePipelineStep("example28Solver", Example28Solver, (instance) => {
       const traces =
+        instance.sameNetTraceAlignmentSolver?.getOutput().traces ??
         instance.traceCleanupSolver?.getOutput().traces ??
         instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
