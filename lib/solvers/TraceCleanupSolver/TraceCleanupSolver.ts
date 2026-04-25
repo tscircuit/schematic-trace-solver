@@ -6,6 +6,8 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
+import { is4PointRectangle } from "./is4PointRectangle"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -18,16 +20,11 @@ interface TraceCleanupSolverInput {
   paddingBuffer: number
 }
 
-import { alignSameNetTraces } from "./alignSameNetTraces"
-import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
-import { is4PointRectangle } from "./is4PointRectangle"
-
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
   | "untangling_traces"
-  | "aligning_same_net_traces"
   | "minimizing_turns"
   | "balancing_l_shapes"
 
@@ -68,10 +65,10 @@ export class TraceCleanupSolver extends BaseSolver {
         this.outputTraces = output.traces
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
-        this.pipelineStep = "aligning_same_net_traces"
+        this.pipelineStep = "minimizing_turns"
       } else if (this.activeSubSolver.failed) {
         this.activeSubSolver = null
-        this.pipelineStep = "aligning_same_net_traces"
+        this.pipelineStep = "minimizing_turns"
       }
       return
     }
@@ -79,9 +76,6 @@ export class TraceCleanupSolver extends BaseSolver {
     switch (this.pipelineStep) {
       case "untangling_traces":
         this._runUntangleTracesStep()
-        break
-      case "aligning_same_net_traces":
-        this._runAlignSameNetTracesStep()
         break
       case "minimizing_turns":
         this._runMinimizeTurnsStep()
@@ -97,12 +91,6 @@ export class TraceCleanupSolver extends BaseSolver {
       ...this.input,
       allTraces: Array.from(this.tracesMap.values()),
     })
-  }
-
-  private _runAlignSameNetTracesStep() {
-    this.outputTraces = alignSameNetTraces(this.outputTraces)
-    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
-    this.pipelineStep = "minimizing_turns"
   }
 
   private _runMinimizeTurnsStep() {

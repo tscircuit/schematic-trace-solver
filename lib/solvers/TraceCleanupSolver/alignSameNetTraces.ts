@@ -7,7 +7,7 @@ import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTrac
  */
 export const alignSameNetTraces = (
   traces: SolvedTracePath[],
-  options: { snapThreshold?: number } = {}
+  options: { snapThreshold?: number } = {},
 ): SolvedTracePath[] => {
   const EPS = options.snapThreshold ?? 0.3
   const COORD_EPS = 1e-6
@@ -48,7 +48,7 @@ export const alignSameNetTraces = (
             p1,
             p2,
             isVert,
-            len: isVert ? Math.abs(p1.y - p2.y) : Math.abs(p1.x - p2.x)
+            len: isVert ? Math.abs(p1.y - p2.y) : Math.abs(p1.x - p2.x),
           })
         }
       }
@@ -68,20 +68,35 @@ export const alignSameNetTraces = (
           const pos = seg.isVert ? seg.p1.x : seg.p1.y
           if (Math.abs(cluster.avgPos - pos) < EPS) {
             // Check for 1D overlap or near-proximity along the shared axis
-            const sMin = seg.isVert ? Math.min(seg.p1.y, seg.p2.y) : Math.min(seg.p1.x, seg.p2.x)
-            const sMax = seg.isVert ? Math.max(seg.p1.y, seg.p2.y) : Math.max(seg.p1.x, seg.p2.x)
-            
-            const overlaps = cluster.segments.some(cs => {
-              const csMin = cs.isVert ? Math.min(cs.p1.y, cs.p2.y) : Math.min(cs.p1.x, cs.p2.x)
-              const csMax = cs.isVert ? Math.max(cs.p1.y, cs.p2.y) : Math.max(cs.p1.x, cs.p2.x)
+            const sMin = seg.isVert
+              ? Math.min(seg.p1.y, seg.p2.y)
+              : Math.min(seg.p1.x, seg.p2.x)
+            const sMax = seg.isVert
+              ? Math.max(seg.p1.y, seg.p2.y)
+              : Math.max(seg.p1.x, seg.p2.x)
+
+            const overlaps = cluster.segments.some((cs) => {
+              const csMin = cs.isVert
+                ? Math.min(cs.p1.y, cs.p2.y)
+                : Math.min(cs.p1.x, cs.p2.x)
+              const csMax = cs.isVert
+                ? Math.max(cs.p1.y, cs.p2.y)
+                : Math.max(cs.p1.x, cs.p2.x)
               return Math.min(sMax, csMax) - Math.max(sMin, csMin) > -EPS
             })
 
             if (overlaps) {
               cluster.segments.push(seg)
               // Recompute weighted average
-              const totalLen = cluster.segments.reduce((acc, s) => acc + s.len, 0)
-              cluster.avgPos = cluster.segments.reduce((acc, s) => acc + (s.isVert ? s.p1.x : s.p1.y) * s.len, 0) / totalLen
+              const totalLen = cluster.segments.reduce(
+                (acc, s) => acc + s.len,
+                0,
+              )
+              cluster.avgPos =
+                cluster.segments.reduce(
+                  (acc, s) => acc + (s.isVert ? s.p1.x : s.p1.y) * s.len,
+                  0,
+                ) / totalLen
               added = true
               break
             }
@@ -92,7 +107,7 @@ export const alignSameNetTraces = (
         clusters.push({
           isVert: seg.isVert,
           segments: [seg],
-          avgPos: seg.isVert ? seg.p1.x : seg.p1.y
+          avgPos: seg.isVert ? seg.p1.x : seg.p1.y,
         })
       }
     }

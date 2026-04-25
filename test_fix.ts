@@ -6,17 +6,17 @@ const mockTraces = [
     globalConnNetId: "GND",
     tracePath: [
       { x: 0, y: 0 },
-      { x: 0, y: 1 }
-    ]
+      { x: 0, y: 1 },
+    ],
   },
   {
     mspPairId: "trace2",
     globalConnNetId: "GND",
     tracePath: [
       { x: 0.1, y: 0.5 },
-      { x: 0.1, y: 1.5 }
-    ]
-  }
+      { x: 0.1, y: 1.5 },
+    ],
+  },
 ]
 
 console.log("Before:", JSON.stringify(mockTraces, null, 2))
