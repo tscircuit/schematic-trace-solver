@@ -16,10 +16,7 @@
       "globalConnNetId": "GND",
       "userNetId": "GND",
       "pins": [],
-      "tracePath": [
-        { "x": 0, "y": 0 },
-        { "x": 10, "y": 0 }
-      ],
+      "tracePath": [{ "x": 0, "y": 0 }, { "x": 10, "y": 0 }],
       "mspConnectionPairIds": ["P1-P2"],
       "pinIds": ["P1", "P2"]
     },
@@ -28,10 +25,7 @@
       "globalConnNetId": "GND",
       "userNetId": "GND",
       "pins": [],
-      "tracePath": [
-        { "x": 10.01, "y": 0 },
-        { "x": 20, "y": 0 }
-      ],
+      "tracePath": [{ "x": 10.01, "y": 0 }, { "x": 20, "y": 0 }],
       "mspConnectionPairIds": ["P2-P3"],
       "pinIds": ["P2", "P3"]
     }

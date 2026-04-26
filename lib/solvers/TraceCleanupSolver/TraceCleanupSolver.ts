@@ -26,6 +26,7 @@ import { is4PointRectangle } from "./is4PointRectangle"
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
   | "merging_traces"
@@ -109,15 +110,18 @@ export class TraceCleanupSolver extends BaseSolver {
           if (processedIndices.has(j)) continue
           const otherTrace = traces[j]!
 
-          if (currentTrace.globalConnNetId !== otherTrace.globalConnNetId) continue
+          if (currentTrace.globalConnNetId !== otherTrace.globalConnNetId)
+            continue
 
           // Check if they can be merged
           const p1Start = currentTrace.tracePath[0]!
-          const p1End = currentTrace.tracePath[currentTrace.tracePath.length - 1]!
+          const p1End =
+            currentTrace.tracePath[currentTrace.tracePath.length - 1]!
           const p2Start = otherTrace.tracePath[0]!
           const p2End = otherTrace.tracePath[otherTrace.tracePath.length - 1]!
 
-          const dist = (pt1: any, pt2: any) => Math.sqrt((pt1.x - pt2.x) ** 2 + (pt1.y - pt2.y) ** 2)
+          const dist = (pt1: any, pt2: any) =>
+            Math.sqrt((pt1.x - pt2.x) ** 2 + (pt1.y - pt2.y) ** 2)
           const threshold = 0.05 // Standard threshold
 
           let mergedPath: any[] | null = null
@@ -126,9 +130,15 @@ export class TraceCleanupSolver extends BaseSolver {
           } else if (dist(p1Start, p2End) < threshold) {
             mergedPath = [...otherTrace.tracePath, ...currentTrace.tracePath]
           } else if (dist(p1End, p2End) < threshold) {
-            mergedPath = [...currentTrace.tracePath, ...[...otherTrace.tracePath].reverse()]
+            mergedPath = [
+              ...currentTrace.tracePath,
+              ...[...otherTrace.tracePath].reverse(),
+            ]
           } else if (dist(p1Start, p2Start) < threshold) {
-            mergedPath = [...[...currentTrace.tracePath].reverse(), ...otherTrace.tracePath]
+            mergedPath = [
+              ...[...currentTrace.tracePath].reverse(),
+              ...otherTrace.tracePath,
+            ]
           }
 
           if (mergedPath) {
@@ -166,9 +176,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
       this.pipelineStep = "balancing_l_shapes"
-      this.traceIdQueue = Array.from(
-        this.outputTraces.map((e) => e.mspPairId),
-      )
+      this.traceIdQueue = Array.from(this.outputTraces.map((e) => e.mspPairId))
       return
     }
 
