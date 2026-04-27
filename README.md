@@ -109,3 +109,11 @@ only appear at certain iterations.
 
 1. `export BUN_UPDATE_SNAPSHOTS=1`
 2. `bun test`
+
+## 💰 Bounty Contribution
+
+- **Task:** Merge same-net trace lines that are close together (make at the same Y or same X
+- **Reward:** $100
+- **Source:** GitHub-Bounty
+- **Date:** 2026-04-28
+
