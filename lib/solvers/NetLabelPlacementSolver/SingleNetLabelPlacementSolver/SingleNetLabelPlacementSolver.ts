@@ -6,7 +6,7 @@ import type {
 import type { InputProblem, PinId } from "lib/types/InputProblem"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { FacingDirection } from "lib/utils/dir"
+import { dir, type FacingDirection } from "lib/utils/dir"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import {
@@ -110,9 +110,8 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       return
     }
 
-    // Handle port-only island (no traces) by placing a label at the port
     if (this.overlappingSameNetTraceGroup.portOnlyPinId) {
-      const res = solveNetLabelPlacementForPortOnlyPin({
+      const result = solveNetLabelPlacementForPortOnlyPin({
         inputProblem: this.inputProblem,
         inputTraceMap: this.inputTraceMap,
         chipObstacleSpatialIndex: this.chipObstacleSpatialIndex,
@@ -120,15 +119,14 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         availableOrientations: this.availableOrientations,
         netLabelWidth: this.netLabelWidth,
       })
-      this.testedCandidates.push(...res.testedCandidates)
-      if (res.placement) {
-        this.netLabelPlacement = res.placement
+      this.testedCandidates.push(...result.testedCandidates)
+      if (result.placement) {
+        this.netLabelPlacement = result.placement
         this.solved = true
         return
       }
       this.failed = true
-      this.error =
-        res.error ?? "Could not place net label at port without collisions"
+      this.error = result.error ?? "Could not place port-only net label"
       return
     }
 
@@ -239,14 +237,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
             )
 
             // Small outward offset to avoid counting the touching trace as a collision
-            const outward =
-              orientation === "x+"
-                ? { x: 1, y: 0 }
-                : orientation === "x-"
-                  ? { x: -1, y: 0 }
-                  : orientation === "y+"
-                    ? { x: 0, y: 1 }
-                    : { x: 0, y: -1 }
+            const outward = dir(orientation)
             const offset = 1e-4
             const testCenter = {
               x: center.x + outward.x * offset,

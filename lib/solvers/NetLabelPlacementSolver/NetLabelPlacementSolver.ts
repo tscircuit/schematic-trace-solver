@@ -8,7 +8,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
-import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import { computeOverlappingSameNetTraceGroups } from "./computeOverlappingSameNetTraceGroups"
 
 /**
  * A group of traces that have at least one overlapping segment and
@@ -53,6 +53,9 @@ export interface NetLabelPlacement {
    * and the orientation.
    */
   center: Point
+
+  /** Pin → anchor wire when the anchor sits off-pin. Undefined otherwise. */
+  netLabelTracePath?: Point[]
 }
 
 /**
@@ -85,169 +88,34 @@ export class NetLabelPlacementSolver extends BaseSolver {
     this.inputProblem = params.inputProblem
     this.inputTraceMap = params.inputTraceMap
 
-    this.overlappingSameNetTraceGroups =
-      this.computeOverlappingSameNetTraceGroups()
+    this.overlappingSameNetTraceGroups = computeOverlappingSameNetTraceGroups({
+      inputProblem: this.inputProblem,
+      inputTraceMap: this.inputTraceMap,
+    })
 
     this.queuedOverlappingSameNetTraceGroups = [
       ...this.overlappingSameNetTraceGroups,
     ]
   }
 
-  computeOverlappingSameNetTraceGroups(): Array<OverlappingSameNetTraceGroup> {
-    // Group existing traces by their global connectivity net id.
-    const byGlobal: Record<string, Array<SolvedTracePath>> = {}
-    for (const trace of Object.values(this.inputTraceMap)) {
-      const key = trace.globalConnNetId
-      if (!byGlobal[key]) byGlobal[key] = []
-      byGlobal[key].push(trace)
-    }
+  private getNetLabelWidth(group: OverlappingSameNetTraceGroup) {
+    if (!group.netId) return undefined
+    return this.inputProblem.netConnections.find(
+      (nc) => nc.netId === group.netId,
+    )?.netLabelWidth
+  }
 
-    // Build global connectivity from input so we also consider pins with no traces
-    const { netConnMap } = getConnectivityMapsFromInputProblem(
-      this.inputProblem,
-    )
-
-    const pinIdToPinMap = new Map<string, unknown>()
-    for (const chip of this.inputProblem.chips) {
-      for (const pin of chip.pins) {
-        pinIdToPinMap.set(pin.pinId, pin)
-      }
-    }
-
-    // Map pins to user-provided netIds (if any)
-    const userNetIdByPinId: Record<string, string | undefined> = {}
-    for (const dc of this.inputProblem.directConnections) {
-      if (dc.netId) {
-        const [a, b] = dc.pinIds
-        userNetIdByPinId[a] = dc.netId
-        userNetIdByPinId[b] = dc.netId
-      }
-    }
-    for (const nc of this.inputProblem.netConnections) {
-      for (const pid of nc.pinIds) {
-        userNetIdByPinId[pid] = nc.netId
-      }
-    }
-
-    const groups: Array<OverlappingSameNetTraceGroup> = []
-
-    const allPinIds = this.inputProblem.chips.flatMap((c) =>
-      c.pins.map((p) => p.pinId),
-    )
-
-    const allGlobalConnNetIds = new Set<string>()
-    for (const pinId of allPinIds) {
-      const netId = netConnMap.getNetConnectedToId(pinId)
-      if (netId) {
-        allGlobalConnNetIds.add(netId)
-      }
-    }
-
-    // Consider every global connectivity net id
-    for (const globalConnNetId of allGlobalConnNetIds) {
-      const allIdsInNet = netConnMap.getIdsConnectedToNet(
-        globalConnNetId,
-      ) as string[]
-      const pinsInNet = allIdsInNet.filter((id) => pinIdToPinMap.has(id))
-
-      // Build adjacency from solved traces (edges)
-      const adj: Record<string, Set<string>> = {}
-      for (const pid of pinsInNet) adj[pid] = new Set()
-      for (const t of byGlobal[globalConnNetId] ?? []) {
-        const a = t.pins[0].pinId
-        const b = t.pins[1].pinId
-        if (adj[a] && adj[b]) {
-          adj[a].add(b)
-          adj[b].add(a)
-        }
-      }
-
-      // Find connected components based on trace edges
-      const visited = new Set<string>()
-      for (const pid of pinsInNet) {
-        if (visited.has(pid)) continue
-        const stack = [pid]
-        const component = new Set<string>()
-        visited.add(pid)
-        while (stack.length > 0) {
-          const u = stack.pop()!
-          component.add(u)
-          for (const v of adj[u] ?? []) {
-            if (!visited.has(v)) {
-              visited.add(v)
-              stack.push(v)
-            }
-          }
-        }
-
-        // Collect traces fully inside this component
-        const compTraces = (byGlobal[globalConnNetId] ?? []).filter(
-          (t) =>
-            component.has(t.pins[0].pinId) && component.has(t.pins[1].pinId),
-        )
-
-        if (compTraces.length > 0) {
-          // Choose a representative trace (longest by L1 length)
-          const lengthOf = (path: SolvedTracePath) => {
-            let sum = 0
-            const pts = path.tracePath
-            for (let i = 0; i < pts.length - 1; i++) {
-              sum +=
-                Math.abs(pts[i + 1]!.x - pts[i]!.x) +
-                Math.abs(pts[i + 1]!.y - pts[i]!.y)
-            }
-            return sum
-          }
-          let rep = compTraces[0]!
-          let repLen = lengthOf(rep)
-          for (let i = 1; i < compTraces.length; i++) {
-            const len = lengthOf(compTraces[i]!)
-            if (len > repLen) {
-              rep = compTraces[i]!
-              repLen = len
-            }
-          }
-
-          let userNetId = compTraces.find((t) => t.userNetId != null)?.userNetId
-          if (!userNetId) {
-            for (const p of component) {
-              if (userNetIdByPinId[p]) {
-                userNetId = userNetIdByPinId[p]
-                break
-              }
-            }
-          }
-          const mspConnectionPairIds = Array.from(
-            new Set(
-              compTraces.flatMap(
-                (t) => t.mspConnectionPairIds ?? [t.mspPairId],
-              ),
-            ),
-          )
-
-          const group = {
-            globalConnNetId,
-            netId: userNetId,
-            overlappingTraces: rep,
-            mspConnectionPairIds,
-          }
-          groups.push(group)
-        } else {
-          // No traces in this component: place label at each pin that has a user net id
-          for (const p of component) {
-            const userNetId = userNetIdByPinId[p]
-            if (!userNetId) continue
-            groups.push({
-              globalConnNetId,
-              netId: userNetId,
-              portOnlyPinId: p,
-            })
-          }
-        }
-      }
-    }
-
-    return groups
+  private createSubSolverForGroup(
+    group: OverlappingSameNetTraceGroup,
+    availableOrientations: FacingDirection[],
+  ): SingleNetLabelPlacementSolver {
+    return new SingleNetLabelPlacementSolver({
+      inputProblem: this.inputProblem,
+      inputTraceMap: this.inputTraceMap,
+      overlappingSameNetTraceGroup: group,
+      availableOrientations,
+      netLabelWidth: this.getNetLabelWidth(group),
+    })
   }
 
   override _step() {
@@ -273,18 +141,10 @@ export class NetLabelPlacementSolver extends BaseSolver {
         this.currentGroup
       ) {
         this.triedAnyOrientationFallbackForCurrentGroup = true
-        const netLabelWidth = this.currentGroup.netId
-          ? this.inputProblem.netConnections.find(
-              (nc) => nc.netId === this.currentGroup!.netId,
-            )?.netLabelWidth
-          : undefined
-        this.activeSubSolver = new SingleNetLabelPlacementSolver({
-          inputProblem: this.inputProblem,
-          inputTraceMap: this.inputTraceMap,
-          overlappingSameNetTraceGroup: this.currentGroup,
-          availableOrientations: fullOrients,
-          netLabelWidth,
-        })
+        this.activeSubSolver = this.createSubSolverForGroup(
+          this.currentGroup,
+          fullOrients,
+        )
         return
       }
 
@@ -298,36 +158,25 @@ export class NetLabelPlacementSolver extends BaseSolver {
       return
     }
 
-    const nextOverlappingSameNetTraceGroup =
-      this.queuedOverlappingSameNetTraceGroups.shift()
-
-    if (!nextOverlappingSameNetTraceGroup) {
+    const nextGroup = this.queuedOverlappingSameNetTraceGroups.shift()
+    if (!nextGroup) {
       this.solved = true
       return
     }
 
-    const netId =
-      nextOverlappingSameNetTraceGroup.netId ??
-      nextOverlappingSameNetTraceGroup.globalConnNetId
-
-    this.currentGroup = nextOverlappingSameNetTraceGroup
+    const netId = nextGroup.netId ?? nextGroup.globalConnNetId
+    this.currentGroup = nextGroup
     this.triedAnyOrientationFallbackForCurrentGroup = false
 
-    const netLabelWidth = this.currentGroup.netId
-      ? this.inputProblem.netConnections.find(
-          (nc) => nc.netId === this.currentGroup!.netId,
-        )?.netLabelWidth
-      : undefined
-
-    this.activeSubSolver = new SingleNetLabelPlacementSolver({
-      inputProblem: this.inputProblem,
-      inputTraceMap: this.inputTraceMap,
-      overlappingSameNetTraceGroup: nextOverlappingSameNetTraceGroup,
-      availableOrientations: this.inputProblem.availableNetLabelOrientations[
-        netId
-      ] ?? ["x+", "x-", "y+", "y-"],
-      netLabelWidth,
-    })
+    this.activeSubSolver = this.createSubSolverForGroup(
+      nextGroup,
+      this.inputProblem.availableNetLabelOrientations[netId] ?? [
+        "x+",
+        "x-",
+        "y+",
+        "y-",
+      ],
+    )
   }
 
   override visualize(): GraphicsObject {

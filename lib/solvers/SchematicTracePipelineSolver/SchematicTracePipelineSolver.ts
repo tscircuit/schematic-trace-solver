@@ -20,6 +20,7 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { SinglePinNetLabelPlacementPipelineSolver } from "../SinglePinNetLabelPlacementPipelineSolver/SinglePinNetLabelPlacementPipelineSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -61,11 +62,11 @@ export interface SchematicTracePipelineSolverParams {
 
 export class SchematicTracePipelineSolver extends BaseSolver {
   mspConnectionPairSolver?: MspConnectionPairSolver
-  // guidelinesSolver?: GuidelinesSolver
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   longDistancePairSolver?: LongDistancePairSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
+  singlePinNetLabelPlacementPipelineSolver?: SinglePinNetLabelPlacementPipelineSolver
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
@@ -82,22 +83,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       "mspConnectionPairSolver",
       MspConnectionPairSolver,
       () => [{ inputProblem: this.inputProblem }],
-      {
-        onSolved: (mspSolver) => {},
-      },
     ),
-    // definePipelineStep(
-    //   "guidelinesSolver",
-    //   GuidelinesSolver,
-    //   () => [
-    //     {
-    //       inputProblem: this.inputProblem,
-    //     },
-    //   ],
-    //   {
-    //     onSolved: (guidelinesSolver) => {},
-    //   },
-    // ),
     definePipelineStep(
       "schematicTraceLinesSolver",
       SchematicTraceLinesSolver,
@@ -107,7 +93,6 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           dcConnMap: this.mspConnectionPairSolver!.dcConnMap,
           globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
           inputProblem: this.inputProblem,
-          // guidelines: this.guidelinesSolver!.guidelines,
           chipMap: this.mspConnectionPairSolver!.chipMap,
         },
       ],
@@ -124,9 +109,6 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             instance.schematicTraceLinesSolver!.solvedTracePaths,
         },
       ],
-      {
-        onSolved: (schematicTraceLinesSolver) => {},
-      },
     ),
     definePipelineStep(
       "traceOverlapShiftSolver",
@@ -139,54 +121,59 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
         },
       ],
-      {
-        onSolved: (_solver) => {},
-      },
     ),
     definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
-      () => [
+      (instance) => [
         {
-          inputProblem: this.inputProblem,
-          inputTraceMap:
-            this.traceOverlapShiftSolver?.correctedTraceMap ??
-            Object.fromEntries(
-              this.longDistancePairSolver!.getOutput().allTracesMerged.map(
-                (p) => [p.mspPairId, p],
-              ),
-            ),
+          inputProblem: instance.inputProblem,
+          inputTraceMap: instance.getPreLabelTraceMap(),
+        },
+      ],
+    ),
+    definePipelineStep(
+      "singlePinNetLabelPlacementPipelineSolver",
+      SinglePinNetLabelPlacementPipelineSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          inputTraceMap: instance.getPreLabelTraceMap(),
+          existingPlacements:
+            instance.netLabelPlacementSolver!.netLabelPlacements,
         },
       ],
       {
-        onSolved: (_solver) => {
-          // TODO
+        // Replace the colliding port-only placements that NetLabelPlacementSolver
+        // already produced with the re-processed ones from this pipeline.
+        onSolved: (instance) => {
+          const placements =
+            instance.netLabelPlacementSolver!.netLabelPlacements
+          for (const newPlacement of instance.singlePinNetLabelPlacementPipelineSolver!
+            .placements) {
+            const pinId = newPlacement.pinIds[0]
+            const existingIdx = placements.findIndex(
+              (p) => p.pinIds.length === 1 && p.pinIds[0] === pinId,
+            )
+            if (existingIdx >= 0) placements[existingIdx] = newPlacement
+            else placements.push(newPlacement)
+          }
         },
       },
     ),
     definePipelineStep(
       "traceLabelOverlapAvoidanceSolver",
       TraceLabelOverlapAvoidanceSolver,
-      (instance) => {
-        const traceMap =
-          instance.traceOverlapShiftSolver?.correctedTraceMap ??
-          Object.fromEntries(
-            instance
-              .longDistancePairSolver!.getOutput()
-              .allTracesMerged.map((p) => [p.mspPairId, p]),
-          )
-        const traces = Object.values(traceMap)
-        const netLabelPlacements =
-          instance.netLabelPlacementSolver!.netLabelPlacements
-
-        return [
-          {
-            inputProblem: instance.inputProblem,
-            traces,
-            netLabelPlacements,
-          },
-        ]
-      },
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          traces:
+            instance.singlePinNetLabelPlacementPipelineSolver!
+              .tracesWithSynthesized,
+          netLabelPlacements:
+            instance.netLabelPlacementSolver!.netLabelPlacements,
+        },
+      ],
     ),
     definePipelineStep("traceCleanupSolver", TraceCleanupSolver, (instance) => {
       const prevSolverOutput =
@@ -224,6 +211,41 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
+    definePipelineStep(
+      "singlePinNetLabelPlacementPipelineSolver",
+      SinglePinNetLabelPlacementPipelineSolver,
+      (instance) => {
+        const traces =
+          instance.traceCleanupSolver?.getOutput().traces ??
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            inputTraceMap: Object.fromEntries(
+              traces.map((trace: SolvedTracePath) => [trace.mspPairId, trace]),
+            ),
+            existingPlacements:
+              instance.netLabelPlacementSolver!.netLabelPlacements,
+          },
+        ]
+      },
+      {
+        onSolved: (instance) => {
+          const placements =
+            instance.netLabelPlacementSolver!.netLabelPlacements
+          for (const newPlacement of instance.singlePinNetLabelPlacementPipelineSolver!
+            .placements) {
+            const pinId = newPlacement.pinIds[0]
+            const existingIdx = placements.findIndex(
+              (p) => p.pinIds.length === 1 && p.pinIds[0] === pinId,
+            )
+            if (existingIdx >= 0) placements[existingIdx] = newPlacement
+            else placements.push(newPlacement)
+          }
+        },
+      },
+    ),
   ]
 
   constructor(inputProblem: InputProblem) {
@@ -243,6 +265,23 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   }
 
   currentPipelineStepIndex = 0
+
+  /**
+   * Trace map fed into the 1st NetLabelPlacementSolver and the
+   * NetLabelTraceSynthesisSolver. Prefers the trace-overlap-shifted traces
+   * when available; otherwise falls back to long-distance-pair output.
+   */
+  private getPreLabelTraceMap(): Record<string, SolvedTracePath> {
+    if (this.traceOverlapShiftSolver?.correctedTraceMap) {
+      return this.traceOverlapShiftSolver.correctedTraceMap
+    }
+    return Object.fromEntries(
+      this.longDistancePairSolver!.getOutput().allTracesMerged.map((p) => [
+        p.mspPairId,
+        p,
+      ]),
+    )
+  }
 
   private cloneAndCorrectInputProblem(original: InputProblem): InputProblem {
     const cloned: InputProblem = structuredClone({
