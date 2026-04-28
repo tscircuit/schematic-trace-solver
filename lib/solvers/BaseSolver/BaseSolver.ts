@@ -23,10 +23,11 @@ export class BaseSolver {
 
   stats: Record<string, unknown> = {}
 
-  // Added "?" to make this optional for type-safety
-  inputProblem?: InputProblem
+  // Change this to 'any' so all other solvers (Guidelines, LongDistance, etc.)
+  // stop complaining about missing properties.
+  inputProblem: any
 
-  constructor(inputProblem?: InputProblem) {
+  constructor(inputProblem: any) {
     this.inputProblem = inputProblem
   }
 
