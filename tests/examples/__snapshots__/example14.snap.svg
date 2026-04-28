@@ -98,11 +98,11 @@ orientation: y+" data-x="2.2" data-y="0.30000000000000004" cx="512.5" cy="265.31
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-1.5500000000000003" data-y="0.10000000000000003" cx="184.37499999999997" cy="282.8125" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: x-" data-x="-1.5000000000000004" data-y="0.7" cx="188.74999999999997" cy="230.3125" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="1.4755000000000003" data-y="-1.2944553500000002" cx="449.10625000000005" cy="404.827343125" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: x+" data-x="1.8010000000000004" data-y="-1.2944553500000002" cx="477.58750000000003" cy="404.827343125" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="-1.2000000000000002,0.10000000000000003 -1.9000000000000004,0.10000000000000002" data-type="line" data-label="" points="215,282.8125 153.74999999999997,282.8125" fill="none" stroke="hsl(296, 100%, 50%, 0.8)" stroke-width="1" />
@@ -171,6 +171,15 @@ orientation: y+" data-x="1.4755000000000003" data-y="-1.2944553500000002" cx="44
     <polyline data-points="1.2000000000000002,-1.2944553500000002 1.7510000000000003,-1.2944553500000002 1.7510000000000003,-0.10000000000000003 1.2000000000000002,-0.10000000000000003" data-type="line" data-label="" points="425,404.827343125 473.21250000000003,404.827343125 473.21250000000003,300.3125 425,300.3125" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
+    <polyline data-points="-1.5500000000000003,0.10000000000000003 -1.3500000000000003,0.10000000000000003 -1.4000000000000004,0.10000000000000003" data-type="line" data-label="" points="184.37499999999997,282.8125 201.87499999999997,282.8125 197.49999999999997,282.8125" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="1.7510000000000003,-1.2944553500000002 1.8010000000000004,-1.2944553500000002" data-type="line" data-label="" points="473.21250000000003,404.827343125 477.58750000000003,404.827343125" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="-1.4000000000000004,0.10000000000000003 -1.4500000000000004,0.10000000000000003 -1.4500000000000004,0.7 -1.5000000000000004,0.7" data-type="line" data-label="" points="197.49999999999997,282.8125 193.12499999999997,282.8125 193.12499999999997,230.3125 188.74999999999997,230.3125" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
     <rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="215" y="247.8125" width="210" height="87.5" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.011428571428571429" />
   </g>
   <g>
@@ -214,11 +223,11 @@ globalConnNetId: connectivity_net5" data-x="2.2" data-y="0.525" x="503.75" y="22
   </g>
   <g>
     <rect data-type="rect" data-label="netId: U1.CTRL to C2.pin1
-globalConnNetId: connectivity_net0" data-x="-1.5500000000000003" data-y="0.32500000000000007" x="175.62499999999997" y="243.4375" width="17.50000000000003" height="39.375" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.011428571428571429" />
+globalConnNetId: connectivity_net0" data-x="-1.7250000000000005" data-y="0.7" x="149.37499999999994" y="221.5625" width="39.37500000000003" height="17.5" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.011428571428571429" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: U1.DISCH to R2.pin1
-globalConnNetId: connectivity_net2" data-x="1.4755000000000003" data-y="-1.0694553500000001" x="440.35625000000005" y="365.452343125" width="17.5" height="39.375" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.011428571428571429" />
+globalConnNetId: connectivity_net2" data-x="2.0260000000000002" data-y="-1.2944553500000002" x="477.5875" y="396.077343125" width="39.375000000000114" height="17.5" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.011428571428571429" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
