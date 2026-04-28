@@ -9,69 +9,67 @@ export type InputProblem = {
 }
 
 export class BaseSolver {
-  MAX_ITERATIONS = 100e3
+  MAX_ITERATIONS = 100e3;
 
-  solved = false
-  failed = false
-  iterations = 0
-  progress = 0
+  solved = false;
+  failed = false;
+  iterations = 0;
+  progress = 0;
 
-  error: string | null = null
-  activeSubSolver?: BaseSolver | null
-  failedSubSolvers?: BaseSolver[]
-  timeToSolve?: number
+  error: string | null = null;
+  activeSubSolver?: BaseSolver | null;
+  failedSubSolvers?: BaseSolver[];
+  timeToSolve?: number;
 
-  stats: Record<string, unknown> = {}
+  stats: Record<string, unknown> = {};
 
-  // ✅ properly typed
-  inputProblem: InputProblem
-
-  constructor(inputProblem: InputProblem) {
-    this.inputProblem = inputProblem
+  inputProblem?: any;
+  constructor(inputProblem: any) {
+    this.inputProblem = inputProblem;
   }
 
   step(): void {
-    if (this.solved || this.failed) return
+    if (this.solved || this.failed) return;
 
-    this.iterations++
+    this.iterations++;
 
     try {
-      this._step()
+      this._step();
     } catch (e) {
-      this.error = `${this.constructor.name} error: ${String(e)}`
-      this.failed = true
-      throw e
+      this.error = `${this.constructor.name} error: ${String(e)}`;
+      this.failed = true;
+      throw e;
     }
 
     if (!this.solved && this.iterations > this.MAX_ITERATIONS) {
-      this.tryFinalAcceptance()
+      this.tryFinalAcceptance();
     }
 
     if (!this.solved && this.iterations > this.MAX_ITERATIONS) {
-      this.error = `${this.constructor.name} ran out of iterations`
-      this.failed = true
+      this.error = `${this.constructor.name} ran out of iterations`;
+      this.failed = true;
     }
 
     if (this.hasComputeProgress()) {
-      this.progress = this.computeProgress()
+      this.progress = this.computeProgress();
     }
   }
 
   protected _step(): void {}
 
   getConstructorParams(): unknown {
-    throw new Error("getConstructorParams not implemented")
+    throw new Error("getConstructorParams not implemented");
   }
 
   solve(): void {
-    const startTime = Date.now()
+    const startTime = Date.now();
 
     while (!this.solved && !this.failed) {
-      this.step()
+      this.step();
     }
 
-    const endTime = Date.now()
-    this.timeToSolve = endTime - startTime
+    const endTime = Date.now();
+    this.timeToSolve = endTime - startTime;
   }
 
   visualize(): GraphicsObject {
@@ -80,7 +78,7 @@ export class BaseSolver {
       points: [],
       rects: [],
       circles: [],
-    }
+    };
   }
 
   tryFinalAcceptance(): void {}
@@ -91,12 +89,12 @@ export class BaseSolver {
       points: [],
       rects: [],
       circles: [],
-    }
+    };
   }
 
   private hasComputeProgress(): this is this & {
-    computeProgress: () => number
+    computeProgress: () => number;
   } {
-    return typeof (this as any).computeProgress === "function"
+    return typeof (this as any).computeProgress === "function";
   }
 }
