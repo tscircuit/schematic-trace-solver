@@ -1,5 +1,5 @@
-import type { Point } from "@tscircuit/math-utils";
-import { segmentToBoxMinDistance } from "@tscircuit/math-utils";
+import type { Point } from "@tscircuit/math-utils"
+import { segmentToBoxMinDistance } from "@tscircuit/math-utils"
 
 /**
  * Checks if a given path (series of segments) collides with any of the provided obstacles.
@@ -11,8 +11,8 @@ export const hasCollisions = (
 ): boolean => {
   // Check each segment of the path
   for (let i = 0; i < pathSegments.length - 1; i++) {
-    const p1 = pathSegments[i];
-    const p2 = pathSegments[i + 1];
+    const p1 = pathSegments[i]
+    const p2 = pathSegments[i + 1]
 
     // Check collision with each obstacle
     for (const obstacle of obstacles) {
@@ -23,12 +23,12 @@ export const hasCollisions = (
         },
         width: obstacle.maxX - obstacle.minX,
         height: obstacle.maxY - obstacle.minY,
-      };
+      }
       if (segmentToBoxMinDistance(p1, p2, box) <= 0) {
-        return true;
+        return true
       }
     }
   }
 
-  return false;
-};
+  return false
+}

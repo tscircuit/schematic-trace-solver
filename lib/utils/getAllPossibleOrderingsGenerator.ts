@@ -33,15 +33,15 @@ export function* getAllPossibleOrderingsGenerator<T>(
   items: T[],
 ): Generator<T[], void, void> {
   if (items.length === 0) {
-    yield [];
-    return;
+    yield []
+    return
   }
 
   for (let i = 0; i < items.length; i++) {
-    const head = items[i];
-    const rest = items.slice(0, i).concat(items.slice(i + 1));
+    const head = items[i]
+    const rest = items.slice(0, i).concat(items.slice(i + 1))
     for (const tail of getAllPossibleOrderingsGenerator(rest)) {
-      yield [head, ...tail];
+      yield [head, ...tail]
     }
   }
 }
