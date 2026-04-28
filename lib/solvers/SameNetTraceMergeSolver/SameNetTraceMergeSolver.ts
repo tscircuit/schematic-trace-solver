@@ -1,80 +1,76 @@
-import { BaseSolver } from "../BaseSolver/BaseSolver"
-
+import { BaseSolver } from "../BaseSolver/BaseSolver";
+import type { InputProblem } from "../BaseSolver/BaseSolver";
 type Point = {
-  x: number
-  y: number
-}
+  x: number;
+  y: number;
+};
 
 type Edge = {
-  from: Point
-  to: Point
-}
+  from: Point;
+  to: Point;
+};
 
 type Trace = {
-  source_net_id: string
-  edges: Edge[]
-}
+  source_net_id: string;
+  edges: Edge[];
+};
 
-export interface SameNetTraceMergeSolverParams {
-  allTraces: Trace[]
-  directConnections: unknown[]
-  chips: unknown[]
-  components: unknown[]
-  obstacles: unknown[]
+export interface SameNetTraceMergeSolverParams extends InputProblem {
+  allTraces: Trace[];
 }
 
 export class SameNetTraceMergeSolver extends BaseSolver {
-  traces: Trace[]
+  traces: Trace[];
 
-  override solved = false
-  override failed = false
+  override solved = false;
+  override failed = false;
 
   constructor(params: SameNetTraceMergeSolverParams) {
-    super(params)
-    this.traces = params.allTraces
+    super(params);
+    this.traces = params.allTraces;
   }
 
   override _step(): void {
-    const threshold = 0.1
-    const mergedTraces: Trace[] = []
+    const threshold = 0.1;
+    const mergedTraces: Trace[] = [];
 
     if (!this.traces) {
-      this.solved = true
-      return
+      this.solved = true;
+      return;
     }
 
     for (const trace of this.traces) {
-      const edges: Edge[] = [...(trace.edges || [])]
-      let changed = true
+      const edges: Edge[] = [...(trace.edges || [])];
+      let changed = true;
 
       while (changed) {
-        changed = false
+        changed = false;
 
         for (let i = 0; i < edges.length; i++) {
           for (let j = i + 1; j < edges.length; j++) {
-            const segA = edges[i]
-            const segB = edges[j]
+            const segA = edges[i];
+            const segB = edges[j];
 
-            const isAHoriz = Math.abs(segA.from.y - segA.to.y) < 0.001
-            const isBHoriz = Math.abs(segB.from.y - segB.to.y) < 0.001
+            const isAHoriz = Math.abs(segA.from.y - segA.to.y) < 0.001;
+            const isBHoriz = Math.abs(segB.from.y - segB.to.y) < 0.001;
 
-            const isAVert = Math.abs(segA.from.x - segA.to.x) < 0.001
-            const isBVert = Math.abs(segB.from.x - segB.to.x) < 0.001
+            const isAVert = Math.abs(segA.from.x - segA.to.x) < 0.001;
+            const isBVert = Math.abs(segB.from.x - segB.to.x) < 0.001;
 
-            let shouldMerge = false
+            let shouldMerge = false;
 
             if (
               isAHoriz &&
               isBHoriz &&
               Math.abs(segA.from.y - segB.from.y) < threshold
             ) {
-              shouldMerge = true
+              shouldMerge = true;
             } else if (
               isAVert &&
               isBVert &&
               Math.abs(segA.from.x - segB.from.x) < threshold
             ) {
-              shouldMerge = true
+              shouldMerge = true;
             }
 
             if (shouldMerge) {
@@ -87,27 +83,28 @@ export class SameNetTraceMergeSolver extends BaseSolver {
                   x: Math.max(segA.from.x, segA.to.x, segB.from.x, segB.to.x),
                   y: Math.max(segA.from.y, segA.to.y, segB.from.y, segB.to.y),
                 },
-              }
+              };
 
-              edges.splice(j, 1)
-              edges.splice(i, 1, newSeg)
+              edges.splice(j, 1);
+              edges.splice(i, 1, newSeg);
 
-              changed = true
-              break
+              changed = true;
+              break;
             }
           }
-          if (changed) break
+
+          if (changed) break;
         }
       }
 
-      mergedTraces.push({ ...trace, edges })
+      mergedTraces.push({ ...trace, edges });
     }
 
-    this.traces = mergedTraces
-    this.solved = true
+    this.traces = mergedTraces;
+    this.solved = true;
   }
 
   getOutput(): { traces: Trace[] } {
-    return { traces: this.traces }
+    return { traces: this.traces };
   }
 }

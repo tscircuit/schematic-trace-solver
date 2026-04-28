@@ -1,23 +1,23 @@
-import type { InputChip, InputProblem } from "lib/types/InputProblem"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import type { InputChip, InputProblem } from "lib/types/InputProblem";
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver";
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver";
 
 export function lengthOfTrace(path: SolvedTracePath): number {
-  let sum = 0
-  const pts = path.tracePath
+  let sum = 0;
+  const pts = path.tracePath;
   for (let i = 0; i < pts.length - 1; i++) {
     sum +=
-      Math.abs(pts[i + 1]!.x - pts[i]!.x) + Math.abs(pts[i + 1]!.y - pts[i]!.y)
+      Math.abs(pts[i + 1]!.x - pts[i]!.x) + Math.abs(pts[i + 1]!.y - pts[i]!.y);
   }
-  return sum
+  return sum;
 }
 
 export function chooseHostTraceForGroup(params: {
-  inputProblem: InputProblem
-  inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
-  globalConnNetId: string
-  fallbackTrace?: SolvedTracePath
-  mspConnectionPairIds?: MspConnectionPairId[]
+  inputProblem: InputProblem;
+  inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>;
+  globalConnNetId: string;
+  fallbackTrace?: SolvedTracePath;
+  mspConnectionPairIds?: MspConnectionPairId[];
 }): SolvedTracePath | undefined {
   const {
     inputProblem,
@@ -25,35 +25,35 @@ export function chooseHostTraceForGroup(params: {
     globalConnNetId,
     fallbackTrace,
     mspConnectionPairIds,
-  } = params
+  } = params;
   const chipsById: Record<string, InputChip> = Object.fromEntries(
     inputProblem.chips.map((c) => [c.chipId, c]),
-  )
+  );
 
   let groupTraces = Object.values(inputTraceMap).filter(
     (t) => t.globalConnNetId === globalConnNetId,
-  )
+  );
 
   if (mspConnectionPairIds && mspConnectionPairIds.length > 0) {
-    const idSet = new Set(mspConnectionPairIds)
+    const idSet = new Set(mspConnectionPairIds);
     groupTraces = groupTraces.filter((t) =>
       t.mspConnectionPairIds.some((id) => idSet.has(id)),
-    )
+    );
   }
-  const chipIdsInGroup = new Set<string>()
+  const chipIdsInGroup = new Set<string>();
   for (const t of groupTraces) {
-    chipIdsInGroup.add(t.pins[0].chipId)
-    chipIdsInGroup.add(t.pins[1].chipId)
+    chipIdsInGroup.add(t.pins[0].chipId);
+    chipIdsInGroup.add(t.pins[1].chipId);
   }
 
-  let largestChipId: string | null = null
-  let largestPinCount = -1
+  let largestChipId: string | null = null;
+  let largestPinCount = -1;
   for (const id of chipIdsInGroup) {
-    const chip = chipsById[id]
-    const count = chip?.pins?.length ?? 0
+    const chip = chipsById[id];
+    const count = chip?.pins?.length ?? 0;
     if (count > largestPinCount) {
-      largestPinCount = count
-      largestChipId = id
+      largestPinCount = count;
+      largestChipId = id;
     }
   }
 
@@ -64,13 +64,13 @@ export function chooseHostTraceForGroup(params: {
           (t) =>
             t.pins[0].chipId === largestChipId ||
             t.pins[1].chipId === largestChipId,
-        )
+        );
 
   if (hostCandidates.length > 0) {
     return hostCandidates.reduce((a, b) =>
       lengthOfTrace(a) >= lengthOfTrace(b) ? a : b,
-    )
+    );
   }
 
-  return fallbackTrace
+  return fallbackTrace;
 }

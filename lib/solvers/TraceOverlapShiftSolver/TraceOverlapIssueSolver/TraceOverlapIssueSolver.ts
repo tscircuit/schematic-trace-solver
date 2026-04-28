@@ -1,34 +1,34 @@
-import type { GraphicsObject } from "graphics-debug"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { applyJogToTerminalSegment } from "./applyJogToTrace"
+import type { GraphicsObject } from "graphics-debug";
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver";
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver";
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver";
+import { applyJogToTerminalSegment } from "./applyJogToTrace";
 
-type ConnNetId = string
+type ConnNetId = string;
 
 export interface OverlappingTraceSegmentLocator {
-  connNetId: string
+  connNetId: string;
   pathsWithOverlap: Array<{
-    solvedTracePathIndex: number
-    traceSegmentIndex: number
-  }>
+    solvedTracePathIndex: number;
+    traceSegmentIndex: number;
+  }>;
 }
 
 export class TraceOverlapIssueSolver extends BaseSolver {
-  overlappingTraceSegments: OverlappingTraceSegmentLocator[]
-  traceNetIslands: Record<ConnNetId, Array<SolvedTracePath>>
+  overlappingTraceSegments: OverlappingTraceSegmentLocator[];
+  traceNetIslands: Record<ConnNetId, Array<SolvedTracePath>>;
 
-  SHIFT_DISTANCE = 0.1
+  SHIFT_DISTANCE = 0.1;
 
-  correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath> = {}
+  correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath> = {};
 
   constructor(params: {
-    overlappingTraceSegments: OverlappingTraceSegmentLocator[]
-    traceNetIslands: Record<ConnNetId, Array<SolvedTracePath>>
+    overlappingTraceSegments: OverlappingTraceSegmentLocator[];
+    traceNetIslands: Record<ConnNetId, Array<SolvedTracePath>>;
   }) {
-    super()
-    this.overlappingTraceSegments = params.overlappingTraceSegments
-    this.traceNetIslands = params.traceNetIslands
+    super();
+    this.overlappingTraceSegments = params.overlappingTraceSegments;
+    this.traceNetIslands = params.traceNetIslands;
 
     // Only add the relevant traces to the correctedTraceMap
     for (const { connNetId, pathsWithOverlap } of this
@@ -38,9 +38,9 @@ export class TraceOverlapIssueSolver extends BaseSolver {
         traceSegmentIndex,
       } of pathsWithOverlap) {
         const mspPairId =
-          this.traceNetIslands[connNetId][solvedTracePathIndex].mspPairId
+          this.traceNetIslands[connNetId][solvedTracePathIndex].mspPairId;
         this.correctedTraceMap[mspPairId] =
-          this.traceNetIslands[connNetId][solvedTracePathIndex]
+          this.traceNetIslands[connNetId][solvedTracePathIndex];
       }
     }
   }
@@ -49,50 +49,50 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     // Shift only the overlapping segments, and move the shared endpoints
     // (the last point of the previous segment and the first point of the next
     // segment) so the polyline remains orthogonal without self-overlap.
-    const EPS = 1e-6
+    const EPS = 1e-6;
 
     // Compute offsets for each island involved: alternate directions
     const offsets = this.overlappingTraceSegments.map((_, idx) => {
-      const n = Math.floor(idx / 2) + 1
-      const signed = idx % 2 === 0 ? -n : n
-      return signed * this.SHIFT_DISTANCE
-    })
+      const n = Math.floor(idx / 2) + 1;
+      const signed = idx % 2 === 0 ? -n : n;
+      return signed * this.SHIFT_DISTANCE;
+    });
 
-    const eq = (a: number, b: number) => Math.abs(a - b) < EPS
+    const eq = (a: number, b: number) => Math.abs(a - b) < EPS;
     const samePoint = (
       p: { x: number; y: number } | undefined,
       q: { x: number; y: number } | undefined,
-    ) => !!p && !!q && eq(p.x, q.x) && eq(p.y, q.y)
+    ) => !!p && !!q && eq(p.x, q.x) && eq(p.y, q.y);
 
     // For each net island group, shift only its overlapping segments and adjust adjacent joints
     this.overlappingTraceSegments.forEach((group, gidx) => {
-      const offset = offsets[gidx]!
+      const offset = offsets[gidx]!;
 
       // Gather unique segment indices per path
-      const byPath: Map<number, Set<number>> = new Map()
+      const byPath: Map<number, Set<number>> = new Map();
       for (const loc of group.pathsWithOverlap) {
         if (!byPath.has(loc.solvedTracePathIndex)) {
-          byPath.set(loc.solvedTracePathIndex, new Set())
+          byPath.set(loc.solvedTracePathIndex, new Set());
         }
-        byPath.get(loc.solvedTracePathIndex)!.add(loc.traceSegmentIndex)
+        byPath.get(loc.solvedTracePathIndex)!.add(loc.traceSegmentIndex);
       }
 
       for (const [pathIdx, segIdxSet] of byPath) {
-        const original = this.traceNetIslands[group.connNetId][pathIdx]!
-        const current = this.correctedTraceMap[original.mspPairId] ?? original
-        const pts = current.tracePath.map((p) => ({ ...p }))
+        const original = this.traceNetIslands[group.connNetId][pathIdx]!;
+        const current = this.correctedTraceMap[original.mspPairId] ?? original;
+        const pts = current.tracePath.map((p) => ({ ...p }));
 
-        const segIdxs = Array.from(segIdxSet).sort((a, b) => a - b)
+        const segIdxs = Array.from(segIdxSet).sort((a, b) => a - b);
 
         const segIdxsRev = Array.from(segIdxSet)
           .sort((a, b) => a - b)
-          .reverse()
+          .reverse();
 
-        const JOG_SIZE = this.SHIFT_DISTANCE
+        const JOG_SIZE = this.SHIFT_DISTANCE;
 
         // Process from end to start to keep indices valid after splicing
         for (const si of segIdxsRev) {
-          if (si < 0 || si >= pts.length - 1) continue
+          if (si < 0 || si >= pts.length - 1) continue;
 
           if (si === 0 || si === pts.length - 2) {
             applyJogToTerminalSegment({
@@ -101,45 +101,45 @@ export class TraceOverlapIssueSolver extends BaseSolver {
               offset,
               JOG_SIZE,
               EPS,
-            })
+            });
           } else {
             // Internal segment - shift both points
-            const start = pts[si]!
-            const end = pts[si + 1]!
-            const isVertical = Math.abs(start.x - end.x) < EPS
-            const isHorizontal = Math.abs(start.y - end.y) < EPS
-            if (!isVertical && !isHorizontal) continue
+            const start = pts[si]!;
+            const end = pts[si + 1]!;
+            const isVertical = Math.abs(start.x - end.x) < EPS;
+            const isHorizontal = Math.abs(start.y - end.y) < EPS;
+            if (!isVertical && !isHorizontal) continue;
 
             if (isVertical) {
-              start.x += offset
-              end.x += offset
+              start.x += offset;
+              end.x += offset;
             } else {
               // Horizontal
-              start.y += offset
-              end.y += offset
+              start.y += offset;
+              end.y += offset;
             }
           }
         }
 
         // Remove consecutive duplicate points that might appear after shifts
-        const cleaned: typeof pts = []
+        const cleaned: typeof pts = [];
         for (const p of pts) {
           if (
             cleaned.length === 0 ||
             !samePoint(cleaned[cleaned.length - 1], p)
           ) {
-            cleaned.push(p)
+            cleaned.push(p);
           }
         }
 
         this.correctedTraceMap[original.mspPairId] = {
           ...current,
           tracePath: cleaned,
-        }
+        };
       }
-    })
+    });
 
-    this.solved = true
+    this.solved = true;
   }
 
   override visualize(): GraphicsObject {
@@ -149,7 +149,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
       points: [],
       rects: [],
       circles: [],
-    }
+    };
 
     // Draw overlapped segments in red
     for (const group of this.overlappingTraceSegments) {
@@ -158,13 +158,13 @@ export class TraceOverlapIssueSolver extends BaseSolver {
         traceSegmentIndex,
       } of group.pathsWithOverlap) {
         const path =
-          this.traceNetIslands[group.connNetId][solvedTracePathIndex]!
-        const segStart = path.tracePath[traceSegmentIndex]!
-        const segEnd = path.tracePath[traceSegmentIndex + 1]!
+          this.traceNetIslands[group.connNetId][solvedTracePathIndex]!;
+        const segStart = path.tracePath[traceSegmentIndex]!;
+        const segEnd = path.tracePath[traceSegmentIndex + 1]!;
         graphics.lines!.push({
           points: [segStart, segEnd],
           strokeColor: "red",
-        })
+        });
       }
     }
 
@@ -174,9 +174,9 @@ export class TraceOverlapIssueSolver extends BaseSolver {
         points: trace.tracePath,
         strokeColor: "blue",
         strokeDash: "4 2",
-      })
+      });
     }
 
-    return graphics
+    return graphics;
   }
 }
