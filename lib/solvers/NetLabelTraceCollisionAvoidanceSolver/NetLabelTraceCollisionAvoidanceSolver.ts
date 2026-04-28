@@ -26,6 +26,34 @@ interface NetLabelTraceCollisionAvoidanceSolverInput {
 type PinWithChipId = InputPin & { chipId: string }
 type LabelTraceOverlapKind = "flat" | "intersects"
 type CollisionAvoidancePhase = "trace-collisions" | "label-collisions"
+type CandidateStatus = "accepted" | "rejected"
+type CandidateRejectReason =
+  | "chip-collision"
+  | "label-collision"
+  | "trace-collision"
+  | "connector-chip-collision"
+  | "connector-label-collision"
+  | "no-connector"
+type RelocationKind = "y-shift" | "outward"
+type RelocationCandidate = {
+  label: NetLabelPlacement
+  connectorPath: Point[] | null
+  kind: RelocationKind
+}
+type RelocationCandidateAttempt = RelocationCandidate & {
+  labelIndex: number
+  originalLabel: NetLabelPlacement
+  phase: CollisionAvoidancePhase
+  status: CandidateStatus
+  rejectReason?: CandidateRejectReason
+}
+type RelocationSearchState = {
+  labelIndex: number
+  originalLabel: NetLabelPlacement
+  phase: CollisionAvoidancePhase
+  candidates: RelocationCandidate[]
+  candidateIndex: number
+}
 const NET_LABEL_WICK_LENGTH = 0.05
 
 function rectsOverlap(
@@ -46,6 +74,7 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
   outputTraces: SolvedTracePath[]
   outputNetLabelPlacements: NetLabelPlacement[]
   movedNetLabelIds = new Set<string>()
+  candidateAttempts: RelocationCandidateAttempt[] = []
   currentPhase: CollisionAvoidancePhase = "trace-collisions"
   currentLabelIndex: number | null = null
 
@@ -54,6 +83,7 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
   private chipMap = new Map<string, InputChip>()
   private labelsOnTraceQueue: number[] | null = null
   private collidingLabelQueue: number[] | null = null
+  private relocationSearchState: RelocationSearchState | null = null
 
   constructor(params: NetLabelTraceCollisionAvoidanceSolverInput) {
     super()
@@ -90,29 +120,26 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
         this.labelsOnTraceQueue = this.getEligibleLabelsOnTraceIndexes()
       }
 
-      const labelIndex = this.labelsOnTraceQueue.shift()
-      if (labelIndex === undefined) {
-        this.currentPhase = "label-collisions"
-        this.currentLabelIndex = null
-        return
+      if (!this.relocationSearchState) {
+        const labelIndex = this.labelsOnTraceQueue.shift()
+        if (labelIndex === undefined) {
+          this.currentPhase = "label-collisions"
+          this.currentLabelIndex = null
+          return
+        }
+
+        const label = this.outputNetLabelPlacements[labelIndex]!
+        this.currentLabelIndex = labelIndex
+        this.relocationSearchState = {
+          labelIndex,
+          originalLabel: label,
+          phase: this.currentPhase,
+          candidates: this.getYShiftedLabelPlacementCandidates(label),
+          candidateIndex: 0,
+        }
       }
 
-      this.currentLabelIndex = labelIndex
-      const label = this.outputNetLabelPlacements[labelIndex]!
-      const moved = this.findYShiftedLabelPlacement(label, labelIndex)
-      if (moved) {
-        const connectorTrace = this.createConnectorTrace({
-          label,
-          tracePath: moved.connectorPath,
-          index: this.outputTraces.length,
-        })
-        this.outputNetLabelPlacements[labelIndex] = this.addTraceIdToLabel(
-          moved.label,
-          connectorTrace.mspPairId,
-        )
-        this.movedNetLabelIds.add(label.globalConnNetId)
-        this.outputTraces.push(connectorTrace)
-      }
+      this.evaluateNextRelocationCandidate()
       return
     }
 
@@ -120,29 +147,26 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
       this.collidingLabelQueue = this.getEligibleCollidingLabelIndexes()
     }
 
-    const labelIndex = this.collidingLabelQueue.shift()
-    if (labelIndex === undefined) {
-      this.currentLabelIndex = null
-      this.solved = true
-      return
+    if (!this.relocationSearchState) {
+      const labelIndex = this.collidingLabelQueue.shift()
+      if (labelIndex === undefined) {
+        this.currentLabelIndex = null
+        this.solved = true
+        return
+      }
+
+      const label = this.outputNetLabelPlacements[labelIndex]!
+      this.currentLabelIndex = labelIndex
+      this.relocationSearchState = {
+        labelIndex,
+        originalLabel: label,
+        phase: this.currentPhase,
+        candidates: this.getMovedLabelPlacementCandidates(label),
+        candidateIndex: 0,
+      }
     }
 
-    this.currentLabelIndex = labelIndex
-    const label = this.outputNetLabelPlacements[labelIndex]!
-    const moved = this.findMovedLabelPlacement(label, labelIndex)
-    if (moved) {
-      const connectorTrace = this.createConnectorTrace({
-        label,
-        tracePath: moved.connectorPath,
-        index: this.outputTraces.length,
-      })
-      this.outputNetLabelPlacements[labelIndex] = this.addTraceIdToLabel(
-        moved.label,
-        connectorTrace.mspPairId,
-      )
-      this.movedNetLabelIds.add(label.globalConnNetId)
-      this.outputTraces.push(connectorTrace)
-    }
+    this.evaluateNextRelocationCandidate()
   }
 
   computeProgress() {
@@ -247,12 +271,50 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
     return null
   }
 
-  private findMovedLabelPlacement(
-    label: NetLabelPlacement,
-    labelIndex: number,
-  ) {
+  private evaluateNextRelocationCandidate() {
+    const searchState = this.relocationSearchState
+    if (!searchState) return
+
+    const candidate = searchState.candidates[searchState.candidateIndex++]
+    if (!candidate) {
+      this.relocationSearchState = null
+      this.currentLabelIndex = null
+      return
+    }
+
+    const rejectReason = this.getRelocationRejectReason(
+      searchState.originalLabel,
+      candidate,
+      searchState.labelIndex,
+    )
+    const attempt: RelocationCandidateAttempt = {
+      ...candidate,
+      labelIndex: searchState.labelIndex,
+      originalLabel: searchState.originalLabel,
+      phase: searchState.phase,
+      status: rejectReason ? "rejected" : "accepted",
+      rejectReason: rejectReason ?? undefined,
+    }
+    this.candidateAttempts.push(attempt)
+
+    if (rejectReason) return
+
+    const connectorTrace = this.createConnectorTrace({
+      label: searchState.originalLabel,
+      tracePath: candidate.connectorPath!,
+      index: this.outputTraces.length,
+    })
+    this.outputNetLabelPlacements[searchState.labelIndex] =
+      this.addTraceIdToLabel(candidate.label, connectorTrace.mspPairId)
+    this.movedNetLabelIds.add(searchState.originalLabel.globalConnNetId)
+    this.outputTraces.push(connectorTrace)
+    this.relocationSearchState = null
+    this.currentLabelIndex = null
+  }
+
+  private getMovedLabelPlacementCandidates(label: NetLabelPlacement) {
     const chip = this.getAssociatedChip(label)
-    if (!chip) return null
+    if (!chip) return []
 
     const xDirection =
       label.center.x === chip.center.x
@@ -267,6 +329,7 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
     const xStep = Math.max(label.width / 2, 0.05)
     const yStep = Math.max(label.height / 2, 0.05)
     const yOffsets = this.getAlternatingOffsets(maxOutwardOffset, yStep)
+    const candidates: RelocationCandidate[] = []
 
     for (const yOffset of yOffsets) {
       for (
@@ -289,31 +352,24 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
           anchorPoint: nextAnchor,
           center: nextCenter,
         }
-        const connectorPath = this.getValidConnectorPath({
+        const connectorPath = this.getValidConnectorPathResult({
           label,
           movedLabel,
-          labelIndex,
-        })
+          labelIndex: this.currentLabelIndex ?? -1,
+        }).tracePath
 
-        if (
-          this.isValidLabelCandidate(label, labelIndex, nextCenter) &&
-          connectorPath
-        ) {
-          return {
-            label: movedLabel,
-            connectorPath,
-          }
-        }
+        candidates.push({
+          label: movedLabel,
+          connectorPath,
+          kind: "outward",
+        })
       }
     }
 
-    return null
+    return candidates
   }
 
-  private findYShiftedLabelPlacement(
-    label: NetLabelPlacement,
-    labelIndex: number,
-  ) {
+  private getYShiftedLabelPlacementCandidates(label: NetLabelPlacement) {
     const chip = this.getAssociatedChip(label)
     const maxYOffset = 6 * (chip?.height ?? Math.max(label.height, 0.5))
     const yStep = Math.max(label.height / 2, 0.05)
@@ -322,6 +378,7 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
       label.anchorPoint,
       label.orientation,
     )
+    const candidates: RelocationCandidate[] = []
 
     for (const yOffset of yOffsets) {
       const verticalSpineEnd = {
@@ -336,10 +393,6 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
         label.height,
       )
 
-      if (!this.isValidLabelCandidate(label, labelIndex, nextCenter)) {
-        continue
-      }
-
       const movedLabel = {
         ...label,
         anchorPoint: nextAnchor,
@@ -352,17 +405,45 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
         nextAnchor,
       ])
 
-      if (this.connectorPathIntersectsChip(connectorPath)) {
-        continue
-      }
-
-      return {
+      candidates.push({
         label: movedLabel,
         connectorPath,
-      }
+        kind: "y-shift",
+      })
     }
 
-    return null
+    return candidates
+  }
+
+  private getRelocationRejectReason(
+    originalLabel: NetLabelPlacement,
+    candidate: RelocationCandidate,
+    labelIndex: number,
+  ): CandidateRejectReason | null {
+    const labelReason = this.getInvalidLabelCandidateReason(
+      candidate.label,
+      labelIndex,
+    )
+    if (labelReason) return labelReason
+
+    if (!candidate.connectorPath) return "no-connector"
+
+    if (candidate.kind === "y-shift") {
+      if (this.connectorPathIntersectsChip(candidate.connectorPath)) {
+        return "connector-chip-collision"
+      }
+      return null
+    }
+
+    const connectorPathResult = this.getValidConnectorPathResult({
+      label: originalLabel,
+      movedLabel: candidate.label,
+      labelIndex,
+    })
+
+    return connectorPathResult.tracePath
+      ? null
+      : connectorPathResult.rejectReason
   }
 
   private addWickOffset(anchor: Point, orientation: string): Point {
@@ -398,15 +479,17 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
     return offsets
   }
 
-  private isValidLabelCandidate(
+  private getInvalidLabelCandidateReason(
     label: NetLabelPlacement,
     labelIndex: number,
-    center: Point,
-  ): boolean {
-    const bounds = getRectBounds(center, label.width, label.height)
+  ): Exclude<
+    CandidateRejectReason,
+    "connector-chip-collision" | "connector-label-collision" | "no-connector"
+  > | null {
+    const bounds = getRectBounds(label.center, label.width, label.height)
 
     if (this.chipObstacleSpatialIndex.getChipsInBounds(bounds).length > 0) {
-      return false
+      return "chip-collision"
     }
 
     for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
@@ -420,7 +503,7 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
       )
 
       if (rectsOverlap(bounds, otherBounds)) {
-        return false
+        return "label-collision"
       }
     }
 
@@ -428,7 +511,11 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
       this.outputTraces.map((trace) => [trace.mspPairId, trace]),
     )
 
-    return !rectIntersectsAnyTrace(bounds, traceMap).hasIntersection
+    if (rectIntersectsAnyTrace(bounds, traceMap).hasIntersection) {
+      return "trace-collision"
+    }
+
+    return null
   }
 
   private getLabelTraceOverlapKind(
@@ -524,7 +611,7 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
     return 0
   }
 
-  private getValidConnectorPath({
+  private getValidConnectorPathResult({
     label,
     movedLabel,
     labelIndex,
@@ -532,12 +619,28 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
     label: NetLabelPlacement
     movedLabel: NetLabelPlacement
     labelIndex: number
-  }) {
+  }): {
+    tracePath: Point[] | null
+    rejectReason: Extract<
+      CandidateRejectReason,
+      "connector-chip-collision" | "connector-label-collision" | "no-connector"
+    >
+  } {
+    let rejectReason: Extract<
+      CandidateRejectReason,
+      "connector-chip-collision" | "connector-label-collision" | "no-connector"
+    > = "no-connector"
+
     for (const tracePath of this.getOrthogonalConnectorPathCandidates(
       label.anchorPoint,
       movedLabel.anchorPoint,
     )) {
-      if (this.connectorPathIntersectsChip(tracePath)) continue
+      if (this.connectorPathIntersectsChip(tracePath)) {
+        if (rejectReason === "no-connector") {
+          rejectReason = "connector-chip-collision"
+        }
+        continue
+      }
 
       const connectorTrace = this.createConnectorTrace({
         label,
@@ -553,10 +656,14 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
         netLabels: labelsWithCandidate,
       })
 
-      if (overlaps.length === 0) return tracePath
+      if (overlaps.length === 0) return { tracePath, rejectReason }
+
+      if (rejectReason === "no-connector") {
+        rejectReason = "connector-label-collision"
+      }
     }
 
-    return null
+    return { tracePath: null, rejectReason }
   }
 
   private connectorPathIntersectsChip(tracePath: Point[]) {
@@ -684,6 +791,7 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
     if (!graphics.lines) graphics.lines = []
     if (!graphics.rects) graphics.rects = []
     if (!graphics.points) graphics.points = []
+    if (!graphics.texts) graphics.texts = []
 
     for (const trace of this.outputTraces) {
       graphics.lines.push({
@@ -709,6 +817,111 @@ export class NetLabelTraceCollisionAvoidanceSolver extends BaseSolver {
       } as any)
     }
 
+    if (!this.solved) {
+      this.visualizeCandidateAttempts(graphics)
+    }
+
     return graphics
+  }
+
+  private visualizeCandidateAttempts(graphics: GraphicsObject) {
+    const latestAttempt =
+      this.candidateAttempts[this.candidateAttempts.length - 1]
+
+    for (const attempt of this.candidateAttempts) {
+      const isLatest = attempt === latestAttempt && !this.solved
+      const style = this.getCandidateAttemptStyle(attempt, isLatest)
+      const label = attempt.label
+
+      graphics.rects!.push({
+        center: label.center,
+        width: label.width,
+        height: label.height,
+        fill: style.fill,
+        strokeColor: style.stroke,
+        strokeWidth: isLatest ? 0.045 : 0.025,
+        label: [
+          `candidate: ${attempt.status}`,
+          `phase: ${attempt.phase}`,
+          `kind: ${attempt.kind}`,
+          `orientation: ${label.orientation}`,
+          attempt.rejectReason ? `reason: ${attempt.rejectReason}` : null,
+          `netId: ${label.netId}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      } as any)
+
+      const connectorPath = attempt.connectorPath ?? [
+        attempt.originalLabel.anchorPoint,
+        label.anchorPoint,
+      ]
+      graphics.lines!.push({
+        points: connectorPath,
+        strokeColor: style.stroke,
+        strokeDash:
+          attempt.status === "rejected" || !attempt.connectorPath
+            ? "4 2"
+            : undefined,
+        strokeWidth: isLatest ? 0.04 : 0.025,
+      } as any)
+
+      graphics.points!.push({
+        x: attempt.originalLabel.anchorPoint.x,
+        y: attempt.originalLabel.anchorPoint.y,
+        color: "gray",
+        label: `original anchor\nnetId: ${attempt.originalLabel.netId}`,
+      } as any)
+      graphics.points!.push({
+        x: label.anchorPoint.x,
+        y: label.anchorPoint.y,
+        color: style.stroke,
+        label: `candidate anchor\norientation: ${label.orientation}`,
+      } as any)
+    }
+  }
+
+  private getCandidateAttemptStyle(
+    attempt: RelocationCandidateAttempt,
+    isLatest: boolean,
+  ) {
+    if (attempt.status === "accepted") {
+      return {
+        fill: isLatest ? "rgba(0, 170, 80, 0.35)" : "rgba(0, 170, 80, 0.22)",
+        stroke: "green",
+      }
+    }
+
+    switch (attempt.rejectReason) {
+      case "chip-collision":
+      case "connector-chip-collision":
+        return {
+          fill: isLatest ? "rgba(220, 0, 0, 0.32)" : "rgba(220, 0, 0, 0.18)",
+          stroke: "red",
+        }
+      case "trace-collision":
+      case "connector-label-collision":
+      case "no-connector":
+        return {
+          fill: isLatest
+            ? "rgba(220, 140, 0, 0.32)"
+            : "rgba(220, 140, 0, 0.18)",
+          stroke: "orange",
+        }
+      case "label-collision":
+        return {
+          fill: isLatest
+            ? "rgba(120, 80, 220, 0.28)"
+            : "rgba(120, 80, 220, 0.16)",
+          stroke: "purple",
+        }
+      default:
+        return {
+          fill: isLatest
+            ? "rgba(120, 120, 120, 0.24)"
+            : "rgba(120, 120, 120, 0.14)",
+          stroke: "gray",
+        }
+    }
   }
 }

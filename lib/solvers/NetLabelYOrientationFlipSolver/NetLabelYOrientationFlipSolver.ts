@@ -25,6 +25,28 @@ type FallbackAnchorCandidate = {
   traceAnchor: Point
   connectorVia?: Point
 }
+type CandidateStatus = "accepted" | "rejected"
+type CandidateRejectReason =
+  | "chip-collision"
+  | "label-collision"
+  | "trace-collision"
+type FlipCandidate = {
+  label: NetLabelPlacement
+  connectorPath: Point[] | null
+  source: "host-trace" | "fallback"
+}
+type FlipCandidateAttempt = FlipCandidate & {
+  labelIndex: number
+  originalLabel: NetLabelPlacement
+  status: CandidateStatus
+  rejectReason?: CandidateRejectReason
+}
+type FlipSearchState = {
+  labelIndex: number
+  originalLabel: NetLabelPlacement
+  candidates: FlipCandidate[]
+  candidateIndex: number
+}
 const NET_LABEL_WICK_LENGTH = 0.05
 const CHIP_EDGE_ESCAPE_LENGTH = 0.1
 
@@ -69,11 +91,15 @@ export class NetLabelYOrientationFlipSolver extends BaseSolver {
   outputTraces: SolvedTracePath[]
   outputNetLabelPlacements: NetLabelPlacement[]
   flippedNetLabelIds = new Set<string>()
+  candidateAttempts: FlipCandidateAttempt[] = []
   currentLabelIndex = 0
 
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private pinMap = new Map<string, PinWithChipId>()
   private chipMap = new Map<string, InputChip>()
+  private eligibleLabelQueue: number[] | null = null
+  private eligibleLabelCount = 0
+  private flipSearchState: FlipSearchState | null = null
 
   constructor(params: NetLabelYOrientationFlipSolverInput) {
     super()
@@ -105,42 +131,72 @@ export class NetLabelYOrientationFlipSolver extends BaseSolver {
   }
 
   override _step() {
-    if (this.currentLabelIndex >= this.outputNetLabelPlacements.length) {
-      this.solved = true
+    if (!this.eligibleLabelQueue) {
+      this.eligibleLabelQueue = this.getEligibleLabelIndexes()
+      this.eligibleLabelCount = this.eligibleLabelQueue.length
+    }
+
+    if (!this.flipSearchState) {
+      const labelIndex = this.eligibleLabelQueue.shift()
+      if (labelIndex === undefined) {
+        this.solved = true
+        return
+      }
+
+      const label = this.outputNetLabelPlacements[labelIndex]!
+      this.currentLabelIndex = labelIndex
+      this.flipSearchState = {
+        labelIndex,
+        originalLabel: label,
+        candidates: this.getFlippedPlacementCandidates(label),
+        candidateIndex: 0,
+      }
+    }
+
+    const searchState = this.flipSearchState
+    const candidate = searchState.candidates[searchState.candidateIndex++]
+    if (!candidate) {
+      this.flipSearchState = null
       return
     }
 
-    const label = this.outputNetLabelPlacements[this.currentLabelIndex]!
-    if (!this.shouldFlipLabel(label)) {
-      this.currentLabelIndex++
-      return
+    const rejectReason = this.getInvalidCandidateReason(
+      candidate.label,
+      searchState.labelIndex,
+    )
+    const attempt: FlipCandidateAttempt = {
+      ...candidate,
+      labelIndex: searchState.labelIndex,
+      originalLabel: searchState.originalLabel,
+      status: rejectReason ? "rejected" : "accepted",
+      rejectReason: rejectReason ?? undefined,
     }
+    this.candidateAttempts.push(attempt)
 
-    const flipped = this.findFlippedPlacement(label, this.currentLabelIndex)
-    if (flipped) {
-      let nextLabel = flipped.label
-      if (flipped.connectorPath) {
+    if (!rejectReason) {
+      let nextLabel = candidate.label
+      if (candidate.connectorPath) {
         const connectorTrace = this.createConnectorTrace({
-          label,
-          tracePath: flipped.connectorPath,
+          label: searchState.originalLabel,
+          tracePath: candidate.connectorPath,
           index: this.outputTraces.length,
         })
         nextLabel = this.addTraceIdToLabel(nextLabel, connectorTrace.mspPairId)
         this.outputTraces.push(connectorTrace)
       }
-      this.outputNetLabelPlacements[this.currentLabelIndex] = nextLabel
-      this.flippedNetLabelIds.add(label.globalConnNetId)
+      this.outputNetLabelPlacements[searchState.labelIndex] = nextLabel
+      this.flippedNetLabelIds.add(searchState.originalLabel.globalConnNetId)
+      this.flipSearchState = null
     }
-
-    this.currentLabelIndex++
   }
 
   computeProgress() {
-    if (this.outputNetLabelPlacements.length === 0) return 1
-    return Math.min(
-      1,
-      this.currentLabelIndex / this.outputNetLabelPlacements.length,
-    )
+    if (!this.eligibleLabelQueue) return 0
+    if (this.eligibleLabelCount === 0) return 1
+
+    const remaining =
+      this.eligibleLabelQueue.length + (this.flipSearchState ? 1 : 0)
+    return Math.min(1, Math.max(0, 1 - remaining / this.eligibleLabelCount))
   }
 
   getOutput() {
@@ -164,10 +220,21 @@ export class NetLabelYOrientationFlipSolver extends BaseSolver {
     )
   }
 
-  private findFlippedPlacement(label: NetLabelPlacement, labelIndex: number) {
+  private getEligibleLabelIndexes() {
+    const indexes: number[] = []
+
+    this.outputNetLabelPlacements.forEach((label, index) => {
+      if (this.shouldFlipLabel(label)) indexes.push(index)
+    })
+
+    return indexes
+  }
+
+  private getFlippedPlacementCandidates(label: NetLabelPlacement) {
     const hostTrace = this.findHostTrace(label)
     const orientations = this.getCandidateOrientations(label)
     const dimensions = this.getHorizontalDimensions(label)
+    const candidates: FlipCandidate[] = []
 
     if (hostTrace) {
       const anchors = this.getVerticalSegmentAnchors(
@@ -185,9 +252,7 @@ export class NetLabelYOrientationFlipSolver extends BaseSolver {
             height: dimensions.height,
             includeOriginalAnchor: false,
           })
-          if (this.isValidCandidate(candidate.label, labelIndex)) {
-            return candidate
-          }
+          candidates.push({ ...candidate, source: "host-trace" })
         }
       }
     }
@@ -203,13 +268,11 @@ export class NetLabelYOrientationFlipSolver extends BaseSolver {
           height: dimensions.height,
           includeOriginalAnchor: true,
         })
-        if (this.isValidCandidate(candidate.label, labelIndex)) {
-          return candidate
-        }
+        candidates.push({ ...candidate, source: "fallback" })
       }
     }
 
-    return null
+    return candidates
   }
 
   private findHostTrace(label: NetLabelPlacement) {
@@ -274,14 +337,22 @@ export class NetLabelYOrientationFlipSolver extends BaseSolver {
     const edgeEscapeAnchor = this.getChipEdgeEscapeAnchor(label)
     const anchor = edgeEscapeAnchor ?? label.anchorPoint
     const connectorVia = edgeEscapeAnchor ? anchor : undefined
+    const xDirection = this.getOutwardXDirection(label)
+    const traceAnchors = xDirection
+      ? [
+          anchor,
+          { x: anchor.x + xDirection * step, y: anchor.y },
+          { x: anchor.x + xDirection * 2 * step, y: anchor.y },
+        ]
+      : [
+          anchor,
+          { x: anchor.x + step, y: anchor.y },
+          { x: anchor.x - step, y: anchor.y },
+          { x: anchor.x + 2 * step, y: anchor.y },
+          { x: anchor.x - 2 * step, y: anchor.y },
+        ]
 
-    return [
-      anchor,
-      { x: anchor.x + step, y: anchor.y },
-      { x: anchor.x - step, y: anchor.y },
-      { x: anchor.x + 2 * step, y: anchor.y },
-      { x: anchor.x - 2 * step, y: anchor.y },
-    ].map(
+    return traceAnchors.map(
       (traceAnchor): FallbackAnchorCandidate => ({
         traceAnchor,
         connectorVia,
@@ -322,11 +393,17 @@ export class NetLabelYOrientationFlipSolver extends BaseSolver {
   }
 
   private getCandidateOrientations(label: NetLabelPlacement) {
+    const xDirection = this.getOutwardXDirection(label)
+    if (!xDirection) return ["x+", "x-"] as FacingDirection[]
+
+    return [xDirection > 0 ? "x+" : "x-"] as FacingDirection[]
+  }
+
+  private getOutwardXDirection(label: NetLabelPlacement) {
     const chip = this.getAssociatedChip(label)
-    const preferred =
-      !chip || label.anchorPoint.x >= chip.center.x ? "x+" : "x-"
-    const secondary = preferred === "x+" ? "x-" : "x+"
-    return [preferred, secondary] as FacingDirection[]
+    if (!chip) return null
+
+    return label.anchorPoint.x >= chip.center.x ? 1 : -1
   }
 
   private getHorizontalDimensions(label: NetLabelPlacement) {
@@ -402,21 +479,28 @@ export class NetLabelYOrientationFlipSolver extends BaseSolver {
     })
   }
 
-  private isValidCandidate(label: NetLabelPlacement, labelIndex: number) {
+  private getInvalidCandidateReason(
+    label: NetLabelPlacement,
+    labelIndex: number,
+  ): CandidateRejectReason | null {
     const bounds = getRectBounds(label.center, label.width, label.height)
 
     if (this.chipObstacleSpatialIndex.getChipsInBounds(bounds).length > 0) {
-      return false
+      return "chip-collision"
     }
 
     for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
       if (i === labelIndex) continue
       const other = this.outputNetLabelPlacements[i]!
       const otherBounds = getRectBounds(other.center, other.width, other.height)
-      if (rectsOverlap(bounds, otherBounds)) return false
+      if (rectsOverlap(bounds, otherBounds)) return "label-collision"
     }
 
-    return !this.hasTraceCollision(label, bounds)
+    if (this.hasTraceCollision(label, bounds)) {
+      return "trace-collision"
+    }
+
+    return null
   }
 
   private hasTraceCollision(
@@ -508,6 +592,7 @@ export class NetLabelYOrientationFlipSolver extends BaseSolver {
     if (!graphics.lines) graphics.lines = []
     if (!graphics.rects) graphics.rects = []
     if (!graphics.points) graphics.points = []
+    if (!graphics.texts) graphics.texts = []
 
     for (const trace of this.outputTraces) {
       graphics.lines.push({
@@ -533,6 +618,102 @@ export class NetLabelYOrientationFlipSolver extends BaseSolver {
       } as any)
     }
 
+    if (!this.solved) {
+      this.visualizeCandidateAttempts(graphics)
+    }
+
     return graphics
+  }
+
+  private visualizeCandidateAttempts(graphics: GraphicsObject) {
+    const latestAttempt =
+      this.candidateAttempts[this.candidateAttempts.length - 1]
+
+    for (const attempt of this.candidateAttempts) {
+      const isLatest = attempt === latestAttempt && !this.solved
+      const style = this.getCandidateAttemptStyle(attempt, isLatest)
+      const label = attempt.label
+
+      graphics.rects!.push({
+        center: label.center,
+        width: label.width,
+        height: label.height,
+        fill: style.fill,
+        strokeColor: style.stroke,
+        strokeWidth: isLatest ? 0.045 : 0.025,
+        label: [
+          `candidate: ${attempt.status}`,
+          `source: ${attempt.source}`,
+          `orientation: ${label.orientation}`,
+          attempt.rejectReason ? `reason: ${attempt.rejectReason}` : null,
+          `netId: ${label.netId}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      } as any)
+
+      if (attempt.connectorPath) {
+        graphics.lines!.push({
+          points: attempt.connectorPath,
+          strokeColor: style.stroke,
+          strokeDash: attempt.status === "rejected" ? "4 2" : undefined,
+          strokeWidth: isLatest ? 0.04 : 0.025,
+        } as any)
+      }
+
+      graphics.points!.push({
+        x: attempt.originalLabel.anchorPoint.x,
+        y: attempt.originalLabel.anchorPoint.y,
+        color: "gray",
+        label: `original anchor\nnetId: ${attempt.originalLabel.netId}`,
+      } as any)
+      graphics.points!.push({
+        x: label.anchorPoint.x,
+        y: label.anchorPoint.y,
+        color: style.stroke,
+        label: `candidate anchor\norientation: ${label.orientation}`,
+      } as any)
+    }
+  }
+
+  private getCandidateAttemptStyle(
+    attempt: FlipCandidateAttempt,
+    isLatest: boolean,
+  ) {
+    if (attempt.status === "accepted") {
+      return {
+        fill: isLatest ? "rgba(0, 170, 80, 0.35)" : "rgba(0, 170, 80, 0.22)",
+        stroke: "green",
+      }
+    }
+
+    switch (attempt.rejectReason) {
+      case "chip-collision":
+        return {
+          fill: isLatest ? "rgba(220, 0, 0, 0.32)" : "rgba(220, 0, 0, 0.18)",
+          stroke: "red",
+        }
+      case "trace-collision":
+        return {
+          fill: isLatest
+            ? "rgba(220, 140, 0, 0.32)"
+            : "rgba(220, 140, 0, 0.18)",
+          stroke: "orange",
+        }
+      case "label-collision":
+        return {
+          fill: isLatest
+            ? "rgba(120, 80, 220, 0.28)"
+            : "rgba(120, 80, 220, 0.16)",
+          stroke: "purple",
+        }
+      default:
+        return {
+          fill: isLatest
+            ? "rgba(120, 120, 120, 0.24)"
+            : "rgba(120, 120, 120, 0.14)",
+          stroke: "gray",
+        }
+    }
   }
 }
