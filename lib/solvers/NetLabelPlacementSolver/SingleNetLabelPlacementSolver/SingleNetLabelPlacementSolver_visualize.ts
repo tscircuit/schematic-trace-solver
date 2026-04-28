@@ -1,6 +1,7 @@
 import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
+import { getNetLabelStrokeColorForOrientation } from "../getNetLabelStrokeColorForOrientation"
 import { chooseHostTraceForGroup } from "./host"
 import type { SingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver"
 
@@ -79,12 +80,16 @@ export function visualizeSingleNetLabelPlacementSolver(
   // Visualize the final accepted label (if any)
   if (solver.netLabelPlacement) {
     const p = solver.netLabelPlacement
+    const strokeColor = getNetLabelStrokeColorForOrientation(
+      p.orientation,
+      "blue",
+    )
     graphics.rects!.push({
       center: p.center,
       width: p.width,
       height: p.height,
       fill: "rgba(0, 128, 255, 0.35)",
-      strokeColor: "blue",
+      strokeColor,
       label: `netId: ${p.netId}\nglobalConnNetId: ${p.globalConnNetId}`,
     } as any)
     graphics.points!.push({

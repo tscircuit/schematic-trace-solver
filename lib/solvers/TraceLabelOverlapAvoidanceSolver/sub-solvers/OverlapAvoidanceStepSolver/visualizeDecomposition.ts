@@ -1,5 +1,6 @@
 import type { GraphicsObject } from "graphics-debug"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { getNetLabelStrokeColorForOrientation } from "lib/solvers/NetLabelPlacementSolver/getNetLabelStrokeColorForOrientation"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 
 interface VisualizeDecompositionParams {
@@ -39,6 +40,10 @@ export const visualizeDecomposition = (
       width: childLabel.width,
       height: childLabel.height,
       fill: isOwnLabel ? "green" : "red", // Green for own label, red for others
+      stroke: getNetLabelStrokeColorForOrientation(
+        childLabel.orientation,
+        isOwnLabel ? "green" : "red",
+      ),
     })
   }
 

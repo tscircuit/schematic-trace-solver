@@ -6,6 +6,7 @@ import type { GraphicsObject, Line } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem } from "lib/types/InputProblem"
+import { getNetLabelStrokeColorForOrientation } from "../../../NetLabelPlacementSolver/getNetLabelStrokeColorForOrientation"
 import { groupLabelsByChipAndOrientation } from "./groupLabelsByChipAndOrientation"
 import { mergeLabelGroup } from "./mergeLabelGroup"
 import { filterLabelsAtTraceEdges } from "./filterLabelsAtTraceEdges"
@@ -157,12 +158,16 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
     ) {
       const activeGroup = this.labelGroups[this.activeMergingGroupKey]!
       for (const label of activeGroup) {
+        const strokeColor = getNetLabelStrokeColorForOrientation(
+          label.orientation,
+          "orange",
+        )
         graphics.rects.push({
           center: label.center,
           width: label.width,
           height: label.height,
           fill: "rgba(255, 165, 0, 0.5)", // Orange highlight
-          stroke: "orange",
+          stroke: strokeColor,
         })
       }
     }
@@ -172,12 +177,16 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
       const color = getColorFromString(finalLabel.globalConnNetId)
 
       if (isMerged) {
+        const strokeColor = getNetLabelStrokeColorForOrientation(
+          finalLabel.orientation,
+          color,
+        )
         graphics.rects.push({
           center: finalLabel.center,
           width: finalLabel.width,
           height: finalLabel.height,
           fill: color.replace(/, 1\)/, ", 0.2)"),
-          stroke: color,
+          stroke: strokeColor,
           label: finalLabel.globalConnNetId,
         })
 
@@ -210,11 +219,15 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
           }
         }
       } else {
+        const strokeColor = getNetLabelStrokeColorForOrientation(
+          finalLabel.orientation,
+          color,
+        )
         graphics.rects.push({
           center: finalLabel.center,
           width: finalLabel.width,
           height: finalLabel.height,
-          stroke: color,
+          stroke: strokeColor,
           label: finalLabel.globalConnNetId,
         })
       }
