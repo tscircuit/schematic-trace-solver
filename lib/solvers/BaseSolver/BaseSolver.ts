@@ -82,71 +82,71 @@
 //   }
 // }
 
-import type { GraphicsObject } from "graphics-debug"
+import type { GraphicsObject } from "graphics-debug";
 
 export class BaseSolver {
-  MAX_ITERATIONS = 100e3
-  solved = false
-  failed = false
-  iterations = 0
-  progress = 0
-  error: string | null = null
-  activeSubSolver?: BaseSolver | null
-  failedSubSolvers?: BaseSolver[]
-  timeToSolve?: number
-  stats: Record<string, any> = {}
+  MAX_ITERATIONS = 100e3;
+  solved = false;
+  failed = false;
+  iterations = 0;
+  progress = 0;
+  error: string | null = null;
+  activeSubSolver?: BaseSolver | null;
+  failedSubSolvers?: BaseSolver[];
+  timeToSolve?: number;
+  stats: Record<string, any> = {};
 
   // ✅ Properly define inputProblem
-  inputProblem: any
+  inputProblem: any;
 
   constructor(inputProblem?: any) {
-    this.inputProblem = inputProblem
+    this.inputProblem = inputProblem;
   }
 
   /** DO NOT OVERRIDE! Override _step() instead */
   step() {
-    if (this.solved) return
-    if (this.failed) return
-    this.iterations++
+    if (this.solved) return;
+    if (this.failed) return;
+    this.iterations++;
 
     try {
-      this._step()
+      this._step();
     } catch (e) {
-      this.error = `${this.constructor.name} error: ${e}`
-      this.failed = true
-      throw e
+      this.error = `${this.constructor.name} error: ${e}`;
+      this.failed = true;
+      throw e;
     }
 
     if (!this.solved && this.iterations > this.MAX_ITERATIONS) {
-      this.tryFinalAcceptance()
+      this.tryFinalAcceptance();
     }
 
     if (!this.solved && this.iterations > this.MAX_ITERATIONS) {
-      this.error = `${this.constructor.name} ran out of iterations`
-      this.failed = true
+      this.error = `${this.constructor.name} ran out of iterations`;
+      this.failed = true;
     }
 
     if ("computeProgress" in this) {
       // @ts-ignore
-      this.progress = this.computeProgress() as number
+      this.progress = this.computeProgress() as number;
     }
   }
 
   _step() {}
 
   getConstructorParams() {
-    throw new Error("getConstructorParams not implemented")
+    throw new Error("getConstructorParams not implemented");
   }
 
   solve() {
-    const startTime = Date.now()
+    const startTime = Date.now();
 
     while (!this.solved && !this.failed) {
-      this.step()
+      this.step();
     }
 
-    const endTime = Date.now()
-    this.timeToSolve = endTime - startTime
+    const endTime = Date.now();
+    this.timeToSolve = endTime - startTime;
   }
 
   visualize(): GraphicsObject {
@@ -155,7 +155,7 @@ export class BaseSolver {
       points: [],
       rects: [],
       circles: [],
-    }
+    };
   }
 
   tryFinalAcceptance() {}
@@ -166,6 +166,6 @@ export class BaseSolver {
       points: [],
       rects: [],
       circles: [],
-    }
+    };
   }
 }
