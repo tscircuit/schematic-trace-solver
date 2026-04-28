@@ -1,4 +1,4 @@
-import type { Point } from "graphics-debug";
+import type { Point } from "graphics-debug"
 
 /**
  * Determines if a given segment (p1-p2) is either the first or the last segment of an original path.
@@ -9,10 +9,10 @@ export const isSegmentAnEndpointSegment = (
   p2: Point,
   originalPath: Point[],
 ): boolean => {
-  if (originalPath.length < 2) return false;
+  if (originalPath.length < 2) return false
 
-  const originalStart = originalPath[0];
-  const originalEnd = originalPath[originalPath.length - 1];
+  const originalStart = originalPath[0]
+  const originalEnd = originalPath[originalPath.length - 1]
 
   // Check if p1-p2 is the first segment of the original path
   if (
@@ -21,7 +21,7 @@ export const isSegmentAnEndpointSegment = (
     p2.x === originalPath[1].x &&
     p2.y === originalPath[1].y
   ) {
-    return true;
+    return true
   }
   // Check if p1-p2 is the last segment of the original path
   if (
@@ -30,7 +30,7 @@ export const isSegmentAnEndpointSegment = (
     p2.x === originalEnd.x &&
     p2.y === originalEnd.y
   ) {
-    return true;
+    return true
   }
-  return false;
-};
+  return false
+}

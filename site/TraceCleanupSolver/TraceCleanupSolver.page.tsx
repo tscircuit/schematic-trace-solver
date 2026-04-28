@@ -1,7 +1,7 @@
-import { useMemo } from "react";
-import { GenericSolverDebugger } from "site/components/GenericSolverDebugger";
-import { TraceCleanupSolver } from "lib/solvers/TraceCleanupSolver/TraceCleanupSolver";
-import inputData from "../../tests/assets/TraceCleanupSolver.test.input.json";
+import { useMemo } from "react"
+import { GenericSolverDebugger } from "site/components/GenericSolverDebugger"
+import { TraceCleanupSolver } from "lib/solvers/TraceCleanupSolver/TraceCleanupSolver"
+import inputData from "../../tests/assets/TraceCleanupSolver.test.input.json"
 
 export default () => {
   const solver = useMemo(
@@ -17,7 +17,7 @@ export default () => {
         ),
       } as any),
     [],
-  );
+  )
 
-  return <GenericSolverDebugger solver={solver} />;
-};
+  return <GenericSolverDebugger solver={solver} />
+}
