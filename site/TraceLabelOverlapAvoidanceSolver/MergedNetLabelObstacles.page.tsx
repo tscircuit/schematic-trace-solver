@@ -1,7 +1,7 @@
-import { useMemo } from "react"
-import { GenericSolverDebugger } from "site/components/GenericSolverDebugger"
-import { MergedNetLabelObstacleSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
-import inputData from "../../tests/assets/MergedNetLabelObstacles.test.input.json"
+import { useMemo } from "react";
+import { GenericSolverDebugger } from "site/components/GenericSolverDebugger";
+import { MergedNetLabelObstacleSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver";
+import inputData from "../../tests/assets/MergedNetLabelObstacles.test.input.json";
 
 export default () => {
   const solver = useMemo(
@@ -12,7 +12,7 @@ export default () => {
         traces: inputData.traces as any,
       }),
     [],
-  )
+  );
 
-  return <GenericSolverDebugger solver={solver} />
-}
+  return <GenericSolverDebugger solver={solver} />;
+};

@@ -1,6 +1,6 @@
-import { useMemo } from "react"
-import { GenericSolverDebugger } from "../components/GenericSolverDebugger"
-import { SchematicTraceSingleLineSolver } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/SchematicTraceSingleLineSolver"
+import { useMemo } from "react";
+import { GenericSolverDebugger } from "../components/GenericSolverDebugger";
+import { SchematicTraceSingleLineSolver } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/SchematicTraceSingleLineSolver";
 
 const input = {
   chipMap: {
@@ -884,11 +884,11 @@ const input = {
     availableNetLabelOrientations: {},
     maxMspPairDistance: 2,
   },
-}
+};
 
 export default () => {
   const solver = useMemo(() => {
-    return new SchematicTraceSingleLineSolver(input as any)
-  }, [])
-  return <GenericSolverDebugger solver={solver} />
-}
+    return new SchematicTraceSingleLineSolver(input as any);
+  }, []);
+  return <GenericSolverDebugger solver={solver} />;
+};

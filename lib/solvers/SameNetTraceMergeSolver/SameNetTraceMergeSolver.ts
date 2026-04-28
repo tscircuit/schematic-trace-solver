@@ -1,22 +1,42 @@
 import { BaseSolver } from "../BaseSolver/BaseSolver";
 
+type Point = {
+  x: number;
+  y: number;
+};
+
+type Edge = {
+  from: Point;
+  to: Point;
+};
+
+type Trace = {
+  source_net_id: string;
+  edges: Edge[];
+};
+
 export interface SameNetTraceMergeSolverParams {
-  allTraces: any[];
+  allTraces: Trace[];
+  directConnections: unknown[];
+  chips: unknown[];
+  components: unknown[];
+  obstacles: unknown[];
 }
 
 export class SameNetTraceMergeSolver extends BaseSolver {
-  traces: any[];
+  traces: Trace[];
+
   override solved = false;
   override failed = false;
 
   constructor(params: SameNetTraceMergeSolverParams) {
-    super();
+    super(params);
     this.traces = params.allTraces;
   }
 
-  override _step() {
+  override _step(): void {
     const threshold = 0.1;
-    const mergedTraces: any[] = [];
+    const mergedTraces: Trace[] = [];
 
     if (!this.traces) {
       this.solved = true;
@@ -24,11 +44,12 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     }
 
     for (const trace of this.traces) {
-      const edges = [...(trace.edges || [])];
+      const edges: Edge[] = [...(trace.edges || [])];
       let changed = true;
 
       while (changed) {
         changed = false;
+
         for (let i = 0; i < edges.length; i++) {
           for (let j = i + 1; j < edges.length; j++) {
             const segA = edges[i];
@@ -36,10 +57,12 @@ export class SameNetTraceMergeSolver extends BaseSolver {
 
             const isAHoriz = Math.abs(segA.from.y - segA.to.y) < 0.001;
             const isBHoriz = Math.abs(segB.from.y - segB.to.y) < 0.001;
+
             const isAVert = Math.abs(segA.from.x - segA.to.x) < 0.001;
             const isBVert = Math.abs(segB.from.x - segB.to.x) < 0.001;
 
             let shouldMerge = false;
+
             if (
               isAHoriz &&
               isBHoriz &&
@@ -55,7 +78,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
             }
 
             if (shouldMerge) {
-              const newSeg = {
+              const newSeg: Edge = {
                 from: {
                   x: Math.min(segA.from.x, segA.to.x, segB.from.x, segB.to.x),
                   y: Math.min(segA.from.y, segA.to.y, segB.from.y, segB.to.y),
@@ -65,8 +88,10 @@ export class SameNetTraceMergeSolver extends BaseSolver {
                   y: Math.max(segA.from.y, segA.to.y, segB.from.y, segB.to.y),
                 },
               };
+
               edges.splice(j, 1);
-              edges.splice(i, 1, newSeg as any);
+              edges.splice(i, 1, newSeg);
+
               changed = true;
               break;
             }
@@ -74,6 +99,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
           if (changed) break;
         }
       }
+
       mergedTraces.push({ ...trace, edges });
     }
 
@@ -81,7 +107,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     this.solved = true;
   }
 
-  getOutput() {
+  getOutput(): { traces: Trace[] } {
     return { traces: this.traces };
   }
 }
