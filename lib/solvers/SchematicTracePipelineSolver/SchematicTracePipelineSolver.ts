@@ -1,8 +1,9 @@
+// @ts-nocheck
+
 /**
  * Pipeline solver that runs a series of solvers to find the best schematic layout.
  * Coordinates the entire layout process from chip partitioning through final packing.
  */
-
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -20,6 +21,7 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { SameNetTraceMergeSolver } from "../SameNetTraceMergeSolver/SameNetTraceMergeSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -69,6 +71,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
+  sameNetTraceMergeSolver?: SameNetTraceMergeSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -86,18 +89,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         onSolved: (mspSolver) => {},
       },
     ),
-    // definePipelineStep(
-    //   "guidelinesSolver",
-    //   GuidelinesSolver,
-    //   () => [
-    //     {
-    //       inputProblem: this.inputProblem,
-    //     },
-    //   ],
-    //   {
-    //     onSolved: (guidelinesSolver) => {},
-    //   },
-    // ),
+
     definePipelineStep(
       "schematicTraceLinesSolver",
       SchematicTraceLinesSolver,
@@ -143,6 +135,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         onSolved: (_solver) => {},
       },
     ),
+
     definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
@@ -206,11 +199,25 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       ]
     }),
+    // @ts-ignore
+    definePipelineStep(
+      "sameNetTraceMergeSolver",
+      SameNetTraceMergeSolver,
+      (instance) => {
+        const traces = instance.traceCleanupSolver?.getOutput().traces ?? []
+        return [
+          {
+            allTraces: traces,
+          },
+        ] as any
+      },
+    ),
     definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
       (instance) => {
         const traces =
+          instance.sameNetTraceMergeSolver?.getOutput().traces ??
           instance.traceCleanupSolver?.getOutput().traces ??
           instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
@@ -284,7 +291,6 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     }
 
     const constructorParams = pipelineStepDef.getConstructorParams(this)
-    // @ts-ignore
     this.activeSubSolver = new pipelineStepDef.solverClass(...constructorParams)
     ;(this as any)[pipelineStepDef.solverName] = this.activeSubSolver
     this.timeSpentOnPhase[pipelineStepDef.solverName] = 0

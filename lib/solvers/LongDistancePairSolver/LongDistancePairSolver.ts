@@ -225,7 +225,10 @@ export class LongDistancePairSolver extends BaseSolver {
     allTracesMerged: SolvedTracePath[]
   } {
     if (!this.solved) {
-      return { newTraces: [], allTracesMerged: this.params.alreadySolvedTraces }
+      return {
+        newTraces: [],
+        allTracesMerged: this.params.alreadySolvedTraces,
+      }
     }
     return {
       newTraces: this.solvedLongDistanceTraces,
