@@ -21,6 +21,7 @@ import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePa
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
 import { Example28Solver } from "../Example28Solver/Example28Solver"
+import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -71,6 +72,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
   example28Solver?: Example28Solver
+  availableNetOrientationSolver?: AvailableNetOrientationSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -240,6 +242,18 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       ]
     }),
+    definePipelineStep(
+      "availableNetOrientationSolver",
+      AvailableNetOrientationSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          traces: instance.example28Solver!.outputTraces,
+          netLabelPlacements:
+            instance.example28Solver!.outputNetLabelPlacements,
+        },
+      ],
+    ),
   ]
 
   constructor(inputProblem: InputProblem) {
