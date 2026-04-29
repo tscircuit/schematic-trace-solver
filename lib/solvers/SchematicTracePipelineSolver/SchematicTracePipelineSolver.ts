@@ -7,7 +7,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectionPairSolver"
-import {
+import type {
   SchematicTraceLinesSolver,
   type SolvedTracePath,
 } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
@@ -15,18 +15,19 @@ import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlap
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { visualizeInputProblem } from "./visualizeInputProblem"
 import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
-import { correctPinsInsideChips } from "./correctPinsInsideChip"
+import { correctPinsInsideChips } from "./correctPinsInsideChips"
 import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { SameNetTraceMergeSolver } from "../SameNetTraceMergeSolver/SameNetTraceMergeSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
-  solverName: string
+  solverName: keyof SchematicTracePipelineSolver
   solverClass: T
   getConstructorParams: (
     instance: SchematicTracePipelineSolver,
-  ) => ConstructorParameters<T>
+  ) => ConstructorParameters<T>[0]
   onSolved?: (instance: SchematicTracePipelineSolver) => void
   shouldSkip?: (instance: SchematicTracePipelineSolver) => boolean
 }
@@ -35,11 +36,10 @@ function definePipelineStep<
   T extends new (
     ...args: any[]
   ) => BaseSolver,
-  const P extends ConstructorParameters<T>,
 >(
   solverName: keyof SchematicTracePipelineSolver,
   solverClass: T,
-  getConstructorParams: (instance: SchematicTracePipelineSolver) => P,
+  getParams: (instance: SchematicTracePipelineSolver) => ConstructorParameters<T>[0],
   opts: {
     onSolved?: (instance: SchematicTracePipelineSolver) => void
     shouldSkip?: (instance: SchematicTracePipelineSolver) => boolean
@@ -48,7 +48,7 @@ function definePipelineStep<
   return {
     solverName,
     solverClass,
-    getConstructorParams,
+    getConstructorParams: getParams as any,
     onSolved: opts.onSolved,
     shouldSkip: opts.shouldSkip,
   }
@@ -69,6 +69,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
+  sameNetTraceMergeSolver?: SameNetTraceMergeSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -135,7 +136,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         {
           inputProblem: this.inputProblem,
           inputTracePaths:
-            this.longDistancePairSolver?.getOutput().allTracesMerged!,
+            this.longDistancePairSolver?.getOutput()?.allTracesMerged ?? [],
           globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
         },
       ],
@@ -152,9 +153,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           inputTraceMap:
             this.traceOverlapShiftSolver?.correctedTraceMap ??
             Object.fromEntries(
-              this.longDistancePairSolver!.getOutput().allTracesMerged.map(
-                (p) => [p.mspPairId, p],
-              ),
+              this.longDistancePairSolver!.getOutput()
+                .allTracesMerged.map(
+                  (p) => [p.mspPairId, p],
+                ),
             ),
         },
       ],
@@ -188,30 +190,47 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
-    definePipelineStep("traceCleanupSolver", TraceCleanupSolver, (instance) => {
-      const prevSolverOutput =
-        instance.traceLabelOverlapAvoidanceSolver!.getOutput()
-      const traces = prevSolverOutput.traces
+    definePipelineStep(
+      "traceCleanupSolver",
+      TraceCleanupSolver,
+      (instance) => {
+        const prevSolverOutput =
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput()
+        const traces = prevSolverOutput.traces
 
-      const labelMergingOutput =
-        instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput()
+        const labelMergingOutput =
+          instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput()
 
-      return [
-        {
-          inputProblem: instance.inputProblem,
-          allTraces: traces,
-          allLabelPlacements: labelMergingOutput.netLabelPlacements,
-          mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
-          paddingBuffer: 0.1,
-        },
-      ]
-    }),
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            allTraces: traces,
+            allLabelPlacements: labelMergingOutput.netLabelPlacements,
+            mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
+            paddingBuffer: 0.1,
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
+      "sameNetTraceMergeSolver",
+      SameNetTraceMergeSolver,
+      (instance) => {
+        const traces = instance.traceCleanupSolver?.getOutput()?.traces ?? []
+        return [
+          {
+            allTraces: traces,
+          },
+        ]
+      },
+    ),
     definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
       (instance) => {
         const traces =
-          instance.traceCleanupSolver?.getOutput().traces ??
+          instance.sameNetTraceMergeSolver?.getOutput()?.traces ??
+          instance.traceCleanupSolver?.getOutput()?.traces ??
           instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
         return [
@@ -250,7 +269,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       _chipObstacleSpatialIndex: undefined,
     })
 
-    // First, expand chips so existing pin coordinates sit on or within their edges without shrinking.
+    // First, expand chips so existing pin coordinates sit on or within their edges without shrinkingning.
     expandChipsToFitPins(cloned)
     // Then, for any remaining pins that are still inside due to mixed extremes, snap them to the nearest edge.
     correctPinsInsideChips(cloned)
@@ -309,26 +328,26 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     const visualizations = [
       visualizeInputProblem(this.inputProblem),
       ...(this.pipelineDef
-        .map((p) => (this as any)[p.solverName]?.visualize())
-        .filter(Boolean)
+        .map((p) => (this as any)[p.solverName]?.visualize?.())
+        .filter(Boolean) as GraphicsObject[]
         .map((viz, stepIndex) => {
-          for (const rect of viz!.rects ?? []) {
+          for (const rect of viz?.rects ?? []) {
             rect.step = stepIndex
           }
-          for (const point of viz!.points ?? []) {
+          for (const point of viz?.points ?? []) {
             point.step = stepIndex
           }
-          for (const circle of viz!.circles ?? []) {
+          for (const circle of viz?.circles ?? []) {
             circle.step = stepIndex
           }
-          for (const text of viz!.texts ?? []) {
+          for (const text of viz?.texts ?? []) {
             text.step = stepIndex
           }
-          for (const line of viz!.lines ?? []) {
+          for (const line of viz?.lines ?? []) {
             line.step = stepIndex
           }
           return viz
-        }) as GraphicsObject[]),
+        })),
     ]
 
     if (visualizations.length === 1) {
@@ -337,11 +356,11 @@ export class SchematicTracePipelineSolver extends BaseSolver {
 
     // Simple combination of visualizations
     const finalGraphics = {
-      points: visualizations.flatMap((v) => v.points || []),
-      rects: visualizations.flatMap((v) => v.rects || []),
-      lines: visualizations.flatMap((v) => v.lines || []),
-      circles: visualizations.flatMap((v) => v.circles || []),
-      texts: visualizations.flatMap((v) => v.texts || []),
+      points: visualizations.flatMap((v) => v.points ?? []),
+      rects: visualizations.flatMap((v) => v.rects ?? []),
+      lines: visualizations.flatMap((v) => v.lines ?? []),
+      circles: visualizations.flatMap((v) => v.circles ?? []),
+      texts: visualizations.flatMap((v) => v.texts ?? []),
     }
     return finalGraphics
   }
