@@ -20,6 +20,7 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { TraceCombineSolver } from "../TraceCombineSolver/TraceCombineSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -68,7 +69,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   netLabelPlacementSolver?: NetLabelPlacementSolver
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
+
   traceCleanupSolver?: TraceCleanupSolver
+  traceCombineSolver?: TraceCombineSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -206,11 +209,22 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       ]
     }),
+    definePipelineStep("traceCombineSolver", TraceCombineSolver, (instance) => {
+      return [
+        {
+          inputTraces:
+            instance.traceCleanupSolver?.getOutput().traces ??
+            instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces,
+          inputProblem: instance.inputProblem,
+        },
+      ]
+    }),
     definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
       (instance) => {
         const traces =
+          instance.traceCombineSolver?.getOutput().traces ??
           instance.traceCleanupSolver?.getOutput().traces ??
           instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
