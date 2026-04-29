@@ -28,6 +28,7 @@ type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
+  | "merging_same_net_traces"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
@@ -84,6 +85,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "merging_same_net_traces":
+        this._runMergeSameNetTracesStep()
+        break
     }
   }
 
@@ -108,11 +112,49 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
+      this.pipelineStep = "merging_same_net_traces"
+      this.traceIdQueue = Array.from(
+        this.input.allTraces.map((e) => e.mspPairId),
+      )
+      return
+    }
+    this._processTrace("balancing_l_shapes")
+  }
+
+  private _runMergeSameNetTracesStep() {
+    if (this.traceIdQueue.length === 0) {
       this.solved = true
       return
     }
 
-    this._processTrace("balancing_l_shapes")
+    const targetId = this.traceIdQueue.shift()!
+    const targetTrace = this.tracesMap.get(targetId)!
+    const TOLERANCE = 0.1
+
+    const sameNetTraces = this.outputTraces.filter(
+      (t: any) =>
+        t.netId === (targetTrace as any).netId && t.mspPairId !== targetId,
+    )
+
+    const updatedPath = targetTrace.tracePath.map((point) => {
+      let newX = point.x
+      let newY = point.y
+
+      for (const otherTrace of sameNetTraces) {
+        for (const otherPoint of otherTrace.tracePath) {
+          if (Math.abs(point.x - otherPoint.x) < TOLERANCE) {
+            newX = otherPoint.x
+          }
+          if (Math.abs(point.y - otherPoint.y) < TOLERANCE) {
+            newY = otherPoint.y
+          }
+        }
+      }
+      return { ...point, x: newX, y: newY }
+    })
+
+    this.tracesMap.set(targetId, { ...targetTrace, tracePath: updatedPath })
+    this.outputTraces = Array.from(this.tracesMap.values())
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {

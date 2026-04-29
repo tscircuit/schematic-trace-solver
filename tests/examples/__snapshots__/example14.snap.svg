@@ -86,7 +86,7 @@ orientation: x-" data-x="-1.4000000000000001" data-y="-0.30000000000000004" cx="
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: x+" data-x="1.4000000000000001" data-y="0.09999999999999998" cx="442.5" cy="282.8125" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: x+" data-x="1.4000000000000001" data-y="0.10000000000000016" cx="442.5" cy="282.8125" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -98,7 +98,7 @@ orientation: y+" data-x="2.2" data-y="0.30000000000000004" cx="512.5" cy="265.31
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-1.5500000000000003" data-y="0.10000000000000003" cx="184.37499999999997" cy="282.8125" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y+" data-x="-1.5500000000000003" data-y="0.10000000000000016" cx="184.37499999999997" cy="282.8125" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -144,25 +144,25 @@ orientation: y+" data-x="1.4755000000000003" data-y="-1.2944553500000002" cx="44
     <polyline data-points="1.2000000000000002,0.30000000000000004 3,-0.10000000000000016" data-type="line" data-label="" points="425,265.3125 582.5,300.3125" fill="none" stroke="hsl(190, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
   </g>
   <g>
-    <polyline data-points="-1.2000000000000002,0.10000000000000003 -1.9000000000000004,0.10000000000000002" data-type="line" data-label="" points="215,282.8125 153.74999999999997,282.8125" fill="none" stroke="purple" stroke-width="1" />
+    <polyline data-points="-1.2000000000000002,0.10000000000000016 -1.9000000000000004,0.10000000000000016" data-type="line" data-label="" points="215,282.8125 153.74999999999997,282.8125" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
     <polyline data-points="-1.2000000000000002,-0.30000000000000004 -1.4000000000000001,-0.30000000000000004 -1.4000000000000001,-0.7250000000000001 -1.2000000000000002,-0.7250000000000001 -1.2000000000000002,-1.1500000000000001" data-type="line" data-label="" points="215,317.8125 197.5,317.8125 197.5,355 215,355 215,392.1875" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="-1.2000000000000002,-0.09999999999999998 -1.4000000000000001,-0.09999999999999998 -1.4000000000000001,-0.30000000000000004 -1.2000000000000002,-0.30000000000000004" data-type="line" data-label="" points="215,300.3125 197.5,300.3125 197.5,317.8125 215,317.8125" fill="none" stroke="purple" stroke-width="1" />
+    <polyline data-points="-1.2000000000000002,-0.10000000000000003 -1.4000000000000001,-0.10000000000000003 -1.4000000000000001,-0.30000000000000004 -1.2000000000000002,-0.30000000000000004" data-type="line" data-label="" points="215,300.3125 197.5,300.3125 197.5,317.8125 215,317.8125" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
     <polyline data-points="0.09999999999999987,-1.2944553500000002 -0.55,-1.2944553500000002 -0.55,-0.9500000000000002 -1.2000000000000002,-0.9500000000000002 -1.2000000000000002,-1.1500000000000001" data-type="line" data-label="" points="328.75,404.827343125 271.875,404.827343125 271.875,374.6875 215,374.6875 215,392.1875" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="1.2000000000000002,-0.10000000000000003 1.9000000000000004,-0.10000000000000002" data-type="line" data-label="" points="425,300.3125 486.25,300.3125" fill="none" stroke="purple" stroke-width="1" />
+    <polyline data-points="1.2000000000000002,-0.10000000000000003 1.9000000000000004,-0.10000000000000003" data-type="line" data-label="" points="425,300.3125 486.25,300.3125" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="1.2000000000000002,0.09999999999999998 1.4000000000000001,0.09999999999999998 1.4000000000000001,0.625 1.2000000000000002,0.625 1.2000000000000002,1.1500000000000001" data-type="line" data-label="" points="425,282.8125 442.5,282.8125 442.5,236.875 425,236.875 425,190.9375" fill="none" stroke="purple" stroke-width="1" />
+    <polyline data-points="1.2000000000000002,0.10000000000000016 1.4000000000000001,0.10000000000000016 1.4000000000000001,0.625 1.2000000000000002,0.625 1.2000000000000002,1.1500000000000001" data-type="line" data-label="" points="425,282.8125 442.5,282.8125 442.5,236.875 425,236.875 425,190.9375" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="1.2000000000000002,0.30000000000000004 3.2,0.30000000000000004 3.2,-0.10000000000000016 3,-0.10000000000000016" data-type="line" data-label="" points="425,265.3125 600,265.3125 600,300.3125 582.5,300.3125" fill="none" stroke="purple" stroke-width="1" />
+    <polyline data-points="1.2000000000000002,0.30000000000000004 3.2,0.30000000000000004 3.2,-0.10000000000000003 3,-0.10000000000000003" data-type="line" data-label="" points="425,265.3125 600,265.3125 600,300.3125 582.5,300.3125" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
     <polyline data-points="-1.2000000000000002,-2.25 -1.2000000000000002,-2.45 -3.2,-2.45 -3.2,0.10000000000000016 -3,0.10000000000000016" data-type="line" data-label="" points="215,488.4375 215,505.9375 40,505.9375 40,282.8125 57.5,282.8125" fill="none" stroke="purple" stroke-width="1" />
@@ -202,7 +202,7 @@ globalConnNetId: connectivity_net1" data-x="-1.6250000000000002" data-y="-0.3000
   </g>
   <g>
     <rect data-type="rect" data-label="netId: U1.OUT to R3.pin1
-globalConnNetId: connectivity_net3" data-x="1.6250000000000002" data-y="0.09999999999999998" x="442.5" y="274.0625" width="39.375" height="17.5" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.011428571428571429" />
+globalConnNetId: connectivity_net3" data-x="1.6250000000000002" data-y="0.10000000000000016" x="442.5" y="274.0625" width="39.375" height="17.5" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.011428571428571429" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: VCC
@@ -214,7 +214,7 @@ globalConnNetId: connectivity_net5" data-x="2.2" data-y="0.525" x="503.75" y="22
   </g>
   <g>
     <rect data-type="rect" data-label="netId: U1.CTRL to C2.pin1
-globalConnNetId: connectivity_net0" data-x="-1.5500000000000003" data-y="0.32500000000000007" x="175.62499999999997" y="243.4375" width="17.50000000000003" height="39.375" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.011428571428571429" />
+globalConnNetId: connectivity_net0" data-x="-1.5500000000000003" data-y="0.3250000000000002" x="175.62499999999997" y="243.4375" width="17.50000000000003" height="39.375" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.011428571428571429" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: U1.DISCH to R2.pin1
