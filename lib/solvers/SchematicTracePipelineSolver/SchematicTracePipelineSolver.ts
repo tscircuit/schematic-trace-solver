@@ -22,6 +22,7 @@ import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolve
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
 import { Example28Solver } from "../Example28Solver/Example28Solver"
 import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
+import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -73,6 +74,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   traceCleanupSolver?: TraceCleanupSolver
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
+  vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -253,6 +255,20 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             instance.example28Solver!.outputNetLabelPlacements,
         },
       ],
+    ),
+    definePipelineStep(
+      "vccNetLabelCornerPlacementSolver",
+      VccNetLabelCornerPlacementSolver,
+      (instance) => {
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces: instance.availableNetOrientationSolver!.traces,
+            netLabelPlacements:
+              instance.availableNetOrientationSolver!.outputNetLabelPlacements,
+          },
+        ]
+      },
     ),
   ]
 
