@@ -9,6 +9,7 @@ import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/Schemati
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { getNetLabelStrokeColorForOrientation } from "../../../NetLabelPlacementSolver/getNetLabelStrokeColorForOrientation"
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath
@@ -106,6 +107,10 @@ export class SingleOverlapSolver extends BaseSolver {
       width: this.label.width,
       height: this.label.height,
       fill: "rgba(255, 0, 0, 0.2)",
+      stroke: getNetLabelStrokeColorForOrientation(
+        this.label.orientation,
+        "red",
+      ),
     })
 
     // Draw next candidate

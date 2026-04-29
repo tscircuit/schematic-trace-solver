@@ -9,6 +9,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import { getNetLabelStrokeColorForOrientation } from "./getNetLabelStrokeColorForOrientation"
 
 /**
  * A group of traces that have at least one overlapping segment and
@@ -344,12 +345,16 @@ export class NetLabelPlacementSolver extends BaseSolver {
     }
 
     for (const p of this.netLabelPlacements) {
+      const strokeColor = getNetLabelStrokeColorForOrientation(
+        p.orientation,
+        getColorFromString(p.globalConnNetId, 0.9),
+      )
       graphics.rects!.push({
         center: p.center,
         width: p.width,
         height: p.height,
         fill: getColorFromString(p.globalConnNetId, 0.35),
-        strokeColor: getColorFromString(p.globalConnNetId, 0.9),
+        strokeColor,
         label: `netId: ${p.netId}\nglobalConnNetId: ${p.globalConnNetId}`,
       } as any)
       graphics.points!.push({
