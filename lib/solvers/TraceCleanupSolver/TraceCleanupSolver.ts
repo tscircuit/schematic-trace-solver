@@ -6,6 +6,8 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
+import { is4PointRectangle } from "./is4PointRectangle"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -18,16 +20,13 @@ interface TraceCleanupSolverInput {
   paddingBuffer: number
 }
 
-import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
-import { is4PointRectangle } from "./is4PointRectangle"
-
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "untangling_traces"
   | "minimizing_turns"
   | "balancing_l_shapes"
-  | "untangling_traces"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
