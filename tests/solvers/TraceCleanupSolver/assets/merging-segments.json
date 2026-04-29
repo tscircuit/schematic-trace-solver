@@ -1,0 +1,46 @@
+{
+  "inputProblem": {
+    "chips": [],
+    "directConnections": [],
+    "netConnections": [
+      {
+        "netId": "NET1",
+        "pinIds": ["P1.1", "P2.1", "P3.1"]
+      }
+    ],
+    "availableNetLabelOrientations": {},
+    "maxMspPairDistance": 10
+  },
+  "allTraces": [
+    {
+      "mspPairId": "P1.1-P2.1",
+      "dcConnNetId": "net0",
+      "globalConnNetId": "net0",
+      "userNetId": "NET1",
+      "pins": [],
+      "tracePath": [
+        { "x": 0, "y": 0 },
+        { "x": 10, "y": 0 }
+      ],
+      "mspConnectionPairIds": ["P1.1-P2.1"],
+      "pinIds": ["P1.1", "P2.1"]
+    },
+    {
+      "mspPairId": "P2.1-P3.1",
+      "dcConnNetId": "net0",
+      "globalConnNetId": "net0",
+      "userNetId": "NET1",
+      "pins": [],
+      "tracePath": [
+        { "x": 5, "y": 0 },
+        { "x": 15, "y": 0 }
+      ],
+      "mspConnectionPairIds": ["P2.1-P3.1"],
+      "pinIds": ["P2.1", "P3.1"]
+    }
+  ],
+  "targetTraceIds": ["P1.1-P2.1", "P2.1-P3.1"],
+  "allLabelPlacements": [],
+  "mergedLabelNetIdMap": {},
+  "paddingBuffer": 0.01
+}
