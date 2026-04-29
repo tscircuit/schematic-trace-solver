@@ -47,7 +47,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   currentCandidateResults: EvaluatedCandidate[] = []
 
   private traceMap: Record<string, SolvedTracePath>
-  private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
+  private chipObstacleSpatialIndex: ChipObstacleSpatialIndex | null
   private maxSearchDistance: number
   private pinMap: Record<string, InputPin & { chipId: string }>
 
@@ -61,9 +61,16 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.traces.map((trace) => [trace.mspPairId, trace]),
     )
     this.pinMap = getPinMap(params.inputProblem)
-    this.chipObstacleSpatialIndex =
-      params.inputProblem._chipObstacleSpatialIndex ??
-      new ChipObstacleSpatialIndex(params.inputProblem.chips)
+    if (params.inputProblem._chipObstacleSpatialIndex) {
+      this.chipObstacleSpatialIndex =
+        params.inputProblem._chipObstacleSpatialIndex
+    } else if (params.inputProblem.chips.length > 0) {
+      this.chipObstacleSpatialIndex = new ChipObstacleSpatialIndex(
+        params.inputProblem.chips,
+      )
+    } else {
+      this.chipObstacleSpatialIndex = null
+    }
     this.maxSearchDistance = getMaxSearchDistance(params.inputProblem)
     this.queuedLabelIndices = this.getProcessableLabelIndices()
     this.setCurrentLabel(this.queuedLabelIndices[0] ?? null)
@@ -490,7 +497,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private getBoundsStatus(bounds: Bounds, labelIndex: number): CandidateStatus {
-    if (this.chipObstacleSpatialIndex.getChipsInBounds(bounds).length > 0) {
+    if (
+      this.chipObstacleSpatialIndex &&
+      this.chipObstacleSpatialIndex.getChipsInBounds(bounds).length > 0
+    ) {
       return "chip-collision"
     }
     if (this.sharesChipBoundary(bounds)) {
@@ -526,6 +536,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private sharesChipBoundary(bounds: Bounds) {
+    if (!this.chipObstacleSpatialIndex) return false
+
     for (const chip of this.chipObstacleSpatialIndex.chips) {
       const chipBounds = chip.bounds
       const adjacentToVerticalSide =
@@ -593,6 +605,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private getContainingChipSide(point: Point) {
+    if (!this.chipObstacleSpatialIndex) return null
+
     let nearestSide: ChipSide | null = null
     let nearestDistance = Number.POSITIVE_INFINITY
 
@@ -619,6 +633,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private getOutsideChipSide(point: Point) {
+    if (!this.chipObstacleSpatialIndex) return null
+
     let nearestSide: ChipSide | null = null
     let nearestDistanceSq = Number.POSITIVE_INFINITY
 
@@ -654,6 +670,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private getNearestChipSide(point: Point) {
+    if (!this.chipObstacleSpatialIndex) return null
+
     let nearestSide: ChipSide | null = null
     let nearestDistance = Number.POSITIVE_INFINITY
 
