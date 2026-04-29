@@ -7,10 +7,8 @@ import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectionPairSolver"
-import {
-  SchematicTraceLinesSolver,
-  type SolvedTracePath,
-} from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { SchematicTraceLinesSolver } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { colorAvailableNetOrientationLabels } from "./colorAvailableNetOrientationLabels"
