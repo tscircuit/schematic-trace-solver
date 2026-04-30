@@ -83,7 +83,7 @@ orientation: y-" data-x="3.511" data-y="-0.4310000000000001" cx="588.11292719167
   <g>
     <rect data-type="rect" data-label="netId: VCC
 globalConnNetId: connectivity_net0
-available orientations: y+" data-x="1.7049999999999998" data-y="0.42500000000000004" x="361.54531946508166" y="147.96699257057952" width="23.77414561664193" height="53.49182763744429" fill="#93c5fd66" stroke="#93c5fd" stroke-width="0.008412500000000002" />
+available orientations: y+" data-x="1.7049999999999998" data-y="0.42500000000000004" x="361.54531946508166" y="147.96699257057952" width="23.77414561664193" height="53.49182763744429" fill="#ef444466" stroke="#ef4444" stroke-width="0.008412500000000002" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: OUT
@@ -93,12 +93,12 @@ available orientations: any" data-x="1.5250000000000001" data-y="-0.448613837499
   <g>
     <rect data-type="rect" data-label="netId: GND
 globalConnNetId: connectivity_net2
-available orientations: y-" data-x="1.8499999999999996" data-y="-2.0194553499999994" x="378.78157503714704" y="438.54117979197616" width="23.77414561664193" height="53.49182763744432" fill="#fca5a566" stroke="#fca5a5" stroke-width="0.008412500000000002" />
+available orientations: y-" data-x="1.8499999999999996" data-y="-2.0194553499999994" x="378.78157503714704" y="438.54117979197616" width="23.77414561664193" height="53.49182763744432" fill="#00000066" stroke="#000000" stroke-width="0.008412500000000002" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
 globalConnNetId: connectivity_net2
-available orientations: y-" data-x="3.511" data-y="-0.6560000000000001" x="576.2258543833581" y="276.466249628529" width="23.77414561664193" height="53.49182763744432" fill="#fca5a566" stroke="#fca5a5" stroke-width="0.008412500000000002" />
+available orientations: y-" data-x="3.511" data-y="-0.6560000000000001" x="576.2258543833581" y="276.466249628529" width="23.77414561664193" height="53.49182763744432" fill="#00000066" stroke="#000000" stroke-width="0.008412500000000002" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />

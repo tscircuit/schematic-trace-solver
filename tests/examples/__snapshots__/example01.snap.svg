@@ -91,7 +91,7 @@ orientation: y-" data-x="-1.4" data-y="-0.7" cx="356.0396039603961" cy="378.2178
   <g>
     <rect data-type="rect" data-label="netId: VCC
 globalConnNetId: connectivity_net0
-available orientations: y+" data-x="-1.1" data-y="0.42500000000000016" x="378.21782178217825" y="228.51485148514848" width="22.178217821782198" height="49.9009900990099" fill="#93c5fd66" stroke="#93c5fd" stroke-width="0.009017857142857143" />
+available orientations: y+" data-x="-1.1" data-y="0.42500000000000016" x="378.21782178217825" y="228.51485148514848" width="22.178217821782198" height="49.9009900990099" fill="#ef444466" stroke="#ef4444" stroke-width="0.009017857142857143" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: EN
@@ -101,7 +101,7 @@ available orientations: x+, x-" data-x="-1.5" data-y="0" x="320" y="289.50495049
   <g>
     <rect data-type="rect" data-label="netId: GND
 globalConnNetId: connectivity_net2
-available orientations: y-" data-x="-1.4" data-y="-0.9249999999999999" x="344.950495049505" y="378.2178217821782" width="22.178217821782198" height="49.9009900990099" fill="#fca5a566" stroke="#fca5a5" stroke-width="0.009017857142857143" />
+available orientations: y-" data-x="-1.4" data-y="-0.9249999999999999" x="344.950495049505" y="378.2178217821782" width="22.178217821782198" height="49.9009900990099" fill="#00000066" stroke="#000000" stroke-width="0.009017857142857143" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
