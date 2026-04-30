@@ -1,0 +1,111 @@
+{
+  "inputProblem": {
+    "chips": [
+      {
+        "chipId": "schematic_component_0",
+        "center": { "x": 0, "y": 0 },
+        "width": 2.4,
+        "height": 1,
+        "pins": [
+          { "pinId": "U1.1", "x": 1.2, "y": -0.3 },
+          { "pinId": "U1.2", "x": -1.2, "y": -0.3 },
+          { "pinId": "U1.3", "x": 1.2, "y": 0.1 },
+          { "pinId": "U1.4", "x": -1.2, "y": 0.3 }
+        ]
+      },
+      {
+        "chipId": "schematic_component_1",
+        "center": { "x": 4, "y": 0 },
+        "width": 2.2,
+        "height": 0.8,
+        "pins": [
+          { "pinId": "J1.1", "x": 3.1, "y": 0 },
+          { "pinId": "J1.2", "x": 4.9, "y": 0 }
+        ]
+      },
+      {
+        "chipId": "schematic_component_2",
+        "center": { "x": 8, "y": 0 },
+        "width": 2.2,
+        "height": 0.8,
+        "pins": [
+          { "pinId": "J2.1", "x": 7.1, "y": 0 },
+          { "pinId": "J2.2", "x": 8.9, "y": 0 }
+        ]
+      }
+    ],
+    "directConnections": [],
+    "netConnections": [
+      { "netId": "VCC", "pinIds": ["U1.1", "J1.1", "J2.1"] },
+      { "netId": "GND", "pinIds": ["U1.4", "J1.2", "J2.2"] }
+    ],
+    "availableNetLabelOrientations": {
+      "VCC": ["y-"],
+      "GND": ["y+"]
+    }
+  },
+  "traces": [
+    {
+      "mspPairId": "U1.1-J1.1",
+      "dcConnNetId": "net0",
+      "globalConnNetId": "VCC",
+      "userNetId": "VCC",
+      "pins": [
+        {
+          "pinId": "U1.1",
+          "x": 1.2,
+          "y": -0.3,
+          "chipId": "schematic_component_0"
+        },
+        { "pinId": "J1.1", "x": 3.1, "y": 0, "chipId": "schematic_component_1" }
+      ],
+      "tracePath": [
+        { "x": 1.2, "y": -0.3 },
+        { "x": 1.2, "y": 0 },
+        { "x": 3.1, "y": 0 }
+      ],
+      "mspConnectionPairIds": ["U1.1-J1.1"],
+      "pinIds": ["U1.1", "J1.1"]
+    },
+    {
+      "mspPairId": "J1.2-J2.2",
+      "dcConnNetId": "net1",
+      "globalConnNetId": "GND",
+      "userNetId": "GND",
+      "pins": [
+        {
+          "pinId": "J1.2",
+          "x": 4.9,
+          "y": 0,
+          "chipId": "schematic_component_1"
+        },
+        { "pinId": "J2.2", "x": 8.9, "y": 0, "chipId": "schematic_component_2" }
+      ],
+      "tracePath": [{ "x": 4.9, "y": 0 }, { "x": 8.9, "y": 0 }],
+      "mspConnectionPairIds": ["J1.2-J2.2"],
+      "pinIds": ["J1.2", "J2.2"]
+    },
+    {
+      "mspPairId": "U1.3-U1.4",
+      "dcConnNetId": "net2",
+      "globalConnNetId": "net2",
+      "pins": [
+        {
+          "pinId": "U1.3",
+          "x": 1.2,
+          "y": 0.1,
+          "chipId": "schematic_component_0"
+        },
+        {
+          "pinId": "U1.4",
+          "x": -1.2,
+          "y": 0.3,
+          "chipId": "schematic_component_0"
+        }
+      ],
+      "tracePath": [{ "x": 1.2, "y": 0.1 }, { "x": -1.2, "y": 0.3 }],
+      "mspConnectionPairIds": ["U1.3-U1.4"],
+      "pinIds": ["U1.3", "U1.4"]
+    }
+  ]
+}
