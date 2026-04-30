@@ -19,6 +19,7 @@ interface TraceCleanupSolverInput {
 }
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
+import { removeNetSegmentDuplicates } from "./removeNetSegmentDuplicates"
 import { is4PointRectangle } from "./is4PointRectangle"
 
 /**
@@ -148,7 +149,7 @@ export class TraceCleanupSolver extends BaseSolver {
 
   getOutput() {
     return {
-      traces: this.outputTraces,
+      traces: removeNetSegmentDuplicates(this.outputTraces),
     }
   }
 

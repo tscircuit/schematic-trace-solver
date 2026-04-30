@@ -4,6 +4,7 @@ import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicT
 import type { NetLabelPlacement } from "../../NetLabelPlacementSolver/NetLabelPlacementSolver"
 
 import { findAllLShapedTurns, type LShape } from "./findAllLShapedTurns"
+import { removeDuplicateConsecutivePoints } from "../simplifyPath"
 import { getTraceObstacles } from "./getTraceObstacles"
 import { findIntersectionsWithObstacles } from "./findIntersectionsWithObstacles"
 import { generateLShapeRerouteCandidates } from "./generateLShapeRerouteCandidates"
@@ -258,11 +259,13 @@ export class UntangleTraceSubsolver extends BaseSolver {
           p.x === this.currentLShape!.p2.x && p.y === this.currentLShape!.p2.y,
       )
       if (p2Index !== -1) {
-        const newTracePath = [
+        // Remove consecutive duplicate points that appear when splicing
+        // the rerouted segment. These render as spurious extra trace lines (#78).
+        const newTracePath = removeDuplicateConsecutivePoints([
           ...originalTrace.tracePath.slice(0, p2Index),
           ...bestRoute,
           ...originalTrace.tracePath.slice(p2Index + 1),
-        ]
+        ])
         this.input.allTraces[traceIndex] = {
           ...originalTrace,
           tracePath: newTracePath,
