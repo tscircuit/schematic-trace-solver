@@ -1,8 +1,8 @@
 import type { GraphicsObject } from "graphics-debug"
 import type { InputProblem } from "lib/types/InputProblem"
 
-const AVAILABLE_Y_PLUS_COLOR = "#93c5fd"
-const AVAILABLE_Y_MINUS_COLOR = "#fca5a5"
+const AVAILABLE_Y_PLUS_COLOR = "#ef4444"
+const AVAILABLE_Y_MINUS_COLOR = "#000000"
 const AVAILABLE_ORIENTATION_FILL_ALPHA = "66"
 
 export const colorAvailableNetOrientationLabels = (
