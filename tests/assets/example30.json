@@ -164,7 +164,8 @@
   ],
   "netConnections": [],
   "availableNetLabelOrientations": {
-    "P.pin4 to P.pin15": ["y+", "y-", "-x"]
+    "P.pin1 to P.pin18": ["y+"],
+    "P.pin4 to P.pin15": ["y-"]
   },
   "maxMspPairDistance": 2.4
 }

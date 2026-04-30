@@ -79,15 +79,18 @@ orientation: y+" data-x="1.049" data-y="2.105" cx="291.88800000000003" cy="174.0
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
-globalConnNetId: connectivity_net0" data-x="1.3010000000000002" data-y="-0.7260000000000001" x="308.91200000000003" y="465.93600000000004" width="22.400000000000034" height="50.39999999999998" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008928571428571428" />
+globalConnNetId: connectivity_net0
+available orientations: y-" data-x="1.3010000000000002" data-y="-0.7260000000000001" x="308.91200000000003" y="465.93600000000004" width="22.400000000000034" height="50.39999999999998" fill="#fca5a566" stroke="#fca5a5" stroke-width="0.008928571428571428" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
-globalConnNetId: connectivity_net0" data-x="1.499" data-y="1.279" x="331.088" y="241.376" width="22.400000000000034" height="50.40000000000006" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008928571428571428" />
+globalConnNetId: connectivity_net0
+available orientations: y-" data-x="1.499" data-y="1.279" x="331.088" y="241.376" width="22.400000000000034" height="50.40000000000006" fill="#fca5a566" stroke="#fca5a5" stroke-width="0.008928571428571428" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: VCC
-globalConnNetId: connectivity_net1" data-x="1.049" data-y="2.33" x="280.68800000000005" y="123.66399999999999" width="22.399999999999977" height="50.400000000000034" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008928571428571428" />
+globalConnNetId: connectivity_net1
+available orientations: y+" data-x="1.049" data-y="2.33" x="280.68800000000005" y="123.66399999999999" width="22.399999999999977" height="50.400000000000034" fill="#93c5fd66" stroke="#93c5fd" stroke-width="0.008928571428571428" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />

@@ -13,6 +13,7 @@ import {
 } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { colorAvailableNetOrientationLabels } from "./colorAvailableNetOrientationLabels"
 import { visualizeInputProblem } from "./visualizeInputProblem"
 import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
 import { correctPinsInsideChips } from "./correctPinsInsideChip"
@@ -403,6 +404,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       circles: visualizations.flatMap((v) => v.circles || []),
       texts: visualizations.flatMap((v) => v.texts || []),
     }
+    colorAvailableNetOrientationLabels(finalGraphics, this.inputProblem)
     return finalGraphics
   }
 
