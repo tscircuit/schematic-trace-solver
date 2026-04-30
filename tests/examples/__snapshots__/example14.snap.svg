@@ -197,12 +197,12 @@ orientation: y+" data-x="1.4755000000000003" data-y="-1.2944553500000002" cx="44
   <g>
     <rect data-type="rect" data-label="netId: GND
 globalConnNetId: connectivity_net4
-available orientations: y-" data-x="1.3510000000000002" data-y="-0.5760000000000001" x="423.4707692307693" y="322.24" width="17.230769230769226" height="38.769230769230774" fill="#fca5a566" stroke="#fca5a5" stroke-width="0.011607142857142856" />
+available orientations: y-" data-x="1.3510000000000002" data-y="-0.5760000000000001" x="423.4707692307693" y="322.24" width="17.230769230769226" height="38.769230769230774" fill="#00000066" stroke="#000000" stroke-width="0.011607142857142856" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
 globalConnNetId: connectivity_net4
-available orientations: y-" data-x="-1.2000000000000002" data-y="-2.6750000000000003" x="203.6923076923077" y="503.0769230769231" width="17.230769230769255" height="38.76923076923083" fill="#fca5a566" stroke="#fca5a5" stroke-width="0.011607142857142856" />
+available orientations: y-" data-x="-1.2000000000000002" data-y="-2.6750000000000003" x="203.6923076923077" y="503.0769230769231" width="17.230769230769255" height="38.76923076923083" fill="#00000066" stroke="#000000" stroke-width="0.011607142857142856" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: U1.THRES to U1.TRIG
@@ -217,12 +217,12 @@ available orientations: any" data-x="1.6250000000000002" data-y="0.0999999999999
   <g>
     <rect data-type="rect" data-label="netId: VCC
 globalConnNetId: connectivity_net5
-available orientations: y+" data-x="-1.3010000000000002" data-y="0.7260000000000001" x="194.99076923076925" y="210.0676923076923" width="17.230769230769255" height="38.769230769230745" fill="#93c5fd66" stroke="#93c5fd" stroke-width="0.011607142857142856" />
+available orientations: y+" data-x="-1.3010000000000002" data-y="0.7260000000000001" x="194.99076923076925" y="210.0676923076923" width="17.230769230769255" height="38.769230769230745" fill="#ef444466" stroke="#ef4444" stroke-width="0.011607142857142856" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: VCC
 globalConnNetId: connectivity_net5
-available orientations: y+" data-x="3.2" data-y="0.525" x="582.7692307692308" y="227.3846153846154" width="17.230769230769283" height="38.769230769230745" fill="#93c5fd66" stroke="#93c5fd" stroke-width="0.011607142857142856" />
+available orientations: y+" data-x="3.2" data-y="0.525" x="582.7692307692308" y="227.3846153846154" width="17.230769230769283" height="38.769230769230745" fill="#ef444466" stroke="#ef4444" stroke-width="0.011607142857142856" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: U1.CTRL to C2.pin1

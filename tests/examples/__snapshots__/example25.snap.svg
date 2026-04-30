@@ -203,17 +203,17 @@ available orientations: any" data-x="-4.78" data-y="2.7600000000000002" x="55.35
   <g>
     <rect data-type="rect" data-label="netId: GND
 globalConnNetId: connectivity_net3
-available orientations: y-" data-x="3" data-y="-0.93" x="440.9813495202105" y="415.85820637387644" width="9.756560445178309" height="14.634840667767435" fill="#fca5a566" stroke="#fca5a5" stroke-width="0.020499027410714285" />
+available orientations: y-" data-x="3" data-y="-0.93" x="440.9813495202105" y="415.85820637387644" width="9.756560445178309" height="14.634840667767435" fill="#00000066" stroke="#000000" stroke-width="0.020499027410714285" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
 globalConnNetId: connectivity_net3
-available orientations: y-" data-x="6" data-y="-0.7010000000000001" x="587.3297561978845" y="404.68694466414735" width="9.756560445178138" height="14.634840667767378" fill="#fca5a566" stroke="#fca5a5" stroke-width="0.020499027410714285" />
+available orientations: y-" data-x="6" data-y="-0.7010000000000001" x="587.3297561978845" y="404.68694466414735" width="9.756560445178138" height="14.634840667767378" fill="#00000066" stroke="#000000" stroke-width="0.020499027410714285" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
 globalConnNetId: connectivity_net3
-available orientations: y-" data-x="-4.995" data-y="-0.7958008" x="50.96284572420936" y="409.31159334140364" width="9.756560445178224" height="14.634840667767378" fill="#fca5a566" stroke="#fca5a5" stroke-width="0.020499027410714285" />
+available orientations: y-" data-x="-4.995" data-y="-0.7958008" x="50.96284572420936" y="409.31159334140364" width="9.756560445178224" height="14.634840667767378" fill="#00000066" stroke="#000000" stroke-width="0.020499027410714285" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: .L1 &gt; .pin2 to .M1 &gt; .drain
