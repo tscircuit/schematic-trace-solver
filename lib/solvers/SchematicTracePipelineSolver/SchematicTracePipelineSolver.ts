@@ -20,6 +20,9 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { Example28Solver } from "../Example28Solver/Example28Solver"
+import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
+import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -69,6 +72,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
+  example28Solver?: Example28Solver
+  availableNetOrientationSolver?: AvailableNetOrientationSolver
+  vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -220,6 +226,46 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             inputTraceMap: Object.fromEntries(
               traces.map((trace: SolvedTracePath) => [trace.mspPairId, trace]),
             ),
+          },
+        ]
+      },
+    ),
+    definePipelineStep("example28Solver", Example28Solver, (instance) => {
+      const traces =
+        instance.traceCleanupSolver?.getOutput().traces ??
+        instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+
+      return [
+        {
+          inputProblem: instance.inputProblem,
+          traces,
+          netLabelPlacements:
+            instance.netLabelPlacementSolver!.netLabelPlacements,
+        },
+      ]
+    }),
+    definePipelineStep(
+      "availableNetOrientationSolver",
+      AvailableNetOrientationSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          traces: instance.example28Solver!.outputTraces,
+          netLabelPlacements:
+            instance.example28Solver!.outputNetLabelPlacements,
+        },
+      ],
+    ),
+    definePipelineStep(
+      "vccNetLabelCornerPlacementSolver",
+      VccNetLabelCornerPlacementSolver,
+      (instance) => {
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces: instance.availableNetOrientationSolver!.traces,
+            netLabelPlacements:
+              instance.availableNetOrientationSolver!.outputNetLabelPlacements,
           },
         ]
       },
