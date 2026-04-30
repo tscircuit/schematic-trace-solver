@@ -20,11 +20,13 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { removeNetSegmentDuplicates } from "./removeNetSegmentDuplicates"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "removing_duplicates"
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
@@ -75,6 +77,9 @@ export class TraceCleanupSolver extends BaseSolver {
     }
 
     switch (this.pipelineStep) {
+      case "removing_duplicates":
+        this._runRemoveDuplicatesStep()
+        break
       case "untangling_traces":
         this._runUntangleTracesStep()
         break
@@ -85,6 +90,12 @@ export class TraceCleanupSolver extends BaseSolver {
         this._runBalanceLShapesStep()
         break
     }
+  }
+
+  private _runRemoveDuplicatesStep() {
+    this.outputTraces = removeNetSegmentDuplicates(this.outputTraces)
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.pipelineStep = "untangling_traces"
   }
 
   private _runUntangleTracesStep() {
