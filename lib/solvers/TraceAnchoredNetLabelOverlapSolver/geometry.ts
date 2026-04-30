@@ -17,6 +17,10 @@ export const rectsOverlap = (a: Bounds, b: Bounds) =>
   Math.min(a.maxX, b.maxX) - Math.max(a.minX, b.minX) > EPS &&
   Math.min(a.maxY, b.maxY) - Math.max(a.minY, b.minY) > EPS
 
+export const rectsTouchOrOverlap = (a: Bounds, b: Bounds) =>
+  Math.min(a.maxX, b.maxX) - Math.max(a.minX, b.minX) >= -EPS &&
+  Math.min(a.maxY, b.maxY) - Math.max(a.minY, b.minY) >= -EPS
+
 export const traceCrossesBoundsInterior = (
   bounds: Bounds,
   traces: SolvedTracePath[],

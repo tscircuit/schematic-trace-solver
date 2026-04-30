@@ -100,7 +100,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const indices: number[] = []
 
     for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
-      if (this.shouldProcessLabel(this.outputNetLabelPlacements[i]!, i)) {
+      if (this.shouldProcessLabel(this.outputNetLabelPlacements[i]!)) {
         indices.push(i)
       }
     }
@@ -108,14 +108,9 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return indices
   }
 
-  private shouldProcessLabel(label: NetLabelPlacement, labelIndex: number) {
+  private shouldProcessLabel(label: NetLabelPlacement) {
     const orientations = this.getAvailableOrientations(label)
-    if (orientations.length === 0) return false
-
-    return !(
-      orientations.includes(label.orientation) &&
-      this.isLabelPlacementValid(label, labelIndex)
-    )
+    return orientations.length > 0 && !orientations.includes(label.orientation)
   }
 
   private processLabel(labelIndex: number) {
@@ -441,27 +436,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )?.netLabelWidth
   }
 
-  private isLabelPlacementValid(label: NetLabelPlacement, labelIndex: number) {
-    return this.isCandidateValidWithOffset(
-      {
-        orientation: label.orientation,
-        anchorPoint: label.anchorPoint,
-        center: label.center,
-        width: label.width,
-        height: label.height,
-      },
-      labelIndex,
-    )
-  }
-
-  private isCandidateValidWithOffset(
-    candidate: CandidateLabel,
-    labelIndex: number,
-  ) {
-    const bounds = this.getOffsetCollisionBounds(candidate)
-    return this.getBoundsStatus(bounds, labelIndex) === "valid"
-  }
-
   private getCandidateStatus(
     candidate: CandidateLabel,
     label: NetLabelPlacement,
@@ -503,16 +477,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       return "netlabel-collision"
     }
     return "valid"
-  }
-
-  private getOffsetCollisionBounds(candidate: CandidateLabel) {
-    const direction = dir(candidate.orientation)
-    const collisionTestOffset = 1e-4
-    const testCenter = {
-      x: candidate.center.x + direction.x * collisionTestOffset,
-      y: candidate.center.y + direction.y * collisionTestOffset,
-    }
-    return getRectBounds(testCenter, candidate.width, candidate.height)
   }
 
   private intersectsAnyOtherNetLabel(bounds: Bounds, labelIndex: number) {

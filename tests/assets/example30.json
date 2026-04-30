@@ -163,6 +163,8 @@
     }
   ],
   "netConnections": [],
-  "availableNetLabelOrientations": {},
+  "availableNetLabelOrientations": {
+    "P.pin4 to P.pin15": ["y+", "y-", "-x"]
+  },
   "maxMspPairDistance": 2.4
 }

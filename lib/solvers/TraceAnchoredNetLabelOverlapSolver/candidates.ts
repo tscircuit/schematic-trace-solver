@@ -10,7 +10,6 @@ import {
   EPS,
   getManhattanDistance,
   getPointAtTraceDistance,
-  getTraceDistanceCompatibleOrientations,
   getTraceLength,
   getTraceVertexDistances,
 } from "./geometry"
@@ -27,10 +26,8 @@ export const generateCandidatesAlongTrace = (params: {
   const traceLength = getTraceLength(traceLocation.trace)
   const orientationConstraint = getOrientationConstraint(inputProblem, label)
   const candidateDistances = getCandidateDistances(
-    traceLocation,
     traceLength,
     getTraceVertexDistances(traceLocation.trace),
-    orientationConstraint,
   )
   const netLabelWidth = getNetLabelWidth(inputProblem, label)
   const candidates: LabelCandidate[] = []
@@ -38,15 +35,10 @@ export const generateCandidatesAlongTrace = (params: {
 
   for (const pathDistance of candidateDistances) {
     const point = getPointAtTraceDistance(traceLocation.trace, pathDistance)
-    const compatibleOrientations = getTraceDistanceCompatibleOrientations(
-      traceLocation.trace,
-      pathDistance,
-    )
     const orientations = getOrientationsForPoint({
       inputProblem,
       label,
       point,
-      compatibleOrientations,
       orientationConstraint,
     })
 
@@ -71,18 +63,12 @@ export const generateCandidatesAlongTrace = (params: {
     }
   }
 
-  return candidates.sort(
-    (a, b) =>
-      a.distanceFromOriginal - b.distanceFromOriginal ||
-      a.pathDistance - b.pathDistance,
-  )
+  return candidates
 }
 
 const getCandidateDistances = (
-  traceLocation: TraceLocation,
   traceLength: number,
   vertexDistances: number[],
-  orientationConstraint: FacingDirection[] | null,
 ) => {
   const distances = new Set<number>()
   const maxSteps = Math.ceil(traceLength / CANDIDATE_STEP)
@@ -94,50 +80,28 @@ const getCandidateDistances = (
   for (const distance of vertexDistances) {
     distances.add(roundDistance(distance))
   }
-  distances.add(roundDistance(traceLocation.distance))
 
   return [...distances]
     .filter((distance) => distance >= -EPS && distance <= traceLength + EPS)
-    .filter((distance) =>
-      isDistanceAllowedByOrientationConstraint(
-        traceLocation,
-        distance,
-        orientationConstraint,
-      ),
-    )
-    .sort(
-      (a, b) =>
-        Math.abs(a - traceLocation.distance) -
-          Math.abs(b - traceLocation.distance) || a - b,
-    )
+    .sort((a, b) => a - b)
 }
 
 const getOrientationsForPoint = (params: {
   inputProblem: InputProblem
   label: NetLabelPlacement
   point: Point
-  compatibleOrientations: Set<FacingDirection>
   orientationConstraint: FacingDirection[] | null
 }) => {
-  const {
-    inputProblem,
-    label,
-    point,
-    compatibleOrientations,
-    orientationConstraint,
-  } = params
+  const { inputProblem, label, point, orientationConstraint } = params
 
   if (orientationConstraint) {
-    return orientationConstraint.filter((orientation) =>
-      compatibleOrientations.has(orientation),
-    )
+    return orientationConstraint
   }
 
   return getUnconstrainedOrientations({
     label,
     inputProblem,
     point,
-    compatibleOrientations,
   })
 }
 
@@ -180,29 +144,21 @@ const getOrientationConstraint = (
   inputProblem: InputProblem,
   label: NetLabelPlacement,
 ): FacingDirection[] | null => {
+  const availableOrientations = inputProblem.availableNetLabelOrientations ?? {}
   for (const netId of getOrientationConstraintKeys(inputProblem, label)) {
-    if (Object.hasOwn(inputProblem.availableNetLabelOrientations, netId)) {
-      return inputProblem.availableNetLabelOrientations[netId] ?? []
+    if (Object.hasOwn(availableOrientations, netId)) {
+      return dedupeOrientations(
+        (availableOrientations[netId] ?? [])
+          .map(normalizeFacingDirection)
+          .filter(
+            (orientation): orientation is FacingDirection =>
+              orientation !== undefined,
+          ),
+      )
     }
   }
 
   return null
-}
-
-const isDistanceAllowedByOrientationConstraint = (
-  traceLocation: TraceLocation,
-  distance: number,
-  constrainedOrientations: FacingDirection[] | null,
-) => {
-  if (!constrainedOrientations) return true
-
-  const compatibleOrientations = getTraceDistanceCompatibleOrientations(
-    traceLocation.trace,
-    distance,
-  )
-  return constrainedOrientations.some((orientation) =>
-    compatibleOrientations.has(orientation),
-  )
 }
 
 const getOrientationConstraintKeys = (
@@ -223,77 +179,60 @@ const getUnconstrainedOrientations = (params: {
   label: NetLabelPlacement
   inputProblem: InputProblem
   point: Point
-  compatibleOrientations: Set<FacingDirection>
 }) => {
-  const { label, inputProblem, point, compatibleOrientations } = params
+  const { label, inputProblem, point } = params
   return dedupeOrientations([
-    ...getInitialOrientations(label, compatibleOrientations),
+    ...getInitialOrientations(label),
     ...getOutwardOrientations({
       inputProblem,
       point,
-      compatibleOrientations,
     }),
-    ...ALL_ORIENTATIONS.filter((orientation) =>
-      compatibleOrientations.has(orientation),
-    ),
+    ...ALL_ORIENTATIONS,
   ])
 }
 
-const getInitialOrientations = (
-  label: NetLabelPlacement,
-  compatibleOrientations: Set<FacingDirection>,
-) =>
-  [label.orientation, getFlippedOrientation(label.orientation)].filter(
-    (orientation) => compatibleOrientations.has(orientation),
-  )
+const getInitialOrientations = (label: NetLabelPlacement) => [
+  label.orientation,
+  getFlippedOrientation(label.orientation),
+]
 
 const getOutwardOrientations = (params: {
   inputProblem: InputProblem
   point: Point
-  compatibleOrientations: Set<FacingDirection>
 }) => {
-  const { inputProblem, point, compatibleOrientations } = params
+  const { inputProblem, point } = params
   const chipBounds = getChipBounds(inputProblem)
 
   return dedupeOrientations(
-    getOutwardOrientationOptions(point, chipBounds, compatibleOrientations)
-      .filter(({ orientation }) => compatibleOrientations.has(orientation))
+    getOutwardOrientationOptions(point, chipBounds)
       .sort((a, b) => b.outwardScore - a.outwardScore)
       .map(({ orientation }) => orientation),
   )
 }
 
-const getOutwardOrientationOptions = (
-  point: Point,
-  chipBounds: ChipBounds,
-  compatibleOrientations: Set<FacingDirection>,
-) => {
+const getOutwardOrientationOptions = (point: Point, chipBounds: ChipBounds) => {
   const options: OutwardOrientationOption[] = []
 
-  if (compatibleOrientations.has("y+") || compatibleOrientations.has("y-")) {
-    options.push(
-      getOutwardAxisOption({
-        value: point.y,
-        min: chipBounds.minY,
-        max: chipBounds.maxY,
-        center: chipBounds.centerY,
-        positiveOrientation: "y+",
-        negativeOrientation: "y-",
-      }),
-    )
-  }
-  if (compatibleOrientations.has("x+") || compatibleOrientations.has("x-")) {
-    options.push(
-      getOutwardAxisOption({
-        value: point.x,
-        min: chipBounds.minX,
-        max: chipBounds.maxX,
-        center: chipBounds.centerX,
-        positiveOrientation: "x+",
-        negativeOrientation: "x-",
-      }),
-    )
-  }
+  options.push(
+    getOutwardAxisOption({
+      value: point.y,
+      min: chipBounds.minY,
+      max: chipBounds.maxY,
+      center: chipBounds.centerY,
+      positiveOrientation: "y+",
+      negativeOrientation: "y-",
+    }),
+  )
+  options.push(
+    getOutwardAxisOption({
+      value: point.x,
+      min: chipBounds.minX,
+      max: chipBounds.maxX,
+      center: chipBounds.centerX,
+      positiveOrientation: "x+",
+      negativeOrientation: "x-",
+    }),
+  )
 
   return options
 }
@@ -414,6 +353,25 @@ const roundDistance = (distance: number) => Number(distance.toFixed(6))
 const dedupeOrientations = (orientations: FacingDirection[]) => [
   ...new Set(orientations),
 ]
+
+const normalizeFacingDirection = (
+  value: string,
+): FacingDirection | undefined => {
+  switch (value) {
+    case "x+":
+    case "+x":
+      return "x+"
+    case "x-":
+    case "-x":
+      return "x-"
+    case "y+":
+    case "+y":
+      return "y+"
+    case "y-":
+    case "-y":
+      return "y-"
+  }
+}
 
 const dedupeStrings = (values: Array<string | undefined>) => [
   ...new Set(values.filter((value): value is string => value !== undefined)),

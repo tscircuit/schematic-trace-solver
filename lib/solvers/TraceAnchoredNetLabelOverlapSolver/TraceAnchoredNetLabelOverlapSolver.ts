@@ -9,6 +9,7 @@ import {
   getLabelBounds,
   getTraceLocationsForPoint,
   rectsOverlap,
+  rectsTouchOrOverlap,
   traceCrossesBoundsInterior,
 } from "./geometry"
 import type {
@@ -217,11 +218,7 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
       )
     }
 
-    return candidates.sort(
-      (a, b) =>
-        a.distanceFromOriginal - b.distanceFromOriginal ||
-        a.pathDistance - b.pathDistance,
-    )
+    return candidates
   }
 
   private getCandidateStatus(
@@ -256,7 +253,10 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
 
   private intersectsAnyChip(bounds: Bounds) {
     return this.inputProblem.chips.some((chip) =>
-      rectsOverlap(bounds, getRectBounds(chip.center, chip.width, chip.height)),
+      rectsTouchOrOverlap(
+        bounds,
+        getRectBounds(chip.center, chip.width, chip.height),
+      ),
     )
   }
 

@@ -21,7 +21,7 @@ export const visualizeTraceAnchoredNetLabelOverlapSolver = (state: {
   ensureGraphicsArrays(graphics)
 
   drawTraces(graphics, state.traces)
-  drawNetLabels(graphics, state.outputNetLabelPlacements)
+  drawNetLabels(graphics, state.inputProblem, state.outputNetLabelPlacements)
 
   if (!state.solved) {
     drawCurrentOverlap(graphics, state)
@@ -42,6 +42,7 @@ const drawTraces = (graphics: GraphicsObject, traces: SolvedTracePath[]) => {
 
 const drawNetLabels = (
   graphics: GraphicsObject,
+  inputProblem: InputProblem,
   labels: NetLabelPlacement[],
 ) => {
   for (const label of labels) {
@@ -51,7 +52,7 @@ const drawNetLabels = (
       height: label.height,
       fill: getColorFromString(label.globalConnNetId, 0.35),
       strokeColor: getColorFromString(label.globalConnNetId, 0.9),
-      label: `netId: ${label.netId}\nglobalConnNetId: ${label.globalConnNetId}`,
+      label: getNetLabelVisualizationLabel(inputProblem, label),
     } as any)
     graphics.points!.push({
       x: label.anchorPoint.x,
@@ -65,6 +66,7 @@ const drawNetLabels = (
 const drawCurrentOverlap = (
   graphics: GraphicsObject,
   state: {
+    inputProblem: InputProblem
     outputNetLabelPlacements: NetLabelPlacement[]
     currentOverlap: LabelOverlap | null
   },
@@ -84,7 +86,7 @@ const drawCurrentOverlap = (
       height: label.height,
       fill: "rgba(255, 0, 0, 0.2)",
       strokeColor: CANDIDATE_REJECTED_COLOR,
-      label: `netlabel overlap target\n${label.netId ?? label.globalConnNetId}`,
+      label: `netlabel overlap target\n${label.netId ?? label.globalConnNetId}\n${getAvailableOrientationText(state.inputProblem, label)}`,
     } as any)
   }
 }
@@ -106,7 +108,7 @@ const drawCurrentCandidates = (
         : "rgba(255, 0, 0, 0.15)",
       strokeColor: color,
       strokeDash: candidate.selected ? undefined : "4 2",
-      label: `${candidate.selected ? "selected" : candidate.status} netlabel overlap candidate\ntrace: ${candidate.traceId}\ndistance: ${candidate.distanceFromOriginal.toFixed(3)}`,
+      label: `${candidate.selected ? "selected" : candidate.status} netlabel overlap candidate\ntrace: ${candidate.traceId}\npath distance: ${candidate.pathDistance.toFixed(3)}\norientation: ${candidate.orientation}\ndistance from original: ${candidate.distanceFromOriginal.toFixed(3)}`,
     } as any)
     graphics.points!.push({
       ...candidate.anchorPoint,
@@ -122,4 +124,36 @@ const ensureGraphicsArrays = (graphics: GraphicsObject) => {
   if (!graphics.rects) graphics.rects = []
   if (!graphics.circles) graphics.circles = []
   if (!graphics.texts) graphics.texts = []
+}
+
+const getAvailableOrientationText = (
+  inputProblem: InputProblem,
+  label: NetLabelPlacement,
+) => {
+  const orientations = getAvailableOrientationsForLabel(inputProblem, label)
+  return `available orientations: ${orientations?.join(", ") ?? "any"}`
+}
+
+const getNetLabelVisualizationLabel = (
+  inputProblem: InputProblem,
+  label: NetLabelPlacement,
+) =>
+  [
+    `netId: ${label.netId}`,
+    `globalConnNetId: ${label.globalConnNetId}`,
+    getAvailableOrientationText(inputProblem, label),
+  ].join("\n")
+
+const getAvailableOrientationsForLabel = (
+  inputProblem: InputProblem,
+  label: NetLabelPlacement,
+) => {
+  const availableOrientations = inputProblem.availableNetLabelOrientations ?? {}
+  for (const netId of [label.netId, label.globalConnNetId]) {
+    if (netId && Object.hasOwn(availableOrientations, netId)) {
+      return availableOrientations[netId]
+    }
+  }
+
+  return undefined
 }
