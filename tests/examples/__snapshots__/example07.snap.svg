@@ -136,23 +136,28 @@ orientation: x+" data-x="1.757519574999999" data-y="0.85" cx="547.3539750075635"
   </g>
   <g>
     <rect data-type="rect" data-label="netId: V3_3
-globalConnNetId: connectivity_net0" data-x="-1.8574283249999997" data-y="0.9762093000000004" x="112.7378861431207" y="270.2760341291854" width="23.398233329971788" height="52.64602499243642" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.00854765388392857" />
+globalConnNetId: connectivity_net0
+available orientations: y+" data-x="-1.8574283249999997" data-y="0.9762093000000004" x="112.7378861431207" y="270.2760341291854" width="23.398233329971788" height="52.64602499243642" fill="#93c5fd66" stroke="#93c5fd" stroke-width="0.00854765388392857" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: V3_3
-globalConnNetId: connectivity_net0" data-x="1.5999999999999999" data-y="-0.07499999999999998" x="517.2264594931378" y="393.2582365293668" width="23.39823332997173" height="52.64602499243648" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.00854765388392857" />
+globalConnNetId: connectivity_net0
+available orientations: y+" data-x="1.5999999999999999" data-y="-0.07499999999999998" x="517.2264594931378" y="393.2582365293668" width="23.39823332997173" height="52.64602499243648" fill="#93c5fd66" stroke="#93c5fd" stroke-width="0.00854765388392857" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: V3_3
-globalConnNetId: connectivity_net0" data-x="1.7580660749999977" data-y="2.5285814" x="535.7187940151516" y="88.66221107549416" width="23.39823332997173" height="52.64602499243642" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.00854765388392857" />
+globalConnNetId: connectivity_net0
+available orientations: y+" data-x="1.7580660749999977" data-y="2.5285814" x="535.7187940151516" y="88.66221107549416" width="23.39823332997173" height="52.64602499243642" fill="#93c5fd66" stroke="#93c5fd" stroke-width="0.00854765388392857" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
-globalConnNetId: connectivity_net1" data-x="-2.31430995" data-y="-0.9762093000000004" x="59.28677181348735" y="498.6917639320694" width="23.398233329971788" height="52.64602499243642" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.00854765388392857" />
+globalConnNetId: connectivity_net1
+available orientations: y-" data-x="-2.31430995" data-y="-0.9762093000000004" x="59.28677181348735" y="498.6917639320694" width="23.398233329971788" height="52.64602499243642" fill="#fca5a566" stroke="#fca5a5" stroke-width="0.00854765388392857" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: FLASH_N_CS
-globalConnNetId: connectivity_net2" data-x="1.982519574999999" data-y="0.85" x="547.3539750075635" y="299.6653032094798" width="52.64602499243654" height="23.39823332997173" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.00854765388392857" />
+globalConnNetId: connectivity_net2
+available orientations: any" data-x="1.982519574999999" data-y="0.85" x="547.3539750075635" y="299.6653032094798" width="52.64602499243654" height="23.39823332997173" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.00854765388392857" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />

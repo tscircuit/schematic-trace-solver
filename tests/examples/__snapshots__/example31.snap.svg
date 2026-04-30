@@ -26,7 +26,8 @@ orientation: y+" data-x="3.2" data-y="0.30000000000000004" cx="587.5555555555557
   </g>
   <g>
     <rect data-type="rect" data-label="netId: VCC
-globalConnNetId: connectivity_net0" data-x="3.2" data-y="0.525" x="575.1111111111111" y="242.22222222222223" width="24.888888888888914" height="56" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008035714285714287" />
+globalConnNetId: connectivity_net0
+available orientations: y+" data-x="3.2" data-y="0.525" x="575.1111111111111" y="242.22222222222223" width="24.888888888888914" height="56" fill="#93c5fd66" stroke="#93c5fd" stroke-width="0.008035714285714287" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
