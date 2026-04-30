@@ -39,10 +39,7 @@
       { "netId": "VCC", "pinIds": ["U1.1", "J1.1", "J2.1"] },
       { "netId": "GND", "pinIds": ["U1.4", "J1.2", "J2.2"] }
     ],
-    "availableNetLabelOrientations": {
-      "VCC": ["y-"],
-      "GND": ["y+"]
-    }
+    "availableNetLabelOrientations": {}
   },
   "traces": [
     {
