@@ -319,8 +319,7 @@ function mergeCollinearSegments(
 
   // axis value: Y for horizontal, X for vertical
   const axisVal = (s: TraceSegment) => (orientation === "h" ? s.y1 : s.x1)
-  const rangeStart = (s: TraceSegment) =>
-    orientation === "h" ? s.x1 : s.y1
+  const rangeStart = (s: TraceSegment) => (orientation === "h" ? s.x1 : s.y1)
   const rangeEnd = (s: TraceSegment) => (orientation === "h" ? s.x2 : s.y2)
 
   // Sort by axis value then range start
@@ -374,7 +373,10 @@ function mergeCollinearSegments(
         if (rangeEnd(next) > mergedEnd) {
           mergedEnd = rangeEnd(next)
         }
-        contributors.push({ traceIndex: next.traceIndex, segIndex: next.segIndex })
+        contributors.push({
+          traceIndex: next.traceIndex,
+          segIndex: next.segIndex,
+        })
       }
 
       // Only record as a merged segment if it actually merged multiple contributors
@@ -411,7 +413,10 @@ function deduplicatePoints(points: Point[]): Point[] {
   const result: Point[] = [points[0]]
   for (let i = 1; i < points.length; i++) {
     const prev = result[result.length - 1]
-    if (!approxEqual(points[i].x, prev.x) || !approxEqual(points[i].y, prev.y)) {
+    if (
+      !approxEqual(points[i].x, prev.x) ||
+      !approxEqual(points[i].y, prev.y)
+    ) {
       result.push(points[i])
     }
   }
