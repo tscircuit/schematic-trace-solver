@@ -62,6 +62,6 @@ test("repro61: net-label-only connections should not produce traces", () => {
   solver.solve()
 
   expect(solver.solved).toBe(true)
-  const traces = solver.solvedTraces ?? []
+  const traces = solver.schematicTraceLinesSolver?.solvedTracePaths ?? []
   expect(traces).toHaveLength(0)
 })
