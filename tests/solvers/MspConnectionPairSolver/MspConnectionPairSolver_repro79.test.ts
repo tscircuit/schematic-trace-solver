@@ -1,0 +1,70 @@
+import { test, expect } from "bun:test"
+import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import type { InputProblem } from "lib/types/InputProblem"
+
+// Regression test for https://github.com/tscircuit/schematic-trace-solver/issues/79
+// Net-label-only nets (netConnections with no directConnections) must not produce
+// spurious MSP trace pairs.
+const inputProblem: InputProblem = {
+  chips: [
+    {
+      chipId: "U1",
+      center: { x: 0, y: 0 },
+      width: 1.6,
+      height: 0.6,
+      pins: [
+        { pinId: "U1.1", x: -0.8, y: 0.2 },
+        { pinId: "U1.2", x: -0.8, y: 0 },
+        { pinId: "U1.3", x: -0.8, y: -0.2 },
+      ],
+    },
+    {
+      chipId: "C1",
+      center: { x: -2, y: 0 },
+      width: 0.5,
+      height: 1,
+      pins: [
+        { pinId: "C1.1", x: -2, y: 0.5 },
+        { pinId: "C1.2", x: -2, y: -0.5 },
+      ],
+    },
+    {
+      chipId: "C2",
+      center: { x: -4, y: 0 },
+      width: 0.5,
+      height: 1,
+      pins: [
+        { pinId: "C2.1", x: -4, y: 0.5 },
+        { pinId: "C2.2", x: -4, y: -0.5 },
+      ],
+    },
+  ],
+  directConnections: [
+    { pinIds: ["U1.1", "C1.1"], netId: "VCC" },
+  ],
+  netConnections: [
+    // GND is a net-label-only connection — no physical trace should be generated
+    { pinIds: ["U1.3", "C2.2", "C1.2"], netId: "GND" },
+  ],
+  availableNetLabelOrientations: {
+    VCC: ["y+"],
+    GND: ["y-"],
+  },
+  maxMspPairDistance: 5,
+}
+
+test("MspConnectionPairSolver_repro79: net-label-only nets produce no MSP pairs", () => {
+  const solver = new MspConnectionPairSolver({ inputProblem })
+  solver.solve()
+
+  const gndPairs = solver.mspConnectionPairs.filter(
+    (p) => p.userNetId === "GND",
+  )
+  expect(gndPairs).toHaveLength(0)
+
+  // VCC has a directConnection so it should produce a pair
+  const vccPairs = solver.mspConnectionPairs.filter(
+    (p) => p.userNetId === "VCC",
+  )
+  expect(vccPairs).toHaveLength(1)
+})
