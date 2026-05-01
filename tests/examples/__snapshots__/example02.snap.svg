@@ -54,11 +54,11 @@ x+" data-x="1" data-y="0.1" cx="500.20151295522464" cy="324.189420823755" r="3" 
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-3.04402325" data-y="1.3024186000000004" cx="157.93655911079327" cy="222.4230062437483" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y+" data-x="-1.4574283249999997" data-y="1.3024186000000004" cx="292.2176463362275" cy="222.4230062437483" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y-" data-x="-3.04347655" data-y="-0.2000000000000004" cx="157.98282893633564" cy="349.5798500586337" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y-" data-x="-3.0434765500000003" data-y="-0.2000000000000004" cx="157.98282893633558" cy="349.5798500586337" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -196,7 +196,6 @@ orientation: y+" data-x="1.4571549750000001" data-y="0.29999999999999966" cx="53
   </g>
   <g>
     <rect data-type="rect" data-label="netId: VSYS
-<<<<<<< HEAD
 globalConnNetId: connectivity_net0
 available orientations: y+" data-x="-1.4574283249999997" data-y="1.5274186000000005" x="283.75416992460123" y="184.33736239143013" width="16.926952823252577" height="38.08564385231816" fill="#ef444466" stroke="#ef4444" stroke-width="0.011815475714285715" />
   </g>
@@ -204,13 +203,6 @@ available orientations: y+" data-x="-1.4574283249999997" data-y="1.5274186000000
     <rect data-type="rect" data-label="netId: GND
 globalConnNetId: connectivity_net1
 available orientations: y-" data-x="-3.0434765500000003" data-y="-0.4250000000000004" x="149.51935252470935" y="349.5798500586337" width="16.926952823252492" height="38.085643852318185" fill="#00000066" stroke="#000000" stroke-width="0.011815475714285715" />
-=======
-globalConnNetId: connectivity_net0" data-x="-3.04402325" data-y="1.5274186000000005" x="149.47308269916698" y="184.33736239143013" width="16.92695282325255" height="38.08564385231816" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.011815475714285715" />
-  </g>
-  <g>
-    <rect data-type="rect" data-label="netId: GND
-globalConnNetId: connectivity_net1" data-x="-3.04347655" data-y="-0.4250000000000004" x="149.51935252470935" y="349.5798500586337" width="16.92695282325255" height="38.085643852318185" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.011815475714285715" />
->>>>>>> 7fa0ee9 (feat: add CollinearTraceMergeSolver to merge collinear same-net trace segments)
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND

@@ -70,19 +70,23 @@ orientation: x+" data-x="4.5512907" data-y="-0.0002732499999993365" cx="558.2772
   </g>
   <g>
     <rect data-type="rect" data-label="netId: chip.U1 &gt; port.pin1 to R1.1
-globalConnNetId: connectivity_net0" data-x="-0.8260000000000001" data-y="0.30000000000000004" x="39.999999999999986" y="282.99533409158755" width="41.630249146963976" height="18.502332954206224" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.010809447678571428" />
+globalConnNetId: connectivity_net0
+available orientations: any" data-x="-0.8260000000000001" data-y="0.30000000000000004" x="39.999999999999986" y="282.99533409158755" width="41.630249146963976" height="18.502332954206224" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.010809447678571428" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: chip.U1 &gt; port.pin1 to R1.1
-globalConnNetId: connectivity_net0" data-x="3.2227093" data-y="0.0002732499999993365" x="414.5528375169559" y="310.72355471049826" width="41.63024914696399" height="18.502332954206224" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.010809447678571428" />
+globalConnNetId: connectivity_net0
+available orientations: any" data-x="3.2227093" data-y="0.0002732499999993365" x="414.5528375169559" y="310.72355471049826" width="41.63024914696399" height="18.502332954206224" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.010809447678571428" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: chip.U1 &gt; port.pin6 to R1.2
-globalConnNetId: connectivity_net1" data-x="0.8260000000000001" data-y="-0.10000000000000003" x="192.82927020174336" y="320" width="41.63024914696396" height="18.502332954206224" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.010809447678571428" />
+globalConnNetId: connectivity_net1
+available orientations: any" data-x="0.8260000000000001" data-y="-0.10000000000000003" x="192.82927020174336" y="320" width="41.63024914696396" height="18.502332954206224" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.010809447678571428" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: chip.U1 &gt; port.pin6 to R1.2
-globalConnNetId: connectivity_net1" data-x="4.7772907" data-y="-0.0002732499999993365" x="558.3697508530361" y="310.7741123352955" width="41.63024914696393" height="18.502332954206224" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.010809447678571428" />
+globalConnNetId: connectivity_net1
+available orientations: any" data-x="4.7772907" data-y="-0.0002732499999993365" x="558.3697508530361" y="310.7741123352955" width="41.63024914696393" height="18.502332954206224" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.010809447678571428" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
