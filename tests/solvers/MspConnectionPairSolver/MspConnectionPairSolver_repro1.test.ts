@@ -10,5 +10,6 @@ test("MspConnectionPairSolver_repro1", () => {
 
   solver.solve()
 
-  expect(solver.mspConnectionPairs.length).toBe(4)
+  // Only direct connections generate MSP pairs; net-label-only connections (GND) should not
+  expect(solver.mspConnectionPairs.length).toBe(2)
 })

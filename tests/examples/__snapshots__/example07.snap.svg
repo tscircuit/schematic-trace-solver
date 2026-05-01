@@ -50,7 +50,7 @@ y-" data-x="1.757519574999999" data-y="1.2" cx="547.3539750075635" cy="270.41751
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-1.8574283249999997" data-y="0.7512093000000004" cx="124.4370028081066" cy="322.9220591216218" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y+" data-x="-2.3148566499999994" data-y="0.7522093000000004" cx="70.92192940766586" cy="322.80506795497195" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -126,6 +126,9 @@ orientation: x+" data-x="1.757519574999999" data-y="0.85" cx="547.3539750075635"
     <polyline data-points="1.757519574999999,1.2 1.757519574999999,0.5 1.4,0.5" data-type="line" data-label="" points="547.3539750075635,270.4175115470151 547.3539750075635,352.31132820191624 505.5273428281519,352.31132820191624" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
+    <polyline data-points="-2.3148566499999994,0.7512093000000004 -2.3148566499999994,0.7522093000000004" data-type="line" data-label="" points="70.92192940766586,322.9220591216218 70.92192940766586,322.80506795497195" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
     <rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="177.95207620854734" y="328.9130948719445" width="327.5752666196046" height="163.78763330980223" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.00854765388392857" />
   </g>
   <g>
@@ -137,7 +140,7 @@ orientation: x+" data-x="1.757519574999999" data-y="0.85" cx="547.3539750075635"
   <g>
     <rect data-type="rect" data-label="netId: V3_3
 globalConnNetId: connectivity_net0
-available orientations: y+" data-x="-1.8574283249999997" data-y="0.9762093000000004" x="112.7378861431207" y="270.2760341291854" width="23.398233329971788" height="52.64602499243642" fill="#ef444466" stroke="#ef4444" stroke-width="0.00854765388392857" />
+available orientations: y+" data-x="-2.3148566499999994" data-y="0.9772093000000004" x="59.22281274267999" y="270.1590429625355" width="23.398233329971788" height="52.64602499243642" fill="#ef444466" stroke="#ef4444" stroke-width="0.00854765388392857" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: V3_3
