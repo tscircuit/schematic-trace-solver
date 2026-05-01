@@ -130,7 +130,8 @@ orientation: y-" data-x="2.6201245500000003" data-y="0.9994877000000013" cx="514
   </g>
   <g>
     <rect data-type="rect" data-label="netId: .LED1 &gt; port.right to .U1 &gt; .pin20
-globalConnNetId: connectivity_net0" data-x="2.6201245500000003" data-y="0.7744877000000013" x="504.1605526923077" y="223.1320938461537" width="21.538461538461604" height="48.46153846153848" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.009285714285714286" />
+globalConnNetId: connectivity_net0
+available orientations: any" data-x="2.6201245500000003" data-y="0.7744877000000013" x="504.1605526923077" y="223.1320938461537" width="21.538461538461604" height="48.46153846153848" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.009285714285714286" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />

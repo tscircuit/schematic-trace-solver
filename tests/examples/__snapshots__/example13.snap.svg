@@ -224,18 +224,12 @@ orientation: y+" data-x="1.96375" data-y="3" cx="417.91062100986653" cy="157.492
     <polyline data-points="1.15,0 1.8,0 1.8,-1.5 2.45,-1.5" data-type="line" data-label="" points="365.01450957632034,352.5014509576321 407.266395821242,352.5014509576321 407.266395821242,450.0058038305282 449.5182820661637,450.0058038305282" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-<<<<<<< HEAD
-    <polyline data-points="3.435,3 0.49249999999999994,3 0.49249999999999994,2 -2.45,2" data-type="line" data-label="" points="513.5461404526988,157.49274521183986 322.2751015670342,157.49274521183986 322.2751015670342,222.49564712710392 131.00406268136967,222.49564712710392" fill="none" stroke="purple" stroke-width="1" />
-  </g>
-  <g>
     <polyline data-points="-1.15,-1.125 -1.301,-1.125 -1.301,-1.074" data-type="line" data-label="" points="215.507835171213,425.62971561230415 205.69239698200812,425.62971561230415 205.69239698200812,422.31456761462573" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
     <polyline data-points="2.45,0 2.2990000000000004,0 2.2990000000000004,0.051000000000000004" data-type="line" data-label="" points="449.5182820661637,352.5014509576321 439.7028438769588,352.5014509576321 439.7028438769588,349.1863029599536" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-=======
->>>>>>> 74b1ec2 (chore: update snapshots after net-label-only trace fix)
     <rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="215.507835171213" y="230.62100986651194" width="149.50667440510733" height="243.76088218224027" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.015383928571428571" />
   </g>
   <g>
@@ -258,25 +252,18 @@ orientation: y+" data-x="1.96375" data-y="3" cx="417.91062100986653" cy="157.492
   </g>
   <g>
     <rect data-type="rect" data-label="netId: gnd
-<<<<<<< HEAD
 globalConnNetId: connectivity_net3
-available orientations: y-" data-x="3.75" data-y="-1.725" x="527.5217643644805" y="450.0058038305282" width="13.000580383052807" height="29.251305861868843" fill="#00000066" stroke="#000000" stroke-width="0.015383928571428571" />
+available orientations: y-" data-x="3.75" data-y="-0.225" x="527.5217643644805" y="352.5014509576321" width="13.000580383052807" height="29.251305861868843" fill="#00000066" stroke="#000000" stroke-width="0.015383928571428571" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: gnd
 globalConnNetId: connectivity_net3
-available orientations: y-" data-x="-2.125" data-y="-2.2249999999999996" x="145.6297156123041" y="482.5072547881602" width="13.000580383052835" height="29.251305861868843" fill="#00000066" stroke="#000000" stroke-width="0.015383928571428571" />
-=======
-globalConnNetId: connectivity_net3" data-x="3.75" data-y="-0.225" x="527.5217643644805" y="352.5014509576321" width="13.000580383052807" height="29.251305861868843" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.015383928571428571" />
+available orientations: y-" data-x="-1.8" data-y="-2.2249999999999996" x="166.75565873476492" y="482.5072547881602" width="13.000580383052835" height="29.251305861868843" fill="#00000066" stroke="#000000" stroke-width="0.015383928571428571" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: gnd
-globalConnNetId: connectivity_net3" data-x="-1.8" data-y="-2.2249999999999996" x="166.75565873476492" y="482.5072547881602" width="13.000580383052835" height="29.251305861868843" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.015383928571428571" />
-  </g>
-  <g>
-    <rect data-type="rect" data-label="netId: gnd
-globalConnNetId: connectivity_net3" data-x="4.1575" data-y="-1.725" x="554.0104468949507" y="450.0058038305282" width="13.000580383052693" height="29.251305861868843" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.015383928571428571" />
->>>>>>> 74b1ec2 (chore: update snapshots after net-label-only trace fix)
+globalConnNetId: connectivity_net3
+available orientations: y-" data-x="4.1575" data-y="-1.725" x="554.0104468949507" y="450.0058038305282" width="13.000580383052693" height="29.251305861868843" fill="#00000066" stroke="#000000" stroke-width="0.015383928571428571" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: v5

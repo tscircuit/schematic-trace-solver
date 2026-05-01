@@ -106,7 +106,8 @@ available orientations: y-" data-x="-1.4" data-y="-0.9249999999999999" x="344.95
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
-globalConnNetId: connectivity_net2" data-x="-4" data-y="-0.726" x="56.63366336633669" y="356.1504950495049" width="22.17821782178214" height="49.90099009900996" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.009017857142857143" />
+globalConnNetId: connectivity_net2
+available orientations: y-" data-x="-4" data-y="-0.726" x="56.63366336633669" y="356.1504950495049" width="22.17821782178214" height="49.90099009900996" fill="#00000066" stroke="#000000" stroke-width="0.009017857142857143" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
