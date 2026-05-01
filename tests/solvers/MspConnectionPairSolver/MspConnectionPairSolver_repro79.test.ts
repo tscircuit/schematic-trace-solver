@@ -39,9 +39,7 @@ const inputProblem: InputProblem = {
       ],
     },
   ],
-  directConnections: [
-    { pinIds: ["U1.1", "C1.1"], netId: "VCC" },
-  ],
+  directConnections: [{ pinIds: ["U1.1", "C1.1"], netId: "VCC" }],
   netConnections: [
     // GND is a net-label-only connection — no physical trace should be generated
     { pinIds: ["U1.3", "C2.2", "C1.2"], netId: "GND" },
