@@ -74,10 +74,6 @@ orientation: y+" data-x="1.5790330374999988" data-y="2.5025814000000004" cx="478
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: x+" data-x="1.4" data-y="-0.5" cx="461.9725106115543" cy="349.0959653360261" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="anchorPoint
 orientation: y-" data-x="-2.31430995" data-y="-0.7512093000000004" cx="129.44502275784095" cy="371.58574098183345" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
@@ -175,10 +171,6 @@ available orientations: y+" data-x="-1.8574283249999997" data-y="0.9762093000000
     <rect data-type="rect" data-label="netId: V3_3
 globalConnNetId: connectivity_net0
 available orientations: y+" data-x="1.5790330374999988" data-y="2.7275814000000005" x="469.0480260561722" y="40" width="17.90520943755456" height="40.28672123449769" fill="#ef444466" stroke="#ef4444" stroke-width="0.011169933571428573" />
-  </g>
-  <g>
-    <rect data-type="rect" data-label="netId: V3_3
-globalConnNetId: connectivity_net0" data-x="1.626" data-y="-0.5" x="462.06203665874204" y="340.14336061724885" width="40.28672123449769" height="17.905209437554504" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.011169933571428573" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND

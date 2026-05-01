@@ -43,15 +43,18 @@ orientation: x+" data-x="0.3" data-y="0.1" cx="442.3470661672909" cy="346.392009
   </g>
   <g>
     <rect data-type="rect" data-label="netId: V5_IN
-globalConnNetId: connectivity_net0" data-x="-0.4" data-y="0.326" x="162.69662921348313" y="188.7390761548065" width="69.91260923845195" height="157.30337078651687" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0028607142857142854" />
+globalConnNetId: connectivity_net0
+available orientations: any" data-x="-0.4" data-y="0.326" x="162.69662921348313" y="188.7390761548065" width="69.91260923845195" height="157.30337078651687" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0028607142857142854" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
-globalConnNetId: connectivity_net2" data-x="-0.526" data-y="0" x="74.95630461922593" y="346.3920099875156" width="157.30337078651687" height="69.91260923845198" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0028607142857142854" />
+globalConnNetId: connectivity_net2
+available orientations: any" data-x="-0.526" data-y="0" x="74.95630461922593" y="346.3920099875156" width="157.30337078651687" height="69.91260923845198" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0028607142857142854" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: V3P3
-globalConnNetId: connectivity_net1" data-x="0.526" data-y="0.1" x="442.6966292134832" y="311.43570536828963" width="157.30337078651678" height="69.91260923845198" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0028607142857142854" />
+globalConnNetId: connectivity_net1
+available orientations: any" data-x="0.526" data-y="0.1" x="442.6966292134832" y="311.43570536828963" width="157.30337078651678" height="69.91260923845198" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0028607142857142854" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
