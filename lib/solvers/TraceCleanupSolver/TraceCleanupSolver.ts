@@ -99,6 +99,7 @@ export class TraceCleanupSolver extends BaseSolver {
     )
     this.tracesMap = new Map(mergedTraces.map((t) => [t.mspPairId, t]))
     this.outputTraces = mergedTraces
+    this.traceIdQueue = mergedTraces.map((t) => t.mspPairId)
     this.pipelineStep = "untangling_traces"
   }
 
