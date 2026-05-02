@@ -6,6 +6,7 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { mergeCollinearTraces } from "./mergeCollinearTraces"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -25,6 +26,7 @@ import { is4PointRectangle } from "./is4PointRectangle"
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "merging_collinear_traces"
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
@@ -32,17 +34,18 @@ type PipelineStep =
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
  * It operates in a multi-step pipeline:
- * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
- * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
- * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
- * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
+ * 1. **Merging Collinear Traces**: Consolidates adjacent traces on the same net that are collinear (horizontal or vertical).
+ * 2. **Untangling Traces**: Attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
+ * 3. **Minimizing Turns**: Reduces the number of turns in each trace path for simpler routing.
+ * 4. **Balancing L-Shapes**: Balances L-shaped trace segments to create more visually appealing layouts.
+ * The solver processes traces sequentially, applying these cleanup steps to refine the overall trace layout.
  */
 export class TraceCleanupSolver extends BaseSolver {
   private input: TraceCleanupSolverInput
   private outputTraces: SolvedTracePath[]
   private traceIdQueue: string[]
   private tracesMap: Map<string, SolvedTracePath>
-  private pipelineStep: PipelineStep = "untangling_traces"
+  private pipelineStep: PipelineStep = "merging_collinear_traces"
   private activeTraceId: string | null = null // New property
   override activeSubSolver: BaseSolver | null = null
 
@@ -75,6 +78,9 @@ export class TraceCleanupSolver extends BaseSolver {
     }
 
     switch (this.pipelineStep) {
+      case "merging_collinear_traces":
+        this._runMergeCollinearTracesStep()
+        break
       case "untangling_traces":
         this._runUntangleTracesStep()
         break
@@ -85,6 +91,13 @@ export class TraceCleanupSolver extends BaseSolver {
         this._runBalanceLShapesStep()
         break
     }
+  }
+
+  private _runMergeCollinearTracesStep() {
+    const mergedTraces = mergeCollinearTraces(Array.from(this.tracesMap.values()))
+    this.tracesMap = new Map(mergedTraces.map((t) => [t.mspPairId, t]))
+    this.outputTraces = mergedTraces
+    this.pipelineStep = "untangling_traces"
   }
 
   private _runUntangleTracesStep() {
