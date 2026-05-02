@@ -1,5 +1,5 @@
-import { mergeCollinearTraces } from "lib/solvers/TraceCleanupSolver/mergeCollinearTraces"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { mergeCollinearTraces } from "lib/solvers/TraceCleanupSolver/mergeCollinearTraces"
 
 function createTrace(
   pairId: string,
@@ -8,11 +8,12 @@ function createTrace(
 ): SolvedTracePath {
   return {
     mspPairId: pairId,
-    netId: netId,
+    dcConnNetId: netId,
+    globalConnNetId: netId,
+    pins: [] as any,
     tracePath,
     mspConnectionPairIds: [pairId],
-    pinIds: ["pin1", "pin2"],
-    pinPairId: "pin1-pin2",
+    pinIds: [],
   }
 }
 

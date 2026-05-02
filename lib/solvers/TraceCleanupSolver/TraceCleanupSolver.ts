@@ -1,12 +1,12 @@
-import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject, Line } from "graphics-debug"
-import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
-import { balanceZShapes } from "./balanceZShapes"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type { InputProblem } from "lib/types/InputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { balanceZShapes } from "./balanceZShapes"
 import { mergeCollinearTraces } from "./mergeCollinearTraces"
+import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -19,8 +19,8 @@ interface TraceCleanupSolverInput {
   paddingBuffer: number
 }
 
-import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -94,7 +94,9 @@ export class TraceCleanupSolver extends BaseSolver {
   }
 
   private _runMergeCollinearTracesStep() {
-    const mergedTraces = mergeCollinearTraces(Array.from(this.tracesMap.values()))
+    const mergedTraces = mergeCollinearTraces(
+      Array.from(this.tracesMap.values()),
+    )
     this.tracesMap = new Map(mergedTraces.map((t) => [t.mspPairId, t]))
     this.outputTraces = mergedTraces
     this.pipelineStep = "untangling_traces"
