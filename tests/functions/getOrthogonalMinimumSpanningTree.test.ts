@@ -15,9 +15,5 @@ test("getOrthogonalMinimumSpanningTree", () => {
       .map(([a, b]) => `${a}->${b}`)
       .sort()
       .join("\n"),
-  ).toMatchInlineSnapshot(`
-    "B->A
-    C->B
-    D->C"
-  `)
+  ).toBe("B->A\nC->B\nD->C")
 })

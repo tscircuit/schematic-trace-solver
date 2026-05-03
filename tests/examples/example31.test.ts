@@ -11,7 +11,7 @@ test("example31-repro61", () => {
   // Verify that there are NO traces and 2 net labels
   const traceCleanupOutput = solver.traceCleanupSolver!.getOutput()
   expect(traceCleanupOutput.traces).toHaveLength(0)
-  
+
   const netLabelOutput = solver.netLabelPlacementSolver!.netLabelPlacements
   expect(netLabelOutput).toHaveLength(2)
   expect(netLabelOutput[0].netId).toBe("VCC")
