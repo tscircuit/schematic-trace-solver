@@ -100,7 +100,9 @@ export function mergeSameNetCloseTraces(
     for (const ti of traceIndices) {
       const segs = extractSegments(allTraces[ti]!, ti)
       for (const seg of segs) {
-        if (!isEndpointSegment(seg.pointIndex, allTraces[ti]!.tracePath.length)) {
+        if (
+          !isEndpointSegment(seg.pointIndex, allTraces[ti]!.tracePath.length)
+        ) {
           allSegments.push(seg)
         }
       }
@@ -118,7 +120,15 @@ export function mergeSameNetCloseTraces(
         const dist = Math.abs(segA.sharedCoord - segB.sharedCoord)
         if (dist < EPS || dist > threshold) continue
 
-        if (!rangesOverlap(segA.rangeMin, segA.rangeMax, segB.rangeMin, segB.rangeMax)) continue
+        if (
+          !rangesOverlap(
+            segA.rangeMin,
+            segA.rangeMax,
+            segB.rangeMin,
+            segB.rangeMax,
+          )
+        )
+          continue
 
         const midCoord = (segA.sharedCoord + segB.sharedCoord) / 2
 
