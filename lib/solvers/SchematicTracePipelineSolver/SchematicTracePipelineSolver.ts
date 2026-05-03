@@ -11,6 +11,7 @@ import { SchematicTraceLinesSolver } from "../SchematicTraceLinesSolver/Schemati
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
 import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { colorAvailableNetOrientationLabels } from "./colorAvailableNetOrientationLabels"
 import { visualizeInputProblem } from "./visualizeInputProblem"
 import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
 import { correctPinsInsideChips } from "./correctPinsInsideChip"
@@ -18,6 +19,10 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { Example28Solver } from "../Example28Solver/Example28Solver"
+import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
+import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
+import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -67,6 +72,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
+  example28Solver?: Example28Solver
+  availableNetOrientationSolver?: AvailableNetOrientationSolver
+  vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
+  traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -222,6 +231,58 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
+    definePipelineStep("example28Solver", Example28Solver, (instance) => {
+      const traces =
+        instance.traceCleanupSolver?.getOutput().traces ??
+        instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+
+      return [
+        {
+          inputProblem: instance.inputProblem,
+          traces,
+          netLabelPlacements:
+            instance.netLabelPlacementSolver!.netLabelPlacements,
+        },
+      ]
+    }),
+    definePipelineStep(
+      "availableNetOrientationSolver",
+      AvailableNetOrientationSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          traces: instance.example28Solver!.outputTraces,
+          netLabelPlacements:
+            instance.example28Solver!.outputNetLabelPlacements,
+        },
+      ],
+    ),
+    definePipelineStep(
+      "vccNetLabelCornerPlacementSolver",
+      VccNetLabelCornerPlacementSolver,
+      (instance) => {
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces: instance.availableNetOrientationSolver!.traces,
+            netLabelPlacements:
+              instance.availableNetOrientationSolver!.outputNetLabelPlacements,
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
+      "traceAnchoredNetLabelOverlapSolver",
+      TraceAnchoredNetLabelOverlapSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          traces: instance.availableNetOrientationSolver!.traces,
+          netLabelPlacements:
+            instance.vccNetLabelCornerPlacementSolver!.outputNetLabelPlacements,
+        },
+      ],
+    ),
   ]
 
   constructor(inputProblem: InputProblem) {
@@ -341,6 +402,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       circles: visualizations.flatMap((v) => v.circles || []),
       texts: visualizations.flatMap((v) => v.texts || []),
     }
+    colorAvailableNetOrientationLabels(finalGraphics, this.inputProblem)
     return finalGraphics
   }
 

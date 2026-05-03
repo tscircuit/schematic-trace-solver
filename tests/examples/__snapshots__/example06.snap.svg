@@ -17,7 +17,8 @@ x-" data-x="2.4487906999999995" data-y="-0.00027334999999961695" cx="516.6019026
 x+" data-x="3.5512093000000005" data-y="0.00027334999999961695" cx="600" cy="318.8552321513003" r="3" fill="hsl(122, 100%, 50%, 0.8)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="-3.7512907000000006" data-y="0.0002732499999993365" cx="47.565011820330994" cy="318.8552397163121" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: y-" data-x="-3.7512907000000006" data-y="0.0002732499999993365" cx="47.565011820330994" cy="318.8552397163121" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="-3.5512907000000005,0.0002732499999993365 2.4487906999999995,-0.00027334999999961695" data-type="line" data-label="" points="62.695035460992926,318.8552397163121 516.6019026004727,318.89659007092195" fill="none" stroke="hsl(72, 100%, 50%, 0.8)" stroke-width="1" />
@@ -32,7 +33,8 @@ x+" data-x="3.5512093000000005" data-y="0.00027334999999961695" cx="600" cy="318
     <rect data-type="rect" data-label="schematic_component_1" data-x="3" data-y="0" x="516.6019026004727" y="287.10220709219846" width="83.39809739952727" height="63.547408037825335" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.013218750000000003" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="-3.7512907000000006" data-y="-0.22472675000000067" x="40" y="318.8552397163121" width="15.130023640661989" height="34.04255319148939" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.013218750000000003" />
+    <rect data-type="rect" data-label="netId: .R1 &gt; .pin1 to .C1 &gt; .pin1
+globalConnNetId: connectivity_net0" data-x="-3.7512907000000006" data-y="-0.22472675000000067" x="40" y="318.8552397163121" width="15.130023640661989" height="34.04255319148939" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.013218750000000003" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
