@@ -129,19 +129,23 @@ orientation: y+" data-x="3.3884680250000008" data-y="1.2997267500000007" cx="438
   </g>
   <g>
     <rect data-type="rect" data-label="netId: solderjumper.JP8 &gt; port.pin2 to .U1 &gt; .pin6
-globalConnNetId: connectivity_net3" data-x="2.2284928" data-y="-0.46751595000000035" x="300.34928" y="375.9895275000001" width="45" height="19.999999999999943" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01" />
+globalConnNetId: connectivity_net3
+available orientations: any" data-x="2.2284928" data-y="-0.46751595000000035" x="300.34928" y="375.9895275000001" width="45" height="19.999999999999943" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: capacitor.C2 &gt; port.pin1 to .U1 &gt; .pin8
-globalConnNetId: connectivity_net0" data-x="1.6252733499999996" data-y="-0.30120930000000024" x="240.027335" y="359.3588625000001" width="45" height="20" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01" />
+globalConnNetId: connectivity_net0
+available orientations: any" data-x="1.6252733499999996" data-y="-0.30120930000000024" x="240.027335" y="359.3588625000001" width="45" height="20" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: resistor.R1 &gt; port.pin1 to .U1 &gt; .pin1
-globalConnNetId: connectivity_net1" data-x="0.7999316625000001" data-y="0.42500000000000004" x="169.99316625000006" y="274.23793250000006" width="20" height="45" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01" />
+globalConnNetId: connectivity_net1
+available orientations: any" data-x="0.7999316625000001" data-y="0.42500000000000004" x="169.99316625000006" y="274.23793250000006" width="20" height="45" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: PAD
-globalConnNetId: connectivity_net2" data-x="3.3884680250000008" data-y="1.5247267500000008" x="428.8468025000001" y="164.26525749999996" width="20" height="45.00000000000003" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01" />
+globalConnNetId: connectivity_net2
+available orientations: any" data-x="3.3884680250000008" data-y="1.5247267500000008" x="428.8468025000001" y="164.26525749999996" width="20" height="45.00000000000003" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />

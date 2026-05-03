@@ -317,12 +317,8 @@ y+" data-x="-2.025" data-y="-1.6000000000000003" cx="318.5204755614267" cy="471.
 y-" data-x="-2.025" data-y="-2.7" cx="318.5204755614267" cy="526.0237780713342" r="3" fill="hsl(111, 100%, 50%, 0.8)" />
   </g>
   <g>
-<<<<<<< HEAD
-    <circle data-type="point" data-label="" data-x="-1.5675" data-y="1.2000000000000015" cx="341.08322324966974" cy="333.6856010568031" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
-=======
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-1.3099999999999998" data-y="1.2000000000000015" cx="353.7824746807574" cy="333.6856010568031" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
->>>>>>> upstream/main
+orientation: y+" data-x="-1.5675" data-y="1.2000000000000015" cx="341.08322324966974" cy="333.6856010568031" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -353,12 +349,8 @@ orientation: y-" data-x="0.29250000000000076" data-y="5.205000000000002" cx="432
 orientation: y-" data-x="-3.7550000000000003" data-y="2.4683333333333346" cx="233.2012329370322" cy="271.13459562600906" r="3" fill="hsl(80, 100%, 50%, 0.9)" />
   </g>
   <g>
-<<<<<<< HEAD
-    <circle data-type="point" data-label="" data-x="-2.4975" data-y="-2.9000000000000004" cx="295.21796565389695" cy="535.8872743284896" r="3" fill="hsl(80, 100%, 50%, 0.9)" />
-=======
     <circle data-type="point" data-label="anchorPoint
-orientation: y-" data-x="-2.49" data-y="-2.9000000000000004" cx="295.5878467635403" cy="535.8872743284896" r="3" fill="hsl(80, 100%, 50%, 0.9)" />
->>>>>>> upstream/main
+orientation: y-" data-x="-2.4975" data-y="-2.9000000000000004" cx="295.21796565389695" cy="535.8872743284896" r="3" fill="hsl(80, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="-1.1099999999999999,1.2000000000000015 -1.5675,6.505000000000002" data-type="line" data-label="" points="363.6459709379128,333.6856010568031 341.08322324966974,72.05636283575518" fill="none" stroke="hsl(280, 100%, 50%, 0.8)" stroke-width="1" />
@@ -889,13 +881,9 @@ orientation: y-" data-x="-2.49" data-y="-2.9000000000000004" cx="295.58784676354
     <rect data-type="rect" data-label="schematic_component_11" data-x="-2.025" data-y="-2.1500000000000004" x="305.45134302069573" y="471.7745486569793" width="26.138265081461896" height="54.249229414354886" fill="hsl(320, 100%, 50%, 0.8)" stroke="black" stroke-width="0.020276785714285723" />
   </g>
   <g>
-<<<<<<< HEAD
-    <rect data-type="rect" data-label="" data-x="-1.5675" data-y="1.4250000000000016" x="336.15147512109206" y="311.4927344782034" width="9.863496257155418" height="22.192866578599705" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.020276785714285723" />
-=======
     <rect data-type="rect" data-label="netId: V3_3
 globalConnNetId: connectivity_net0
-available orientations: y+" data-x="-1.3099999999999998" data-y="1.4250000000000016" x="348.85072655217965" y="311.4927344782034" width="9.863496257155475" height="22.192866578599705" fill="#ef444466" stroke="#ef4444" stroke-width="0.020276785714285723" />
->>>>>>> upstream/main
+available orientations: y+" data-x="-1.5675" data-y="1.4250000000000016" x="336.15147512109206" y="311.4927344782034" width="9.863496257155418" height="22.192866578599705" fill="#ef444466" stroke="#ef4444" stroke-width="0.020276785714285723" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: V3_3
@@ -933,13 +921,9 @@ globalConnNetId: connectivity_net10
 available orientations: y-" data-x="-3.7550000000000003" data-y="2.2433333333333345" x="228.26948480845445" y="271.13459562600906" width="9.863496257155447" height="22.192866578599705" fill="#00000066" stroke="#000000" stroke-width="0.020276785714285723" />
   </g>
   <g>
-<<<<<<< HEAD
-    <rect data-type="rect" data-label="" data-x="-2.4975" data-y="-3.1250000000000004" x="290.2862175253193" y="535.8872743284896" width="9.863496257155418" height="22.192866578599705" fill="hsl(80, 100%, 50%, 0.35)" stroke="black" stroke-width="0.020276785714285723" />
-=======
     <rect data-type="rect" data-label="netId: GND
 globalConnNetId: connectivity_net10
-available orientations: y-" data-x="-2.49" data-y="-3.1250000000000004" x="290.6560986349626" y="535.8872743284896" width="9.863496257155418" height="22.192866578599705" fill="#00000066" stroke="#000000" stroke-width="0.020276785714285723" />
->>>>>>> upstream/main
+available orientations: y-" data-x="-2.4975" data-y="-3.1250000000000004" x="290.2862175253193" y="535.8872743284896" width="9.863496257155418" height="22.192866578599705" fill="#00000066" stroke="#000000" stroke-width="0.020276785714285723" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />

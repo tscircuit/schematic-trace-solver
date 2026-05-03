@@ -57,12 +57,8 @@ x+" data-x="1" data-y="0.1" cx="500.20151295522464" cy="324.189420823755" r="3" 
 orientation: y+" data-x="-1.4574283249999997" data-y="1.3024186000000004" cx="292.2176463362275" cy="222.4230062437483" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-<<<<<<< HEAD
-    <circle data-type="point" data-label="" data-x="-1.5071549750000002" data-y="-0.2000000000000004" cx="288.00904304318556" cy="349.5798500586337" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
-=======
     <circle data-type="point" data-label="anchorPoint
-orientation: y-" data-x="-3.0434765500000003" data-y="-0.2000000000000004" cx="157.98282893633558" cy="349.5798500586337" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
->>>>>>> upstream/main
+orientation: y-" data-x="-1.5071549750000002" data-y="-0.2000000000000004" cx="288.00904304318556" cy="349.5798500586337" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -204,13 +200,9 @@ globalConnNetId: connectivity_net0
 available orientations: y+" data-x="-1.4574283249999997" data-y="1.5274186000000005" x="283.75416992460123" y="184.33736239143013" width="16.926952823252577" height="38.08564385231816" fill="#ef444466" stroke="#ef4444" stroke-width="0.011815475714285715" />
   </g>
   <g>
-<<<<<<< HEAD
-    <rect data-type="rect" data-label="" data-x="-1.5071549750000002" data-y="-0.4250000000000004" x="279.54556663155927" y="349.5798500586337" width="16.92695282325252" height="38.085643852318185" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.011815475714285715" />
-=======
     <rect data-type="rect" data-label="netId: GND
 globalConnNetId: connectivity_net1
-available orientations: y-" data-x="-3.0434765500000003" data-y="-0.4250000000000004" x="149.51935252470935" y="349.5798500586337" width="16.926952823252492" height="38.085643852318185" fill="#00000066" stroke="#000000" stroke-width="0.011815475714285715" />
->>>>>>> upstream/main
+available orientations: y-" data-x="-1.5071549750000002" data-y="-0.4250000000000004" x="279.54556663155927" y="349.5798500586337" width="16.92695282325252" height="38.085643852318185" fill="#00000066" stroke="#000000" stroke-width="0.011815475714285715" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
