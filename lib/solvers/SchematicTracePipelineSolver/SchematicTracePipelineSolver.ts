@@ -129,8 +129,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       SameNetTraceMergeSolver,
       (instance) => [
         {
-          inputTracePaths:
-            instance.schematicTraceLinesSolver!.solvedTracePaths,
+          inputTracePaths: instance.schematicTraceLinesSolver!.solvedTracePaths,
         },
       ],
     ),
