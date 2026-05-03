@@ -6,6 +6,8 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { mergeSameNetCollinearTraces } from "./mergeSameNetCollinearTraces"
+import { mergeSameNetCloseTraces } from "./mergeSameNetCloseTraces"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -28,6 +30,8 @@ type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
+  | "merging_collinear_traces"
+  | "merging_close_traces"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
@@ -84,6 +88,12 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "merging_collinear_traces":
+        this._runMergeCollinearTracesStep()
+        break
+      case "merging_close_traces":
+        this._runMergeCloseTracesStep()
+        break
     }
   }
 
@@ -108,11 +118,29 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "merging_collinear_traces"
       return
     }
 
     this._processTrace("balancing_l_shapes")
+  }
+
+  private _runMergeCollinearTracesStep() {
+    this.outputTraces = mergeSameNetCollinearTraces(
+      this.outputTraces,
+      this.input.inputProblem,
+    )
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.pipelineStep = "merging_close_traces"
+  }
+
+  private _runMergeCloseTracesStep() {
+    this.outputTraces = mergeSameNetCloseTraces(
+      this.outputTraces,
+      this.input.inputProblem,
+    )
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.solved = true
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
