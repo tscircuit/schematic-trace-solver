@@ -34,7 +34,8 @@ orientation: y-" data-x="-3.7512907000000006" data-y="0.0002732499999993365" cx=
   </g>
   <g>
     <rect data-type="rect" data-label="netId: .R1 &gt; .pin1 to .C1 &gt; .pin1
-globalConnNetId: connectivity_net0" data-x="-3.7512907000000006" data-y="-0.22472675000000067" x="40" y="318.8552397163121" width="15.130023640661989" height="34.04255319148939" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.013218750000000003" />
+globalConnNetId: connectivity_net0
+available orientations: any" data-x="-3.7512907000000006" data-y="-0.22472675000000067" x="40" y="318.8552397163121" width="15.130023640661989" height="34.04255319148939" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.013218750000000003" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
