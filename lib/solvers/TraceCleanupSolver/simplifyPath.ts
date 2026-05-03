@@ -4,6 +4,21 @@ import {
   isVertical,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
+/**
+ * Remove consecutive duplicate points from a path (zero-length segments).
+ */
+export const removeDuplicateConsecutivePoints = (path: Point[]): Point[] => {
+  if (path.length < 2) return path
+  const result: Point[] = [path[0]]
+  for (let i = 1; i < path.length; i++) {
+    const prev = result[result.length - 1]
+    if (path[i].x !== prev.x || path[i].y !== prev.y) {
+      result.push(path[i])
+    }
+  }
+  return result
+}
+
 export const simplifyPath = (path: Point[]): Point[] => {
   if (path.length < 3) return path
   const newPath: Point[] = [path[0]]
