@@ -57,8 +57,8 @@ test("MspConnectionPairSolver_sameNetIdNoMerge", () => {
   // NOT a single MST connecting all four (which would have 3 pairs)
   // And definitely not a jump between the two groups.
   expect(solver.mspConnectionPairs.length).toBe(2)
-  
-  const pairIds = solver.mspConnectionPairs.map(p => p.mspPairId)
+
+  const pairIds = solver.mspConnectionPairs.map((p) => p.mspPairId)
   expect(pairIds).toContain("U1.1-U2.1")
   expect(pairIds).toContain("U3.1-U4.1")
 })

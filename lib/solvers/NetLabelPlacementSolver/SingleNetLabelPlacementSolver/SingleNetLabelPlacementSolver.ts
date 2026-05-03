@@ -71,7 +71,12 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     bounds: { minX: number; minY: number; maxX: number; maxY: number }
     anchor: { x: number; y: number }
     orientation: FacingDirection
-    status: "ok" | "chip-collision" | "trace-collision" | "label-collision" | "parallel-to-segment"
+    status:
+      | "ok"
+      | "chip-collision"
+      | "trace-collision"
+      | "label-collision"
+      | "parallel-to-segment"
     hostSegIndex: number
   }> = []
 
@@ -299,7 +304,9 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
             // Label collision check
             if (rectIntersectsAnyLabel(bounds, this.alreadyPlacedNetLabels)) {
-              console.log(`Label collision detected for ${this.overlappingSameNetTraceGroup.netId} with ${this.alreadyPlacedNetLabels.length} labels`)
+              console.log(
+                `Label collision detected for ${this.overlappingSameNetTraceGroup.netId} with ${this.alreadyPlacedNetLabels.length} labels`,
+              )
               this.testedCandidates.push({
                 center: testCenter,
                 width,

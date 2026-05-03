@@ -18,9 +18,7 @@ const inputProblem: InputProblem = {
       center: { x: 1, y: 5.05 },
       width: 2,
       height: 2,
-      pins: [
-        { pinId: "U2.1", x: 1, y: 4.05 },
-      ],
+      pins: [{ pinId: "U2.1", x: 1, y: 4.05 }],
     },
   ],
   directConnections: [
@@ -46,4 +44,6 @@ const solver = new SchematicTracePipelineSolver(inputProblem)
 solver.solve()
 const labels = solver.netLabelPlacementSolver!.netLabelPlacements
 
-console.log(`Labels: ${JSON.stringify(labels.map(l => ({ netId: l.netId, center: l.center, width: l.width, height: l.height })))}`)
+console.log(
+  `Labels: ${JSON.stringify(labels.map((l) => ({ netId: l.netId, center: l.center, width: l.width, height: l.height })))}`,
+)

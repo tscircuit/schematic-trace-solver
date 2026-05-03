@@ -32,7 +32,12 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     bounds: { minX: number; minY: number; maxX: number; maxY: number }
     anchor: { x: number; y: number }
     orientation: FacingDirection
-    status: "ok" | "chip-collision" | "trace-collision" | "label-collision" | "parallel-to-segment"
+    status:
+      | "ok"
+      | "chip-collision"
+      | "trace-collision"
+      | "label-collision"
+      | "parallel-to-segment"
     hostSegIndex: number
   }>
   error?: string
@@ -97,7 +102,12 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     bounds: { minX: number; minY: number; maxX: number; maxY: number }
     anchor: { x: number; y: number }
     orientation: FacingDirection
-    status: "ok" | "chip-collision" | "trace-collision" | "label-collision" | "parallel-to-segment"
+    status:
+      | "ok"
+      | "chip-collision"
+      | "trace-collision"
+      | "label-collision"
+      | "parallel-to-segment"
     hostSegIndex: number
   }> = []
 

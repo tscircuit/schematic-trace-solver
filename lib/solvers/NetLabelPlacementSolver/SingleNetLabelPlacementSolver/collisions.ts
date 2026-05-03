@@ -47,7 +47,11 @@ export function rectIntersectsAnyTrace(
     for (let i = 0; i < pts.length - 1; i++) {
       if (pairId === hostPathId && i === hostSegIndex) continue
       if (segmentIntersectsRect(pts[i]!, pts[i + 1]!, bounds))
-        return { hasIntersection: true, mspPairId: pairId as MspConnectionPairId, segIndex: i }
+        return {
+          hasIntersection: true,
+          mspPairId: pairId as MspConnectionPairId,
+          segIndex: i,
+        }
     }
   }
   return { hasIntersection: false }
@@ -59,8 +63,12 @@ export function rectIntersectsAnyLabel(
 ): boolean {
   for (const label of alreadyPlacedNetLabels) {
     const labelBounds = getRectBounds(label.center, label.width, label.height)
-    const overlapX = Math.min(bounds.maxX, labelBounds.maxX) - Math.max(bounds.minX, labelBounds.minX)
-    const overlapY = Math.min(bounds.maxY, labelBounds.maxY) - Math.max(bounds.minY, labelBounds.minY)
+    const overlapX =
+      Math.min(bounds.maxX, labelBounds.maxX) -
+      Math.max(bounds.minX, labelBounds.minX)
+    const overlapY =
+      Math.min(bounds.maxY, labelBounds.maxY) -
+      Math.max(bounds.minY, labelBounds.minY)
     if (overlapX > 1e-9 && overlapY > 1e-9) return true
   }
   return false

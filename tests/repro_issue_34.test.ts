@@ -38,7 +38,7 @@ test("repro_issue_34_parallel_traces", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
   const traces = solver.traceCleanupSolver!.getOutput().traces
-  
+
   console.log(`Number of traces: ${traces.length}`)
   for (const trace of traces) {
     console.log(`Trace ${trace.mspPairId}: ${JSON.stringify(trace.tracePath)}`)
