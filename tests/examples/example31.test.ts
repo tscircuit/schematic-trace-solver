@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+﻿import { test, expect } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import { inputProblem } from "site/examples/example31-repro61.page"
 import "tests/fixtures/matcher"
