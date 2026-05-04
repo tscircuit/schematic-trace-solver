@@ -74,7 +74,16 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    // Queue all direct-wire nets from dcConnMap plus any nets that exist only in
+    // globalConnMap (net-label-only nets such as GND shared via netConnections).
+    // Because directConnMap and netConnMap now have independent netMap arrays (deep
+    // clone in getConnectivityMapsFromInputProblem), net-label pins that happen to
+    // share a name with a direct-wire pin are NOT merged into the direct-wire net.
+    const directNetIds = new Set(Object.keys(directConnMap.netMap))
+    const netLabelOnlyNetIds = Object.keys(netConnMap.netMap).filter(
+      (id) => !directNetIds.has(id),
+    )
+    this.queuedDcNetIds = [...directNetIds, ...netLabelOnlyNetIds]
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -93,7 +102,14 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     const dcNetId = this.queuedDcNetIds.shift()!
 
-    const allIds = this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[]
+    // For direct-wire nets use dcConnMap so that net-label-only pins merged into
+    // the same global net are not included in wire routing.  For net-label-only
+    // nets (not present in dcConnMap) fall back to globalConnMap.
+    const dcIds = this.dcConnMap.getIdsConnectedToNet(dcNetId) as string[]
+    const allIds =
+      dcIds.length > 0
+        ? dcIds
+        : (this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[])
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
     if (directlyConnectedPins.length <= 1) {
