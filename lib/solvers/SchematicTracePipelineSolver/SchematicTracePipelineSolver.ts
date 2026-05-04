@@ -25,6 +25,7 @@ import { Example28Solver } from "../Example28Solver/Example28Solver"
 import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
 import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
+import { SameNetTraceSegmentCombiner } from "../SameNetTraceSegmentCombiner/SameNetTraceSegmentCombiner"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -78,6 +79,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   availableNetOrientationSolver?: AvailableNetOrientationSolver
   vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
+  sameNetTraceSegmentCombiner?: SameNetTraceSegmentCombiner
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -137,53 +139,68 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         onSolved: (schematicTraceLinesSolver) => {},
       },
     ),
-    definePipelineStep(
-      "traceOverlapShiftSolver",
-      TraceOverlapShiftSolver,
-      () => [
-        {
-          inputProblem: this.inputProblem,
-          inputTracePaths:
-            this.longDistancePairSolver?.getOutput().allTracesMerged!,
-          globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
-        },
-      ],
+  definePipelineStep(
+    "traceOverlapShiftSolver",
+    TraceOverlapShiftSolver,
+    () => [
       {
-        onSolved: (_solver) => {},
+        inputProblem: this.inputProblem,
+        inputTracePaths:
+          this.longDistancePairSolver?.getOutput().allTracesMerged!,
+        globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
       },
-    ),
-    definePipelineStep(
-      "netLabelPlacementSolver",
-      NetLabelPlacementSolver,
-      () => [
-        {
-          inputProblem: this.inputProblem,
-          inputTraceMap:
-            this.traceOverlapShiftSolver?.correctedTraceMap ??
-            Object.fromEntries(
-              this.longDistancePairSolver!.getOutput().allTracesMerged.map(
-                (p) => [p.mspPairId, p],
-              ),
+    ],
+    {
+      onSolved: (_solver) => {},
+    },
+  ),
+  definePipelineStep(
+    "sameNetTraceSegmentCombiner",
+    SameNetTraceSegmentCombiner,
+    () => [
+      {
+        inputProblem: this.inputProblem,
+        inputTracePaths:
+          this.traceOverlapShiftSolver?.getOutput().traces ??
+          this.longDistancePairSolver!.getOutput().allTracesMerged!,
+        globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
+      },
+    ],
+  ),
+  definePipelineStep(
+    "netLabelPlacementSolver",
+    NetLabelPlacementSolver,
+    () => [
+      {
+        inputProblem: this.inputProblem,
+        inputTraceMap:
+          this.sameNetTraceSegmentCombiner?.getOutput().traceMap ??
+          this.traceOverlapShiftSolver?.correctedTraceMap ??
+          Object.fromEntries(
+            this.longDistancePairSolver!.getOutput().allTracesMerged.map(
+              (p) => [p.mspPairId, p],
             ),
-        },
-      ],
-      {
-        onSolved: (_solver) => {
-          // TODO
-        },
+          ),
       },
-    ),
+    ],
+    {
+      onSolved: (_solver) => {
+        // TODO
+      },
+    },
+  ),
     definePipelineStep(
       "traceLabelOverlapAvoidanceSolver",
       TraceLabelOverlapAvoidanceSolver,
-      (instance) => {
-        const traceMap =
-          instance.traceOverlapShiftSolver?.correctedTraceMap ??
-          Object.fromEntries(
-            instance
-              .longDistancePairSolver!.getOutput()
-              .allTracesMerged.map((p) => [p.mspPairId, p]),
-          )
+  (instance) => {
+    const traceMap =
+      instance.sameNetTraceSegmentCombiner?.getOutput().traceMap ??
+      instance.traceOverlapShiftSolver?.correctedTraceMap ??
+      Object.fromEntries(
+        instance
+          .longDistancePairSolver!.getOutput()
+          .allTracesMerged.map((p) => [p.mspPairId, p]),
+      )
         const traces = Object.values(traceMap)
         const netLabelPlacements =
           instance.netLabelPlacementSolver!.netLabelPlacements
