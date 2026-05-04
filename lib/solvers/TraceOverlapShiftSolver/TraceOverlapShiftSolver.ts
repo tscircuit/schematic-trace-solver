@@ -1,13 +1,13 @@
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import type { InputProblem } from "lib/types/InputProblem"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"
-import {
-  TraceOverlapIssueSolver,
-  type OverlappingTraceSegmentLocator,
-} from "./TraceOverlapIssueSolver/TraceOverlapIssueSolver"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { InputProblem } from "lib/types/InputProblem"
 import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import {
+  type OverlappingTraceSegmentLocator,
+  TraceOverlapIssueSolver,
+} from "./TraceOverlapIssueSolver/TraceOverlapIssueSolver"
 
 type ConnNetId = string
 
@@ -239,7 +239,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       return false // No diagonal segments found
     }
 
-    const { mspPairId, tracePath, i, p1, p2 } = diagonalInfo
+    const { tracePath, i, p1, p2 } = diagonalInfo
     const EPS = 2e-3
 
     const p0 = i > 0 ? tracePath[i - 1] : null

@@ -1,10 +1,10 @@
+import { getRestrictedCenterLines } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getRestrictedCenterLines"
 import type {
   InputChip,
   InputPin,
   InputProblem,
   PinId,
 } from "lib/types/InputProblem"
-import { getRestrictedCenterLines } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getRestrictedCenterLines"
 
 export const doesPairCrossRestrictedCenterLines = (params: {
   inputProblem: InputProblem

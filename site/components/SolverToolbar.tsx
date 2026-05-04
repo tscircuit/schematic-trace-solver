@@ -1,5 +1,5 @@
 import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import { useReducer, useRef, useEffect } from "react"
+import { useEffect, useReducer, useRef } from "react"
 import { SolverBreadcrumbInputDownloader } from "./SolverBreadcrumbInputDownloader"
 
 /**
@@ -18,7 +18,7 @@ export const SolverToolbar = ({
   triggerRender,
 }: {
   solver: BaseSolver
-  triggerRender: Function
+  triggerRender: () => void
 }) => {
   const [isAnimating, setIsAnimating] = useReducer((x) => !x, false)
   const animationRef = useRef<number | undefined>(undefined)

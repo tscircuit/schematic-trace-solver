@@ -2,7 +2,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { applyJogToTerminalSegment } from "./applyJogToTrace"
+import { applyJogToTerminalSegment } from "./apply-jog-to-trace"
 
 type ConnNetId = string
 
@@ -33,10 +33,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     // Only add the relevant traces to the correctedTraceMap
     for (const { connNetId, pathsWithOverlap } of this
       .overlappingTraceSegments) {
-      for (const {
-        solvedTracePathIndex,
-        traceSegmentIndex,
-      } of pathsWithOverlap) {
+      for (const { solvedTracePathIndex } of pathsWithOverlap) {
         const mspPairId =
           this.traceNetIslands[connNetId][solvedTracePathIndex].mspPairId
         this.correctedTraceMap[mspPairId] =
@@ -82,7 +79,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
         const current = this.correctedTraceMap[original.mspPairId] ?? original
         const pts = current.tracePath.map((p) => ({ ...p }))
 
-        const segIdxs = Array.from(segIdxSet).sort((a, b) => a - b)
+        const _segIdxs = Array.from(segIdxSet).sort((a, b) => a - b)
 
         const segIdxsRev = Array.from(segIdxSet)
           .sort((a, b) => a - b)

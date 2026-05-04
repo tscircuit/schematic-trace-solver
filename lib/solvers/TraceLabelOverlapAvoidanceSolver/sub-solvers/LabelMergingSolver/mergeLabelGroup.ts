@@ -1,6 +1,6 @@
+import type { Point } from "graphics-debug" // Assuming Point is from graphics-debug or similar
 import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { getRectBounds } from "../../../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import type { Point } from "graphics-debug" // Assuming Point is from graphics-debug or similar
 
 /**
  * Merges a group of NetLabelPlacement objects into a single, larger NetLabelPlacement.
@@ -40,8 +40,12 @@ export const mergeLabelGroup = (
     maxX = Math.max(maxX, bounds.maxX)
     maxY = Math.max(maxY, bounds.maxY)
 
-    label.pinIds.forEach((id) => allPinIds.add(id))
-    label.mspConnectionPairIds.forEach((id) => allMspConnectionPairIds.add(id))
+    for (const id of label.pinIds) {
+      allPinIds.add(id)
+    }
+    for (const id of label.mspConnectionPairIds) {
+      allMspConnectionPairIds.add(id)
+    }
     originalNetIds.add(label.globalConnNetId)
   }
 

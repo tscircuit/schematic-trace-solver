@@ -4,7 +4,7 @@ import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabe
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
-import { generateRerouteCandidates } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/rerouteCollidingTrace"
+import { generateRerouteCandidates } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/reroute-colliding-trace"
 import type { InputProblem } from "lib/types/InputProblem"
 import { dir } from "lib/utils/dir"
 import {

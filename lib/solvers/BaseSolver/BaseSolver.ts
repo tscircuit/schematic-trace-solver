@@ -32,7 +32,7 @@ export class BaseSolver {
       this.failed = true
     }
     if ("computeProgress" in this) {
-      // @ts-ignore
+      // @ts-expect-error
       this.progress = this.computeProgress() as number
     }
   }
