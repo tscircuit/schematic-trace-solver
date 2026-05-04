@@ -489,22 +489,28 @@ x+" data-x="-8.4" data-y="-16.6" cx="198.31710258539454" cy="392.52251162760695"
 x+" data-x="-8.4" data-y="-17" cx="198.31710258539454" cy="399.68032912258366" r="3" fill="hsl(226, 100%, 50%, 0.8)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="-3" data-y="0.7250000000000008" cx="294.9476387675812" cy="82.4995413764247" r="3" fill="orange" />
+    <circle data-type="point" data-label="anchor
+orientation: y+" data-x="-3" data-y="0.7250000000000008" cx="294.9476387675812" cy="82.4995413764247" r="3" fill="orange" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="-3" data-y="0.7250000000000008" cx="294.9476387675812" cy="82.4995413764247" r="3" fill="orange" />
+    <circle data-type="point" data-label="anchor
+orientation: y-" data-x="-3" data-y="0.7250000000000008" cx="294.9476387675812" cy="82.4995413764247" r="3" fill="orange" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="-3" data-y="0.7250000000000008" cx="294.9476387675812" cy="82.4995413764247" r="3" fill="orange" />
+    <circle data-type="point" data-label="anchor
+orientation: y+" data-x="-3" data-y="0.7250000000000008" cx="294.9476387675812" cy="82.4995413764247" r="3" fill="orange" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="-3" data-y="0.7250000000000008" cx="294.9476387675812" cy="82.4995413764247" r="3" fill="orange" />
+    <circle data-type="point" data-label="anchor
+orientation: y-" data-x="-3" data-y="0.7250000000000008" cx="294.9476387675812" cy="82.4995413764247" r="3" fill="orange" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="-3" data-y="0.7250000000000008" cx="294.9476387675812" cy="82.4995413764247" r="3" fill="orange" />
+    <circle data-type="point" data-label="anchor
+orientation: y+" data-x="-3" data-y="0.7250000000000008" cx="294.9476387675812" cy="82.4995413764247" r="3" fill="orange" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="-3" data-y="0.7250000000000008" cx="294.9476387675812" cy="82.4995413764247" r="3" fill="orange" />
+    <circle data-type="point" data-label="anchor
+orientation: y-" data-x="-3" data-y="0.7250000000000008" cx="294.9476387675812" cy="82.4995413764247" r="3" fill="orange" />
   </g>
   <g>
     <polyline data-points="-5.550000000000001,0 -8.4,-3" data-type="line" data-label="" points="249.31655223710416,95.47308558607014 198.31710258539454,149.15671679839608" fill="none" stroke="hsl(32, 100%, 50%, 0.8)" stroke-width="1" />
@@ -891,22 +897,28 @@ x+" data-x="-8.4" data-y="-17" cx="198.31710258539454" cy="399.68032912258366" r
     <rect data-type="rect" data-label="schematic_component_32" data-x="-9" data-y="-16" x="176.84365010046417" y="360.31233290021135" width="21.473452484930363" height="42.946904969860725" fill="hsl(320, 100%, 50%, 0.8)" stroke="black" stroke-width="0.05588295598214286" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="-3" data-y="0.9501000000000007" x="293.158184393837" y="74.44520724020207" width="3.5789087474884127" height="8.052544681848886" fill="rgba(220, 140, 0, 0.25)" stroke="black" stroke-width="0.05588295598214286" />
+    <rect data-type="rect" data-label="status: trace-collision
+orientation: y+" data-x="-3" data-y="0.9501000000000007" x="293.158184393837" y="74.44520724020207" width="3.5789087474884127" height="8.052544681848886" fill="rgba(220, 140, 0, 0.25)" stroke="black" stroke-width="0.05588295598214286" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="-3" data-y="0.4999000000000008" x="293.158184393837" y="82.50133083079844" width="3.5789087474884127" height="8.052544681848886" fill="rgba(220, 140, 0, 0.25)" stroke="black" stroke-width="0.05588295598214286" />
+    <rect data-type="rect" data-label="status: trace-collision
+orientation: y-" data-x="-3" data-y="0.4999000000000008" x="293.158184393837" y="82.50133083079844" width="3.5789087474884127" height="8.052544681848886" fill="rgba(220, 140, 0, 0.25)" stroke="black" stroke-width="0.05588295598214286" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="-3" data-y="0.9501000000000007" x="293.158184393837" y="74.44520724020207" width="3.5789087474884127" height="8.052544681848886" fill="rgba(220, 140, 0, 0.25)" stroke="black" stroke-width="0.05588295598214286" />
+    <rect data-type="rect" data-label="status: trace-collision
+orientation: y+" data-x="-3" data-y="0.9501000000000007" x="293.158184393837" y="74.44520724020207" width="3.5789087474884127" height="8.052544681848886" fill="rgba(220, 140, 0, 0.25)" stroke="black" stroke-width="0.05588295598214286" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="-3" data-y="0.4999000000000008" x="293.158184393837" y="82.50133083079844" width="3.5789087474884127" height="8.052544681848886" fill="rgba(220, 140, 0, 0.25)" stroke="black" stroke-width="0.05588295598214286" />
+    <rect data-type="rect" data-label="status: trace-collision
+orientation: y-" data-x="-3" data-y="0.4999000000000008" x="293.158184393837" y="82.50133083079844" width="3.5789087474884127" height="8.052544681848886" fill="rgba(220, 140, 0, 0.25)" stroke="black" stroke-width="0.05588295598214286" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="-3" data-y="0.9501000000000007" x="293.158184393837" y="74.44520724020207" width="3.5789087474884127" height="8.052544681848886" fill="rgba(220, 140, 0, 0.25)" stroke="black" stroke-width="0.05588295598214286" />
+    <rect data-type="rect" data-label="status: trace-collision
+orientation: y+" data-x="-3" data-y="0.9501000000000007" x="293.158184393837" y="74.44520724020207" width="3.5789087474884127" height="8.052544681848886" fill="rgba(220, 140, 0, 0.25)" stroke="black" stroke-width="0.05588295598214286" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="-3" data-y="0.4999000000000008" x="293.158184393837" y="82.50133083079844" width="3.5789087474884127" height="8.052544681848886" fill="rgba(220, 140, 0, 0.25)" stroke="black" stroke-width="0.05588295598214286" />
+    <rect data-type="rect" data-label="status: trace-collision
+orientation: y-" data-x="-3" data-y="0.4999000000000008" x="293.158184393837" y="82.50133083079844" width="3.5789087474884127" height="8.052544681848886" fill="rgba(220, 140, 0, 0.25)" stroke="black" stroke-width="0.05588295598214286" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
