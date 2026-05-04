@@ -36,12 +36,8 @@ test("MspConnectionPairSolver_repro79 - no spurious pairs for net-label-only pin
         pins: [{ pinId: "B.1", x: 2.5, y: 0 }],
       },
     ],
-    directConnections: [
-      { pinIds: ["A.1", "A.2"] },
-    ],
-    netConnections: [
-      { netId: "VCC", pinIds: ["A.1", "B.1"] },
-    ],
+    directConnections: [{ pinIds: ["A.1", "A.2"] }],
+    netConnections: [{ netId: "VCC", pinIds: ["A.1", "B.1"] }],
     availableNetLabelOrientations: {
       VCC: ["x+", "x-", "y+", "y-"],
     },
