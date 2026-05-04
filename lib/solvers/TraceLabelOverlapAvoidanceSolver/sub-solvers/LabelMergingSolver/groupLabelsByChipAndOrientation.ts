@@ -1,5 +1,5 @@
-import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { InputProblem } from "lib/types/InputProblem"
+import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
 
 /**
  * Groups NetLabelPlacement objects by their associated chip ID and orientation.
@@ -13,7 +13,7 @@ import type { InputProblem } from "lib/types/InputProblem"
  */
 export const groupLabelsByChipAndOrientation = ({
   labels,
-  chips,
+  chips: _chips,
 }: {
   labels: NetLabelPlacement[]
   chips: InputProblem["chips"]

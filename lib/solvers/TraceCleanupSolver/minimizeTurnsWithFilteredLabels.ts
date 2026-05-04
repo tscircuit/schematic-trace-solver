@@ -1,8 +1,8 @@
-import type { InputProblem } from "lib/types/InputProblem"
-import { minimizeTurns } from "./turnMinimization"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import type { InputProblem } from "lib/types/InputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { minimizeTurns } from "./turn-minimization"
 
 /**
  * Minimizes the turns of a target trace while considering other traces and labels as obstacles.

@@ -1,16 +1,14 @@
+import type { Point } from "@tscircuit/math-utils"
+import type { ConnectivityMap } from "connectivity-map"
+import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import { getBounds, type GraphicsObject } from "graphics-debug"
 import type { InputChip, InputProblem, PinId } from "lib/types/InputProblem"
 import type {
   MspConnectionPair,
   MspConnectionPairId,
 } from "../MspConnectionPairSolver/MspConnectionPairSolver"
-import type { ConnectivityMap } from "connectivity-map"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { SchematicTraceSingleLineSolver2 } from "./SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
-import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
-import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
-import type { Point } from "@tscircuit/math-utils"
 
 export interface SolvedTracePath extends MspConnectionPair {
   tracePath: Point[]
@@ -123,7 +121,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       connectionAlpha: 0.1,
     })
 
-    for (const { mspPairId, tracePath } of this.solvedTracePaths) {
+    for (const { mspPairId: _mspPairId, tracePath } of this.solvedTracePaths) {
       graphics.lines!.push({
         points: tracePath,
         strokeColor: "green",

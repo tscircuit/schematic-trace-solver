@@ -1,4 +1,4 @@
-import type { InputChip, InputProblem } from "lib/types/InputProblem"
+import type { InputChip } from "lib/types/InputProblem"
 
 /**
  * Creates a generator function that yields all possible pairs of chips from the given array.

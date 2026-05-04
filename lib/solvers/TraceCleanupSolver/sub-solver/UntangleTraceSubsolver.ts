@@ -1,28 +1,25 @@
-import { BaseSolver } from "../../BaseSolver/BaseSolver"
+import type { Point } from "@tscircuit/math-utils"
+import type { GraphicsObject } from "graphics-debug"
 import type { InputProblem } from "../../../types/InputProblem"
-import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { BaseSolver } from "../../BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "../../NetLabelPlacementSolver/NetLabelPlacementSolver"
-
+import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { mergeGraphicsObjects } from "../mergeGraphicsObjects"
+import { visualizeTightRectangle } from "../visualizeTightRectangle"
 import { findAllLShapedTurns, type LShape } from "./findAllLShapedTurns"
-import { getTraceObstacles } from "./getTraceObstacles"
 import { findIntersectionsWithObstacles } from "./findIntersectionsWithObstacles"
 import { generateLShapeRerouteCandidates } from "./generateLShapeRerouteCandidates"
-import { isPathColliding, type CollisionInfo } from "./isPathColliding"
 import {
   generateRectangleCandidates,
   type Rectangle,
   type RectangleCandidate,
 } from "./generateRectangleCandidates"
-
-import type { GraphicsObject } from "graphics-debug"
-import type { Point } from "@tscircuit/math-utils"
-
-import { visualizeLSapes } from "./visualizeLSapes"
-import { visualizeIntersectionPoints } from "./visualizeIntersectionPoints"
-import { visualizeTightRectangle } from "../visualizeTightRectangle"
+import { getTraceObstacles } from "./getTraceObstacles"
+import { type CollisionInfo, isPathColliding } from "./isPathColliding"
 import { visualizeCandidates } from "./visualizeCandidates"
-import { mergeGraphicsObjects } from "../mergeGraphicsObjects"
 import { visualizeCollision } from "./visualizeCollision"
+import { visualizeIntersectionPoints } from "./visualizeIntersectionPoints"
+import { visualizeLSapes } from "./visualizeLSapes"
 
 /**
  * Defines the input structure for the UntangleTraceSubsolver.
@@ -64,7 +61,6 @@ export class UntangleTraceSubsolver extends BaseSolver {
   private intersectionPoints: Point[] = []
   private tightRectangle: Rectangle | null = null
   private candidates: Point[][] = []
-  private bestRoute: Point[] | null = null
   private lastCollision: CollisionInfo | null = null
   private collidingCandidate: Point[] | null = null
 
@@ -135,7 +131,6 @@ export class UntangleTraceSubsolver extends BaseSolver {
     this.intersectionPoints = [] // Clear temporary data
     this.tightRectangle = null
     this.candidates = []
-    this.bestRoute = null
     this.lastCollision = null
     this.collidingCandidate = null
   }
@@ -244,7 +239,6 @@ export class UntangleTraceSubsolver extends BaseSolver {
   }
 
   private _applyBestRoute(bestRoute: Point[]) {
-    this.bestRoute = bestRoute
     this.collidingCandidate = null
     this.lastCollision = null
 

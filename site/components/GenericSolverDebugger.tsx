@@ -1,7 +1,6 @@
-import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { InputProblem } from "lib/types/InputProblem"
-import { useMemo, useReducer } from "react"
 import { InteractiveGraphics } from "graphics-debug/react"
+import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { useReducer } from "react"
 import { SolverToolbar } from "./SolverToolbar"
 
 export const GenericSolverDebugger = ({ solver }: { solver: BaseSolver }) => {

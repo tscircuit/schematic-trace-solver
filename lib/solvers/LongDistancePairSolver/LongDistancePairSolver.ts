@@ -1,22 +1,22 @@
-import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import type { ConnectivityMap } from "connectivity-map"
+import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/get-connectivity-map-from-input-problem"
 import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type {
-  InputProblem,
-  InputPin,
-  PinId,
   InputChip,
+  InputPin,
+  InputProblem,
+  PinId,
 } from "lib/types/InputProblem"
-import { BaseSolver } from "../BaseSolver/BaseSolver"
-import { SchematicTraceSingleLineSolver2 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
 import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import { BaseSolver } from "../BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { ConnectivityMap } from "connectivity-map"
+import { SchematicTraceSingleLineSolver2 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 
 const NEAREST_NEIGHBOR_COUNT = 3
 
 const distance = (p1: InputPin, p2: InputPin) => {
-  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
+  return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
 }
 
 export class LongDistancePairSolver extends BaseSolver {
