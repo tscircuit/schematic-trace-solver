@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#f7f8fb"/>
+  <text x="60" y="76" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#111827">Issue #79 demo: remove extra net-label traces</text>
+  <text x="60" y="122" font-family="Arial, sans-serif" font-size="23" fill="#374151">Repro61 uses only netConnections for VCC and GND. Those should render as net labels, not physical wire traces.</text>
+
+  <rect x="60" y="170" width="540" height="360" rx="18" fill="#ffffff" stroke="#d1d5db" stroke-width="2"/>
+  <text x="90" y="220" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#991b1b">Before</text>
+  <text x="90" y="255" font-family="Arial, sans-serif" font-size="20" fill="#6b7280">Net-label-only pins still generated traces</text>
+  <rect x="150" y="300" width="90" height="150" rx="6" fill="#e5e7eb" stroke="#6b7280" stroke-width="2"/>
+  <rect x="420" y="300" width="90" height="150" rx="6" fill="#e5e7eb" stroke="#6b7280" stroke-width="2"/>
+  <text x="178" y="382" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">R1</text>
+  <text x="448" y="382" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">R2</text>
+  <circle cx="240" cy="330" r="6" fill="#111827"/>
+  <circle cx="420" cy="330" r="6" fill="#111827"/>
+  <circle cx="240" cy="420" r="6" fill="#111827"/>
+  <circle cx="420" cy="420" r="6" fill="#111827"/>
+  <line x1="240" y1="330" x2="420" y2="330" stroke="#dc2626" stroke-width="7"/>
+  <line x1="240" y1="420" x2="420" y2="420" stroke="#dc2626" stroke-width="7"/>
+  <text x="285" y="318" font-family="Arial, sans-serif" font-size="20" fill="#991b1b">extra VCC trace</text>
+  <text x="285" y="455" font-family="Arial, sans-serif" font-size="20" fill="#991b1b">extra GND trace</text>
+
+  <rect x="680" y="170" width="540" height="360" rx="18" fill="#ffffff" stroke="#d1d5db" stroke-width="2"/>
+  <text x="710" y="220" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#166534">After PR #260</text>
+  <text x="710" y="255" font-family="Arial, sans-serif" font-size="20" fill="#6b7280">Only directly-wired nets are queued for MSP traces</text>
+  <rect x="770" y="300" width="90" height="150" rx="6" fill="#e5e7eb" stroke="#6b7280" stroke-width="2"/>
+  <rect x="1040" y="300" width="90" height="150" rx="6" fill="#e5e7eb" stroke="#6b7280" stroke-width="2"/>
+  <text x="798" y="382" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">R1</text>
+  <text x="1068" y="382" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">R2</text>
+  <circle cx="860" cy="330" r="6" fill="#111827"/>
+  <circle cx="1040" cy="330" r="6" fill="#111827"/>
+  <circle cx="860" cy="420" r="6" fill="#111827"/>
+  <circle cx="1040" cy="420" r="6" fill="#111827"/>
+  <rect x="888" y="305" width="84" height="34" rx="17" fill="#dbeafe" stroke="#2563eb"/>
+  <text x="910" y="329" font-family="Arial, sans-serif" font-size="20" fill="#1d4ed8">VCC</text>
+  <rect x="890" y="405" width="80" height="34" rx="17" fill="#dcfce7" stroke="#16a34a"/>
+  <text x="910" y="429" font-family="Arial, sans-serif" font-size="20" fill="#166534">GND</text>
+  <text x="896" y="480" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#166534">0 MSP pairs, 0 traces</text>
+
+  <rect x="60" y="575" width="1160" height="80" rx="16" fill="#111827"/>
+  <text x="90" y="615" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#ffffff">Verification</text>
+  <text x="90" y="645" font-family="Arial, sans-serif" font-size="21" fill="#d1d5db">Targeted repro tests pass, full suite passes: 54 pass, 4 skip, 0 fail. PR body includes /claim #79.</text>
+</svg>
