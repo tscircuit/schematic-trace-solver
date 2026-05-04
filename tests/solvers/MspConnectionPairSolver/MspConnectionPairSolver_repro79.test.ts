@@ -35,9 +35,7 @@ test("MspConnectionPairSolver_repro79 - no spurious pairs for net-label-only pin
         center: { x: 3, y: 0 },
         width: 1,
         height: 1,
-        pins: [
-          { pinId: "B.1", x: 2.5, y: 0 },
-        ],
+        pins: [{ pinId: "B.1", x: 2.5, y: 0 }],
       },
     ],
     directConnections: [
@@ -48,6 +46,9 @@ test("MspConnectionPairSolver_repro79 - no spurious pairs for net-label-only pin
       // VCC label: connects A.1 and B.1 (no wire trace should be added for B.1)
       { netId: "VCC", pinIds: ["A.1", "B.1"] },
     ],
+    availableNetLabelOrientations: {
+      VCC: ["x+", "x-", "y+", "y-"],
+    },
   }
 
   const solver = new MspConnectionPairSolver({ inputProblem })
