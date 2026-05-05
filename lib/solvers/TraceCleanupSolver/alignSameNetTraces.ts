@@ -44,7 +44,13 @@ function alignSegments(
   otherCoord: "x" | "y",
   threshold: number,
 ) {
-  const segments: { traceIdx: number; pointIdx: number; val: number; start: number; end: number }[] = []
+  const segments: {
+    traceIdx: number
+    pointIdx: number
+    val: number
+    start: number
+    end: number
+  }[] = []
 
   for (const idx of indices) {
     const path = traces[idx].tracePath
@@ -70,7 +76,7 @@ function alignSegments(
   // Simple clustering: sort by val and group
   segments.sort((a, b) => a.val - b.val)
 
-  const clusters: typeof segments[] = []
+  const clusters: (typeof segments)[] = []
   if (segments.length > 0) {
     let currentCluster = [segments[0]]
     for (let i = 1; i < segments.length; i++) {
@@ -93,7 +99,7 @@ function alignSegments(
 
     for (const seg of cluster) {
       const path = traces[seg.traceIdx].tracePath
-      
+
       // Only align if it's an internal segment (not connected to pins)
       // This ensures we don't create slanted lines near pins.
       if (seg.pointIdx > 0 && seg.pointIdx + 1 < path.length - 1) {
