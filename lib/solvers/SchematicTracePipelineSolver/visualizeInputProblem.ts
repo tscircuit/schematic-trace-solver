@@ -2,6 +2,7 @@ import type { GraphicsObject } from "graphics-debug"
 import type { PinId, InputPin, InputProblem } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
+import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 
 export const visualizeInputProblem = (
   inputProblem: InputProblem,
@@ -50,6 +51,9 @@ export const visualizeInputProblem = (
     const [pinId1, pinId2] = directConn.pinIds
     const pin1 = pinIdMap.get(pinId1)!
     const pin2 = pinIdMap.get(pinId2)!
+    if (arePinsInDifferentSchematicSections(inputProblem, pin1, pin2)) {
+      continue
+    }
     graphics.lines.push({
       points: [
         {
@@ -74,6 +78,9 @@ export const visualizeInputProblem = (
       for (let j = i + 1; j < pins.length; j++) {
         const pin1 = pins[i]!
         const pin2 = pins[j]!
+        if (arePinsInDifferentSchematicSections(inputProblem, pin1, pin2)) {
+          continue
+        }
         graphics.lines.push({
           points: [
             { x: pin1.x, y: pin1.y },
