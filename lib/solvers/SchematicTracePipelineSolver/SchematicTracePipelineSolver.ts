@@ -25,6 +25,7 @@ import { Example28Solver } from "../Example28Solver/Example28Solver"
 import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
 import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
+import { SameNetTraceMergeSolver } from "../SameNetTraceMergeSolver/SameNetTraceMergeSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -78,6 +79,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   availableNetOrientationSolver?: AvailableNetOrientationSolver
   vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
+  sameNetTraceMergeSolver?: SameNetTraceMergeSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -121,6 +123,16 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       ],
     ),
+    // Phase: Merge same-net collinear trace segments into single segments (issue #29)
+    definePipelineStep(
+      "sameNetTraceMergeSolver",
+      SameNetTraceMergeSolver,
+      (instance) => [
+        {
+          inputTracePaths: instance.schematicTraceLinesSolver!.solvedTracePaths,
+        },
+      ],
+    ),
     definePipelineStep(
       "longDistancePairSolver",
       LongDistancePairSolver,
@@ -130,7 +142,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           primaryMspConnectionPairs:
             instance.mspConnectionPairSolver!.mspConnectionPairs,
           alreadySolvedTraces:
-            instance.schematicTraceLinesSolver!.solvedTracePaths,
+            instance.sameNetTraceMergeSolver!.mergedTracePaths,
         },
       ],
       {
