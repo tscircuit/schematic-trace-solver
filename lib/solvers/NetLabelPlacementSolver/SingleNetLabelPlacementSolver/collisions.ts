@@ -1,5 +1,7 @@
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { MspConnectionPairId } from "../../MspConnectionPairSolver/MspConnectionPairSolver"
+import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { NetLabelPlacement } from "../NetLabelPlacementSolver"
+import { getRectBounds } from "./geometry"
 
 export function segmentIntersectsRect(
   p1: { x: number; y: number },
@@ -45,8 +47,21 @@ export function rectIntersectsAnyTrace(
     for (let i = 0; i < pts.length - 1; i++) {
       if (pairId === hostPathId && i === hostSegIndex) continue
       if (segmentIntersectsRect(pts[i]!, pts[i + 1]!, bounds))
-        return { hasIntersection: true, mspPairId: pairId, segIndex: i }
+        return { hasIntersection: true, mspPairId: pairId as MspConnectionPairId, segIndex: i }
     }
   }
   return { hasIntersection: false }
+}
+
+export function rectIntersectsAnyLabel(
+  bounds: { minX: number; minY: number; maxX: number; maxY: number },
+  alreadyPlacedNetLabels: NetLabelPlacement[],
+): boolean {
+  for (const label of alreadyPlacedNetLabels) {
+    const labelBounds = getRectBounds(label.center, label.width, label.height)
+    const overlapX = Math.min(bounds.maxX, labelBounds.maxX) - Math.max(bounds.minX, labelBounds.minX)
+    const overlapY = Math.min(bounds.maxY, labelBounds.maxY) - Math.max(bounds.minY, labelBounds.minY)
+    if (overlapX > 1e-9 && overlapY > 1e-9) return true
+  }
+  return false
 }
