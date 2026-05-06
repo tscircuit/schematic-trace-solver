@@ -75,7 +75,11 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    const directNetIds = new Set(Object.keys(this.dcConnMap.netMap))
+    const netLabelOnlyNetIds = Object.keys(netConnMap.netMap).filter(
+      (id) => !directNetIds.has(id),
+    )
+    this.queuedDcNetIds = [...directNetIds, ...netLabelOnlyNetIds]
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -94,7 +98,11 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     const dcNetId = this.queuedDcNetIds.shift()!
 
-    const allIds = this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[]
+    const dcIds = this.dcConnMap.getIdsConnectedToNet(dcNetId) as string[]
+    const allIds =
+      dcIds.length > 0
+        ? dcIds
+        : (this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[])
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
     if (directlyConnectedPins.length <= 1) {
