@@ -6,18 +6,21 @@ export const getConnectivityMapsFromInputProblem = (
 ): { directConnMap: ConnectivityMap; netConnMap: ConnectivityMap } => {
   const directConnMap = new ConnectivityMap({})
 
-  for (const directConn of inputProblem.directConnections) {
-    directConnMap.addConnections([
-      directConn.netId
-        ? [directConn.netId, ...directConn.pinIds]
-        : directConn.pinIds,
-    ])
+  for (let i = 0; i < inputProblem.directConnections.length; i++) {
+    const directConn = inputProblem.directConnections[i]
+    // Use a unique ID for each direct connection to prevent jumping between nets
+    // with the same name.
+    const syntheticId = `dc_${i}`
+    directConnMap.addConnections([[syntheticId, ...directConn.pinIds]])
   }
 
   const netConnMap = new ConnectivityMap(directConnMap.netMap)
 
-  for (const netConn of inputProblem.netConnections) {
-    netConnMap.addConnections([[netConn.netId, ...netConn.pinIds]])
+  for (let i = 0; i < inputProblem.netConnections.length; i++) {
+    const netConn = inputProblem.netConnections[i]
+    // Use a unique ID for each net connection
+    const syntheticId = `nc_${i}`
+    netConnMap.addConnections([[syntheticId, ...netConn.pinIds]])
   }
 
   return { directConnMap, netConnMap }
