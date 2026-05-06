@@ -6,6 +6,10 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import {
+  mergeCloseParallelSegments,
+  DEFAULT_MERGE_THRESHOLD,
+} from "lib/utils/mergeCloseParallelSegments"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -16,6 +20,7 @@ interface TraceCleanupSolverInput {
   allLabelPlacements: NetLabelPlacement[]
   mergedLabelNetIdMap: Record<string, Set<string>>
   paddingBuffer: number
+  mergeThreshold?: number
 }
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
@@ -25,6 +30,7 @@ import { is4PointRectangle } from "./is4PointRectangle"
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "merging_parallel_segments"
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
@@ -32,9 +38,10 @@ type PipelineStep =
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
  * It operates in a multi-step pipeline:
- * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
- * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
- * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
+ * 1. **Merging Parallel Segments**: First merges close parallel trace segments to reduce visual clutter.
+ * 2. **Untangling Traces**: It then attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
+ * 3. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
+ * 4. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
  * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
  */
 export class TraceCleanupSolver extends BaseSolver {
@@ -42,13 +49,15 @@ export class TraceCleanupSolver extends BaseSolver {
   private outputTraces: SolvedTracePath[]
   private traceIdQueue: string[]
   private tracesMap: Map<string, SolvedTracePath>
-  private pipelineStep: PipelineStep = "untangling_traces"
-  private activeTraceId: string | null = null // New property
+  private pipelineStep: PipelineStep = "merging_parallel_segments"
+  private activeTraceId: string | null = null
   override activeSubSolver: BaseSolver | null = null
+  private mergeThreshold: number
 
   constructor(solverInput: TraceCleanupSolverInput) {
     super()
     this.input = solverInput
+    this.mergeThreshold = solverInput.mergeThreshold ?? DEFAULT_MERGE_THRESHOLD
     this.outputTraces = [...solverInput.allTraces]
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.traceIdQueue = Array.from(
@@ -75,6 +84,9 @@ export class TraceCleanupSolver extends BaseSolver {
     }
 
     switch (this.pipelineStep) {
+      case "merging_parallel_segments":
+        this._runMergeParallelSegmentsStep()
+        break
       case "untangling_traces":
         this._runUntangleTracesStep()
         break
@@ -85,6 +97,15 @@ export class TraceCleanupSolver extends BaseSolver {
         this._runBalanceLShapesStep()
         break
     }
+  }
+
+  private _runMergeParallelSegmentsStep() {
+    this.outputTraces = mergeCloseParallelSegments(
+      this.outputTraces,
+      this.mergeThreshold,
+    )
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.pipelineStep = "untangling_traces"
   }
 
   private _runUntangleTracesStep() {
@@ -171,7 +192,7 @@ export class TraceCleanupSolver extends BaseSolver {
     for (const trace of this.outputTraces) {
       const line: Line = {
         points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
-        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue", // Highlight active trace
+        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue",
       }
       graphics.lines!.push(line)
     }
