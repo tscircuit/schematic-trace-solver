@@ -9,6 +9,24 @@ import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import { getRectBounds } from "./SingleNetLabelPlacementSolver/geometry"
+
+/**
+ * Check if two net labels overlap (for collision detection)
+ */
+function netLabelsOverlap(
+  a: { center: Point; width: number; height: number },
+  b: { center: Point; width: number; height: number },
+): boolean {
+  const aBounds = getRectBounds(a.center, a.width, a.height)
+  const bBounds = getRectBounds(b.center, b.width, b.height)
+  return (
+    aBounds.maxX > bBounds.minX &&
+    aBounds.minX < bBounds.maxX &&
+    aBounds.maxY > bBounds.minY &&
+    aBounds.minY < bBounds.maxY
+  )
+}
 
 /**
  * A group of traces that have at least one overlapping segment and
@@ -76,6 +94,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
   netLabelPlacements: Array<NetLabelPlacement> = []
   currentGroup: OverlappingSameNetTraceGroup | null = null
   triedAnyOrientationFallbackForCurrentGroup = false
+  netLabelCollisions: Array<{ a: NetLabelPlacement; b: NetLabelPlacement }> = []
 
   constructor(params: {
     inputProblem: InputProblem
@@ -88,9 +107,32 @@ export class NetLabelPlacementSolver extends BaseSolver {
     this.overlappingSameNetTraceGroups =
       this.computeOverlappingSameNetTraceGroups()
 
+    // Sort groups: port-only labels first, then by globalConnNetId
+    this.overlappingSameNetTraceGroups.sort((a, b) => {
+      if (a.portOnlyPinId && !b.portOnlyPinId) return -1
+      if (!a.portOnlyPinId && b.portOnlyPinId) return 1
+      return 0
+    })
+
     this.queuedOverlappingSameNetTraceGroups = [
       ...this.overlappingSameNetTraceGroups,
     ]
+  }
+
+  /**
+   * Check if the newly placed net label collides with any previously placed
+   * net label (from a different net).
+   */
+  checkNetLabelCollisions(newPlacement: NetLabelPlacement): void {
+    for (const existing of this.netLabelPlacements) {
+      // Skip if same net
+      if (existing.globalConnNetId === newPlacement.globalConnNetId) continue
+      if (netLabelsOverlap(existing, newPlacement)) {
+        // Record collision but don't fail - just track it
+        this.netLabelCollisions.push({ a: existing, b: newPlacement })
+        return
+      }
+    }
   }
 
   computeOverlappingSameNetTraceGroups(): Array<OverlappingSameNetTraceGroup> {
@@ -252,7 +294,12 @@ export class NetLabelPlacementSolver extends BaseSolver {
 
   override _step() {
     if (this.activeSubSolver?.solved) {
-      this.netLabelPlacements.push(this.activeSubSolver.netLabelPlacement!)
+      const placement = this.activeSubSolver.netLabelPlacement!
+      this.netLabelPlacements.push(placement)
+
+      // Check for collision with previously placed net labels
+      this.checkNetLabelCollisions(placement)
+
       this.activeSubSolver = null
       this.currentGroup = null
       this.triedAnyOrientationFallbackForCurrentGroup = false
