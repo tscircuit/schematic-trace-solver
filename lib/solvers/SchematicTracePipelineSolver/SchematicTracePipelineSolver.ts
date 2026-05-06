@@ -297,6 +297,33 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     this.firstIterationOfPhase = {}
   }
 
+  getOutput(): {
+    traces: SolvedTracePath[]
+    netLabelPlacements: import("../NetLabelPlacementSolver/NetLabelPlacementSolver").NetLabelPlacement[]
+  } {
+    let traces: SolvedTracePath[] = []
+
+    if (this.traceCleanupSolver) {
+      traces = this.traceCleanupSolver.getOutput().traces
+    } else if (this.traceLabelOverlapAvoidanceSolver) {
+      traces = this.traceLabelOverlapAvoidanceSolver.getOutput().traces
+    } else if (this.traceOverlapShiftSolver?.correctedTraceMap) {
+      traces = Object.values(this.traceOverlapShiftSolver.correctedTraceMap)
+    } else if (this.longDistancePairSolver) {
+      traces = this.longDistancePairSolver.getOutput().allTracesMerged
+    } else if (this.schematicTraceLinesSolver) {
+      traces = this.schematicTraceLinesSolver.solvedTracePaths
+    }
+
+    const netLabelPlacements =
+      this.netLabelPlacementSolver?.netLabelPlacements ?? []
+
+    return {
+      traces,
+      netLabelPlacements,
+    }
+  }
+
   override getConstructorParams(): ConstructorParameters<
     typeof SchematicTracePipelineSolver
   >[0] {
