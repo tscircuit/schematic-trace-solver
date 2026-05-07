@@ -25,6 +25,7 @@ import { Example28Solver } from "../Example28Solver/Example28Solver"
 import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
 import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
+import { SameNetTraceCombiningSolver } from "../SameNetTraceCombiningSolver/SameNetTraceCombiningSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -74,6 +75,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
+  sameNetTraceCombiningSolver?: SameNetTraceCombiningSolver
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
   vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
