@@ -16,7 +16,7 @@ export const mergeSameNetCloseTraces = (
       const traceA = result[i]
       const traceB = result[j]
 
-      if (traceA.netId !== traceB.netId) continue
+      if (traceA.dcConnNetId !== traceB.dcConnNetId) continue
 
       const merged = tryMergeTraces(traceA, traceB)
       if (merged) {
@@ -58,7 +58,13 @@ function tryMergeTraces(
         const minX = Math.min(a1.x, a2.x, b1.x, b2.x)
         const maxX = Math.max(a1.x, a2.x, b1.x, b2.x)
         const y = (a1.y + b1.y) / 2
-        return { ...traceA, tracePath: [{ x: minX, y }, { x: maxX, y }] }
+        return {
+          ...traceA,
+          tracePath: [
+            { x: minX, y },
+            { x: maxX, y },
+          ],
+        }
       }
 
       if (
@@ -69,7 +75,13 @@ function tryMergeTraces(
         const minY = Math.min(a1.y, a2.y, b1.y, b2.y)
         const maxY = Math.max(a1.y, a2.y, b1.y, b2.y)
         const x = (a1.x + b1.x) / 2
-        return { ...traceA, tracePath: [{ x, y: minY }, { x, y: maxY }] }
+        return {
+          ...traceA,
+          tracePath: [
+            { x, y: minY },
+            { x, y: maxY },
+          ],
+        }
       }
     }
   }
