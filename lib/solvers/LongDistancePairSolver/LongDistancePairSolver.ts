@@ -12,6 +12,7 @@ import { BaseSolver } from "../BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { SchematicTraceSingleLineSolver2 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 
 const NEAREST_NEIGHBOR_COUNT = 3
 
@@ -104,6 +105,11 @@ export class LongDistancePairSolver extends BaseSolver {
             InputPin & { chipId: string },
             InputPin & { chipId: string },
           ] = [sourcePin, neighbor.pin]
+          if (
+            arePinsInDifferentSchematicSections(inputProblem, pair[0], pair[1])
+          ) {
+            continue
+          }
           const pairKey = pair
             .map((p) => p.pinId)
             .sort()
@@ -225,7 +231,10 @@ export class LongDistancePairSolver extends BaseSolver {
     allTracesMerged: SolvedTracePath[]
   } {
     if (!this.solved) {
-      return { newTraces: [], allTracesMerged: this.params.alreadySolvedTraces }
+      return {
+        newTraces: [],
+        allTracesMerged: this.params.alreadySolvedTraces,
+      }
     }
     return {
       newTraces: this.solvedLongDistanceTraces,
