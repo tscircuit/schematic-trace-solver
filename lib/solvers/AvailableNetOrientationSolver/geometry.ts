@@ -93,7 +93,9 @@ export const tracePathCrossesAnyBounds = (
   bounds: Bounds,
 ) => {
   for (let i = 0; i < tracePath.length - 1; i++) {
-    if (segmentCrossesBoundsInterior(tracePath[i]!, tracePath[i + 1]!, bounds)) {
+    if (
+      segmentCrossesBoundsInterior(tracePath[i]!, tracePath[i + 1]!, bounds)
+    ) {
       return true
     }
   }
