@@ -88,6 +88,20 @@ const segmentCrossesBoundsInterior = (p1: Point, p2: Point, bounds: Bounds) => {
   return false
 }
 
+export const tracePathCrossesAnyBounds = (
+  tracePath: Point[],
+  bounds: Bounds,
+) => {
+  for (let i = 0; i < tracePath.length - 1; i++) {
+    if (
+      segmentCrossesBoundsInterior(tracePath[i]!, tracePath[i + 1]!, bounds)
+    ) {
+      return true
+    }
+  }
+  return false
+}
+
 export const tracePathCrossesAnyTrace = (
   tracePath: Point[],
   traceMap: Record<string, SolvedTracePath>,
