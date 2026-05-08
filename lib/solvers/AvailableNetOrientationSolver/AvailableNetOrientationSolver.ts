@@ -21,6 +21,7 @@ import {
   rangesOverlap,
   rectsOverlap,
   traceCrossesBoundsInterior,
+  tracePathCrossesAnyBounds,
   tracePathCrossesAnyTrace,
 } from "./geometry"
 import { getPinMap, getTracePins, toNetLabelPlacementPatch } from "./traces"
@@ -447,17 +448,27 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (boundsStatus !== "valid") return boundsStatus
 
-    if (
-      tracePathCrossesAnyTrace(
-        getConnectorTracePath(
-          label.anchorPoint,
-          candidate.anchorPoint,
-          candidate.orientation,
-        ),
-        this.traceMap,
-      )
-    ) {
+    const connectorTrace = getConnectorTracePath(
+      label.anchorPoint,
+      candidate.anchorPoint,
+      candidate.orientation,
+    )
+
+    if (tracePathCrossesAnyTrace(connectorTrace, this.traceMap)) {
       return "trace-collision"
+    }
+
+    for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
+      if (i === labelIndex) continue
+      const otherLabel = this.outputNetLabelPlacements[i]!
+      if (
+        tracePathCrossesAnyBounds(
+          connectorTrace,
+          getRectBounds(otherLabel.center, otherLabel.width, otherLabel.height),
+        )
+      ) {
+        return "netlabel-collision"
+      }
     }
 
     return "valid"
