@@ -6,26 +6,26 @@
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { InputProblem } from "lib/types/InputProblem"
+import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
+import { Example28Solver } from "../Example28Solver/Example28Solver"
+import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectionPairSolver"
+import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { SameNetTraceSegmentCombiner } from "../SameNetTraceSegmentCombiner/SameNetTraceSegmentCombiner"
 import {
   SchematicTraceLinesSolver,
   type SolvedTracePath,
 } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
-import { SameNetTraceSegmentCombiner } from "../SameNetTraceSegmentCombiner/SameNetTraceSegmentCombiner"
-import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { colorAvailableNetOrientationLabels } from "./colorAvailableNetOrientationLabels"
-import { visualizeInputProblem } from "./visualizeInputProblem"
+import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
+import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import type { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
+import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
+import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
+import { colorAvailableNetOrientationLabels } from "./colorAvailableNetOrientationLabels"
 import { correctPinsInsideChips } from "./correctPinsInsideChip"
 import { expandChipsToFitPins } from "./expandChipsToFitPins"
-import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
-import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
-import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
-import { Example28Solver } from "../Example28Solver/Example28Solver"
-import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
-import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
-import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
+import { visualizeInputProblem } from "./visualizeInputProblem"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -181,19 +181,18 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       () => [
         {
           inputProblem: this.inputProblem,
-          inputTraceMap:
-            this.sameNetTraceSegmentCombiner?.getOutput().traces ?
-              Object.fromEntries(
+          inputTraceMap: this.sameNetTraceSegmentCombiner?.getOutput().traces
+            ? Object.fromEntries(
                 this.sameNetTraceSegmentCombiner!.getOutput().traces.map(
                   (p) => [p.mspPairId, p],
                 ),
-              ) :
-            this.traceOverlapShiftSolver?.correctedTraceMap ??
+              )
+            : (this.traceOverlapShiftSolver?.correctedTraceMap ??
               Object.fromEntries(
                 this.longDistancePairSolver!.getOutput().allTracesMerged.map(
                   (p) => [p.mspPairId, p],
                 ),
-              ),
+              )),
         },
       ],
       {
@@ -206,19 +205,18 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       "traceLabelOverlapAvoidanceSolver",
       TraceLabelOverlapAvoidanceSolver,
       (instance) => {
-        const baseMap =
-          instance.sameNetTraceSegmentCombiner?.getOutput().traces ?
-            Object.fromEntries(
-              instance.sameNetTraceSegmentCombiner!.getOutput().traces.map(
-                (p) => [p.mspPairId, p],
-              ),
-            ) :
-            instance.traceOverlapShiftSolver?.correctedTraceMap ??
+        const baseMap = instance.sameNetTraceSegmentCombiner?.getOutput().traces
+          ? Object.fromEntries(
+              instance
+                .sameNetTraceSegmentCombiner!.getOutput()
+                .traces.map((p) => [p.mspPairId, p]),
+            )
+          : (instance.traceOverlapShiftSolver?.correctedTraceMap ??
             Object.fromEntries(
               instance
                 .longDistancePairSolver!.getOutput()
                 .allTracesMerged.map((p) => [p.mspPairId, p]),
-            )
+            ))
         const traces = Object.values(baseMap)
         const netLabelPlacements =
           instance.netLabelPlacementSolver!.netLabelPlacements
@@ -380,7 +378,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     }
 
     const constructorParams = pipelineStepDef.getConstructorParams(this)
-    // @ts-ignore
+    // @ts-expect-error
     this.activeSubSolver = new pipelineStepDef.solverClass(...constructorParams)
     ;(this as any)[pipelineStepDef.solverName] = this.activeSubSolver
     this.timeSpentOnPhase[pipelineStepDef.solverName] = 0

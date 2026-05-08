@@ -1,14 +1,14 @@
 import type { Point } from "@tscircuit/math-utils"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject } from "graphics-debug"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import type { InputProblem } from "lib/types/InputProblem"
+import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath
@@ -32,7 +32,7 @@ export class SingleOverlapSolver extends BaseSolver {
   problem: InputProblem
   obstacles: ReturnType<typeof getObstacleRects>
   label: NetLabelPlacement
-  _tried: number = 0
+  _tried = 0
 
   constructor(solverInput: SingleOverlapSolverInput) {
     super()

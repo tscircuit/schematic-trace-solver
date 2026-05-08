@@ -1,28 +1,28 @@
+import type { GraphicsObject } from "graphics-debug"
+import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { InputProblem, PinId } from "lib/types/InputProblem"
+import type { FacingDirection } from "lib/utils/dir"
 import type {
   NetLabelPlacement,
   OverlappingSameNetTraceGroup,
 } from "../NetLabelPlacementSolver"
-import type { InputProblem, PinId } from "lib/types/InputProblem"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { FacingDirection } from "lib/utils/dir"
-import type { GraphicsObject } from "graphics-debug"
-import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
+import { anchorsForSegment } from "./anchors"
+import { rectIntersectsAnyTrace } from "./collisions"
 import {
-  getDimsForOrientation,
   getCenterFromAnchor,
+  getDimsForOrientation,
   getRectBounds,
 } from "./geometry"
-import { rectIntersectsAnyTrace } from "./collisions"
 import { chooseHostTraceForGroup } from "./host"
-import { anchorsForSegment } from "./anchors"
-import { solveNetLabelPlacementForPortOnlyPin } from "./solvePortOnlyPin"
 import { visualizeSingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver_visualize"
+import { solveNetLabelPlacementForPortOnlyPin } from "./solvePortOnlyPin"
 
 export {
-  NET_LABEL_HORIZONTAL_WIDTH,
   NET_LABEL_HORIZONTAL_HEIGHT,
+  NET_LABEL_HORIZONTAL_WIDTH,
 } from "./geometry"
 // NOTE: net labels, when in the y+/y- orientation, are rotated and therefore
 // the width/height are swapped
@@ -134,7 +134,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
     // Prefer starting from the trace connected to the "largest" chip (most pins)
     const groupId = this.overlappingSameNetTraceGroup.globalConnNetId
-    let host = chooseHostTraceForGroup({
+    const host = chooseHostTraceForGroup({
       inputProblem: this.inputProblem,
       inputTraceMap: this.inputTraceMap,
       globalConnNetId: groupId,

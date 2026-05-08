@@ -1,6 +1,6 @@
 import type { GraphicsObject } from "graphics-debug"
-import type { Guideline } from "./GuidelinesSolver"
 import { getBounds } from "graphics-debug"
+import type { Guideline } from "./GuidelinesSolver"
 
 export const visualizeGuidelines = ({
   guidelines,

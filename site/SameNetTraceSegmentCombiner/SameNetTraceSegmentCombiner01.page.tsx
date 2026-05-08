@@ -5,26 +5,48 @@ import { SameNetTraceSegmentCombiner } from "lib/solvers/SameNetTraceSegmentComb
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { ConnectivityMap } from "connectivity-map"
 
-// Two horizontal traces from the same net that are close together
-const traceA: SolvedTracePath = {
-  mspPairId: "traceA",
-  globalConnNetId: "net1",
-  tracePath: [
+const makeTrace = (
+  id: string,
+  netId: string,
+  path: { x: number; y: number }[],
+  pIds: string[],
+): SolvedTracePath =>
+  ({
+    mspPairId: id,
+    globalConnNetId: netId,
+    dcConnNetId: netId,
+    tracePath: path,
+    mspConnectionPairIds: [id],
+    pinIds: pIds,
+    pins: [
+      { pinId: pIds[0] ?? "p0", x: path[0]!.x, y: path[0]!.y, chipId: "chip1" },
+      {
+        pinId: pIds[1] ?? "p1",
+        x: path[path.length - 1]!.x,
+        y: path[path.length - 1]!.y,
+        chipId: "chip2",
+      },
+    ],
+  }) as SolvedTracePath
+
+const traceA = makeTrace(
+  "traceA",
+  "net1",
+  [
     { x: 0, y: 0 },
     { x: 2, y: 0 },
   ],
-  connectedPinIds: ["pin1", "pin2"],
-}
-
-const traceB: SolvedTracePath = {
-  mspPairId: "traceB",
-  globalConnNetId: "net1",
-  tracePath: [
+  ["pin1", "pin2"],
+)
+const traceB = makeTrace(
+  "traceB",
+  "net1",
+  [
     { x: 0.5, y: 0.05 },
     { x: 1.5, y: 0.05 },
   ],
-  connectedPinIds: ["pin3", "pin4"],
-}
+  ["pin3", "pin4"],
+)
 
 const inputProblem: InputProblem = {
   chips: [
@@ -50,10 +72,9 @@ const inputProblem: InputProblem = {
     },
   ],
   directConnections: [],
-  netConnections: [
-    { netId: "net1", pinIds: ["pin1", "pin2", "pin3", "pin4"] },
-  ],
+  netConnections: [{ netId: "net1", pinIds: ["pin1", "pin2", "pin3", "pin4"] }],
   maxMspPairDistance: 5,
+  availableNetLabelOrientations: {},
 }
 
 const connMap = new ConnectivityMap({})

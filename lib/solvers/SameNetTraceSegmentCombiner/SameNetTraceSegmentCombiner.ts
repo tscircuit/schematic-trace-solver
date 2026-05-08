@@ -1,9 +1,9 @@
+import type { ConnectivityMap } from "connectivity-map"
+import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem } from "lib/types/InputProblem"
-import type { ConnectivityMap } from "connectivity-map"
 
 type ConnNetId = string
 
@@ -188,7 +188,14 @@ export class SameNetTraceSegmentCombiner extends BaseSolver {
     }
 
     // Process the first combinable pair
-    const { traceA, traceB, segmentIndexA, segmentIndexB, combinedStart, combinedEnd } = combinable[0]!
+    const {
+      traceA,
+      traceB,
+      segmentIndexA,
+      segmentIndexB,
+      combinedStart,
+      combinedEnd,
+    } = combinable[0]!
 
     // Modify traceA to use the combined segment
     const newTracePathA = [...traceA.tracePath]
