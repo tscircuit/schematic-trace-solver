@@ -223,11 +223,18 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     definePipelineStep(
       "sameNetTraceCombiningSolver",
       SameNetTraceCombiningSolver,
-      (instance) => [
-        {
-          traces: instance.traceCleanupSolver!.getOutput().traces,
-        },
-      ],
+      (instance) => {
+        const labelMergingOutput =
+          instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput()
+
+        return [
+          {
+            traces: instance.traceCleanupSolver!.getOutput().traces,
+            inputProblem: instance.inputProblem,
+            netLabelPlacements: labelMergingOutput.netLabelPlacements,
+          },
+        ]
+      },
     ),
     definePipelineStep(
       "postCombineNetLabelPlacementSolver",
