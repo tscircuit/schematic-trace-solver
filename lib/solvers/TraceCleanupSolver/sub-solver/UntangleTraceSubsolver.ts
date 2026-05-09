@@ -258,11 +258,18 @@ export class UntangleTraceSubsolver extends BaseSolver {
           p.x === this.currentLShape!.p2.x && p.y === this.currentLShape!.p2.y,
       )
       if (p2Index !== -1) {
-        const newTracePath = [
+        const rawPath = [
           ...originalTrace.tracePath.slice(0, p2Index),
           ...bestRoute,
           ...originalTrace.tracePath.slice(p2Index + 1),
         ]
+        const EPS = 1e-9
+        const newTracePath = rawPath.filter(
+          (p, i) =>
+            i === 0 ||
+            Math.abs(p.x - rawPath[i - 1].x) > EPS ||
+            Math.abs(p.y - rawPath[i - 1].y) > EPS,
+        )
         this.input.allTraces[traceIndex] = {
           ...originalTrace,
           tracePath: newTracePath,
