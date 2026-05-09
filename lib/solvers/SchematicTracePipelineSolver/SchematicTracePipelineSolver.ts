@@ -77,6 +77,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
   sameNetTraceCombiningSolver?: SameNetTraceCombiningSolver
+  postCombineNetLabelPlacementSolver?: NetLabelPlacementSolver
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
   vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
@@ -229,7 +230,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ],
     ),
     definePipelineStep(
-      "netLabelPlacementSolver",
+      "postCombineNetLabelPlacementSolver",
       NetLabelPlacementSolver,
       (instance) => {
         const traces =
@@ -258,7 +259,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           inputProblem: instance.inputProblem,
           traces,
           netLabelPlacements:
-            instance.netLabelPlacementSolver!.netLabelPlacements,
+            instance.postCombineNetLabelPlacementSolver!.netLabelPlacements,
         },
       ]
     }),
