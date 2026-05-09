@@ -188,7 +188,14 @@ export class SameNetTraceSegmentCombiner extends BaseSolver {
     }
 
     // Process the first combinable pair
-    const { traceA, traceB, segmentIndexA, segmentIndexB, combinedStart, combinedEnd } = combinable[0]!
+    const {
+      traceA,
+      traceB,
+      segmentIndexA,
+      segmentIndexB,
+      combinedStart,
+      combinedEnd,
+    } = combinable[0]!
 
     // Modify traceA to use the combined segment
     const newTracePathA = [...traceA.tracePath]
@@ -251,6 +258,7 @@ export class SameNetTraceSegmentCombiner extends BaseSolver {
   getOutput() {
     return {
       traces: Object.values(this.correctedTraceMap),
+      traceMap: this.correctedTraceMap,
     }
   }
 

@@ -8,22 +8,34 @@ import { ConnectivityMap } from "connectivity-map"
 // Two horizontal traces from the same net that are close together
 const traceA: SolvedTracePath = {
   mspPairId: "traceA",
+  mspConnectionPairIds: ["traceA"],
   globalConnNetId: "net1",
+  dcConnNetId: "dc1",
   tracePath: [
     { x: 0, y: 0 },
     { x: 2, y: 0 },
   ],
-  connectedPinIds: ["pin1", "pin2"],
+  pinIds: ["pin1", "pin2"],
+  pins: [
+    { pinId: "pin1", x: 0, y: 0, chipId: "chip1" },
+    { pinId: "pin2", x: 2, y: 0, chipId: "chip1" },
+  ],
 }
 
 const traceB: SolvedTracePath = {
   mspPairId: "traceB",
+  mspConnectionPairIds: ["traceB"],
   globalConnNetId: "net1",
+  dcConnNetId: "dc2",
   tracePath: [
     { x: 0.5, y: 0.05 },
     { x: 1.5, y: 0.05 },
   ],
-  connectedPinIds: ["pin3", "pin4"],
+  pinIds: ["pin3", "pin4"],
+  pins: [
+    { pinId: "pin3", x: 0.5, y: 0.05, chipId: "chip2" },
+    { pinId: "pin4", x: 1.5, y: 0.05, chipId: "chip2" },
+  ],
 }
 
 const inputProblem: InputProblem = {
@@ -50,10 +62,9 @@ const inputProblem: InputProblem = {
     },
   ],
   directConnections: [],
-  netConnections: [
-    { netId: "net1", pinIds: ["pin1", "pin2", "pin3", "pin4"] },
-  ],
+  netConnections: [{ netId: "net1", pinIds: ["pin1", "pin2", "pin3", "pin4"] }],
   maxMspPairDistance: 5,
+  availableNetLabelOrientations: {},
 }
 
 const connMap = new ConnectivityMap({})

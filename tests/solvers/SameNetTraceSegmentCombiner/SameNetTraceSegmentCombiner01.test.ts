@@ -13,22 +13,34 @@ test("SameNetTraceSegmentCombiner01 - combines parallel horizontal traces from s
   // They should be combined to Y=0.025
   const traceA: SolvedTracePath = {
     mspPairId: "traceA",
+    dcConnNetId: "net1",
     globalConnNetId: "net1",
     tracePath: [
       { x: 0, y: 0 },
       { x: 2, y: 0 },
     ],
-    connectedPinIds: ["pin1", "pin2"],
+    mspConnectionPairIds: ["traceA"],
+    pinIds: ["pin1", "pin2"],
+    pins: [
+      { pinId: "pin1", x: 0, y: 0, chipId: "chip1" },
+      { pinId: "pin2", x: 2, y: 0, chipId: "chip1" },
+    ],
   }
 
   const traceB: SolvedTracePath = {
     mspPairId: "traceB",
+    dcConnNetId: "net1",
     globalConnNetId: "net1",
     tracePath: [
       { x: 0.5, y: 0.05 },
       { x: 1.5, y: 0.05 },
     ],
-    connectedPinIds: ["pin3", "pin4"],
+    mspConnectionPairIds: ["traceB"],
+    pinIds: ["pin3", "pin4"],
+    pins: [
+      { pinId: "pin3", x: 0.5, y: 0.05, chipId: "chip2" },
+      { pinId: "pin4", x: 1.5, y: 0.05, chipId: "chip2" },
+    ],
   }
 
   const inputProblem: InputProblem = {
@@ -38,6 +50,7 @@ test("SameNetTraceSegmentCombiner01 - combines parallel horizontal traces from s
       { netId: "net1", pinIds: ["pin1", "pin2", "pin3", "pin4"] },
     ],
     maxMspPairDistance: 5,
+    availableNetLabelOrientations: {},
   }
 
   // Create a connectivity map with the correct constructor API
@@ -71,22 +84,34 @@ test("SameNetTraceSegmentCombiner01 - combines parallel horizontal traces from s
 test("SameNetTraceSegmentCombiner02 - no combination for traces in different nets", () => {
   const traceA: SolvedTracePath = {
     mspPairId: "traceA",
+    dcConnNetId: "net1",
     globalConnNetId: "net1",
     tracePath: [
       { x: 0, y: 0 },
       { x: 2, y: 0 },
     ],
-    connectedPinIds: ["pin1", "pin2"],
+    mspConnectionPairIds: ["traceA"],
+    pinIds: ["pin1", "pin2"],
+    pins: [
+      { pinId: "pin1", x: 0, y: 0, chipId: "chip1" },
+      { pinId: "pin2", x: 2, y: 0, chipId: "chip1" },
+    ],
   }
 
   const traceB: SolvedTracePath = {
     mspPairId: "traceB",
+    dcConnNetId: "net2",
     globalConnNetId: "net2",
     tracePath: [
       { x: 0.5, y: 0.05 },
       { x: 1.5, y: 0.05 },
     ],
-    connectedPinIds: ["pin3", "pin4"],
+    mspConnectionPairIds: ["traceB"],
+    pinIds: ["pin3", "pin4"],
+    pins: [
+      { pinId: "pin3", x: 0.5, y: 0.05, chipId: "chip2" },
+      { pinId: "pin4", x: 1.5, y: 0.05, chipId: "chip2" },
+    ],
   }
 
   const inputProblem: InputProblem = {
@@ -97,6 +122,7 @@ test("SameNetTraceSegmentCombiner02 - no combination for traces in different net
       { netId: "net2", pinIds: ["pin3", "pin4"] },
     ],
     maxMspPairDistance: 5,
+    availableNetLabelOrientations: {},
   }
 
   const connMap = new ConnectivityMap({})
@@ -124,22 +150,34 @@ test("SameNetTraceSegmentCombiner02 - no combination for traces in different net
 test("SameNetTraceSegmentCombiner03 - no combination for traces far apart", () => {
   const traceA: SolvedTracePath = {
     mspPairId: "traceA",
+    dcConnNetId: "net1",
     globalConnNetId: "net1",
     tracePath: [
       { x: 0, y: 0 },
       { x: 2, y: 0 },
     ],
-    connectedPinIds: ["pin1", "pin2"],
+    mspConnectionPairIds: ["traceA"],
+    pinIds: ["pin1", "pin2"],
+    pins: [
+      { pinId: "pin1", x: 0, y: 0, chipId: "chip1" },
+      { pinId: "pin2", x: 2, y: 0, chipId: "chip1" },
+    ],
   }
 
   const traceB: SolvedTracePath = {
     mspPairId: "traceB",
+    dcConnNetId: "net1",
     globalConnNetId: "net1",
     tracePath: [
       { x: 0.5, y: 0.5 }, // 0.5 apart - beyond EPS=0.1
       { x: 1.5, y: 0.5 },
     ],
-    connectedPinIds: ["pin3", "pin4"],
+    mspConnectionPairIds: ["traceB"],
+    pinIds: ["pin3", "pin4"],
+    pins: [
+      { pinId: "pin3", x: 0.5, y: 0.5, chipId: "chip2" },
+      { pinId: "pin4", x: 1.5, y: 0.5, chipId: "chip2" },
+    ],
   }
 
   const inputProblem: InputProblem = {
@@ -149,6 +187,7 @@ test("SameNetTraceSegmentCombiner03 - no combination for traces far apart", () =
       { netId: "net1", pinIds: ["pin1", "pin2", "pin3", "pin4"] },
     ],
     maxMspPairDistance: 5,
+    availableNetLabelOrientations: {},
   }
 
   const connMap = new ConnectivityMap({})
