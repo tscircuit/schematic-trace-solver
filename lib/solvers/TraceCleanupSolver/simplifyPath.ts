@@ -4,7 +4,31 @@ import {
   isVertical,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
+/**
+ * Removes consecutive duplicate points (zero-length segments) from a path.
+ *
+ * These arise when rerouted segments are spliced together at the same
+ * coordinate — e.g. when _applyBestRoute concatenates path slices and the
+ * junction point appears twice. Zero-length segments render as tiny artifacts
+ * in the schematic output.
+ */
+export const removeDuplicateConsecutivePoints = (path: Point[]): Point[] => {
+  if (path.length === 0) return path
+  const result: Point[] = [path[0]]
+  for (let i = 1; i < path.length; i++) {
+    const prev = result[result.length - 1]
+    if (prev.x !== path[i].x || prev.y !== path[i].y) {
+      result.push(path[i])
+    }
+  }
+  return result
+}
+
 export const simplifyPath = (path: Point[]): Point[] => {
+  // Remove duplicate consecutive points (zero-length segments) first so the
+  // collinear-merge pass below doesn't see misleading direction changes.
+  path = removeDuplicateConsecutivePoints(path)
+
   if (path.length < 3) return path
   const newPath: Point[] = [path[0]]
   for (let i = 1; i < path.length - 1; i++) {
