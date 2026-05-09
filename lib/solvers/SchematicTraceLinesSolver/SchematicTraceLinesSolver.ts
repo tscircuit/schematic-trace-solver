@@ -1,6 +1,6 @@
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import { getBounds, type GraphicsObject } from "graphics-debug"
+import { type GraphicsObject } from "graphics-debug"
 import type { InputChip, InputProblem, PinId } from "lib/types/InputProblem"
 import type {
   MspConnectionPair,
@@ -8,8 +8,6 @@ import type {
 } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 import type { ConnectivityMap } from "connectivity-map"
 import { SchematicTraceSingleLineSolver2 } from "./SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
-import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
-import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
 import type { Point } from "@tscircuit/math-utils"
 
 export interface SolvedTracePath extends MspConnectionPair {
@@ -66,9 +64,14 @@ export class SchematicTraceLinesSolver extends BaseSolver {
 
   override _step() {
     if (this.activeSubSolver?.solved) {
+      // --- START OF FIX: Snap new path to existing same-net traces ---
+      const rawPath = this.activeSubSolver!.solvedTracePath!
+      const snappedPath = this.snapPathToExistingTraces(rawPath)
+      // --- END OF FIX ---
+
       this.solvedTracePaths.push({
         ...this.currentConnectionPair!,
-        tracePath: this.activeSubSolver!.solvedTracePath!,
+        tracePath: snappedPath,
         mspConnectionPairIds: [this.currentConnectionPair!.mspPairId],
         pinIds: [
           this.currentConnectionPair!.pins[0].pinId,
@@ -78,8 +81,8 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       this.activeSubSolver = null
       this.currentConnectionPair = null
     }
+    
     if (this.activeSubSolver?.failed) {
-      // Record the failure for this connection and continue to the next pair
       if (this.currentConnectionPair) {
         this.failedConnectionPairs.push({
           ...this.currentConnectionPair,
@@ -88,7 +91,6 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       }
       this.activeSubSolver = null
       this.currentConnectionPair = null
-      // Do not fail the whole solver; proceed to schedule the next pair
     }
 
     if (this.activeSubSolver) {
@@ -130,7 +132,6 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       })
     }
 
-    // Indicate failed connection pairs with dashed red lines between their pins
     for (const pair of this.failedConnectionPairs) {
       graphics.lines!.push({
         points: [
@@ -143,5 +144,41 @@ export class SchematicTraceLinesSolver extends BaseSolver {
     }
 
     return graphics
+  }
+
+  /**
+   * Snaps a new path's points to the X or Y coordinates of existing traces 
+   * in the same net if they are within a 0.1mm tolerance.
+   */
+  private snapPathToExistingTraces(path: Point[]): Point[] {
+    const TOLERANCE = 0.1
+
+    const sameNetPaths = this.solvedTracePaths.filter((solved) => {
+      if (!this.currentConnectionPair || !solved.pinIds?.[0]) return false
+      return this.globalConnMap.areConnected(
+        this.currentConnectionPair.pins[0].pinId,
+        solved.pinIds[0],
+      )
+    })
+
+    if (sameNetPaths.length === 0) return path
+
+    const existingPoints: Point[] = sameNetPaths.flatMap((solved) => solved.tracePath)
+
+    return path.map((point) => {
+      let snappedX = point.x
+      let snappedY = point.y
+
+      for (const existing of existingPoints) {
+        if (Math.abs(point.x - existing.x) <= TOLERANCE) {
+          snappedX = existing.x
+        }
+        if (Math.abs(point.y - existing.y) <= TOLERANCE) {
+          snappedY = existing.y
+        }
+      }
+
+      return { x: snappedX, y: snappedY }
+    })
   }
 }
