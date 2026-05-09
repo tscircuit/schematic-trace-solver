@@ -15,6 +15,7 @@ interface SegmentRef {
   start: number
   end: number
   length: number
+  isTerminal: boolean
 }
 
 interface SameNetTraceCombiningSolverInput {
@@ -54,7 +55,10 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
 
     for (const traces of tracesByNet.values()) {
       if (traces.length < 2) continue
-      this.combineTraceGroup(traces)
+      let didCombine = true
+      while (didCombine) {
+        didCombine = this.combineTraceGroup(traces)
+      }
     }
 
     this.outputTraces = this.outputTraces.map((trace) => ({
@@ -64,7 +68,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     this.solved = true
   }
 
-  private combineTraceGroup(groupTraces: SolvedTracePath[]) {
+  private combineTraceGroup(groupTraces: SolvedTracePath[]): boolean {
     const traceIndexById = new Map(
       this.outputTraces.map((trace, index) => [trace.mspPairId, index]),
     )
@@ -87,11 +91,15 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
         if (!this.shouldCombineSegments(first, second)) continue
 
         const target = this.getTargetSegment(first, second)
+        if (!target) continue
         const source = target === first ? second : first
         this.snapSegmentToCoordinate(source, target.constantCoord)
         this.mergedSegmentCount++
+        return true
       }
     }
+
+    return false
   }
 
   private getSegmentRefs(trace: SolvedTracePath): SegmentRef[] {
@@ -112,6 +120,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
           start,
           end,
           length: end - start,
+          isTerminal: i === 0 || i + 1 === trace.tracePath.length - 1,
         })
       } else if (this.areEqual(startPoint.x, endPoint.x)) {
         const start = Math.min(startPoint.y, endPoint.y)
@@ -124,6 +133,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
           start,
           end,
           length: end - start,
+          isTerminal: i === 0 || i + 1 === trace.tracePath.length - 1,
         })
       }
     }
@@ -144,7 +154,14 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     return overlap >= this.input.minOverlap
   }
 
-  private getTargetSegment(first: SegmentRef, second: SegmentRef): SegmentRef {
+  private getTargetSegment(
+    first: SegmentRef,
+    second: SegmentRef,
+  ): SegmentRef | null {
+    if (first.isTerminal && second.isTerminal) return null
+    if (first.isTerminal) return first
+    if (second.isTerminal) return second
+
     if (first.length !== second.length) {
       return first.length > second.length ? first : second
     }
