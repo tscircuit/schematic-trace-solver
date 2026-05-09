@@ -8,6 +8,7 @@ import { MergedNetLabelObstacleSolver } from "./sub-solvers/LabelMergingSolver/L
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { OverlapAvoidanceStepSolver } from "./sub-solvers/OverlapAvoidanceStepSolver/OverlapAvoidanceStepSolver"
 import { detectTraceLabelOverlap } from "./detectTraceLabelOverlap"
+import { getNetLabelStrokeColorForOrientation } from "../NetLabelPlacementSolver/getNetLabelStrokeColorForOrientation"
 
 interface TraceLabelOverlapAvoidanceSolverInput {
   inputProblem: InputProblem
@@ -151,12 +152,16 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
     // Also show original labels
     for (const label of this.netLabelPlacements) {
       const color = getColorFromString(label.globalConnNetId, 0.3) // Make fill opaque
+      const strokeColor = getNetLabelStrokeColorForOrientation(
+        label.orientation,
+        color.replace("0.3", "1"),
+      )
       graphics.rects!.push({
         center: label.center,
         width: label.width,
         height: label.height,
         fill: color,
-        stroke: color.replace("0.3", "1"),
+        stroke: strokeColor,
         label: label.globalConnNetId,
       })
     }

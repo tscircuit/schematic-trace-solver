@@ -8,6 +8,7 @@ import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
 import { SingleOverlapSolver } from "../SingleOverlapSolver/SingleOverlapSolver"
 import { doesTraceStartOrEndInLabel } from "./doesTraceStartOrEndInLabel"
 import { visualizeDecomposition } from "./visualizeDecomposition"
+import { getNetLabelStrokeColorForOrientation } from "../../../NetLabelPlacementSolver/getNetLabelStrokeColorForOrientation"
 
 type Overlap = ReturnType<typeof detectTraceLabelOverlap>[0]
 
@@ -261,6 +262,10 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
           width: label.width,
           height: label.height,
           fill: "yellow",
+          stroke: getNetLabelStrokeColorForOrientation(
+            label.orientation,
+            "yellow",
+          ),
         })
         if (!graphics.texts) graphics.texts = []
         graphics.texts.push({
