@@ -1,13 +1,13 @@
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { InputProblem, PinId } from "lib/types/InputProblem"
+import { BaseSolver } from "../BaseSolver/BaseSolver"
+import type { InputProblem, PinId } from "../../types/InputProblem"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 import { SingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver/SingleNetLabelPlacementSolver"
-import type { FacingDirection } from "lib/utils/dir"
+import type { FacingDirection } from "../../utils/dir"
 import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import { getColorFromString } from "lib/utils/getColorFromString"
+import { getColorFromString } from "../../utils/getColorFromString"
 import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 
 /**
@@ -87,6 +87,14 @@ export class NetLabelPlacementSolver extends BaseSolver {
 
     this.overlappingSameNetTraceGroups =
       this.computeOverlappingSameNetTraceGroups()
+
+    // Sort so that port-only labels are placed first. This helps as port-only labels
+    // have a fixed anchor (the pin) and cannot move.
+    this.overlappingSameNetTraceGroups.sort((a, b) => {
+      if (a.portOnlyPinId && !b.portOnlyPinId) return -1
+      if (!a.portOnlyPinId && b.portOnlyPinId) return 1
+      return 0
+    })
 
     this.queuedOverlappingSameNetTraceGroups = [
       ...this.overlappingSameNetTraceGroups,
@@ -284,6 +292,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
           overlappingSameNetTraceGroup: this.currentGroup,
           availableOrientations: fullOrients,
           netLabelWidth,
+          alreadyPlacedNetLabels: this.netLabelPlacements,
         })
         return
       }
@@ -327,6 +336,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
         netId
       ] ?? ["x+", "x-", "y+", "y-"],
       netLabelWidth,
+      alreadyPlacedNetLabels: this.netLabelPlacements,
     })
   }
 
