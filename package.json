@@ -28,5 +28,9 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "bun": "^1.3.13",
+    "sharp": "^0.34.5"
   }
 }
