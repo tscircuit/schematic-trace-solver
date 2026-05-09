@@ -2,6 +2,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject, Line } from "graphics-debug"
 import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
 import { balanceZShapes } from "./balanceZShapes"
+import { mergeCloseParallelSegments } from "./mergeCloseParallelSegments"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
@@ -28,6 +29,7 @@ type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
+  | "merging_close_traces"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
@@ -84,6 +86,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "merging_close_traces":
+        this._runMergeCloseTracesStep()
+        break
     }
   }
 
@@ -108,11 +113,21 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "merging_close_traces"
       return
     }
 
     this._processTrace("balancing_l_shapes")
+  }
+
+  private _runMergeCloseTracesStep() {
+    const merged = mergeCloseParallelSegments(
+      Array.from(this.tracesMap.values()),
+    )
+    this.outputTraces = merged
+    this.tracesMap = new Map(merged.map((t) => [t.mspPairId, t]))
+    this.activeTraceId = null
+    this.solved = true
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
