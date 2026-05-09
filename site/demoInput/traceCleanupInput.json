@@ -1,0 +1,28 @@
+{
+  "inputProblem": {
+    "directConnections": [],
+    "components": []
+  },
+  "allTraces": [
+    {
+      "mspPairId": "t1",
+      "tracePath": [
+        { "x": 10, "y": 10 },
+        { "x": 50, "y": 10 },
+        { "x": 50, "y": 60 },
+        { "x": 100, "y": 60 }
+      ]
+    },
+    {
+      "mspPairId": "t2",
+      "tracePath": [
+        { "x": 20, "y": 20 },
+        { "x": 60, "y": 20 },
+        { "x": 60, "y": 80 },
+        { "x": 110, "y": 80 }
+      ]
+    }
+  ],
+  "allLabelPlacements": [],
+  "mergedLabelNetIdMap": {}
+}
