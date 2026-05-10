@@ -8,5 +8,5 @@ test("example01", () => {
 
   solver.solve()
 
-  expect(solver.solved).toBe(true);
+  expect(solver.solved).toBe(true)
 })

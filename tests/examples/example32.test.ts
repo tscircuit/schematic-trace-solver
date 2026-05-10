@@ -8,5 +8,5 @@ test("example31 -> VCC net labels should be at a corner whenever feasible", () =
 
   solver.solve()
 
-  expect(solver.solved).toBe(true);
+  expect(solver.solved).toBe(true)
 })
