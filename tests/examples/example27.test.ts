@@ -8,5 +8,5 @@ test("example27", () => {
 
   solver.solve()
 
-  expect(solver.solved).toBe(true)
+  expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
