@@ -53,7 +53,7 @@ export class TraceCleanupSolver extends BaseSolver {
     super()
     this.input = solverInput
     this.outputTraces = [...solverInput.allTraces]
-    this.tracesMap = new Map(
+          this.tracesMap = new Map(
             this.outputTraces.map((t) => [t.mspPairId, t]),
           )
     this.traceIdQueue = Array.from(
