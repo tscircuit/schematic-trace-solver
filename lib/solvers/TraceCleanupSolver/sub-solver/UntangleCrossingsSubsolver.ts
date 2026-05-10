@@ -90,7 +90,9 @@ export class UntangleCrossingsSubsolver extends BaseSolver {
     }
 
     this.currentTraceId = this.crossedTraceIds.shift()!
-    const trace = this.allTraces.find((t) => t.mspPairId === this.currentTraceId)!
+    const trace = this.allTraces.find(
+      (t) => t.mspPairId === this.currentTraceId,
+    )!
 
     // Create a new single line solver that treats other traces as obstacles
     const chipMap = Object.fromEntries(
