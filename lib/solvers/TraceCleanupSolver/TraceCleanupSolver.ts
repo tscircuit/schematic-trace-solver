@@ -53,7 +53,9 @@ export class TraceCleanupSolver extends BaseSolver {
     super()
     this.input = solverInput
     this.outputTraces = [...solverInput.allTraces]
-    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.tracesMap = new Map(
+            this.outputTraces.map((t) => [t.mspPairId, t]),
+          )
     this.traceIdQueue = Array.from(
       solverInput.allTraces.map((e) => e.mspPairId),
     )
@@ -68,7 +70,9 @@ export class TraceCleanupSolver extends BaseSolver {
             this.activeSubSolver as UntangleTraceSubsolver
           ).getOutput()
           this.outputTraces = output.traces
-          this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+          this.tracesMap = new Map(
+            this.outputTraces.map((t) => [t.mspPairId, t]),
+          )
           this.activeSubSolver = null
           this.pipelineStep = "untangling_crossings"
         } else if (this.pipelineStep === "untangling_crossings") {
