@@ -30,7 +30,6 @@ type PipelineStep =
   | "snapping_traces"
   | "minimizing_turns"
   | "balancing_l_shapes"
-  | "merging_same_net_traces"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
@@ -39,7 +38,6 @@ type PipelineStep =
  * 2. **Snapping Traces**: It snaps trace segments that are close together to the same X or Y coordinate.
  * 3. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
  * 4. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
- * 5. **Merging Same-Net Traces**: It merges separate trace paths belonging to the same net that share endpoints.
  * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
  */
 export class TraceCleanupSolver extends BaseSolver {
@@ -92,9 +90,6 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
-      case "merging_same_net_traces":
-        this._runMergeSameNetTracesStep()
-        break
     }
   }
 
@@ -126,84 +121,11 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.pipelineStep = "merging_same_net_traces"
+      this.solved = true
       return
     }
 
     this._processTrace("balancing_l_shapes")
-  }
-
-  private _runMergeSameNetTracesStep() {
-    const tracesByNet: Record<string, SolvedTracePath[]> = {}
-    for (const trace of this.outputTraces) {
-      const netId = trace.globalConnNetId
-      if (!tracesByNet[netId]) tracesByNet[netId] = []
-      tracesByNet[netId].push(trace)
-    }
-
-    const newTraces: SolvedTracePath[] = []
-    for (const netId in tracesByNet) {
-      const netTraces = tracesByNet[netId]
-      newTraces.push(...this._mergeTracesInNet(netTraces))
-    }
-    this.outputTraces = newTraces
-    this.solved = true
-  }
-
-  private _mergeTracesInNet(
-    netTraces: SolvedTracePath[],
-  ): SolvedTracePath[] {
-    if (netTraces.length <= 1) return netTraces
-
-    let merged = true
-    const currentTraces = [...netTraces]
-
-    while (merged) {
-      merged = false
-      for (let i = 0; i < currentTraces.length; i++) {
-        for (let j = i + 1; j < currentTraces.length; j++) {
-          const t1 = currentTraces[i]
-          const t2 = currentTraces[j]
-
-          const p1Start = t1.tracePath[0]
-          const p1End = t1.tracePath[t1.tracePath.length - 1]
-          const p2Start = t2.tracePath[0]
-          const p2End = t2.tracePath[t2.tracePath.length - 1]
-
-          let newPath: any[] | null = null
-          if (p1End.x === p2Start.x && p1End.y === p2Start.y) {
-            newPath = [...t1.tracePath, ...t2.tracePath.slice(1)]
-          } else if (p1End.x === p2End.x && p1End.y === p2End.y) {
-            newPath = [...t1.tracePath, ...[...t2.tracePath].reverse().slice(1)]
-          } else if (p1Start.x === p2Start.x && p1Start.y === p2Start.y) {
-            newPath = [
-              ...[...t1.tracePath].reverse(),
-              ...t2.tracePath.slice(1),
-            ]
-          } else if (p1Start.x === p2End.x && p1Start.y === p2End.y) {
-            newPath = [...t2.tracePath, ...t1.tracePath.slice(1)]
-          }
-
-          if (newPath) {
-            const newTrace: SolvedTracePath = {
-              ...t1,
-              tracePath: simplifyPath(newPath),
-              mspConnectionPairIds: [
-                ...t1.mspConnectionPairIds,
-                ...t2.mspConnectionPairIds,
-              ],
-              pinIds: Array.from(new Set([...t1.pinIds, ...t2.pinIds])),
-            }
-            currentTraces.splice(j, 1)
-            currentTraces[i] = newTrace
-            merged = true
-            break
-          }
-        }
-        if (merged) break
-      }
-    }
-    return currentTraces
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
