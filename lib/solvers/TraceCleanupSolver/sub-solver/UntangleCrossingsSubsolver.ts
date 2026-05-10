@@ -15,7 +15,7 @@ export class UntangleCrossingsSubsolver extends BaseSolver {
   private inputProblem: InputProblem
   private allTraces: SolvedTracePath[]
   private crossedTraceIds: string[] = []
-  
+
   override activeSubSolver: SchematicTraceSingleLineSolver2 | null = null
   private currentTraceId: string | null = null
 
@@ -26,10 +26,14 @@ export class UntangleCrossingsSubsolver extends BaseSolver {
     super()
     this.inputProblem = params.inputProblem
     this.allTraces = [...params.allTraces]
-    
+
     // Identify traces that have crossings
     for (const trace of this.allTraces) {
-      const collision = isPathColliding(trace.tracePath, this.allTraces, trace.mspPairId)
+      const collision = isPathColliding(
+        trace.tracePath,
+        this.allTraces,
+        trace.mspPairId,
+      )
       if (collision.isColliding) {
         this.crossedTraceIds.push(trace.mspPairId as string)
       }
@@ -39,15 +43,15 @@ export class UntangleCrossingsSubsolver extends BaseSolver {
   private getTraceObstacles(excludeTraceId: string): ChipWithBounds[] {
     const obstacles = getObstacleRects(this.inputProblem)
     const EPS = 0.01 // Very thin obstacles for traces
-    
+
     for (const trace of this.allTraces) {
       if (trace.mspPairId === excludeTraceId) continue
-      
+
       for (let i = 0; i < trace.tracePath.length - 1; i++) {
         const p1 = trace.tracePath[i]
         const p2 = trace.tracePath[i + 1]
         obstacles.push({
-          chipId: \`\${trace.mspPairId}_seg_\${i}\`,
+          chipId: `${trace.mspPairId}_seg_${i}`,
           minX: Math.min(p1.x, p2.x) - EPS,
           maxX: Math.max(p1.x, p2.x) + EPS,
           minY: Math.min(p1.y, p2.y) - EPS,
@@ -62,11 +66,13 @@ export class UntangleCrossingsSubsolver extends BaseSolver {
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
       if (this.activeSubSolver.solved) {
-        const traceIndex = this.allTraces.findIndex(t => t.mspPairId === this.currentTraceId)
+        const traceIndex = this.allTraces.findIndex(
+          (t) => t.mspPairId === this.currentTraceId,
+        )
         if (traceIndex !== -1) {
           this.allTraces[traceIndex] = {
             ...this.allTraces[traceIndex],
-            tracePath: this.activeSubSolver.solvedTracePath!
+            tracePath: this.activeSubSolver.solvedTracePath!,
           }
         }
         this.activeSubSolver = null
@@ -84,16 +90,18 @@ export class UntangleCrossingsSubsolver extends BaseSolver {
     }
 
     this.currentTraceId = this.crossedTraceIds.shift()!
-    const trace = this.allTraces.find(t => t.mspPairId === this.currentTraceId)!
-    
+    const trace = this.allTraces.find((t) => t.mspPairId === this.currentTraceId)!
+
     // Create a new single line solver that treats other traces as obstacles
-    const chipMap = Object.fromEntries(this.inputProblem.chips.map(c => [c.chipId, c]))
+    const chipMap = Object.fromEntries(
+      this.inputProblem.chips.map((c) => [c.chipId, c]),
+    )
     this.activeSubSolver = new SchematicTraceSingleLineSolver2({
       inputProblem: this.inputProblem,
       pins: trace.pins,
-      chipMap
+      chipMap,
     })
-    
+
     // Inject trace obstacles into the sub-solver
     // @ts-ignore - hacking in trace obstacles
     this.activeSubSolver.obstacles = this.getTraceObstacles(this.currentTraceId)
