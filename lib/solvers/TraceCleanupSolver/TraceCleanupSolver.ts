@@ -6,7 +6,85 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { is4PointRectangle } from "./is4PointRectangle"
 
+function mergeSameNetCloseTraces(
+  traces: SolvedTracePath[],
+  mergedLabelNetIdMap: Record<string, Set<string>>,
+): SolvedTracePath[] {
+  const SNAP_THRESHOLD = 0.15
+
+  // Map each trace to a net group using mergedLabelNetIdMap
+  const traceToNetGroup = new Map<string, string>()
+  for (const trace of traces) {
+    let grouped = false
+    for (const [labelId, netIds] of Object.entries(mergedLabelNetIdMap)) {
+      for (const netId of netIds) {
+        if (trace.mspPairId.includes(netId)) {
+          traceToNetGroup.set(trace.mspPairId, labelId)
+          grouped = true
+          break
+        }
+      }
+      if (grouped) break
+    }
+    if (!grouped) traceToNetGroup.set(trace.mspPairId, trace.mspPairId)
+  }
+
+  // Group traces by net
+  const netGroups = new Map<string, SolvedTracePath[]>()
+  for (const trace of traces) {
+    const groupKey = traceToNetGroup.get(trace.mspPairId)!
+    if (!netGroups.has(groupKey)) netGroups.set(groupKey, [])
+    netGroups.get(groupKey)!.push(trace)
+  }
+
+  // Copy all trace paths as mutable
+  const updatedPaths = new Map<string, Array<{ x: number; y: number }>>(
+    traces.map((t) => [
+      t.mspPairId,
+      t.tracePath.map((p) => ({ x: p.x, y: p.y })),
+    ]),
+  )
+
+  for (const [, group] of netGroups) {
+    if (group.length < 2) continue
+
+    for (let ai = 0; ai < group.length; ai++) {
+      const traceA = group[ai]
+      const pathA = updatedPaths.get(traceA.mspPairId)!
+      for (let pi = 1; pi < pathA.length - 1; pi++) {
+        for (let bi = ai + 1; bi < group.length; bi++) {
+          const traceB = group[bi]
+          const pathB = updatedPaths.get(traceB.mspPairId)!
+          for (let pj = 1; pj < pathB.length - 1; pj++) {
+            const dy = Math.abs(pathA[pi].y - pathB[pj].y)
+            const dx = Math.abs(pathA[pi].x - pathB[pj].x)
+
+            // Snap close Y values (horizontal alignment)
+            if (dy > 0 && dy < SNAP_THRESHOLD) {
+              const avg = (pathA[pi].y + pathB[pj].y) / 2
+              pathA[pi] = { ...pathA[pi], y: avg }
+              pathB[pj] = { ...pathB[pj], y: avg }
+            }
+
+            // Snap close X values (vertical alignment)
+            if (dx > 0 && dx < SNAP_THRESHOLD) {
+              const avg = (pathA[pi].x + pathB[pj].x) / 2
+              pathA[pi] = { ...pathA[pi], x: avg }
+              pathB[pj] = { ...pathB[pj], x: avg }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return traces.map((t) => ({
+    ...t,
+    tracePath: updatedPaths.get(t.mspPairId)!,
+  }))
+}
 /**
  * Defines the input structure for the TraceCleanupSolver.
  */
@@ -19,7 +97,7 @@ interface TraceCleanupSolverInput {
 }
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
-import { is4PointRectangle } from "./is4PointRectangle"
+
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -28,6 +106,7 @@ type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
+  | "merging_same_net_traces"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
@@ -84,6 +163,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "merging_same_net_traces":
+        this._runMergeSameNetTracesStep()
+        break
     }
   }
 
@@ -108,11 +190,19 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "merging_same_net_traces"
       return
     }
 
     this._processTrace("balancing_l_shapes")
+  }
+
+  private _runMergeSameNetTracesStep() {
+    this.outputTraces = mergeSameNetCloseTraces(
+      this.outputTraces,
+      this.input.mergedLabelNetIdMap,
+    )
+    this.solved = true
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
