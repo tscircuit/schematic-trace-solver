@@ -39,14 +39,14 @@ const inputProblem: InputProblem = {
     { pinIds: ["U1.2", "U2.1"], netId: "net2" },
   ],
   netConnections: [],
+  availableNetLabelOrientations: {},
 }
 
 test("Reproduction of crossing traces in schematic", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
 
-  const output = solver.getOutput()
-  const traces = output.traces
+  const traces = solver.traceCleanupSolver?.getOutput().traces ?? []
 
   // Identify crossings
   let crossings = 0
