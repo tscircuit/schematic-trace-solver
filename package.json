@@ -10,7 +10,7 @@
     "format:check": "biome format ."
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.2",
+    "@biomejs/biome": "^2.3.3",
     "@react-hook/resize-observer": "^2.0.2",
     "@tscircuit/math-utils": "^0.0.19",
     "@types/bun": "^1.2.21",
