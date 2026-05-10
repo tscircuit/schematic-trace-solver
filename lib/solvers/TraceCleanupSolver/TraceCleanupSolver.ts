@@ -19,22 +19,25 @@ interface TraceCleanupSolverInput {
 }
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
+import { UntangleCrossingsSubsolver } from "./sub-solver/UntangleCrossingsSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "untangling_traces"
+  | "untangling_crossings"
   | "minimizing_turns"
   | "balancing_l_shapes"
-  | "untangling_traces"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
  * It operates in a multi-step pipeline:
  * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
- * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
- * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
+ * 2. **Untangling Crossings**: It specifically identifies and resolves trace-to-trace crossings.
+ * 3. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
+ * 4. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
  * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
  */
 export class TraceCleanupSolver extends BaseSolver {
@@ -60,16 +63,31 @@ export class TraceCleanupSolver extends BaseSolver {
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
       if (this.activeSubSolver.solved) {
-        const output = (
-          this.activeSubSolver as UntangleTraceSubsolver
-        ).getOutput()
-        this.outputTraces = output.traces
-        this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
-        this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        if (this.pipelineStep === "untangling_traces") {
+          const output = (
+            this.activeSubSolver as UntangleTraceSubsolver
+          ).getOutput()
+          this.outputTraces = output.traces
+          this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+          this.activeSubSolver = null
+          this.pipelineStep = "untangling_crossings"
+        } else if (this.pipelineStep === "untangling_crossings") {
+          const output = (
+            this.activeSubSolver as UntangleCrossingsSubsolver
+          ).getOutput()
+          this.outputTraces = output.traces
+          this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+          this.activeSubSolver = null
+          this.pipelineStep = "minimizing_turns"
+        }
       } else if (this.activeSubSolver.failed) {
-        this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        if (this.pipelineStep === "untangling_traces") {
+          this.activeSubSolver = null
+          this.pipelineStep = "untangling_crossings"
+        } else {
+          this.activeSubSolver = null
+          this.pipelineStep = "minimizing_turns"
+        }
       }
       return
     }
@@ -77,6 +95,9 @@ export class TraceCleanupSolver extends BaseSolver {
     switch (this.pipelineStep) {
       case "untangling_traces":
         this._runUntangleTracesStep()
+        break
+      case "untangling_crossings":
+        this._runUntangleCrossingsStep()
         break
       case "minimizing_turns":
         this._runMinimizeTurnsStep()
@@ -90,6 +111,13 @@ export class TraceCleanupSolver extends BaseSolver {
   private _runUntangleTracesStep() {
     this.activeSubSolver = new UntangleTraceSubsolver({
       ...this.input,
+      allTraces: Array.from(this.tracesMap.values()),
+    })
+  }
+
+  private _runUntangleCrossingsStep() {
+    this.activeSubSolver = new UntangleCrossingsSubsolver({
+      inputProblem: this.input.inputProblem,
       allTraces: Array.from(this.tracesMap.values()),
     })
   }
