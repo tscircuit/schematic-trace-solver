@@ -36,9 +36,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     this.solved = true
   }
 
-  private _mergeTracesInNet(
-    netTraces: SolvedTracePath[],
-  ): SolvedTracePath[] {
+  private _mergeTracesInNet(netTraces: SolvedTracePath[]): SolvedTracePath[] {
     if (netTraces.length <= 1) return netTraces
 
     let merged = true
@@ -62,10 +60,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
           } else if (p1End.x === p2End.x && p1End.y === p2End.y) {
             newPath = [...t1.tracePath, ...[...t2.tracePath].reverse().slice(1)]
           } else if (p1Start.x === p2Start.x && p1Start.y === p2Start.y) {
-            newPath = [
-              ...[...t1.tracePath].reverse(),
-              ...t2.tracePath.slice(1),
-            ]
+            newPath = [...[...t1.tracePath].reverse(), ...t2.tracePath.slice(1)]
           } else if (p1Start.x === p2End.x && p1Start.y === p2End.y) {
             newPath = [...t2.tracePath, ...t1.tracePath.slice(1)]
           }
