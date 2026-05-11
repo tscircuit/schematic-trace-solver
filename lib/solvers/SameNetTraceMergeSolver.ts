@@ -54,14 +54,17 @@ export class SameNetTraceMergeSolver extends BaseSolver {
           const p2Start = t2.tracePath[0]
           const p2End = t2.tracePath[t2.tracePath.length - 1]
 
+          const arePointsEqual = (a: Point, b: Point) =>
+            Math.abs(a.x - b.x) < 1e-6 && Math.abs(a.y - b.y) < 1e-6
+
           let newPath: Point[] | null = null
-          if (p1End.x === p2Start.x && p1End.y === p2Start.y) {
+          if (arePointsEqual(p1End, p2Start)) {
             newPath = [...t1.tracePath, ...t2.tracePath.slice(1)]
-          } else if (p1End.x === p2End.x && p1End.y === p2End.y) {
+          } else if (arePointsEqual(p1End, p2End)) {
             newPath = [...t1.tracePath, ...[...t2.tracePath].reverse().slice(1)]
-          } else if (p1Start.x === p2Start.x && p1Start.y === p2Start.y) {
+          } else if (arePointsEqual(p1Start, p2Start)) {
             newPath = [...[...t1.tracePath].reverse(), ...t2.tracePath.slice(1)]
-          } else if (p1Start.x === p2End.x && p1Start.y === p2End.y) {
+          } else if (arePointsEqual(p1Start, p2End)) {
             newPath = [...t2.tracePath, ...t1.tracePath.slice(1)]
           }
 
