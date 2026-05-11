@@ -96,9 +96,17 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
 
   private getSegments(): SegmentRef[] {
     const segments: SegmentRef[] = []
-    for (let traceIndex = 0; traceIndex < this.outputTraces.length; traceIndex++) {
+    for (
+      let traceIndex = 0;
+      traceIndex < this.outputTraces.length;
+      traceIndex++
+    ) {
       const trace = this.outputTraces[traceIndex]!
-      for (let segmentIndex = 0; segmentIndex < trace.tracePath.length - 1; segmentIndex++) {
+      for (
+        let segmentIndex = 0;
+        segmentIndex < trace.tracePath.length - 1;
+        segmentIndex++
+      ) {
         const p0 = trace.tracePath[segmentIndex]!
         const p1 = trace.tracePath[segmentIndex + 1]!
         if (Math.abs(p0.y - p1.y) < EPSILON) {
@@ -271,7 +279,12 @@ function segmentsIntersect(a0: Point, a1: Point, b0: Point, b1: Point) {
   const vy0 = Math.min(vertical[0]!.y, vertical[1]!.y)
   const vy1 = Math.max(vertical[0]!.y, vertical[1]!.y)
 
-  return vx >= hx0 - EPSILON && vx <= hx1 + EPSILON && hy >= vy0 - EPSILON && hy <= vy1 + EPSILON
+  return (
+    vx >= hx0 - EPSILON &&
+    vx <= hx1 + EPSILON &&
+    hy >= vy0 - EPSILON &&
+    hy <= vy1 + EPSILON
+  )
 }
 
 function rangesOverlap(a0: number, a1: number, b0: number, b1: number) {
