@@ -23,6 +23,27 @@ import { visualizeTightRectangle } from "../visualizeTightRectangle"
 import { visualizeCandidates } from "./visualizeCandidates"
 import { mergeGraphicsObjects } from "../mergeGraphicsObjects"
 import { visualizeCollision } from "./visualizeCollision"
+const EPS = 1e-9
+
+/**
+ * Remove duplicate consecutive points from a path.
+ * Path concatenation in _applyBestRoute can produce duplicate points
+ * at the junctions, which render as zero-length extra trace segments.
+ */
+const removeDuplicateConsecutivePoints = (
+  path: Array<{ x: number; y: number }>,
+) => {
+  if (path.length < 2) return path
+  const result = [path[0]]
+  for (let i = 1; i < path.length; i++) {
+    const prev = result[result.length - 1]
+    const curr = path[i]
+    if (Math.abs(prev.x - curr.x) >= EPS || Math.abs(prev.y - curr.y) >= EPS) {
+      result.push(curr)
+    }
+  }
+  return result
+}
 
 /**
  * Defines the input structure for the UntangleTraceSubsolver.
@@ -258,11 +279,11 @@ export class UntangleTraceSubsolver extends BaseSolver {
           p.x === this.currentLShape!.p2.x && p.y === this.currentLShape!.p2.y,
       )
       if (p2Index !== -1) {
-        const newTracePath = [
+        const newTracePath = removeDuplicateConsecutivePoints([
           ...originalTrace.tracePath.slice(0, p2Index),
           ...bestRoute,
           ...originalTrace.tracePath.slice(p2Index + 1),
-        ]
+        ])
         this.input.allTraces[traceIndex] = {
           ...originalTrace,
           tracePath: newTracePath,
