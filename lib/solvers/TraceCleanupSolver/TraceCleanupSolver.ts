@@ -20,6 +20,7 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { removeNetSegmentDuplicates } from "./removeNetSegmentDuplicates"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -49,11 +50,14 @@ export class TraceCleanupSolver extends BaseSolver {
   constructor(solverInput: TraceCleanupSolverInput) {
     super()
     this.input = solverInput
-    this.outputTraces = [...solverInput.allTraces]
+    // Pre-process: remove duplicate segments that appear in multiple traces of
+    // the same net. These are created by SchematicTraceLinesSolver when two MSP
+    // connection pairs share a pin and independently route through the same
+    // physical segment (issue #78 — "extra trace lines in post-processing").
+    const dedupedTraces = removeNetSegmentDuplicates(solverInput.allTraces)
+    this.outputTraces = dedupedTraces
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
-    this.traceIdQueue = Array.from(
-      solverInput.allTraces.map((e) => e.mspPairId),
-    )
+    this.traceIdQueue = Array.from(dedupedTraces.map((e) => e.mspPairId))
   }
 
   override _step() {
