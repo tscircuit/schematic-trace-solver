@@ -20,6 +20,8 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { removeNetSegmentDuplicates } from "./removeNetSegmentDuplicates"
+import { removeDuplicateConsecutivePoints } from "./simplifyPath"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -49,11 +51,16 @@ export class TraceCleanupSolver extends BaseSolver {
   constructor(solverInput: TraceCleanupSolverInput) {
     super()
     this.input = solverInput
-    this.outputTraces = [...solverInput.allTraces]
+
+    // Preprocessing: remove duplicate consecutive points (zero-length segments)
+    const cleanedTraces = solverInput.allTraces.map((trace) => ({
+      ...trace,
+      tracePath: removeDuplicateConsecutivePoints(trace.tracePath),
+    }))
+
+    this.outputTraces = [...cleanedTraces]
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
-    this.traceIdQueue = Array.from(
-      solverInput.allTraces.map((e) => e.mspPairId),
-    )
+    this.traceIdQueue = Array.from(cleanedTraces.map((e) => e.mspPairId))
   }
 
   override _step() {
