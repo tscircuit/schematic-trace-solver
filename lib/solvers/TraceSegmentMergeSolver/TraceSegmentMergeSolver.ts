@@ -243,9 +243,6 @@ export class TraceSegmentMergeSolver extends BaseSolver {
     const end = Math.min(maxA, maxB)
     if (start <= end) return [start, end]
 
-    const gap = start - end
-    if (gap <= this.mergeDistance) return [end, start]
-
     return null
   }
 
