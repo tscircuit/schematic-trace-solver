@@ -1,24 +1,24 @@
-import type { Point } from "@tscircuit/math-utils";
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver";
-import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver";
-import type { InputProblem } from "lib/types/InputProblem";
-import type { GraphicsObject } from "graphics-debug";
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver";
-import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions";
-import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect";
-import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem";
-import { generateRerouteCandidates } from "../../rerouteCollidingTrace";
-import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath";
+import type { Point } from "@tscircuit/math-utils"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import type { InputProblem } from "lib/types/InputProblem"
+import type { GraphicsObject } from "graphics-debug"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
+import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 
 interface SingleOverlapSolverInput {
-  trace: SolvedTracePath;
-  label: NetLabelPlacement;
-  problem: InputProblem;
-  paddingBuffer: number;
-  detourCount: number;
+  trace: SolvedTracePath
+  label: NetLabelPlacement
+  problem: InputProblem
+  paddingBuffer: number
+  detourCount: number
 }
 
-const MAX_TRIES = 5;
+const MAX_TRIES = 5
 
 /**
  * This solver attempts to find a valid rerouting for a single trace that is
@@ -26,60 +26,60 @@ const MAX_TRIES = 5;
  * finds one that does not introduce new collisions.
  */
 export class SingleOverlapSolver extends BaseSolver {
-  queuedCandidatePaths: Point[][];
-  solvedTracePath: Point[] | null = null;
-  initialTrace: SolvedTracePath;
-  problem: InputProblem;
-  obstacles: ReturnType<typeof getObstacleRects>;
-  label: NetLabelPlacement;
-  _tried: number = 0;
+  queuedCandidatePaths: Point[][]
+  solvedTracePath: Point[] | null = null
+  initialTrace: SolvedTracePath
+  problem: InputProblem
+  obstacles: ReturnType<typeof getObstacleRects>
+  label: NetLabelPlacement
+  _tried: number = 0
 
   constructor(solverInput: SingleOverlapSolverInput) {
-    super();
-    this.initialTrace = solverInput.trace;
-    this.problem = solverInput.problem;
-    this.label = solverInput.label;
+    super()
+    this.initialTrace = solverInput.trace
+    this.problem = solverInput.problem
+    this.label = solverInput.label
 
     // Calculate an effective padding for this specific run based on the detourCount.
     const effectivePadding =
       solverInput.paddingBuffer +
-      solverInput.detourCount * solverInput.paddingBuffer;
+      solverInput.detourCount * solverInput.paddingBuffer
 
     const candidates = generateRerouteCandidates({
       ...solverInput,
       paddingBuffer: effectivePadding, // Use the calculated, larger padding
-    });
+    })
 
     const getPathLength = (pts: Point[]) => {
-      let len = 0;
+      let len = 0
       for (let i = 0; i < pts.length - 1; i++) {
-        const dx = pts[i + 1].x - pts[i].x;
-        const dy = pts[i + 1].y - pts[i].y;
-        len += Math.sqrt(dx * dx + dy * dy);
+        const dx = pts[i + 1].x - pts[i].x
+        const dy = pts[i + 1].y - pts[i].y
+        len += Math.sqrt(dx * dx + dy * dy)
       }
-      return len;
-    };
+      return len
+    }
 
     this.queuedCandidatePaths = candidates.sort(
       (a, b) => getPathLength(a) - getPathLength(b),
-    );
-    this.obstacles = getObstacleRects(this.problem);
+    )
+    this.obstacles = getObstacleRects(this.problem)
   }
 
   override _step() {
     // Failure conditions: no more candidates or exceeded max tries
     if (this.queuedCandidatePaths.length === 0 || this._tried >= MAX_TRIES) {
-      this.failed = true;
-      return;
+      this.failed = true
+      return
     }
 
-    this._tried++;
-    const nextCandidatePath = this.queuedCandidatePaths.shift()!;
-    const simplifiedPath = simplifyPath(nextCandidatePath);
+    this._tried++
+    const nextCandidatePath = this.queuedCandidatePaths.shift()!
+    const simplifiedPath = simplifyPath(nextCandidatePath)
 
     if (!isPathCollidingWithObstacles(simplifiedPath, this.obstacles)) {
-      this.solvedTracePath = simplifiedPath;
-      this.solved = true;
+      this.solvedTracePath = simplifiedPath
+      this.solved = true
     }
     // If the path collides, we simply do nothing and let the next step try another candidate.
   }
@@ -88,17 +88,17 @@ export class SingleOverlapSolver extends BaseSolver {
     const graphics = visualizeInputProblem(this.problem, {
       chipAlpha: 0.1,
       connectionAlpha: 0.1,
-    });
+    })
 
-    if (!graphics.lines) graphics.lines = [];
-    if (!graphics.rects) graphics.rects = [];
+    if (!graphics.lines) graphics.lines = []
+    if (!graphics.rects) graphics.rects = []
 
     // Draw initial trace
     graphics.lines.push({
       points: this.initialTrace.tracePath,
       strokeColor: "red",
       strokeDash: "4 4",
-    });
+    })
 
     // Draw label
     graphics.rects.push({
@@ -106,14 +106,14 @@ export class SingleOverlapSolver extends BaseSolver {
       width: this.label.width,
       height: this.label.height,
       fill: "rgba(255, 0, 0, 0.2)",
-    });
+    })
 
     // Draw next candidate
     if (this.queuedCandidatePaths.length > 0) {
       graphics.lines.push({
         points: this.queuedCandidatePaths[0],
         strokeColor: "orange",
-      });
+      })
     }
 
     // Draw solved path
@@ -121,9 +121,9 @@ export class SingleOverlapSolver extends BaseSolver {
       graphics.lines.push({
         points: this.solvedTracePath,
         strokeColor: "green",
-      });
+      })
     }
 
-    return graphics;
+    return graphics
   }
 }

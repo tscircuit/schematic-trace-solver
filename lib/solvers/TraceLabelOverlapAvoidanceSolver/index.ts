@@ -1,1 +1,1 @@
-export * from "./TraceLabelOverlapAvoidanceSolver";
+export * from "./TraceLabelOverlapAvoidanceSolver"

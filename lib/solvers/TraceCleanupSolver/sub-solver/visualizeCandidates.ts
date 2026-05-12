@@ -1,5 +1,5 @@
-import type { GraphicsObject } from "graphics-debug";
-import type { Point } from "@tscircuit/math-utils";
+import type { GraphicsObject } from "graphics-debug"
+import type { Point } from "@tscircuit/math-utils"
 
 /**
  * Visualizes a set of candidate paths and optional intersection points.
@@ -11,13 +11,13 @@ export const visualizeCandidates = (
   color = "gray",
   intersectionPoints: Point[] = [],
 ): GraphicsObject => {
-  const graphics: GraphicsObject = { lines: [], circles: [] };
+  const graphics: GraphicsObject = { lines: [], circles: [] }
 
   for (const candidate of candidates) {
     graphics.lines!.push({
       points: candidate,
       strokeColor: color,
-    });
+    })
   }
 
   // Draw intersection points
@@ -26,8 +26,8 @@ export const visualizeCandidates = (
       center: point,
       radius: 0.01, // Larger radius for intersection points
       fill: "green",
-    });
+    })
   }
 
-  return graphics;
-};
+  return graphics
+}

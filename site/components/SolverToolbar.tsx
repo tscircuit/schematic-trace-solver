@@ -1,6 +1,6 @@
-import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver";
-import { useReducer, useRef, useEffect } from "react";
-import { SolverBreadcrumbInputDownloader } from "./SolverBreadcrumbInputDownloader";
+import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { useReducer, useRef, useEffect } from "react"
+import { SolverBreadcrumbInputDownloader } from "./SolverBreadcrumbInputDownloader"
 
 /**
  * The solver toolbar offers various actions for progressing the solver
@@ -17,64 +17,64 @@ export const SolverToolbar = ({
   solver,
   triggerRender,
 }: {
-  solver: BaseSolver;
-  triggerRender: Function;
+  solver: BaseSolver
+  triggerRender: Function
 }) => {
-  const [isAnimating, setIsAnimating] = useReducer((x) => !x, false);
-  const animationRef = useRef<number | undefined>(undefined);
+  const [isAnimating, setIsAnimating] = useReducer((x) => !x, false)
+  const animationRef = useRef<number | undefined>(undefined)
 
   const handleStep = () => {
-    solver.step();
-    triggerRender();
-  };
+    solver.step()
+    triggerRender()
+  }
 
   const handleSolve = () => {
-    solver.solve();
-    triggerRender();
-  };
+    solver.solve()
+    triggerRender()
+  }
 
   const handleAnimate = () => {
     if (isAnimating) {
       if (animationRef.current) {
-        clearInterval(animationRef.current);
-        animationRef.current = undefined;
+        clearInterval(animationRef.current)
+        animationRef.current = undefined
       }
-      setIsAnimating();
+      setIsAnimating()
     } else {
-      setIsAnimating();
+      setIsAnimating()
       animationRef.current = window.setInterval(() => {
         if (solver.solved || solver.failed) {
           if (animationRef.current) {
-            clearInterval(animationRef.current);
-            animationRef.current = undefined;
+            clearInterval(animationRef.current)
+            animationRef.current = undefined
           }
-          setIsAnimating();
-          triggerRender();
-          return;
+          setIsAnimating()
+          triggerRender()
+          return
         }
-        solver.step();
-        triggerRender();
-      }, 25); // 40 iterations/second = 25ms interval
+        solver.step()
+        triggerRender()
+      }, 25) // 40 iterations/second = 25ms interval
     }
-  };
+  }
 
   useEffect(() => {
     return () => {
       if (animationRef.current) {
-        clearInterval(animationRef.current);
+        clearInterval(animationRef.current)
       }
-    };
-  }, []);
+    }
+  }, [])
 
   useEffect(() => {
     if ((solver.solved || solver.failed) && isAnimating) {
       if (animationRef.current) {
-        clearInterval(animationRef.current);
-        animationRef.current = undefined;
+        clearInterval(animationRef.current)
+        animationRef.current = undefined
       }
-      setIsAnimating();
+      setIsAnimating()
     }
-  }, [solver.solved, solver.failed, isAnimating]);
+  }, [solver.solved, solver.failed, isAnimating])
 
   return (
     <div className="space-y-1 px-1">
@@ -124,5 +124,5 @@ export const SolverToolbar = ({
         <div className="text-red-500">Failed: {solver.error}</div>
       )}
     </div>
-  );
-};
+  )
+}

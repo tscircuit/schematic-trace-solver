@@ -1,17 +1,17 @@
-import type { GraphicsObject } from "graphics-debug";
-import type { PinId, InputPin, InputProblem } from "lib/types/InputProblem";
-import { getColorFromString } from "lib/utils/getColorFromString";
-import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection";
-import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections";
+import type { GraphicsObject } from "graphics-debug"
+import type { PinId, InputPin, InputProblem } from "lib/types/InputProblem"
+import { getColorFromString } from "lib/utils/getColorFromString"
+import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
+import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 
 export const visualizeInputProblem = (
   inputProblem: InputProblem,
   opts: {
-    chipAlpha?: number;
-    connectionAlpha?: number;
+    chipAlpha?: number
+    connectionAlpha?: number
   } = {},
 ): GraphicsObject => {
-  const { connectionAlpha = 0.8, chipAlpha = 0.8 } = opts;
+  const { connectionAlpha = 0.8, chipAlpha = 0.8 } = opts
   const graphics: Pick<
     Required<GraphicsObject>,
     "lines" | "points" | "rects"
@@ -19,12 +19,12 @@ export const visualizeInputProblem = (
     lines: [],
     points: [],
     rects: [],
-  };
+  }
 
-  const pinIdMap = new Map<PinId, InputPin>();
+  const pinIdMap = new Map<PinId, InputPin>()
   for (const chip of inputProblem.chips) {
     for (const pin of chip.pins) {
-      pinIdMap.set(pin.pinId, pin);
+      pinIdMap.set(pin.pinId, pin)
     }
   }
 
@@ -35,7 +35,7 @@ export const visualizeInputProblem = (
       width: chip.width,
       height: chip.height,
       fill: getColorFromString(chip.chipId, chipAlpha),
-    });
+    })
 
     for (const pin of chip.pins) {
       graphics.points.push({
@@ -43,16 +43,16 @@ export const visualizeInputProblem = (
         x: pin.x,
         y: pin.y,
         color: getColorFromString(pin.pinId, 0.8),
-      });
+      })
     }
   }
 
   for (const directConn of inputProblem.directConnections) {
-    const [pinId1, pinId2] = directConn.pinIds;
-    const pin1 = pinIdMap.get(pinId1)!;
-    const pin2 = pinIdMap.get(pinId2)!;
+    const [pinId1, pinId2] = directConn.pinIds
+    const pin1 = pinIdMap.get(pinId1)!
+    const pin2 = pinIdMap.get(pinId2)!
     if (arePinsInDifferentSchematicSections(inputProblem, pin1, pin2)) {
-      continue;
+      continue
     }
     graphics.lines.push({
       points: [
@@ -69,17 +69,17 @@ export const visualizeInputProblem = (
         directConn.netId ?? `${pinId1}-${pinId2}`,
         connectionAlpha,
       ),
-    });
+    })
   }
 
   for (const netConn of inputProblem.netConnections) {
-    const pins = netConn.pinIds.map((pinId) => pinIdMap.get(pinId)!);
+    const pins = netConn.pinIds.map((pinId) => pinIdMap.get(pinId)!)
     for (let i = 0; i < pins.length - 1; i++) {
       for (let j = i + 1; j < pins.length; j++) {
-        const pin1 = pins[i]!;
-        const pin2 = pins[j]!;
+        const pin1 = pins[i]!
+        const pin2 = pins[j]!
         if (arePinsInDifferentSchematicSections(inputProblem, pin1, pin2)) {
-          continue;
+          continue
         }
         graphics.lines.push({
           points: [
@@ -88,10 +88,10 @@ export const visualizeInputProblem = (
           ],
           strokeColor: getColorFromString(netConn.netId, connectionAlpha),
           strokeDash: "4 2",
-        });
+        })
       }
     }
   }
 
-  return graphics;
-};
+  return graphics
+}

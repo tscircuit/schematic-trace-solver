@@ -1,5 +1,5 @@
-import type { Point } from "@tscircuit/math-utils";
-import type { GraphicsObject } from "graphics-debug";
+import type { Point } from "@tscircuit/math-utils"
+import type { GraphicsObject } from "graphics-debug"
 
 /**
  * Visualizes a set of intersection points by drawing circles at their locations.
@@ -9,7 +9,7 @@ export const visualizeIntersectionPoints = (
   points: Point[],
   color = "red",
 ): GraphicsObject => {
-  const graphics: GraphicsObject = { circles: [] };
+  const graphics: GraphicsObject = { circles: [] }
 
   for (const point of points) {
     graphics.circles!.push({
@@ -19,8 +19,8 @@ export const visualizeIntersectionPoints = (
       },
       radius: 0.01,
       fill: color,
-    });
+    })
   }
 
-  return graphics;
-};
+  return graphics
+}

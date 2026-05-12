@@ -1,6 +1,6 @@
-import type { InputProblem } from "lib/types/InputProblem";
-import { test, expect } from "bun:test";
-import { SchematicTracePipelineSolver } from "lib/index";
+import type { InputProblem } from "lib/types/InputProblem"
+import { test, expect } from "bun:test"
+import { SchematicTracePipelineSolver } from "lib/index"
 
 const inputProblem: InputProblem = {
   chips: [
@@ -482,10 +482,10 @@ const inputProblem: InputProblem = {
     ROW2: ["x-", "x+"],
   },
   maxMspPairDistance: 5,
-};
+}
 
 test("SchematicTracePipelineSolver_repro03 - infinite loop fixed", () => {
-  const solver = new SchematicTracePipelineSolver(inputProblem);
-  solver.solve();
-  expect(solver.solved).toBe(true);
-});
+  const solver = new SchematicTracePipelineSolver(inputProblem)
+  solver.solve()
+  expect(solver.solved).toBe(true)
+})

@@ -1,8 +1,8 @@
-import { useMemo } from "react";
-import { GenericSolverDebugger } from "site/components/GenericSolverDebugger";
-import { TraceLabelOverlapAvoidanceSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver";
-import type { InputProblem } from "lib/types/InputProblem";
-import testInput from "../../tests/assets/TraceLabelOverlapAvoidanceSolver.test.input.json";
+import { useMemo } from "react"
+import { GenericSolverDebugger } from "site/components/GenericSolverDebugger"
+import { TraceLabelOverlapAvoidanceSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
+import type { InputProblem } from "lib/types/InputProblem"
+import testInput from "../../tests/assets/TraceLabelOverlapAvoidanceSolver.test.input.json"
 
 const inputProblem: InputProblem = {
   chips: [
@@ -129,7 +129,7 @@ const inputProblem: InputProblem = {
   ],
   availableNetLabelOrientations: { GND: ["y-"] },
   maxMspPairDistance: 2.4,
-};
+}
 
 export default () => {
   const solver = useMemo(
@@ -140,7 +140,7 @@ export default () => {
         traces: testInput.traces as any,
       }),
     [],
-  );
+  )
 
-  return <GenericSolverDebugger solver={solver} />;
-};
+  return <GenericSolverDebugger solver={solver} />
+}
