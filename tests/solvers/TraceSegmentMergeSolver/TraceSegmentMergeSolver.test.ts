@@ -115,3 +115,23 @@ test("TraceSegmentMergeSolver does not bridge different nets", () => {
 
   expect(solver.getOutput().traces).toHaveLength(2)
 })
+
+test("TraceSegmentMergeSolver does not create floating bridges between gapped parallel segments", () => {
+  const solver = new TraceSegmentMergeSolver({
+    inputProblem,
+    traces: [
+      makeTrace("a", [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+      ]),
+      makeTrace("b", [
+        { x: 1.24, y: 0.12 },
+        { x: 2.2, y: 0.12 },
+      ]),
+    ],
+  })
+
+  solver.solve()
+
+  expect(solver.getOutput().traces).toHaveLength(2)
+})
