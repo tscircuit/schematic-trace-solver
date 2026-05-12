@@ -31,9 +31,7 @@ export class GuidelinesSolver extends BaseSolver {
   usedXGuidelines: Set<number>
   usedYGuidelines: Set<number>
 
-  constructor(params: {
-    inputProblem: InputProblem
-  }) {
+  constructor(params: { inputProblem: InputProblem }) {
     super()
     this.inputProblem = params.inputProblem
     const inputProblemBounds = getInputProblemBounds(this.inputProblem)
