@@ -1,3 +1,5 @@
+import type { ConnectivityMap } from "connectivity-map"
+import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type {
   InputChip,
@@ -5,14 +7,12 @@ import type {
   InputProblem,
   PinId,
 } from "lib/types/InputProblem"
-import { ConnectivityMap } from "connectivity-map"
+import { getColorFromString } from "lib/utils/getColorFromString"
+import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCenterLines"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
-import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCenterLines"
-import type { GraphicsObject } from "graphics-debug"
-import { getColorFromString } from "lib/utils/getColorFromString"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 
 export type MspConnectionPairId = string
 
@@ -75,7 +75,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    this.queuedDcNetIds = Object.keys(directConnMap.netMap)
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -94,7 +94,7 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     const dcNetId = this.queuedDcNetIds.shift()!
 
-    const allIds = this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[]
+    const allIds = this.dcConnMap.getIdsConnectedToNet(dcNetId) as string[]
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
     if (directlyConnectedPins.length <= 1) {
