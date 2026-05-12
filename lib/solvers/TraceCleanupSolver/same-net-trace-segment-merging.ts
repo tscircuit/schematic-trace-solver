@@ -74,8 +74,7 @@ function getMergeableSegments(traces: SolvedTracePath[]): SegmentRef[] {
       const axis = getSegmentAxis(start, end)
       if (!axis) continue
 
-      const movable =
-        pointIndex > 0 && pointIndex + 1 < trace.tracePath.length - 1
+      const movable = canMoveSegment(trace.tracePath, pointIndex, axis)
       segments.push({
         traceIndex,
         pointIndex,
@@ -102,6 +101,32 @@ function getSegmentAxis(start: Point, end: Point): SegmentAxis | null {
   if (Math.abs(start.y - end.y) < EPSILON) return "horizontal"
   if (Math.abs(start.x - end.x) < EPSILON) return "vertical"
   return null
+}
+
+function canMoveSegment(
+  tracePath: Point[],
+  pointIndex: number,
+  axis: SegmentAxis,
+) {
+  if (pointIndex === 0 || pointIndex + 1 >= tracePath.length - 1) {
+    return false
+  }
+
+  const previousAxis = getSegmentAxis(
+    tracePath[pointIndex - 1]!,
+    tracePath[pointIndex]!,
+  )
+  const nextAxis = getSegmentAxis(
+    tracePath[pointIndex + 1]!,
+    tracePath[pointIndex + 2]!,
+  )
+
+  return (
+    previousAxis !== null &&
+    nextAxis !== null &&
+    previousAxis !== axis &&
+    nextAxis !== axis
+  )
 }
 
 function getRangeGap(a: SegmentRef, b: SegmentRef) {

@@ -61,3 +61,22 @@ test("does not move endpoint segments or different nets", () => {
   expect(merged[0]!.tracePath).toEqual(traces[0]!.tracePath)
   expect(merged[1]!.tracePath).toEqual(traces[1]!.tracePath)
 })
+
+test("does not create diagonal neighbors when merging same-net segments", () => {
+  const traces = [
+    makeTrace("a", "net1", [
+      { x: -3, y: 0 },
+      { x: -1, y: 0 },
+      { x: 1, y: 0 },
+      { x: 3, y: 0 },
+    ]),
+    makeTrace("b", "net1", [
+      { x: -1, y: 0.05 },
+      { x: 1, y: 0.05 },
+    ]),
+  ]
+
+  const merged = mergeSameNetTraceSegments(traces, { maxOffset: 0.1 })
+
+  expect(merged[0]!.tracePath).toEqual(traces[0]!.tracePath)
+})
