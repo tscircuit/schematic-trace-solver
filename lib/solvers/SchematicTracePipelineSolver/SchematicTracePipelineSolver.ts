@@ -26,6 +26,7 @@ import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/
 import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
+import { SameNetTraceAlignSolver } from "../SameNetTraceAlignSolver/SameNetTraceAlignSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -80,6 +81,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
+  sameNetTraceAlignSolver?: SameNetTraceAlignSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -217,6 +219,20 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       ]
     }),
+    // Issue #34: align same-net traces that are close together to same X or Y
+    definePipelineStep(
+      "sameNetTraceAlignSolver",
+      SameNetTraceAlignSolver,
+      (instance) => {
+        const traces =
+          instance.traceCleanupSolver?.getOutput().traces ??
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+        return [traces]
+      },
+      {
+        onSolved: (_solver) => {},
+      },
+    ),
     definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
