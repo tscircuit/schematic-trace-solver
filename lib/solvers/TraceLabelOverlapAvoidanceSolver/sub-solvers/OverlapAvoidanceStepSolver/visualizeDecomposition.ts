@@ -1,12 +1,12 @@
-import type { GraphicsObject } from "graphics-debug"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { GraphicsObject } from "graphics-debug";
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver";
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver";
 
 interface VisualizeDecompositionParams {
-  decomposedChildLabels: NetLabelPlacement[]
-  collidingTrace: SolvedTracePath
-  mergedLabel: NetLabelPlacement
-  graphics: GraphicsObject
+  decomposedChildLabels: NetLabelPlacement[];
+  collidingTrace: SolvedTracePath;
+  mergedLabel: NetLabelPlacement;
+  graphics: GraphicsObject;
 }
 
 /**
@@ -25,21 +25,21 @@ export const visualizeDecomposition = (
   params: VisualizeDecompositionParams,
 ): GraphicsObject => {
   const { decomposedChildLabels, collidingTrace, mergedLabel, graphics } =
-    params
+    params;
 
-  if (!graphics.rects) graphics.rects = []
-  if (!graphics.texts) graphics.texts = []
+  if (!graphics.rects) graphics.rects = [];
+  if (!graphics.texts) graphics.texts = [];
 
   for (const childLabel of decomposedChildLabels) {
     const isOwnLabel =
-      childLabel.globalConnNetId === collidingTrace.globalConnNetId
+      childLabel.globalConnNetId === collidingTrace.globalConnNetId;
 
     graphics.rects.push({
       center: childLabel.center,
       width: childLabel.width,
       height: childLabel.height,
       fill: isOwnLabel ? "green" : "red", // Green for own label, red for others
-    })
+    });
   }
 
   graphics.texts.push({
@@ -48,7 +48,7 @@ export const visualizeDecomposition = (
     text: `DECOMPOSITION: Trace ${collidingTrace.mspPairId} vs Merged Label ${mergedLabel.globalConnNetId}`,
     fontSize: 0.3,
     color: "blue",
-  })
+  });
 
-  return graphics
-}
+  return graphics;
+};

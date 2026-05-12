@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test"
-import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import { NetLabelPlacementSolver } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import type { InputProblem } from "lib/types/InputProblem"
+import { test, expect } from "bun:test";
+import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver";
+import { NetLabelPlacementSolver } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver";
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem";
+import type { InputProblem } from "lib/types/InputProblem";
 
 const createInputProblem = (): InputProblem => ({
   chips: [
@@ -27,44 +27,44 @@ const createInputProblem = (): InputProblem => ({
   netConnections: [],
   availableNetLabelOrientations: {},
   maxMspPairDistance: 10,
-})
+});
 
 test("MspConnectionPairSolver skips pairs between different schematic sections", () => {
   const solver = new MspConnectionPairSolver({
     inputProblem: createInputProblem(),
-  })
+  });
 
-  solver.solve()
+  solver.solve();
 
-  expect(solver.mspConnectionPairs).toHaveLength(0)
-})
+  expect(solver.mspConnectionPairs).toHaveLength(0);
+});
 
 test("cross-section skipped trace is replaced by port net labels", () => {
-  const inputProblem = createInputProblem()
+  const inputProblem = createInputProblem();
   const solver = new NetLabelPlacementSolver({
     inputProblem,
     inputTraceMap: {},
-  })
+  });
 
-  solver.solve()
+  solver.solve();
 
-  expect(solver.netLabelPlacements).toHaveLength(2)
+  expect(solver.netLabelPlacements).toHaveLength(2);
   expect(solver.netLabelPlacements.map((p) => p.pinIds[0]).sort()).toEqual([
     "U1.1",
     "U2.1",
-  ])
-  expect(solver.netLabelPlacements.every((p) => p.netId === "SIG")).toBe(true)
-})
+  ]);
+  expect(solver.netLabelPlacements.every((p) => p.netId === "SIG")).toBe(true);
+});
 
 test("cross-section input connections are not visualized as future traces", () => {
-  const directConnectionProblem = createInputProblem()
-  expect(visualizeInputProblem(directConnectionProblem).lines).toHaveLength(0)
+  const directConnectionProblem = createInputProblem();
+  expect(visualizeInputProblem(directConnectionProblem).lines).toHaveLength(0);
 
-  const netConnectionProblem = createInputProblem()
-  netConnectionProblem.directConnections = []
+  const netConnectionProblem = createInputProblem();
+  netConnectionProblem.directConnections = [];
   netConnectionProblem.netConnections = [
     { netId: "SIG", pinIds: ["U1.1", "U2.1"] },
-  ]
+  ];
 
-  expect(visualizeInputProblem(netConnectionProblem).lines).toHaveLength(0)
-})
+  expect(visualizeInputProblem(netConnectionProblem).lines).toHaveLength(0);
+});

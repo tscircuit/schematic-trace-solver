@@ -1,12 +1,12 @@
-import type { Point } from "@tscircuit/math-utils"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { Point } from "@tscircuit/math-utils";
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver";
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver";
 import {
   findPreferredReroutedSegment,
   findSegmentContainingPoint,
   projectPointToPath,
   projectPointToSegment,
-} from "./geometry"
+} from "./geometry";
 
 export const moveAttachedLabelsToReroutedTrace = ({
   trace,
@@ -14,25 +14,25 @@ export const moveAttachedLabelsToReroutedTrace = ({
   reroutedTracePath,
   netLabelPlacements,
 }: {
-  trace: SolvedTracePath
-  originalTracePath: Point[]
-  reroutedTracePath: Point[]
-  netLabelPlacements: NetLabelPlacement[]
+  trace: SolvedTracePath;
+  originalTracePath: Point[];
+  reroutedTracePath: Point[];
+  netLabelPlacements: NetLabelPlacement[];
 }) =>
   netLabelPlacements.map((label) => {
-    if (!isLabelAttachedToTrace(label, trace)) return label
+    if (!isLabelAttachedToTrace(label, trace)) return label;
 
     const movedAnchorPoint = getMovedAnchorPointForReroute(
       label.anchorPoint,
       originalTracePath,
       reroutedTracePath,
-    )
-    if (!movedAnchorPoint) return label
+    );
+    if (!movedAnchorPoint) return label;
 
     const delta = {
       x: movedAnchorPoint.x - label.anchorPoint.x,
       y: movedAnchorPoint.y - label.anchorPoint.y,
-    }
+    };
 
     return {
       ...label,
@@ -41,15 +41,15 @@ export const moveAttachedLabelsToReroutedTrace = ({
         x: label.center.x + delta.x,
         y: label.center.y + delta.y,
       },
-    }
-  })
+    };
+  });
 
 const isLabelAttachedToTrace = (
   label: NetLabelPlacement,
   trace: SolvedTracePath,
 ) =>
   label.globalConnNetId === trace.globalConnNetId ||
-  label.mspConnectionPairIds.includes(trace.mspPairId)
+  label.mspConnectionPairIds.includes(trace.mspPairId);
 
 const getMovedAnchorPointForReroute = (
   anchorPoint: Point,
@@ -59,8 +59,8 @@ const getMovedAnchorPointForReroute = (
   const originalSegment = findSegmentContainingPoint(
     originalTracePath,
     anchorPoint,
-  )
-  if (!originalSegment) return null
+  );
+  if (!originalSegment) return null;
 
   const preferredSegment = findPreferredReroutedSegment(
     reroutedTracePath,
@@ -68,15 +68,15 @@ const getMovedAnchorPointForReroute = (
     originalTracePath.length - 1,
     originalSegment.orientation,
     anchorPoint,
-  )
+  );
 
   if (!preferredSegment) {
-    return projectPointToPath(anchorPoint, reroutedTracePath)
+    return projectPointToPath(anchorPoint, reroutedTracePath);
   }
 
   return projectPointToSegment(
     anchorPoint,
     preferredSegment.start,
     preferredSegment.end,
-  )
-}
+  );
+};

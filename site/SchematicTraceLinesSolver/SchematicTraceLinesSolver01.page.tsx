@@ -1,6 +1,6 @@
-import { useMemo } from "react"
-import { GenericSolverDebugger } from "../components/GenericSolverDebugger"
-import { SchematicTraceLinesSolver } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { useMemo } from "react";
+import { GenericSolverDebugger } from "../components/GenericSolverDebugger";
+import { SchematicTraceLinesSolver } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver";
 
 const input = {
   mspConnectionPairs: [
@@ -112,11 +112,11 @@ const input = {
       ],
     },
   },
-}
+};
 
 export default () => {
   const solver = useMemo(() => {
-    return new SchematicTraceLinesSolver(input as any)
-  }, [])
-  return <GenericSolverDebugger solver={solver} />
-}
+    return new SchematicTraceLinesSolver(input as any);
+  }, []);
+  return <GenericSolverDebugger solver={solver} />;
+};

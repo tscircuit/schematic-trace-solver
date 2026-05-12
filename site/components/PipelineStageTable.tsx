@@ -1,6 +1,6 @@
-import type { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import type { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver";
 
-type StageStatus = "Solved" | "Failed" | "Running" | "Not Started"
+type StageStatus = "Solved" | "Failed" | "Running" | "Not Started";
 
 /**
  * Displays every stage of the pipeline with the status ("Solved", "Failed", "Running" or "Not Started"),
@@ -13,43 +13,43 @@ export const PipelineStageTable = ({
   pipelineSolver,
   triggerRender,
 }: {
-  pipelineSolver: SchematicTracePipelineSolver
-  triggerRender: () => void
+  pipelineSolver: SchematicTracePipelineSolver;
+  triggerRender: () => void;
 }) => {
   const getStageStatus = (stageIndex: number): StageStatus => {
     if (pipelineSolver.currentPipelineStepIndex > stageIndex) {
-      return "Solved"
+      return "Solved";
     }
     if (pipelineSolver.currentPipelineStepIndex === stageIndex) {
-      if (pipelineSolver.failed) return "Failed"
-      if (pipelineSolver.activeSubSolver) return "Running"
+      if (pipelineSolver.failed) return "Failed";
+      if (pipelineSolver.activeSubSolver) return "Running";
     }
-    return "Not Started"
-  }
+    return "Not Started";
+  };
 
   const downloadParams = (stageName: string) => {
     const stage = pipelineSolver.pipelineDef.find(
       (s) => s.solverName === stageName,
-    )
-    if (!stage) return
+    );
+    if (!stage) return;
 
     try {
-      const params = stage.getConstructorParams(pipelineSolver)
+      const params = stage.getConstructorParams(pipelineSolver);
       const blob = new Blob([JSON.stringify(params, null, 2)], {
         type: "application/json",
-      })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `${stageName}_params.json`
-      a.click()
-      URL.revokeObjectURL(url)
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${stageName}_params.json`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (error) {
       alert(
         `Error downloading params for ${stageName}: ${error instanceof Error ? error.message : String(error)}`,
-      )
+      );
     }
-  }
+  };
 
   return (
     <div className="overflow-x-auto">
@@ -78,16 +78,16 @@ export const PipelineStageTable = ({
         </thead>
         <tbody>
           {pipelineSolver.pipelineDef.map((stage, index) => {
-            const status = getStageStatus(index)
+            const status = getStageStatus(index);
             const startIteration =
-              pipelineSolver.firstIterationOfPhase[stage.solverName]
+              pipelineSolver.firstIterationOfPhase[stage.solverName];
             const endIteration =
               status === "Solved"
                 ? (pipelineSolver.firstIterationOfPhase[stage.solverName] ||
                     0) +
                   ((pipelineSolver as any)[stage.solverName]?.iterations || 0)
-                : undefined
-            const timeSpent = pipelineSolver.timeSpentOnPhase[stage.solverName]
+                : undefined;
+            const timeSpent = pipelineSolver.timeSpentOnPhase[stage.solverName];
 
             return (
               <tr key={stage.solverName} className="hover:bg-gray-50">
@@ -111,8 +111,8 @@ export const PipelineStageTable = ({
                     </span>
                     <button
                       onClick={() => {
-                        pipelineSolver.solveUntilPhase(stage.solverName)
-                        triggerRender()
+                        pipelineSolver.solveUntilPhase(stage.solverName);
+                        triggerRender();
                       }}
                       className="hover:bg-green-500 text-gray-600 hover:text-white px-2 py-1 rounded text-sm"
                       title={`Run until ${stage.solverName} is active`}
@@ -140,10 +140,10 @@ export const PipelineStageTable = ({
                   </button>
                 </td>
               </tr>
-            )
+            );
           })}
         </tbody>
       </table>
     </div>
-  )
-}
+  );
+};

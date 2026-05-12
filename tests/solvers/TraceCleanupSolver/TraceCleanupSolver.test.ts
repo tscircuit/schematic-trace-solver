@@ -1,7 +1,7 @@
-import { expect } from "bun:test"
-import { test } from "bun:test"
-import inputData from "../../assets/TraceCleanupSolver.test.input.json"
-import { TraceCleanupSolver } from "lib/solvers/TraceCleanupSolver/TraceCleanupSolver"
+import { expect } from "bun:test";
+import { test } from "bun:test";
+import inputData from "../../assets/TraceCleanupSolver.test.input.json";
+import { TraceCleanupSolver } from "lib/solvers/TraceCleanupSolver/TraceCleanupSolver";
 
 test("TraceCleanupSolver snapshot", () => {
   const solver = new TraceCleanupSolver({
@@ -13,7 +13,7 @@ test("TraceCleanupSolver snapshot", () => {
         new Set(v as any),
       ]),
     ),
-  } as any)
-  solver.solve()
-  expect(solver).toMatchSolverSnapshot(import.meta.path)
-})
+  } as any);
+  solver.solve();
+  expect(solver).toMatchSolverSnapshot(import.meta.path);
+});

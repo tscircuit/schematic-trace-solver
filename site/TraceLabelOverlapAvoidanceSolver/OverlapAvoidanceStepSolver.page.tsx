@@ -1,7 +1,7 @@
-import { useMemo } from "react"
-import { GenericSolverDebugger } from "site/components/GenericSolverDebugger"
-import { OverlapAvoidanceStepSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/OverlapAvoidanceStepSolver/OverlapAvoidanceStepSolver"
-import inputData from "../../tests/assets/OverlapAvoidanceStepSolver.test.input.json"
+import { useMemo } from "react";
+import { GenericSolverDebugger } from "site/components/GenericSolverDebugger";
+import { OverlapAvoidanceStepSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/OverlapAvoidanceStepSolver/OverlapAvoidanceStepSolver";
+import inputData from "../../tests/assets/OverlapAvoidanceStepSolver.test.input.json";
 
 export default () => {
   const solver = useMemo(
@@ -18,7 +18,7 @@ export default () => {
         ),
       } as any),
     [],
-  )
+  );
 
-  return <GenericSolverDebugger solver={solver} />
-}
+  return <GenericSolverDebugger solver={solver} />;
+};

@@ -1,36 +1,35 @@
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { InputProblem } from "lib/types/InputProblem"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { GraphicsObject } from "graphics-debug"
-import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver";
+import type { InputProblem } from "lib/types/InputProblem";
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver";
+import type { GraphicsObject } from "graphics-debug";
+import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath";
 
 interface SameNetTraceMergeSolverInput {
-  inputProblem: InputProblem
-  traces: SolvedTracePath[]
+  inputProblem: InputProblem;
+  traces: SolvedTracePath[];
 }
 
 type SegmentRef = {
-  traceIndex: number
-  p1Index: number
-  p2Index: number
-  netId: string
-  fixedCoord: number
-  minBound: number
-  maxBound: number
-}
+  traceIndex: number;
+  p1Index: number;
+  p2Index: number;
+  netId: string;
+  fixedCoord: number;
+  minBound: number;
+  maxBound: number;
+};
 
 export class SameNetTraceMergeSolver extends BaseSolver {
-  private input: SameNetTraceMergeSolverInput
-  public outputTraces: SolvedTracePath[]
+  private input: SameNetTraceMergeSolverInput;
+  public outputTraces: SolvedTracePath[];
 
   constructor(input: SameNetTraceMergeSolverInput) {
-    super()
-    this.input = input
-    this.outputTraces = JSON.parse(JSON.stringify(input.traces))
+    super();
+    this.input = input;
+    this.outputTraces = JSON.parse(JSON.stringify(input.traces));
   }
 
   override _step() {
-
     this.mergeCloseSegments();
 
     this.fuseCollinearTraces();
@@ -38,7 +37,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     for (const trace of this.outputTraces) {
       trace.tracePath = simplifyPath(trace.tracePath);
     }
-    
+
     this.solved = true;
   }
 
@@ -80,41 +79,55 @@ export class SameNetTraceMergeSolver extends BaseSolver {
   }
 
   private mergeCloseSegments() {
-    const TOLERANCE = 0.1; 
+    const TOLERANCE = 0.1;
     const horizontalSegments: SegmentRef[] = [];
     const verticalSegments: SegmentRef[] = [];
 
     for (let tIdx = 0; tIdx < this.outputTraces.length; tIdx++) {
       const trace = this.outputTraces[tIdx];
       const path = trace.tracePath;
-      
+
       const netId = trace.globalConnNetId || (trace as any).netId || "unknown";
 
       for (let pIdx = 0; pIdx < path.length - 1; pIdx++) {
         const p1 = path[pIdx];
         const p2 = path[pIdx + 1];
 
-        if (Math.abs(p1.y - p2.y) < 0.01) { 
+        if (Math.abs(p1.y - p2.y) < 0.01) {
           horizontalSegments.push({
-            traceIndex: tIdx, p1Index: pIdx, p2Index: pIdx + 1, netId,
-            fixedCoord: p1.y, minBound: Math.min(p1.x, p2.x), maxBound: Math.max(p1.x, p2.x)
+            traceIndex: tIdx,
+            p1Index: pIdx,
+            p2Index: pIdx + 1,
+            netId,
+            fixedCoord: p1.y,
+            minBound: Math.min(p1.x, p2.x),
+            maxBound: Math.max(p1.x, p2.x),
           });
-        } else if (Math.abs(p1.x - p2.x) < 0.01) { 
+        } else if (Math.abs(p1.x - p2.x) < 0.01) {
           verticalSegments.push({
-            traceIndex: tIdx, p1Index: pIdx, p2Index: pIdx + 1, netId,
-            fixedCoord: p1.x, minBound: Math.min(p1.y, p2.y), maxBound: Math.max(p1.y, p2.y)
+            traceIndex: tIdx,
+            p1Index: pIdx,
+            p2Index: pIdx + 1,
+            netId,
+            fixedCoord: p1.x,
+            minBound: Math.min(p1.y, p2.y),
+            maxBound: Math.max(p1.y, p2.y),
           });
         }
       }
     }
 
-    this.processGroups(horizontalSegments, 'y', TOLERANCE);
-    this.processGroups(verticalSegments, 'x', TOLERANCE);
+    this.processGroups(horizontalSegments, "y", TOLERANCE);
+    this.processGroups(verticalSegments, "x", TOLERANCE);
   }
 
-  private processGroups(segments: SegmentRef[], axis: 'x' | 'y', tolerance: number) {
+  private processGroups(
+    segments: SegmentRef[],
+    axis: "x" | "y",
+    tolerance: number,
+  ) {
     const byNet = this.groupByNetId(segments);
-    
+
     for (const [netId, netSegments] of Object.entries(byNet)) {
       netSegments.sort((a, b) => a.fixedCoord - b.fixedCoord);
 
@@ -122,14 +135,16 @@ export class SameNetTraceMergeSolver extends BaseSolver {
       while (i < netSegments.length) {
         let j = i + 1;
         const cluster = [netSegments[i]];
-        
+
         while (j < netSegments.length) {
           const current = netSegments[j];
           const prev = cluster[cluster.length - 1];
-          
+
           const dist = Math.abs(current.fixedCoord - prev.fixedCoord);
-          const overlaps = (current.minBound <= prev.maxBound + 0.1 && current.maxBound >= prev.minBound - 0.1);
-          
+          const overlaps =
+            current.minBound <= prev.maxBound + 0.1 &&
+            current.maxBound >= prev.minBound - 0.1;
+
           if (dist <= tolerance && overlaps) {
             cluster.push(current);
             j++;
@@ -137,7 +152,7 @@ export class SameNetTraceMergeSolver extends BaseSolver {
             break;
           }
         }
-        
+
         if (cluster.length > 1) {
           this.snapCluster(cluster, axis);
         }
@@ -147,14 +162,17 @@ export class SameNetTraceMergeSolver extends BaseSolver {
   }
 
   private groupByNetId(segments: SegmentRef[]): Record<string, SegmentRef[]> {
-    return segments.reduce((acc, seg) => {
-      if (!acc[seg.netId]) acc[seg.netId] = [];
-      acc[seg.netId].push(seg);
-      return acc;
-    }, {} as Record<string, SegmentRef[]>);
+    return segments.reduce(
+      (acc, seg) => {
+        if (!acc[seg.netId]) acc[seg.netId] = [];
+        acc[seg.netId].push(seg);
+        return acc;
+      },
+      {} as Record<string, SegmentRef[]>,
+    );
   }
 
-  private snapCluster(cluster: SegmentRef[], axis: 'x' | 'y') {
+  private snapCluster(cluster: SegmentRef[], axis: "x" | "y") {
     const sum = cluster.reduce((acc, seg) => acc + seg.fixedCoord, 0);
     const avg = sum / cluster.length;
 
@@ -165,7 +183,9 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     }
   }
 
-  getOutput() { return { traces: this.outputTraces }; }
+  getOutput() {
+    return { traces: this.outputTraces };
+  }
 
   override visualize(): GraphicsObject {
     return {};

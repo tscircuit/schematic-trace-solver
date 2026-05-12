@@ -1,7 +1,7 @@
-import { OverlapAvoidanceStepSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/OverlapAvoidanceStepSolver/OverlapAvoidanceStepSolver"
-import { expect } from "bun:test"
-import { test } from "bun:test"
-import inputData from "../../../assets/OverlapAvoidanceStepSolver.test.input.json"
+import { OverlapAvoidanceStepSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/OverlapAvoidanceStepSolver/OverlapAvoidanceStepSolver";
+import { expect } from "bun:test";
+import { test } from "bun:test";
+import inputData from "../../../assets/OverlapAvoidanceStepSolver.test.input.json";
 
 test("OverlapAvoidanceStepSolver snapshot", () => {
   const solver = new OverlapAvoidanceStepSolver({
@@ -14,7 +14,7 @@ test("OverlapAvoidanceStepSolver snapshot", () => {
         new Set(v as any),
       ]),
     ),
-  } as any)
-  solver.solve()
-  expect(solver).toMatchSolverSnapshot(import.meta.path)
-})
+  } as any);
+  solver.solve();
+  expect(solver).toMatchSolverSnapshot(import.meta.path);
+});

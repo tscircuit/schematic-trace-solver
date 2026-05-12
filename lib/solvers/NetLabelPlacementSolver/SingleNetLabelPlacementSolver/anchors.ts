@@ -7,5 +7,5 @@ export function anchorsForSegment(
     { x: a.x, y: a.y },
     { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
     { x: b.x, y: b.y },
-  ]
+  ];
 }

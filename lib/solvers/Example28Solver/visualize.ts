@@ -1,29 +1,29 @@
-import type { GraphicsObject } from "graphics-debug"
-import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import { getColorFromString } from "lib/utils/getColorFromString"
+import type { GraphicsObject } from "graphics-debug";
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem";
+import { getColorFromString } from "lib/utils/getColorFromString";
 import type {
   Example28VisualizationState,
   RerouteCandidateResult,
-} from "./types"
+} from "./types";
 
-const CANDIDATE_SELECTED_COLOR = "blue"
-const CANDIDATE_REJECTED_COLOR = "red"
+const CANDIDATE_SELECTED_COLOR = "blue";
+const CANDIDATE_REJECTED_COLOR = "red";
 
 export const visualizeExample28Solver = (
   state: Example28VisualizationState,
 ): GraphicsObject => {
-  const graphics = visualizeInputProblem(state.inputProblem)
+  const graphics = visualizeInputProblem(state.inputProblem);
 
-  drawTraces(graphics, state)
-  drawNetLabels(graphics, state)
+  drawTraces(graphics, state);
+  drawNetLabels(graphics, state);
 
   if (!state.solved) {
-    drawCurrentCandidates(graphics, state.currentCandidateResults)
-    drawCurrentOverlap(graphics, state)
+    drawCurrentCandidates(graphics, state.currentCandidateResults);
+    drawCurrentOverlap(graphics, state);
   }
 
-  return graphics
-}
+  return graphics;
+};
 
 const drawTraces = (
   graphics: GraphicsObject,
@@ -33,16 +33,16 @@ const drawTraces = (
     graphics.lines!.push({
       points: trace.tracePath,
       strokeColor: "purple",
-    } as any)
+    } as any);
   }
-}
+};
 
 const drawNetLabels = (
   graphics: GraphicsObject,
   state: Example28VisualizationState,
 ) => {
   for (const label of state.outputNetLabelPlacements) {
-    const color = getColorFromString(label.globalConnNetId, 0.35)
+    const color = getColorFromString(label.globalConnNetId, 0.35);
     graphics.rects!.push({
       center: label.center,
       width: label.width,
@@ -50,14 +50,14 @@ const drawNetLabels = (
       fill: color,
       strokeColor: getColorFromString(label.globalConnNetId, 0.9),
       label: `netId: ${label.netId}\nglobalConnNetId: ${label.globalConnNetId}`,
-    } as any)
+    } as any);
     graphics.points!.push({
       ...label.anchorPoint,
       color: getColorFromString(label.globalConnNetId, 0.9),
       label: `anchorPoint\norientation: ${label.orientation}`,
-    } as any)
+    } as any);
   }
-}
+};
 
 const drawCurrentCandidates = (
   graphics: GraphicsObject,
@@ -66,7 +66,7 @@ const drawCurrentCandidates = (
   for (const candidate of candidateResults) {
     const scoreLabel = candidate.score
       ? `\nlabel intersections: ${candidate.score.labelIntersections}\ntrace intersections: ${candidate.score.traceIntersections}`
-      : ""
+      : "";
     graphics.lines!.push({
       points: candidate.path,
       strokeColor: candidate.selected
@@ -74,17 +74,17 @@ const drawCurrentCandidates = (
         : CANDIDATE_REJECTED_COLOR,
       strokeDash: candidate.selected ? undefined : "4 2",
       label: `${candidate.selected ? "selected" : candidate.status} reroute${scoreLabel}`,
-    } as any)
+    } as any);
   }
-}
+};
 
 const drawCurrentOverlap = (
   graphics: GraphicsObject,
   state: Example28VisualizationState,
 ) => {
-  if (!state.currentOverlap) return
+  if (!state.currentOverlap) return;
 
-  const label = state.currentOverlap.label
+  const label = state.currentOverlap.label;
   graphics.rects!.push({
     center: label.center,
     width: label.width,
@@ -92,5 +92,5 @@ const drawCurrentOverlap = (
     fill: "rgba(255, 0, 0, 0.2)",
     strokeColor: CANDIDATE_REJECTED_COLOR,
     label: `overlap target\n${label.netId ?? label.globalConnNetId}`,
-  } as any)
-}
+  } as any);
+};

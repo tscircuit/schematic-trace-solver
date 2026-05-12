@@ -1,5 +1,5 @@
-import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import { test, expect } from "bun:test"
+import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver";
+import { test, expect } from "bun:test";
 
 test("MspConnectionPairSolver should solve problem correctly", () => {
   const input = {
@@ -76,17 +76,17 @@ test("MspConnectionPairSolver should solve problem correctly", () => {
       availableNetLabelOrientations: {},
       maxMspPairDistance: 2,
     },
-  }
+  };
 
-  const solver = new MspConnectionPairSolver(input as any)
-  solver.solve()
+  const solver = new MspConnectionPairSolver(input as any);
+  solver.solve();
 
   for (const { pins } of solver.mspConnectionPairs) {
-    const [pin1, pin2] = pins
-    const dist = Math.sqrt((pin1.x - pin2.x) ** 2 + (pin1.y - pin2.y) ** 2)
-    expect(dist).toBeLessThan(input.inputProblem.maxMspPairDistance)
+    const [pin1, pin2] = pins;
+    const dist = Math.sqrt((pin1.x - pin2.x) ** 2 + (pin1.y - pin2.y) ** 2);
+    expect(dist).toBeLessThan(input.inputProblem.maxMspPairDistance);
   }
 
   // Add more specific assertions based on expected output
   // expect(solver.netLabelPlacementSolver!.netLabelPlacements).toMatchInlineSnapshot()
-})
+});

@@ -1,5 +1,5 @@
-import { SchematicTraceSingleLineSolver2 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
-import { test, expect } from "bun:test"
+import { SchematicTraceSingleLineSolver2 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2";
+import { test, expect } from "bun:test";
 
 test("SchematicTraceSingleLineSolver2 should solve problem correctly", () => {
   const input = {
@@ -314,10 +314,10 @@ test("SchematicTraceSingleLineSolver2 should solve problem correctly", () => {
       availableNetLabelOrientations: {},
       maxMspPairDistance: 2.4,
     },
-  }
+  };
 
-  const solver = new SchematicTraceSingleLineSolver2(input as any)
-  solver.solve()
+  const solver = new SchematicTraceSingleLineSolver2(input as any);
+  solver.solve();
 
-  expect(solver).toMatchSolverSnapshot(import.meta.path)
-})
+  expect(solver).toMatchSolverSnapshot(import.meta.path);
+});

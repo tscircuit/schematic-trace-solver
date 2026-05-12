@@ -1,32 +1,32 @@
-import type { InputProblem } from "lib/types/InputProblem"
-import { PipelineDebugger } from "site/components/PipelineDebugger"
-import { useState } from "react"
+import type { InputProblem } from "lib/types/InputProblem";
+import { PipelineDebugger } from "site/components/PipelineDebugger";
+import { useState } from "react";
 
 export default () => {
-  const [inputText, setInputText] = useState("")
-  const [inputProblem, setInputProblem] = useState<InputProblem | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [inputText, setInputText] = useState("");
+  const [inputProblem, setInputProblem] = useState<InputProblem | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleOpenDebugger = () => {
     try {
-      setError(null)
-      let parsed: InputProblem
+      setError(null);
+      let parsed: InputProblem;
 
-      const trimmedInput = inputText.trim()
+      const trimmedInput = inputText.trim();
       if (trimmedInput.startsWith("{") || trimmedInput.startsWith("[")) {
-        parsed = JSON.parse(trimmedInput)
+        parsed = JSON.parse(trimmedInput);
       } else {
-        parsed = eval(`(${trimmedInput})`)
+        parsed = eval(`(${trimmedInput})`);
       }
 
-      setInputProblem(parsed)
+      setInputProblem(parsed);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid input format")
+      setError(err instanceof Error ? err.message : "Invalid input format");
     }
-  }
+  };
 
   if (inputProblem) {
-    return <PipelineDebugger inputProblem={inputProblem} />
+    return <PipelineDebugger inputProblem={inputProblem} />;
   }
 
   return (
@@ -79,5 +79,5 @@ export default () => {
         Open Debugger
       </button>
     </div>
-  )
-}
+  );
+};

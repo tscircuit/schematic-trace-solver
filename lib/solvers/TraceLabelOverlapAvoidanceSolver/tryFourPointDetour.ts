@@ -1,7 +1,7 @@
-import type { Point } from "graphics-debug"
-import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { segmentIntersectsRect } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import type { Point } from "graphics-debug";
+import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver";
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver";
+import { segmentIntersectsRect } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions";
 
 /**
  * Generates candidate four-point detour paths for a trace colliding with a label obstacle.
@@ -16,63 +16,63 @@ export const generateFourPointDetourCandidates = ({
   paddingBuffer,
   detourCount,
 }: {
-  initialTrace: SolvedTracePath
-  label: NetLabelPlacement
-  labelBounds: { minX: number; maxX: number; minY: number; maxY: number }
-  paddingBuffer: number
-  detourCount: number
+  initialTrace: SolvedTracePath;
+  label: NetLabelPlacement;
+  labelBounds: { minX: number; maxX: number; minY: number; maxY: number };
+  paddingBuffer: number;
+  detourCount: number;
 }): Point[][] => {
-  const isMergedLabel = label.globalConnNetId.startsWith("merged-group-")
-  const effectivePadding = paddingBuffer + detourCount * paddingBuffer
+  const isMergedLabel = label.globalConnNetId.startsWith("merged-group-");
+  const effectivePadding = paddingBuffer + detourCount * paddingBuffer;
   const paddedLabelBounds = {
     minX: labelBounds.minX - effectivePadding,
     maxX: labelBounds.maxX + effectivePadding,
     minY: labelBounds.minY - effectivePadding,
     maxY: labelBounds.maxY + effectivePadding,
-  }
+  };
 
-  let entryPoint: Point, exitPoint: Point
-  let entryIndex: number, exitIndex: number
+  let entryPoint: Point, exitPoint: Point;
+  let entryIndex: number, exitIndex: number;
 
   const isPointInRect = (p: Point) =>
     p.x >= paddedLabelBounds.minX &&
     p.x <= paddedLabelBounds.maxX &&
     p.y >= paddedLabelBounds.minY &&
-    p.y <= paddedLabelBounds.maxY
+    p.y <= paddedLabelBounds.maxY;
 
   if (isMergedLabel) {
     // STRATEGY 2: Merged Label - find first point before and after the entire crossing
-    let firstInsideIndex = -1
+    let firstInsideIndex = -1;
     for (let i = 0; i < initialTrace.tracePath.length; i++) {
       if (isPointInRect(initialTrace.tracePath[i])) {
-        firstInsideIndex = i
-        break
+        firstInsideIndex = i;
+        break;
       }
     }
 
-    if (firstInsideIndex === -1) return [] // No points inside, shouldn't be called
+    if (firstInsideIndex === -1) return []; // No points inside, shouldn't be called
 
-    entryIndex = Math.max(0, firstInsideIndex - 1)
-    entryPoint = initialTrace.tracePath[entryIndex]
+    entryIndex = Math.max(0, firstInsideIndex - 1);
+    entryPoint = initialTrace.tracePath[entryIndex];
 
-    let firstOutsideIndex = -1
+    let firstOutsideIndex = -1;
     for (let i = firstInsideIndex; i < initialTrace.tracePath.length; i++) {
       if (!isPointInRect(initialTrace.tracePath[i])) {
-        firstOutsideIndex = i
-        break
+        firstOutsideIndex = i;
+        break;
       }
     }
 
     if (firstOutsideIndex === -1) {
       // Trace ends inside the box, use the last point as exit
-      exitIndex = initialTrace.tracePath.length - 1
+      exitIndex = initialTrace.tracePath.length - 1;
     } else {
-      exitIndex = firstOutsideIndex
+      exitIndex = firstOutsideIndex;
     }
-    exitPoint = initialTrace.tracePath[exitIndex]
+    exitPoint = initialTrace.tracePath[exitIndex];
   } else {
     // STRATEGY 1: Single Label - find the first intersecting segment
-    let collidingSegIndex = -1
+    let collidingSegIndex = -1;
     for (let i = 0; i < initialTrace.tracePath.length - 1; i++) {
       if (
         segmentIntersectsRect(
@@ -81,28 +81,28 @@ export const generateFourPointDetourCandidates = ({
           { ...paddedLabelBounds, chipId: "temp-obstacle" },
         )
       ) {
-        collidingSegIndex = i
-        break
+        collidingSegIndex = i;
+        break;
       }
     }
 
-    if (collidingSegIndex === -1) return []
+    if (collidingSegIndex === -1) return [];
 
-    entryIndex = collidingSegIndex
-    exitIndex = collidingSegIndex + 1
-    entryPoint = initialTrace.tracePath[entryIndex]
-    exitPoint = initialTrace.tracePath[exitIndex]
+    entryIndex = collidingSegIndex;
+    exitIndex = collidingSegIndex + 1;
+    entryPoint = initialTrace.tracePath[entryIndex];
+    exitPoint = initialTrace.tracePath[exitIndex];
   }
 
-  if (!entryPoint || !exitPoint || entryIndex >= exitIndex) return []
+  if (!entryPoint || !exitPoint || entryIndex >= exitIndex) return [];
 
-  const candidateDetours: Point[][] = []
-  const dx = exitPoint.x - entryPoint.x
-  const dy = exitPoint.y - entryPoint.y
+  const candidateDetours: Point[][] = [];
+  const dx = exitPoint.x - entryPoint.x;
+  const dy = exitPoint.y - entryPoint.y;
 
   if (Math.abs(dx) > Math.abs(dy)) {
     // More horizontal
-    const yCandidates = [paddedLabelBounds.maxY, paddedLabelBounds.minY]
+    const yCandidates = [paddedLabelBounds.maxY, paddedLabelBounds.minY];
     for (const newY of yCandidates) {
       candidateDetours.push(
         dx > 0 // Left-to-right
@@ -119,11 +119,11 @@ export const generateFourPointDetourCandidates = ({
               { x: paddedLabelBounds.minX, y: newY },
               { x: paddedLabelBounds.minX, y: exitPoint.y },
             ],
-      )
+      );
     }
   } else {
     // More vertical
-    const xCandidates = [paddedLabelBounds.maxX, paddedLabelBounds.minX]
+    const xCandidates = [paddedLabelBounds.maxX, paddedLabelBounds.minX];
     for (const newX of xCandidates) {
       candidateDetours.push(
         dy > 0 // Top-to-bottom
@@ -140,7 +140,7 @@ export const generateFourPointDetourCandidates = ({
               { x: newX, y: paddedLabelBounds.minY },
               { x: exitPoint.x, y: paddedLabelBounds.minY },
             ],
-      )
+      );
     }
   }
 
@@ -150,5 +150,5 @@ export const generateFourPointDetourCandidates = ({
     ...detourPoints,
     exitPoint,
     ...initialTrace.tracePath.slice(exitIndex + 1),
-  ])
-}
+  ]);
+};

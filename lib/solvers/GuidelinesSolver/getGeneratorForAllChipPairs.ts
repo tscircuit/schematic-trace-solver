@@ -1,4 +1,4 @@
-import type { InputChip, InputProblem } from "lib/types/InputProblem"
+import type { InputChip, InputProblem } from "lib/types/InputProblem";
 
 /**
  * Creates a generator function that yields all possible pairs of chips from the given array.
@@ -31,9 +31,9 @@ export const getGeneratorForAllChipPairs = (
     for (let i = 0; i < chips.length; i++) {
       for (let j = 0; j < chips.length; j++) {
         if (i !== j) {
-          yield [chips[i], chips[j]] as const
+          yield [chips[i], chips[j]] as const;
         }
       }
     }
-  })()
-}
+  })();
+};
