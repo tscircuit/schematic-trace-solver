@@ -14,7 +14,11 @@ export const getConnectivityMapsFromInputProblem = (
     ])
   }
 
-  const netConnMap = new ConnectivityMap(directConnMap.netMap)
+  // Shallow copy netMap to prevent netConnMap.addConnections() from mutating
+  // directConnMap.netMap (they would share the same reference otherwise).
+  // This bug caused net-only connections to appear in directConnMap, leading
+  // MspConnectionPairSolver to create MSP pairs for net-label-only nets.
+  const netConnMap = new ConnectivityMap({ ...directConnMap.netMap })
 
   for (const netConn of inputProblem.netConnections) {
     netConnMap.addConnections([[netConn.netId, ...netConn.pinIds]])
