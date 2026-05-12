@@ -26,6 +26,7 @@ import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/
 import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
+import { SameNetTraceSegmentDedupSolver } from "../SameNetTraceSegmentDedupSolver/SameNetTraceSegmentDedupSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -80,6 +81,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
+  sameNetTraceSegmentDedupSolver?: SameNetTraceSegmentDedupSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -155,17 +157,39 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
+      "sameNetTraceSegmentDedupSolver",
+      SameNetTraceSegmentDedupSolver,
+      (instance) => {
+        const traceMap =
+          instance.traceOverlapShiftSolver?.correctedTraceMap ??
+          Object.fromEntries(
+            instance
+              .longDistancePairSolver!.getOutput()
+              .allTracesMerged.map((p) => [p.mspPairId, p]),
+          )
+        const traces = Object.values(traceMap) as SolvedTracePath[]
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces,
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
-      () => [
+      (instance) => [
         {
-          inputProblem: this.inputProblem,
+          inputProblem: instance.inputProblem,
           inputTraceMap:
-            this.traceOverlapShiftSolver?.correctedTraceMap ??
             Object.fromEntries(
-              this.longDistancePairSolver!.getOutput().allTracesMerged.map(
-                (p) => [p.mspPairId, p],
-              ),
+              (instance.sameNetTraceSegmentDedupSolver?.getOutput().traces ??
+                Object.values(
+                  instance.traceOverlapShiftSolver?.correctedTraceMap ?? {},
+                ) as SolvedTracePath[])
+                .map((p) => [p.mspPairId, p]),
             ),
         },
       ],
@@ -179,14 +203,11 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       "traceLabelOverlapAvoidanceSolver",
       TraceLabelOverlapAvoidanceSolver,
       (instance) => {
-        const traceMap =
-          instance.traceOverlapShiftSolver?.correctedTraceMap ??
-          Object.fromEntries(
-            instance
-              .longDistancePairSolver!.getOutput()
-              .allTracesMerged.map((p) => [p.mspPairId, p]),
-          )
-        const traces = Object.values(traceMap)
+        const traces =
+          instance.sameNetTraceSegmentDedupSolver?.getOutput().traces ??
+          Object.values(
+            instance.traceOverlapShiftSolver?.correctedTraceMap ?? {},
+          ) as SolvedTracePath[]
         const netLabelPlacements =
           instance.netLabelPlacementSolver!.netLabelPlacements
 
@@ -412,13 +433,66 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     }
 
     // Simple combination of visualizations
-    const finalGraphics = {
+    const finalGraphics: GraphicsObject = {
       points: visualizations.flatMap((v) => v.points || []),
       rects: visualizations.flatMap((v) => v.rects || []),
       lines: visualizations.flatMap((v) => v.lines || []),
       circles: visualizations.flatMap((v) => v.circles || []),
       texts: visualizations.flatMap((v) => v.texts || []),
     }
+
+    // Deduplicate trace lines within the last visualization step to remove
+    // extra trace lines rendered by overlapping sub-solver visualizations
+    const allElms = [
+      ...(finalGraphics.lines ?? []),
+      ...(finalGraphics.points ?? []),
+      ...(finalGraphics.rects ?? []),
+      ...(finalGraphics.circles ?? []),
+      ...(finalGraphics.texts ?? []),
+    ]
+    const lastStep = allElms.reduce((acc, elm) => Math.max(acc, elm.step ?? 0), 0)
+
+    const lastStepLines = (finalGraphics.lines ?? []).filter(
+      (l: any) => (l.step ?? 0) === lastStep,
+    )
+    const seenSegments = new Set<string>()
+    const dedupedLastStepLines: any[] = []
+
+    for (const line of lastStepLines) {
+      const pts = (line as any).points as Array<{ x: number; y: number }> | undefined
+      if (!pts || pts.length < 2) {
+        dedupedLastStepLines.push(line)
+        continue
+      }
+
+      let hasDupSegment = false
+      const newPoints: Array<{ x: number; y: number }> = [pts[0]!]
+      for (let i = 1; i < pts.length; i++) {
+        const endpoints = [
+          `${pts[i - 1]!.x.toFixed(4)},${pts[i - 1]!.y.toFixed(4)}`,
+          `${pts[i]!.x.toFixed(4)},${pts[i]!.y.toFixed(4)}`,
+        ].sort()
+        const segKey = `${endpoints[0]}|${endpoints[1]}`
+
+        if (seenSegments.has(segKey)) {
+          hasDupSegment = true
+          continue // skip this point (removes the duplicate segment)
+        }
+        seenSegments.add(segKey)
+        newPoints.push(pts[i]!)
+      }
+
+      if (newPoints.length >= 2) {
+        dedupedLastStepLines.push({ ...line, points: newPoints })
+      }
+    }
+
+    // Reconstruct lines: non-last-step lines as-is + deduped last-step lines
+    const nonLastStepLines = (finalGraphics.lines ?? []).filter(
+      (l: any) => (l.step ?? 0) !== lastStep,
+    )
+    finalGraphics.lines = [...nonLastStepLines, ...dedupedLastStepLines]
+
     colorAvailableNetOrientationLabels(finalGraphics, this.inputProblem)
     return finalGraphics
   }
