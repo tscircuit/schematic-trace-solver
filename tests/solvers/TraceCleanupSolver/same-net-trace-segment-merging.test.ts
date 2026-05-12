@@ -44,6 +44,30 @@ test("aligns close horizontal same-net interior segments", () => {
   expect(merged[1]!.tracePath[3]!.y).toBeCloseTo(0)
 })
 
+test("aligns close vertical same-net interior segments", () => {
+  const traces = [
+    makeTrace("a", "net1", [
+      { x: 0, y: -3 },
+      { x: 0, y: -1 },
+      { x: 0, y: 1 },
+      { x: 0, y: 3 },
+    ]),
+    makeTrace("b", "net1", [
+      { x: 1, y: -3 },
+      { x: 1, y: -1 },
+      { x: 0.05, y: -1 },
+      { x: 0.05, y: 1 },
+      { x: 1, y: 1 },
+      { x: 1, y: 3 },
+    ]),
+  ]
+
+  const merged = mergeSameNetTraceSegments(traces, { maxOffset: 0.1 })
+
+  expect(merged[1]!.tracePath[2]!.x).toBeCloseTo(0)
+  expect(merged[1]!.tracePath[3]!.x).toBeCloseTo(0)
+})
+
 test("does not move endpoint segments or different nets", () => {
   const traces = [
     makeTrace("a", "net1", [
