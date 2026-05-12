@@ -37,7 +37,7 @@ export const applyJogToTerminalSegment = ({
         1,
         { x: start.x, y: jogY },
         { x: start.x + offset, y: jogY },
-        { x: end.x + offset, y: end.y },
+        { x: start.x + offset, y: end.y },
       )
     } else {
       // Horizontal
@@ -47,7 +47,7 @@ export const applyJogToTerminalSegment = ({
         1,
         { x: jogX, y: start.y },
         { x: jogX, y: start.y + offset },
-        { x: end.x, y: end.y + offset },
+        { x: end.x, y: start.y + offset },
       )
     }
   } else {
@@ -58,7 +58,7 @@ export const applyJogToTerminalSegment = ({
         si,
         1,
         { x: start.x + offset, y: start.y },
-        { x: end.x + offset, y: jogY },
+        { x: start.x + offset, y: jogY },
         { x: end.x, y: jogY },
       )
     } else {
@@ -68,7 +68,7 @@ export const applyJogToTerminalSegment = ({
         si,
         1,
         { x: start.x, y: start.y + offset },
-        { x: jogX, y: end.y + offset },
+        { x: jogX, y: start.y + offset },
         { x: jogX, y: end.y },
       )
     }
