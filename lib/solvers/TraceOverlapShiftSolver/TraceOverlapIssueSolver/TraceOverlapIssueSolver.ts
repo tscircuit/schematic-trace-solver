@@ -5,6 +5,8 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { applyJogToTerminalSegment } from "./applyJogToTrace"
 
 type ConnNetId = string
+type Point = SolvedTracePath["tracePath"][number]
+type CorrectedTraceMap = Record<MspConnectionPairId, SolvedTracePath>
 
 export interface OverlappingTraceSegmentLocator {
   connNetId: string
@@ -33,10 +35,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     // Only add the relevant traces to the correctedTraceMap
     for (const { connNetId, pathsWithOverlap } of this
       .overlappingTraceSegments) {
-      for (const {
-        solvedTracePathIndex,
-        traceSegmentIndex,
-      } of pathsWithOverlap) {
+      for (const { solvedTracePathIndex } of pathsWithOverlap) {
         const mspPairId =
           this.traceNetIslands[connNetId][solvedTracePathIndex].mspPairId
         this.correctedTraceMap[mspPairId] =
@@ -46,17 +45,42 @@ export class TraceOverlapIssueSolver extends BaseSolver {
   }
 
   override _step() {
-    // Shift only the overlapping segments, and move the shared endpoints
-    // (the last point of the previous segment and the first point of the next
-    // segment) so the polyline remains orthogonal without self-overlap.
-    const EPS = 1e-6
+    let bestTraceMap: CorrectedTraceMap | null = null
+    let bestScore = Number.POSITIVE_INFINITY
 
-    // Compute offsets for each island involved: alternate directions
-    const offsets = this.overlappingTraceSegments.map((_, idx) => {
+    for (const offsets of this.getOffsetCandidates()) {
+      const candidateTraceMap = this.buildCorrectedTraceMapForOffsets(offsets)
+      const candidateScore = this.countCrossNetIntersections(candidateTraceMap)
+      if (candidateScore < bestScore) {
+        bestScore = candidateScore
+        bestTraceMap = candidateTraceMap
+      }
+    }
+
+    this.correctedTraceMap = bestTraceMap ?? this.correctedTraceMap
+    this.solved = true
+  }
+
+  private getOffsetCandidates() {
+    const baseOffsets = this.overlappingTraceSegments.map((_, idx) => {
       const n = Math.floor(idx / 2) + 1
       const signed = idx % 2 === 0 ? -n : n
       return signed * this.SHIFT_DISTANCE
     })
+
+    if (baseOffsets.length <= 1) {
+      return [baseOffsets]
+    }
+
+    const reversedOffsets = baseOffsets.map((offset) => -offset)
+    return [baseOffsets, reversedOffsets]
+  }
+
+  private buildCorrectedTraceMapForOffsets(offsets: number[]) {
+    // Shift only the overlapping segments, and move the shared endpoints
+    // (the last point of the previous segment and the first point of the next
+    // segment) so the polyline remains orthogonal without self-overlap.
+    const EPS = 1e-6
 
     const eq = (a: number, b: number) => Math.abs(a - b) < EPS
     const samePoint = (
@@ -64,8 +88,19 @@ export class TraceOverlapIssueSolver extends BaseSolver {
       q: { x: number; y: number } | undefined,
     ) => !!p && !!q && eq(p.x, q.x) && eq(p.y, q.y)
 
+    const correctedTraceMap: CorrectedTraceMap = {}
+    for (const { connNetId, pathsWithOverlap } of this
+      .overlappingTraceSegments) {
+      for (const { solvedTracePathIndex } of pathsWithOverlap) {
+        const trace = this.traceNetIslands[connNetId][solvedTracePathIndex]
+        if (!trace) continue
+        correctedTraceMap[trace.mspPairId] = trace
+      }
+    }
+
     // For each net island group, shift only its overlapping segments and adjust adjacent joints
-    this.overlappingTraceSegments.forEach((group, gidx) => {
+    for (let gidx = 0; gidx < this.overlappingTraceSegments.length; gidx++) {
+      const group = this.overlappingTraceSegments[gidx]!
       const offset = offsets[gidx]!
 
       // Gather unique segment indices per path
@@ -79,10 +114,8 @@ export class TraceOverlapIssueSolver extends BaseSolver {
 
       for (const [pathIdx, segIdxSet] of byPath) {
         const original = this.traceNetIslands[group.connNetId][pathIdx]!
-        const current = this.correctedTraceMap[original.mspPairId] ?? original
+        const current = correctedTraceMap[original.mspPairId] ?? original
         const pts = current.tracePath.map((p) => ({ ...p }))
-
-        const segIdxs = Array.from(segIdxSet).sort((a, b) => a - b)
 
         const segIdxsRev = Array.from(segIdxSet)
           .sort((a, b) => a - b)
@@ -132,14 +165,42 @@ export class TraceOverlapIssueSolver extends BaseSolver {
           }
         }
 
-        this.correctedTraceMap[original.mspPairId] = {
+        correctedTraceMap[original.mspPairId] = {
           ...current,
           tracePath: cleaned,
         }
       }
-    })
+    }
 
-    this.solved = true
+    return correctedTraceMap
+  }
+
+  private getAllTracesWithCorrections(correctedTraceMap: CorrectedTraceMap) {
+    const traces: SolvedTracePath[] = []
+
+    for (const island of Object.values(this.traceNetIslands)) {
+      for (const trace of island) {
+        traces.push(correctedTraceMap[trace.mspPairId] ?? trace)
+      }
+    }
+
+    return traces
+  }
+
+  private countCrossNetIntersections(correctedTraceMap: CorrectedTraceMap) {
+    const traces = this.getAllTracesWithCorrections(correctedTraceMap)
+    let count = 0
+
+    for (let i = 0; i < traces.length; i++) {
+      const traceA = traces[i]!
+      for (let j = i + 1; j < traces.length; j++) {
+        const traceB = traces[j]!
+        if (traceA.globalConnNetId === traceB.globalConnNetId) continue
+        count += countPathIntersections(traceA.tracePath, traceB.tracePath)
+      }
+    }
+
+    return count
   }
 
   override visualize(): GraphicsObject {
@@ -179,4 +240,61 @@ export class TraceOverlapIssueSolver extends BaseSolver {
 
     return graphics
   }
+}
+
+const countPathIntersections = (pathA: Point[], pathB: Point[]) => {
+  let count = 0
+
+  for (let i = 0; i < pathA.length - 1; i++) {
+    for (let j = 0; j < pathB.length - 1; j++) {
+      if (
+        segmentsIntersect(pathA[i]!, pathA[i + 1]!, pathB[j]!, pathB[j + 1]!)
+      ) {
+        count++
+      }
+    }
+  }
+
+  return count
+}
+
+const segmentsIntersect = (a1: Point, a2: Point, b1: Point, b2: Point) => {
+  const EPS = 1e-6
+  const aVertical = Math.abs(a1.x - a2.x) < EPS
+  const aHorizontal = Math.abs(a1.y - a2.y) < EPS
+  const bVertical = Math.abs(b1.x - b2.x) < EPS
+  const bHorizontal = Math.abs(b1.y - b2.y) < EPS
+
+  if ((!aVertical && !aHorizontal) || (!bVertical && !bHorizontal)) {
+    return false
+  }
+
+  const between = (value: number, p1: number, p2: number) =>
+    value >= Math.min(p1, p2) - EPS && value <= Math.max(p1, p2) + EPS
+
+  if (aVertical && bVertical) {
+    if (Math.abs(a1.x - b1.x) > EPS) return false
+    const overlap =
+      Math.min(Math.max(a1.y, a2.y), Math.max(b1.y, b2.y)) -
+      Math.max(Math.min(a1.y, a2.y), Math.min(b1.y, b2.y))
+    return overlap > EPS
+  }
+
+  if (aHorizontal && bHorizontal) {
+    if (Math.abs(a1.y - b1.y) > EPS) return false
+    const overlap =
+      Math.min(Math.max(a1.x, a2.x), Math.max(b1.x, b2.x)) -
+      Math.max(Math.min(a1.x, a2.x), Math.min(b1.x, b2.x))
+    return overlap > EPS
+  }
+
+  const verticalStart = aVertical ? a1 : b1
+  const verticalEnd = aVertical ? a2 : b2
+  const horizontalStart = aHorizontal ? a1 : b1
+  const horizontalEnd = aHorizontal ? a2 : b2
+
+  return (
+    between(verticalStart.x, horizontalStart.x, horizontalEnd.x) &&
+    between(horizontalStart.y, verticalStart.y, verticalEnd.y)
+  )
 }
