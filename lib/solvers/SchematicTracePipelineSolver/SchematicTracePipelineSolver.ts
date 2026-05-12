@@ -148,6 +148,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         {
           inputProblem: instance.inputProblem,
           traces: instance.longDistancePairSolver!.getOutput().allTracesMerged,
+          mergeDistance: 0.02,
+          alignmentDistance: 0.01,
         },
       ],
       {
