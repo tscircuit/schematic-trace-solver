@@ -16,9 +16,76 @@ interface SingleOverlapSolverInput {
   problem: InputProblem
   paddingBuffer: number
   detourCount: number
+  otherTraces?: SolvedTracePath[]
 }
 
 const MAX_TRIES = 5
+
+const EPSILON = 1e-9
+
+const isSamePoint = (a: Point, b: Point) =>
+  Math.abs(a.x - b.x) < EPSILON && Math.abs(a.y - b.y) < EPSILON
+
+const orientation = (a: Point, b: Point, c: Point) => {
+  const value = (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y)
+  if (Math.abs(value) < EPSILON) return 0
+  return value > 0 ? 1 : 2
+}
+
+const isPointOnSegment = (a: Point, b: Point, c: Point) =>
+  b.x <= Math.max(a.x, c.x) + EPSILON &&
+  b.x + EPSILON >= Math.min(a.x, c.x) &&
+  b.y <= Math.max(a.y, c.y) + EPSILON &&
+  b.y + EPSILON >= Math.min(a.y, c.y)
+
+const segmentsIntersect = (a1: Point, a2: Point, b1: Point, b2: Point) => {
+  if (
+    isSamePoint(a1, b1) ||
+    isSamePoint(a1, b2) ||
+    isSamePoint(a2, b1) ||
+    isSamePoint(a2, b2)
+  ) {
+    return false
+  }
+
+  const o1 = orientation(a1, a2, b1)
+  const o2 = orientation(a1, a2, b2)
+  const o3 = orientation(b1, b2, a1)
+  const o4 = orientation(b1, b2, a2)
+
+  if (o1 !== o2 && o3 !== o4) return true
+
+  return (
+    (o1 === 0 && isPointOnSegment(a1, b1, a2)) ||
+    (o2 === 0 && isPointOnSegment(a1, b2, a2)) ||
+    (o3 === 0 && isPointOnSegment(b1, a1, b2)) ||
+    (o4 === 0 && isPointOnSegment(b1, a2, b2))
+  )
+}
+
+const countTraceCrossings = (
+  candidatePath: Point[],
+  otherTraces: SolvedTracePath[],
+) => {
+  let crossings = 0
+  for (let i = 0; i < candidatePath.length - 1; i++) {
+    for (const otherTrace of otherTraces) {
+      for (let j = 0; j < otherTrace.tracePath.length - 1; j++) {
+        if (
+          segmentsIntersect(
+            candidatePath[i],
+            candidatePath[i + 1],
+            otherTrace.tracePath[j],
+            otherTrace.tracePath[j + 1],
+          )
+        ) {
+          crossings++
+        }
+      }
+    }
+  }
+  return crossings
+}
 
 /**
  * This solver attempts to find a valid rerouting for a single trace that is
@@ -60,9 +127,14 @@ export class SingleOverlapSolver extends BaseSolver {
       return len
     }
 
-    this.queuedCandidatePaths = candidates.sort(
-      (a, b) => getPathLength(a) - getPathLength(b),
-    )
+    const otherTraces = solverInput.otherTraces ?? []
+    this.queuedCandidatePaths = candidates.sort((a, b) => {
+      const crossingDelta =
+        countTraceCrossings(a, otherTraces) -
+        countTraceCrossings(b, otherTraces)
+      if (crossingDelta !== 0) return crossingDelta
+      return getPathLength(a) - getPathLength(b)
+    })
     this.obstacles = getObstacleRects(this.problem)
   }
 

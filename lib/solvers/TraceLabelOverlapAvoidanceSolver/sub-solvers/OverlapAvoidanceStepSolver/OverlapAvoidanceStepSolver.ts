@@ -150,6 +150,9 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
             problem: this.inputProblem,
             paddingBuffer: this.PADDING_BUFFER,
             detourCount: detourCount,
+            otherTraces: this.allTraces.filter(
+              (trace) => trace.mspPairId !== traceToFix.mspPairId,
+            ),
           })
         } else {
           const overlapId = `${traceToFix.mspPairId}-${labelToAvoid.globalConnNetId}`
@@ -192,6 +195,9 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
             problem: this.inputProblem,
             paddingBuffer: this.PADDING_BUFFER,
             detourCount: detourCount,
+            otherTraces: this.allTraces.filter(
+              (trace) => trace.mspPairId !== traceToFix.mspPairId,
+            ),
           })
         } else {
           const overlapId = `${traceToFix.mspPairId}-${labelToAvoid.globalConnNetId}`
@@ -211,6 +217,9 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
         problem: this.inputProblem,
         paddingBuffer: this.PADDING_BUFFER,
         detourCount: detourCount,
+        otherTraces: this.allTraces.filter(
+          (trace) => trace.mspPairId !== traceToFix.mspPairId,
+        ),
       })
     }
   }
