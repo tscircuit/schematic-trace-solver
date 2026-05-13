@@ -4,7 +4,7 @@ import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTrac
 import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 import { SingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver/SingleNetLabelPlacementSolver"
 import type { FacingDirection } from "lib/utils/dir"
-import type { Point } from "@tscircuit/math-utils"
+import { doSegmentsIntersect, type Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
@@ -53,6 +53,38 @@ export interface NetLabelPlacement {
    * and the orientation.
    */
   center: Point
+}
+
+const sameNumber = (a: number, b: number) => Math.abs(a - b) < 1e-9
+
+const samePoint = (a: Point, b: Point) =>
+  sameNumber(a.x, b.x) && sameNumber(a.y, b.y)
+
+const tracePathsTouch = (a: SolvedTracePath, b: SolvedTracePath) => {
+  for (let i = 0; i < a.tracePath.length - 1; i++) {
+    const aStart = a.tracePath[i]!
+    const aEnd = a.tracePath[i + 1]!
+
+    for (let j = 0; j < b.tracePath.length - 1; j++) {
+      const bStart = b.tracePath[j]!
+      const bEnd = b.tracePath[j + 1]!
+
+      if (
+        samePoint(aStart, bStart) ||
+        samePoint(aStart, bEnd) ||
+        samePoint(aEnd, bStart) ||
+        samePoint(aEnd, bEnd)
+      ) {
+        return true
+      }
+
+      if (doSegmentsIntersect(aStart, aEnd, bStart, bEnd)) {
+        return true
+      }
+    }
+  }
+
+  return false
 }
 
 /**
@@ -159,6 +191,31 @@ export class NetLabelPlacementSolver extends BaseSolver {
         if (adj[a] && adj[b]) {
           adj[a].add(b)
           adj[b].add(a)
+        }
+      }
+
+      const tracesInGlobalNet = byGlobal[globalConnNetId] ?? []
+      for (let i = 0; i < tracesInGlobalNet.length; i++) {
+        for (let j = i + 1; j < tracesInGlobalNet.length; j++) {
+          const firstTrace = tracesInGlobalNet[i]!
+          const secondTrace = tracesInGlobalNet[j]!
+          if (!tracePathsTouch(firstTrace, secondTrace)) continue
+
+          const firstPinId = firstTrace.pins[0].pinId
+          const firstOtherPinId = firstTrace.pins[1].pinId
+          const secondPinId = secondTrace.pins[0].pinId
+          const secondOtherPinId = secondTrace.pins[1].pinId
+          if (
+            adj[firstPinId] &&
+            adj[firstOtherPinId] &&
+            adj[secondPinId] &&
+            adj[secondOtherPinId]
+          ) {
+            adj[firstPinId].add(secondPinId)
+            adj[secondPinId].add(firstPinId)
+            adj[firstOtherPinId].add(secondOtherPinId)
+            adj[secondOtherPinId].add(firstOtherPinId)
+          }
         }
       }
 
