@@ -1,7 +1,5 @@
 import { BaseSolver } from "../BaseSolver/BaseSolver"
-import type {
-  SolvedTracePath,
-} from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 
 const COORD_PRECISION = 4
@@ -27,9 +25,7 @@ const segmentKey = (
 const getTraceSegmentKeys = (trace: SolvedTracePath) => {
   const segments: string[] = []
   for (let i = 0; i < trace.tracePath.length - 1; i++) {
-    segments.push(
-      segmentKey(trace.tracePath[i]!, trace.tracePath[i + 1]!),
-    )
+    segments.push(segmentKey(trace.tracePath[i]!, trace.tracePath[i + 1]!))
   }
   return segments
 }
