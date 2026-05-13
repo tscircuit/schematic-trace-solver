@@ -144,7 +144,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       // Calculate corner distance
       const cornerDist = Math.sqrt(
         Math.pow(seg1.startPoint.x - seg2.startPoint.x, 2) +
-        Math.pow(seg1.startPoint.y - seg2.startPoint.y, 2)
+          Math.pow(seg1.startPoint.y - seg2.startPoint.y, 2),
       )
       return cornerDist
     }
@@ -162,7 +162,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       // Calculate corner distance
       const cornerDist = Math.sqrt(
         Math.pow(seg1.startPoint.x - seg2.startPoint.x, 2) +
-        Math.pow(seg1.startPoint.y - seg2.startPoint.y, 2)
+          Math.pow(seg1.startPoint.y - seg2.startPoint.y, 2),
       )
       return cornerDist
     }
