@@ -39,7 +39,12 @@ test("SameNetTraceCombiningSolver - combines close traces in same net", () => {
   ]
 
   const solver = new SameNetTraceCombiningSolver({
-    inputProblem: { chips: [], directConnections: [], netConnections: [], availableNetLabelOrientations: {} } as any,
+    inputProblem: {
+        chips: [],
+        directConnections: [],
+        netConnections: [],
+        availableNetLabelOrientations: {},
+      } as any,
     traces,
     proximityThreshold: 0.19,
   })
@@ -91,7 +96,12 @@ test("SameNetTraceCombiningSolver - does not merge traces in different nets", ()
   ]
 
   const solver = new SameNetTraceCombiningSolver({
-    inputProblem: { chips: [], directConnections: [], netConnections: [], availableNetLabelOrientations: {} } as any,
+    inputProblem: {
+        chips: [],
+        directConnections: [],
+        netConnections: [],
+        availableNetLabelOrientations: {},
+      } as any,
     traces,
     proximityThreshold: 0.19,
   })
@@ -128,7 +138,12 @@ test("SameNetTraceCombiningSolver - handles single trace", () => {
   ]
 
   const solver = new SameNetTraceCombiningSolver({
-    inputProblem: { chips: [], directConnections: [], netConnections: [], availableNetLabelOrientations: {} } as any,
+    inputProblem: {
+        chips: [],
+        directConnections: [],
+        netConnections: [],
+        availableNetLabelOrientations: {},
+      } as any,
     traces,
     proximityThreshold: 0.19,
   })
@@ -165,7 +180,12 @@ test("SameNetTraceCombiningSolver - uses default proximity threshold", () => {
 
   // No proximity threshold specified - should use default
   const solver = new SameNetTraceCombiningSolver({
-    inputProblem: { chips: [], directConnections: [], netConnections: [], availableNetLabelOrientations: {} } as any,
+    inputProblem: {
+        chips: [],
+        directConnections: [],
+        netConnections: [],
+        availableNetLabelOrientations: {},
+      } as any,
     traces,
   })
 
@@ -177,7 +197,12 @@ test("SameNetTraceCombiningSolver - uses default proximity threshold", () => {
 
 test("SameNetTraceCombiningSolver - handles empty traces", () => {
   const solver = new SameNetTraceCombiningSolver({
-    inputProblem: { chips: [], directConnections: [], netConnections: [], availableNetLabelOrientations: {} } as any,
+    inputProblem: {
+        chips: [],
+        directConnections: [],
+        netConnections: [],
+        availableNetLabelOrientations: {},
+      } as any,
     traces: [],
     proximityThreshold: 0.19,
   })
