@@ -183,14 +183,14 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => [
         {
           inputProblem: instance.inputProblem,
-          inputTraceMap:
-            Object.fromEntries(
-              (instance.sameNetTraceSegmentDedupSolver?.getOutput().traces ??
-                Object.values(
-                  instance.traceOverlapShiftSolver?.correctedTraceMap ?? {},
-                ) as SolvedTracePath[])
-                .map((p) => [p.mspPairId, p]),
-            ),
+          inputTraceMap: Object.fromEntries(
+            (
+              instance.sameNetTraceSegmentDedupSolver?.getOutput().traces ??
+              (Object.values(
+                instance.traceOverlapShiftSolver?.correctedTraceMap ?? {},
+              ) as SolvedTracePath[])
+            ).map((p) => [p.mspPairId, p]),
+          ),
         },
       ],
       {
@@ -205,9 +205,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => {
         const traces =
           instance.sameNetTraceSegmentDedupSolver?.getOutput().traces ??
-          Object.values(
+          (Object.values(
             instance.traceOverlapShiftSolver?.correctedTraceMap ?? {},
-          ) as SolvedTracePath[]
+          ) as SolvedTracePath[])
         const netLabelPlacements =
           instance.netLabelPlacementSolver!.netLabelPlacements
 
@@ -450,7 +450,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ...(finalGraphics.circles ?? []),
       ...(finalGraphics.texts ?? []),
     ]
-    const lastStep = allElms.reduce((acc, elm) => Math.max(acc, elm.step ?? 0), 0)
+    const lastStep = allElms.reduce(
+      (acc, elm) => Math.max(acc, elm.step ?? 0),
+      0,
+    )
 
     const lastStepLines = (finalGraphics.lines ?? []).filter(
       (l: any) => (l.step ?? 0) === lastStep,
@@ -459,7 +462,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     const dedupedLastStepLines: any[] = []
 
     for (const line of lastStepLines) {
-      const pts = (line as any).points as Array<{ x: number; y: number }> | undefined
+      const pts = (line as any).points as
+        | Array<{ x: number; y: number }>
+        | undefined
       if (!pts || pts.length < 2) {
         dedupedLastStepLines.push(line)
         continue
