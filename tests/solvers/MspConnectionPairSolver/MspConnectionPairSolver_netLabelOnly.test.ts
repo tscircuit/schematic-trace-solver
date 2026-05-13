@@ -107,17 +107,11 @@ describe("MspConnectionPairSolver - net-label-only nets (issue #79)", () => {
           center: { x: 7, y: 0 },
           width: 2,
           height: 2,
-          pins: [
-            { pinId: "U2.1", x: 6, y: -0.5, _facingDirection: "x-" },
-          ],
+          pins: [{ pinId: "U2.1", x: 6, y: -0.5, _facingDirection: "x-" }],
         },
       ],
-      directConnections: [
-        { pinIds: ["R1.2", "U1.1"], netId: "NET1" },
-      ],
-      netConnections: [
-        { netId: "NET1", pinIds: ["U2.1"] },
-      ],
+      directConnections: [{ pinIds: ["R1.2", "U1.1"], netId: "NET1" }],
+      netConnections: [{ netId: "NET1", pinIds: ["U2.1"] }],
       availableNetLabelOrientations: {
         NET1: ["x+", "x-", "y+", "y-"],
       },
