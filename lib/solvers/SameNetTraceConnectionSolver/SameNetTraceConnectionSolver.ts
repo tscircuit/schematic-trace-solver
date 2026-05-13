@@ -48,16 +48,6 @@ const cloneTraceMap = (traceMap: TraceMap): TraceMap =>
     ]),
   )
 
-const getTraceMapSignature = (traceMap: TraceMap) =>
-  JSON.stringify(
-    Object.entries(traceMap)
-      .sort(([firstId], [secondId]) => firstId.localeCompare(secondId))
-      .map(([id, trace]) => [
-        id,
-        trace.tracePath.map((point) => [point.x, point.y]),
-      ]),
-  )
-
 const getChipObstacles = (inputProblem: InputProblem): Rect[] =>
   inputProblem.chips.map((chip) => ({
     minX: chip.center.x - chip.width / 2,
@@ -127,6 +117,16 @@ const collectSegmentsByNet = (traceMap: TraceMap) => {
   return segmentsByNet
 }
 
+const countSegmentPairs = (segmentsByNet: Map<string, SegmentRef[]>) => {
+  let pairCount = 0
+
+  for (const segments of segmentsByNet.values()) {
+    pairCount += (segments.length * (segments.length - 1)) / 2
+  }
+
+  return pairCount
+}
+
 const getSegmentPoints = (traceMap: TraceMap, segment: SegmentRef) => {
   const trace = traceMap[segment.mspPairId]
   if (!trace) return null
@@ -134,6 +134,13 @@ const getSegmentPoints = (traceMap: TraceMap, segment: SegmentRef) => {
   const end = trace.tracePath[segment.segmentIndex + 1]
   if (!start || !end) return null
   return { trace, start, end }
+}
+
+const getCurrentSegmentRef = (traceMap: TraceMap, segment: SegmentRef) => {
+  const trace = traceMap[segment.mspPairId]
+  if (!trace) return null
+
+  return getSegmentRef(trace, segment.segmentIndex)
 }
 
 const isTruePinEndpoint = (trace: SolvedTracePath, pointIndex: number) => {
@@ -385,15 +392,15 @@ const tryConnectSegmentPair = ({
   firstSegment,
   secondSegment,
   maxGap,
-  inputProblem,
   labelObstacles,
+  chipObstacles,
 }: {
   traceMap: TraceMap
   firstSegment: SegmentRef
   secondSegment: SegmentRef
   maxGap: number
-  inputProblem: InputProblem
   labelObstacles: Rect[]
+  chipObstacles: Rect[]
 }): TraceMap | null => {
   if (firstSegment.orientation !== secondSegment.orientation) return null
 
@@ -493,7 +500,7 @@ const tryConnectSegmentPair = ({
     hasInvalidCandidateGeometry({
       before: traceMap,
       after: candidateTraceMap,
-      chipObstacles: getChipObstacles(inputProblem),
+      chipObstacles,
       labelObstacles,
     })
   ) {
@@ -510,33 +517,42 @@ export const connectCloseSameNetTraces = ({
   labelObstacles = [],
 }: SameNetTraceConnectionSolverParams): TraceMap => {
   let outputTraceMap = cloneTraceMap(inputTraceMap)
-  const seenTraceMapSignatures = new Set([getTraceMapSignature(outputTraceMap)])
+  const chipObstacles = getChipObstacles(inputProblem)
+  const maxPasses = Math.max(
+    1,
+    countSegmentPairs(collectSegmentsByNet(outputTraceMap)),
+  )
 
-  while (true) {
+  for (let passCount = 0; passCount < maxPasses; passCount++) {
     let changedInPass = false
 
     const segmentsByNet = collectSegmentsByNet(outputTraceMap)
 
-    scanSegments: for (const segments of segmentsByNet.values()) {
+    for (const segments of segmentsByNet.values()) {
       for (let i = 0; i < segments.length; i++) {
         for (let j = i + 1; j < segments.length; j++) {
+          const firstSegment = getCurrentSegmentRef(
+            outputTraceMap,
+            segments[i]!,
+          )
+          const secondSegment = getCurrentSegmentRef(
+            outputTraceMap,
+            segments[j]!,
+          )
+          if (!firstSegment || !secondSegment) continue
+
           const nextTraceMap = tryConnectSegmentPair({
             traceMap: outputTraceMap,
-            firstSegment: segments[i]!,
-            secondSegment: segments[j]!,
+            firstSegment,
+            secondSegment,
             maxGap,
-            inputProblem,
             labelObstacles,
+            chipObstacles,
           })
 
           if (nextTraceMap) {
-            const nextSignature = getTraceMapSignature(nextTraceMap)
-            if (seenTraceMapSignatures.has(nextSignature)) continue
-
-            seenTraceMapSignatures.add(nextSignature)
             outputTraceMap = nextTraceMap
             changedInPass = true
-            break scanSegments
           }
         }
       }

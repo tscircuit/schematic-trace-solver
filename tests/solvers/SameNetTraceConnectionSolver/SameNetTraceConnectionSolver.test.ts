@@ -462,3 +462,22 @@ test("continues connecting same-net chains beyond fifty successful passes", () =
   }
   expectManhattan(Object.values(result))
 })
+
+test("terminates deterministically on dense same-net traces", () => {
+  const traces = Array.from({ length: 24 }, (_, index) =>
+    trace({
+      id: `dense${index}`,
+      globalConnNetId: "NET1",
+      tracePath: [
+        { x: index * 0.55, y: 0 },
+        { x: index * 0.55 + 0.5, y: 0 },
+      ],
+    }),
+  )
+
+  const firstResult = connect(traces)
+  const secondResult = connect(traces)
+
+  expect(secondResult).toEqual(firstResult)
+  expectManhattan(Object.values(firstResult))
+})
