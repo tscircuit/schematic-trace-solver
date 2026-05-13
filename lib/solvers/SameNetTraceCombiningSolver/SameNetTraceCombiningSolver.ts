@@ -24,11 +24,11 @@ interface TraceSegment {
 
 /**
  * SameNetTraceCombiningSolver - Combines same-net trace segments that are close together
- * 
+ *
  * This solver reduces visual clutter by merging traces from the same net that run
  * parallel and close to each other. It helps create cleaner schematic layouts by
  * combining redundant trace paths.
- * 
+ *
  * The solver:
  * 1. Groups traces by their globalConnNetId
  * 2. For each net group, identifies traces that are close together
@@ -60,14 +60,14 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     while (processed < batchSize && this.netsToProcess.length > 0) {
       const netId = this.netsToProcess[0]
       const traces = this.tracesByNet.get(netId) || []
-      
+
       const mergedTraces = this._combineCloseTraces(traces)
-      
+
       // Update output traces
       this.outputTraces = this.outputTraces.filter(
         (t) => t.globalConnNetId !== netId
       ).concat(mergedTraces)
-      
+
       this.netsToProcess.shift()
       processed++
     }
@@ -80,9 +80,11 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
   /**
    * Groups traces by their globalConnNetId
    */
-  private _groupTracesByNet(traces: SolvedTracePath[]): Map<string, SolvedTracePath[]> {
+  private _groupTracesByNet(
+    traces: SolvedTracePath[],
+  ): Map<string, SolvedTracePath[]> {
     const groups = new Map<string, SolvedTracePath[]>()
-    
+
     for (const trace of traces) {
       const netId = trace.globalConnNetId
       if (!groups.has(netId)) {
@@ -90,7 +92,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       }
       groups.get(netId)!.push(trace)
     }
-    
+
     return groups
   }
 
@@ -100,12 +102,12 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
   private _extractTraceSegments(trace: SolvedTracePath): TraceSegment[] {
     const { tracePath } = trace
     const segments: TraceSegment[] = []
-    
+
     for (let i = 0; i < tracePath.length - 1; i++) {
       const start = tracePath[i]
       const end = tracePath[i + 1]
       const isHorizontal = Math.abs(end.y - start.y) < 0.001
-      
+
       segments.push({
         trace,
         startPoint: start,
@@ -117,7 +119,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
         maxY: Math.max(start.y, end.y),
       })
     }
-    
+
     return segments
   }
 
@@ -140,7 +142,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       )
       return cornerDist
     }
-    
+
     if (!seg1.isHorizontal && seg2.isHorizontal) {
       // seg1 is vertical, seg2 is horizontal
       const yDist = Math.abs(seg1.startPoint.y - seg2.startPoint.y)
@@ -155,7 +157,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       )
       return cornerDist
     }
-    
+
     // Both same orientation - calculate perpendicular distance
     if (seg1.isHorizontal && seg2.isHorizontal) {
       // Both horizontal - check if they're at similar y and overlapping x
@@ -182,7 +184,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       }
       return minDist
     }
-    
+
     // Both vertical
     if (!seg1.isHorizontal && !seg2.isHorizontal) {
       const xDist = Math.abs(seg1.startPoint.x - seg2.startPoint.x)
@@ -208,7 +210,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       }
       return minDist
     }
-    
+
     return Infinity
   }
 
@@ -228,21 +230,21 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
 
     // Find pairs of segments that are close together and same orientation
     const mergeCandidates: Array<{ seg1: TraceSegment; seg2: TraceSegment; distance: number }> = []
-    
+
     for (let i = 0; i < allSegments.length; i++) {
       for (let j = i + 1; j < allSegments.length; j++) {
         // Only merge segments from different traces but same net
         if (allSegments[i].trace.mspPairId === allSegments[j].trace.mspPairId) {
           continue // Skip segments from same trace
         }
-        
+
         // Only merge segments with same orientation
         if (allSegments[i].isHorizontal !== allSegments[j].isHorizontal) {
           continue
         }
-        
+
         const distance = this._calculateSegmentDistance(allSegments[i], allSegments[j])
-        
+
         if (distance <= this.proximityThreshold) {
           mergeCandidates.push({
             seg1: allSegments[i],
@@ -260,7 +262,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
 
     // Sort by distance (closest first) and mark traces for merging
     mergeCandidates.sort((a, b) => a.distance - b.distance)
-    
+
     const tracesToMerge = new Set<string>()
     for (const candidate of mergeCandidates) {
       tracesToMerge.add(candidate.seg1.trace.mspPairId)
@@ -271,7 +273,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     // A more sophisticated implementation would actually merge the trace paths
     const mergedTraces: SolvedTracePath[] = []
     const unmergedTraces = traces.filter((t) => tracesToMerge.has(t.mspPairId))
-    
+
     // If we have multiple traces in the same net, try to simplify them
     // by keeping only the most representative one
     if (unmergedTraces.length > 1) {
