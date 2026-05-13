@@ -229,6 +229,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
 
         return [
           {
+            inputProblem: instance.inputProblem,
             traces,
             proximityThreshold: 0.19,
           },
