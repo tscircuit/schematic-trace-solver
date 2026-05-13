@@ -17,28 +17,36 @@ const makeTrace = (
     tracePath,
   }) as SolvedTracePath
 
-test("aligns close same-net horizontal internal segments", () => {
+test("aligns close same-net horizontal segments away from endpoints", () => {
   const traces = [
     makeTrace("a", "net1", [
       { x: 0, y: 0 },
-      { x: 0, y: 1 },
-      { x: 3, y: 1 },
-      { x: 3, y: 2 },
+      { x: 1, y: 0 },
+      { x: 1, y: 1 },
+      { x: 4, y: 1 },
+      { x: 4, y: 2 },
+      { x: 5, y: 2 },
     ]),
     makeTrace("b", "net1", [
       { x: 0, y: 0.08 },
-      { x: 0, y: 1.08 },
-      { x: 3, y: 1.08 },
-      { x: 3, y: 2.08 },
+      { x: 1, y: 0.08 },
+      { x: 1, y: 1.08 },
+      { x: 4, y: 1.08 },
+      { x: 4, y: 2.08 },
+      { x: 5, y: 2.08 },
     ]),
   ]
 
   const result = mergeSameNetCloseSegments({ traces, tolerance: 0.1 })
 
-  expect(result[0]!.tracePath[1]!.y).toBe(1.04)
   expect(result[0]!.tracePath[2]!.y).toBe(1.04)
-  expect(result[1]!.tracePath[1]!.y).toBe(1.04)
+  expect(result[0]!.tracePath[3]!.y).toBe(1.04)
   expect(result[1]!.tracePath[2]!.y).toBe(1.04)
+  expect(result[1]!.tracePath[3]!.y).toBe(1.04)
+  expect(result[0]!.tracePath[0]!.y).toBe(0)
+  expect(result[0]!.tracePath[1]!.y).toBe(0)
+  expect(result[0]!.tracePath[4]!.y).toBe(2)
+  expect(result[0]!.tracePath[5]!.y).toBe(2)
 })
 
 test("does not align segments from different nets", () => {
@@ -83,4 +91,28 @@ test("does not move endpoint segments", () => {
   expect(result[0]!.tracePath[1]!.y).toBe(1)
   expect(result[1]!.tracePath[0]!.y).toBe(1.08)
   expect(result[1]!.tracePath[1]!.y).toBe(1.08)
+})
+
+test("does not move internal segments that share endpoint-adjacent vertices", () => {
+  const traces = [
+    makeTrace("a", "net1", [
+      { x: 0, y: 0 },
+      { x: 0, y: 1 },
+      { x: 3, y: 1 },
+      { x: 3, y: 2 },
+    ]),
+    makeTrace("b", "net1", [
+      { x: 0, y: 0.08 },
+      { x: 0, y: 1.08 },
+      { x: 3, y: 1.08 },
+      { x: 3, y: 2.08 },
+    ]),
+  ]
+
+  const result = mergeSameNetCloseSegments({ traces, tolerance: 0.1 })
+
+  expect(result[0]!.tracePath[1]!.y).toBe(1)
+  expect(result[0]!.tracePath[2]!.y).toBe(1)
+  expect(result[1]!.tracePath[1]!.y).toBe(1.08)
+  expect(result[1]!.tracePath[2]!.y).toBe(1.08)
 })

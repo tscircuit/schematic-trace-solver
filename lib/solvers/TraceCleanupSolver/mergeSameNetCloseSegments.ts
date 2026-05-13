@@ -52,8 +52,8 @@ const rangesAreClose = (a: Segment, b: Segment, tolerance: number): boolean => {
   return gap <= tolerance
 }
 
-const isInternalSegment = (tracePath: Point[], segmentIndex: number) =>
-  segmentIndex > 0 && segmentIndex < tracePath.length - 2
+const isSafeToSnapSegment = (tracePath: Point[], segmentIndex: number) =>
+  segmentIndex > 1 && segmentIndex < tracePath.length - 3
 
 const snapSegment = (
   tracePath: Point[],
@@ -106,7 +106,7 @@ export const mergeSameNetCloseSegments = ({
           segmentAIndex < traceA.tracePath.length - 1;
           segmentAIndex++
         ) {
-          if (!isInternalSegment(traceA.tracePath, segmentAIndex)) continue
+          if (!isSafeToSnapSegment(traceA.tracePath, segmentAIndex)) continue
 
           const segmentA = getSegment(traceA, traceAIndex, segmentAIndex)
           if (!segmentA) continue
@@ -116,7 +116,7 @@ export const mergeSameNetCloseSegments = ({
             segmentBIndex < traceB.tracePath.length - 1;
             segmentBIndex++
           ) {
-            if (!isInternalSegment(traceB.tracePath, segmentBIndex)) continue
+            if (!isSafeToSnapSegment(traceB.tracePath, segmentBIndex)) continue
 
             const segmentB = getSegment(traceB, traceBIndex, segmentBIndex)
             if (!segmentB || segmentA.orientation !== segmentB.orientation) {
