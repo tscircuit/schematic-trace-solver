@@ -64,9 +64,9 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       const mergedTraces = this._combineCloseTraces(traces)
 
       // Update output traces
-        this.outputTraces = this.outputTraces
-          .filter((t) => t.globalConnNetId !== netId)
-          .concat(mergedTraces)
+      this.outputTraces = this.outputTraces
+        .filter((t) => t.globalConnNetId !== netId)
+        .concat(mergedTraces)
 
       this.netsToProcess.shift()
       processed++
@@ -134,10 +134,10 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     if (seg1.isHorizontal && !seg2.isHorizontal) {
       // seg1 is horizontal, seg2 is vertical
       const xDist = Math.abs(seg1.startPoint.x - seg2.startPoint.x)
-        const yOverlap = Math.max(
-          0,
-          Math.min(seg1.maxY, seg2.maxY) - Math.max(seg1.minY, seg2.minY),
-        )
+      const yOverlap = Math.max(
+        0,
+        Math.min(seg1.maxY, seg2.maxY) - Math.max(seg1.minY, seg2.minY),
+      )
       if (yOverlap > 0) {
         return xDist
       }
@@ -152,10 +152,10 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     if (!seg1.isHorizontal && seg2.isHorizontal) {
       // seg1 is vertical, seg2 is horizontal
       const yDist = Math.abs(seg1.startPoint.y - seg2.startPoint.y)
-        const xOverlap = Math.max(
-          0,
+      const xOverlap = Math.max(
+        0,
           Math.min(seg1.maxX, seg2.maxX) - Math.max(seg1.minX, seg2.minX),
-        )
+      )
       if (xOverlap > 0) {
         return yDist
       }
@@ -171,10 +171,10 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     if (seg1.isHorizontal && seg2.isHorizontal) {
       // Both horizontal - check if they're at similar y and overlapping x
       const yDist = Math.abs(seg1.startPoint.y - seg2.startPoint.y)
-        const xOverlap = Math.max(
-          0,
+      const xOverlap = Math.max(
+        0,
           Math.min(seg1.maxX, seg2.maxX) - Math.max(seg1.minX, seg2.minX),
-        )
+      )
       if (xOverlap > 0) {
         return yDist
       }
@@ -202,10 +202,10 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     // Both vertical
     if (!seg1.isHorizontal && !seg2.isHorizontal) {
       const xDist = Math.abs(seg1.startPoint.x - seg2.startPoint.x)
-        const yOverlap = Math.max(
-          0,
-          Math.min(seg1.maxY, seg2.maxY) - Math.max(seg1.minY, seg2.minY),
-        )
+      const yOverlap = Math.max(
+        0,
+        Math.min(seg1.maxY, seg2.maxY) - Math.max(seg1.minY, seg2.minY),
+      )
       if (yOverlap > 0) {
         return xDist
       }
@@ -248,7 +248,11 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     }
 
     // Find pairs of segments that are close together and same orientation
-    const mergeCandidates: Array<{ seg1: TraceSegment; seg2: TraceSegment; distance: number }> = []
+    const mergeCandidates: Array<{
+      seg1: TraceSegment
+      seg2: TraceSegment
+      distance: number
+    }> = []
 
     for (let i = 0; i < allSegments.length; i++) {
       for (let j = i + 1; j < allSegments.length; j++) {
