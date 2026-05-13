@@ -42,16 +42,13 @@ test("CombineCloseTraceSegmentsSolver merges close vertical segments", () => {
 })
 
 test("CombineCloseTraceSegmentsSolver does not merge distant segments", () => {
-  const input = {
-    ...inputData,
-    allTraces: inputData.allTraces.map((t: any, i: number) => ({
-      ...t,
-      // Put the vertical segments far apart (x=2.0 and x=3.5)
-      tracePath: t.tracePath.map((p: any) => ({
-        ...p,
-        x: p.x === 2.5 ? 2.0 : p.x === 2.6 ? 3.5 : p.x,
-      })),
-    })),
+  const input = JSON.parse(JSON.stringify(inputData))
+  // Put the vertical segments far apart (x=2.0 and x=3.5)
+  for (const trace of input.allTraces) {
+    for (const p of trace.tracePath) {
+      if (p.x === 2.5) p.x = 2.0
+      if (p.x === 2.6) p.x = 3.5
+    }
   }
 
   const solver = new CombineCloseTraceSegmentsSolver(input as any)
@@ -81,14 +78,11 @@ test("CombineCloseTraceSegmentsSolver does not merge distant segments", () => {
 })
 
 test("CombineCloseTraceSegmentsSolver skips different nets", () => {
-  const input = {
-    ...inputData,
-    allTraces: inputData.allTraces.map((t: any, i: number) => ({
-      ...t,
-      // Give each trace a different globalConnNetId
-      globalConnNetId: `net_${i}`,
-    })),
-  }
+  const input = JSON.parse(JSON.stringify(inputData))
+  // Give each trace a different globalConnNetId
+  input.allTraces.forEach((t: any, i: number) => {
+    t.globalConnNetId = `net_${i}`
+  })
 
   const solver = new CombineCloseTraceSegmentsSolver(input as any)
   solver.solve()

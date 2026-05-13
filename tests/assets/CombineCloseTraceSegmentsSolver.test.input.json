@@ -41,8 +41,20 @@
       "globalConnNetId": "net1_global",
       "userNetId": "NET1",
       "pins": [
-        { "pinId": "U1.3", "x": 1.0, "y": 0.2, "chipId": "U1", "_facingDirection": "x+" },
-        { "pinId": "U2.1", "x": 4.0, "y": 0.2, "chipId": "U2", "_facingDirection": "x-" }
+        {
+          "pinId": "U1.3",
+          "x": 1.0,
+          "y": 0.2,
+          "chipId": "U1",
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U2.1",
+          "x": 4.0,
+          "y": 0.2,
+          "chipId": "U2",
+          "_facingDirection": "x-"
+        }
       ],
       "tracePath": [
         { "x": 1.0, "y": 0.2 },
@@ -60,8 +72,20 @@
       "globalConnNetId": "net1_global",
       "userNetId": "NET1",
       "pins": [
-        { "pinId": "U1.4", "x": 1.0, "y": -0.2, "chipId": "U1", "_facingDirection": "x+" },
-        { "pinId": "U2.2", "x": 4.0, "y": -0.2, "chipId": "U2", "_facingDirection": "x-" }
+        {
+          "pinId": "U1.4",
+          "x": 1.0,
+          "y": -0.2,
+          "chipId": "U1",
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U2.2",
+          "x": 4.0,
+          "y": -0.2,
+          "chipId": "U2",
+          "_facingDirection": "x-"
+        }
       ],
       "tracePath": [
         { "x": 1.0, "y": -0.2 },

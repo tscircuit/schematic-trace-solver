@@ -72,9 +72,7 @@ export class CombineCloseTraceSegmentsSolver extends BaseSolver {
    * Find two parallel segments from different traces on the same net that
    * are close together (within tolerance) and overlap in the parallel axis.
    */
-  private findCloseSegmentPair(
-    traces: SolvedTracePath[],
-  ): SegmentPair | null {
+  private findCloseSegmentPair(traces: SolvedTracePath[]): SegmentPair | null {
     const tol = this.closenessTolerance
 
     for (let i = 0; i < traces.length; i++) {
