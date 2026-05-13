@@ -154,7 +154,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       const yDist = Math.abs(seg1.startPoint.y - seg2.startPoint.y)
       const xOverlap = Math.max(
         0,
-          Math.min(seg1.maxX, seg2.maxX) - Math.max(seg1.minX, seg2.minX),
+        Math.min(seg1.maxX, seg2.maxX) - Math.max(seg1.minX, seg2.minX),
       )
       if (xOverlap > 0) {
         return yDist
@@ -173,7 +173,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       const yDist = Math.abs(seg1.startPoint.y - seg2.startPoint.y)
       const xOverlap = Math.max(
         0,
-          Math.min(seg1.maxX, seg2.maxX) - Math.max(seg1.minX, seg2.minX),
+        Math.min(seg1.maxX, seg2.maxX) - Math.max(seg1.minX, seg2.minX),
       )
       if (xOverlap > 0) {
         return yDist
@@ -266,7 +266,10 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
           continue
         }
 
-        const distance = this._calculateSegmentDistance(allSegments[i], allSegments[j])
+        const distance = this._calculateSegmentDistance(
+          allSegments[i],
+          allSegments[j],
+        )
 
         if (distance <= this.proximityThreshold) {
           mergeCandidates.push({
@@ -317,10 +320,10 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
   }
 
   override visualize(): GraphicsObject {
-    const graphics = visualizeInputProblem(
-      this.input.inputProblem,
-      { chipAlpha: 0.1, connectionAlpha: 0.1 }
-    )
+    const graphics = visualizeInputProblem(this.input.inputProblem, {
+      chipAlpha: 0.1,
+      connectionAlpha: 0.1,
+    })
 
     if (!graphics.lines) graphics.lines = []
     if (!graphics.points) graphics.points = []
@@ -330,7 +333,16 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
 
     // Color traces by net
     const netColors = new Map<string, string>()
-    const colors = ["green", "blue", "red", "orange", "purple", "cyan", "magenta", "yellow"]
+    const colors = [
+      "green",
+      "blue",
+      "red",
+      "orange",
+      "purple",
+      "cyan",
+      "magenta",
+      "yellow",
+    ]
 
     for (const trace of this.outputTraces) {
       if (!netColors.has(trace.globalConnNetId)) {
