@@ -34,22 +34,16 @@ const sameYProblem: InputProblem = {
       ],
     },
   ],
-  traces: [
-    // Trace from U1.1 to middle point at y=2
-    { net: "NET1", path: [{ x: -0.8, y: 0.2 }, { x: -0.8, y: 2 }, { x: 2, y: 2 }] },
-    // Trace from middle point at y=2 to U2.1 - same Y as above
-    { net: "NET1", path: [{ x: 2, y: 2 }, { x: 3.2, y: 0.2 }] },
-  ],
-  tracePaths: [],
 }
 
 test("merges same-net trace segments at same Y coordinate", async () => {
-  const solver = new SchematicTracePipelineSolver()
-  const result = await solver.solve(sameYProblem)
+  const solver = new SchematicTracePipelineSolver(sameYProblem)
+  solver.solve()
+  const result = solver.sameNetTraceCombiningSolver?.getOutput()
   
   // After merging, there should be fewer trace segments for NET1
   // The two segments at y=2 should be merged into one
-  const net1Traces = result.traces.filter(t => t.net === "NET1")
+  const net1Traces = result?.traces?.filter(t => t.net === "NET1")
   
   // Should merge into a single continuous path
   expect(net1Traces.length).toBeLessThanOrEqual(1)
@@ -73,18 +67,14 @@ const sameXProblem: InputProblem = {
       pins: [{ pinId: "U2.1", x: -0.8, y: 4 }],
     },
   ],
-  traces: [
-    { net: "NET1", path: [{ x: -0.8, y: 0 }, { x: -0.8, y: 2 }] },
-    { net: "NET1", path: [{ x: -0.8, y: 2 }, { x: -0.8, y: 4 }] },
-  ],
-  tracePaths: [],
 }
 
 test("merges same-net trace segments at same X coordinate", async () => {
-  const solver = new SchematicTracePipelineSolver()
-  const result = await solver.solve(sameXProblem)
+  const solver = new SchematicTracePipelineSolver(sameYProblem)
+  solver.solve()
+  const result = solver.sameNetTraceCombiningSolver?.getOutput()
   
-  const net1Traces = result.traces.filter(t => t.net === "NET1")
+  const net1Traces = result?.traces?.filter(t => t.net === "NET1")
   
   // Should merge into a single vertical trace
   expect(net1Traces.length).toBeLessThanOrEqual(1)
