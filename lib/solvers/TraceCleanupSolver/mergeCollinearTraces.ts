@@ -61,8 +61,8 @@ function getSimpleTraceInfo(trace: SolvedTracePath): SimpleTrace | null {
 
   const start = trace.tracePath[0]
   const end = trace.tracePath[1]
-  const isHorizontal = Math.abs(start.y - end.y) < 1e-6
-  const isVertical = Math.abs(start.x - end.x) < 1e-6
+  const isHorizontal = Math.abs(start.y - end.y) < EPS
+  const isVertical = Math.abs(start.x - end.x) < EPS
 
   return {
     trace,
@@ -81,11 +81,17 @@ function canMergeSimpleTraces(
   t2: SimpleTrace,
   threshold = 0.05,
 ): boolean {
-  const netId1 = t1.trace.userNetId ?? t1.trace.globalConnNetId
-  const netId2 = t2.trace.userNetId ?? t2.trace.globalConnNetId
+  // Must share the same global connectivity net (primary check)
+  if (t1.trace.globalConnNetId !== t2.trace.globalConnNetId) return false
 
-  // Must be same net
-  if (netId1 !== netId2) return false
+  // If both traces carry an explicit userNetId, they must agree
+  if (
+    t1.trace.userNetId != null &&
+    t2.trace.userNetId != null &&
+    t1.trace.userNetId !== t2.trace.userNetId
+  ) {
+    return false
+  }
 
   // Both must be horizontal or both vertical
   if (t1.isHorizontal && t2.isHorizontal) {
@@ -139,11 +145,13 @@ function mergeSimpleTraces(t1: SimpleTrace, t2: SimpleTrace): SolvedTracePath {
         { x: minX, y },
         { x: maxX, y },
       ],
-      mspConnectionPairIds: [
-        ...t1.trace.mspConnectionPairIds,
-        ...t2.trace.mspConnectionPairIds,
-      ],
-      pinIds: [...t1.trace.pinIds, ...t2.trace.pinIds],
+      mspConnectionPairIds: Array.from(
+        new Set([
+          ...t1.trace.mspConnectionPairIds,
+          ...t2.trace.mspConnectionPairIds,
+        ]),
+      ),
+      pinIds: Array.from(new Set([...t1.trace.pinIds, ...t2.trace.pinIds])),
     }
   }
   // Vertical
@@ -157,11 +165,13 @@ function mergeSimpleTraces(t1: SimpleTrace, t2: SimpleTrace): SolvedTracePath {
       { x, y: minY },
       { x, y: maxY },
     ],
-    mspConnectionPairIds: [
-      ...t1.trace.mspConnectionPairIds,
-      ...t2.trace.mspConnectionPairIds,
-    ],
-    pinIds: [...t1.trace.pinIds, ...t2.trace.pinIds],
+    mspConnectionPairIds: Array.from(
+      new Set([
+        ...t1.trace.mspConnectionPairIds,
+        ...t2.trace.mspConnectionPairIds,
+      ]),
+    ),
+    pinIds: Array.from(new Set([...t1.trace.pinIds, ...t2.trace.pinIds])),
   }
 }
 
@@ -210,9 +220,18 @@ export function mergeCollinearTraces(
         if (merged.has(j)) continue
 
         if (canMergeSimpleTraces(current, simpleTraces[j], threshold)) {
-          current = getSimpleTraceInfo(
-            mergeSimpleTraces(current, simpleTraces[j]),
-          )!
+          const mergedResult = mergeSimpleTraces(current, simpleTraces[j])
+
+          // Preserve graph connectivity: update the absorbed trace in-place
+          // so downstream solvers (e.g. NetLabelPlacementSolver) that hold
+          // references to individual trace objects see the unified path.
+          simpleTraces[j].trace.tracePath = [...mergedResult.tracePath]
+          simpleTraces[j].trace.mspConnectionPairIds = [
+            ...mergedResult.mspConnectionPairIds,
+          ]
+          simpleTraces[j].trace.pinIds = [...mergedResult.pinIds]
+
+          current = getSimpleTraceInfo(mergedResult)!
           merged.add(j)
           foundMerge = true
           break // Start over to find more merges
