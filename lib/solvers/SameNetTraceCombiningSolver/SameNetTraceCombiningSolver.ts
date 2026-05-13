@@ -66,8 +66,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       // Update output traces
         this.outputTraces = this.outputTraces
           .filter((t) => t.globalConnNetId !== netId)
-        (t) => t.globalConnNetId !== netId
-      ).concat(mergedTraces)
+          .concat(mergedTraces)
 
       this.netsToProcess.shift()
       processed++
