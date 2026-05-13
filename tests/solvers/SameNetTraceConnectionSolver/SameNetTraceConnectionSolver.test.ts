@@ -439,3 +439,26 @@ test("connects chained close same-net segments deterministically", () => {
   expect(result.c!.tracePath[0]).toEqual({ x: 2.05, y: 0 })
   expectManhattan(Object.values(result))
 })
+
+test("continues connecting same-net chains beyond fifty successful passes", () => {
+  const traceCount = 62
+  const result = connect(
+    Array.from({ length: traceCount }, (_, index) =>
+      trace({
+        id: `trace${index}`,
+        globalConnNetId: "NET1",
+        tracePath: [
+          { x: index * 1.1, y: 0 },
+          { x: index * 1.1 + 1, y: 0 },
+        ],
+      }),
+    ),
+  )
+
+  for (let index = 0; index < traceCount - 1; index++) {
+    expect(result[`trace${index}`]!.tracePath[1]).toEqual(
+      result[`trace${index + 1}`]!.tracePath[0],
+    )
+  }
+  expectManhattan(Object.values(result))
+})

@@ -48,6 +48,16 @@ const cloneTraceMap = (traceMap: TraceMap): TraceMap =>
     ]),
   )
 
+const getTraceMapSignature = (traceMap: TraceMap) =>
+  JSON.stringify(
+    Object.entries(traceMap)
+      .sort(([firstId], [secondId]) => firstId.localeCompare(secondId))
+      .map(([id, trace]) => [
+        id,
+        trace.tracePath.map((point) => [point.x, point.y]),
+      ]),
+  )
+
 const getChipObstacles = (inputProblem: InputProblem): Rect[] =>
   inputProblem.chips.map((chip) => ({
     minX: chip.center.x - chip.width / 2,
@@ -500,12 +510,10 @@ export const connectCloseSameNetTraces = ({
   labelObstacles = [],
 }: SameNetTraceConnectionSolverParams): TraceMap => {
   let outputTraceMap = cloneTraceMap(inputTraceMap)
-  let changedInPass = true
-  let passCount = 0
+  const seenTraceMapSignatures = new Set([getTraceMapSignature(outputTraceMap)])
 
-  while (changedInPass && passCount < 50) {
-    changedInPass = false
-    passCount++
+  while (true) {
+    let changedInPass = false
 
     const segmentsByNet = collectSegmentsByNet(outputTraceMap)
 
@@ -522,6 +530,10 @@ export const connectCloseSameNetTraces = ({
           })
 
           if (nextTraceMap) {
+            const nextSignature = getTraceMapSignature(nextTraceMap)
+            if (seenTraceMapSignatures.has(nextSignature)) continue
+
+            seenTraceMapSignatures.add(nextSignature)
             outputTraceMap = nextTraceMap
             changedInPass = true
             break scanSegments
@@ -529,6 +541,8 @@ export const connectCloseSameNetTraces = ({
         }
       }
     }
+
+    if (!changedInPass) break
   }
 
   return outputTraceMap
