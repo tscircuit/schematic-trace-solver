@@ -5,6 +5,7 @@ import type { Point } from "@tscircuit/math-utils"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 
 export interface SameNetTraceCombiningSolverInput {
+  inputProblem: import("lib/types/InputProblem").InputProblem
   traces: SolvedTracePath[]
   /** Maximum distance between traces to consider merging (in schematic units) */
   proximityThreshold?: number
