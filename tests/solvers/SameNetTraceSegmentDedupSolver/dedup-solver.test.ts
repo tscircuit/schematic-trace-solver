@@ -97,31 +97,27 @@ describe("dedupSameNetTraceSegments", () => {
   test("keeps trace with interior duplicates intact", () => {
     // Two traces that share a middle segment but diverge at start and end
     const traces = [
-      makeTrace("a", "NET1", [
-        p(0, 0), p(1, 0), p(2, 0), p(3, 0),
-      ]),
-      makeTrace("b", "NET1", [
-        p(0, 1), p(1, 1), p(1, 0), p(2, 0), p(3, 1),
-      ]), // shares 1,0→2,0 interior segment
+      makeTrace("a", "NET1", [p(0, 0), p(1, 0), p(2, 0), p(3, 0)]),
+      makeTrace("b", "NET1", [p(0, 1), p(1, 1), p(1, 0), p(2, 0), p(3, 1)]), // shares 1,0→2,0 interior segment
     ]
 
     const result = dedupSameNetTraceSegments(traces)
     expect(result.traces).toHaveLength(2)
     // Trace b has interior duplicate — kept intact (not trimmed)
-    expect(result.traces.find((t) => t.mspPairId === "b")!.tracePath).toEqual(
-      [p(0, 1), p(1, 1), p(1, 0), p(2, 0), p(3, 1)],
-    )
+    expect(result.traces.find((t) => t.mspPairId === "b")!.tracePath).toEqual([
+      p(0, 1),
+      p(1, 1),
+      p(1, 0),
+      p(2, 0),
+      p(3, 1),
+    ])
   })
 
   test("handles multiple overlapping traces through common pin (DISCH pattern)", () => {
     // U1.7 shared between R1.2→U1.7 and U1.7→R2.1
     const traces = [
-      makeTrace("dc3", "DISCH", [
-        p(0, 0), p(1, 0), p(2, 0), p(3.05, -1.5),
-      ]),
-      makeTrace("dc4", "DISCH", [
-        p(3.05, -1.5), p(3.935, -1.5), p(5, -1.5),
-      ]),
+      makeTrace("dc3", "DISCH", [p(0, 0), p(1, 0), p(2, 0), p(3.05, -1.5)]),
+      makeTrace("dc4", "DISCH", [p(3.05, -1.5), p(3.935, -1.5), p(5, -1.5)]),
     ]
 
     const result = dedupSameNetTraceSegments(traces)
@@ -137,9 +133,7 @@ describe("dedupSameNetTraceSegments", () => {
   })
 
   test("handles trace with single point (no segments)", () => {
-    const traces = [
-      makeTrace("a", "NET1", [p(0, 0)]),
-    ]
+    const traces = [makeTrace("a", "NET1", [p(0, 0)])]
 
     const result = dedupSameNetTraceSegments(traces)
     expect(result.traces).toHaveLength(1)
