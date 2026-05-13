@@ -5,7 +5,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 function makeTrace(
   mspPairId: string,
   globalConnNetId: string,
-  path: { x: number; y: number }[]
+  path: { x: number; y: number }[],
 ): SolvedTracePath {
   return {
     mspPairId,

@@ -44,18 +44,21 @@ export class SameNetTraceAlignSolver extends BaseSolver {
   private netsToProcess: string[] = []
   private tracesByNet: Map<string, SolvedTracePath[]>
   private outputTraces: SolvedTracePath[]
-  private pendingAlignments: Map<string, { orientation: "h" | "v"; alignTo: number }[]>
+  private pendingAlignments: Map<
+    string,
+    { orientation: "h" | "v"; alignTo: number }[]
+  >
 
-  constructor(
-    traces: SolvedTracePath[],
-    proximityThreshold = 0.19
-  ) {
+  constructor(traces: SolvedTracePath[], proximityThreshold = 0.19) {
     super()
     this.traces = traces
     this.proximityThreshold = proximityThreshold
     this.tracesByNet = this._groupTracesByNet(traces)
     this.netsToProcess = Array.from(this.tracesByNet.keys())
-    this.outputTraces = traces.map((t) => ({ ...t, tracePath: t.tracePath.map((p) => ({ ...p })) }))
+    this.outputTraces = traces.map((t) => ({
+      ...t,
+      tracePath: t.tracePath.map((p) => ({ ...p })),
+    }))
     this.pendingAlignments = new Map()
   }
 
@@ -74,7 +77,7 @@ export class SameNetTraceAlignSolver extends BaseSolver {
   }
 
   private _groupTracesByNet(
-    traces: SolvedTracePath[]
+    traces: SolvedTracePath[],
   ): Map<string, SolvedTracePath[]> {
     const groups = new Map<string, SolvedTracePath[]>()
     for (const trace of traces) {
@@ -85,9 +88,7 @@ export class SameNetTraceAlignSolver extends BaseSolver {
     return groups
   }
 
-  private _extractSegments(
-    traces: SolvedTracePath[]
-  ): TraceSegment[] {
+  private _extractSegments(traces: SolvedTracePath[]): TraceSegment[] {
     const segments: TraceSegment[] = []
     for (const trace of traces) {
       for (let i = 0; i < trace.tracePath.length - 1; i++) {
@@ -109,7 +110,7 @@ export class SameNetTraceAlignSolver extends BaseSolver {
 
   private _clusterSegments(
     segments: TraceSegment[],
-    getCoord: (s: TraceSegment) => number
+    getCoord: (s: TraceSegment) => number,
   ): string[][] {
     if (segments.length === 0) return []
     // Stable IDs: unique per call using original array index
@@ -155,7 +156,10 @@ export class SameNetTraceAlignSolver extends BaseSolver {
     const vSegments = segments.filter((s) => !s.isHorizontal)
 
     // Build cluster map: segmentId → cluster
-    const segmentClusterMap = new Map<string, { orient: "h" | "v"; alignTo: number }>()
+    const segmentClusterMap = new Map<
+      string,
+      { orient: "h" | "v"; alignTo: number }
+    >()
 
     const hClusters = this._clusterSegments(hSegments, (s) => s.fixedCoord)
     for (const cluster of hClusters) {
@@ -187,7 +191,9 @@ export class SameNetTraceAlignSolver extends BaseSolver {
       const align = segmentClusterMap.get(segId)
       if (!align) continue
 
-      const outTrace = this.outputTraces.find((t) => t.mspPairId === seg.traceId)
+      const outTrace = this.outputTraces.find(
+        (t) => t.mspPairId === seg.traceId,
+      )
       if (!outTrace) continue
 
       for (const pt of outTrace.tracePath) {
