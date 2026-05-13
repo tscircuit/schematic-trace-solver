@@ -23,9 +23,7 @@ function isSimpleLineSegment(trace: SolvedTracePath): boolean {
  * collinear with their neighbors. For example, (0,0)→(1,0)→(2,0)→(3,0)
  * becomes (0,0)→(3,0).
  */
-function simplifyTraceCollinearPoints(
-  trace: SolvedTracePath,
-): SolvedTracePath {
+function simplifyTraceCollinearPoints(trace: SolvedTracePath): SolvedTracePath {
   const path = trace.tracePath
   if (path.length <= 2) return trace
 
