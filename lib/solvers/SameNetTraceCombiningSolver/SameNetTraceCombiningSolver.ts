@@ -64,7 +64,8 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       const mergedTraces = this._combineCloseTraces(traces)
 
       // Update output traces
-      this.outputTraces = this.outputTraces.filter(
+        this.outputTraces = this.outputTraces
+          .filter((t) => t.globalConnNetId !== netId)
         (t) => t.globalConnNetId !== netId
       ).concat(mergedTraces)
 
@@ -126,12 +127,18 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
   /**
    * Calculates the minimum distance between two line segments
    */
-  private _calculateSegmentDistance(seg1: TraceSegment, seg2: TraceSegment): number {
+  private _calculateSegmentDistance(
+    seg1: TraceSegment,
+    seg2: TraceSegment,
+  ): number {
     // For horizontal segments
     if (seg1.isHorizontal && !seg2.isHorizontal) {
       // seg1 is horizontal, seg2 is vertical
       const xDist = Math.abs(seg1.startPoint.x - seg2.startPoint.x)
-      const yOverlap = Math.max(0, Math.min(seg1.maxY, seg2.maxY) - Math.max(seg1.minY, seg2.minY))
+        const yOverlap = Math.max(
+          0,
+          Math.min(seg1.maxY, seg2.maxY) - Math.max(seg1.minY, seg2.minY),
+        )
       if (yOverlap > 0) {
         return xDist
       }
@@ -146,7 +153,10 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     if (!seg1.isHorizontal && seg2.isHorizontal) {
       // seg1 is vertical, seg2 is horizontal
       const yDist = Math.abs(seg1.startPoint.y - seg2.startPoint.y)
-      const xOverlap = Math.max(0, Math.min(seg1.maxX, seg2.maxX) - Math.max(seg1.minX, seg2.minX))
+        const xOverlap = Math.max(
+          0,
+          Math.min(seg1.maxX, seg2.maxX) - Math.max(seg1.minX, seg2.minX),
+        )
       if (xOverlap > 0) {
         return yDist
       }
@@ -162,7 +172,10 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     if (seg1.isHorizontal && seg2.isHorizontal) {
       // Both horizontal - check if they're at similar y and overlapping x
       const yDist = Math.abs(seg1.startPoint.y - seg2.startPoint.y)
-      const xOverlap = Math.max(0, Math.min(seg1.maxX, seg2.maxX) - Math.max(seg1.minX, seg2.minX))
+        const xOverlap = Math.max(
+          0,
+          Math.min(seg1.maxX, seg2.maxX) - Math.max(seg1.minX, seg2.minX),
+        )
       if (xOverlap > 0) {
         return yDist
       }
@@ -178,7 +191,9 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       let minDist = Infinity
       for (const c1 of corners) {
         for (const c2 of seg2Corners) {
-          const dist = Math.sqrt(Math.pow(c1.x - c2.x, 2) + Math.pow(c1.y - c2.y, 2))
+          const dist = Math.sqrt(
+            Math.pow(c1.x - c2.x, 2) + Math.pow(c1.y - c2.y, 2),
+          )
           minDist = Math.min(minDist, dist)
         }
       }
@@ -188,7 +203,10 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     // Both vertical
     if (!seg1.isHorizontal && !seg2.isHorizontal) {
       const xDist = Math.abs(seg1.startPoint.x - seg2.startPoint.x)
-      const yOverlap = Math.max(0, Math.min(seg1.maxY, seg2.maxY) - Math.max(seg1.minY, seg2.minY))
+        const yOverlap = Math.max(
+          0,
+          Math.min(seg1.maxY, seg2.maxY) - Math.max(seg1.minY, seg2.minY),
+        )
       if (yOverlap > 0) {
         return xDist
       }
@@ -204,7 +222,9 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       let minDist = Infinity
       for (const c1 of corners) {
         for (const c2 of seg2Corners) {
-          const dist = Math.sqrt(Math.pow(c1.x - c2.x, 2) + Math.pow(c1.y - c2.y, 2))
+          const dist = Math.sqrt(
+            Math.pow(c1.x - c2.x, 2) + Math.pow(c1.y - c2.y, 2),
+          )
           minDist = Math.min(minDist, dist)
         }
       }
