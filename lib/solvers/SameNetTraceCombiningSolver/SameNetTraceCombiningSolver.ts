@@ -293,7 +293,7 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
 
   override visualize(): GraphicsObject {
     const graphics = visualizeInputProblem(
-      this.input.traces[0]?.inputProblem || { chips: [], pins: [], ports: [] },
+      this.input.inputProblem,
       { chipAlpha: 0.1, connectionAlpha: 0.1 }
     )
 
