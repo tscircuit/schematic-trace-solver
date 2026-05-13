@@ -49,7 +49,7 @@ export class CombineCloseTraceSegmentsSolver extends BaseSolver {
     this.closenessTolerance = solverInput.closenessTolerance ?? 0.15
     this.outputTraces = solverInput.allTraces.map((t) => ({
       ...t,
-      tracePath: [...t.tracePath],
+      tracePath: t.tracePath.map((p) => ({ ...p })),
     }))
 
     // Group traces by net
