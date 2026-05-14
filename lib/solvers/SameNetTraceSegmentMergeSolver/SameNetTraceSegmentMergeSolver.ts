@@ -16,6 +16,25 @@ type OrientedJoin = {
   distance: number
 }
 
+type AxisAlignedSegment = {
+  orientation: "horizontal" | "vertical"
+  start: Point
+  end: Point
+  spanMin: number
+  spanMax: number
+  axis: number
+}
+
+type ParallelOverlapMerge = {
+  leftIndex: number
+  rightIndex: number
+  orientation: "horizontal" | "vertical"
+  axis: number
+  spanMin: number
+  spanMax: number
+  distance: number
+}
+
 const DEFAULT_MAX_ENDPOINT_GAP = 0.12
 const EPS = 1e-9
 
@@ -68,6 +87,98 @@ const getNetKey = (trace: SolvedTracePath) =>
   trace.userNetId ?? trace.globalConnNetId ?? trace.dcConnNetId
 
 const getOrientations = (path: Point[]) => [path, [...path].reverse()]
+
+const getSingleAxisAlignedSegment = (
+  path: Point[],
+): AxisAlignedSegment | null => {
+  const simplified = simplifyCollinearPoints(path)
+  if (simplified.length !== 2) return null
+
+  const [start, end] = simplified as [Point, Point]
+  if (Math.abs(start.y - end.y) < EPS) {
+    return {
+      orientation: "horizontal",
+      start,
+      end,
+      spanMin: Math.min(start.x, end.x),
+      spanMax: Math.max(start.x, end.x),
+      axis: start.y,
+    }
+  }
+  if (Math.abs(start.x - end.x) < EPS) {
+    return {
+      orientation: "vertical",
+      start,
+      end,
+      spanMin: Math.min(start.y, end.y),
+      spanMax: Math.max(start.y, end.y),
+      axis: start.x,
+    }
+  }
+  return null
+}
+
+const getSharedAxis = (left: AxisAlignedSegment, right: AxisAlignedSegment) => {
+  const leftLength = left.spanMax - left.spanMin
+  const rightLength = right.spanMax - right.spanMin
+  if (leftLength >= rightLength) return left.axis
+  return right.axis
+}
+
+const makePathOnAxis = (
+  orientation: "horizontal" | "vertical",
+  axis: number,
+  spanMin: number,
+  spanMax: number,
+): Point[] => {
+  if (orientation === "horizontal") {
+    return [
+      { x: spanMin, y: axis },
+      { x: spanMax, y: axis },
+    ]
+  }
+  return [
+    { x: axis, y: spanMin },
+    { x: axis, y: spanMax },
+  ]
+}
+
+const findBestParallelOverlapMerge = (
+  traces: SolvedTracePath[],
+  maxEndpointGap: number,
+): ParallelOverlapMerge | null => {
+  let best: ParallelOverlapMerge | null = null
+
+  for (let i = 0; i < traces.length; i++) {
+    for (let j = i + 1; j < traces.length; j++) {
+      if (getNetKey(traces[i]!) !== getNetKey(traces[j]!)) continue
+
+      const left = getSingleAxisAlignedSegment(traces[i]!.tracePath)
+      const right = getSingleAxisAlignedSegment(traces[j]!.tracePath)
+      if (!left || !right || left.orientation !== right.orientation) continue
+
+      const overlapMin = Math.max(left.spanMin, right.spanMin)
+      const overlapMax = Math.min(left.spanMax, right.spanMax)
+      if (overlapMax - overlapMin <= EPS) continue
+
+      const distance = Math.abs(left.axis - right.axis)
+      if (distance > maxEndpointGap) continue
+      if (best && distance >= best.distance) continue
+
+      best = {
+        leftIndex: i,
+        rightIndex: j,
+        orientation: left.orientation,
+        axis: getSharedAxis(left, right),
+        spanMin: Math.min(left.spanMin, right.spanMin),
+        spanMax: Math.max(left.spanMax, right.spanMax),
+        distance,
+      }
+    }
+  }
+
+  return best
+}
 
 const findBestJoin = (
   traces: SolvedTracePath[],
@@ -124,6 +235,43 @@ export class SameNetTraceSegmentMergeSolver extends BaseSolver {
   }
 
   override _step() {
+    const parallelOverlapMerge = findBestParallelOverlapMerge(
+      this.outputTraces,
+      this.input.maxEndpointGap,
+    )
+    if (parallelOverlapMerge) {
+      const left = this.outputTraces[parallelOverlapMerge.leftIndex]!
+      const right = this.outputTraces[parallelOverlapMerge.rightIndex]!
+
+      const mergedTrace: SolvedTracePath = {
+        ...left,
+        tracePath: makePathOnAxis(
+          parallelOverlapMerge.orientation,
+          parallelOverlapMerge.axis,
+          parallelOverlapMerge.spanMin,
+          parallelOverlapMerge.spanMax,
+        ),
+        mspConnectionPairIds: [
+          ...left.mspConnectionPairIds,
+          ...right.mspConnectionPairIds.filter(
+            (id) => !left.mspConnectionPairIds.includes(id),
+          ),
+        ],
+        pinIds: [
+          ...left.pinIds,
+          ...right.pinIds.filter((id) => !left.pinIds.includes(id)),
+        ],
+      }
+
+      this.outputTraces = this.outputTraces.filter(
+        (_, index) =>
+          index !== parallelOverlapMerge.leftIndex &&
+          index !== parallelOverlapMerge.rightIndex,
+      )
+      this.outputTraces.push(mergedTrace)
+      return
+    }
+
     const join = findBestJoin(this.outputTraces, this.input.maxEndpointGap)
     if (!join) {
       this.solved = true

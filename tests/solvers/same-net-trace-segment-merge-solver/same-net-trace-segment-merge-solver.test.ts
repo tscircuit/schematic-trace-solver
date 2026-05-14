@@ -46,6 +46,32 @@ test("merges same-net trace paths with nearby endpoints", () => {
   ])
 })
 
+test("merges close overlapping same-net parallel segments onto one axis", () => {
+  const solver = new SameNetTraceSegmentMergeSolver({
+    maxEndpointGap: 0.12,
+    traces: [
+      makeTrace("a", "net1", [
+        { x: 0, y: 0 },
+        { x: 2, y: 0 },
+      ]),
+      makeTrace("b", "net1", [
+        { x: 0, y: 0.05 },
+        { x: 2, y: 0.05 },
+      ]),
+    ],
+  })
+
+  solver.solve()
+  const output = solver.getOutput().traces
+
+  expect(output).toHaveLength(1)
+  expect(output[0]!.tracePath).toEqual([
+    { x: 0, y: 0 },
+    { x: 2, y: 0 },
+  ])
+  expect(output[0]!.mspConnectionPairIds).toEqual(["a", "b"])
+})
+
 test("does not merge different-net traces even when endpoints are close", () => {
   const solver = new SameNetTraceSegmentMergeSolver({
     maxEndpointGap: 0.12,
