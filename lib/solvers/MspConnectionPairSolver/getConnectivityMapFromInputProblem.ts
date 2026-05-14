@@ -14,7 +14,9 @@ export const getConnectivityMapsFromInputProblem = (
     ])
   }
 
-  const netConnMap = new ConnectivityMap(directConnMap.netMap)
+  // Shallow copy prevents netConnMap.addConnections() from mutating
+  // directConnMap.netMap (they share the same object reference otherwise).
+  const netConnMap = new ConnectivityMap({ ...directConnMap.netMap })
 
   for (const netConn of inputProblem.netConnections) {
     netConnMap.addConnections([[netConn.netId, ...netConn.pinIds]])

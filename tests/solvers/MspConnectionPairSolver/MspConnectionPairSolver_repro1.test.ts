@@ -10,5 +10,6 @@ test("MspConnectionPairSolver_repro1", () => {
 
   solver.solve()
 
-  expect(solver.mspConnectionPairs.length).toBe(4)
+  // GND is net-only (netConnections), so only VCC and EN direct pairs are routed
+  expect(solver.mspConnectionPairs.length).toBe(2)
 })
