@@ -231,7 +231,10 @@ export class SameNetTraceCombineSolver extends BaseSolver {
           const distance = Math.abs(a.axisCoord - b.axisCoord)
           if (distance < EPS) continue // already shared
           if (distance > this.closeDistanceThreshold) continue
-          if (SameNetTraceCombineSolver.overlap1D(a.min, a.max, b.min, b.max) <= EPS)
+          if (
+            SameNetTraceCombineSolver.overlap1D(a.min, a.max, b.min, b.max) <=
+            EPS
+          )
             continue
           const aShiftable = this.canShiftInteriorSegment(
             netTraces[a.traceIdx]!,
