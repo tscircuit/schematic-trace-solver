@@ -36,7 +36,12 @@ function makeTrace(opts: {
     dcConnNetId: opts.netId,
     globalConnNetId: opts.netId,
     pins: [
-      { pinId: opts.pinIds[0], x: opts.tracePath[0].x, y: opts.tracePath[0].y, chipId: "U1" },
+      {
+        pinId: opts.pinIds[0],
+        x: opts.tracePath[0].x,
+        y: opts.tracePath[0].y,
+        chipId: "U1",
+      },
       {
         pinId: opts.pinIds[1],
         x: opts.tracePath[opts.tracePath.length - 1].x,
@@ -141,7 +146,10 @@ test("CombineSameNetTraceSegmentsPhase - merges close parallel segments", () => 
 
   expect(phase.solved).toBe(true)
   // After merging, should have fewer total trace segments than input
-  const totalInputPoints = traces.reduce((sum, t) => sum + t.tracePath.length, 0)
+  const totalInputPoints = traces.reduce(
+    (sum, t) => sum + t.tracePath.length,
+    0,
+  )
   const totalOutputPoints = phase.outputTraces.reduce(
     (sum, t) => sum + t.tracePath.length,
     0,

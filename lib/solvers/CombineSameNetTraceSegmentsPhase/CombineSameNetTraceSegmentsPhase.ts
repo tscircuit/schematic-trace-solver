@@ -70,7 +70,7 @@ export interface CombineSameNetTraceSegmentsPhaseParams {
 /**
  * Graph-based trace consolidation phase that combines same-net trace segments
  * that are close together using spatial clustering and graph contraction.
- * 
+ *
  * Algorithm:
  * 1. Build a graph from trace segments - nodes are points, edges are segments
  * 2. Spatial clustering using distance threshold to find mergeable nodes
@@ -110,8 +110,14 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
   /**
    * Build graph from traces, grouping by net
    */
-  private buildGraphByNet(): Map<string, { nodes: Map<string, GraphNode>, edges: GraphEdge[] }> {
-    const netGraphs = new Map<string, { nodes: Map<string, GraphNode>, edges: GraphEdge[] }>()
+  private buildGraphByNet(): Map<
+    string,
+    { nodes: Map<string, GraphNode>; edges: GraphEdge[] }
+  > {
+    const netGraphs = new Map<
+      string,
+      { nodes: Map<string, GraphNode>; edges: GraphEdge[] }
+    >()
 
     for (const trace of this.inputTraces) {
       const netId = trace.globalConnNetId
@@ -124,7 +130,7 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
       for (let i = 0; i < trace.tracePath.length; i++) {
         const point = trace.tracePath[i]
         const key = this.pointToKey(point)
-        
+
         if (!graph.nodes.has(key)) {
           const isPinEndpoint = i === 0 || i === trace.tracePath.length - 1
           graph.nodes.set(key, {
@@ -156,7 +162,7 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
    */
   private clusterAndMergeNodes(
     nodes: Map<string, GraphNode>,
-    threshold: number
+    threshold: number,
   ): Map<string, string> {
     const uf = new UnionFind()
     const nodeList = Array.from(nodes.values())
@@ -171,7 +177,7 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
       for (let j = i + 1; j < nodeList.length; j++) {
         const n1 = nodeList[i]
         const n2 = nodeList[j]
-        
+
         // Don't merge pin endpoints with other pin endpoints
         if (n1.isPinEndpoint && n2.isPinEndpoint) {
           continue
@@ -197,7 +203,7 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
    */
   private deduplicateEdges(
     edges: GraphEdge[],
-    nodeMapping: Map<string, string>
+    nodeMapping: Map<string, string>,
   ): GraphEdge[] {
     const edgeSet = new Set<string>()
     const uniqueEdges: GraphEdge[] = []
@@ -211,7 +217,7 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
 
       // Create canonical edge key (sorted to handle bidirectional)
       const edgeKey = from < to ? `${from}->${to}` : `${to}->${from}`
-      
+
       if (!edgeSet.has(edgeKey)) {
         edgeSet.add(edgeKey)
         uniqueEdges.push({ from, to, netId: edge.netId })
@@ -227,7 +233,7 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
   private getRepresentativePoint(
     nodeId: string,
     nodes: Map<string, GraphNode>,
-    nodeMapping: Map<string, string>
+    nodeMapping: Map<string, string>,
   ): Point {
     // Find all nodes that map to this representative
     const clusterNodes: GraphNode[] = []
@@ -245,7 +251,7 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
     }
 
     // Prefer pin endpoints
-    const pinNode = clusterNodes.find(n => n.isPinEndpoint)
+    const pinNode = clusterNodes.find((n) => n.isPinEndpoint)
     if (pinNode) return pinNode.point
 
     // Otherwise, use centroid
@@ -264,14 +270,14 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
     nodes: Map<string, GraphNode>,
     edges: GraphEdge[],
     nodeMapping: Map<string, string>,
-    netId: string
+    netId: string,
   ): SolvedTracePath[] {
     // Build adjacency list
     const adjacency = new Map<string, Set<string>>()
     for (const edge of edges) {
       const from = nodeMapping.get(edge.from) ?? edge.from
       const to = nodeMapping.get(edge.to) ?? edge.to
-      
+
       if (!adjacency.has(from)) adjacency.set(from, new Set())
       if (!adjacency.has(to)) adjacency.set(to, new Set())
       adjacency.get(from)!.add(to)
@@ -309,8 +315,8 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
         // BFS to find path
         const path = this.findPath(startRep, endRep, adjacency, visited)
         if (path.length > 0) {
-          const tracePath = path.map(nodeId => 
-            this.getRepresentativePoint(nodeId, nodes, nodeMapping)
+          const tracePath = path.map((nodeId) =>
+            this.getRepresentativePoint(nodeId, nodes, nodeMapping),
           )
 
           paths.push({
@@ -318,7 +324,12 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
             dcConnNetId: netId,
             globalConnNetId: netId,
             pins: [
-              { pinId: start.pinId!, x: start.point.x, y: start.point.y, chipId: "" },
+              {
+                pinId: start.pinId!,
+                x: start.point.x,
+                y: start.point.y,
+                chipId: "",
+              },
               { pinId: end.pinId!, x: end.point.x, y: end.point.y, chipId: "" },
             ],
             tracePath,
@@ -328,9 +339,10 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
 
           // Mark edges as visited
           for (let k = 0; k < path.length - 1; k++) {
-            const edgeKey = path[k] < path[k + 1] 
-              ? `${path[k]}-${path[k + 1]}`
-              : `${path[k + 1]}-${path[k]}`
+            const edgeKey =
+              path[k] < path[k + 1]
+                ? `${path[k]}-${path[k + 1]}`
+                : `${path[k + 1]}-${path[k]}`
             visited.add(edgeKey)
           }
         }
@@ -347,9 +359,11 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
     start: string,
     end: string,
     adjacency: Map<string, Set<string>>,
-    visitedEdges: Set<string>
+    visitedEdges: Set<string>,
   ): string[] {
-    const queue: { node: string, path: string[] }[] = [{ node: start, path: [start] }]
+    const queue: { node: string; path: string[] }[] = [
+      { node: start, path: [start] },
+    ]
     const visited = new Set<string>([start])
 
     while (queue.length > 0) {
@@ -361,8 +375,9 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
 
       const neighbors = adjacency.get(node) ?? new Set()
       for (const neighbor of neighbors) {
-        const edgeKey = node < neighbor ? `${node}-${neighbor}` : `${neighbor}-${node}`
-        
+        const edgeKey =
+          node < neighbor ? `${node}-${neighbor}` : `${neighbor}-${node}`
+
         if (!visited.has(neighbor) && !visitedEdges.has(edgeKey)) {
           visited.add(neighbor)
           queue.push({ node: neighbor, path: [...path, neighbor] })
@@ -380,13 +395,21 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
     // Process each net independently
     for (const [netId, graph] of netGraphs.entries()) {
       // Cluster and merge nodes
-      const nodeMapping = this.clusterAndMergeNodes(graph.nodes, this.mergeThreshold)
+      const nodeMapping = this.clusterAndMergeNodes(
+        graph.nodes,
+        this.mergeThreshold,
+      )
 
       // Deduplicate edges
       const uniqueEdges = this.deduplicateEdges(graph.edges, nodeMapping)
 
       // Reconstruct paths
-      const paths = this.reconstructPaths(graph.nodes, uniqueEdges, nodeMapping, netId)
+      const paths = this.reconstructPaths(
+        graph.nodes,
+        uniqueEdges,
+        nodeMapping,
+        netId,
+      )
       this.outputTraces.push(...paths)
     }
 
@@ -407,7 +430,10 @@ export class CombineSameNetTraceSegmentsPhase extends BaseSolver {
       })
 
       // Mark endpoints
-      for (const point of [trace.tracePath[0], trace.tracePath[trace.tracePath.length - 1]]) {
+      for (const point of [
+        trace.tracePath[0],
+        trace.tracePath[trace.tracePath.length - 1],
+      ]) {
         graphics.circles.push({
           center: point,
           radius: 0.05,

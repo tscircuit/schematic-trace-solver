@@ -160,10 +160,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       "combineSameNetTraceSegmentsPhase",
       CombineSameNetTraceSegmentsPhase,
       (instance) => {
-        const traces =
-          instance.traceOverlapShiftSolver?.correctedTraceMap
-            ? Object.values(instance.traceOverlapShiftSolver.correctedTraceMap)
-            : instance.longDistancePairSolver!.getOutput().allTracesMerged
+        const traces = instance.traceOverlapShiftSolver?.correctedTraceMap
+          ? Object.values(instance.traceOverlapShiftSolver.correctedTraceMap)
+          : instance.longDistancePairSolver!.getOutput().allTracesMerged
 
         return [
           {
