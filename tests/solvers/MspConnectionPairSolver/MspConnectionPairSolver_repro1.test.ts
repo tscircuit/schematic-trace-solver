@@ -10,5 +10,7 @@ test("MspConnectionPairSolver_repro1", () => {
 
   solver.solve()
 
-  expect(solver.mspConnectionPairs.length).toBe(4)
+  // Only VCC and EN have direct connections; the net-label-only GND net no
+  // longer produces MSP trace pairs (its pins are represented by net labels).
+  expect(solver.mspConnectionPairs.length).toBe(2)
 })
