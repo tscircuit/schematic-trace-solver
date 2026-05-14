@@ -52,6 +52,26 @@ const rangesAreClose = (a: Segment, b: Segment, tolerance: number): boolean => {
   return gap <= tolerance
 }
 
+const rangesOverlap = (a: Segment, b: Segment): boolean =>
+  Math.max(a.rangeStart, b.rangeStart) <= Math.min(a.rangeEnd, b.rangeEnd) + EPS
+
+const rangeContains = (segment: Segment, value: number): boolean =>
+  value >= segment.rangeStart - EPS && value <= segment.rangeEnd + EPS
+
+const segmentsIntersect = (a: Segment, b: Segment): boolean => {
+  if (a.orientation === b.orientation) {
+    return Math.abs(a.fixedCoord - b.fixedCoord) < EPS && rangesOverlap(a, b)
+  }
+
+  const horizontal = a.orientation === "horizontal" ? a : b
+  const vertical = a.orientation === "vertical" ? a : b
+
+  return (
+    rangeContains(horizontal, vertical.fixedCoord) &&
+    rangeContains(vertical, horizontal.fixedCoord)
+  )
+}
+
 const isSafeToSnapSegment = (tracePath: Point[], segmentIndex: number) =>
   segmentIndex > 1 && segmentIndex < tracePath.length - 3
 
@@ -71,6 +91,33 @@ const snapSegment = (
     tracePath[segmentIndex] = { ...p1, x: fixedCoord }
     tracePath[segmentIndex + 1] = { ...p2, x: fixedCoord }
   }
+}
+
+const wouldIntersectDifferentNet = ({
+  segment,
+  traces,
+  sourceNetId,
+}: {
+  segment: Segment
+  traces: SolvedTracePath[]
+  sourceNetId: string
+}): boolean => {
+  for (let traceIndex = 0; traceIndex < traces.length; traceIndex++) {
+    const trace = traces[traceIndex]!
+    if (trace.globalConnNetId === sourceNetId) continue
+
+    for (
+      let segmentIndex = 0;
+      segmentIndex < trace.tracePath.length - 1;
+      segmentIndex++
+    ) {
+      const otherSegment = getSegment(trace, traceIndex, segmentIndex)
+      if (!otherSegment) continue
+      if (segmentsIntersect(segment, otherSegment)) return true
+    }
+  }
+
+  return false
 }
 
 export const mergeSameNetCloseSegments = ({
@@ -135,6 +182,23 @@ export const mergeSameNetCloseSegments = ({
             }
 
             const mergedCoord = (segmentA.fixedCoord + segmentB.fixedCoord) / 2
+            const snappedSegmentA = { ...segmentA, fixedCoord: mergedCoord }
+            const snappedSegmentB = { ...segmentB, fixedCoord: mergedCoord }
+            if (
+              wouldIntersectDifferentNet({
+                segment: snappedSegmentA,
+                traces: outputTraces,
+                sourceNetId: traceA.globalConnNetId,
+              }) ||
+              wouldIntersectDifferentNet({
+                segment: snappedSegmentB,
+                traces: outputTraces,
+                sourceNetId: traceA.globalConnNetId,
+              })
+            ) {
+              continue
+            }
+
             snapSegment(
               outputTraces[segmentA.traceIndex]!.tracePath,
               segmentA.segmentIndex,

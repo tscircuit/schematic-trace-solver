@@ -116,3 +116,79 @@ test("does not move internal segments that share endpoint-adjacent vertices", ()
   expect(result[1]!.tracePath[1]!.y).toBe(1.08)
   expect(result[1]!.tracePath[2]!.y).toBe(1.08)
 })
+
+test("does not merge same-net segments into an overlapping different-net segment", () => {
+  const traces = [
+    makeTrace("a", "net1", [
+      { x: -1, y: -1 },
+      { x: -1, y: 0 },
+      { x: 0, y: 0 },
+      { x: 2, y: 0 },
+      { x: 2, y: 1 },
+      { x: 3, y: 1 },
+    ]),
+    makeTrace("b", "net1", [
+      { x: -1, y: -0.9 },
+      { x: -1, y: 0.1 },
+      { x: 0, y: 0.1 },
+      { x: 2, y: 0.1 },
+      { x: 2, y: 1.1 },
+      { x: 3, y: 1.1 },
+    ]),
+    makeTrace("c", "net2", [
+      { x: -1, y: -0.95 },
+      { x: -1, y: 0.05 },
+      { x: 0, y: 0.05 },
+      { x: 2, y: 0.05 },
+      { x: 2, y: 1.05 },
+      { x: 3, y: 1.05 },
+    ]),
+  ]
+
+  const result = mergeSameNetCloseSegments({ traces, tolerance: 0.11 })
+
+  expect(result[0]!.tracePath[2]!.y).toBe(0)
+  expect(result[0]!.tracePath[3]!.y).toBe(0)
+  expect(result[1]!.tracePath[2]!.y).toBe(0.1)
+  expect(result[1]!.tracePath[3]!.y).toBe(0.1)
+  expect(result[2]!.tracePath[2]!.y).toBe(0.05)
+  expect(result[2]!.tracePath[3]!.y).toBe(0.05)
+})
+
+test("does not merge same-net segments into a crossing different-net segment", () => {
+  const traces = [
+    makeTrace("a", "net1", [
+      { x: -1, y: -1 },
+      { x: -1, y: 0 },
+      { x: 0, y: 0 },
+      { x: 2, y: 0 },
+      { x: 2, y: 1 },
+      { x: 3, y: 1 },
+    ]),
+    makeTrace("b", "net1", [
+      { x: -1, y: -0.9 },
+      { x: -1, y: 0.1 },
+      { x: 0, y: 0.1 },
+      { x: 2, y: 0.1 },
+      { x: 2, y: 1.1 },
+      { x: 3, y: 1.1 },
+    ]),
+    makeTrace("c", "net2", [
+      { x: -1, y: -1 },
+      { x: 1, y: -1 },
+      { x: 1, y: 0.03 },
+      { x: 1, y: 0.07 },
+      { x: 2, y: 0.07 },
+      { x: 3, y: 0.07 },
+    ]),
+  ]
+
+  const result = mergeSameNetCloseSegments({ traces, tolerance: 0.11 })
+
+  expect(result[0]!.tracePath[2]!.y).toBe(0)
+  expect(result[0]!.tracePath[3]!.y).toBe(0)
+  expect(result[1]!.tracePath[2]!.y).toBe(0.1)
+  expect(result[1]!.tracePath[3]!.y).toBe(0.1)
+  expect(result[2]!.tracePath[2]!.x).toBe(1)
+  expect(result[2]!.tracePath[3]!.x).toBe(1)
+})
