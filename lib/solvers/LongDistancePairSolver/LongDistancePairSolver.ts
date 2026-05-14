@@ -67,6 +67,17 @@ export class LongDistancePairSolver extends BaseSolver {
       }
     }
 
+    // Pins that participate in an explicit direct connection. Nets that are
+    // made up purely of net-label connections should not be connected with a
+    // (long-distance) trace "jumping" between their pins; each pin is instead
+    // represented with its own net label.
+    const directlyWiredPinIds = new Set<PinId>()
+    for (const dc of inputProblem.directConnections) {
+      for (const pid of dc.pinIds) {
+        directlyWiredPinIds.add(pid)
+      }
+    }
+
     // 2. Generate candidate pairs using N-Nearest-Neighbors approach
     const candidatePairs: Array<
       [InputPin & { chipId: string }, InputPin & { chipId: string }]
@@ -76,6 +87,9 @@ export class LongDistancePairSolver extends BaseSolver {
     for (const netId of Object.keys(netConnMap.netMap)) {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
+
+      // Skip net-label-only nets (no pin has a direct connection)
+      if (!allPinIdsInNet.some((id) => directlyWiredPinIds.has(id))) continue
 
       const unconnectedPinIds = allPinIdsInNet.filter(
         (pinId) => !primaryConnectedPinIds.has(pinId),
