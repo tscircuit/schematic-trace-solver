@@ -210,12 +210,8 @@ export class CombineCloseTraceSegmentsSolver extends BaseSolver {
         if (!isVertical && !qHorz) continue
         const qCoord = isVertical ? q1.x : q1.y
         if (Math.abs(qCoord - targetCoord) > EPS) continue
-        const qMin = isVertical
-          ? Math.min(q1.y, q2.y)
-          : Math.min(q1.x, q2.x)
-        const qMax = isVertical
-          ? Math.max(q1.y, q2.y)
-          : Math.max(q1.x, q2.x)
+        const qMin = isVertical ? Math.min(q1.y, q2.y) : Math.min(q1.x, q2.x)
+        const qMax = isVertical ? Math.max(q1.y, q2.y) : Math.max(q1.x, q2.x)
         const overlapStart = Math.max(qMin, sharedMin)
         const overlapEnd = Math.min(qMax, sharedMax)
         if (overlapEnd - overlapStart > EPS) return true
