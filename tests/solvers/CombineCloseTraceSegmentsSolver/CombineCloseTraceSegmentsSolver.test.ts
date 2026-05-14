@@ -77,6 +77,67 @@ test("CombineCloseTraceSegmentsSolver does not merge distant segments", () => {
   }
 })
 
+test("CombineCloseTraceSegmentsSolver does not merge onto a different-net segment", () => {
+  // Regression test for the case raised in review:
+  //   net1: vertical segment at x=2.5
+  //   net1: vertical segment at x=2.6
+  //   net2: vertical segment at x=2.55  (right where the average would be)
+  // The naive merge would average the two net1 segments to x=2.55, placing
+  // them exactly on top of the net2 segment — a cross-net short. The solver
+  // must reject this merge.
+  const input = JSON.parse(JSON.stringify(inputData))
+
+  // Build a third trace on a different net, with a vertical segment at the
+  // midpoint of the two existing net1 vertical segments (x=2.55), spanning
+  // the same y range so it overlaps in parallel.
+  const decoyTrace = {
+    mspPairId: "decoy",
+    dcConnNetId: "net2_dc",
+    globalConnNetId: "net2_global",
+    userNetId: "NET2",
+    pins: [],
+    tracePath: [
+      { x: 1.0, y: -0.2 },
+      { x: 2.55, y: -0.2 },
+      { x: 2.55, y: 0.8 },
+      { x: 4.0, y: 0.8 },
+    ],
+    mspConnectionPairIds: ["decoy"],
+    pinIds: [],
+  }
+  input.allTraces.push(decoyTrace)
+
+  const solver = new CombineCloseTraceSegmentsSolver(input as any)
+  solver.solve()
+
+  const output = solver.getOutput()
+
+  // The two net1 traces should NOT both have ended up at x=2.55, which would
+  // overlap the net2 segment.
+  const net1Vertical: number[] = []
+  let net2Vertical: number | null = null
+  for (const trace of output.traces) {
+    for (let i = 0; i < trace.tracePath.length - 1; i++) {
+      const p1 = trace.tracePath[i]!
+      const p2 = trace.tracePath[i + 1]!
+      if (Math.abs(p1.x - p2.x) < 1e-6 && p1.x > 1.5 && p1.x < 3.5) {
+        if (trace.globalConnNetId === "net2_global") {
+          net2Vertical = p1.x
+        } else {
+          net1Vertical.push(p1.x)
+        }
+        break
+      }
+    }
+  }
+
+  expect(net2Vertical).not.toBeNull()
+  // Neither net1 segment should sit on top of the net2 segment.
+  for (const x of net1Vertical) {
+    expect(Math.abs(x - (net2Vertical ?? -999))).toBeGreaterThan(1e-6)
+  }
+})
+
 test("CombineCloseTraceSegmentsSolver skips different nets", () => {
   const input = JSON.parse(JSON.stringify(inputData))
   // Give each trace a different globalConnNetId

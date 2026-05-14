@@ -71,9 +71,14 @@ export class CombineCloseTraceSegmentsSolver extends BaseSolver {
   /**
    * Find two parallel segments from different traces on the same net that
    * are close together (within tolerance) and overlap in the parallel axis.
+   *
+   * Rejects candidates whose merged target axis would land on a different-net
+   * trace segment in the same parallel range — that would introduce a
+   * cross-net short. See `wouldCollideWithDifferentNet`.
    */
   private findCloseSegmentPair(traces: SolvedTracePath[]): SegmentPair | null {
     const tol = this.closenessTolerance
+    const netId = traces[0]?.globalConnNetId ?? ""
 
     for (let i = 0; i < traces.length; i++) {
       const path1 = traces[i]!.tracePath
@@ -105,6 +110,18 @@ export class CombineCloseTraceSegmentsSolver extends BaseSolver {
                   Math.max(b1.y, b2.y),
                 )
                 if (overlapMax - overlapMin > EPS) {
+                  const targetCoord = (a1.x + b1.x) / 2
+                  if (
+                    this.wouldCollideWithDifferentNet(
+                      targetCoord,
+                      overlapMin,
+                      overlapMax,
+                      true,
+                      netId,
+                    )
+                  ) {
+                    continue
+                  }
                   return {
                     traceIdx1: i,
                     segIdx1: si,
@@ -130,6 +147,18 @@ export class CombineCloseTraceSegmentsSolver extends BaseSolver {
                   Math.max(b1.x, b2.x),
                 )
                 if (overlapMax - overlapMin > EPS) {
+                  const targetCoord = (a1.y + b1.y) / 2
+                  if (
+                    this.wouldCollideWithDifferentNet(
+                      targetCoord,
+                      overlapMin,
+                      overlapMax,
+                      false,
+                      netId,
+                    )
+                  ) {
+                    continue
+                  }
                   return {
                     traceIdx1: i,
                     segIdx1: si,
@@ -149,6 +178,50 @@ export class CombineCloseTraceSegmentsSolver extends BaseSolver {
       }
     }
     return null
+  }
+
+  /**
+   * Returns true if moving both candidate segments onto `targetCoord` (with
+   * shared perpendicular range [sharedMin, sharedMax]) would place them on top
+   * of a parallel segment from a different net. This is the check that
+   * prevents same-net merges from accidentally introducing a cross-net short.
+   *
+   * Two segments collide when:
+   *   - they share orientation (both vertical or both horizontal),
+   *   - their parallel-axis coordinates are equal (within EPS) at targetCoord,
+   *   - their perpendicular ranges overlap beyond EPS.
+   */
+  private wouldCollideWithDifferentNet(
+    targetCoord: number,
+    sharedMin: number,
+    sharedMax: number,
+    isVertical: boolean,
+    currentNetId: string,
+  ): boolean {
+    for (const trace of this.outputTraces) {
+      if (trace.globalConnNetId === currentNetId) continue
+      const path = trace.tracePath
+      for (let k = 0; k < path.length - 1; k++) {
+        const q1 = path[k]!
+        const q2 = path[k + 1]!
+        const qVert = Math.abs(q1.x - q2.x) < EPS
+        const qHorz = Math.abs(q1.y - q2.y) < EPS
+        if (isVertical && !qVert) continue
+        if (!isVertical && !qHorz) continue
+        const qCoord = isVertical ? q1.x : q1.y
+        if (Math.abs(qCoord - targetCoord) > EPS) continue
+        const qMin = isVertical
+          ? Math.min(q1.y, q2.y)
+          : Math.min(q1.x, q2.x)
+        const qMax = isVertical
+          ? Math.max(q1.y, q2.y)
+          : Math.max(q1.x, q2.x)
+        const overlapStart = Math.max(qMin, sharedMin)
+        const overlapEnd = Math.min(qMax, sharedMax)
+        if (overlapEnd - overlapStart > EPS) return true
+      }
+    }
+    return false
   }
 
   /**
