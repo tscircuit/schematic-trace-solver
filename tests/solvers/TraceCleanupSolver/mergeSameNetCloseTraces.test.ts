@@ -63,7 +63,9 @@ test("merges two parallel same-net vertical segments that are close", () => {
   ]
 
   const merged = mergeSameNetCloseTraces(traces)
-  expect(Math.abs(merged[0]!.tracePath[1]!.x - merged[1]!.tracePath[1]!.x)).toBeLessThan(1e-6)
+  expect(
+    Math.abs(merged[0]!.tracePath[1]!.x - merged[1]!.tracePath[1]!.x),
+  ).toBeLessThan(1e-6)
 })
 
 test("does not merge segments from different nets", () => {

@@ -64,9 +64,7 @@ export function mergeSameNetCloseTraces(
             pointIndex: pi,
             isHorizontal: isHorz,
             coord: isHorz ? (p1.y + p2.y) / 2 : (p1.x + p2.x) / 2,
-            parallelStart: isHorz
-              ? Math.min(p1.x, p2.x)
-              : Math.min(p1.y, p2.y),
+            parallelStart: isHorz ? Math.min(p1.x, p2.x) : Math.min(p1.y, p2.y),
             parallelEnd: isHorz ? Math.max(p1.x, p2.x) : Math.max(p1.y, p2.y),
           })
         }
