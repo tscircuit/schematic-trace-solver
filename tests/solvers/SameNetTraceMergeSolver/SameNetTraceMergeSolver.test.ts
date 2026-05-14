@@ -74,53 +74,69 @@ test("does not merge same-net endpoints beyond the gap threshold", () => {
   expect(traces[1]!.tracePath[0]).toEqual({ x: 1.3, y: 0 })
 })
 
-test("snaps close overlapping same-net parallel horizontal segments onto a shared y axis", () => {
+test("snaps close overlapping same-net internal horizontal segments onto a shared y axis", () => {
   const traces = mergeSameNetTraceSegments({
     traces: [
       makeTrace("a", "net1", [
+        { x: 0, y: -1 },
         { x: 0, y: 0 },
         { x: 3, y: 0 },
+        { x: 3, y: -1 },
       ]),
       makeTrace("b", "net1", [
+        { x: 1, y: 1 },
         { x: 1, y: 0.08 },
         { x: 4, y: 0.08 },
+        { x: 4, y: 1 },
       ]),
     ],
     gapThreshold: 0.15,
   })
 
   expect(traces[0]!.tracePath).toEqual([
+    { x: 0, y: -1 },
     { x: 0, y: 0.04 },
     { x: 3, y: 0.04 },
+    { x: 3, y: -1 },
   ])
   expect(traces[1]!.tracePath).toEqual([
+    { x: 1, y: 1 },
     { x: 1, y: 0.04 },
     { x: 4, y: 0.04 },
+    { x: 4, y: 1 },
   ])
 })
 
-test("snaps close overlapping same-net parallel vertical segments onto a shared x axis", () => {
+test("snaps close overlapping same-net internal vertical segments onto a shared x axis", () => {
   const traces = mergeSameNetTraceSegments({
     traces: [
       makeTrace("a", "net1", [
+        { x: -1, y: 0 },
         { x: 0, y: 0 },
         { x: 0, y: 3 },
+        { x: -1, y: 3 },
       ]),
       makeTrace("b", "net1", [
+        { x: 1, y: 1 },
         { x: 0.08, y: 1 },
         { x: 0.08, y: 4 },
+        { x: 1, y: 4 },
       ]),
     ],
     gapThreshold: 0.15,
   })
 
   expect(traces[0]!.tracePath).toEqual([
+    { x: -1, y: 0 },
     { x: 0.04, y: 0 },
     { x: 0.04, y: 3 },
+    { x: -1, y: 3 },
   ])
   expect(traces[1]!.tracePath).toEqual([
+    { x: 1, y: 1 },
     { x: 0.04, y: 1 },
     { x: 0.04, y: 4 },
+    { x: 1, y: 4 },
   ])
 })
 
@@ -146,5 +162,42 @@ test("does not snap close parallel segments unless their spans overlap", () => {
   expect(traces[1]!.tracePath).toEqual([
     { x: 1.1, y: 0.08 },
     { x: 2, y: 0.08 },
+  ])
+})
+
+test("does not snap close parallel segments when that would add a different-net crossing", () => {
+  const traces = mergeSameNetTraceSegments({
+    traces: [
+      makeTrace("a", "net1", [
+        { x: 0, y: -1 },
+        { x: 0, y: 0 },
+        { x: 3, y: 0 },
+        { x: 3, y: -1 },
+      ]),
+      makeTrace("b", "net1", [
+        { x: 1, y: 1 },
+        { x: 1, y: 0.08 },
+        { x: 4, y: 0.08 },
+        { x: 4, y: 1 },
+      ]),
+      makeTrace("c", "net2", [
+        { x: 2, y: 0.02 },
+        { x: 2, y: 0.06 },
+      ]),
+    ],
+    gapThreshold: 0.15,
+  })
+
+  expect(traces[0]!.tracePath).toEqual([
+    { x: 0, y: -1 },
+    { x: 0, y: 0 },
+    { x: 3, y: 0 },
+    { x: 3, y: -1 },
+  ])
+  expect(traces[1]!.tracePath).toEqual([
+    { x: 1, y: 1 },
+    { x: 1, y: 0.08 },
+    { x: 4, y: 0.08 },
+    { x: 4, y: 1 },
   ])
 })

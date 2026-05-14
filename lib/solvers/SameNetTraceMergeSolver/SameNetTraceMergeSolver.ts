@@ -117,7 +117,120 @@ function overlappingParallelCandidate(
   const overlapMax = Math.min(first.max, second.max)
   if (overlapMax - overlapMin <= EPSILON) return null
 
-  return { mergedFixed: (first.fixed + second.fixed) / 2 }
+  return true
+}
+
+function isInternalSegment(trace: SolvedTracePath, segment: Segment) {
+  return segment.startIndex > 0 && segment.endIndex < trace.tracePath.length - 1
+}
+
+function getSnappedFixedValue(
+  firstTrace: SolvedTracePath,
+  first: Segment,
+  secondTrace: SolvedTracePath,
+  second: Segment,
+) {
+  const canMoveFirst = isInternalSegment(firstTrace, first)
+  const canMoveSecond = isInternalSegment(secondTrace, second)
+
+  if (canMoveFirst && canMoveSecond) return (first.fixed + second.fixed) / 2
+  if (canMoveFirst) return second.fixed
+  if (canMoveSecond) return first.fixed
+
+  return null
+}
+
+function cloneTraces(traces: SolvedTracePath[]) {
+  return traces.map((trace) => ({
+    ...trace,
+    tracePath: trace.tracePath.map((point) => ({ ...point })),
+  }))
+}
+
+function rangesOverlap(
+  firstMin: number,
+  firstMax: number,
+  secondMin: number,
+  secondMax: number,
+) {
+  return (
+    Math.min(firstMax, secondMax) - Math.max(firstMin, secondMin) >= -EPSILON
+  )
+}
+
+function axisAlignedSegmentsIntersect(
+  firstTrace: SolvedTracePath,
+  first: Segment,
+  secondTrace: SolvedTracePath,
+  second: Segment,
+) {
+  if (first.orientation === second.orientation) {
+    return (
+      almostEqual(first.fixed, second.fixed) &&
+      rangesOverlap(first.min, first.max, second.min, second.max)
+    )
+  }
+
+  const horizontal = first.orientation === "horizontal" ? first : second
+  const vertical = first.orientation === "vertical" ? first : second
+  return (
+    vertical.fixed >= horizontal.min - EPSILON &&
+    vertical.fixed <= horizontal.max + EPSILON &&
+    horizontal.fixed >= vertical.min - EPSILON &&
+    horizontal.fixed <= vertical.max + EPSILON
+  )
+}
+
+function countDifferentNetIntersections(traces: SolvedTracePath[]) {
+  const segments = traces.flatMap((trace, traceIndex) =>
+    getSegments(trace, traceIndex),
+  )
+  let intersections = 0
+
+  for (let i = 0; i < segments.length; i++) {
+    const first = segments[i]!
+    const firstTrace = traces[first.traceIndex]!
+    for (let j = i + 1; j < segments.length; j++) {
+      const second = segments[j]!
+      const secondTrace = traces[second.traceIndex]!
+      if (firstTrace.globalConnNetId === secondTrace.globalConnNetId) continue
+      if (
+        axisAlignedSegmentsIntersect(firstTrace, first, secondTrace, second)
+      ) {
+        intersections++
+      }
+    }
+  }
+
+  return intersections
+}
+
+function moveParallelSegmentsSafely(
+  traces: SolvedTracePath[],
+  first: Segment,
+  second: Segment,
+  snappedFixed: number,
+) {
+  const candidateTraces = cloneTraces(traces)
+  const candidateFirstTrace = candidateTraces[first.traceIndex]!
+  const candidateSecondTrace = candidateTraces[second.traceIndex]!
+
+  if (isInternalSegment(candidateFirstTrace, first)) {
+    moveSegmentFixed(candidateFirstTrace, first, snappedFixed)
+  }
+  if (isInternalSegment(candidateSecondTrace, second)) {
+    moveSegmentFixed(candidateSecondTrace, second, snappedFixed)
+  }
+
+  if (
+    countDifferentNetIntersections(candidateTraces) >
+    countDifferentNetIntersections(traces)
+  ) {
+    return false
+  }
+
+  traces.splice(0, traces.length, ...candidateTraces)
+  return true
 }
 
 function moveSegmentEndpoint(
@@ -207,8 +320,24 @@ export function mergeSameNetTraceSegments({
           gapThreshold,
         )
         if (parallelMerge) {
-          moveSegmentFixed(firstTrace, first, parallelMerge.mergedFixed)
-          moveSegmentFixed(secondTrace, second, parallelMerge.mergedFixed)
+          const snappedFixed = getSnappedFixedValue(
+            firstTrace,
+            first,
+            secondTrace,
+            second,
+          )
+          if (snappedFixed === null) continue
+
+          if (
+            !moveParallelSegmentsSafely(
+              mergedTraces,
+              first,
+              second,
+              snappedFixed,
+            )
+          ) {
+            continue
+          }
           changed = true
           break outer
         }
