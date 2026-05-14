@@ -2,6 +2,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject, Line } from "graphics-debug"
 import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
 import { balanceZShapes } from "./balanceZShapes"
+import { mergeSameNetCloseTraces } from "./mergeSameNetCloseTraces"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
@@ -25,6 +26,7 @@ import { is4PointRectangle } from "./is4PointRectangle"
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "merging_same_net_traces"
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
@@ -66,10 +68,10 @@ export class TraceCleanupSolver extends BaseSolver {
         this.outputTraces = output.traces
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "merging_same_net_traces"
       } else if (this.activeSubSolver.failed) {
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "merging_same_net_traces"
       }
       return
     }
@@ -78,6 +80,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "untangling_traces":
         this._runUntangleTracesStep()
         break
+      case "merging_same_net_traces":
+        this._runMergeSameNetTracesStep()
+        break
       case "minimizing_turns":
         this._runMinimizeTurnsStep()
         break
@@ -85,6 +90,14 @@ export class TraceCleanupSolver extends BaseSolver {
         this._runBalanceLShapesStep()
         break
     }
+  }
+
+  private _runMergeSameNetTracesStep() {
+    this.outputTraces = mergeSameNetCloseTraces(
+      Array.from(this.tracesMap.values()),
+    )
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.pipelineStep = "minimizing_turns"
   }
 
   private _runUntangleTracesStep() {
