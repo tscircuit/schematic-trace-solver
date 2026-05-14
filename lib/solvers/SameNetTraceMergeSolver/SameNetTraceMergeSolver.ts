@@ -37,6 +37,15 @@ function setAxisValue(
   else point.y = value
 }
 
+function setFixedValue(
+  point: { x: number; y: number },
+  orientation: "horizontal" | "vertical",
+  value: number,
+) {
+  if (orientation === "horizontal") point.y = value
+  else point.x = value
+}
+
 function getSegments(trace: SolvedTracePath, traceIndex: number): Segment[] {
   const segments: Segment[] = []
 
@@ -93,6 +102,24 @@ function endpointCandidate(
   return null
 }
 
+function overlappingParallelCandidate(
+  first: Segment,
+  second: Segment,
+  gapThreshold: number,
+) {
+  if (first.traceIndex === second.traceIndex) return null
+  if (first.orientation !== second.orientation) return null
+
+  const fixedDistance = Math.abs(first.fixed - second.fixed)
+  if (fixedDistance <= EPSILON || fixedDistance > gapThreshold) return null
+
+  const overlapMin = Math.max(first.min, second.min)
+  const overlapMax = Math.min(first.max, second.max)
+  if (overlapMax - overlapMin <= EPSILON) return null
+
+  return { mergedFixed: (first.fixed + second.fixed) / 2 }
+}
+
 function moveSegmentEndpoint(
   trace: SolvedTracePath,
   segment: Segment,
@@ -106,6 +133,24 @@ function moveSegmentEndpoint(
       setAxisValue(point, segment.orientation, replacementAxisValue)
     }
   }
+}
+
+function moveSegmentFixed(
+  trace: SolvedTracePath,
+  segment: Segment,
+  replacementFixedValue: number,
+) {
+  const points = trace.tracePath
+  setFixedValue(
+    points[segment.startIndex]!,
+    segment.orientation,
+    replacementFixedValue,
+  )
+  setFixedValue(
+    points[segment.endIndex]!,
+    segment.orientation,
+    replacementFixedValue,
+  )
 }
 
 export function mergeSameNetTraceSegments({
@@ -136,19 +181,37 @@ export function mergeSameNetTraceSegments({
 
         if (firstTrace.globalConnNetId !== secondTrace.globalConnNetId) continue
 
-        const candidate = endpointCandidate(first, second, gapThreshold)
-        if (!candidate) continue
+        const endpointMerge = endpointCandidate(first, second, gapThreshold)
+        if (endpointMerge) {
+          const mergedAxis =
+            (endpointMerge.firstAxis + endpointMerge.secondAxis) / 2
+          moveSegmentEndpoint(
+            firstTrace,
+            first,
+            endpointMerge.firstAxis,
+            mergedAxis,
+          )
+          moveSegmentEndpoint(
+            secondTrace,
+            second,
+            endpointMerge.secondAxis,
+            mergedAxis,
+          )
+          changed = true
+          break outer
+        }
 
-        const mergedAxis = (candidate.firstAxis + candidate.secondAxis) / 2
-        moveSegmentEndpoint(firstTrace, first, candidate.firstAxis, mergedAxis)
-        moveSegmentEndpoint(
-          secondTrace,
+        const parallelMerge = overlappingParallelCandidate(
+          first,
           second,
-          candidate.secondAxis,
-          mergedAxis,
+          gapThreshold,
         )
-        changed = true
-        break outer
+        if (parallelMerge) {
+          moveSegmentFixed(firstTrace, first, parallelMerge.mergedFixed)
+          moveSegmentFixed(secondTrace, second, parallelMerge.mergedFixed)
+          changed = true
+          break outer
+        }
       }
     }
   }
