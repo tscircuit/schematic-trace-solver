@@ -20,6 +20,7 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { SameNetTraceCombiningSolverWrapper } from "../SameNetTraceCombiningSolver/SameNetTraceCombiningSolverWrapper"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -69,6 +70,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
+  sameNetTraceCombiningSolver?: SameNetTraceCombiningSolverWrapper
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -222,6 +224,17 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             ),
           },
         ]
+      },
+    ),
+    // Same-net trace combining: merge parallel segments on the same net
+    definePipelineStep(
+      "sameNetTraceCombiningSolver",
+      SameNetTraceCombiningSolverWrapper,
+      (instance) => {
+        const traces =
+          instance.traceCleanupSolver?.getOutput().traces ??
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+        return [{ traces }]
       },
     ),
   ]
