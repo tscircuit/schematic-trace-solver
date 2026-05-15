@@ -100,7 +100,9 @@ export class TraceCleanupSolver extends BaseSolver {
   }
 
   private _runSnapSameNetParallelTracesStep() {
-    const snapped = snapSameNetParallelTraces(Array.from(this.tracesMap.values()))
+    const snapped = snapSameNetParallelTraces(
+      Array.from(this.tracesMap.values()),
+    )
     this.outputTraces = snapped
     this.tracesMap = new Map(snapped.map((t) => [t.mspPairId, t]))
     this.traceIdQueue = Array.from(this.input.allTraces.map((e) => e.mspPairId))

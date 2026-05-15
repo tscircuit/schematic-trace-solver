@@ -11,9 +11,7 @@ interface Segment {
   rangeMax: number // x-max for horizontal, y-max for vertical
 }
 
-function getSegments(
-  traces: SolvedTracePath[],
-): Segment[] {
+function getSegments(traces: SolvedTracePath[]): Segment[] {
   const segments: Segment[] = []
   for (let ti = 0; ti < traces.length; ti++) {
     const { tracePath } = traces[ti]
@@ -124,7 +122,10 @@ export function snapSameNetParallelTraces(
 
           const dist = Math.abs(sa.coord - sb.coord)
           if (dist < 1e-9 || dist > SNAP_THRESHOLD) continue
-          if (!rangesOverlap(sa.rangeMin, sa.rangeMax, sb.rangeMin, sb.rangeMax)) continue
+          if (
+            !rangesOverlap(sa.rangeMin, sa.rangeMax, sb.rangeMin, sb.rangeMax)
+          )
+            continue
 
           // Snap both to midpoint
           const mid = (sa.coord + sb.coord) / 2
