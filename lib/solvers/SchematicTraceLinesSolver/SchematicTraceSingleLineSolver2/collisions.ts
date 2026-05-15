@@ -13,24 +13,31 @@ export const segmentIntersectsRect = (
   b: Point,
   r: ChipWithBounds,
   eps = EPS,
+  thickness = 0,
 ): boolean => {
   const vert = isVertical(a, b, eps)
   const horz = isHorizontal(a, b, eps)
   if (!vert && !horz) return false
 
+  const pad = thickness / 2
+  const rMinX = r.minX - pad
+  const rMaxX = r.maxX + pad
+  const rMinY = r.minY - pad
+  const rMaxY = r.maxY + pad
+
   if (vert) {
     const x = a.x
-    if (x < r.minX - eps || x > r.maxX + eps) return false
+    if (x < rMinX - eps || x > rMaxX + eps) return false
     const segMinY = Math.min(a.y, b.y)
     const segMaxY = Math.max(a.y, b.y)
-    const overlap = Math.min(segMaxY, r.maxY) - Math.max(segMinY, r.minY)
+    const overlap = Math.min(segMaxY, rMaxY) - Math.max(segMinY, rMinY)
     return overlap > eps
   } else {
     const y = a.y
-    if (y < r.minY - eps || y > r.maxY + eps) return false
+    if (y < rMinY - eps || y > rMaxY + eps) return false
     const segMinX = Math.min(a.x, b.x)
     const segMaxX = Math.max(a.x, b.x)
-    const overlap = Math.min(segMaxX, r.maxX) - Math.max(segMinX, r.minX)
+    const overlap = Math.min(segMaxX, rMaxX) - Math.max(segMinX, rMinX)
     return overlap > eps
   }
 }
