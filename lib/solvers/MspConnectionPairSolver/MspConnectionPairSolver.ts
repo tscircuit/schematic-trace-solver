@@ -94,7 +94,11 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     const dcNetId = this.queuedDcNetIds.shift()!
 
-    const allIds = this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[]
+    // Only pins that share a *direct* connection should be paired into a
+    // routed trace. Pins linked only via a net connection (net label) are
+    // expressed visually by the label itself, not by an MSP-routed trace.
+    // See repro61 (tscircuit/schematic-trace-solver#79).
+    const allIds = this.dcConnMap.getIdsConnectedToNet(dcNetId) as string[]
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
     if (directlyConnectedPins.length <= 1) {

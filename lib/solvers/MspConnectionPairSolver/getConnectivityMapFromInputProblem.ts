@@ -14,7 +14,11 @@ export const getConnectivityMapsFromInputProblem = (
     ])
   }
 
-  const netConnMap = new ConnectivityMap(directConnMap.netMap)
+  // ConnectivityMap stores the netMap by reference; if we passed
+  // `directConnMap.netMap` directly, subsequent `netConnMap.addConnections`
+  // calls would mutate `directConnMap` too, polluting the "direct only" view.
+  // Clone so the two maps stay independent. (See repro61, tscircuit/schematic-trace-solver#79.)
+  const netConnMap = new ConnectivityMap(structuredClone(directConnMap.netMap))
 
   for (const netConn of inputProblem.netConnections) {
     netConnMap.addConnections([[netConn.netId, ...netConn.pinIds]])

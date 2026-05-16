@@ -52,9 +52,11 @@ export class LongDistancePairSolver extends BaseSolver {
 
     // 1. Create initial maps and sets for efficient lookup
     const primaryConnectedPinIds = new Set<PinId>()
+    const netsWithPrimaryPairs = new Set<string>()
     for (const pair of primaryMspConnectionPairs) {
       primaryConnectedPinIds.add(pair.pins[0].pinId)
       primaryConnectedPinIds.add(pair.pins[1].pinId)
+      netsWithPrimaryPairs.add(pair.globalConnNetId)
     }
 
     const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
@@ -74,6 +76,12 @@ export class LongDistancePairSolver extends BaseSolver {
     const addedPairKeys = new Set<string>()
 
     for (const netId of Object.keys(netConnMap.netMap)) {
+      // Long-distance routing only "fills in" pins on a net that is already
+      // partially routed via a direct connection. Nets that exist only as
+      // net-label connections should remain label-only — drawing extra traces
+      // here is the bug seen in repro61 (issue #79).
+      if (!netsWithPrimaryPairs.has(netId)) continue
+
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
 
