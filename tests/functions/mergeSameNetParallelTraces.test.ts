@@ -6,7 +6,7 @@ describe("mergeSameNetParallelTraces", () => {
   test("merges two horizontal segments on the same net that are very close in Y", () => {
     const traceA: SolvedTracePath = {
       mspPairId: "net1_A",
-      netId: "net1",
+      globalConnNetId: "net1",
       tracePath: [
         { x: 0, y: 0 },
         { x: 4, y: 0 },
@@ -18,7 +18,7 @@ describe("mergeSameNetParallelTraces", () => {
 
     const traceB: SolvedTracePath = {
       mspPairId: "net1_B",
-      netId: "net1",
+      globalConnNetId: "net1",
       tracePath: [
         { x: 1, y: 0.03 }, // only 0.03 away — should be snapped to y=0
         { x: 3, y: 0.03 },
@@ -38,7 +38,7 @@ describe("mergeSameNetParallelTraces", () => {
   test("does not merge segments on different nets", () => {
     const traceA: SolvedTracePath = {
       mspPairId: "net1_A",
-      netId: "net1",
+      globalConnNetId: "net1",
       tracePath: [
         { x: 0, y: 0 },
         { x: 4, y: 0 },
@@ -50,7 +50,7 @@ describe("mergeSameNetParallelTraces", () => {
 
     const traceB: SolvedTracePath = {
       mspPairId: "net2_B",
-      netId: "net2",
+      globalConnNetId: "net2",
       tracePath: [
         { x: 1, y: 0.03 },
         { x: 3, y: 0.03 },
@@ -69,7 +69,7 @@ describe("mergeSameNetParallelTraces", () => {
   test("does not merge segments far apart", () => {
     const traceA: SolvedTracePath = {
       mspPairId: "net1_A",
-      netId: "net1",
+      globalConnNetId: "net1",
       tracePath: [
         { x: 0, y: 0 },
         { x: 4, y: 0 },
@@ -81,7 +81,7 @@ describe("mergeSameNetParallelTraces", () => {
 
     const traceB: SolvedTracePath = {
       mspPairId: "net1_B",
-      netId: "net1",
+      globalConnNetId: "net1",
       tracePath: [
         { x: 1, y: 0.5 }, // 0.5 away — too far, should NOT be merged
         { x: 3, y: 0.5 },

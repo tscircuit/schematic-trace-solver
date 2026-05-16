@@ -72,7 +72,7 @@ export function mergeSameNetParallelTraces(
   const netToTraceIndices = new Map<string, number[]>()
   for (let i = 0; i < traces.length; i++) {
     const trace = traces[i]
-    const netId = trace.netId ?? trace.mspPairId
+    const netId = trace.userNetId ?? trace.globalConnNetId ?? trace.mspPairId
     if (!netToTraceIndices.has(netId)) {
       netToTraceIndices.set(netId, [])
     }
