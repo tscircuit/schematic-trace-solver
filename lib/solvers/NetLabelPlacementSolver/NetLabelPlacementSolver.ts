@@ -103,7 +103,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
     }
 
     // Build global connectivity from input so we also consider pins with no traces
-    const { netConnMap } = getConnectivityMapsFromInputProblem(
+    const { netConnMap, directConnMap } = getConnectivityMapsFromInputProblem(
       this.inputProblem,
     )
 
@@ -186,62 +186,94 @@ export class NetLabelPlacementSolver extends BaseSolver {
             component.has(t.pins[0].pinId) && component.has(t.pins[1].pinId),
         )
 
-        if (compTraces.length > 0) {
-          // Choose a representative trace (longest by L1 length)
-          const lengthOf = (path: SolvedTracePath) => {
-            let sum = 0
-            const pts = path.tracePath
-            for (let i = 0; i < pts.length - 1; i++) {
-              sum +=
-                Math.abs(pts[i + 1]!.x - pts[i]!.x) +
-                Math.abs(pts[i + 1]!.y - pts[i]!.y)
-            }
-            return sum
-          }
-          let rep = compTraces[0]!
-          let repLen = lengthOf(rep)
-          for (let i = 1; i < compTraces.length; i++) {
-            const len = lengthOf(compTraces[i]!)
-            if (len > repLen) {
-              rep = compTraces[i]!
-              repLen = len
-            }
-          }
-
-          let userNetId = compTraces.find((t) => t.userNetId != null)?.userNetId
-          if (!userNetId) {
-            for (const p of component) {
-              if (userNetIdByPinId[p]) {
-                userNetId = userNetIdByPinId[p]
-                break
+        // Check if this component is part of a global net that has multiple disconnected trace/pin components.
+        // If there's only 1 component, it means EVERYTHING in that global net is connected by traces.
+        // In that case, we don't need a net label.
+        const numComponentsInGlobalNet = (() => {
+          const visitedInGlobal = new Set<string>()
+          let count = 0
+          for (const p of pinsInNet) {
+            if (visitedInGlobal.has(p)) continue
+            count++
+            const q = [p]
+            visitedInGlobal.add(p)
+            while (q.length > 0) {
+              const u = q.pop()!
+              for (const v of adj[u] ?? []) {
+                if (!visitedInGlobal.has(v)) {
+                  visitedInGlobal.add(v)
+                  q.push(v)
+                }
               }
             }
           }
-          const mspConnectionPairIds = Array.from(
-            new Set(
-              compTraces.flatMap(
-                (t) => t.mspConnectionPairIds ?? [t.mspPairId],
-              ),
-            ),
-          )
+          return count
+        })()
 
-          const group = {
-            globalConnNetId,
-            netId: userNetId,
-            overlappingTraces: rep,
-            mspConnectionPairIds,
-          }
-          groups.push(group)
-        } else {
-          // No traces in this component: place label at each pin that has a user net id
-          for (const p of component) {
-            const userNetId = userNetIdByPinId[p]
-            if (!userNetId) continue
-            groups.push({
+        if (
+          numComponentsInGlobalNet > 1 ||
+          directConnMap.getNetConnectedToId(
+            component.values().next().value,
+          ) !== globalConnNetId
+        ) {
+          if (compTraces.length > 0) {
+            // Choose a representative trace (longest by L1 length)
+            const lengthOf = (path: SolvedTracePath) => {
+              let sum = 0
+              const pts = path.tracePath
+              for (let i = 0; i < pts.length - 1; i++) {
+                sum +=
+                  Math.abs(pts[i + 1]!.x - pts[i]!.x) +
+                  Math.abs(pts[i + 1]!.y - pts[i]!.y)
+              }
+              return sum
+            }
+            let rep = compTraces[0]!
+            let repLen = lengthOf(rep)
+            for (let i = 1; i < compTraces.length; i++) {
+              const len = lengthOf(compTraces[i]!)
+              if (len > repLen) {
+                rep = compTraces[i]!
+                repLen = len
+              }
+            }
+
+            let userNetId = compTraces.find((t) => t.userNetId != null)
+              ?.userNetId
+            if (!userNetId) {
+              for (const p of component) {
+                if (userNetIdByPinId[p]) {
+                  userNetId = userNetIdByPinId[p]
+                  break
+                }
+              }
+            }
+            const mspConnectionPairIds = Array.from(
+              new Set(
+                compTraces.flatMap(
+                  (t) => t.mspConnectionPairIds ?? [t.mspPairId],
+                ),
+              ),
+            )
+
+            const group = {
               globalConnNetId,
               netId: userNetId,
-              portOnlyPinId: p,
-            })
+              overlappingTraces: rep,
+              mspConnectionPairIds,
+            }
+            groups.push(group)
+          } else {
+            // No traces in this component: place label at each pin that has a user net id
+            for (const p of component) {
+              const userNetId = userNetIdByPinId[p]
+              if (!userNetId) continue
+              groups.push({
+                globalConnNetId,
+                netId: userNetId,
+                portOnlyPinId: p,
+              })
+            }
           }
         }
       }

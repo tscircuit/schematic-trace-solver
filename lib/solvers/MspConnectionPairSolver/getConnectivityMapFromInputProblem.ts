@@ -17,7 +17,9 @@ export const getConnectivityMapsFromInputProblem = (
   const netConnMap = new ConnectivityMap(directConnMap.netMap)
 
   for (const netConn of inputProblem.netConnections) {
-    netConnMap.addConnections([[netConn.netId, ...netConn.pinIds]])
+    netConnMap.addConnections([
+      netConn.netId ? [netConn.netId, ...netConn.pinIds] : netConn.pinIds,
+    ])
   }
 
   return { directConnMap, netConnMap }
