@@ -79,7 +79,10 @@ function tryJoinByEndpoint(
     ...a,
     mspPairId: `merged-${a.mspPairId}+${b.mspPairId}`,
     tracePath: mergedPath,
-    mspConnectionPairIds: [...a.mspConnectionPairIds, ...b.mspConnectionPairIds],
+    mspConnectionPairIds: [
+      ...a.mspConnectionPairIds,
+      ...b.mspConnectionPairIds,
+    ],
     pinIds: [...a.pinIds, ...b.pinIds],
   }
 }
@@ -89,7 +92,10 @@ export class SameNetTraceMergeSolver extends BaseSolver {
   outputTraces: SolvedTracePath[]
   maxEndpointGap: number
 
-  constructor({ traces, maxEndpointGap = 0.12 }: SameNetTraceMergeSolverParams) {
+  constructor({
+    traces,
+    maxEndpointGap = 0.12,
+  }: SameNetTraceMergeSolverParams) {
     super()
     this.inputTraces = [...traces]
     this.outputTraces = [...traces]
