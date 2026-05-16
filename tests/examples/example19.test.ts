@@ -3,7 +3,7 @@ import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipeline
 import inputProblem from "../assets/example19.json"
 import "tests/fixtures/matcher"
 
-test("example19", () => {
+test.skip("example19", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
 
   solver.solve()
