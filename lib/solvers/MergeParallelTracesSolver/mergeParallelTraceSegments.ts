@@ -156,11 +156,6 @@ const mergeTracePair = (
     return p
   })
 
-  const pinIds = [...new Set([...kept.pinIds, ...removed.pinIds])]
-  const pinsById = new Map(
-    [...kept.pins, ...removed.pins].map((pin) => [pin.pinId, pin]),
-  )
-
   return {
     ...kept,
     tracePath: simplifyPath(tracePath),
@@ -170,8 +165,7 @@ const mergeTracePair = (
         ...removed.mspConnectionPairIds,
       ]),
     ],
-    pinIds,
-    pins: pinIds.map((pinId) => pinsById.get(pinId)!),
+    pinIds: [...new Set([...kept.pinIds, ...removed.pinIds])],
   }
 }
 
