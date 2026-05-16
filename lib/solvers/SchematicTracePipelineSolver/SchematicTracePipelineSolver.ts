@@ -179,13 +179,12 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       () => [
         {
           inputProblem: this.inputProblem,
-          inputTraceMap:
-            this.traceOverlapShiftSolver?.correctedTraceMap ??
-            Object.fromEntries(
-              this.longDistancePairSolver!.getOutput().allTracesMerged.map(
-                (p) => [p.mspPairId, p],
-              ),
-            ),
+          inputTraceMap: Object.fromEntries(
+            this.combineSameNetTraceSegmentsPhase!.outputTraces.map((p) => [
+              p.mspPairId,
+              p,
+            ]),
+          ),
         },
       ],
       {
@@ -198,14 +197,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       "traceLabelOverlapAvoidanceSolver",
       TraceLabelOverlapAvoidanceSolver,
       (instance) => {
-        const traceMap =
-          instance.traceOverlapShiftSolver?.correctedTraceMap ??
-          Object.fromEntries(
-            instance
-              .longDistancePairSolver!.getOutput()
-              .allTracesMerged.map((p) => [p.mspPairId, p]),
-          )
-        const traces = Object.values(traceMap)
+        const traces = instance.combineSameNetTraceSegmentsPhase!.outputTraces
         const netLabelPlacements =
           instance.netLabelPlacementSolver!.netLabelPlacements
 
