@@ -131,7 +131,8 @@ const findConsolidatableSegmentPair = (
   if (!segmentA || !segmentB) return null
   if (segmentA.orientation !== segmentB.orientation) return null
   if (
-    Math.abs(segmentA.fixedCoordinate - segmentB.fixedCoordinate) > mergeDistance
+    Math.abs(segmentA.fixedCoordinate - segmentB.fixedCoordinate) >
+    mergeDistance
   ) {
     return null
   }
@@ -189,7 +190,9 @@ const consolidateRedundantParallelTraces = (
 
     outer: for (let indexA = 0; indexA < result.length; indexA++) {
       for (let indexB = indexA + 1; indexB < result.length; indexB++) {
-        if (result[indexA]!.globalConnNetId !== result[indexB]!.globalConnNetId) {
+        if (
+          result[indexA]!.globalConnNetId !== result[indexB]!.globalConnNetId
+        ) {
           continue
         }
 
