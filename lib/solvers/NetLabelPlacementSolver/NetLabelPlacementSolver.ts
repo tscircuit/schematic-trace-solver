@@ -213,7 +213,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
         if (
           numComponentsInGlobalNet > 1 ||
           directConnMap.getNetConnectedToId(
-            component.values().next().value,
+            component.values().next().value!,
           ) !== globalConnNetId
         ) {
           if (compTraces.length > 0) {
@@ -238,8 +238,9 @@ export class NetLabelPlacementSolver extends BaseSolver {
               }
             }
 
-            let userNetId = compTraces.find((t) => t.userNetId != null)
-              ?.userNetId
+            let userNetId = compTraces.find(
+              (t) => t.userNetId != null,
+            )?.userNetId
             if (!userNetId) {
               for (const p of component) {
                 if (userNetIdByPinId[p]) {

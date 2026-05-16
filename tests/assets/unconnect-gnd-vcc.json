@@ -23,8 +23,18 @@
   ],
   "directConnections": [],
   "netConnections": [
-    { "netId": "GND", "pinIds": ["C1.1", "C2.1"], "netLabelWidth": 0.3, "globalConnNetId": "GND" },
-    { "netId": "VCC", "pinIds": ["C1.2", "C2.2"], "netLabelWidth": 0.3, "globalConnNetId": "VCC" }
+    {
+      "netId": "GND",
+      "pinIds": ["C1.1", "C2.1"],
+      "netLabelWidth": 0.3,
+      "globalConnNetId": "GND"
+    },
+    {
+      "netId": "VCC",
+      "pinIds": ["C1.2", "C2.2"],
+      "netLabelWidth": 0.3,
+      "globalConnNetId": "VCC"
+    }
   ],
   "availableNetLabelOrientations": { "GND": ["y-"], "VCC": ["y+"] },
   "maxMspPairDistance": 2.4

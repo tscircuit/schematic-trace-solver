@@ -5,13 +5,15 @@ import unconnectInput from "../../assets/unconnect-gnd-vcc.json"
 import type { InputProblem } from "lib/types/InputProblem"
 
 test("repro61: extra net label when direct connection exists", () => {
-  const solver = new SchematicTracePipelineSolver(connectedInput as any as InputProblem)
+  const solver = new SchematicTracePipelineSolver(
+    connectedInput as any as InputProblem,
+  )
   solver.solve()
-  
+
   const labels = solver.netLabelPlacementSolver!.netLabelPlacements
-  const gndLabels = labels.filter(l => l.netId === "GND")
-  const vccLabels = labels.filter(l => l.netId === "VCC")
-  
+  const gndLabels = labels.filter((l) => l.netId === "GND")
+  const vccLabels = labels.filter((l) => l.netId === "VCC")
+
   console.log("Connected case - GND labels:", gndLabels.length)
   console.log("Connected case - VCC labels:", vccLabels.length)
 
@@ -21,12 +23,14 @@ test("repro61: extra net label when direct connection exists", () => {
 })
 
 test("repro61: net labels should exist when NO direct connection exists", () => {
-  const solver = new SchematicTracePipelineSolver(unconnectInput as any as InputProblem)
+  const solver = new SchematicTracePipelineSolver(
+    unconnectInput as any as InputProblem,
+  )
   solver.solve()
-  
+
   const labels = solver.netLabelPlacementSolver!.netLabelPlacements
-  const gndLabels = labels.filter(l => l.netId === "GND")
-  const vccLabels = labels.filter(l => l.netId === "VCC")
+  const gndLabels = labels.filter((l) => l.netId === "GND")
+  const vccLabels = labels.filter((l) => l.netId === "VCC")
 
   console.log("Disconnected case - GND labels:", gndLabels.length)
   console.log("Disconnected case - VCC labels:", vccLabels.length)
