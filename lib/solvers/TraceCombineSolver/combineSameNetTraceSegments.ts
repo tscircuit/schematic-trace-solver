@@ -3,7 +3,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 
 const EPS = 1e-6
-export const DEFAULT_MERGE_DISTANCE = 0.15
+export const DEFAULT_COMBINE_DISTANCE = 0.15
 
 type Orientation = "horizontal" | "vertical"
 
@@ -108,7 +108,7 @@ const findConsolidatableSegmentPair = (
   traces: SolvedTracePath[],
   indexA: number,
   indexB: number,
-  mergeDistance: number,
+  combineDistance: number,
 ): SegmentRef | null => {
   const traceA = traces[indexA]!
   const traceB = traces[indexB]!
@@ -132,7 +132,7 @@ const findConsolidatableSegmentPair = (
   if (segmentA.orientation !== segmentB.orientation) return null
   if (
     Math.abs(segmentA.fixedCoordinate - segmentB.fixedCoordinate) >
-    mergeDistance
+    combineDistance
   ) {
     return null
   }
@@ -171,7 +171,7 @@ const mergeTracePair = (
 
 const consolidateRedundantParallelTraces = (
   traces: SolvedTracePath[],
-  mergeDistance: number,
+  combineDistance: number,
 ): SolvedTracePath[] => {
   const result = traces.map((trace) => ({
     ...trace,
@@ -194,7 +194,7 @@ const consolidateRedundantParallelTraces = (
           result,
           indexA,
           indexB,
-          mergeDistance,
+          combineDistance,
         )
         if (!canonical) continue
         if (
@@ -242,22 +242,19 @@ const snapSegmentFixedCoordinate = (
   }
 }
 
-/**
- * Snaps nearby parallel same-net trace segments onto a shared X or Y axis.
- * Internal segments align to overlapping segments on sibling traces in the net.
- */
-export const mergeParallelTraceSegments = (
+/** Aligns and merges nearby parallel same-net trace segments onto a shared axis. */
+export const combineSameNetTraceSegments = (
   traces: SolvedTracePath[],
-  mergeDistance = DEFAULT_MERGE_DISTANCE,
+  combineDistance = DEFAULT_COMBINE_DISTANCE,
 ): SolvedTracePath[] => {
-  const mergedTraces = traces.map((trace) => ({
+  const combinedTraces = traces.map((trace) => ({
     ...trace,
     tracePath: trace.tracePath.map((point) => ({ ...point })),
   }))
 
   const traceIndexesByNet = new Map<string, number[]>()
-  for (let traceIndex = 0; traceIndex < mergedTraces.length; traceIndex++) {
-    const netId = mergedTraces[traceIndex]!.globalConnNetId
+  for (let traceIndex = 0; traceIndex < combinedTraces.length; traceIndex++) {
+    const netId = combinedTraces[traceIndex]!.globalConnNetId
     const traceIndexes = traceIndexesByNet.get(netId) ?? []
     traceIndexes.push(traceIndex)
     traceIndexesByNet.set(netId, traceIndexes)
@@ -271,7 +268,7 @@ export const mergeParallelTraceSegments = (
       changed = false
 
       for (const traceIndex of traceIndexes.slice(1)) {
-        const candidates = getSegments(mergedTraces, traceIndex, {
+        const candidates = getSegments(combinedTraces, traceIndex, {
           includeTerminals: false,
         })
 
@@ -279,7 +276,7 @@ export const mergeParallelTraceSegments = (
           const target = traceIndexes
             .filter((targetTraceIndex) => targetTraceIndex !== traceIndex)
             .flatMap((targetTraceIndex) =>
-              getSegments(mergedTraces, targetTraceIndex, {
+              getSegments(combinedTraces, targetTraceIndex, {
                 includeTerminals: true,
               }),
             )
@@ -287,12 +284,12 @@ export const mergeParallelTraceSegments = (
               (other) =>
                 other.orientation === candidate.orientation &&
                 Math.abs(other.fixedCoordinate - candidate.fixedCoordinate) <=
-                  mergeDistance &&
+                  combineDistance &&
                 Math.abs(other.fixedCoordinate - candidate.fixedCoordinate) >
                   EPS &&
                 rangesOverlap(candidate, other) &&
                 !wouldOverlapDifferentNet(
-                  mergedTraces,
+                  combinedTraces,
                   candidate,
                   other.fixedCoordinate,
                 ),
@@ -300,8 +297,8 @@ export const mergeParallelTraceSegments = (
 
           if (!target) continue
 
-          mergedTraces[traceIndex] = snapSegmentFixedCoordinate(
-            mergedTraces[traceIndex]!,
+          combinedTraces[traceIndex] = snapSegmentFixedCoordinate(
+            combinedTraces[traceIndex]!,
             candidate.segmentIndex,
             candidate.orientation,
             target.fixedCoordinate,
@@ -315,5 +312,5 @@ export const mergeParallelTraceSegments = (
     }
   }
 
-  return consolidateRedundantParallelTraces(mergedTraces, mergeDistance)
+  return consolidateRedundantParallelTraces(combinedTraces, combineDistance)
 }

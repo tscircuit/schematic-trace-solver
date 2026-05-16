@@ -4,26 +4,30 @@ import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/Ms
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem } from "lib/types/InputProblem"
 import {
-  DEFAULT_MERGE_DISTANCE,
-  mergeParallelTraceSegments,
-} from "./mergeParallelTraceSegments"
+  combineSameNetTraceSegments,
+  DEFAULT_COMBINE_DISTANCE,
+} from "./combineSameNetTraceSegments"
 
-export class MergeParallelTracesSolver extends BaseSolver {
+/**
+ * Pipeline phase that combines nearby parallel trace segments on the same net
+ * by snapping them to a shared X or Y coordinate.
+ */
+export class TraceCombineSolver extends BaseSolver {
   inputProblem: InputProblem
   inputTracePaths: SolvedTracePath[]
-  mergeDistance: number
+  combineDistance: number
 
   correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath> = {}
 
   constructor(params: {
     inputProblem: InputProblem
     inputTracePaths: SolvedTracePath[]
-    mergeDistance?: number
+    combineDistance?: number
   }) {
     super()
     this.inputProblem = params.inputProblem
     this.inputTracePaths = params.inputTracePaths
-    this.mergeDistance = params.mergeDistance ?? DEFAULT_MERGE_DISTANCE
+    this.combineDistance = params.combineDistance ?? DEFAULT_COMBINE_DISTANCE
 
     for (const tracePath of this.inputTracePaths) {
       this.correctedTraceMap[tracePath.mspPairId] = tracePath
@@ -31,23 +35,23 @@ export class MergeParallelTracesSolver extends BaseSolver {
   }
 
   override getConstructorParams(): ConstructorParameters<
-    typeof MergeParallelTracesSolver
+    typeof TraceCombineSolver
   >[0] {
     return {
       inputProblem: this.inputProblem,
       inputTracePaths: this.inputTracePaths,
-      mergeDistance: this.mergeDistance,
+      combineDistance: this.combineDistance,
     }
   }
 
   override _step() {
-    const merged = mergeParallelTraceSegments(
+    const combined = combineSameNetTraceSegments(
       this.inputTracePaths,
-      this.mergeDistance,
+      this.combineDistance,
     )
 
     this.correctedTraceMap = Object.fromEntries(
-      merged.map((trace) => [trace.mspPairId, trace]),
+      combined.map((trace) => [trace.mspPairId, trace]),
     )
     this.solved = true
   }
