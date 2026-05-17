@@ -26,7 +26,12 @@ export class MergeParallelTracesSolver extends BaseSolver {
     this.mergeDistance = params.mergeDistance ?? DEFAULT_MERGE_DISTANCE
 
     for (const tracePath of this.inputTracePaths) {
-      this.correctedTraceMap[tracePath.mspPairId] = tracePath
+      this.correctedTraceMap[tracePath.mspPairId] = {
+        ...tracePath,
+        tracePath: tracePath.tracePath.map((point) => ({ ...point })),
+        mspConnectionPairIds: [...tracePath.mspConnectionPairIds],
+        pinIds: [...tracePath.pinIds],
+      }
     }
   }
 

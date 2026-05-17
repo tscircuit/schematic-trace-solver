@@ -1,50 +1,35 @@
 {
   "chips": [
     {
-      "chipId": "JP6",
-      "center": { "x": -3, "y": 0 },
-      "width": 1,
-      "height": 1.2,
+      "chipId": "U1",
+      "center": { "x": 0, "y": 1.05 },
+      "width": 0.5,
+      "height": 0.3,
       "pins": [
-        { "pinId": "JP6.VOUT", "x": -3, "y": 0.3 },
-        { "pinId": "JP6.GND", "x": -3, "y": -0.3 }
+        { "pinId": "U1.1", "x": 0, "y": 1 },
+        { "pinId": "U1.2", "x": 0, "y": 1.1 }
       ]
     },
     {
-      "chipId": "R1",
-      "center": { "x": 0, "y": 0 },
-      "width": 1.5,
-      "height": 0.5,
+      "chipId": "U2",
+      "center": { "x": 4, "y": 1.05 },
+      "width": 0.5,
+      "height": 0.3,
       "pins": [
-        { "pinId": "R1.1", "x": -0.6, "y": 0 },
-        { "pinId": "R1.2", "x": 0.6, "y": 0 }
-      ]
-    },
-    {
-      "chipId": "SJ2",
-      "center": { "x": 3, "y": 0 },
-      "width": 0.8,
-      "height": 0.8,
-      "pins": [
-        { "pinId": "SJ2.1", "x": 3, "y": 0.2 },
-        { "pinId": "SJ2.2", "x": 3, "y": -0.2 }
+        { "pinId": "U2.1", "x": 4, "y": 1 },
+        { "pinId": "U2.2", "x": 4, "y": 1.1 }
       ]
     }
   ],
   "directConnections": [],
   "netConnections": [
     {
-      "pinIds": ["JP6.GND", "R1.1", "SJ2.2"],
+      "pinIds": ["U1.1", "U1.2", "U2.1", "U2.2"],
       "netId": "GND"
-    },
-    {
-      "pinIds": ["JP6.VOUT", "R1.2", "SJ2.1"],
-      "netId": "VOUT"
     }
   ],
   "availableNetLabelOrientations": {
-    "GND": ["y-"],
-    "VOUT": ["x+"]
+    "GND": ["x+"]
   },
-  "maxMspPairDistance": 8
+  "maxMspPairDistance": 10
 }

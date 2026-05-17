@@ -1,25 +1,52 @@
 import { expect, test } from "bun:test"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { MergeParallelTracesSolver } from "lib/solvers/MergeParallelTracesSolver/MergeParallelTracesSolver"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import inputProblem from "../assets/example35.json"
+import preMergeTraces from "../assets/example35-pre-merge-traces.json"
 import "tests/fixtures/matcher"
 
-/** Issue #34: parallel same-net traces before/after MergeParallelTracesSolver */
+const cloneInputTracePaths = (traces: SolvedTracePath[]): SolvedTracePath[] =>
+  traces.map((trace) => ({
+    ...trace,
+    tracePath: trace.tracePath.map((point) => ({ ...point })),
+    mspConnectionPairIds: [...trace.mspConnectionPairIds],
+    pinIds: [...trace.pinIds],
+  }))
+
+/**
+ * Issue #34: two parallel same-net traces (y=1 and y=1.1) merge into one.
+ * Uses explicit pre-merge traces so before/after snapshots differ by geometry,
+ * not only stroke color between pipeline stages.
+ */
 test("example35 before/after mergeParallelTracesSolver", () => {
-  const solver = new SchematicTracePipelineSolver(inputProblem as any)
+  const inputTracePaths = cloneInputTracePaths(
+    preMergeTraces as SolvedTracePath[],
+  )
 
-  solver.solveUntilPhase("mergeParallelTracesSolver")
-  expect(solver.traceOverlapShiftSolver).toBeDefined()
+  const mergeSolver = new MergeParallelTracesSolver({
+    inputProblem: inputProblem as any,
+    inputTracePaths,
+  })
 
-  expect(solver.traceOverlapShiftSolver!).toMatchSolverSnapshot(
+  expect(mergeSolver.solved).toBe(false)
+  expect(Object.keys(mergeSolver.correctedTraceMap)).toHaveLength(2)
+
+  expect(mergeSolver).toMatchSolverSnapshot(
     import.meta.path,
     "before-mergeParallelTraces",
   )
 
-  while (!solver.mergeParallelTracesSolver?.solved) {
-    solver.step()
-  }
+  mergeSolver.solve()
 
-  expect(solver.mergeParallelTracesSolver!).toMatchSolverSnapshot(
+  expect(mergeSolver.solved).toBe(true)
+  expect(Object.keys(mergeSolver.correctedTraceMap)).toHaveLength(1)
+  expect(mergeSolver.getOutput().traces[0]!.tracePath).toEqual([
+    { x: 0, y: 1 },
+    { x: 4, y: 1 },
+  ])
+
+  expect(mergeSolver).toMatchSolverSnapshot(
     import.meta.path,
     "after-mergeParallelTraces",
   )
