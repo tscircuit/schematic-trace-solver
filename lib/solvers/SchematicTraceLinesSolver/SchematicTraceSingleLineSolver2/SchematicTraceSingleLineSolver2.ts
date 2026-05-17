@@ -83,7 +83,16 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       { x: pin2.x, y: pin2.y },
     )
 
-    // Seed search
+    // Check if base elbow path has no collisions - if so, use it directly
+    const baseCollision = findFirstCollision(this.baseElbow, this.obstacles)
+    if (!baseCollision) {
+      // No collisions found, use the base elbow path as the solution
+      this.solvedTracePath = this.baseElbow
+      this.solved = true
+      return
+    }
+
+    // Base elbow has collisions, proceed with pathfinding
     this.queue.push({ path: this.baseElbow, collisionChipIds: new Set() })
     this.visited.add(pathKey(this.baseElbow))
   }
