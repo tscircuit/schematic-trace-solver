@@ -1,0 +1,28 @@
+[
+  {
+    "mspPairId": "trace-a",
+    "dcConnNetId": "V3_3",
+    "globalConnNetId": "V3_3",
+    "tracePath": [
+      { "x": 0, "y": 0 },
+      { "x": 0, "y": 1 },
+      { "x": 4, "y": 1 },
+      { "x": 4, "y": 0 }
+    ],
+    "mspConnectionPairIds": ["trace-a"],
+    "pinIds": ["C14.1", "C15.1"]
+  },
+  {
+    "mspPairId": "trace-b",
+    "dcConnNetId": "V3_3",
+    "globalConnNetId": "V3_3",
+    "tracePath": [
+      { "x": 0, "y": 0.12 },
+      { "x": 0, "y": 1.12 },
+      { "x": 4, "y": 1.12 },
+      { "x": 4, "y": 0.12 }
+    ],
+    "mspConnectionPairIds": ["trace-b"],
+    "pinIds": ["C14.2", "C15.2"]
+  }
+]
