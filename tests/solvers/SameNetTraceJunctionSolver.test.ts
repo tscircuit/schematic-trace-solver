@@ -19,7 +19,12 @@ const makeTrace = (
 
 test("SameNetTraceJunctionSolver snaps same-net endpoints to nearby segments", () => {
   const solver = new SameNetTraceJunctionSolver({
-    inputProblem: { chips: [], directConnections: [], netConnections: [] },
+    inputProblem: {
+      chips: [],
+      directConnections: [],
+      netConnections: [],
+      availableNetLabelOrientations: {},
+    },
     snapThreshold: 0.1,
     traces: [
       makeTrace("a", "net-1", [
@@ -46,7 +51,12 @@ test("SameNetTraceJunctionSolver snaps same-net endpoints to nearby segments", (
 
 test("SameNetTraceJunctionSolver leaves different-net close segments separate", () => {
   const solver = new SameNetTraceJunctionSolver({
-    inputProblem: { chips: [], directConnections: [], netConnections: [] },
+    inputProblem: {
+      chips: [],
+      directConnections: [],
+      netConnections: [],
+      availableNetLabelOrientations: {},
+    },
     snapThreshold: 0.1,
     traces: [
       makeTrace("a", "net-1", [
