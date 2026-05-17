@@ -15,9 +15,9 @@ const cloneInputTracePaths = (traces: SolvedTracePath[]): SolvedTracePath[] =>
   }))
 
 /**
- * Issue #34: two parallel same-net traces (y=1 and y=1.1) merge into one.
- * Uses explicit pre-merge traces so before/after snapshots differ by geometry,
- * not only stroke color between pipeline stages.
+ * Issue #34: same-net trace segments that are almost on the same Y (or X) get
+ * snapped onto a shared axis — removes the small jog between parallel runs.
+ * Repro matches the bypass-cap style case from the issue screenshot (C14/C15).
  */
 test("example35 before/after mergeParallelTracesSolver", () => {
   const inputTracePaths = cloneInputTracePaths(
@@ -40,11 +40,18 @@ test("example35 before/after mergeParallelTracesSolver", () => {
   mergeSolver.solve()
 
   expect(mergeSolver.solved).toBe(true)
-  expect(Object.keys(mergeSolver.correctedTraceMap)).toHaveLength(1)
-  expect(mergeSolver.getOutput().traces[0]!.tracePath).toEqual([
-    { x: 0, y: 1 },
-    { x: 4, y: 1 },
-  ])
+  expect(Object.keys(mergeSolver.correctedTraceMap)).toHaveLength(2)
+
+  const traceA = mergeSolver.correctedTraceMap["trace-a"]!
+  const traceB = mergeSolver.correctedTraceMap["trace-b"]!
+
+  // Internal horizontal runs align to y=1 (same Y), pin legs keep their offset
+  expect(traceA.tracePath[1]!.y).toBe(1)
+  expect(traceA.tracePath[2]!.y).toBe(1)
+  expect(traceB.tracePath[1]!.y).toBe(1)
+  expect(traceB.tracePath[2]!.y).toBe(1)
+  expect(traceB.tracePath[0]!.y).toBe(0.12)
+  expect(traceB.tracePath[3]!.y).toBe(0.12)
 
   expect(mergeSolver).toMatchSolverSnapshot(
     import.meta.path,
