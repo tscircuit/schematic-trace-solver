@@ -86,3 +86,32 @@ test("mergeNearbySameNetTraceLines leaves different nets unchanged", () => {
   expect(traces[1]!.tracePath[1]!.y).toBe(1.05)
   expect(traces[1]!.tracePath[2]!.y).toBe(1.05)
 })
+
+test("mergeNearbySameNetTraceLines rejects moves that overlap a different net", () => {
+  const traces = mergeNearbySameNetTraceLines(
+    [
+      makeTrace("a", "N1", [
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+        { x: 4, y: 1 },
+        { x: 4, y: 0 },
+      ]),
+      makeTrace("b", "N1", [
+        { x: 1, y: 0 },
+        { x: 1, y: 1.05 },
+        { x: 3, y: 1.05 },
+        { x: 3, y: 0 },
+      ]),
+      makeTrace("c", "N2", [
+        { x: 1.5, y: 2 },
+        { x: 1.5, y: 1 },
+        { x: 2.5, y: 1 },
+        { x: 2.5, y: 2 },
+      ]),
+    ],
+    0.1,
+  )
+
+  expect(traces[1]!.tracePath[1]!.y).toBe(1.05)
+  expect(traces[1]!.tracePath[2]!.y).toBe(1.05)
+})

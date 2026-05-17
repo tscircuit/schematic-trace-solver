@@ -80,6 +80,14 @@ const getSegmentsByNet = (traces: SolvedTracePath[]) => {
   return segmentsByNet
 }
 
+const getAllSegments = (traces: SolvedTracePath[]) =>
+  traces.flatMap((trace, traceIndex) =>
+    trace.tracePath.flatMap((_, segmentIndex) => {
+      const locator = getSegmentLocator(trace, traceIndex, segmentIndex)
+      return locator ? [locator] : []
+    }),
+  )
+
 const spansOverlap = (a: SegmentLocator, b: SegmentLocator) =>
   Math.min(a.spanMax, b.spanMax) - Math.max(a.spanMin, b.spanMin) > EPS
 
@@ -101,6 +109,48 @@ const moveSegmentToCoord = (
   }
 
   trace.tracePath = simplifyPath(trace.tracePath)
+}
+
+const cloneAndMoveTrace = (
+  trace: SolvedTracePath,
+  segmentIndex: number,
+  orientation: SegmentOrientation,
+  coord: number,
+): SolvedTracePath => {
+  const clonedTrace = {
+    ...trace,
+    tracePath: trace.tracePath.map((point) => ({ ...point })),
+  }
+  moveSegmentToCoord(clonedTrace, segmentIndex, orientation, coord)
+  return clonedTrace
+}
+
+const wouldCreateDifferentNetOverlap = (
+  traces: SolvedTracePath[],
+  source: SegmentLocator,
+  target: SegmentLocator,
+) => {
+  const movedTrace = cloneAndMoveTrace(
+    traces[source.traceIndex]!,
+    source.segmentIndex,
+    source.orientation,
+    target.coord,
+  )
+  const movedTraceSegments = getAllSegments([movedTrace])
+  const otherNetSegments = getAllSegments(traces).filter(
+    (segment) =>
+      traces[segment.traceIndex]!.globalConnNetId !==
+      movedTrace.globalConnNetId,
+  )
+
+  return movedTraceSegments.some((candidate) =>
+    otherNetSegments.some(
+      (other) =>
+        candidate.orientation === other.orientation &&
+        Math.abs(candidate.coord - other.coord) < EPS &&
+        spansOverlap(candidate, other),
+    ),
+  )
 }
 
 const pickSourceAndTarget = (
@@ -161,6 +211,15 @@ export const mergeNearbySameNetTraceLines = (
 
           const pair = pickSourceAndTarget(a, b)
           if (!pair) continue
+          if (
+            wouldCreateDifferentNetOverlap(
+              outputTraces,
+              pair.source,
+              pair.target,
+            )
+          ) {
+            continue
+          }
 
           moveSegmentToCoord(
             outputTraces[pair.source.traceIndex]!,
