@@ -253,7 +253,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     definePipelineStep("example28Solver", Example28Solver, (instance) => {
       const traces =
         instance.sameNetTraceMergeSolver?.getOutput().traces ??
-          instance.traceCleanupSolver?.getOutput().traces ??
+        instance.traceCleanupSolver?.getOutput().traces ??
         instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
       return [

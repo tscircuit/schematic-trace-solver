@@ -21,8 +21,14 @@ function makeTrace(
 
 describe("SameNetTraceMergeSolver", () => {
   test("merges two collinear same-net traces with touching endpoints", () => {
-    const t1 = makeTrace("t1", "net1", [{ x: 0, y: 0 }, { x: 1, y: 0 }])
-    const t2 = makeTrace("t2", "net1", [{ x: 1, y: 0 }, { x: 2, y: 0 }])
+    const t1 = makeTrace("t1", "net1", [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+    ])
+    const t2 = makeTrace("t2", "net1", [
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
+    ])
     const solver = new SameNetTraceMergeSolver({ traces: [t1, t2] })
     while (!solver.solved && !solver.failed) solver.step()
     expect(solver.solved).toBe(true)
@@ -36,16 +42,31 @@ describe("SameNetTraceMergeSolver", () => {
   })
 
   test("merges traces with a small gap within maxEndpointGap", () => {
-    const t1 = makeTrace("t1", "net1", [{ x: 0, y: 0 }, { x: 1, y: 0 }])
-    const t2 = makeTrace("t2", "net1", [{ x: 1.1, y: 0 }, { x: 2, y: 0 }])
-    const solver = new SameNetTraceMergeSolver({ traces: [t1, t2], maxEndpointGap: 0.15 })
+    const t1 = makeTrace("t1", "net1", [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+    ])
+    const t2 = makeTrace("t2", "net1", [
+      { x: 1.1, y: 0 },
+      { x: 2, y: 0 },
+    ])
+    const solver = new SameNetTraceMergeSolver({
+      traces: [t1, t2],
+      maxEndpointGap: 0.15,
+    })
     while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(1)
   })
 
   test("does NOT merge traces from different nets", () => {
-    const t1 = makeTrace("t1", "netA", [{ x: 0, y: 0 }, { x: 1, y: 0 }])
-    const t2 = makeTrace("t2", "netB", [{ x: 1, y: 0 }, { x: 2, y: 0 }])
+    const t1 = makeTrace("t1", "netA", [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+    ])
+    const t2 = makeTrace("t2", "netB", [
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
+    ])
     const solver = new SameNetTraceMergeSolver({ traces: [t1, t2] })
     while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(2)
@@ -53,17 +74,35 @@ describe("SameNetTraceMergeSolver", () => {
   })
 
   test("does NOT merge when gap exceeds maxEndpointGap", () => {
-    const t1 = makeTrace("t1", "net1", [{ x: 0, y: 0 }, { x: 1, y: 0 }])
-    const t2 = makeTrace("t2", "net1", [{ x: 2, y: 0 }, { x: 3, y: 0 }])
-    const solver = new SameNetTraceMergeSolver({ traces: [t1, t2], maxEndpointGap: 0.12 })
+    const t1 = makeTrace("t1", "net1", [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+    ])
+    const t2 = makeTrace("t2", "net1", [
+      { x: 2, y: 0 },
+      { x: 3, y: 0 },
+    ])
+    const solver = new SameNetTraceMergeSolver({
+      traces: [t1, t2],
+      maxEndpointGap: 0.12,
+    })
     while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(2)
   })
 
   test("inserts L-bridge when endpoints are not axis-aligned", () => {
-    const t1 = makeTrace("t1", "net1", [{ x: 0, y: 0 }, { x: 1, y: 0 }])
-    const t2 = makeTrace("t2", "net1", [{ x: 1.05, y: 0.05 }, { x: 2, y: 0.05 }])
-    const solver = new SameNetTraceMergeSolver({ traces: [t1, t2], maxEndpointGap: 0.15 })
+    const t1 = makeTrace("t1", "net1", [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+    ])
+    const t2 = makeTrace("t2", "net1", [
+      { x: 1.05, y: 0.05 },
+      { x: 2, y: 0.05 },
+    ])
+    const solver = new SameNetTraceMergeSolver({
+      traces: [t1, t2],
+      maxEndpointGap: 0.15,
+    })
     while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(1)
     // Bridge point should exist between the two paths
@@ -72,9 +111,18 @@ describe("SameNetTraceMergeSolver", () => {
   })
 
   test("merges multiple traces in the same net iteratively", () => {
-    const t1 = makeTrace("t1", "net1", [{ x: 0, y: 0 }, { x: 1, y: 0 }])
-    const t2 = makeTrace("t2", "net1", [{ x: 1, y: 0 }, { x: 2, y: 0 }])
-    const t3 = makeTrace("t3", "net1", [{ x: 2, y: 0 }, { x: 3, y: 0 }])
+    const t1 = makeTrace("t1", "net1", [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+    ])
+    const t2 = makeTrace("t2", "net1", [
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
+    ])
+    const t3 = makeTrace("t3", "net1", [
+      { x: 2, y: 0 },
+      { x: 3, y: 0 },
+    ])
     const solver = new SameNetTraceMergeSolver({ traces: [t1, t2, t3] })
     while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(1)
@@ -82,7 +130,10 @@ describe("SameNetTraceMergeSolver", () => {
   })
 
   test("leaves single-trace nets unchanged", () => {
-    const t1 = makeTrace("t1", "net1", [{ x: 0, y: 0 }, { x: 1, y: 0 }])
+    const t1 = makeTrace("t1", "net1", [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+    ])
     const solver = new SameNetTraceMergeSolver({ traces: [t1] })
     while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(1)
@@ -90,8 +141,14 @@ describe("SameNetTraceMergeSolver", () => {
   })
 
   test("handles reversed endpoint matching (end-to-end)", () => {
-    const t1 = makeTrace("t1", "net1", [{ x: 0, y: 0 }, { x: 1, y: 0 }])
-    const t2 = makeTrace("t2", "net1", [{ x: 2, y: 0 }, { x: 1, y: 0 }])
+    const t1 = makeTrace("t1", "net1", [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+    ])
+    const t2 = makeTrace("t2", "net1", [
+      { x: 2, y: 0 },
+      { x: 1, y: 0 },
+    ])
     const solver = new SameNetTraceMergeSolver({ traces: [t1, t2] })
     while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(1)

@@ -25,7 +25,11 @@ function dedupe(pts: Point[]): Point[] {
   const out: Point[] = []
   for (const p of pts) {
     const prev = out[out.length - 1]
-    if (!prev || Math.abs(prev.x - p.x) > 1e-9 || Math.abs(prev.y - p.y) > 1e-9) {
+    if (
+      !prev ||
+      Math.abs(prev.x - p.x) > 1e-9 ||
+      Math.abs(prev.y - p.y) > 1e-9
+    ) {
       out.push(p)
     }
   }
@@ -54,8 +58,8 @@ function tryMerge(
   const options = [
     { d: dist(aE, bS), revA: false, revB: false },
     { d: dist(aE, bE), revA: false, revB: true },
-    { d: dist(aS, bS), revA: true,  revB: false },
-    { d: dist(aS, bE), revA: true,  revB: true },
+    { d: dist(aS, bS), revA: true, revB: false },
+    { d: dist(aS, bE), revA: true, revB: true },
   ]
   const best = options.reduce((p, c) => (c.d < p.d ? c : p))
   if (best.d > maxGap) return null
@@ -64,7 +68,7 @@ function tryMerge(
   const ordB = best.revB ? [...pb].reverse() : [...pb]
 
   const from = ordA[ordA.length - 1]!
-  const to   = ordB[0]!
+  const to = ordB[0]!
 
   // Insert a single L-shaped bridge if the connection is not axis-aligned
   const bridge: Point[] =
