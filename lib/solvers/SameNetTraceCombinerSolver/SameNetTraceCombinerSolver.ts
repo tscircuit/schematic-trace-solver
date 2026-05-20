@@ -4,6 +4,8 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject, Line } from "graphics-debug"
 import type { Point } from "@tscircuit/math-utils"
+import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 
 type Axis = "horizontal" | "vertical"
 
@@ -22,6 +24,14 @@ interface SegmentLocator {
   rangeMax: number
   length: number
   movable: boolean
+}
+
+interface RectBounds {
+  chipId: string
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
 }
 
 const EPS = 1e-6
@@ -80,6 +90,39 @@ const getSegments = (traces: SolvedTracePath[]): SegmentLocator[] => {
   return segments
 }
 
+const getTraceObstacleRects = (
+  traces: SolvedTracePath[],
+  movingSegment: SegmentLocator,
+): RectBounds[] => {
+  const movingTrace = traces[movingSegment.traceIndex]!
+  const TRACE_WIDTH = 0.01
+
+  return traces
+    .filter(
+      (trace, traceIndex) =>
+        traceIndex !== movingSegment.traceIndex &&
+        trace.globalConnNetId !== movingTrace.globalConnNetId,
+    )
+    .flatMap((trace) =>
+      trace.tracePath.slice(0, -1).map((p1, pointIndex) => {
+        const p2 = trace.tracePath[pointIndex + 1]!
+        return {
+          chipId: `trace-obstacle-${trace.mspPairId}-${pointIndex}`,
+          minX: Math.min(p1.x, p2.x) - TRACE_WIDTH / 2,
+          maxX: Math.max(p1.x, p2.x) + TRACE_WIDTH / 2,
+          minY: Math.min(p1.y, p2.y) - TRACE_WIDTH / 2,
+          maxY: Math.max(p1.y, p2.y) + TRACE_WIDTH / 2,
+        }
+      }),
+    )
+}
+
+const segmentIntersectsAnyRect = (
+  p1: Point,
+  p2: Point,
+  rects: RectBounds[],
+): boolean => rects.some((rect) => segmentIntersectsRect(p1, p2, rect))
+
 const simplifyTracePath = (path: Point[]): Point[] => {
   const withoutDuplicates: Point[] = []
   for (const point of path) {
@@ -114,6 +157,7 @@ const simplifyTracePath = (path: Point[]): Point[] => {
 
 export class SameNetTraceCombinerSolver extends BaseSolver {
   private input: SameNetTraceCombinerInput
+  private skippedCombinationKeys = new Set<string>()
   public outputTraces: SolvedTracePath[]
   public lastCombinedSegments: [SegmentLocator, SegmentLocator] | null = null
 
@@ -127,6 +171,15 @@ export class SameNetTraceCombinerSolver extends BaseSolver {
     typeof SameNetTraceCombinerSolver
   >[0] {
     return this.input
+  }
+
+  private getCombinationKey(a: SegmentLocator, b: SegmentLocator): string {
+    return [
+      `${a.traceIndex}:${a.segmentIndex}`,
+      `${b.traceIndex}:${b.segmentIndex}`,
+    ]
+      .sort()
+      .join("|")
   }
 
   private findNextCombination(): [SegmentLocator, SegmentLocator] | null {
@@ -146,6 +199,9 @@ export class SameNetTraceCombinerSolver extends BaseSolver {
         if (a.traceIndex === b.traceIndex) continue
         if (a.axis !== b.axis) continue
         if (!a.movable && !b.movable) continue
+        if (this.skippedCombinationKeys.has(this.getCombinationKey(a, b))) {
+          continue
+        }
 
         const distance = Math.abs(a.fixedCoord - b.fixedCoord)
         if (distance < EPS || distance > proximityThreshold) continue
@@ -160,8 +216,10 @@ export class SameNetTraceCombinerSolver extends BaseSolver {
     return null
   }
 
-  private snapSegmentToFixedCoord(segment: SegmentLocator, fixedCoord: number) {
-    const path = this.outputTraces[segment.traceIndex]!.tracePath
+  private getSnappedPath(segment: SegmentLocator, fixedCoord: number): Point[] {
+    const path = this.outputTraces[segment.traceIndex]!.tracePath.map((p) => ({
+      ...p,
+    }))
     const p1 = path[segment.segmentIndex]!
     const p2 = path[segment.segmentIndex + 1]!
 
@@ -173,10 +231,55 @@ export class SameNetTraceCombinerSolver extends BaseSolver {
       p2.x = fixedCoord
     }
 
+    return simplifyTracePath(path)
+  }
+
+  private wouldSnapIntroduceCollision(
+    segment: SegmentLocator,
+    snappedPath: Point[],
+  ): boolean {
+    const TOLERANCE = 1e-5
+    const staticObstacles = getObstacleRects(this.input.inputProblem).map(
+      (obs) => ({
+        chipId: obs.chipId,
+        minX: obs.minX + TOLERANCE,
+        maxX: obs.maxX - TOLERANCE,
+        minY: obs.minY + TOLERANCE,
+        maxY: obs.maxY - TOLERANCE,
+      }),
+    )
+    const otherNetTraceObstacles = getTraceObstacleRects(
+      this.outputTraces,
+      segment,
+    )
+    const collisionObstacles = [...staticObstacles, ...otherNetTraceObstacles]
+
+    for (let i = 0; i < snappedPath.length - 1; i++) {
+      if (
+        segmentIntersectsAnyRect(
+          snappedPath[i]!,
+          snappedPath[i + 1]!,
+          collisionObstacles,
+        )
+      ) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  private snapSegmentToFixedCoord(segment: SegmentLocator, fixedCoord: number) {
+    const snappedPath = this.getSnappedPath(segment, fixedCoord)
+    if (this.wouldSnapIntroduceCollision(segment, snappedPath)) {
+      return false
+    }
+
     this.outputTraces[segment.traceIndex] = {
       ...this.outputTraces[segment.traceIndex]!,
-      tracePath: simplifyTracePath(path),
+      tracePath: snappedPath,
     }
+    return true
   }
 
   override _step() {
@@ -187,7 +290,16 @@ export class SameNetTraceCombinerSolver extends BaseSolver {
     }
 
     const [movingSegment, targetSegment] = combination
-    this.snapSegmentToFixedCoord(movingSegment, targetSegment.fixedCoord)
+    const didSnap = this.snapSegmentToFixedCoord(
+      movingSegment,
+      targetSegment.fixedCoord,
+    )
+    if (!didSnap) {
+      this.skippedCombinationKeys.add(
+        this.getCombinationKey(movingSegment, targetSegment),
+      )
+      return
+    }
     this.lastCombinedSegments = combination
   }
 

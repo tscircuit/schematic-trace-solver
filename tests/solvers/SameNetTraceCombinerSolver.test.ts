@@ -93,6 +93,36 @@ test("does not combine nearby segments from different nets", () => {
   expect(solver.getOutput().traces[1]!.tracePath[2]!.y).toBe(1.08)
 })
 
+test("does not snap through other-net traces", () => {
+  const solver = new SameNetTraceCombinerSolver({
+    inputProblem,
+    proximityThreshold: 0.12,
+    traces: [
+      makeTrace("a", "net1", [
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+        { x: 3, y: 1 },
+        { x: 3, y: 0 },
+      ]),
+      makeTrace("b", "net1", [
+        { x: 1, y: 2 },
+        { x: 1, y: 1.08 },
+        { x: 4, y: 1.08 },
+        { x: 4, y: 2 },
+      ]),
+      makeTrace("c", "net2", [
+        { x: 2, y: 0.5 },
+        { x: 2, y: 1.05 },
+      ]),
+    ],
+  })
+
+  solver.solve()
+
+  expect(solver.getOutput().traces[1]!.tracePath[1]!.y).toBe(1.08)
+  expect(solver.getOutput().traces[1]!.tracePath[2]!.y).toBe(1.08)
+})
+
 test("keeps boundary segments anchored to their pins", () => {
   const solver = new SameNetTraceCombinerSolver({
     inputProblem,
