@@ -1,4 +1,9 @@
 import { expect, test } from "bun:test"
+import {
+  getSvgFromGraphicsObject,
+  stackGraphicsHorizontally,
+  type GraphicsObject,
+} from "graphics-debug"
 import { alignNearbySameNetSegments } from "lib/solvers/TraceCleanupSolver/alignNearbySameNetSegments"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 
@@ -16,6 +21,19 @@ const makeTrace = (
     pinIds: [],
     tracePath,
   }) as unknown as SolvedTracePath
+
+const renderTraces = (traces: SolvedTracePath[]): GraphicsObject => ({
+  lines: traces.map((trace, index) => ({
+    points: trace.tracePath,
+    strokeColor: index === 0 ? "blue" : "red",
+  })),
+  points: traces.flatMap((trace) =>
+    trace.tracePath.map((point) => ({
+      ...point,
+      color: trace.globalConnNetId === "net1" ? "green" : "orange",
+    })),
+  ),
+})
 
 test("aligns close overlapping horizontal segments on the same net", () => {
   const [anchorTrace, adjustedTrace] = alignNearbySameNetSegments(
@@ -43,6 +61,43 @@ test("aligns close overlapping horizontal segments on the same net", () => {
   expect(anchorTrace.tracePath[2].y).toBe(1)
   expect(adjustedTrace.tracePath[2].y).toBe(1)
   expect(adjustedTrace.tracePath[3].y).toBe(1)
+})
+
+test("renders before and after proof for same-net segment alignment", () => {
+  const before = [
+    makeTrace("a", "net1", [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 1, y: 1 },
+      { x: 4, y: 1 },
+      { x: 4, y: 0 },
+      { x: 5, y: 0 },
+    ]),
+    makeTrace("b", "net1", [
+      { x: 0, y: 2 },
+      { x: 2, y: 2 },
+      { x: 2, y: 1.08 },
+      { x: 3, y: 1.08 },
+      { x: 3, y: 2 },
+      { x: 5, y: 2 },
+    ]),
+  ]
+
+  const after = alignNearbySameNetSegments(before, {
+    maxAxisDistance: 0.1,
+  })
+
+  expect(after[1].tracePath[2].y).toBe(1)
+  expect(after[1].tracePath[3].y).toBe(1)
+
+  const proofSvg = getSvgFromGraphicsObject(
+    stackGraphicsHorizontally([renderTraces(before), renderTraces(after)], {
+      titles: ["Before", "After"],
+    }),
+    { backgroundColor: "white" },
+  )
+
+  expect(proofSvg).toMatchSvgSnapshot(import.meta.path, "before-after")
 })
 
 test("aligns close overlapping vertical segments on the same net", () => {
