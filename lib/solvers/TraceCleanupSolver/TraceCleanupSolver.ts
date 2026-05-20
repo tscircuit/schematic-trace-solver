@@ -6,6 +6,7 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { combineCloseSameNetTraceSegments } from "./combineCloseSameNetTraceSegments"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -25,6 +26,7 @@ import { is4PointRectangle } from "./is4PointRectangle"
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "combining_same_net_segments"
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
@@ -42,7 +44,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private outputTraces: SolvedTracePath[]
   private traceIdQueue: string[]
   private tracesMap: Map<string, SolvedTracePath>
-  private pipelineStep: PipelineStep = "untangling_traces"
+  private pipelineStep: PipelineStep = "combining_same_net_segments"
   private activeTraceId: string | null = null // New property
   override activeSubSolver: BaseSolver | null = null
 
@@ -75,6 +77,9 @@ export class TraceCleanupSolver extends BaseSolver {
     }
 
     switch (this.pipelineStep) {
+      case "combining_same_net_segments":
+        this._runCombineSameNetSegmentsStep()
+        break
       case "untangling_traces":
         this._runUntangleTracesStep()
         break
@@ -87,6 +92,13 @@ export class TraceCleanupSolver extends BaseSolver {
     }
   }
 
+  private _runCombineSameNetSegmentsStep() {
+    this.outputTraces = combineCloseSameNetTraceSegments(this.outputTraces)
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.traceIdQueue = this.outputTraces.map((e) => e.mspPairId)
+    this.pipelineStep = "untangling_traces"
+  }
+
   private _runUntangleTracesStep() {
     this.activeSubSolver = new UntangleTraceSubsolver({
       ...this.input,
@@ -97,9 +109,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
       this.pipelineStep = "balancing_l_shapes"
-      this.traceIdQueue = Array.from(
-        this.input.allTraces.map((e) => e.mspPairId),
-      )
+      this.traceIdQueue = this.outputTraces.map((e) => e.mspPairId)
       return
     }
 
