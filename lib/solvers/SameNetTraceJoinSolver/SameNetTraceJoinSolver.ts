@@ -54,7 +54,12 @@ export class SameNetTraceJoinSolver extends BaseSolver {
     ]
   }
 
-  private getOrientedPath(endpoint: EndpointRef): Point[] {
+  private getPathEndingAt(endpoint: EndpointRef): Point[] {
+    const path = this.traces[endpoint.traceIndex]!.tracePath
+    return endpoint.atStart ? [...path].reverse() : [...path]
+  }
+
+  private getPathStartingAt(endpoint: EndpointRef): Point[] {
     const path = this.traces[endpoint.traceIndex]!.tracePath
     return endpoint.atStart ? [...path] : [...path].reverse()
   }
@@ -71,8 +76,8 @@ export class SameNetTraceJoinSolver extends BaseSolver {
     const traceA = this.traces[a.traceIndex]!
     const traceB = this.traces[b.traceIndex]!
 
-    const aPath = this.getOrientedPath(a)
-    const bPath = this.getOrientedPath(b)
+    const aPath = this.getPathEndingAt(a)
+    const bPath = this.getPathStartingAt(b)
 
     const bridge = { x: b.point.x, y: b.point.y }
     const joinedPath = dedupeConsecutivePoints(
