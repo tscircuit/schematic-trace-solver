@@ -70,11 +70,7 @@ const getGap = (a: StraightTrace, b: StraightTrace) => {
   return 0
 }
 
-const canMerge = (
-  a: StraightTrace,
-  b: StraightTrace,
-  gapThreshold: number,
-) => {
+const canMerge = (a: StraightTrace, b: StraightTrace, gapThreshold: number) => {
   if (a.trace.globalConnNetId !== b.trace.globalConnNetId) return false
   if (a.axis !== b.axis) return false
   if (!nearlyEqual(a.fixed, b.fixed)) return false
