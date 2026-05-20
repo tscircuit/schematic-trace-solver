@@ -68,3 +68,15 @@ test("cross-section input connections are not visualized as future traces", () =
 
   expect(visualizeInputProblem(netConnectionProblem).lines).toHaveLength(0)
 })
+
+test("net-label-only connections do not create MSP trace pairs", () => {
+  const inputProblem = createInputProblem()
+  inputProblem.chips[1]!.sectionId = "section-a"
+  inputProblem.directConnections = []
+  inputProblem.netConnections = [{ netId: "SIG", pinIds: ["U1.1", "U2.1"] }]
+
+  const solver = new MspConnectionPairSolver({ inputProblem })
+  solver.solve()
+
+  expect(solver.mspConnectionPairs).toHaveLength(0)
+})
