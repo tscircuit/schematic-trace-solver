@@ -1,6 +1,13 @@
 import { ConnectivityMap } from "connectivity-map"
 import type { InputProblem } from "lib/types/InputProblem"
 
+const cloneNetMap = (
+  netMap: Record<string, string[]>,
+): Record<string, string[]> =>
+  Object.fromEntries(
+    Object.entries(netMap).map(([netId, ids]) => [netId, [...ids]]),
+  )
+
 export const getConnectivityMapsFromInputProblem = (
   inputProblem: InputProblem,
 ): { directConnMap: ConnectivityMap; netConnMap: ConnectivityMap } => {
@@ -14,7 +21,7 @@ export const getConnectivityMapsFromInputProblem = (
     ])
   }
 
-  const netConnMap = new ConnectivityMap(directConnMap.netMap)
+  const netConnMap = new ConnectivityMap(cloneNetMap(directConnMap.netMap))
 
   for (const netConn of inputProblem.netConnections) {
     netConnMap.addConnections([[netConn.netId, ...netConn.pinIds]])
