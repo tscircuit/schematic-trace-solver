@@ -90,6 +90,65 @@ const setSegmentCoordinate = (
   }
 }
 
+const segmentRangesOverlap = (a: SegmentInfo, b: SegmentInfo) =>
+  Math.min(a.rangeMax, b.rangeMax) - Math.max(a.rangeMin, b.rangeMin) > EPS
+
+const withSegmentCoordinate = (
+  path: Point[],
+  segmentIndex: number,
+  orientation: SegmentOrientation,
+  coordinate: number,
+) => {
+  const p1 = { ...path[segmentIndex]! }
+  const p2 = { ...path[segmentIndex + 1]! }
+  if (orientation === "vertical") {
+    p1.x = coordinate
+    p2.x = coordinate
+  } else {
+    p1.y = coordinate
+    p2.y = coordinate
+  }
+  return [p1, p2] as const
+}
+
+const wouldOverlapDifferentNetTrace = (
+  traces: SolvedTracePath[],
+  movingTrace: SolvedTracePath,
+  segmentIndex: number,
+  orientation: SegmentOrientation,
+  coordinate: number,
+) => {
+  const candidateSegment = getSegmentInfo(
+    withSegmentCoordinate(
+      movingTrace.tracePath,
+      segmentIndex,
+      orientation,
+      coordinate,
+    ),
+    0,
+    0,
+  )
+  if (candidateSegment === null) return true
+
+  return traces.some((trace) => {
+    if (trace.globalConnNetId === movingTrace.globalConnNetId) return false
+
+    return trace.tracePath.slice(0, -1).some((_, otherSegmentIndex) => {
+      const otherSegment = getSegmentInfo(trace.tracePath, 0, otherSegmentIndex)
+      if (otherSegment === null) return false
+      if (otherSegment.orientation !== candidateSegment.orientation) {
+        return false
+      }
+      if (
+        Math.abs(otherSegment.coordinate - candidateSegment.coordinate) > EPS
+      ) {
+        return false
+      }
+      return segmentRangesOverlap(candidateSegment, otherSegment)
+    })
+  })
+}
+
 const collectSegments = (traces: SolvedTracePath[]) =>
   traces.flatMap((trace, traceIndex) =>
     trace.tracePath
@@ -140,23 +199,45 @@ export const mergeCloseSameNetTraceSegments = (
           if (targetCoordinate === null) continue
 
           if (a.movable && Math.abs(a.coordinate - targetCoordinate) > EPS) {
-            setSegmentCoordinate(
-              sameNetTraces[a.traceIndex]!.tracePath,
-              a.segmentIndex,
-              a.orientation,
-              targetCoordinate,
-            )
-            changed = true
+            const trace = sameNetTraces[a.traceIndex]!
+            if (
+              !wouldOverlapDifferentNetTrace(
+                outputTraces,
+                trace,
+                a.segmentIndex,
+                a.orientation,
+                targetCoordinate,
+              )
+            ) {
+              setSegmentCoordinate(
+                trace.tracePath,
+                a.segmentIndex,
+                a.orientation,
+                targetCoordinate,
+              )
+              changed = true
+            }
           }
 
           if (b.movable && Math.abs(b.coordinate - targetCoordinate) > EPS) {
-            setSegmentCoordinate(
-              sameNetTraces[b.traceIndex]!.tracePath,
-              b.segmentIndex,
-              b.orientation,
-              targetCoordinate,
-            )
-            changed = true
+            const trace = sameNetTraces[b.traceIndex]!
+            if (
+              !wouldOverlapDifferentNetTrace(
+                outputTraces,
+                trace,
+                b.segmentIndex,
+                b.orientation,
+                targetCoordinate,
+              )
+            ) {
+              setSegmentCoordinate(
+                trace.tracePath,
+                b.segmentIndex,
+                b.orientation,
+                targetCoordinate,
+              )
+              changed = true
+            }
           }
         }
       }

@@ -75,3 +75,31 @@ test("does not move terminal same-net segments because that would move pins", ()
   expect(merged[0]!.tracePath).toEqual(traces[0]!.tracePath)
   expect(merged[1]!.tracePath).toEqual(traces[1]!.tracePath)
 })
+
+test("does not align same-net segments onto a different-net overlap", () => {
+  const traces = [
+    makeTrace("a", "net1", [
+      { x: 0, y: 0 },
+      { x: 0, y: 2 },
+      { x: 3, y: 2 },
+      { x: 3, y: 0 },
+    ]),
+    makeTrace("b", "net1", [
+      { x: 2.5, y: 0.25 },
+      { x: 2.5, y: 2.12 },
+      { x: 5, y: 2.12 },
+      { x: 5, y: 0.25 },
+    ]),
+    makeTrace("c", "net2", [
+      { x: 4, y: 1 },
+      { x: 4, y: 2 },
+      { x: 5.5, y: 2 },
+      { x: 5.5, y: 1 },
+    ]),
+  ]
+
+  const merged = mergeCloseSameNetTraceSegments(traces, { maxOffset: 0.2 })
+
+  expect(merged[1]!.tracePath[1]!.y).toBe(2.12)
+  expect(merged[1]!.tracePath[2]!.y).toBe(2.12)
+})
