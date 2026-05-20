@@ -2,7 +2,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 
 type Point = { x: number; y: number }
 
-const DEFAULT_MAX_ENDPOINT_DISTANCE = 0.35
+const DEFAULT_MAX_ENDPOINT_DISTANCE = 0.05
 const EPS = 1e-6
 
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y)
@@ -30,13 +30,8 @@ const getEndpointVariants = (trace: SolvedTracePath) => {
   return [path, reversePath(path)]
 }
 
-const buildOrthogonalBridge = (from: Point, to: Point) => {
-  if (pointsEqual(from, to)) return []
-  if (Math.abs(from.x - to.x) < EPS || Math.abs(from.y - to.y) < EPS) {
-    return [to]
-  }
-  return [{ x: to.x, y: from.y }, to]
-}
+const pointsShareAxis = (from: Point, to: Point) =>
+  Math.abs(from.x - to.x) < EPS || Math.abs(from.y - to.y) < EPS
 
 const mergeTracePair = (
   traceA: SolvedTracePath,
@@ -51,11 +46,16 @@ const mergeTracePair = (
 
   for (const variantA of getEndpointVariants(traceA)) {
     for (const variantB of getEndpointVariants(traceB)) {
+      if (!pointsShareAxis(variantA[variantA.length - 1]!, variantB[0]!)) {
+        continue
+      }
+
       const endpointDistance = distance(
         variantA[variantA.length - 1]!,
         variantB[0]!,
       )
       if (
+        endpointDistance > EPS &&
         endpointDistance <= maxEndpointDistance &&
         (!best || endpointDistance < best.distance)
       ) {
@@ -70,19 +70,10 @@ const mergeTracePair = (
 
   if (!best) return null
 
-  const bridge = buildOrthogonalBridge(
-    best.pathA[best.pathA.length - 1]!,
-    best.pathB[0]!,
-  )
-
   return {
     ...traceA,
     mspPairId: traceA.mspPairId,
-    tracePath: removeDuplicateNeighborPoints([
-      ...best.pathA,
-      ...bridge,
-      ...best.pathB,
-    ]),
+    tracePath: removeDuplicateNeighborPoints([...best.pathA, ...best.pathB]),
     mspConnectionPairIds: uniq([
       ...(traceA.mspConnectionPairIds ?? [traceA.mspPairId]),
       ...(traceB.mspConnectionPairIds ?? [traceB.mspPairId]),
