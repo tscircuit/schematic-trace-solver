@@ -1,9 +1,12 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 
 type Orientation = "horizontal" | "vertical"
@@ -239,6 +242,13 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
       if (!oldIntersections.has(key)) return false
     }
 
+    const oldChipCollisions = this.getChipObstacleCollisionKeys(sourceTrace)
+    const newChipCollisions = this.getChipObstacleCollisionKeys(proposedTrace)
+
+    for (const key of newChipCollisions) {
+      if (!oldChipCollisions.has(key)) return false
+    }
+
     return true
   }
 
@@ -368,7 +378,15 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
 
       const overlapMin = Math.max(segmentA.min, segmentB.min)
       const overlapMax = Math.min(segmentA.max, segmentB.max)
-      if (overlapMax - overlapMin <= this.EPS) return null
+      if (overlapMax < overlapMin - this.EPS) return null
+      if (Math.abs(overlapMax - overlapMin) <= this.EPS) {
+        return [
+          "touch",
+          segmentA.orientation,
+          this.round(segmentA.axis),
+          this.round((overlapMin + overlapMax) / 2),
+        ].join(":")
+      }
 
       return [
         "overlap",
@@ -384,11 +402,11 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     const vertical = segmentA.orientation === "vertical" ? segmentA : segmentB
 
     if (
-      !this.isStrictlyBetween(vertical.axis, horizontal.min, horizontal.max)
+      !this.isBetweenInclusive(vertical.axis, horizontal.min, horizontal.max)
     ) {
       return null
     }
-    if (!this.isStrictlyBetween(horizontal.axis, vertical.min, vertical.max)) {
+    if (!this.isBetweenInclusive(horizontal.axis, vertical.min, vertical.max)) {
       return null
     }
 
@@ -405,9 +423,94 @@ export class SameNetTraceCombiningSolver extends BaseSolver {
     return null
   }
 
-  private isStrictlyBetween(value: number, a: number, b: number): boolean {
+  private getChipObstacleCollisionKeys(trace: SolvedTracePath): Set<string> {
+    const keys = new Set<string>()
+    if (!this.inputProblem) return keys
+
+    const chipById = new Map(
+      this.inputProblem.chips.map((chip) => [chip.chipId, chip]),
+    )
+    const obstacleRects = getObstacleRects(this.inputProblem)
+
+    for (
+      let segmentIndex = 0;
+      segmentIndex < trace.tracePath.length - 1;
+      segmentIndex++
+    ) {
+      const start = trace.tracePath[segmentIndex]!
+      const end = trace.tracePath[segmentIndex + 1]!
+      const allowedEndpointChipIds = this.getAllowedEndpointChipIds(
+        trace,
+        start,
+        end,
+        chipById,
+      )
+
+      for (const rect of obstacleRects) {
+        if (allowedEndpointChipIds.has(rect.chipId)) continue
+        if (segmentIntersectsRect(start, end, rect, this.EPS)) {
+          keys.add(`${segmentIndex}:${rect.chipId}`)
+        }
+      }
+    }
+
+    return keys
+  }
+
+  private getAllowedEndpointChipIds(
+    trace: SolvedTracePath,
+    start: Point,
+    end: Point,
+    chipById: Map<string, InputChip>,
+  ): Set<string> {
+    const allowedChipIds = new Set<string>()
+
+    for (const pin of trace.pins) {
+      const chip = chipById.get(pin.chipId)
+      if (!chip) continue
+
+      if (
+        this.samePoint(pin, start) &&
+        !this.segmentEntersPinChip(start, end, chip)
+      ) {
+        allowedChipIds.add(pin.chipId)
+      }
+
+      if (
+        this.samePoint(pin, end) &&
+        !this.segmentEntersPinChip(end, start, chip)
+      ) {
+        allowedChipIds.add(pin.chipId)
+      }
+    }
+
+    return allowedChipIds
+  }
+
+  private segmentEntersPinChip(
+    pinPoint: Point,
+    otherPoint: Point,
+    chip: InputChip,
+  ): boolean {
+    const bounds = getInputChipBounds(chip)
+    const dx = otherPoint.x - pinPoint.x
+    const dy = otherPoint.y - pinPoint.y
+    const onLeft = Math.abs(pinPoint.x - bounds.minX) <= this.EPS
+    const onRight = Math.abs(pinPoint.x - bounds.maxX) <= this.EPS
+    const onBottom = Math.abs(pinPoint.y - bounds.minY) <= this.EPS
+    const onTop = Math.abs(pinPoint.y - bounds.maxY) <= this.EPS
+
     return (
-      value > Math.min(a, b) + this.EPS && value < Math.max(a, b) - this.EPS
+      (onLeft && dx > this.EPS) ||
+      (onRight && dx < -this.EPS) ||
+      (onBottom && dy > this.EPS) ||
+      (onTop && dy < -this.EPS)
+    )
+  }
+
+  private isBetweenInclusive(value: number, a: number, b: number): boolean {
+    return (
+      value >= Math.min(a, b) - this.EPS && value <= Math.max(a, b) + this.EPS
     )
   }
 

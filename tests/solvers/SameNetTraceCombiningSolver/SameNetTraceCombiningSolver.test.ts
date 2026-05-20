@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { SameNetTraceCombiningSolver } from "lib/solvers/SameNetTraceCombiningSolver/SameNetTraceCombiningSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { InputProblem } from "lib/types/InputProblem"
 
 const makeTrace = (
   mspPairId: string,
@@ -34,6 +35,13 @@ const makeTrace = (
     pinIds: [`${mspPairId}.1`, `${mspPairId}.2`],
   }
 }
+
+const makeInputProblem = (chips: InputProblem["chips"]): InputProblem => ({
+  chips,
+  directConnections: [],
+  netConnections: [],
+  availableNetLabelOrientations: {},
+})
 
 test("snaps close overlapping same-net horizontal internal segments onto a shared axis", () => {
   const solver = new SameNetTraceCombiningSolver({
@@ -165,6 +173,75 @@ test("rejects same-net snap candidates that create a different-net crossing", ()
         { x: 0, y: -0.05 },
         { x: 0, y: 0.05 },
         { x: -1, y: 0.05 },
+      ]),
+    ],
+  })
+
+  solver.solve()
+
+  const traceB = solver
+    .getOutput()
+    .traces.find((t) => t.mspPairId === "trace-b")!
+  expect(traceB.tracePath[1]!.y).toBe(0.12)
+  expect(traceB.tracePath[2]!.y).toBe(0.12)
+  expect(solver.mergeCount).toBe(0)
+})
+
+test("rejects same-net snap candidates that create a different-net endpoint touch", () => {
+  const solver = new SameNetTraceCombiningSolver({
+    traces: [
+      makeTrace("trace-a", "NET1", [
+        { x: -2, y: -1 },
+        { x: -2, y: 0 },
+        { x: 2, y: 0 },
+        { x: 2, y: -1 },
+      ]),
+      makeTrace("trace-b", "NET1", [
+        { x: -2, y: 1 },
+        { x: -2, y: 0.12 },
+        { x: 2, y: 0.12 },
+        { x: 2, y: 1 },
+      ]),
+      makeTrace("trace-c", "NET2", [
+        { x: -3, y: 0 },
+        { x: -2, y: 0 },
+      ]),
+    ],
+  })
+
+  solver.solve()
+
+  const traceB = solver
+    .getOutput()
+    .traces.find((t) => t.mspPairId === "trace-b")!
+  expect(traceB.tracePath[1]!.y).toBe(0.12)
+  expect(traceB.tracePath[2]!.y).toBe(0.12)
+  expect(solver.mergeCount).toBe(0)
+})
+
+test("rejects same-net snap candidates that move a connector into a chip obstacle", () => {
+  const solver = new SameNetTraceCombiningSolver({
+    inputProblem: makeInputProblem([
+      {
+        chipId: "obstacle-chip",
+        center: { x: -2, y: 0.05 },
+        width: 0.05,
+        height: 0.05,
+        pins: [],
+      },
+    ]),
+    traces: [
+      makeTrace("trace-a", "NET1", [
+        { x: -2.5, y: -1 },
+        { x: -2.5, y: 0 },
+        { x: 2, y: 0 },
+        { x: 2, y: -1 },
+      ]),
+      makeTrace("trace-b", "NET1", [
+        { x: -2, y: 1 },
+        { x: -2, y: 0.12 },
+        { x: 1.5, y: 0.12 },
+        { x: 1.5, y: 1 },
       ]),
     ],
   })
