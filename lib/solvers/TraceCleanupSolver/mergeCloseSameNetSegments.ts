@@ -98,7 +98,7 @@ const withSegmentCoordinate = (
   segmentIndex: number,
   orientation: SegmentOrientation,
   coordinate: number,
-) => {
+): Point[] => {
   const p1 = { ...path[segmentIndex]! }
   const p2 = { ...path[segmentIndex + 1]! }
   if (orientation === "vertical") {
@@ -108,7 +108,7 @@ const withSegmentCoordinate = (
     p1.y = coordinate
     p2.y = coordinate
   }
-  return [p1, p2] as const
+  return [p1, p2]
 }
 
 const wouldOverlapDifferentNetTrace = (
