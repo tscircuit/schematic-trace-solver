@@ -85,3 +85,67 @@ test("TraceSegmentMergeSolver keeps close segments on different nets separate", 
     { x: 3, y: 3 },
   ])
 })
+
+test("TraceSegmentMergeSolver preserves orthogonal paths when closing range gaps", () => {
+  const solver = new TraceSegmentMergeSolver({
+    inputProblem,
+    inputTracePaths: [
+      makeTrace("a", "net-1", [
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+        { x: 4, y: 1 },
+        { x: 4, y: 0 },
+      ]),
+      makeTrace("b", "net-1", [
+        { x: 4.05, y: 3 },
+        { x: 4.05, y: 1.06 },
+        { x: 6, y: 1.06 },
+        { x: 6, y: 3 },
+      ]),
+    ],
+  })
+
+  solver.solve()
+
+  expect(solver.getOutput().traces[1]!.tracePath).toEqual([
+    { x: 4, y: 3 },
+    { x: 4, y: 1 },
+    { x: 6, y: 1 },
+    { x: 6, y: 3 },
+  ])
+})
+
+test("TraceSegmentMergeSolver rejects merges that create cross-net overlaps", () => {
+  const solver = new TraceSegmentMergeSolver({
+    inputProblem,
+    inputTracePaths: [
+      makeTrace("a", "net-1", [
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+        { x: 4, y: 1 },
+        { x: 4, y: 0 },
+      ]),
+      makeTrace("b", "net-1", [
+        { x: 1, y: 3 },
+        { x: 1, y: 1.06 },
+        { x: 3, y: 1.06 },
+        { x: 3, y: 3 },
+      ]),
+      makeTrace("c", "net-2", [
+        { x: 1.2, y: 0 },
+        { x: 1.2, y: 1 },
+        { x: 2.8, y: 1 },
+        { x: 2.8, y: 0 },
+      ]),
+    ],
+  })
+
+  solver.solve()
+
+  expect(solver.getOutput().traces[1]!.tracePath).toEqual([
+    { x: 1, y: 3 },
+    { x: 1, y: 1.06 },
+    { x: 3, y: 1.06 },
+    { x: 3, y: 3 },
+  ])
+})

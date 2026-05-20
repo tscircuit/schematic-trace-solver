@@ -164,6 +164,16 @@ export class TraceSegmentMergeSolver extends BaseSolver {
       return false
     }
     if (this.pathTouchesChipObstacle(nextTrace.tracePath)) return false
+    if (!this.isPathOrthogonal(nextTrace.tracePath)) return false
+    if (
+      this.pathCreatesNewCrossNetOverlap(
+        this.outputTracePaths[target.traceIndex]!.tracePath,
+        nextTrace.tracePath,
+        target.traceIndex,
+      )
+    ) {
+      return false
+    }
 
     this.outputTracePaths[target.traceIndex] = nextTrace
     return true
@@ -249,6 +259,14 @@ export class TraceSegmentMergeSolver extends BaseSolver {
     path[targetPointIndex]![axis] = targetStartsBeforeAnchor
       ? anchor.rangeStart
       : anchor.rangeEnd
+
+    const outsideNeighborIndex =
+      targetPointIndex === target.segmentIndex
+        ? target.segmentIndex - 1
+        : target.segmentIndex + 2
+    if (path[outsideNeighborIndex]) {
+      path[outsideNeighborIndex]![axis] = path[targetPointIndex]![axis]
+    }
   }
 
   private getPointIndexAtRangeStart(segment: SegmentLocator): number {
@@ -271,6 +289,101 @@ export class TraceSegmentMergeSolver extends BaseSolver {
     return isPathCollidingWithObstacles(
       path,
       getObstacleRects(this.inputProblem),
+    )
+  }
+
+  private isPathOrthogonal(path: Point[]): boolean {
+    for (let i = 0; i < path.length - 1; i++) {
+      const p1 = path[i]!
+      const p2 = path[i + 1]!
+      if (Math.abs(p1.x - p2.x) >= EPS && Math.abs(p1.y - p2.y) >= EPS) {
+        return false
+      }
+    }
+    return true
+  }
+
+  private pathCreatesNewCrossNetOverlap(
+    previousPath: Point[],
+    nextPath: Point[],
+    targetTraceIndex: number,
+  ): boolean {
+    const targetTrace = this.outputTracePaths[targetTraceIndex]!
+    for (let i = 0; i < this.outputTracePaths.length; i++) {
+      if (i === targetTraceIndex) continue
+      const otherTrace = this.outputTracePaths[i]!
+      if (otherTrace.globalConnNetId === targetTrace.globalConnNetId) continue
+      if (
+        this.pathsTouch(nextPath, otherTrace.tracePath) &&
+        !this.pathsTouch(previousPath, otherTrace.tracePath)
+      ) {
+        return true
+      }
+    }
+    return false
+  }
+
+  private pathsTouch(pathA: Point[], pathB: Point[]): boolean {
+    for (let i = 0; i < pathA.length - 1; i++) {
+      for (let j = 0; j < pathB.length - 1; j++) {
+        if (
+          this.segmentsTouch(pathA[i]!, pathA[i + 1]!, pathB[j]!, pathB[j + 1]!)
+        ) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  private segmentsTouch(a1: Point, a2: Point, b1: Point, b2: Point): boolean {
+    const aHorizontal = Math.abs(a1.y - a2.y) < EPS
+    const aVertical = Math.abs(a1.x - a2.x) < EPS
+    const bHorizontal = Math.abs(b1.y - b2.y) < EPS
+    const bVertical = Math.abs(b1.x - b2.x) < EPS
+
+    if ((!aHorizontal && !aVertical) || (!bHorizontal && !bVertical)) {
+      return false
+    }
+
+    if (aHorizontal && bHorizontal) {
+      if (Math.abs(a1.y - b1.y) >= EPS) return false
+      return this.rangesOverlap(a1.x, a2.x, b1.x, b2.x)
+    }
+    if (aVertical && bVertical) {
+      if (Math.abs(a1.x - b1.x) >= EPS) return false
+      return this.rangesOverlap(a1.y, a2.y, b1.y, b2.y)
+    }
+
+    const horizontal = aHorizontal
+      ? { start: a1, end: a2 }
+      : { start: b1, end: b2 }
+    const vertical = aVertical ? { start: a1, end: a2 } : { start: b1, end: b2 }
+    return (
+      this.valueInRange(
+        vertical.start.x,
+        horizontal.start.x,
+        horizontal.end.x,
+      ) &&
+      this.valueInRange(horizontal.start.y, vertical.start.y, vertical.end.y)
+    )
+  }
+
+  private rangesOverlap(
+    aStart: number,
+    aEnd: number,
+    bStart: number,
+    bEnd: number,
+  ): boolean {
+    return (
+      Math.max(Math.min(aStart, aEnd), Math.min(bStart, bEnd)) <=
+      Math.min(Math.max(aStart, aEnd), Math.max(bStart, bEnd)) + EPS
+    )
+  }
+
+  private valueInRange(value: number, start: number, end: number): boolean {
+    return (
+      value >= Math.min(start, end) - EPS && value <= Math.max(start, end) + EPS
     )
   }
 
