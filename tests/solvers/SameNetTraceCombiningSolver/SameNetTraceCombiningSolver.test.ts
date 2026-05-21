@@ -29,6 +29,7 @@ const emptyInput: InputProblem = {
   chips: [],
   directConnections: [],
   netConnections: [],
+  availableNetLabelOrientations: {},
 }
 
 test("snaps close horizontal same-net segments to average Y", () => {
