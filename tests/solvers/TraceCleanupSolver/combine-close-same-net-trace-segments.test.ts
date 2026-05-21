@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
-import { combineCloseSameNetTraceSegments } from "lib/solvers/TraceCleanupSolver/combineCloseSameNetTraceSegments"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { combineCloseSameNetTraceSegments } from "lib/solvers/TraceCleanupSolver/combineCloseSameNetTraceSegments"
 
 const makeTrace = (
   mspPairId: string,
