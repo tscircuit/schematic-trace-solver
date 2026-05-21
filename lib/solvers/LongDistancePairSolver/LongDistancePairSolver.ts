@@ -67,6 +67,12 @@ export class LongDistancePairSolver extends BaseSolver {
       }
     }
 
+    // Collect nets that have at least one primary MSP pair
+    const netsWithMspPairs = new Set<string>()
+    for (const pair of primaryMspConnectionPairs) {
+      netsWithMspPairs.add(pair.globalConnNetId)
+    }
+
     // 2. Generate candidate pairs using N-Nearest-Neighbors approach
     const candidatePairs: Array<
       [InputPin & { chipId: string }, InputPin & { chipId: string }]
@@ -74,6 +80,11 @@ export class LongDistancePairSolver extends BaseSolver {
     const addedPairKeys = new Set<string>()
 
     for (const netId of Object.keys(netConnMap.netMap)) {
+      // Skip nets that exist only as labels with no primary MSP pair —
+      // long-distance routing should only complete partially-routed nets,
+      // never invent traces for label-only nets.
+      if (!netsWithMspPairs.has(netId)) continue
+
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
 
