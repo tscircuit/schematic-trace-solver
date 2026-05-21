@@ -21,16 +21,13 @@ x+" data-x="0.3" data-y="0.1" cx="442.3470661672909" cy="346.3920099875156" r="3
 x+" data-x="0.3" data-y="0" cx="442.3470661672909" cy="381.3483146067416" r="3" fill="hsl(325, 100%, 50%, 0.8)" />
   </g>
   <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-0.4" data-y="0.101" cx="197.6529338327091" cy="346.04244694132336" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="-0.4" data-y="0.101" cx="197.6529338327091" cy="346.04244694132336" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: x-" data-x="-0.3" data-y="0" cx="232.60923845193508" cy="381.3483146067416" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="-0.3" data-y="0" cx="232.60923845193508" cy="381.3483146067416" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: x+" data-x="0.3" data-y="0.1" cx="442.3470661672909" cy="346.3920099875156" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="0.3" data-y="0.1" cx="442.3470661672909" cy="346.3920099875156" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="-0.3,0.1 -0.3,-0.1" data-type="line" data-label="" points="232.60923845193508,346.3920099875156 232.60923845193508,416.3046192259676" fill="none" stroke="hsl(325, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />

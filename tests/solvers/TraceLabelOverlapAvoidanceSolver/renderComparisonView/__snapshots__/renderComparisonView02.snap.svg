@@ -128,13 +128,13 @@ x-" data-x="7.850000000000001" data-y="-2.545" cx="490.488888888889" cy="397.808
     <rect data-type="rect" data-label="schematic_component_1" data-x="2.7" data-y="-2.095" x="179.3777777777778" y="355.4977777777778" width="109.51111111111112" height="39.82222222222225" fill="hsl(24, 100%, 50%, 0.1)" stroke="black" stroke-width="0.020089285714285712" />
   </g>
   <g>
-    <rect data-type="rect" data-label="connectivity_net0" data-x="1.4000000000000001" data-y="-2.52" x="164.44444444444446" y="385.3644444444445" width="9.955555555555577" height="22.400000000000034" fill="none" stroke="hsl(40, 100%, 50%, 1)" stroke-width="0.020089285714285712" />
+    <rect data-type="rect" data-label="merged-group-J1-x-" data-x="1.374" data-y="-1.995" x="156.92800000000003" y="360.47555555555556" width="22.400000000000006" height="19.911111111111154" fill="hsl(296, 100%, 50%, 0.2)" stroke="hsl(296, 100%, 50%, 1)" stroke-width="0.020089285714285712" />
   </g>
   <g>
     <rect data-type="rect" data-label="connectivity_net1" data-x="1.4260000000000002" data-y="0.30000000000000004" x="159.51644444444446" y="251.21333333333337" width="22.400000000000034" height="9.95555555555552" fill="none" stroke="hsl(40, 100%, 50%, 1)" stroke-width="0.020089285714285712" />
   </g>
   <g>
-    <rect data-type="rect" data-label="merged-group-J1-x-" data-x="1.374" data-y="-1.995" x="156.92800000000003" y="360.47555555555556" width="22.400000000000006" height="19.911111111111154" fill="hsl(296, 100%, 50%, 0.2)" stroke="hsl(296, 100%, 50%, 1)" stroke-width="0.020089285714285712" />
+    <rect data-type="rect" data-label="connectivity_net0" data-x="1.4000000000000001" data-y="-2.52" x="164.44444444444446" y="385.3644444444445" width="9.955555555555577" height="22.400000000000034" fill="none" stroke="hsl(40, 100%, 50%, 1)" stroke-width="0.020089285714285712" />
   </g>
   <g>
     <rect data-type="rect" data-label="schematic_component_0" data-x="6.250000000000001" data-y="-0.25" x="351.1111111111112" y="258.68" width="119.46666666666664" height="49.77777777777777" fill="hsl(24, 100%, 50%, 0.1)" stroke="black" stroke-width="0.020089285714285712" />
