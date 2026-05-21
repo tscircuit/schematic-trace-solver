@@ -1,13 +1,13 @@
 import type { GraphicsObject } from "graphics-debug"
-import { traceCrossesBoundsInterior } from "lib/solvers/AvailableNetOrientationSolver/geometry"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { traceCrossesBoundsInterior } from "../AvailableNetOrientationSolver/geometry"
+import { BaseSolver } from "../BaseSolver/BaseSolver"
+import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
   getRectBounds,
-} from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { InputProblem } from "lib/types/InputProblem"
+} from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { InputProblem } from "../../types/InputProblem"
 import {
   getDistance,
   getTraceCorners,

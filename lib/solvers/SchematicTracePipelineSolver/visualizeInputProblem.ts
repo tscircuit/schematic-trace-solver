@@ -1,6 +1,6 @@
 import type { GraphicsObject } from "graphics-debug"
-import type { PinId, InputPin, InputProblem } from "lib/types/InputProblem"
-import { getColorFromString } from "lib/utils/getColorFromString"
+import type { PinId, InputPin, InputProblem } from "../../types/InputProblem"
+import { getColorFromString } from "../../utils/getColorFromString"
 import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 

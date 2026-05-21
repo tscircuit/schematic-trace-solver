@@ -1,4 +1,4 @@
-import type { InputPin, PinId } from "lib/types/InputProblem"
+import type { InputPin, PinId } from "../../types/InputProblem"
 
 /**
  * Compute the Orthogonal (Manhattan/L1) Minimum Spanning Tree (MST)

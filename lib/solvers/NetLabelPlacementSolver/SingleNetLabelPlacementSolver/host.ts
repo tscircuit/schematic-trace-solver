@@ -1,6 +1,6 @@
-import type { InputChip, InputProblem } from "lib/types/InputProblem"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import type { InputChip, InputProblem } from "../../../types/InputProblem"
+import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { MspConnectionPairId } from "../../MspConnectionPairSolver/MspConnectionPairSolver"
 
 export function lengthOfTrace(path: SolvedTracePath): number {
   let sum = 0

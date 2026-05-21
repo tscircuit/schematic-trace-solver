@@ -1,4 +1,4 @@
-import type { InputChip } from "lib/types/InputProblem"
+import type { InputChip } from "../../types/InputProblem"
 
 export interface ChipBounds {
   minX: number

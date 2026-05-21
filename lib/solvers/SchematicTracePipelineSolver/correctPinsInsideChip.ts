@@ -1,4 +1,4 @@
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputProblem } from "../../types/InputProblem"
 import { getInputChipBounds } from "../GuidelinesSolver/getInputChipBounds"
 
 export const correctPinsInsideChips = (problem: InputProblem) => {

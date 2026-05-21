@@ -1,7 +1,7 @@
 import type { Point } from "@tscircuit/math-utils"
-import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { FacingDirection } from "lib/utils/dir"
+import { getRectBounds } from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { FacingDirection } from "../../utils/dir"
 import type { Bounds, TraceLocation } from "./types"
 
 export const EPS = 1e-6

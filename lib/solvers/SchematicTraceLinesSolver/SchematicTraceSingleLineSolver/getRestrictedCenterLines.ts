@@ -4,7 +4,7 @@ import type {
   InputPin,
   InputProblem,
   PinId,
-} from "lib/types/InputProblem"
+} from "../../../types/InputProblem"
 import { getPinDirection } from "./getPinDirection"
 
 type ChipPin = InputPin & { chipId: ChipId }

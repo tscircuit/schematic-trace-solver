@@ -1,5 +1,5 @@
 import { ConnectivityMap } from "connectivity-map"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputProblem } from "../../types/InputProblem"
 
 export const getConnectivityMapsFromInputProblem = (
   inputProblem: InputProblem,

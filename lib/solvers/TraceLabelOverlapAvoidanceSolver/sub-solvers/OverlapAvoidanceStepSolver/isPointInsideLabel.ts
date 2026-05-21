@@ -1,6 +1,6 @@
 import type { Point } from "graphics-debug"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { getRectBounds } from "../../../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 
 /**
  * Checks if a point is inside the bounding box of a net label.

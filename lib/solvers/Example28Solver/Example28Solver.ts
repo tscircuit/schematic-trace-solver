@@ -1,13 +1,13 @@
 import type { GraphicsObject } from "graphics-debug"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { BaseSolver } from "../BaseSolver/BaseSolver"
+import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { getObstacleRects } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import {
   detectTraceLabelOverlap,
   type TraceLabelOverlap,
-} from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
-import type { InputProblem } from "lib/types/InputProblem"
+} from "../TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
+import type { InputProblem } from "../../types/InputProblem"
 import { moveAttachedLabelsToReroutedTrace } from "./labelMovement"
 import { findBestReroutePath } from "./reroute"
 import type { Example28SolverParams, RerouteCandidateResult } from "./types"

@@ -1,14 +1,14 @@
-import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
-import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import type { MspConnectionPair } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 import type {
   InputProblem,
   InputPin,
   PinId,
   InputChip,
-} from "lib/types/InputProblem"
+} from "../../types/InputProblem"
 import { BaseSolver } from "../BaseSolver/BaseSolver"
 import { SchematicTraceSingleLineSolver2 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
-import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
+import { doesTraceOverlapWithExistingTraces } from "../../utils/does-trace-overlap-with-existing-traces"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"

@@ -1,5 +1,5 @@
-import type { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
-import type { FacingDirection } from "lib/utils/dir"
+import type { ChipObstacleSpatialIndex } from "../data-structures/ChipObstacleSpatialIndex"
+import type { FacingDirection } from "../utils/dir"
 
 export type ChipId = string
 export type PinId = string

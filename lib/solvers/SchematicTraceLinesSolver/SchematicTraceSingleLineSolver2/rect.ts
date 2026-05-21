@@ -1,5 +1,5 @@
-import type { InputChip, InputProblem } from "lib/types/InputProblem"
-import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
+import type { InputChip, InputProblem } from "../../../types/InputProblem"
+import { getInputChipBounds } from "../../GuidelinesSolver/getInputChipBounds"
 
 export type ChipWithBounds = {
   chipId: string

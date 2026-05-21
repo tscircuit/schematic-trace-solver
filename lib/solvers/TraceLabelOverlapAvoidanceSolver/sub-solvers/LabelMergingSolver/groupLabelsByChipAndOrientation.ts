@@ -1,5 +1,5 @@
 import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputProblem } from "../../../../types/InputProblem"
 
 /**
  * Groups NetLabelPlacement objects by their associated chip ID and orientation.

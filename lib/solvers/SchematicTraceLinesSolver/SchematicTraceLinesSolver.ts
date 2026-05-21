@@ -1,7 +1,7 @@
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { BaseSolver } from "../BaseSolver/BaseSolver"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { getBounds, type GraphicsObject } from "graphics-debug"
-import type { InputChip, InputProblem, PinId } from "lib/types/InputProblem"
+import type { InputChip, InputProblem, PinId } from "../../types/InputProblem"
 import type {
   MspConnectionPair,
   MspConnectionPairId,

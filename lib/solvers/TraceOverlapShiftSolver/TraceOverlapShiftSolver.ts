@@ -1,6 +1,6 @@
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { BaseSolver } from "../BaseSolver/BaseSolver"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputProblem } from "../../types/InputProblem"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"
 import {

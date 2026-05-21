@@ -1,14 +1,14 @@
 import type { Point } from "@tscircuit/math-utils"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { BaseSolver } from "../../../BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputProblem } from "../../../../types/InputProblem"
 import type { GraphicsObject } from "graphics-debug"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
-import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
-import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type { SolvedTracePath } from "../../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { isPathCollidingWithObstacles } from "../../../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { getObstacleRects } from "../../../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import { visualizeInputProblem } from "../../../SchematicTracePipelineSolver/visualizeInputProblem"
 import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
-import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { simplifyPath } from "../../../TraceCleanupSolver/simplifyPath"
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath

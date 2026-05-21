@@ -1,16 +1,16 @@
 import { getBounds, type GraphicsObject } from "graphics-debug"
-import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { Guideline } from "lib/solvers/GuidelinesSolver/GuidelinesSolver"
-import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import { ChipObstacleSpatialIndex } from "../../../data-structures/ChipObstacleSpatialIndex"
+import { BaseSolver } from "../../BaseSolver/BaseSolver"
+import type { Guideline } from "../../GuidelinesSolver/GuidelinesSolver"
+import type { MspConnectionPair } from "../../MspConnectionPairSolver/MspConnectionPairSolver"
+import { visualizeInputProblem } from "../../SchematicTracePipelineSolver/visualizeInputProblem"
 import type {
   ChipId,
   InputChip,
   InputPin,
   InputProblem,
   PinId,
-} from "lib/types/InputProblem"
+} from "../../../types/InputProblem"
 import { calculateElbow } from "calculate-elbow"
 import { getPinDirection } from "./getPinDirection"
 import {
@@ -18,9 +18,9 @@ import {
   type MovableSegment,
 } from "./generateElbowVariants"
 import type { Point } from "@tscircuit/math-utils"
-import { visualizeGuidelines } from "lib/solvers/GuidelinesSolver/visualizeGuidelines"
-import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
-import { getColorFromString } from "lib/utils/getColorFromString"
+import { visualizeGuidelines } from "../../GuidelinesSolver/visualizeGuidelines"
+import { getInputChipBounds } from "../../GuidelinesSolver/getInputChipBounds"
+import { getColorFromString } from "../../../utils/getColorFromString"
 import { getRestrictedCenterLines } from "./getRestrictedCenterLines"
 
 type ChipPin = InputPin & { chipId: ChipId }

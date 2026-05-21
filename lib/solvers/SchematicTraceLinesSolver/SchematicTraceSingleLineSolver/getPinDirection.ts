@@ -1,4 +1,4 @@
-import type { InputChip, InputPin } from "lib/types/InputProblem"
+import type { InputChip, InputPin } from "../../../types/InputProblem"
 
 export const getPinDirection = (
   pin: InputPin,

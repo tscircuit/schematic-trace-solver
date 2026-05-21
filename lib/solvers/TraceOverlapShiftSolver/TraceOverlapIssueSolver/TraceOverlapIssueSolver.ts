@@ -1,7 +1,7 @@
 import type { GraphicsObject } from "graphics-debug"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { BaseSolver } from "../../BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "../../MspConnectionPairSolver/MspConnectionPairSolver"
+import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { applyJogToTerminalSegment } from "./applyJogToTrace"
 
 type ConnNetId = string

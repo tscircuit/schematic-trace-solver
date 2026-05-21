@@ -1,7 +1,7 @@
-import type { InputChip } from "lib/types/InputProblem"
+import type { InputChip } from "../types/InputProblem"
 import type { Bounds, Point } from "@tscircuit/math-utils"
 import Flatbush from "flatbush"
-import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
+import { getInputChipBounds } from "../solvers/GuidelinesSolver/getInputChipBounds"
 
 export interface SpatiallyIndexedChip extends InputChip {
   bounds: Bounds

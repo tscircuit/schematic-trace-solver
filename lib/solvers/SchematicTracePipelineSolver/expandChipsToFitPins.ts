@@ -1,4 +1,4 @@
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputProblem } from "../../types/InputProblem"
 
 /**
  * Expands chip width/height (never shrinks) so that all existing pin coordinates

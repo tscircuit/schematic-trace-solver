@@ -1,16 +1,16 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
-import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { ChipObstacleSpatialIndex } from "../../data-structures/ChipObstacleSpatialIndex"
+import { BaseSolver } from "../BaseSolver/BaseSolver"
+import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
   getDimsForOrientation,
   getRectBounds,
-} from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { InputPin, InputProblem } from "lib/types/InputProblem"
-import { dir, type FacingDirection } from "lib/utils/dir"
+} from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { InputPin, InputProblem } from "../../types/InputProblem"
+import { dir, type FacingDirection } from "../../utils/dir"
 import { EPS, LABEL_SEARCH_STEP, WICK_CLEARANCE } from "./constants"
 import {
   getConnectorTracePath,

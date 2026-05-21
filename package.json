@@ -1,6 +1,14 @@
 {
   "name": "@tscircuit/schematic-trace-solver",
-  "main": "dist/index.js",
+  "main": "./lib/index.ts",
+  "types": "./lib/index.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.ts",
+      "import": "./lib/index.ts",
+      "default": "./lib/index.ts"
+    }
+  },
   "version": "0.0.57",
   "type": "module",
   "scripts": {

@@ -4,8 +4,8 @@
  */
 
 import type { GraphicsObject } from "graphics-debug"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { InputProblem } from "lib/types/InputProblem"
+import { BaseSolver } from "../BaseSolver/BaseSolver"
+import type { InputProblem } from "../../types/InputProblem"
 import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 import {
   SchematicTraceLinesSolver,

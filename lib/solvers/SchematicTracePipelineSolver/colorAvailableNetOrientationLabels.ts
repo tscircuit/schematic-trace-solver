@@ -1,5 +1,5 @@
 import type { GraphicsObject } from "graphics-debug"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputProblem } from "../../types/InputProblem"
 
 const AVAILABLE_Y_PLUS_COLOR = "#ef4444"
 const AVAILABLE_Y_MINUS_COLOR = "#000000"

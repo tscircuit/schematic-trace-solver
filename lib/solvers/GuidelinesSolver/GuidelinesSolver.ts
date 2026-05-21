@@ -1,5 +1,5 @@
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { InputChip, InputProblem } from "lib/types/InputProblem"
+import { BaseSolver } from "../BaseSolver/BaseSolver"
+import type { InputChip, InputProblem } from "../../types/InputProblem"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { getBounds, type GraphicsObject } from "graphics-debug"
 import { getGeneratorForAllChipPairs } from "./getGeneratorForAllChipPairs"

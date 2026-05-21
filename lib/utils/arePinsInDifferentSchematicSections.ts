@@ -1,4 +1,4 @@
-import type { InputProblem, InputPin } from "lib/types/InputProblem"
+import type { InputProblem, InputPin } from "../types/InputProblem"
 
 const getSectionNameForPin = (
   sectionByChipId: Map<string, string>,

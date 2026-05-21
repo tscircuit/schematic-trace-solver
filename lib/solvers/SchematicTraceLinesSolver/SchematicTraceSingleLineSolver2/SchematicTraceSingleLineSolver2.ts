@@ -1,13 +1,13 @@
 import type { GraphicsObject } from "graphics-debug"
-import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import { visualizeInputProblem } from "../../SchematicTracePipelineSolver/visualizeInputProblem"
+import { BaseSolver } from "../../BaseSolver/BaseSolver"
+import type { MspConnectionPair } from "../../MspConnectionPairSolver/MspConnectionPairSolver"
 import type {
   ChipId,
   InputChip,
   InputProblem,
   PinId,
-} from "lib/types/InputProblem"
+} from "../../../types/InputProblem"
 import type { Point } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
 import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"

@@ -1,13 +1,13 @@
 import type { Point } from "@tscircuit/math-utils"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { segmentIntersectsRect as segmentIntersectsLabelRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
-import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
-import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
-import { generateRerouteCandidates } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/rerouteCollidingTrace"
-import type { InputProblem } from "lib/types/InputProblem"
-import { dir } from "lib/utils/dir"
+import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { segmentIntersectsRect as segmentIntersectsLabelRect } from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
+import { getRectBounds } from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { simplifyPath } from "../TraceCleanupSolver/simplifyPath"
+import { detectTraceLabelOverlap } from "../TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
+import { generateRerouteCandidates } from "../TraceLabelOverlapAvoidanceSolver/rerouteCollidingTrace"
+import type { InputProblem } from "../../types/InputProblem"
+import { dir } from "../../utils/dir"
 import {
   countPathIntersections,
   getPathKey,

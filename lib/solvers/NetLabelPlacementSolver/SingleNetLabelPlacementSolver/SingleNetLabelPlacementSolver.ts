@@ -1,14 +1,14 @@
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { BaseSolver } from "../../BaseSolver/BaseSolver"
 import type {
   NetLabelPlacement,
   OverlappingSameNetTraceGroup,
 } from "../NetLabelPlacementSolver"
-import type { InputProblem, PinId } from "lib/types/InputProblem"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { FacingDirection } from "lib/utils/dir"
+import type { InputProblem, PinId } from "../../../types/InputProblem"
+import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { MspConnectionPairId } from "../../MspConnectionPairSolver/MspConnectionPairSolver"
+import type { FacingDirection } from "../../../utils/dir"
 import type { GraphicsObject } from "graphics-debug"
-import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
+import { ChipObstacleSpatialIndex } from "../../../data-structures/ChipObstacleSpatialIndex"
 import {
   getDimsForOrientation,
   getCenterFromAnchor,

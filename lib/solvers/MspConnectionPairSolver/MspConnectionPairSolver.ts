@@ -1,16 +1,16 @@
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { BaseSolver } from "../BaseSolver/BaseSolver"
 import type {
   InputChip,
   InputPin,
   InputProblem,
   PinId,
-} from "lib/types/InputProblem"
+} from "../../types/InputProblem"
 import { ConnectivityMap } from "connectivity-map"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCenterLines"
 import type { GraphicsObject } from "graphics-debug"
-import { getColorFromString } from "lib/utils/getColorFromString"
+import { getColorFromString } from "../../utils/getColorFromString"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 

@@ -2,10 +2,10 @@ import type { Point } from "@tscircuit/math-utils"
 import {
   getCenterFromAnchor,
   getDimsForOrientation,
-} from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { InputProblem } from "lib/types/InputProblem"
-import type { FacingDirection } from "lib/utils/dir"
+} from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import type { InputProblem } from "../../types/InputProblem"
+import type { FacingDirection } from "../../utils/dir"
 import {
   EPS,
   getManhattanDistance,

@@ -1,6 +1,6 @@
 import type { Point } from "@tscircuit/math-utils"
-import type { Guideline } from "lib/solvers/GuidelinesSolver/GuidelinesSolver"
-import { dir, type FacingDirection } from "lib/utils/dir"
+import type { Guideline } from "../../GuidelinesSolver/GuidelinesSolver"
+import { dir, type FacingDirection } from "../../../utils/dir"
 
 export interface MovableSegment {
   start: Point

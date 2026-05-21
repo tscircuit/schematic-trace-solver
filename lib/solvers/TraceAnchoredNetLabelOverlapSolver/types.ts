@@ -1,8 +1,8 @@
 import type { Point } from "@tscircuit/math-utils"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { InputProblem } from "lib/types/InputProblem"
-import type { FacingDirection } from "lib/utils/dir"
+import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { InputProblem } from "../../types/InputProblem"
+import type { FacingDirection } from "../../utils/dir"
 
 export interface TraceAnchoredNetLabelOverlapSolverParams {
   inputProblem: InputProblem

@@ -1,5 +1,5 @@
 import type { Point } from "@tscircuit/math-utils"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { Bounds } from "./types"
 
 export const EPS = 1e-6

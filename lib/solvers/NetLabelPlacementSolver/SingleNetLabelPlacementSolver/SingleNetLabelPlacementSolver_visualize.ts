@@ -1,6 +1,6 @@
 import type { GraphicsObject } from "graphics-debug"
-import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import { getColorFromString } from "lib/utils/getColorFromString"
+import { visualizeInputProblem } from "../../SchematicTracePipelineSolver/visualizeInputProblem"
+import { getColorFromString } from "../../../utils/getColorFromString"
 import { chooseHostTraceForGroup } from "./host"
 import type { SingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver"
 

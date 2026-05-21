@@ -1,7 +1,7 @@
 import type { Point } from "@tscircuit/math-utils"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { InputProblem } from "lib/types/InputProblem"
-import type { FacingDirection } from "lib/utils/dir"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { InputProblem } from "../../types/InputProblem"
+import type { FacingDirection } from "../../utils/dir"
 import { EPS, TRACE_BOUNDARY_TOLERANCE } from "./constants"
 import type { Bounds, ChipSide } from "./types"
 

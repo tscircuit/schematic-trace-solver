@@ -1,6 +1,6 @@
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { InputPin, InputProblem } from "lib/types/InputProblem"
+import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { InputPin, InputProblem } from "../../types/InputProblem"
 import type { CandidateLabel } from "./types"
 
 export const getPinMap = (inputProblem: InputProblem) => {

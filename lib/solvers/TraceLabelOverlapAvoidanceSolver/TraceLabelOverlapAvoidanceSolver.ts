@@ -5,7 +5,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem } from "../../types/InputProblem"
 import { MergedNetLabelObstacleSolver } from "./sub-solvers/LabelMergingSolver/LabelMergingSolver"
-import { getColorFromString } from "lib/utils/getColorFromString"
+import { getColorFromString } from "../../utils/getColorFromString"
 import { OverlapAvoidanceStepSolver } from "./sub-solvers/OverlapAvoidanceStepSolver/OverlapAvoidanceStepSolver"
 import { detectTraceLabelOverlap } from "./detectTraceLabelOverlap"
 

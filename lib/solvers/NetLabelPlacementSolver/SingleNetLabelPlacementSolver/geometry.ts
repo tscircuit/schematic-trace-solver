@@ -1,4 +1,4 @@
-import type { FacingDirection } from "lib/utils/dir"
+import type { FacingDirection } from "../../../utils/dir"
 
 export const NET_LABEL_HORIZONTAL_WIDTH = 0.45
 export const NET_LABEL_HORIZONTAL_HEIGHT = 0.2

@@ -1,5 +1,5 @@
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import type { SolvedTracePath } from "../../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
 
 interface Props {
