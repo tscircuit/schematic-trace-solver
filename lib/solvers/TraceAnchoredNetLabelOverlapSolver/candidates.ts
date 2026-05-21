@@ -338,14 +338,26 @@ const getNetLabelWidth = (
   inputProblem: InputProblem,
   label: NetLabelPlacement,
 ) => {
-  const configuredWidth = inputProblem.netConnections.find(
+  const ncWidthByNetId = inputProblem.netConnections.find(
     (connection) => connection.netId === label.netId,
   )?.netLabelWidth
-  if (configuredWidth !== undefined) return configuredWidth
+  if (ncWidthByNetId !== undefined) return ncWidthByNetId
 
-  return label.orientation === "y+" || label.orientation === "y-"
-    ? label.height
-    : label.width
+  const dcWidth = inputProblem.directConnections.find((dc) =>
+    dc.pinIds.some((pid) => label.pinIds.includes(pid)),
+  )?.netLabelWidth
+  if (dcWidth !== undefined) return dcWidth
+
+  const ncWidthByPinId = inputProblem.netConnections.find((nc) =>
+    nc.pinIds.some((pid) => label.pinIds.includes(pid)),
+  )?.netLabelWidth
+  if (ncWidthByPinId !== undefined) return ncWidthByPinId
+
+  if (label.orientation === "y+" || label.orientation === "y-") {
+    return label.height
+  }
+
+  return label.width
 }
 
 const roundDistance = (distance: number) => Number(distance.toFixed(6))

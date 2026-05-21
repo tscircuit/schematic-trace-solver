@@ -431,9 +431,25 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private getNetLabelWidth(label: NetLabelPlacement) {
-    if (!label.netId) return undefined
-    return this.inputProblem.netConnections.find(
-      (connection) => connection.netId === label.netId,
+    if (label.netId) {
+      const ncWidth = this.inputProblem.netConnections.find(
+        (connection) => connection.netId === label.netId,
+      )?.netLabelWidth
+      if (ncWidth !== undefined) return ncWidth
+
+      const dcWidthByNetId = this.inputProblem.directConnections.find(
+        (dc) => dc.netId === label.netId,
+      )?.netLabelWidth
+      if (dcWidthByNetId !== undefined) return dcWidthByNetId
+    }
+
+    const dcWidthByPinId = this.inputProblem.directConnections.find((dc) =>
+      dc.pinIds.some((pid) => label.pinIds.includes(pid)),
+    )?.netLabelWidth
+    if (dcWidthByPinId !== undefined) return dcWidthByPinId
+
+    return this.inputProblem.netConnections.find((nc) =>
+      nc.pinIds.some((pid) => label.pinIds.includes(pid)),
     )?.netLabelWidth
   }
 

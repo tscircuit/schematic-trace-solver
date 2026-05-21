@@ -32,6 +32,7 @@ export type RerouteCandidateResult = {
   path: Point[]
   score?: TracePathScore
   status: "valid" | "duplicate" | "chip-collision"
+  usesHorizontalSegmentPush?: boolean
   selected: boolean
 }
 
