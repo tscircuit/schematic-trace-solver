@@ -24,6 +24,7 @@ export interface InputChip {
 export interface InputDirectConnection {
   pinIds: [PinId, PinId]
   netId?: string
+  netLabelWidth?: number
 }
 
 export interface InputNetConnection {
