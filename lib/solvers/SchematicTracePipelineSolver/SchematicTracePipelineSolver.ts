@@ -32,6 +32,7 @@ import { UnroutedTraceRecoverySolver } from "../UnroutedTraceRecoverySolver/Unro
 import { SameNetJunctionAlignmentSolver } from "../SameNetJunctionAlignmentSolver/SameNetJunctionAlignmentSolver"
 import { TraceElbowTransitionSimplificationSolver } from "../TraceElbowTransitionSimplificationSolver/TraceElbowTransitionSimplificationSolver"
 import { InlineNetLabelSolver } from "../InlineNetLabelSolver/InlineNetLabelSolver"
+import { SameNetTraceMergeSolver } from "../SameNetTraceMergeSolver/SameNetTraceMergeSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -81,6 +82,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
+  sameNetTraceMergeSolver?: SameNetTraceMergeSolver
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
   postLabelTraceOverlapShiftSolver?: TraceOverlapShiftSolver
@@ -267,10 +269,22 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ]
     }),
     definePipelineStep(
+      "sameNetTraceMergeSolver",
+      SameNetTraceMergeSolver,
+      (instance) => [
+        {
+          traces:
+            instance.traceCleanupSolver?.getOutput().traces ??
+            instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces,
+        },
+      ],
+    ),
+    definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
       (instance) => {
         const traces =
+          instance.sameNetTraceMergeSolver?.getOutput().traces ??
           instance.traceCleanupSolver?.getOutput().traces ??
           instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
@@ -286,6 +300,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     ),
     definePipelineStep("example28Solver", Example28Solver, (instance) => {
       const traces =
+        instance.sameNetTraceMergeSolver?.getOutput().traces ??
         instance.traceCleanupSolver?.getOutput().traces ??
         instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 

@@ -1,4 +1,6 @@
 export * from "./solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+export * from "./solvers/SameNetTraceMergeSolver/SameNetTraceMergeSolver"
+export * from "./solvers/SameNetTraceMergeSolver/mergeSameNetTraceSegments"
 export * from "./types/InputProblem"
 export * from "./solvers/InlineNetLabelSolver/InlineNetLabelSolver"
 export type { NetLabelPlacement } from "./solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
