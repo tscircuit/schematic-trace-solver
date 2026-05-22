@@ -328,9 +328,10 @@ export class SameNetTraceConsolidationSolver extends BaseSolver {
     }
 
     this.consolidationPassCount++
-    if (this.consolidationPassCount > MAX_CONSOLIDATION_PASSES) {
-      this.error = `${this.constructor.name} exceeded ${MAX_CONSOLIDATION_PASSES} consolidation passes`
-      this.failed = true
+    if (this.consolidationPassCount >= MAX_CONSOLIDATION_PASSES) {
+      this.stats.consolidationPassLimitExceeded = true
+      this.stats.consolidationPassCount = this.consolidationPassCount
+      this.solved = true
     }
   }
 

@@ -318,6 +318,22 @@ test("uses current output traces when rejecting later cross-net intersections", 
   expect(output["z-vcc-branch"]!.tracePath).toEqual(rejectedBranch.tracePath)
 })
 
+test("stops gracefully if the consolidation pass limit is reached", () => {
+  const solver = new SameNetTraceConsolidationSolver({
+    inputProblem,
+    inputTraces: [],
+  })
+  ;(solver as any).applyNextConsolidationPass = () => true
+
+  solver.solve()
+
+  expect(solver.solved).toBe(true)
+  expect(solver.failed).toBe(false)
+  expect(solver.error).toBe(null)
+  expect(solver.stats.consolidationPassLimitExceeded).toBe(true)
+  expect(solver.stats.consolidationPassCount).toBe(1000)
+})
+
 test("consolidates transitive chains deterministically", () => {
   const output = solve([
     trace({
