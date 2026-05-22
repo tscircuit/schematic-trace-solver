@@ -102,6 +102,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private _runAlignSameNetSegmentsStep() {
     const result = alignNearbySameNetTraceSegments(
       Array.from(this.tracesMap.values()),
+      this.input,
     )
 
     if (result.changed) {

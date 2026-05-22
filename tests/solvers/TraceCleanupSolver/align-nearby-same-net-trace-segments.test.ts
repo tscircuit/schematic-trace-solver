@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { alignNearbySameNetTraceSegments } from "lib/solvers/TraceCleanupSolver/alignNearbySameNetTraceSegments"
+import type { InputProblem } from "lib/types/InputProblem"
 
 const makeTrace = (
   mspPairId: string,
@@ -114,5 +115,46 @@ test("alignNearbySameNetTraceSegments does not move endpoint segments", () => {
   expect(result.traces.map((trace) => trace.tracePath)).toEqual([
     firstTrace.tracePath,
     secondTrace.tracePath,
+  ])
+})
+
+test("alignNearbySameNetTraceSegments does not introduce obstacle intersections", () => {
+  const keepTrace = makeTrace("pair-a", "NET1", [
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    { x: 1, y: 1 },
+    { x: 3, y: 1 },
+    { x: 3, y: 0 },
+  ])
+  const moveTrace = makeTrace("pair-b", "NET1", [
+    { x: 0, y: 0.08 },
+    { x: 1.2, y: 0.08 },
+    { x: 1.2, y: 1.08 },
+    { x: 2.8, y: 1.08 },
+    { x: 2.8, y: 0.08 },
+  ])
+  const inputProblem: InputProblem = {
+    chips: [
+      {
+        chipId: "obstacle",
+        center: { x: 2, y: 1 },
+        width: 1,
+        height: 0.08,
+        pins: [],
+      },
+    ],
+    directConnections: [],
+    netConnections: [],
+    availableNetLabelOrientations: {},
+  }
+
+  const result = alignNearbySameNetTraceSegments([keepTrace, moveTrace], {
+    inputProblem,
+  })
+
+  expect(result.changed).toBe(false)
+  expect(result.traces.map((trace) => trace.tracePath)).toEqual([
+    keepTrace.tracePath,
+    moveTrace.tracePath,
   ])
 })
