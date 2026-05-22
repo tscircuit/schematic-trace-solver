@@ -37,6 +37,7 @@ export interface SameNetTraceConsolidationSolverInput {
 
 const DEFAULT_MERGE_DISTANCE = 0.12
 const DEFAULT_INTERVAL_GAP = 0.12
+const MAX_CONSOLIDATION_PASSES = 1000
 const EPS = 1e-6
 
 const cloneTrace = (trace: SolvedTracePath): SolvedTracePath => ({
@@ -232,8 +233,6 @@ const snappedPathForSegment = (
   segment: SegmentRef,
   coord: number,
 ): Point[] | null => {
-  if (Math.abs(segment.coord - coord) < EPS) return null
-
   const pts = trace.tracePath.map((p) => ({ ...p }))
   const segmentStart = pts[segment.segmentIndex]!
   const segmentEnd = pts[segment.segmentIndex + 1]!
@@ -242,6 +241,7 @@ const snappedPathForSegment = (
   const isLastSegment = segment.segmentIndex + 1 === lastIndex
 
   if (isFirstSegment && isLastSegment) return null
+  if (Math.abs(segment.coord - coord) < EPS) return null
 
   if (segment.axis === "horizontal") {
     if (isFirstSegment) {
@@ -294,6 +294,7 @@ export class SameNetTraceConsolidationSolver extends BaseSolver {
 
   outputTraces: SolvedTracePath[]
   correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath>
+  private consolidationPassCount = 0
 
   constructor(params: SameNetTraceConsolidationSolverInput) {
     super()
@@ -320,14 +321,17 @@ export class SameNetTraceConsolidationSolver extends BaseSolver {
   }
 
   override _step() {
-    let changed = true
-    let guard = 0
-    while (changed && guard < 1000) {
-      guard++
-      changed = this.applyNextConsolidationPass()
+    const changed = this.applyNextConsolidationPass()
+    if (!changed) {
+      this.solved = true
+      return
     }
 
-    this.solved = true
+    this.consolidationPassCount++
+    if (this.consolidationPassCount > MAX_CONSOLIDATION_PASSES) {
+      this.error = `${this.constructor.name} exceeded ${MAX_CONSOLIDATION_PASSES} consolidation passes`
+      this.failed = true
+    }
   }
 
   private applyNextConsolidationPass() {

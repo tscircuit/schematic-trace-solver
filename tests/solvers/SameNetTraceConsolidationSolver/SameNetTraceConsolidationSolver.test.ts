@@ -264,6 +264,60 @@ test("rejects snaps that would add a different-net intersection", () => {
   expect(output.branch!.tracePath).toEqual(branch.tracePath)
 })
 
+test("uses current output traces when rejecting later cross-net intersections", () => {
+  const movedDifferentNetTrace = trace({
+    id: "a-gnd-branch",
+    net: "a-gnd",
+    points: [
+      { x: 1, y: 0.96 },
+      { x: 1.15, y: 0.96 },
+      { x: 1.15, y: 1.04 },
+      { x: 1, y: 1.04 },
+    ],
+  })
+  const rejectedBranch = trace({
+    id: "z-vcc-branch",
+    net: "z-vcc",
+    points: [
+      { x: 1.24, y: 1.08 },
+      { x: 1.5, y: 1.08 },
+      { x: 1.5, y: 1.2 },
+    ],
+  })
+
+  const output = solve([
+    trace({
+      id: "a-gnd-trunk",
+      net: "a-gnd",
+      points: [
+        { x: 1.25, y: 0.6 },
+        { x: 1.25, y: 0.9 },
+      ],
+    }),
+    movedDifferentNetTrace,
+    trace({
+      id: "z-vcc-trunk",
+      net: "z-vcc",
+      points: [
+        { x: 0, y: 0.4 },
+        { x: 0.8, y: 0.4 },
+        { x: 0.8, y: 1 },
+        { x: 1.2, y: 1 },
+        { x: 1.2, y: 0.4 },
+      ],
+    }),
+    rejectedBranch,
+  ])
+
+  expect(output["a-gnd-branch"]!.tracePath).toEqual([
+    { x: 1, y: 0.96 },
+    { x: 1.25, y: 0.96 },
+    { x: 1.25, y: 1.04 },
+    { x: 1, y: 1.04 },
+  ])
+  expect(output["z-vcc-branch"]!.tracePath).toEqual(rejectedBranch.tracePath)
+})
+
 test("consolidates transitive chains deterministically", () => {
   const output = solve([
     trace({

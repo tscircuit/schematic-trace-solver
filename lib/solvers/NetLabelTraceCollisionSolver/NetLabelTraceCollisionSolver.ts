@@ -116,6 +116,38 @@ export interface NetLabelTraceCollisionSolverParams {
 const PADDING_BUFFER = 0.1
 const MAX_DETOUR_ATTEMPTS = 3
 
+const getAvailableOrientationsForLabel = (
+  inputProblem: InputProblem,
+  label: NetLabelPlacement,
+) => {
+  const availableOrientations = inputProblem.availableNetLabelOrientations ?? {}
+  for (const netId of [label.netId, label.globalConnNetId]) {
+    if (netId && Object.hasOwn(availableOrientations, netId)) {
+      return availableOrientations[netId]
+    }
+  }
+
+  return undefined
+}
+
+const getAvailableOrientationText = (
+  inputProblem: InputProblem,
+  label: NetLabelPlacement,
+) => {
+  const orientations = getAvailableOrientationsForLabel(inputProblem, label)
+  return `available orientations: ${orientations?.join(", ") ?? "any"}`
+}
+
+const getNetLabelVisualizationLabel = (
+  inputProblem: InputProblem,
+  label: NetLabelPlacement,
+) =>
+  [
+    `netId: ${label.netId}`,
+    `globalConnNetId: ${label.globalConnNetId}`,
+    getAvailableOrientationText(inputProblem, label),
+  ].join("\n")
+
 export class NetLabelTraceCollisionSolver extends BaseSolver {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
@@ -266,12 +298,13 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
         height: label.height,
         fill: getColorFromString(label.globalConnNetId, 0.35),
         strokeColor: getColorFromString(label.globalConnNetId, 0.9),
-        label: `netId: ${label.netId}\nglobalConnNetId: ${label.globalConnNetId}`,
+        label: getNetLabelVisualizationLabel(this.inputProblem, label),
       } as any)
       graphics.points.push({
         x: label.anchorPoint.x,
         y: label.anchorPoint.y,
         color: getColorFromString(label.globalConnNetId, 0.9),
+        label: `anchorPoint\norientation: ${label.orientation}`,
       } as any)
     }
 
