@@ -48,11 +48,7 @@ function isVertical(p1: Point, p2: Point): boolean {
  * Perpendicular distance from point `p` to the infinite line defined by
  * direction of segment (s1→s2). Works for axis-aligned segments only.
  */
-function perpendicularDistance(
-  p: Point,
-  s1: Point,
-  s2: Point,
-): number {
+function perpendicularDistance(p: Point, s1: Point, s2: Point): number {
   if (isHorizontal(s1, s2)) {
     // horizontal segment → perpendicular distance is |Δy|
     return Math.abs(p.y - s1.y)
@@ -168,9 +164,7 @@ function tryMergeTraces(
       if (!bothHoriz && !bothVert) continue
 
       // Check perpendicular distance (collinearity within threshold)
-      const perpDist = bothHoriz
-        ? Math.abs(a1.y - b1.y)
-        : Math.abs(a1.x - b1.x)
+      const perpDist = bothHoriz ? Math.abs(a1.y - b1.y) : Math.abs(a1.x - b1.x)
 
       if (perpDist > threshold) continue
 
@@ -246,7 +240,11 @@ function tryMergeTraces(
       const dedupedPath: Point[] = []
       for (const pt of newPath) {
         const last = dedupedPath[dedupedPath.length - 1]
-        if (!last || Math.abs(last.x - pt.x) > 1e-9 || Math.abs(last.y - pt.y) > 1e-9) {
+        if (
+          !last ||
+          Math.abs(last.x - pt.x) > 1e-9 ||
+          Math.abs(last.y - pt.y) > 1e-9
+        ) {
           dedupedPath.push(pt)
         }
       }
@@ -300,9 +298,7 @@ export class SameNetSegmentMergeSolver extends BaseSolver {
     this.pairQueue = this._buildPairQueue(this.outputTraces)
   }
 
-  private _buildPairQueue(
-    traces: SolvedTracePath[],
-  ): Array<[number, number]> {
+  private _buildPairQueue(traces: SolvedTracePath[]): Array<[number, number]> {
     const queue: Array<[number, number]> = []
     for (let i = 0; i < traces.length; i++) {
       for (let j = i + 1; j < traces.length; j++) {
