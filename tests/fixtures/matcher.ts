@@ -54,7 +54,7 @@ async function toMatchSolverSnapshot(
     backgroundColor: "white",
   })
 
-  return expect(svg).toMatchSvgSnapshot(testPathOriginal, svgName)
+  return await expect(svg).toMatchSvgSnapshot(testPathOriginal, svgName)
 }
 
 const getInputProblem = (solver: BaseSolver): InputProblem | undefined => {
