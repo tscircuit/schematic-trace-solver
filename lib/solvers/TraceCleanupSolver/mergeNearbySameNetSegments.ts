@@ -88,71 +88,72 @@ export const mergeNearbySameNetSegments = (
     tracePath: trace.tracePath.map((p) => ({ ...p })),
   }))
 
-  // Two passes lets a segment align with the first close same-net neighbor, then
-  // lets any newly simplified path expose another merge candidate.
-  for (let pass = 0; pass < 2; pass++) {
-    let changed = false
+  const segments: SegmentRef[] = []
+  for (let traceIndex = 0; traceIndex < output.length; traceIndex++) {
+    const trace = output[traceIndex]!
+    for (
+      let segmentIndex = 0;
+      segmentIndex < trace.tracePath.length - 1;
+      segmentIndex++
+    ) {
+      if (!isInteriorSegment(trace, segmentIndex)) continue
+      const segment = getSegmentRef(trace, traceIndex, segmentIndex)
+      if (segment) segments.push(segment)
+    }
+  }
 
-    for (let traceIndexA = 0; traceIndexA < output.length; traceIndexA++) {
-      const traceA = output[traceIndexA]!
+  const visited = new Set<number>()
+
+  for (let startIndex = 0; startIndex < segments.length; startIndex++) {
+    if (visited.has(startIndex)) continue
+
+    const componentIndexes: number[] = []
+    const queue = [startIndex]
+    visited.add(startIndex)
+
+    while (queue.length > 0) {
+      const currentIndex = queue.shift()!
+      const current = segments[currentIndex]!
+      componentIndexes.push(currentIndex)
+
       for (
-        let traceIndexB = traceIndexA + 1;
-        traceIndexB < output.length;
-        traceIndexB++
+        let candidateIndex = 0;
+        candidateIndex < segments.length;
+        candidateIndex++
       ) {
-        const traceB = output[traceIndexB]!
-        if (getNetId(traceA) !== getNetId(traceB)) continue
+        if (visited.has(candidateIndex)) continue
+        const candidate = segments[candidateIndex]!
+        if (
+          getNetId(output[current.traceIndex]!) !==
+          getNetId(output[candidate.traceIndex]!)
+        )
+          continue
+        if (current.orientation !== candidate.orientation) continue
+        if (!rangesOverlap(current, candidate)) continue
 
-        for (
-          let segmentIndexA = 0;
-          segmentIndexA < traceA.tracePath.length - 1;
-          segmentIndexA++
-        ) {
-          if (!isInteriorSegment(traceA, segmentIndexA)) continue
-          const segmentA = getSegmentRef(traceA, traceIndexA, segmentIndexA)
-          if (!segmentA) continue
+        const distance = Math.abs(current.fixedCoord - candidate.fixedCoord)
+        if (distance <= EPS || distance > mergeDistance) continue
 
-          for (
-            let segmentIndexB = 0;
-            segmentIndexB < traceB.tracePath.length - 1;
-            segmentIndexB++
-          ) {
-            if (!isInteriorSegment(traceB, segmentIndexB)) continue
-            const segmentB = getSegmentRef(traceB, traceIndexB, segmentIndexB)
-            if (!segmentB) continue
-            if (segmentA.orientation !== segmentB.orientation) continue
-            if (!rangesOverlap(segmentA, segmentB)) continue
-
-            const distance = Math.abs(segmentA.fixedCoord - segmentB.fixedCoord)
-            if (distance <= EPS || distance > mergeDistance) continue
-
-            const mergedCoord = (segmentA.fixedCoord + segmentB.fixedCoord) / 2
-            output[traceIndexA] = moveSegmentToFixedCoord(
-              output[traceIndexA]!,
-              segmentIndexA,
-              segmentA.orientation,
-              mergedCoord,
-            )
-            output[traceIndexB] = moveSegmentToFixedCoord(
-              output[traceIndexB]!,
-              segmentIndexB,
-              segmentB.orientation,
-              mergedCoord,
-            )
-            changed = true
-            break
-          }
-
-          if (changed) break
-        }
-
-        if (changed) break
+        visited.add(candidateIndex)
+        queue.push(candidateIndex)
       }
-
-      if (changed) break
     }
 
-    if (!changed) break
+    if (componentIndexes.length < 2) continue
+
+    const component = componentIndexes.map((index) => segments[index]!)
+    const mergedCoord =
+      component.reduce((sum, segment) => sum + segment.fixedCoord, 0) /
+      component.length
+
+    for (const segment of component) {
+      output[segment.traceIndex] = moveSegmentToFixedCoord(
+        output[segment.traceIndex]!,
+        segment.startIndex,
+        segment.orientation,
+        mergedCoord,
+      )
+    }
   }
 
   return output

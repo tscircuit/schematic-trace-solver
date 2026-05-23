@@ -36,7 +36,8 @@ type PipelineStep =
  * It operates in a multi-step pipeline:
  * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
  * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
- * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
+ * 3. **Balancing L-Shapes**: It balances L-shaped trace segments to create more visually appealing and consistent layouts.
+ * 4. **Merging Close Same-Net Segments**: Finally, it aligns nearby overlapping same-net segments onto shared coordinates.
  * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
  */
 export class TraceCleanupSolver extends BaseSolver {
