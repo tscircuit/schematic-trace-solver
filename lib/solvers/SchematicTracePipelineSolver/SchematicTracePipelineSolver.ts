@@ -26,6 +26,7 @@ import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/
 import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
+import { dedupeSameNetTraceSegments } from "./dedupeSameNetTraceSegments"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -337,6 +338,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   override _step() {
     const pipelineStepDef = this.pipelineDef[this.currentPipelineStepIndex]
     if (!pipelineStepDef) {
+      this.applyFinalPostProcessing()
       this.solved = true
       return
     }
@@ -366,6 +368,14 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     this.timeSpentOnPhase[pipelineStepDef.solverName] = 0
     this.startTimeOfPhase[pipelineStepDef.solverName] = performance.now()
     this.firstIterationOfPhase[pipelineStepDef.solverName] = this.iterations
+  }
+
+  private applyFinalPostProcessing() {
+    if (!this.netLabelTraceCollisionSolver) return
+
+    this.netLabelTraceCollisionSolver.outputTraces = dedupeSameNetTraceSegments(
+      this.netLabelTraceCollisionSolver.outputTraces,
+    )
   }
 
   solveUntilPhase(phase: string) {
