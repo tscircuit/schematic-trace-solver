@@ -38,7 +38,7 @@ describe("SameNetTraceMergeSolver", () => {
       { x: 2, y: 0 },
     ]);
     const solver = new SameNetTraceMergeSolver({ traces: [t1, t2] });
-    while (!solver.solved && !solver.failed) solver.step();
+    while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(1);
     expect(solver.outputTraces[0]!.tracePath).toEqual([
       { x: 0, y: 0 },
@@ -57,7 +57,7 @@ describe("SameNetTraceMergeSolver", () => {
       { x: 2, y: 0 },
     ]);
     const solver = new SameNetTraceMergeSolver({ traces: [t1, t2] });
-    while (!solver.solved && !solver.failed) solver.step();
+    while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(2);
     expect(solver.mergeCount).toBe(0);
   });
@@ -75,7 +75,7 @@ describe("SameNetTraceMergeSolver", () => {
       traces: [t1, t2],
       mergeThreshold: 0.1,
     });
-    while (!solver.solved && !solver.failed) solver.step();
+    while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(2);
     expect(solver.mergeCount).toBe(0);
   });
@@ -93,7 +93,7 @@ describe("SameNetTraceMergeSolver", () => {
       traces: [t1, t2],
       mergeThreshold: 0.15,
     });
-    while (!solver.solved && !solver.failed) solver.step();
+    while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(1);
     const path = solver.outputTraces[0]!.tracePath;
     expect(path.length).toBeGreaterThan(3);
@@ -113,7 +113,7 @@ describe("SameNetTraceMergeSolver", () => {
       { x: 3, y: 0 },
     ]);
     const solver = new SameNetTraceMergeSolver({ traces: [t1, t2, t3] });
-    while (!solver.solved && !solver.failed) solver.step();
+    while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(1);
     expect(solver.mergeCount).toBe(2);
   });
@@ -128,7 +128,7 @@ describe("SameNetTraceMergeSolver", () => {
       { x: 1, y: 0 },
     ]);
     const solver = new SameNetTraceMergeSolver({ traces: [t1, t2] });
-    while (!solver.solved && !solver.failed) solver.step();
+    while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(1);
   });
 
@@ -138,7 +138,7 @@ describe("SameNetTraceMergeSolver", () => {
       { x: 1, y: 0 },
     ]);
     const solver = new SameNetTraceMergeSolver({ traces: [t1] });
-    while (!solver.solved && !solver.failed) solver.step();
+    while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(1);
     expect(solver.mergeCount).toBe(0);
   });
@@ -155,7 +155,7 @@ describe("SameNetTraceMergeSolver", () => {
     ]);
     t2.userNetId = "user_net";
     const solver = new SameNetTraceMergeSolver({ traces: [t1, t2] });
-    while (!solver.solved && !solver.failed) solver.step();
+    while (!solver.solved && !solver.failed) solver.step()
     expect(solver.outputTraces.length).toBe(1);
   });
 });
