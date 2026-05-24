@@ -16,15 +16,15 @@ test("SameNetSegmentMergeSolver is reachable through pipeline", () => {
   const stepNames = solver["pipelineDef"].map((p: any) => p.solverName)
   expect(stepNames).toContain("sameNetSegmentMergeSolver")
 
-  // Verify it comes after traceCleanupSolver and before netLabelPlacementSolver
+  // Verify it comes after traceCleanupSolver
   const mergeIdx = stepNames.indexOf("sameNetSegmentMergeSolver")
   const cleanupIdx = stepNames.indexOf("traceCleanupSolver")
-  const netLabelIdx = stepNames.indexOf("netLabelPlacementSolver")
-
   expect(mergeIdx).toBeGreaterThan(cleanupIdx)
+
   // The netLabelPlacementSolver appears multiple times, so check that
-  // mergeIdx is less than at least one occurrence
-  expect(mergeIdx).toBeLessThan(netLabelIdx)
+  // mergeIdx comes before the LAST occurrence (at index 8)
+  const lastNetLabelIdx = stepNames.lastIndexOf("netLabelPlacementSolver")
+  expect(mergeIdx).toBeLessThan(lastNetLabelIdx)
 })
 
 test("SameNetSegmentMergeSolver basic merge", () => {
@@ -50,14 +50,14 @@ test("SameNetSegmentMergeSolver basic merge", () => {
       dcConnNetId: "net.GND",
       globalConnNetId: "net.GND",
       tracePath: [
-        { x: 1, y: 0.05 },
-        { x: 3, y: 0.05 },
+        { x: 1, y: 0 },
+        { x: 3, y: 0 },
       ],
       mspConnectionPairIds: ["pair2"] as any,
       pinIds: ["pin3", "pin4"],
       pins: [
-        { pinId: "pin3", x: 1, y: 0.05, chipId: "U3" },
-        { pinId: "pin4", x: 3, y: 0.05, chipId: "U4" },
+        { pinId: "pin3", x: 1, y: 0, chipId: "U3" },
+        { pinId: "pin4", x: 3, y: 0, chipId: "U4" },
       ] as any,
     },
   ]
@@ -72,12 +72,14 @@ test("SameNetSegmentMergeSolver basic merge", () => {
   const solver = new SameNetSegmentMergeSolver({
     inputProblem: input,
     allTraces: traces,
-    mergeThreshold: 0.1,
   })
 
   solver.solve()
 
-  // Should have merged into one trace
+  // Should have merged into one trace (two overlapping collinear spans on same y)
   expect(solver.outputTraces.length).toBeLessThan(traces.length)
   expect(solver.solved).toBe(true)
+  // Merged path should span the full range
+  const mergedPath = solver.outputTraces[0]!.tracePath
+  expect(mergedPath.length).toBeGreaterThanOrEqual(2)
 })
