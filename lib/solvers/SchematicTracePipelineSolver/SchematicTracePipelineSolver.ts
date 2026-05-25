@@ -75,9 +75,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   netLabelPlacementSolver?: NetLabelPlacementSolver
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
-traceCleanupSolver?: TraceCleanupSolver
- sameNetTraceMergeSolver?: SameNetTraceMergeSolver
- example28Solver?: Example28Solver
+  traceCleanupSolver?: TraceCleanupSolver
+  sameNetTraceMergeSolver?: SameNetTraceMergeSolver
+  example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
   vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
@@ -218,25 +218,25 @@ traceCleanupSolver?: TraceCleanupSolver
           paddingBuffer: 0.1,
         },
       ]
- }),
- definePipelineStep(
- "sameNetTraceMergeSolver",
- SameNetTraceMergeSolver,
- (instance) => {
- const traces =
- instance.traceCleanupSolver?.getOutput().traces ??
- instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
- return [{ traces }]
- },
- ),
- definePipelineStep(
- "netLabelPlacementSolver",
- NetLabelPlacementSolver,
- (instance) => {
- const traces =
- instance.sameNetTraceMergeSolver?.getOutput().traces ??
- instance.traceCleanupSolver?.getOutput().traces ??
- instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+    }),
+    definePipelineStep(
+      "sameNetTraceMergeSolver",
+      SameNetTraceMergeSolver,
+      (instance) => {
+        const traces =
+          instance.traceCleanupSolver?.getOutput().traces ??
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+        return [{ traces }]
+      },
+    ),
+    definePipelineStep(
+      "netLabelPlacementSolver",
+      NetLabelPlacementSolver,
+      (instance) => {
+        const traces =
+          instance.sameNetTraceMergeSolver?.getOutput().traces ??
+          instance.traceCleanupSolver?.getOutput().traces ??
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
         return [
           {
