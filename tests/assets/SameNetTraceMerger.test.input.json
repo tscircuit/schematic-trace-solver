@@ -37,7 +37,9 @@
       { "pinIds": ["U1.1", "C1.1"], "netId": "VCC" },
       { "pinIds": ["U1.2", "C2.1"], "netId": "EN" }
     ],
-    "netConnections": [{ "netId": "GND", "pinIds": ["U1.3", "C1.2", "C2.2"] }],
+    "netConnections": [
+      { "netId": "GND", "pinIds": ["U1.3", "C1.2", "C2.2"] }
+    ],
     "availableNetLabelOrientations": {
       "VCC": ["y+"],
       "EN": ["x-"],
