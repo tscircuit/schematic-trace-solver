@@ -125,6 +125,30 @@ describe("alignNearbySameNetSegments", () => {
     expect(blockedTrace.tracePath[2].y).toBe(0.08)
   })
 
+  test("allows alignments that keep an existing different-net collision", () => {
+    const [, movedTrace] = alignNearbySameNetSegments([
+      trace("a", "net1", [
+        { x: 0, y: -2 },
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 10, y: 2 },
+      ]),
+      trace("b", "net1", [
+        { x: 2, y: -2 },
+        { x: 2, y: 0.08 },
+        { x: 8, y: 0.08 },
+        { x: 8, y: 2 },
+      ]),
+      trace("c", "net2", [
+        { x: 5, y: -0.1 },
+        { x: 5, y: 0.1 },
+      ]),
+    ])
+
+    expect(movedTrace.tracePath[1].y).toBe(0)
+    expect(movedTrace.tracePath[2].y).toBe(0)
+  })
+
   test("rejects alignments that would collide with a chip obstacle", () => {
     const [, blockedTrace] = alignNearbySameNetSegments(
       [
@@ -152,6 +176,35 @@ describe("alignNearbySameNetSegments", () => {
 
     expect(blockedTrace.tracePath[1].y).toBe(0.08)
     expect(blockedTrace.tracePath[2].y).toBe(0.08)
+  })
+
+  test("allows alignments that keep an existing chip obstacle collision", () => {
+    const [, movedTrace] = alignNearbySameNetSegments(
+      [
+        trace("a", "net1", [
+          { x: 0, y: -2 },
+          { x: 0, y: 0 },
+          { x: 5, y: 0 },
+          { x: 5, y: 2 },
+        ]),
+        trace("b", "net1", [
+          { x: 3, y: -2 },
+          { x: 3, y: 0.08 },
+          { x: 8, y: 0.08 },
+          { x: 8, y: 2 },
+        ]),
+      ],
+      {
+        inputProblem: problemWithChipObstacle({
+          center: { x: 6, y: 0.04 },
+          width: 1,
+          height: 0.2,
+        }),
+      },
+    )
+
+    expect(movedTrace.tracePath[1].y).toBe(0)
+    expect(movedTrace.tracePath[2].y).toBe(0)
   })
 
   test("renders before and after proof for the nearby same-net alignment", () => {

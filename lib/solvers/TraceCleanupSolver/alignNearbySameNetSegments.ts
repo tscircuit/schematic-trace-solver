@@ -7,6 +7,7 @@ import {
   isVertical,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import type { ChipWithBounds } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { InputProblem } from "lib/types/InputProblem"
 import { simplifyPath } from "./simplifyPath"
 
@@ -66,13 +67,17 @@ export const alignNearbySameNetSegments = (
       )
 
       if (
-        traceHasDifferentNetCollision(
+        introducesDifferentNetCollision(
+          pair.moving.trace,
           updatedTrace,
           outputTraces,
           pair.moving.traceIndex,
         ) ||
-        (staticObstacles.length > 0 &&
-          isPathCollidingWithObstacles(updatedTrace.tracePath, staticObstacles))
+        introducesStaticObstacleCollision(
+          pair.moving.trace,
+          updatedTrace,
+          staticObstacles,
+        )
       ) {
         continue
       }
@@ -225,7 +230,8 @@ const alignSegmentToCoordinate = (
   }
 }
 
-const traceHasDifferentNetCollision = (
+const introducesDifferentNetCollision = (
+  originalTrace: SolvedTracePath,
   updatedTrace: SolvedTracePath,
   allTraces: SolvedTracePath[],
   updatedTraceIndex: number,
@@ -234,7 +240,36 @@ const traceHasDifferentNetCollision = (
     if (traceIndex === updatedTraceIndex) continue
     if (updatedTrace.globalConnNetId === otherTrace.globalConnNetId) continue
 
-    if (pathsIntersect(updatedTrace.tracePath, otherTrace.tracePath)) {
+    const hadCollision = pathsIntersect(
+      originalTrace.tracePath,
+      otherTrace.tracePath,
+    )
+    const hasCollision = pathsIntersect(
+      updatedTrace.tracePath,
+      otherTrace.tracePath,
+    )
+    if (!hadCollision && hasCollision) {
+      return true
+    }
+  }
+
+  return false
+}
+
+const introducesStaticObstacleCollision = (
+  originalTrace: SolvedTracePath,
+  updatedTrace: SolvedTracePath,
+  staticObstacles: ChipWithBounds[],
+) => {
+  for (const obstacle of staticObstacles) {
+    const hadCollision = isPathCollidingWithObstacles(originalTrace.tracePath, [
+      obstacle,
+    ])
+    const hasCollision = isPathCollidingWithObstacles(updatedTrace.tracePath, [
+      obstacle,
+    ])
+
+    if (!hadCollision && hasCollision) {
       return true
     }
   }
