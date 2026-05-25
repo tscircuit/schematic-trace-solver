@@ -175,6 +175,29 @@ describe("alignNearbySameNetSegments", () => {
     expect(blockedTrace.tracePath[2].y).toBe(0.08)
   })
 
+  test("rejects alignments that introduce a self-intersection", () => {
+    const [, blockedTrace] = alignNearbySameNetSegments([
+      trace("a", "net1", [
+        { x: 0, y: -2 },
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 10, y: 2 },
+      ]),
+      trace("b", "net1", [
+        { x: 2, y: -2 },
+        { x: 2, y: 0.08 },
+        { x: 8, y: 0.08 },
+        { x: 8, y: -2 },
+        { x: 5, y: -2 },
+        { x: 5, y: 0.02 },
+        { x: 9, y: 0.02 },
+      ]),
+    ])
+
+    expect(blockedTrace.tracePath[1].y).toBe(0.08)
+    expect(blockedTrace.tracePath[2].y).toBe(0.08)
+  })
+
   test("rejects alignments that would collide with a chip obstacle", () => {
     const [, blockedTrace] = alignNearbySameNetSegments(
       [

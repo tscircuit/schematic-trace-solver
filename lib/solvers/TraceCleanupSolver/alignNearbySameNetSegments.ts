@@ -82,7 +82,8 @@ export const alignNearbySameNetSegments = (
           pair.moving.trace,
           updatedTrace,
           staticObstacles,
-        )
+        ) ||
+        introducesSelfCollision(pair.moving.trace, updatedTrace)
       ) {
         continue
       }
@@ -103,6 +104,16 @@ export const alignNearbySameNetSegments = (
   }
 
   return outputTraces
+}
+
+const introducesSelfCollision = (
+  originalTrace: SolvedTracePath,
+  updatedTrace: SolvedTracePath,
+) => {
+  return hasNewCollision(
+    getSelfCollisionKeys(originalTrace.tracePath),
+    getSelfCollisionKeys(updatedTrace.tracePath),
+  )
 }
 
 const findAlignmentPairs = (
@@ -311,6 +322,25 @@ const getPathCollisionKeys = (firstPath: Point[], secondPath: Point[]) => {
         firstPath[i + 1],
         secondPath[j],
         secondPath[j + 1],
+      )
+      if (collisionKey) {
+        collisions.add(collisionKey)
+      }
+    }
+  }
+
+  return collisions
+}
+
+const getSelfCollisionKeys = (path: Point[]) => {
+  const collisions = new Set<string>()
+  for (let i = 0; i < path.length - 1; i++) {
+    for (let j = i + 2; j < path.length - 1; j++) {
+      const collisionKey = getSegmentCollisionKey(
+        path[i],
+        path[i + 1],
+        path[j],
+        path[j + 1],
       )
       if (collisionKey) {
         collisions.add(collisionKey)
