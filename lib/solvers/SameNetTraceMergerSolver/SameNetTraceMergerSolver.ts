@@ -82,7 +82,6 @@ export class SameNetTraceMergerSolver extends BaseSolver {
             const xMaxA = Math.max(a1.x, a2.x)
             const xMinB = Math.min(b1.x, b2.x)
             const xMaxB = Math.max(b1.x, b2.x)
-            // Check X-axis overlap
             if (xMinA < xMaxB && xMinB < xMaxA) {
               const avgY = (a1.y + b1.y) / 2
               a1.y = avgY
@@ -98,7 +97,6 @@ export class SameNetTraceMergerSolver extends BaseSolver {
             const yMaxA = Math.max(a1.y, a2.y)
             const yMinB = Math.min(b1.y, b2.y)
             const yMaxB = Math.max(b1.y, b2.y)
-            // Check Y-axis overlap
             if (yMinA < yMaxB && yMinB < yMaxA) {
               const avgX = (a1.x + b1.x) / 2
               a1.x = avgX
@@ -122,7 +120,6 @@ export class SameNetTraceMergerSolver extends BaseSolver {
     if (!graphics.rects) graphics.rects = []
     if (!graphics.circles) graphics.circles = []
     if (!graphics.texts) graphics.texts = []
-
     for (const trace of this.outputTraces) {
       const line: Line = {
         points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
