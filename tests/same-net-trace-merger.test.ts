@@ -3,6 +3,13 @@ import { SameNetTraceMergerSolver } from "lib/solvers/SameNetTraceMergerSolver/S
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import inputData from "./assets/SameNetTraceMerger.test.input.json"
 
+const emptyProblem = {
+  chips: [],
+  directConnections: [],
+  netConnections: [],
+  availableNetLabelOrientations: {},
+}
+
 // Helper to build a minimal SolvedTracePath
 const makeTrace = (
   mspPairId: string,
@@ -31,7 +38,7 @@ test("snaps two nearly-horizontal same-net segments to same Y", () => {
     ]),
   ]
   const solver = new SameNetTraceMergerSolver({
-    inputProblem: { chips: [], directConnections: [], netConnections: [], availableNetLabelOrientations: {} },
+    inputProblem: emptyProblem,
     traces,
   })
   solver.solve()
@@ -51,7 +58,7 @@ test("does NOT snap segments from different nets", () => {
     ]),
   ]
   const solver = new SameNetTraceMergerSolver({
-    inputProblem: { chips: [], directConnections: [], netConnections: [], availableNetLabelOrientations: {} },
+    inputProblem: emptyProblem,
     traces,
   })
   solver.solve()
@@ -72,7 +79,7 @@ test("does NOT snap segments farther apart than threshold", () => {
     ]),
   ]
   const solver = new SameNetTraceMergerSolver({
-    inputProblem: { chips: [], directConnections: [], netConnections: [], availableNetLabelOrientations: {} },
+    inputProblem: emptyProblem,
     traces,
     threshold: 0.15,
   })
@@ -94,7 +101,7 @@ test("snaps two nearly-vertical same-net segments to same X", () => {
     ]),
   ]
   const solver = new SameNetTraceMergerSolver({
-    inputProblem: { chips: [], directConnections: [], netConnections: [], availableNetLabelOrientations: {} },
+    inputProblem: emptyProblem,
     traces,
   })
   solver.solve()
