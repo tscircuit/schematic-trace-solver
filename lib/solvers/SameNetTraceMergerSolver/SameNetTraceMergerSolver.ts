@@ -18,7 +18,7 @@ interface SameNetTraceMergerSolverInput {
  */
 export class SameNetTraceMergerSolver extends BaseSolver {
   private input: SameNetTraceMergerSolverInput
-  private outputTraces: SolvedTracePath[]
+  outputTraces: SolvedTracePath[]
   readonly threshold: number
 
   constructor(input: SameNetTraceMergerSolverInput) {
@@ -34,6 +34,12 @@ export class SameNetTraceMergerSolver extends BaseSolver {
   override _step() {
     this._mergeCollinearSegments()
     this.solved = true
+  }
+
+  getOutput() {
+    return {
+      traces: this.outputTraces,
+    }
   }
 
   private _mergeCollinearSegments() {
@@ -76,12 +82,13 @@ export class SameNetTraceMergerSolver extends BaseSolver {
             const xMaxA = Math.max(a1.x, a2.x)
             const xMinB = Math.min(b1.x, b2.x)
             const xMaxB = Math.max(b1.x, b2.x)
-            if (xMaxA > xMinB && xMaxB > xMinA) {
+            // Check X-axis overlap
+            if (xMinA < xMaxB && xMinB < xMaxA) {
               const avgY = (a1.y + b1.y) / 2
-              pathA[i]!.y = avgY
-              pathA[i + 1]!.y = avgY
-              pathB[j]!.y = avgY
-              pathB[j + 1]!.y = avgY
+              a1.y = avgY
+              a2.y = avgY
+              b1.y = avgY
+              b2.y = avgY
             }
           }
         } else if (isVertA && Math.abs(b1.x - b2.x) < 1e-6) {
@@ -91,21 +98,18 @@ export class SameNetTraceMergerSolver extends BaseSolver {
             const yMaxA = Math.max(a1.y, a2.y)
             const yMinB = Math.min(b1.y, b2.y)
             const yMaxB = Math.max(b1.y, b2.y)
-            if (yMaxA > yMinB && yMaxB > yMinA) {
+            // Check Y-axis overlap
+            if (yMinA < yMaxB && yMinB < yMaxA) {
               const avgX = (a1.x + b1.x) / 2
-              pathA[i]!.x = avgX
-              pathA[i + 1]!.x = avgX
-              pathB[j]!.x = avgX
-              pathB[j + 1]!.x = avgX
+              a1.x = avgX
+              a2.x = avgX
+              b1.x = avgX
+              b2.x = avgX
             }
           }
         }
       }
     }
-  }
-
-  getOutput() {
-    return { traces: this.outputTraces }
   }
 
   override visualize(): GraphicsObject {
@@ -114,11 +118,17 @@ export class SameNetTraceMergerSolver extends BaseSolver {
       connectionAlpha: 0.1,
     })
     if (!graphics.lines) graphics.lines = []
+    if (!graphics.points) graphics.points = []
+    if (!graphics.rects) graphics.rects = []
+    if (!graphics.circles) graphics.circles = []
+    if (!graphics.texts) graphics.texts = []
+
     for (const trace of this.outputTraces) {
-      graphics.lines!.push({
+      const line: Line = {
         points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
         strokeColor: "blue",
-      } as Line)
+      }
+      graphics.lines!.push(line)
     }
     return graphics
   }
