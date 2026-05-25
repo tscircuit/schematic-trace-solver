@@ -1,9 +1,12 @@
 import type { Point } from "@tscircuit/math-utils"
-import { doSegmentsIntersect } from "@tscircuit/math-utils"
+import {
+  doSegmentsIntersect,
+  getSegmentIntersection,
+} from "@tscircuit/math-utils"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import {
-  isPathCollidingWithObstacles,
   isHorizontal,
+  segmentIntersectsRect,
   isVertical,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
@@ -35,8 +38,8 @@ interface SegmentPair {
 const EPS = 1e-9
 const DEFAULT_ALIGNMENT_TOLERANCE = 0.15
 const MIN_OVERLAP = 0.05
-const MAX_ALIGNMENT_PASSES = 5
 const STATIC_OBSTACLE_TOLERANCE = 1e-5
+const COLLISION_KEY_PRECISION = 1e6
 
 export const alignNearbySameNetSegments = (
   traces: SolvedTracePath[],
@@ -53,8 +56,10 @@ export const alignNearbySameNetSegments = (
       }))
     : []
   let outputTraces = traces
+  const seenTraceStates = new Set<string>()
 
-  for (let pass = 0; pass < MAX_ALIGNMENT_PASSES; pass++) {
+  while (true) {
+    seenTraceStates.add(getTraceStateKey(outputTraces))
     const pairs = findAlignmentPairs(outputTraces, tolerance)
     let aligned = false
 
@@ -82,9 +87,14 @@ export const alignNearbySameNetSegments = (
         continue
       }
 
-      outputTraces = outputTraces.map((trace, index) =>
+      const candidateTraces = outputTraces.map((trace, index) =>
         index === pair.moving.traceIndex ? updatedTrace : trace,
       )
+      if (seenTraceStates.has(getTraceStateKey(candidateTraces))) {
+        continue
+      }
+
+      outputTraces = candidateTraces
       aligned = true
       break
     }
@@ -240,15 +250,15 @@ const introducesDifferentNetCollision = (
     if (traceIndex === updatedTraceIndex) continue
     if (updatedTrace.globalConnNetId === otherTrace.globalConnNetId) continue
 
-    const hadCollision = pathsIntersect(
+    const originalCollisions = getPathCollisionKeys(
       originalTrace.tracePath,
       otherTrace.tracePath,
     )
-    const hasCollision = pathsIntersect(
+    const updatedCollisions = getPathCollisionKeys(
       updatedTrace.tracePath,
       otherTrace.tracePath,
     )
-    if (!hadCollision && hasCollision) {
+    if (hasNewCollision(originalCollisions, updatedCollisions)) {
       return true
     }
   }
@@ -262,14 +272,16 @@ const introducesStaticObstacleCollision = (
   staticObstacles: ChipWithBounds[],
 ) => {
   for (const obstacle of staticObstacles) {
-    const hadCollision = isPathCollidingWithObstacles(originalTrace.tracePath, [
+    const originalCollisions = getObstacleCollisionKeys(
+      originalTrace.tracePath,
       obstacle,
-    ])
-    const hasCollision = isPathCollidingWithObstacles(updatedTrace.tracePath, [
+    )
+    const updatedCollisions = getObstacleCollisionKeys(
+      updatedTrace.tracePath,
       obstacle,
-    ])
+    )
 
-    if (!hadCollision && hasCollision) {
+    if (hasNewCollision(originalCollisions, updatedCollisions)) {
       return true
     }
   }
@@ -277,21 +289,152 @@ const introducesStaticObstacleCollision = (
   return false
 }
 
-const pathsIntersect = (firstPath: Point[], secondPath: Point[]) => {
-  for (let i = 0; i < firstPath.length - 1; i++) {
-    for (let j = 0; j < secondPath.length - 1; j++) {
-      if (
-        doSegmentsIntersect(
-          firstPath[i],
-          firstPath[i + 1],
-          secondPath[j],
-          secondPath[j + 1],
-        )
-      ) {
-        return true
-      }
+const hasNewCollision = (
+  originalCollisions: Set<string>,
+  updatedCollisions: Set<string>,
+) => {
+  for (const collision of updatedCollisions) {
+    if (!originalCollisions.has(collision)) {
+      return true
     }
   }
 
   return false
+}
+
+const getPathCollisionKeys = (firstPath: Point[], secondPath: Point[]) => {
+  const collisions = new Set<string>()
+  for (let i = 0; i < firstPath.length - 1; i++) {
+    for (let j = 0; j < secondPath.length - 1; j++) {
+      const collisionKey = getSegmentCollisionKey(
+        firstPath[i],
+        firstPath[i + 1],
+        secondPath[j],
+        secondPath[j + 1],
+      )
+      if (collisionKey) {
+        collisions.add(collisionKey)
+      }
+    }
+  }
+
+  return collisions
+}
+
+const getSegmentCollisionKey = (
+  firstStart: Point,
+  firstEnd: Point,
+  secondStart: Point,
+  secondEnd: Point,
+) => {
+  const intersection = getSegmentIntersection(
+    firstStart,
+    firstEnd,
+    secondStart,
+    secondEnd,
+  )
+  if (intersection) {
+    return `point:${pointKey(intersection)}`
+  }
+
+  if (!doSegmentsIntersect(firstStart, firstEnd, secondStart, secondEnd)) {
+    return null
+  }
+
+  return (
+    getCollinearOverlapKey(firstStart, firstEnd, secondStart, secondEnd) ??
+    [
+      "segment-pair",
+      segmentKey(firstStart, firstEnd),
+      segmentKey(secondStart, secondEnd),
+    ].join(":")
+  )
+}
+
+const getCollinearOverlapKey = (
+  firstStart: Point,
+  firstEnd: Point,
+  secondStart: Point,
+  secondEnd: Point,
+) => {
+  if (
+    isHorizontal(firstStart, firstEnd) &&
+    isHorizontal(secondStart, secondEnd) &&
+    Math.abs(firstStart.y - secondStart.y) <= EPS
+  ) {
+    const minX = Math.max(
+      Math.min(firstStart.x, firstEnd.x),
+      Math.min(secondStart.x, secondEnd.x),
+    )
+    const maxX = Math.min(
+      Math.max(firstStart.x, firstEnd.x),
+      Math.max(secondStart.x, secondEnd.x),
+    )
+    return `horizontal-overlap:${formatNumber(firstStart.y)}:${formatNumber(minX)}:${formatNumber(maxX)}`
+  }
+
+  if (
+    isVertical(firstStart, firstEnd) &&
+    isVertical(secondStart, secondEnd) &&
+    Math.abs(firstStart.x - secondStart.x) <= EPS
+  ) {
+    const minY = Math.max(
+      Math.min(firstStart.y, firstEnd.y),
+      Math.min(secondStart.y, secondEnd.y),
+    )
+    const maxY = Math.min(
+      Math.max(firstStart.y, firstEnd.y),
+      Math.max(secondStart.y, secondEnd.y),
+    )
+    return `vertical-overlap:${formatNumber(firstStart.x)}:${formatNumber(minY)}:${formatNumber(maxY)}`
+  }
+
+  return null
+}
+
+const getObstacleCollisionKeys = (path: Point[], obstacle: ChipWithBounds) => {
+  const collisions = new Set<string>()
+  for (let i = 0; i < path.length - 1; i++) {
+    const start = path[i]
+    const end = path[i + 1]
+    if (!segmentIntersectsRect(start, end, obstacle)) {
+      continue
+    }
+
+    if (isHorizontal(start, end)) {
+      const minX = Math.max(Math.min(start.x, end.x), obstacle.minX)
+      const maxX = Math.min(Math.max(start.x, end.x), obstacle.maxX)
+      collisions.add(
+        `horizontal-obstacle:${formatNumber(start.y)}:${formatNumber(minX)}:${formatNumber(maxX)}`,
+      )
+    } else if (isVertical(start, end)) {
+      const minY = Math.max(Math.min(start.y, end.y), obstacle.minY)
+      const maxY = Math.min(Math.max(start.y, end.y), obstacle.maxY)
+      collisions.add(
+        `vertical-obstacle:${formatNumber(start.x)}:${formatNumber(minY)}:${formatNumber(maxY)}`,
+      )
+    }
+  }
+
+  return collisions
+}
+
+const getTraceStateKey = (traces: SolvedTracePath[]) => {
+  return traces
+    .map((trace) => trace.tracePath.map(pointKey).join(";"))
+    .join("|")
+}
+
+const segmentKey = (start: Point, end: Point) => {
+  return `${pointKey(start)}>${pointKey(end)}`
+}
+
+const pointKey = (point: Point) => {
+  return `${formatNumber(point.x)},${formatNumber(point.y)}`
+}
+
+const formatNumber = (value: number) => {
+  return String(
+    Math.round(value * COLLISION_KEY_PRECISION) / COLLISION_KEY_PRECISION,
+  )
 }

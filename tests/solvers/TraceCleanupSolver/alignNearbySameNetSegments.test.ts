@@ -140,13 +140,39 @@ describe("alignNearbySameNetSegments", () => {
         { x: 8, y: 2 },
       ]),
       trace("c", "net2", [
-        { x: 5, y: -0.1 },
-        { x: 5, y: 0.1 },
+        { x: 1, y: -1 },
+        { x: 3, y: -1 },
       ]),
     ])
 
     expect(movedTrace.tracePath[1].y).toBe(0)
     expect(movedTrace.tracePath[2].y).toBe(0)
+  })
+
+  test("rejects alignments that add a collision with an already-colliding trace", () => {
+    const [, blockedTrace] = alignNearbySameNetSegments([
+      trace("a", "net1", [
+        { x: 0, y: -2 },
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 10, y: 2 },
+      ]),
+      trace("b", "net1", [
+        { x: 2, y: -2 },
+        { x: 2, y: 0.08 },
+        { x: 8, y: 0.08 },
+        { x: 8, y: 2 },
+      ]),
+      trace("c", "net2", [
+        { x: 1, y: -1 },
+        { x: 3, y: -1 },
+        { x: 6, y: -1 },
+        { x: 6, y: 0.02 },
+      ]),
+    ])
+
+    expect(blockedTrace.tracePath[1].y).toBe(0.08)
+    expect(blockedTrace.tracePath[2].y).toBe(0.08)
   })
 
   test("rejects alignments that would collide with a chip obstacle", () => {
@@ -196,8 +222,8 @@ describe("alignNearbySameNetSegments", () => {
       ],
       {
         inputProblem: problemWithChipObstacle({
-          center: { x: 6, y: 0.04 },
-          width: 1,
+          center: { x: 3, y: -1 },
+          width: 0.2,
           height: 0.2,
         }),
       },
@@ -205,6 +231,30 @@ describe("alignNearbySameNetSegments", () => {
 
     expect(movedTrace.tracePath[1].y).toBe(0)
     expect(movedTrace.tracePath[2].y).toBe(0)
+  })
+
+  test("aligns more than five independent same-net segment pairs", () => {
+    const traces = alignNearbySameNetSegments([
+      trace("anchor", "net1", [
+        { x: 0, y: -2 },
+        { x: 0, y: 0 },
+        { x: 20, y: 0 },
+        { x: 20, y: 2 },
+      ]),
+      ...Array.from({ length: 6 }, (_, index) =>
+        trace(`moved-${index}`, "net1", [
+          { x: index * 2 + 1, y: -2 },
+          { x: index * 2 + 1, y: 0.03 + index * 0.01 },
+          { x: index * 2 + 2, y: 0.03 + index * 0.01 },
+          { x: index * 2 + 2, y: 2 },
+        ]),
+      ),
+    ])
+
+    for (const alignedTrace of traces.slice(1)) {
+      expect(alignedTrace.tracePath[1].y).toBe(0)
+      expect(alignedTrace.tracePath[2].y).toBe(0)
+    }
   })
 
   test("renders before and after proof for the nearby same-net alignment", () => {
