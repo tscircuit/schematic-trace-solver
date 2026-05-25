@@ -2,9 +2,12 @@ import type { Point } from "@tscircuit/math-utils"
 import { doSegmentsIntersect } from "@tscircuit/math-utils"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import {
+  isPathCollidingWithObstacles,
   isHorizontal,
   isVertical,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import type { InputProblem } from "lib/types/InputProblem"
 import { simplifyPath } from "./simplifyPath"
 
 type Axis = "horizontal" | "vertical"
@@ -32,12 +35,22 @@ const EPS = 1e-9
 const DEFAULT_ALIGNMENT_TOLERANCE = 0.15
 const MIN_OVERLAP = 0.05
 const MAX_ALIGNMENT_PASSES = 5
+const STATIC_OBSTACLE_TOLERANCE = 1e-5
 
 export const alignNearbySameNetSegments = (
   traces: SolvedTracePath[],
-  opts: { tolerance?: number } = {},
+  opts: { tolerance?: number; inputProblem?: InputProblem } = {},
 ): SolvedTracePath[] => {
   const tolerance = opts.tolerance ?? DEFAULT_ALIGNMENT_TOLERANCE
+  const staticObstacles = opts.inputProblem
+    ? getObstacleRects(opts.inputProblem).map((obs) => ({
+        ...obs,
+        minX: obs.minX + STATIC_OBSTACLE_TOLERANCE,
+        maxX: obs.maxX - STATIC_OBSTACLE_TOLERANCE,
+        minY: obs.minY + STATIC_OBSTACLE_TOLERANCE,
+        maxY: obs.maxY - STATIC_OBSTACLE_TOLERANCE,
+      }))
+    : []
   let outputTraces = traces
 
   for (let pass = 0; pass < MAX_ALIGNMENT_PASSES; pass++) {
@@ -57,7 +70,9 @@ export const alignNearbySameNetSegments = (
           updatedTrace,
           outputTraces,
           pair.moving.traceIndex,
-        )
+        ) ||
+        (staticObstacles.length > 0 &&
+          isPathCollidingWithObstacles(updatedTrace.tracePath, staticObstacles))
       ) {
         continue
       }

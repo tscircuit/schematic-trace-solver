@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { getSvgFromGraphicsObject, type GraphicsObject } from "graphics-debug"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { alignNearbySameNetSegments } from "lib/solvers/TraceCleanupSolver/alignNearbySameNetSegments"
+import type { InputProblem } from "lib/types/InputProblem"
 
 const trace = (
   mspPairId: string,
@@ -124,6 +125,35 @@ describe("alignNearbySameNetSegments", () => {
     expect(blockedTrace.tracePath[2].y).toBe(0.08)
   })
 
+  test("rejects alignments that would collide with a chip obstacle", () => {
+    const [, blockedTrace] = alignNearbySameNetSegments(
+      [
+        trace("a", "net1", [
+          { x: 0, y: -2 },
+          { x: 0, y: 0 },
+          { x: 5, y: 0 },
+          { x: 5, y: 2 },
+        ]),
+        trace("b", "net1", [
+          { x: 3, y: -2 },
+          { x: 3, y: 0.08 },
+          { x: 8, y: 0.08 },
+          { x: 8, y: 2 },
+        ]),
+      ],
+      {
+        inputProblem: problemWithChipObstacle({
+          center: { x: 6, y: 0 },
+          width: 1,
+          height: 0.1,
+        }),
+      },
+    )
+
+    expect(blockedTrace.tracePath[1].y).toBe(0.08)
+    expect(blockedTrace.tracePath[2].y).toBe(0.08)
+  })
+
   test("renders before and after proof for the nearby same-net alignment", () => {
     const inputTraces = [
       trace("a", "net1", [
@@ -196,3 +226,26 @@ const addTraceLines = (
     })
   }
 }
+
+const problemWithChipObstacle = ({
+  center,
+  width,
+  height,
+}: {
+  center: { x: number; y: number }
+  width: number
+  height: number
+}): InputProblem => ({
+  chips: [
+    {
+      chipId: "obstacle",
+      center,
+      width,
+      height,
+      pins: [],
+    },
+  ],
+  directConnections: [],
+  netConnections: [],
+  availableNetLabelOrientations: {},
+})
