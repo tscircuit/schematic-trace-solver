@@ -111,7 +111,10 @@ export const mergeSameNetTraceSegments = (
     mergedLabelNetIdMap?: Record<string, Set<string>>
   } = {},
 ): SolvedTracePath[] => {
-  const output = traces.map((t) => ({ ...t, tracePath: t.tracePath.map(clonePoint) }))
+  const output = traces.map((t) => ({
+    ...t,
+    tracePath: t.tracePath.map(clonePoint),
+  }))
   const segments = collectInteriorSegments(traces, mergedLabelNetIdMap)
 
   for (let i = 0; i < segments.length; i++) {
@@ -122,7 +125,8 @@ export const mergeSameNetTraceSegments = (
       if (a.netKey !== b.netKey) continue
       if (a.orientation !== b.orientation) continue
       if (Math.abs(a.coord - b.coord) > tolerance) continue
-      if (!rangesOverlap(a.rangeMin, a.rangeMax, b.rangeMin, b.rangeMax)) continue
+      if (!rangesOverlap(a.rangeMin, a.rangeMax, b.rangeMin, b.rangeMax))
+        continue
 
       const targetCoord = a.coord
       setSegmentCoord(output[b.traceIndex]!.tracePath, b, targetCoord)

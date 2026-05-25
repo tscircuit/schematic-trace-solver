@@ -15,7 +15,7 @@ const baseTrace = (
     mspConnectionPairIds: [id],
     pinIds: [],
     pins: [],
-  }) as SolvedTracePath
+  }) as unknown as SolvedTracePath
 
 test("aligns close horizontal interior segments on the same net", () => {
   const traces = [
