@@ -123,6 +123,9 @@ export class TraceCleanupSolver extends BaseSolver {
   private _runAlignNearbySameNetSegmentsStep() {
     this.outputTraces = alignNearbySameNetSegments(this.outputTraces, {
       inputProblem: this.input.inputProblem,
+      allLabelPlacements: this.input.allLabelPlacements,
+      mergedLabelNetIdMap: this.input.mergedLabelNetIdMap,
+      paddingBuffer: this.input.paddingBuffer,
     })
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.solved = true

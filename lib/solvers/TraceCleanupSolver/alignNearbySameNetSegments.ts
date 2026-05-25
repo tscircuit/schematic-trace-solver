@@ -13,6 +13,7 @@ import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/Schemati
 import type { ChipWithBounds } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { InputProblem } from "lib/types/InputProblem"
 import { simplifyPath } from "./simplifyPath"
+import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 
 type Axis = "horizontal" | "vertical"
 
@@ -43,9 +44,18 @@ const COLLISION_KEY_PRECISION = 1e6
 
 export const alignNearbySameNetSegments = (
   traces: SolvedTracePath[],
-  opts: { tolerance?: number; inputProblem?: InputProblem } = {},
+  opts: {
+    tolerance?: number
+    inputProblem?: InputProblem
+    allLabelPlacements?: NetLabelPlacement[]
+    mergedLabelNetIdMap?: Record<string, Set<string>>
+    paddingBuffer?: number
+  } = {},
 ): SolvedTracePath[] => {
   const tolerance = opts.tolerance ?? DEFAULT_ALIGNMENT_TOLERANCE
+  const labelPlacements = opts.allLabelPlacements ?? []
+  const mergedLabelNetIdMap = opts.mergedLabelNetIdMap ?? {}
+  const paddingBuffer = opts.paddingBuffer ?? 0
   const staticObstacles = opts.inputProblem
     ? getObstacleRects(opts.inputProblem).map((obs) => ({
         ...obs,
@@ -82,6 +92,13 @@ export const alignNearbySameNetSegments = (
           pair.moving.trace,
           updatedTrace,
           staticObstacles,
+        ) ||
+        introducesNetLabelCollision(
+          pair.moving.trace,
+          updatedTrace,
+          labelPlacements,
+          mergedLabelNetIdMap,
+          paddingBuffer,
         ) ||
         introducesSelfCollision(pair.moving.trace, updatedTrace)
       ) {
@@ -298,6 +315,50 @@ const introducesStaticObstacleCollision = (
   }
 
   return false
+}
+
+const introducesNetLabelCollision = (
+  originalTrace: SolvedTracePath,
+  updatedTrace: SolvedTracePath,
+  allLabelPlacements: NetLabelPlacement[],
+  mergedLabelNetIdMap: Record<string, Set<string>>,
+  paddingBuffer: number,
+) => {
+  const labelBounds = getLabelBoundsForTrace(
+    updatedTrace,
+    allLabelPlacements,
+    mergedLabelNetIdMap,
+    paddingBuffer,
+  )
+
+  return introducesStaticObstacleCollision(
+    originalTrace,
+    updatedTrace,
+    labelBounds,
+  )
+}
+
+const getLabelBoundsForTrace = (
+  trace: SolvedTracePath,
+  allLabelPlacements: NetLabelPlacement[],
+  mergedLabelNetIdMap: Record<string, Set<string>>,
+  paddingBuffer: number,
+): ChipWithBounds[] => {
+  return allLabelPlacements
+    .filter((label) => {
+      const originalNetIds = mergedLabelNetIdMap[label.globalConnNetId]
+      if (originalNetIds) {
+        return !originalNetIds.has(trace.globalConnNetId)
+      }
+      return label.globalConnNetId !== trace.globalConnNetId
+    })
+    .map((label, index) => ({
+      chipId: `net-label-${label.globalConnNetId}-${index}`,
+      minX: label.center.x - label.width / 2 - paddingBuffer,
+      maxX: label.center.x + label.width / 2 + paddingBuffer,
+      minY: label.center.y - label.height / 2 - paddingBuffer,
+      maxY: label.center.y + label.height / 2 + paddingBuffer,
+    }))
 }
 
 const hasNewCollision = (

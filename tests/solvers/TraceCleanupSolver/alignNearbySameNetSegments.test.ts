@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { getSvgFromGraphicsObject, type GraphicsObject } from "graphics-debug"
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { alignNearbySameNetSegments } from "lib/solvers/TraceCleanupSolver/alignNearbySameNetSegments"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -227,6 +228,37 @@ describe("alignNearbySameNetSegments", () => {
     expect(blockedTrace.tracePath[2].y).toBe(0.08)
   })
 
+  test("rejects alignments that would collide with a different-net label", () => {
+    const [, blockedTrace] = alignNearbySameNetSegments(
+      [
+        trace("a", "net1", [
+          { x: 0, y: -2 },
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 2 },
+        ]),
+        trace("b", "net1", [
+          { x: 2, y: -2 },
+          { x: 2, y: 0.08 },
+          { x: 8, y: 0.08 },
+          { x: 8, y: 2 },
+        ]),
+      ],
+      {
+        allLabelPlacements: [
+          labelPlacement("net2", {
+            center: { x: 5, y: 0 },
+            width: 1,
+            height: 0.1,
+          }),
+        ],
+      },
+    )
+
+    expect(blockedTrace.tracePath[1].y).toBe(0.08)
+    expect(blockedTrace.tracePath[2].y).toBe(0.08)
+  })
+
   test("allows alignments that keep an existing chip obstacle collision", () => {
     const [, movedTrace] = alignNearbySameNetSegments(
       [
@@ -374,4 +406,22 @@ const problemWithChipObstacle = ({
   directConnections: [],
   netConnections: [],
   availableNetLabelOrientations: {},
+})
+
+const labelPlacement = (
+  globalConnNetId: string,
+  bounds: {
+    center: { x: number; y: number }
+    width: number
+    height: number
+  },
+): NetLabelPlacement => ({
+  globalConnNetId,
+  mspConnectionPairIds: [],
+  pinIds: [],
+  orientation: "x+",
+  anchorPoint: bounds.center,
+  center: bounds.center,
+  width: bounds.width,
+  height: bounds.height,
 })
