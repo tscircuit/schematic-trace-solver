@@ -83,7 +83,7 @@ export class SchematicDebugObjectsSolver extends BaseSolver {
       if (path.length === 0) continue
 
       const color = getColorFromString(
-        trace.globalConnNetId ?? trace.netId,
+        trace.globalConnNetId ?? trace.mspPairId,
         0.9,
       )
 
@@ -92,7 +92,7 @@ export class SchematicDebugObjectsSolver extends BaseSolver {
         x: path[0]!.x,
         y: path[0]!.y,
         color,
-        label: `start:${trace.netId}`,
+        label: `start:${trace.globalConnNetId ?? trace.mspPairId}`,
         radius: 0.15,
       })
 
@@ -101,7 +101,7 @@ export class SchematicDebugObjectsSolver extends BaseSolver {
         x: path[path.length - 1]!.x,
         y: path[path.length - 1]!.y,
         color,
-        label: `end:${trace.netId}`,
+        label: `end:${trace.globalConnNetId ?? trace.mspPairId}`,
         radius: 0.15,
       })
 
@@ -139,7 +139,7 @@ export class SchematicDebugObjectsSolver extends BaseSolver {
         x: label.anchorPoint.x,
         y: label.anchorPoint.y,
         color: "orange",
-        label: `anchor:${label.netId}`,
+        label: `anchor:${label.globalConnNetId}`,
         radius: 0.1,
       })
 
@@ -176,7 +176,7 @@ export class SchematicDebugObjectsSolver extends BaseSolver {
     // Draw traces
     for (const trace of this.traces) {
       const color = getColorFromString(
-        trace.globalConnNetId ?? trace.netId,
+        trace.globalConnNetId ?? trace.mspPairId,
         0.7,
       )
       graphics.lines.push({

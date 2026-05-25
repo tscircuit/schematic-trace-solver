@@ -1,3 +1,4 @@
+import { describe, test, expect } from "bun:test"
 import { SchematicDebugObjectsSolver } from "./SchematicDebugObjectsSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
@@ -38,10 +39,10 @@ const mockInputProblem: InputProblem = {
 
 const mockTrace: SolvedTracePath = {
   mspPairId: "pair1",
-  netId: "net1",
   globalConnNetId: "net1",
   userNetId: "net1",
   dcConnNetId: "net1",
+  mspConnectionPairIds: ["pair1"],
   tracePath: [
     { x: -1, y: 0 },
     { x: 1, y: 0 },
