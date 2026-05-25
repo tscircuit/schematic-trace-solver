@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import { getSvgFromGraphicsObject, type GraphicsObject } from "graphics-debug"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { alignNearbySameNetSegments } from "lib/solvers/TraceCleanupSolver/alignNearbySameNetSegments"
 
@@ -122,4 +123,76 @@ describe("alignNearbySameNetSegments", () => {
     expect(blockedTrace.tracePath[1].y).toBe(0.08)
     expect(blockedTrace.tracePath[2].y).toBe(0.08)
   })
+
+  test("renders before and after proof for the nearby same-net alignment", () => {
+    const inputTraces = [
+      trace("a", "net1", [
+        { x: 0, y: -2 },
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 10, y: 2 },
+      ]),
+      trace("b", "net1", [
+        { x: 2, y: -2 },
+        { x: 2, y: 0.08 },
+        { x: 8, y: 0.08 },
+        { x: 8, y: 2 },
+      ]),
+    ]
+    const outputTraces = alignNearbySameNetSegments(inputTraces)
+    const svg = getSvgFromGraphicsObject(
+      renderBeforeAfterProof(inputTraces, outputTraces),
+      {
+        backgroundColor: "white",
+      },
+    )
+
+    expect(svg).toMatchSvgSnapshot(import.meta.path, "before-after")
+  })
 })
+
+const renderBeforeAfterProof = (
+  before: SolvedTracePath[],
+  after: SolvedTracePath[],
+): GraphicsObject => {
+  const graphics: GraphicsObject = {
+    lines: [],
+    texts: [
+      {
+        text: "Before",
+        x: 5,
+        y: -3,
+        fontSize: 0.5,
+      },
+      {
+        text: "After",
+        x: 20,
+        y: -3,
+        fontSize: 0.5,
+      },
+    ],
+  }
+
+  addTraceLines(graphics, before, 0)
+  addTraceLines(graphics, after, 15)
+
+  return graphics
+}
+
+const addTraceLines = (
+  graphics: GraphicsObject,
+  traces: SolvedTracePath[],
+  xOffset: number,
+) => {
+  const colors = ["#1d4ed8", "#dc2626"]
+
+  for (const [index, trace] of traces.entries()) {
+    graphics.lines!.push({
+      points: trace.tracePath.map((point) => ({
+        x: point.x + xOffset,
+        y: point.y,
+      })),
+      strokeColor: colors[index] ?? "#374151",
+    })
+  }
+}
