@@ -9,11 +9,6 @@ import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/Singl
 import { getColorFromString } from "lib/utils/getColorFromString"
 import type { InputProblem } from "lib/types/InputProblem"
 
-/**
- * Merges all labels that touch/overlap with each other (transitively) around
- * a seed label into a single bounding-box label. This prevents the situation
- * where fixing one label collision re-routes the trace into an adjacent label.
- */
 function buildMergedObstacleLabel(
   seedLabel: NetLabelPlacement,
   allLabels: NetLabelPlacement[],
@@ -72,34 +67,51 @@ function buildMergedObstacleLabel(
   }
 }
 
-interface TraceInnerLabelOverlap {
+interface TraceLabelOverlap {
   trace: SolvedTracePath
   label: NetLabelPlacement
+  /** Index of the first segment point that overlaps */
+  segmentStartIdx: number
 }
 
-/**
- * Detects overlaps where a trace's INTERIOR (non-endpoint) segments cross a label.
- * Traces are allowed to boundary a label at their endpoints (pin locations),
- * just not allowed to cross through it in the middle.
- */
-function detectInnerTraceLabelOverlaps(
+const ENDPOINT_TOLERANCE = 0.15
+
+function detectAllTraceLabelOverlaps(
   traces: SolvedTracePath[],
   labels: NetLabelPlacement[],
-): TraceInnerLabelOverlap[] {
-  const overlaps: TraceInnerLabelOverlap[] = []
+): TraceLabelOverlap[] {
+  const overlaps: TraceLabelOverlap[] = []
   for (const trace of traces) {
     for (const label of labels) {
       if (trace.globalConnNetId === label.globalConnNetId) continue
       const bounds = getRectBounds(label.center, label.width, label.height)
       const path = trace.tracePath
-      // Skip first and last segments — trace endpoints (pins) may legitimately
-      // sit inside or adjacent to labels of neighbouring nets.
-      const innerStart = 1
-      const innerEnd = path.length - 2
-      for (let i = innerStart; i < innerEnd; i++) {
-        if (segmentIntersectsRect(path[i]!, path[i + 1]!, bounds)) {
-          overlaps.push({ trace, label })
-          break
+
+      for (let i = 0; i < path.length - 1; i++) {
+        const p1 = path[i]!
+        const p2 = path[i + 1]!
+
+        if (!segmentIntersectsRect(p1, p2, bounds)) continue
+
+        const isFirstSeg = i === 0
+        const isLastSeg = i === path.length - 2
+
+        if (isFirstSeg || isLastSeg) {
+          const ep = isFirstSeg ? p1 : p2
+          const labelCx = (bounds.minX + bounds.maxX) / 2
+          const labelCy = (bounds.minY + bounds.maxY) / 2
+          const labelHalfW = (bounds.maxX - bounds.minX) / 2
+          const labelHalfH = (bounds.maxY - bounds.minY) / 2
+
+          const dx = Math.abs(ep.x - labelCx) - labelHalfW
+          const dy = Math.abs(ep.y - labelCy) - labelHalfH
+          const distFromLabel = Math.sqrt(Math.max(0, dx) ** 2 + Math.max(0, dy) ** 2)
+
+          if (distFromLabel > ENDPOINT_TOLERANCE) {
+            overlaps.push({ trace, label, segmentStartIdx: i })
+          }
+        } else {
+          overlaps.push({ trace, label, segmentStartIdx: i })
         }
       }
     }
@@ -114,7 +126,7 @@ export interface NetLabelTraceCollisionSolverParams {
 }
 
 const PADDING_BUFFER = 0.1
-const MAX_DETOUR_ATTEMPTS = 3
+const MAX_DETOUR_ATTEMPTS = 5
 
 export class NetLabelTraceCollisionSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -183,7 +195,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
       return
     }
 
-    const overlaps = detectInnerTraceLabelOverlaps(
+    const overlaps = detectAllTraceLabelOverlaps(
       this.outputTraces,
       this.outputNetLabelPlacements,
     )
@@ -206,8 +218,6 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
 
     this.currentOverlap = next
 
-    // Merge all touching/overlapping labels into one obstacle so that fixing
-    // one collision doesn't immediately create another with an adjacent label.
     const mergedLabel = buildMergedObstacleLabel(
       next.label,
       this.outputNetLabelPlacements.filter(
@@ -228,7 +238,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
       trace: traceToFix,
       label: mergedLabel,
       problem: this.inputProblem,
-      paddingBuffer: PADDING_BUFFER,
+      paddingBuffer: PADDING_BUFFER + detourCount * 0.05,
       detourCount,
     })
   }
