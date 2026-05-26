@@ -208,7 +208,7 @@ export class SchematicDebugObjectsSolver extends BaseSolver {
       } as any)
     }
 
-    // Draw debug circles
+// Draw debug circles
     for (const dc of this.debugCircles) {
       graphics.circles.push({
         center: { x: dc.x, y: dc.y },
