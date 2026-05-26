@@ -63,12 +63,13 @@ const snapVerticalSegment = (path: Point[], segStart: number, x: number) => {
  * touch chip pins and shifting them would disconnect the trace.
  *
  * @param traces          all SolvedTracePaths in the schematic
- * @param paddingBuffer   the upstream channel-spacing constant; the merge
- *                        threshold defaults to this value because the
- *                        TraceOverlapShiftSolver only ever shifts parallel
- *                        traces by `paddingBuffer`, so any offset ≤ that
- *                        amount is exactly the cosmetic gap we want to
- *                        collapse for same-net traces.
+ * @param paddingBuffer   the upstream channel-spacing constant. The merge
+ *                        threshold defaults to half of this so we only
+ *                        collapse offsets STRICTLY tighter than the
+ *                        intentional channel spacing — anything at or
+ *                        beyond `paddingBuffer` was placed there
+ *                        deliberately by TraceOverlapShiftSolver and must
+ *                        not be reverted.
  * @param mergeDistance   optional explicit override of the threshold
  *
  * @returns               new traces array; inputs are not mutated.
@@ -82,7 +83,7 @@ export const mergeCloseSameNetTraces = ({
   paddingBuffer: number
   mergeDistance?: number
 }): SolvedTracePath[] => {
-  const threshold = mergeDistance ?? paddingBuffer
+  const threshold = mergeDistance ?? paddingBuffer * 0.5
   if (threshold <= 0 || traces.length < 2) return traces
 
   // Deep-copy each tracePath so mutations stay local.

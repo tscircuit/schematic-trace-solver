@@ -24,16 +24,16 @@ const stub = (
 
 describe("mergeCloseSameNetTraces", () => {
   test("snaps two same-net horizontal segments offset less than the threshold", () => {
-    // Trace A: pin at (0,0) → corner (5, 0) → corner (5, 4.9) → corner (10, 4.9) → pin (10, 4.9)
-    // Trace B: pin at (0,0.5) → corner (5,0.5) → corner (5, 5.1) → corner (10, 5.1) → pin (10, 5.1)
-    // The middle horizontal segments at y=4.9 and y=5.1 are 0.2 apart, same net.
-    // With paddingBuffer = 0.4, the threshold = 0.4, so they should snap to y=5.0.
+    // Trace A: pin (0,0) -> corner (5,0) -> corner (5,4.9) -> pin (10,4.9)
+    // Trace B: pin (0,0.5) -> corner (5,0.5) -> corner (5,5.1) -> pin (10,5.1)
+    // Middle horizontal segments at y=4.9 and y=5.1 are 0.2 apart, same net.
+    // With paddingBuffer = 0.5, the default threshold = 0.25, so 0.2 < 0.25
+    // and the two segments should snap to the shared midpoint y=5.0.
     const traces = [
       stub("A", "net1", [
         { x: 0, y: 0 },
         { x: 5, y: 0 },
         { x: 5, y: 4.9 },
-        { x: 10, y: 4.9 },
         { x: 10, y: 4.9 },
       ]),
       stub("B", "net1", [
@@ -41,21 +41,17 @@ describe("mergeCloseSameNetTraces", () => {
         { x: 5, y: 0.5 },
         { x: 5, y: 5.1 },
         { x: 10, y: 5.1 },
-        { x: 10, y: 5.1 },
       ]),
     ]
 
-    const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.4 })
+    const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.5 })
 
-    // Both interior horizontal segments should now sit at the midpoint y=5.0.
-    const aMid = out[0].tracePath.find((p, i, arr) =>
-      i > 0 && Math.abs(arr[i - 1].y - p.y) < 1e-6 && p.x !== arr[i - 1].x,
-    )
-    const bMid = out[1].tracePath.find((p, i, arr) =>
-      i > 0 && Math.abs(arr[i - 1].y - p.y) < 1e-6 && p.x !== arr[i - 1].x,
-    )
-    expect(aMid?.y).toBeCloseTo(5.0, 6)
-    expect(bMid?.y).toBeCloseTo(5.0, 6)
+    // The third tracePath entry is the start corner of the middle horizontal
+    // segment in each path (path[2]); after snap it sits at y=5.0.
+    expect(out[0].tracePath[2].y).toBeCloseTo(5.0, 6)
+    expect(out[0].tracePath[3].y).toBeCloseTo(5.0, 6)
+    expect(out[1].tracePath[2].y).toBeCloseTo(5.0, 6)
+    expect(out[1].tracePath[3].y).toBeCloseTo(5.0, 6)
   })
 
   test("does NOT snap segments belonging to different nets", () => {
@@ -76,7 +72,7 @@ describe("mergeCloseSameNetTraces", () => {
       ]),
     ]
 
-    const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.4 })
+    const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.5 })
 
     // y values of the middle segment should be unchanged.
     expect(out[0].tracePath[2].y).toBeCloseTo(4.9, 6)
@@ -102,7 +98,7 @@ describe("mergeCloseSameNetTraces", () => {
       ]),
     ]
 
-    const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.4 })
+    const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.5 })
 
     expect(out[0].tracePath[2].y).toBeCloseTo(2, 6)
     expect(out[1].tracePath[2].y).toBeCloseTo(8, 6)
@@ -127,7 +123,7 @@ describe("mergeCloseSameNetTraces", () => {
       ]),
     ]
 
-    const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.4 })
+    const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.5 })
 
     // After snap, the vertical-segment x should be midpoint 5.0.
     expect(out[0].tracePath[2].x).toBeCloseTo(5.0, 6)
@@ -149,7 +145,7 @@ describe("mergeCloseSameNetTraces", () => {
       ]),
     ]
 
-    const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.4 })
+    const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.5 })
 
     // Both endpoints touch pins → no snap.
     expect(out[0].tracePath[0].y).toBe(0.0)
@@ -170,7 +166,7 @@ describe("mergeCloseSameNetTraces", () => {
       ]),
     ]
 
-    const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.4 })
+    const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.5 })
     expect(out[0].tracePath).toEqual(traces[0].tracePath)
     expect(out[1].tracePath).toEqual(traces[1].tracePath)
   })
