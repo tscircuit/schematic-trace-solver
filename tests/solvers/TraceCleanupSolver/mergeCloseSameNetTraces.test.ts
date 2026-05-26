@@ -24,30 +24,38 @@ const stub = (
 
 describe("mergeCloseSameNetTraces", () => {
   test("snaps two same-net horizontal segments offset less than the threshold", () => {
-    // Trace A: pin (0,0) -> corner (5,0) -> corner (5,4.9) -> pin (10,4.9)
-    // Trace B: pin (0,0.5) -> corner (5,0.5) -> corner (5,5.1) -> pin (10,5.1)
+    // Traces must have at least 6 points for a horizontal middle segment to
+    // be "interior" — endpoint segments touch pins and are skipped.
+    //
+    // Trace A: pin (0,0) -> (3,0) -> (3, 4.9) -> (8, 4.9) -> (8, 9) -> pin (12, 9)
+    // Trace B: pin (0,0.5) -> (3,0.5) -> (3, 5.1) -> (8, 5.1) -> (8, 9.5) -> pin (12, 9.5)
+    //
     // Middle horizontal segments at y=4.9 and y=5.1 are 0.2 apart, same net.
     // With paddingBuffer = 0.5, the default threshold = 0.25, so 0.2 < 0.25
     // and the two segments should snap to the shared midpoint y=5.0.
     const traces = [
       stub("A", "net1", [
         { x: 0, y: 0 },
-        { x: 5, y: 0 },
-        { x: 5, y: 4.9 },
-        { x: 10, y: 4.9 },
+        { x: 3, y: 0 },
+        { x: 3, y: 4.9 },
+        { x: 8, y: 4.9 },
+        { x: 8, y: 9 },
+        { x: 12, y: 9 },
       ]),
       stub("B", "net1", [
         { x: 0, y: 0.5 },
-        { x: 5, y: 0.5 },
-        { x: 5, y: 5.1 },
-        { x: 10, y: 5.1 },
+        { x: 3, y: 0.5 },
+        { x: 3, y: 5.1 },
+        { x: 8, y: 5.1 },
+        { x: 8, y: 9.5 },
+        { x: 12, y: 9.5 },
       ]),
     ]
 
     const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.5 })
 
-    // The third tracePath entry is the start corner of the middle horizontal
-    // segment in each path (path[2]); after snap it sits at y=5.0.
+    // The middle horizontal segment runs from path[2] to path[3] in both
+    // traces; after snap both endpoints sit at y=5.0.
     expect(out[0].tracePath[2].y).toBeCloseTo(5.0, 6)
     expect(out[0].tracePath[3].y).toBeCloseTo(5.0, 6)
     expect(out[1].tracePath[2].y).toBeCloseTo(5.0, 6)
@@ -58,17 +66,19 @@ describe("mergeCloseSameNetTraces", () => {
     const traces = [
       stub("A", "net1", [
         { x: 0, y: 0 },
-        { x: 5, y: 0 },
-        { x: 5, y: 4.9 },
-        { x: 10, y: 4.9 },
-        { x: 10, y: 4.9 },
+        { x: 3, y: 0 },
+        { x: 3, y: 4.9 },
+        { x: 8, y: 4.9 },
+        { x: 8, y: 9 },
+        { x: 12, y: 9 },
       ]),
       stub("B", "net2", [
         { x: 0, y: 0.5 },
-        { x: 5, y: 0.5 },
-        { x: 5, y: 5.1 },
-        { x: 10, y: 5.1 },
-        { x: 10, y: 5.1 },
+        { x: 3, y: 0.5 },
+        { x: 3, y: 5.1 },
+        { x: 8, y: 5.1 },
+        { x: 8, y: 9.5 },
+        { x: 12, y: 9.5 },
       ]),
     ]
 
@@ -84,17 +94,19 @@ describe("mergeCloseSameNetTraces", () => {
     const traces = [
       stub("A", "net1", [
         { x: 0, y: 0 },
-        { x: 5, y: 0 },
-        { x: 5, y: 2 },
-        { x: 10, y: 2 },
-        { x: 10, y: 2 },
+        { x: 3, y: 0 },
+        { x: 3, y: 2 },
+        { x: 8, y: 2 },
+        { x: 8, y: 9 },
+        { x: 12, y: 9 },
       ]),
       stub("B", "net1", [
         { x: 0, y: 0 },
-        { x: 5, y: 0 },
-        { x: 5, y: 8 },
-        { x: 10, y: 8 },
-        { x: 10, y: 8 },
+        { x: 3, y: 0 },
+        { x: 3, y: 8 },
+        { x: 8, y: 8 },
+        { x: 8, y: 9 },
+        { x: 12, y: 9 },
       ]),
     ]
 
@@ -105,29 +117,38 @@ describe("mergeCloseSameNetTraces", () => {
   })
 
   test("snaps two same-net vertical segments offset less than the threshold", () => {
-    // Vertical analogue: middle vertical segments at x=4.9 and x=5.1, same net.
+    // Vertical analogue: a 6-point trace where path[2]->path[3] is an
+    // interior VERTICAL segment.
+    //
+    // Trace A: pin (0,0) -> (0,3) -> (4.9, 3) -> (4.9, 8) -> (9, 8) -> pin (9, 12)
+    // Trace B: pin (0.5,0) -> (0.5,3) -> (5.1, 3) -> (5.1, 8) -> (9.5, 8) -> pin (9.5, 12)
+    //
+    // The interior vertical segments at x=4.9 and x=5.1 should snap to x=5.0.
     const traces = [
       stub("A", "net1", [
         { x: 0, y: 0 },
-        { x: 0, y: 5 },
-        { x: 4.9, y: 5 },
-        { x: 4.9, y: 10 },
-        { x: 4.9, y: 10 },
+        { x: 0, y: 3 },
+        { x: 4.9, y: 3 },
+        { x: 4.9, y: 8 },
+        { x: 9, y: 8 },
+        { x: 9, y: 12 },
       ]),
       stub("B", "net1", [
         { x: 0.5, y: 0 },
-        { x: 0.5, y: 5 },
-        { x: 5.1, y: 5 },
-        { x: 5.1, y: 10 },
-        { x: 5.1, y: 10 },
+        { x: 0.5, y: 3 },
+        { x: 5.1, y: 3 },
+        { x: 5.1, y: 8 },
+        { x: 9.5, y: 8 },
+        { x: 9.5, y: 12 },
       ]),
     ]
 
     const out = mergeCloseSameNetTraces({ traces, paddingBuffer: 0.5 })
 
-    // After snap, the vertical-segment x should be midpoint 5.0.
     expect(out[0].tracePath[2].x).toBeCloseTo(5.0, 6)
+    expect(out[0].tracePath[3].x).toBeCloseTo(5.0, 6)
     expect(out[1].tracePath[2].x).toBeCloseTo(5.0, 6)
+    expect(out[1].tracePath[3].x).toBeCloseTo(5.0, 6)
   })
 
   test("does not move terminal (pin-touching) endpoints", () => {
