@@ -42,28 +42,29 @@ test("snaps two same-net vertical segments that are close together", () => {
   const traceA = result.find((t) => t.mspPairId === "A")!
   const traceB = result.find((t) => t.mspPairId === "B")!
 
-  // Find the vertical segments and verify they share the same X
-  const vertXA = traceA.tracePath.find((p, i, arr) => {
-    if (i === arr.length - 1) return false
-    return (
-      Math.abs(p.x - arr[i + 1]!.x) < 1e-6 &&
-      Math.abs(p.y - arr[i + 1]!.y) > 1e-6
-    )
-  })?.x
+  // Find the vertical segments
+const segA = traceA.tracePath.find((p, i, arr) => {
+  const next = arr[i + 1];
+  if (!next) return false;
+  // A vertical segment has identical X and different Y
+  return Math.abs(p.x - next.x) < 1e-6 && Math.abs(p.y - next.y) > 1e-6;
+});
 
-  const vertXB = traceB.tracePath.find((p, i, arr) => {
-    if (i === arr.length - 1) return false
-    return (
-      Math.abs(p.x - arr[i + 1]!.x) < 1e-6 &&
-      Math.abs(p.y - arr[i + 1]!.y) > 1e-6
-    )
-  })?.x
+const segB = traceB.tracePath.find((p, i, arr) => {
+  const next = arr[i + 1];
+  if (!next) return false;
+  return Math.abs(p.x - next.x) < 1e-6 && Math.abs(p.y - next.y) > 1e-6;
+});
 
-  expect(vertXA).toBeDefined()
-  expect(vertXB).toBeDefined()
-  expect(Math.abs(vertXA! - vertXB!)).toBeLessThan(1e-6)
-  // Should snap to midpoint 1.015
-  expect(Math.abs(vertXA! - 1.015)).toBeLessThan(1e-6)
+// Assert they exist to prevent NaN
+expect(segA).toBeDefined();
+expect(segB).toBeDefined();
+
+// Now it is safe to use !.x
+expect(Math.abs(segA!.x - segB!.x)).toBeLessThan(1e-6);
+// Should snap to midpoint 1.015
+expect(Math.abs(segA!.x - 1.015)).toBeLessThan(1e-6);
+
 })
 
 test("snaps two same-net horizontal segments that are close together", () => {
