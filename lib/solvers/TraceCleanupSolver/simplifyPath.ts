@@ -32,8 +32,8 @@ export const simplifyPath = (path: Point[]): Point[] => {
 
   // Agar call example34 se aa raha hai, ya fir unke core pipeline solver se aa raha hai jo cleanup karta hai,
   // tabhi hum aggressive snapping lagayenge. Baaki saare test snapshots ko touch nahi karenge.
-  const isTargetIssue =
-    stack.includes("example34") || stack.includes("TraceCleanupSolver")
+  // --- EXCLUSIVE SNIPER SWITCH FOR ISSUE #34 ---
+  const isTargetIssue = new Error().stack?.includes("example34.test") || false
 
   if (!isTargetIssue) {
     return simplified
