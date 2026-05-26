@@ -3,8 +3,8 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import { getColorFromString } from "lib/utils/getColorFromString"
 import type { InputProblem } from "lib/types/InputProblem"
+import { getColorFromString } from "lib/utils/getColorFromString"
 
 /**
  * A post-processing solver that generates debug visualization objects
@@ -188,7 +188,7 @@ export class SchematicDebugObjectsSolver extends BaseSolver {
     // Draw net labels
     for (const label of this.netLabelPlacements) {
       const color = getColorFromString(label.globalConnNetId, 0.35)
-graphics.rects.push({
+      graphics.rects.push({
         center: label.center,
         width: label.width,
         height: label.height,
