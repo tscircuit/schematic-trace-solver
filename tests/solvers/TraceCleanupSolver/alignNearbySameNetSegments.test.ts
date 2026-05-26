@@ -107,3 +107,52 @@ test("alignNearbySameNetSegments rejects moves that intersect a different net", 
   expect(output[1]!.tracePath[1]!.y).toBe(1.08)
   expect(output[1]!.tracePath[2]!.y).toBe(1.08)
 })
+
+test("alignNearbySameNetSegments rejects moves through blocker rectangles", () => {
+  const traces = [
+    makeTrace("a", "net1", [
+      { x: 0, y: 0 },
+      { x: 0, y: 1 },
+      { x: 4, y: 1 },
+      { x: 4, y: 2 },
+    ]),
+    makeTrace("b", "net1", [
+      { x: 1, y: 3 },
+      { x: 1, y: 1.08 },
+      { x: 3, y: 1.08 },
+      { x: 3, y: 4 },
+    ]),
+  ]
+
+  const output = alignNearbySameNetSegments(traces, {
+    tolerance: 0.1,
+    blockers: [{ minX: 1.5, maxX: 2.5, minY: 0.9, maxY: 1.1 }],
+  })
+
+  expect(output[1]!.tracePath[1]!.y).toBe(1.08)
+  expect(output[1]!.tracePath[2]!.y).toBe(1.08)
+})
+
+test("alignNearbySameNetSegments rejects self-intersecting candidate paths", () => {
+  const traces = [
+    makeTrace("a", "net1", [
+      { x: 0, y: 0 },
+      { x: 0, y: 1 },
+      { x: 4, y: 1 },
+      { x: 4, y: 2 },
+    ]),
+    makeTrace("b", "net1", [
+      { x: 3, y: 0 },
+      { x: 3, y: 1.08 },
+      { x: 1, y: 1.08 },
+      { x: 1, y: 0.5 },
+      { x: 4, y: 0.5 },
+      { x: 4, y: 2 },
+    ]),
+  ]
+
+  const output = alignNearbySameNetSegments(traces, { tolerance: 0.1 })
+
+  expect(output[1]!.tracePath[1]!.y).toBe(1.08)
+  expect(output[1]!.tracePath[2]!.y).toBe(1.08)
+})
