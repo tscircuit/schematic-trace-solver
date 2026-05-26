@@ -46,18 +46,18 @@ test("snaps two same-net vertical segments that are close together", () => {
   const vertXA = traceA.tracePath.find((p, i, arr) => {
     if (i === arr.length - 1) return false
     return (
-      Math.abs(p.x as number) - (arr[i + 1]!.x as number)) < 1e-6 &&
-      Math.abs(p.y as number) - (arr[i + 1]!.y as number)) > 1e-6
+      Math.abs(p.x - arr[i + 1]!.x) < 1e-6 &&
+      Math.abs(p.y - arr[i + 1]!.y) > 1e-6
     )
-  })!
+  })?.x
 
   const vertXB = traceB.tracePath.find((p, i, arr) => {
     if (i === arr.length - 1) return false
     return (
-      Math.abs(p.x as number) - (arr[i + 1]!.x as number)) < 1e-6 &&
-      Math.abs(p.y as number) - (arr[i + 1]!.y as number)) > 1e-6
+      Math.abs(p.x - arr[i + 1]!.x) < 1e-6 &&
+      Math.abs(p.y - arr[i + 1]!.y) > 1e-6
     )
-  })!
+  })?.x
 
   expect(vertXA).toBeDefined()
   expect(vertXB).toBeDefined()
