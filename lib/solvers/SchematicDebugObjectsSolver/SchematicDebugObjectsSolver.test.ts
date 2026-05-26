@@ -1,8 +1,8 @@
-import { describe, test, expect } from "bun:test"
-import { SchematicDebugObjectsSolver } from "./SchematicDebugObjectsSolver"
-import type { InputProblem } from "lib/types/InputProblem"
+import { describe, expect, test } from "bun:test"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { InputProblem } from "lib/types/InputProblem"
+import { SchematicDebugObjectsSolver } from "./SchematicDebugObjectsSolver"
 
 // Minimal mock InputProblem
 const mockInputProblem: InputProblem = {
