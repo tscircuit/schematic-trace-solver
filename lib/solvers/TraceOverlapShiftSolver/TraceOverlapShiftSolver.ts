@@ -264,6 +264,25 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
     const elbowPoint = score1 < score2 ? elbow1 : elbow2
 
+    // Skip if the elbow coincides with an existing endpoint -- inserting it
+    // would produce a zero-length segment that confuses downstream solvers.
+    const EPS2 = 2e-3
+    const elbowEqualsP1 =
+      Math.abs(elbowPoint.x - p1.x) < EPS2 &&
+      Math.abs(elbowPoint.y - p1.y) < EPS2
+    const elbowEqualsP2 =
+      Math.abs(elbowPoint.x - p2.x) < EPS2 &&
+      Math.abs(elbowPoint.y - p2.y) < EPS2
+
+    if (elbowEqualsP1 || elbowEqualsP2) {
+      if (elbowEqualsP1) {
+        tracePath[i + 1] = { ...p2, x: p1.x }
+      } else {
+        tracePath[i] = { ...p1, y: p2.y }
+      }
+      return true
+    }
+
     // Replace [p1, p2] with [p1, elbowPoint, p2]
     tracePath.splice(i + 1, 0, elbowPoint)
     return true // Fixed one diagonal, return true to re-evaluate in next step
