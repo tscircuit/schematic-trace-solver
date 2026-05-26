@@ -139,13 +139,19 @@ const segmentIntersectsRectInterior = (
   if (Math.abs(a.y - b.y) < EPS) {
     const y = a.y
     if (y <= top + EPS || y >= bottom - EPS) return false
-    return Math.max(Math.min(a.x, b.x), left) < Math.min(Math.max(a.x, b.x), right) - EPS
+    return (
+      Math.max(Math.min(a.x, b.x), left) <
+      Math.min(Math.max(a.x, b.x), right) - EPS
+    )
   }
 
   if (Math.abs(a.x - b.x) < EPS) {
     const x = a.x
     if (x <= left + EPS || x >= right - EPS) return false
-    return Math.max(Math.min(a.y, b.y), top) < Math.min(Math.max(a.y, b.y), bottom) - EPS
+    return (
+      Math.max(Math.min(a.y, b.y), top) <
+      Math.min(Math.max(a.y, b.y), bottom) - EPS
+    )
   }
 
   return false
