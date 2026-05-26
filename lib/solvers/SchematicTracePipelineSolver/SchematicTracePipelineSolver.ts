@@ -26,6 +26,8 @@ import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/
 import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
+import { SameNetTraceMergingSolver } from "../SameNetTraceMergingSolver/SameNetTraceMergingSolver"
+import { SameNetSegmentCombiningSolver } from "../SameNetSegmentCombiningSolver/SameNetSegmentCombiningSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -80,6 +82,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
+  sameNetTraceMergingSolver?: SameNetTraceMergingSolver
+  sameNetSegmentCombiningSolver?: SameNetSegmentCombiningSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -297,6 +301,28 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           netLabelPlacements:
             instance.traceAnchoredNetLabelOverlapSolver!
               .outputNetLabelPlacements,
+        },
+      ],
+    ),
+    definePipelineStep(
+      "sameNetTraceMergingSolver",
+      SameNetTraceMergingSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          traces:
+            instance.netLabelTraceCollisionSolver!.getOutput().traces,
+        },
+      ],
+    ),
+    definePipelineStep(
+      "sameNetSegmentCombiningSolver",
+      SameNetSegmentCombiningSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          traces:
+            instance.sameNetTraceMergingSolver!.getOutput().traces,
         },
       ],
     ),
