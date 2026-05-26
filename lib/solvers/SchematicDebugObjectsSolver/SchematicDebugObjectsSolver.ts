@@ -188,14 +188,14 @@ export class SchematicDebugObjectsSolver extends BaseSolver {
     // Draw net labels
     for (const label of this.netLabelPlacements) {
       const color = getColorFromString(label.globalConnNetId, 0.35)
-      graphics.rects.push({
+graphics.rects.push({
         center: label.center,
         width: label.width,
         height: label.height,
         fill: color,
-        strokeColor: getColorFromString(label.globalConnNetId, 0.9),
+        stroke: getColorFromString(label.globalConnNetId, 0.9),
         label: `${label.globalConnNetId}`,
-      } as any)
+      })
     }
 
     // Draw debug points
@@ -211,13 +211,12 @@ export class SchematicDebugObjectsSolver extends BaseSolver {
     // Draw debug circles
     for (const dc of this.debugCircles) {
       graphics.circles.push({
-        x: dc.x,
-        y: dc.y,
-        r: dc.r,
+        center: { x: dc.x, y: dc.y },
+        radius: dc.r,
         fill: dc.fill,
-        strokeColor: dc.strokeColor,
+        stroke: dc.strokeColor,
         label: dc.label,
-      } as any)
+      })
     }
 
     // Draw debug texts
