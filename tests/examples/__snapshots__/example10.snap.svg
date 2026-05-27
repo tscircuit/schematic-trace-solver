@@ -25,20 +25,16 @@ y+" data-x="3.2144395444999985" data-y="0.5519250999999993" cx="509.779348272728
 x+" data-x="3.9061310649999994" data-y="0.004526300000001031" cx="564.3915149460504" cy="319.6426281909097" r="3" fill="hsl(81, 100%, 50%, 0.8)" />
   </g>
   <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: x-" data-x="-2.2855604555" data-y="-0.6519250999999994" cx="75.52953054163507" cy="371.4724283362409" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="-2.2855604555" data-y="-0.6519250999999994" cx="75.52953054163507" cy="371.4724283362409" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: x-" data-x="-2.2855604555000015" data-y="0.6519250999999994" cx="75.52953054163495" cy="268.5275716637591" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="-2.2855604555000015" data-y="0.6519250999999994" cx="75.52953054163495" cy="268.5275716637591" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: x+" data-x="-1.5938689350000006" data-y="0.004526300000001031" cx="130.1416972149565" cy="319.6426281909097" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="-1.5938689350000006" data-y="0.004526300000001031" cx="130.1416972149565" cy="319.6426281909097" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: x+" data-x="3.9061310649999994" data-y="0.004526300000001031" cx="564.3915149460504" cy="319.6426281909097" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="" data-x="3.9061310649999994" data-y="0.004526300000001031" cx="564.3915149460504" cy="319.6426281909097" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="-2.2855604555,-0.5519250999999993 3.2144395445,-0.5519250999999993" data-type="line" data-label="" points="75.52953054163507,363.57697710476646 509.7793482727289,363.57697710476646" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
