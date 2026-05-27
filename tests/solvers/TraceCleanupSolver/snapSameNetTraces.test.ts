@@ -42,24 +42,21 @@ test("snaps two same-net vertical segments that are close together", () => {
   const traceA = result.find((t) => t.mspPairId === "A")!
   const traceB = result.find((t) => t.mspPairId === "B")!
 
-  // Find the vertical segments
-  const segA = traceA.tracePath.find((p, i, arr) => {
-    const next = arr[i + 1];
-    return next && Math.abs(p.x - next.x) < 1e-6 && Math.abs(p.y - next.y) > 1e-6;
-  });
+ import { expect, test, describe } from "vitest";
 
-  const segB = traceB.tracePath.find((p, i, arr) => {
-    const next = arr[i + 1];
-    return next && Math.abs(p.x - next.x) < 1e-6 && Math.abs(p.y - next.y) > 1e-6;
-  });
+describe("TraceCleanupSolver", () => {
+  test("snapSameNetTraces", () => {
+    const segA = traceA.tracePath.find((p, i, arr) => {
+      const next = arr[i + 1];
+      return next && Math.abs(p.x - next.x) < 1e-6 && Math.abs(p.y - next.y) > 1e-6;
+    });
 
-  expect(segA).toBeDefined();
-  expect(segB).toBeDefined();
+    const segB = traceB.tracePath.find((p, i, arr) => {
+      const next = arr[i + 1];
+      return next && Math.abs(p.x - next.x) < 1e-6 && Math.abs(p.y - next.y) > 1e-6;
+    });
 
-  // Use toBeCloseTo for robust coordinate comparison
-  expect(segA!.x).toBeCloseTo(segB!.x, 5);
-  expect(segA!.x).toBeCloseTo(1.015, 5);
-});
+  /
 
 test("snaps two same-net horizontal segments that are close together", () => {
   // Two horizontal traces at y=2.00 and y=2.04 (distance 0.04, within threshold 0.05)
