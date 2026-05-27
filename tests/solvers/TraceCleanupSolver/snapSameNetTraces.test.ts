@@ -45,15 +45,12 @@ test("snaps two same-net vertical segments that are close together", () => {
   // Find the vertical segments
 const segA = traceA.tracePath.find((p, i, arr) => {
   const next = arr[i + 1];
-  if (!next) return false;
-  // A vertical segment has identical X and different Y
-  return Math.abs(p.x - next.x) < 1e-6 && Math.abs(p.y - next.y) > 1e-6;
+  return next && Math.abs(p.x - next.x) < 1e-6 && Math.abs(p.y - next.y) > 1e-6;
 });
 
 const segB = traceB.tracePath.find((p, i, arr) => {
   const next = arr[i + 1];
-  if (!next) return false;
-  return Math.abs(p.x - next.x) < 1e-6 && Math.abs(p.y - next.y) > 1e-6;
+  return next && Math.abs(p.x - next.x) < 1e-6 && Math.abs(p.y - next.y) > 1e-6;
 });
 
 // Assert they exist to prevent NaN
@@ -62,10 +59,10 @@ expect(segB).toBeDefined();
 
 // Now it is safe to use !.x
 expect(Math.abs(segA!.x - segB!.x)).toBeLessThan(1e-6);
+
 // Should snap to midpoint 1.015
 expect(Math.abs(segA!.x - 1.015)).toBeLessThan(1e-6);
-
-})
+});
 
 test("snaps two same-net horizontal segments that are close together", () => {
   // Two horizontal traces at y=2.00 and y=2.04 (distance 0.04, within threshold 0.05)
