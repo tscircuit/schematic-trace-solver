@@ -1,0 +1,32 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 0.2,
+      "height": 0.325,
+      "pins": [
+        {
+          "pinId": "TP1.1",
+          "x": -1.2246467991473533e-17,
+          "y": 0.2
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "pinIds": ["TP1.1"],
+      "netLabelWidth": 0.48
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": ["y-"]
+  },
+  "maxMspPairDistance": 2.4
+}
