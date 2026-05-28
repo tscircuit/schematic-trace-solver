@@ -16,37 +16,8 @@ import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/
 import { getColorFromString } from "lib/utils/getColorFromString"
 
 const OUTWARD_OFFSET = 1e-4
-const EPS = 1e-6
+const SEGMENT_PARALLEL_EPS = 1e-6
 const CANDIDATE_STEP = 0.1
-
-function anchorsAlongSegment(
-  a: { x: number; y: number },
-  b: { x: number; y: number },
-): Array<{ x: number; y: number }> {
-  const dx = b.x - a.x
-  const dy = b.y - a.y
-  const len = Math.sqrt(dx * dx + dy * dy)
-  const steps = Math.max(1, Math.round(len / CANDIDATE_STEP))
-  const result: Array<{ x: number; y: number }> = []
-  for (let k = 0; k <= steps; k++) {
-    const t = k / steps
-    result.push({ x: a.x + t * dx, y: a.y + t * dy })
-  }
-  return result
-}
-
-function boundsOverlap(
-  a: { minX: number; minY: number; maxX: number; maxY: number },
-  b: { minX: number; minY: number; maxX: number; maxY: number },
-  eps = 1e-9,
-): boolean {
-  return (
-    a.minX < b.maxX - eps &&
-    a.maxX > b.minX + eps &&
-    a.minY < b.maxY - eps &&
-    a.maxY > b.minY + eps
-  )
-}
 
 type CandidateStatus = "ok" | "chip-collision" | "trace-collision" | "label-collision"
 
@@ -62,6 +33,34 @@ type Candidate = {
   status: CandidateStatus | null
 }
 
+function boundsOverlap(
+  a: { minX: number; minY: number; maxX: number; maxY: number },
+  b: { minX: number; minY: number; maxX: number; maxY: number },
+): boolean {
+  return (
+    a.minX < b.maxX - 1e-9 &&
+    a.maxX > b.minX + 1e-9 &&
+    a.minY < b.maxY - 1e-9 &&
+    a.maxY > b.minY + 1e-9
+  )
+}
+
+function sampleAnchorsAlongSegment(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+): Array<{ x: number; y: number }> {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const len = Math.sqrt(dx * dx + dy * dy)
+  const steps = Math.max(1, Math.round(len / CANDIDATE_STEP))
+  const anchors: Array<{ x: number; y: number }> = []
+  for (let k = 0; k <= steps; k++) {
+    const t = k / steps
+    anchors.push({ x: a.x + t * dx, y: a.y + t * dy })
+  }
+  return anchors
+}
+
 export interface NetLabelNetLabelCollisionSolverParams {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
@@ -75,19 +74,18 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
 
   outputNetLabelPlacements: NetLabelPlacement[]
 
-  // Active state (for visualization)
+  // Active search state — exposed for visualization
   currentCollision: [NetLabelPlacement, NetLabelPlacement] | null = null
   currentLabelToMove: NetLabelPlacement | null = null
   candidateResults: Candidate[] = []
 
-  private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
-  private inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
-  private recentlyFailed = new Set<string>()
+  private chipIndex: ChipObstacleSpatialIndex
+  private traceMap: Record<MspConnectionPairId, SolvedTracePath>
+  private skippedCollisionKeys = new Set<string>()
 
+  private labelsToTry: NetLabelPlacement[] = []
   private candidateQueue: Candidate[] = []
   private candidateIndex = 0
-  // 0 = trying second label of pair, 1 = trying first label of pair
-  private attemptPhase = 0
 
   constructor(params: NetLabelNetLabelCollisionSolverParams) {
     super()
@@ -95,10 +93,10 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     this.traces = params.traces
     this.netLabelPlacements = params.netLabelPlacements
     this.outputNetLabelPlacements = [...params.netLabelPlacements]
-    this.chipObstacleSpatialIndex =
+    this.chipIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
       new ChipObstacleSpatialIndex(params.inputProblem.chips)
-    this.inputTraceMap = Object.fromEntries(
+    this.traceMap = Object.fromEntries(
       params.traces.map((t) => [t.mspPairId, t]),
     ) as Record<MspConnectionPairId, SolvedTracePath>
   }
@@ -113,45 +111,44 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     }
   }
 
+  getOutput() {
+    return { netLabelPlacements: this.outputNetLabelPlacements }
+  }
+
   private labelBounds(label: NetLabelPlacement) {
     return getRectBounds(label.center, label.width, label.height)
   }
 
   private collisionKey(a: NetLabelPlacement, b: NetLabelPlacement) {
-    const ids = [a.globalConnNetId, b.globalConnNetId].sort()
-    return ids.join("::")
+    return [a.globalConnNetId, b.globalConnNetId].sort().join("::")
   }
 
-  private detectNextCollision(): [NetLabelPlacement, NetLabelPlacement] | null {
+  private findNextCollidingPair(): [NetLabelPlacement, NetLabelPlacement] | null {
     const labels = this.outputNetLabelPlacements
     for (let i = 0; i < labels.length; i++) {
       for (let j = i + 1; j < labels.length; j++) {
         const a = labels[i]!
         const b = labels[j]!
         if (a.globalConnNetId === b.globalConnNetId) continue
-        if (this.recentlyFailed.has(this.collisionKey(a, b))) continue
-        if (boundsOverlap(this.labelBounds(a), this.labelBounds(b))) {
-          return [a, b]
-        }
+        if (this.skippedCollisionKeys.has(this.collisionKey(a, b))) continue
+        if (boundsOverlap(this.labelBounds(a), this.labelBounds(b))) return [a, b]
       }
     }
     return null
   }
 
-  private getNetLabelWidth(label: NetLabelPlacement): number | undefined {
-    // x+/x-: width is the netLabelWidth; y+/y-: swapped, height holds netLabelWidth
-    if (label.orientation === "x+" || label.orientation === "x-") {
-      return label.width
-    }
-    return label.height
+  private netLabelWidthOf(label: NetLabelPlacement): number | undefined {
+    // x+/x-: width stores netLabelWidth; y+/y-: width and height are swapped so height stores it
+    return label.orientation === "x+" || label.orientation === "x-"
+      ? label.width
+      : label.height
   }
 
-  private buildCandidates(label: NetLabelPlacement): Candidate[] {
-    const netLabelWidth = this.getNetLabelWidth(label)
+  private buildCandidatesForLabel(label: NetLabelPlacement): Candidate[] {
+    const netLabelWidth = this.netLabelWidthOf(label)
     const candidates: Candidate[] = []
-    const isPortOnly = label.mspConnectionPairIds.length === 0
 
-    const makeCandidate = (
+    const buildCandidate = (
       orientation: FacingDirection,
       anchor: { x: number; y: number },
       hostPairId?: MspConnectionPairId,
@@ -159,60 +156,50 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     ): Candidate => {
       const { width, height } = getDimsForOrientation({ orientation, netLabelWidth })
       const baseCenter = getCenterFromAnchor(anchor, orientation, width, height)
-      const outward =
+      const outwardDir =
         orientation === "x+" ? { x: 1, y: 0 } :
         orientation === "x-" ? { x: -1, y: 0 } :
         orientation === "y+" ? { x: 0, y: 1 } : { x: 0, y: -1 }
       const center = {
-        x: baseCenter.x + outward.x * OUTWARD_OFFSET,
-        y: baseCenter.y + outward.y * OUTWARD_OFFSET,
+        x: baseCenter.x + outwardDir.x * OUTWARD_OFFSET,
+        y: baseCenter.y + outwardDir.y * OUTWARD_OFFSET,
       }
       return {
-        orientation,
-        anchor,
-        center,
-        width,
-        height,
+        orientation, anchor, center, width, height,
         bounds: getRectBounds(center, width, height),
-        hostPairId,
-        hostSegIndex,
+        hostPairId, hostSegIndex,
         status: null,
       }
     }
 
+    const isPortOnly = label.mspConnectionPairIds.length === 0
+
     if (isPortOnly) {
-      const anchor = label.anchorPoint
-      const orientations: FacingDirection[] = [
+      const allOrientations: FacingDirection[] = ["x+", "x-", "y+", "y-"]
+      const orderedOrientations = [
         label.orientation,
-        ...([
-          "x+", "x-", "y+", "y-",
-        ] as FacingDirection[]).filter((o) => o !== label.orientation),
+        ...allOrientations.filter((o) => o !== label.orientation),
       ]
-      for (const orientation of orientations) {
-        candidates.push(makeCandidate(orientation, anchor))
+      for (const orientation of orderedOrientations) {
+        candidates.push(buildCandidate(orientation, label.anchorPoint))
       }
     } else {
       for (const mspPairId of label.mspConnectionPairIds) {
-        const trace = this.inputTraceMap[mspPairId]
+        const trace = this.traceMap[mspPairId]
         if (!trace) continue
         const pts = trace.tracePath
         for (let si = 0; si < pts.length - 1; si++) {
-          const a = pts[si]!
-          const b = pts[si + 1]!
-          const isH = Math.abs(a.y - b.y) < EPS
-          const isV = Math.abs(a.x - b.x) < EPS
-          if (!isH && !isV) continue
-          const segOrientations: FacingDirection[] = isH ? ["y+", "y-"] : ["x+", "x-"]
-          for (const anchor of anchorsAlongSegment(a, b)) {
-            for (const orientation of segOrientations) {
-              candidates.push(
-                makeCandidate(
-                  orientation,
-                  anchor,
-                  mspPairId as MspConnectionPairId,
-                  si,
-                ),
-              )
+          const segStart = pts[si]!
+          const segEnd = pts[si + 1]!
+          const isHorizontal = Math.abs(segStart.y - segEnd.y) < SEGMENT_PARALLEL_EPS
+          const isVertical = Math.abs(segStart.x - segEnd.x) < SEGMENT_PARALLEL_EPS
+          if (!isHorizontal && !isVertical) continue
+          const perpendicularOrientations: FacingDirection[] = isHorizontal
+            ? ["y+", "y-"]
+            : ["x+", "x-"]
+          for (const anchor of sampleAnchorsAlongSegment(segStart, segEnd)) {
+            for (const orientation of perpendicularOrientations) {
+              candidates.push(buildCandidate(orientation, anchor, mspPairId as MspConnectionPairId, si))
             }
           }
         }
@@ -222,107 +209,85 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     return candidates
   }
 
-  private evaluateCandidate(
+  private checkCandidate(
     candidate: Candidate,
-    labelToMove: NetLabelPlacement,
-    otherLabels: NetLabelPlacement[],
+    movingLabelNetId: string,
+    obstacleLabels: NetLabelPlacement[],
   ): CandidateStatus {
     const { bounds, hostPairId, hostSegIndex } = candidate
 
-    if (this.chipObstacleSpatialIndex.getChipsInBounds(bounds).length > 0) {
-      return "chip-collision"
-    }
+    if (this.chipIndex.getChipsInBounds(bounds).length > 0) return "chip-collision"
 
-    if (
-      rectIntersectsAnyTrace(bounds, this.inputTraceMap, hostPairId, hostSegIndex)
-        .hasIntersection
-    ) {
+    if (rectIntersectsAnyTrace(bounds, this.traceMap, hostPairId, hostSegIndex).hasIntersection) {
       return "trace-collision"
     }
 
-    for (const other of otherLabels) {
-      if (other.globalConnNetId === labelToMove.globalConnNetId) continue
-      if (boundsOverlap(bounds, this.labelBounds(other))) return "label-collision"
+    for (const obstacle of obstacleLabels) {
+      if (obstacle.globalConnNetId === movingLabelNetId) continue
+      if (boundsOverlap(bounds, this.labelBounds(obstacle))) return "label-collision"
     }
 
     return "ok"
   }
 
-  private startCollisionSearch(pair: [NetLabelPlacement, NetLabelPlacement]) {
-    this.currentCollision = pair
-    this.attemptPhase = 0
-    this.candidateResults = []
-    this.currentLabelToMove = pair[1] // try second label first
-    this.candidateQueue = this.buildCandidates(pair[1])
+  private beginSearchForLabel(label: NetLabelPlacement) {
+    this.currentLabelToMove = label
+    this.candidateQueue = this.buildCandidatesForLabel(label)
     this.candidateIndex = 0
+    this.candidateResults = []
   }
 
-  private switchToOtherLabel() {
-    if (!this.currentCollision) return
-    this.attemptPhase = 1
-    this.candidateResults = []
-    this.currentLabelToMove = this.currentCollision[0]
-    this.candidateQueue = this.buildCandidates(this.currentCollision[0])
-    this.candidateIndex = 0
-  }
-
-  private clearSearch() {
+  private clearActiveSearch() {
     this.currentCollision = null
     this.currentLabelToMove = null
+    this.labelsToTry = []
     this.candidateQueue = []
     this.candidateIndex = 0
     this.candidateResults = []
-    this.attemptPhase = 0
   }
 
   override _step() {
-    // No active search: find next collision
     if (!this.currentCollision) {
-      const pair = this.detectNextCollision()
+      const pair = this.findNextCollidingPair()
       if (!pair) {
         this.solved = true
         return
       }
-      this.startCollisionSearch(pair)
+      this.currentCollision = pair
+      this.labelsToTry = [pair[1], pair[0]] // try second label first, then first
+      this.beginSearchForLabel(this.labelsToTry.shift()!)
       return
     }
 
-    // Exhausted candidates for current label
     if (this.candidateIndex >= this.candidateQueue.length) {
-      if (this.attemptPhase === 0) {
-        // Try the other label of the pair
-        this.switchToOtherLabel()
-        return
+      if (this.labelsToTry.length > 0) {
+        this.beginSearchForLabel(this.labelsToTry.shift()!)
+      } else {
+        this.skippedCollisionKeys.add(
+          this.collisionKey(this.currentCollision[0], this.currentCollision[1]),
+        )
+        this.clearActiveSearch()
       }
-      // Both labels exhausted: give up on this collision
-      this.recentlyFailed.add(
-        this.collisionKey(this.currentCollision[0], this.currentCollision[1]),
-      )
-      this.clearSearch()
       return
     }
 
-    // Evaluate next candidate
-    const candidate = this.candidateQueue[this.candidateIndex]!
-    this.candidateIndex++
-
+    const candidate = this.candidateQueue[this.candidateIndex++]!
     const [labelA, labelB] = this.currentCollision
-    const toMove = this.currentLabelToMove!
-    const fixed = toMove === labelB ? labelA : labelB
-    const otherLabels = this.outputNetLabelPlacements.filter(
-      (l) => l !== labelA && l !== labelB,
-    )
+    const fixedLabel = this.currentLabelToMove === labelB ? labelA : labelB
+    const obstacleLabels = [
+      ...this.outputNetLabelPlacements.filter((l) => l !== labelA && l !== labelB),
+      fixedLabel,
+    ]
 
-    const status = this.evaluateCandidate(candidate, toMove, [...otherLabels, fixed])
+    const status = this.checkCandidate(candidate, this.currentLabelToMove!.globalConnNetId, obstacleLabels)
     candidate.status = status
     this.candidateResults.push({ ...candidate })
 
     if (status === "ok") {
-      // Apply the placement
-      const idx = this.outputNetLabelPlacements.indexOf(toMove)
+      const idx = this.outputNetLabelPlacements.indexOf(this.currentLabelToMove!)
       if (idx !== -1) {
         this.outputNetLabelPlacements[idx] = {
-          ...toMove,
+          ...this.currentLabelToMove!,
           orientation: candidate.orientation,
           anchorPoint: candidate.anchor,
           width: candidate.width,
@@ -330,13 +295,7 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
           center: candidate.center,
         }
       }
-      this.clearSearch()
-    }
-  }
-
-  getOutput() {
-    return {
-      netLabelPlacements: this.outputNetLabelPlacements,
+      this.clearActiveSearch()
     }
   }
 
@@ -347,70 +306,51 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     if (!graphics.points) graphics.points = []
 
     for (const trace of this.traces) {
-      graphics.lines.push({
-        points: trace.tracePath,
-        strokeColor: "purple",
-      } as any)
+      graphics.lines.push({ points: trace.tracePath, strokeColor: "purple" } as any)
     }
 
-    // All current labels
     for (const label of this.outputNetLabelPlacements) {
-      const isColliding =
+      const isInActiveCollision =
         this.currentCollision != null &&
         (label === this.currentCollision[0] || label === this.currentCollision[1])
-
       graphics.rects.push({
         center: label.center,
         width: label.width,
         height: label.height,
-        fill: isColliding
-          ? "rgba(255, 0, 0, 0.2)"
-          : getColorFromString(label.globalConnNetId, 0.35),
-        strokeColor: isColliding
-          ? "red"
-          : getColorFromString(label.globalConnNetId, 0.9),
-        label: `netId: ${label.netId}\nglobalConnNetId: ${label.globalConnNetId}${isColliding ? "\n⚠ COLLIDING" : ""}`,
+        fill: isInActiveCollision ? "rgba(255, 0, 0, 0.2)" : getColorFromString(label.globalConnNetId, 0.35),
+        strokeColor: isInActiveCollision ? "red" : getColorFromString(label.globalConnNetId, 0.9),
+        label: `netId: ${label.netId}\nglobalConnNetId: ${label.globalConnNetId}${isInActiveCollision ? "\n⚠ COLLIDING" : ""}`,
       } as any)
       graphics.points.push({
         x: label.anchorPoint.x,
         y: label.anchorPoint.y,
-        color: isColliding ? "red" : getColorFromString(label.globalConnNetId, 0.9),
+        color: isInActiveCollision ? "red" : getColorFromString(label.globalConnNetId, 0.9),
         label: `anchorPoint\norientation: ${label.orientation}`,
       } as any)
     }
 
-    // Tested candidates for current search
     for (const c of this.candidateResults) {
-      const color =
-        c.status === "ok"
-          ? "green"
-          : c.status === "label-collision"
-            ? "orange"
-            : c.status === "trace-collision"
-              ? "darkorange"
-              : "red"
-      const fill =
-        c.status === "ok"
-          ? "rgba(0, 200, 0, 0.25)"
-          : c.status === "label-collision"
-            ? "rgba(255, 160, 0, 0.2)"
-            : c.status === "trace-collision"
-              ? "rgba(200, 80, 0, 0.2)"
-              : "rgba(220, 0, 0, 0.15)"
-
+      const statusColor =
+        c.status === "ok" ? "green" :
+        c.status === "label-collision" ? "orange" :
+        c.status === "trace-collision" ? "darkorange" : "red"
+      const statusFill =
+        c.status === "ok" ? "rgba(0, 200, 0, 0.25)" :
+        c.status === "label-collision" ? "rgba(255, 160, 0, 0.2)" :
+        c.status === "trace-collision" ? "rgba(200, 80, 0, 0.2)" : "rgba(220, 0, 0, 0.15)"
       graphics.rects.push({
         center: c.center,
         width: c.width,
         height: c.height,
-        fill,
-        strokeColor: color,
+        fill: statusFill,
+        strokeColor: statusColor,
         strokeDash: c.status === "ok" ? undefined : "4 2",
         label: `candidate: ${c.status}\norientation: ${c.orientation}\nmoving: ${this.currentLabelToMove?.netId ?? "?"}`,
       } as any)
       graphics.points.push({
         x: c.anchor.x,
         y: c.anchor.y,
-        color,
+        color: statusColor,
         label: `candidate anchor\n${c.status}`,
       } as any)
     }
