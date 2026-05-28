@@ -33,7 +33,7 @@ export type CandidateStatus =
   | "trace-collision"
   | "netlabel-collision"
 
-export type CandidatePhase = "rotate" | "shift"
+export type CandidatePhase = "rotate" | "shift" | "lateral-shift"
 
 export type EvaluatedCandidate = CandidateLabel & {
   status: CandidateStatus
