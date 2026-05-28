@@ -1,7 +1,5 @@
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { NetLabelPlacement } from "../NetLabelPlacementSolver"
-import { getRectBounds } from "./geometry"
 
 export function segmentIntersectsRect(
   p1: { x: number; y: number },
@@ -51,24 +49,4 @@ export function rectIntersectsAnyTrace(
     }
   }
   return { hasIntersection: false }
-}
-
-export function rectIntersectsAnyPlacedLabel(
-  bounds: { minX: number; minY: number; maxX: number; maxY: number },
-  placedLabels: NetLabelPlacement[],
-  excludeGlobalConnNetId?: string,
-): boolean {
-  for (const label of placedLabels) {
-    if (label.globalConnNetId === excludeGlobalConnNetId) continue
-    const lb = getRectBounds(label.center, label.width, label.height)
-    if (
-      bounds.minX < lb.maxX &&
-      bounds.maxX > lb.minX &&
-      bounds.minY < lb.maxY &&
-      bounds.maxY > lb.minY
-    ) {
-      return true
-    }
-  }
-  return false
 }

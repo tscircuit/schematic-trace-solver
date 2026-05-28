@@ -14,10 +14,7 @@ import {
   getCenterFromAnchor,
   getRectBounds,
 } from "./geometry"
-import {
-  rectIntersectsAnyTrace,
-  rectIntersectsAnyPlacedLabel,
-} from "./collisions"
+import { rectIntersectsAnyTrace } from "./collisions"
 import { chooseHostTraceForGroup } from "./host"
 import { anchorsForSegment } from "./anchors"
 import { solveNetLabelPlacementForPortOnlyPin } from "./solvePortOnlyPin"
@@ -61,8 +58,6 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
   chipObstacleSpatialIndex: ChipObstacleSpatialIndex
 
-  alreadyPlacedLabels: NetLabelPlacement[]
-
   // Optional override for the width of the net label (per netId)
   netLabelWidth?: number
 
@@ -84,7 +79,6 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     overlappingSameNetTraceGroup: OverlappingSameNetTraceGroup
     availableOrientations: FacingDirection[]
     netLabelWidth?: number
-    alreadyPlacedLabels?: NetLabelPlacement[]
   }) {
     super()
     this.inputProblem = params.inputProblem
@@ -92,7 +86,6 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     this.overlappingSameNetTraceGroup = params.overlappingSameNetTraceGroup
     this.availableOrientations = params.availableOrientations
     this.netLabelWidth = params.netLabelWidth
-    this.alreadyPlacedLabels = params.alreadyPlacedLabels ?? []
 
     this.chipObstacleSpatialIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
@@ -108,7 +101,6 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       overlappingSameNetTraceGroup: this.overlappingSameNetTraceGroup,
       availableOrientations: this.availableOrientations,
       netLabelWidth: this.netLabelWidth,
-      alreadyPlacedLabels: this.alreadyPlacedLabels,
     }
   }
 
@@ -127,7 +119,6 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         overlappingSameNetTraceGroup: this.overlappingSameNetTraceGroup,
         availableOrientations: this.availableOrientations,
         netLabelWidth: this.netLabelWidth,
-        alreadyPlacedLabels: this.alreadyPlacedLabels,
       })
       this.testedCandidates.push(...res.testedCandidates)
       if (res.placement) {
@@ -199,7 +190,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
           return -anchor.x
       }
     }
-    type CandidateInfo = {
+    let bestCandidate: {
       anchor: { x: number; y: number }
       orientation: FacingDirection
       width: number
@@ -209,12 +200,8 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       dcConnNetId: string
       mspPairId: MspConnectionPairId
       pinIds: PinId[]
-    }
-    let bestCandidate: CandidateInfo | null = null
+    } | null = null
     let bestScore = -Infinity
-    // Fallback: position valid except for label-label overlap
-    let labelOnlyFallback: CandidateInfo | null = null
-    let labelOnlyFallbackScore = -Infinity
 
     const EPS = 1e-6
 
@@ -304,45 +291,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
               continue
             }
 
-            // Label collision check against already-placed labels (soft: prefer
-            // non-colliding but fall back to colliding rather than failing)
-            const hasLabelCollision = rectIntersectsAnyPlacedLabel(
-              bounds,
-              this.alreadyPlacedLabels,
-              this.overlappingSameNetTraceGroup.globalConnNetId,
-            )
-
-            if (hasLabelCollision) {
-              // Record as fallback (chip/trace free, label collision only)
-              const s = scoreFor(orientation, anchor)
-              if (s > labelOnlyFallbackScore + 1e-9) {
-                labelOnlyFallbackScore = s
-                labelOnlyFallback = {
-                  anchor,
-                  orientation,
-                  width,
-                  height,
-                  center,
-                  hostSegIndex: si,
-                  dcConnNetId: curr.dcConnNetId,
-                  mspPairId: curr.mspPairId,
-                  pinIds: [curr.pins[0].pinId, curr.pins[1].pinId],
-                }
-              }
-              this.testedCandidates.push({
-                center: testCenter,
-                width,
-                height,
-                bounds,
-                anchor,
-                orientation,
-                status: "trace-collision",
-                hostSegIndex: si,
-              })
-              continue
-            }
-
-            // Found a valid placement (no chip, trace, or label collision)
+            // Found a valid placement
             this.testedCandidates.push({
               center: testCenter,
               width,
@@ -394,20 +343,18 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       }
     }
 
-    // Use best fully-valid candidate, then fall back to label-only-colliding
-    const winner = bestCandidate ?? labelOnlyFallback
-    if (winner) {
+    if (singleOrientationMode && bestCandidate) {
       this.netLabelPlacement = {
         globalConnNetId: this.overlappingSameNetTraceGroup.globalConnNetId,
-        dcConnNetId: winner.dcConnNetId,
+        dcConnNetId: bestCandidate.dcConnNetId,
         netId: this.overlappingSameNetTraceGroup.netId,
-        mspConnectionPairIds: [winner.mspPairId],
-        pinIds: winner.pinIds,
-        orientation: winner.orientation,
-        anchorPoint: winner.anchor,
-        width: winner.width,
-        height: winner.height,
-        center: winner.center,
+        mspConnectionPairIds: [bestCandidate.mspPairId],
+        pinIds: bestCandidate.pinIds,
+        orientation: bestCandidate.orientation,
+        anchorPoint: bestCandidate.anchor,
+        width: bestCandidate.width,
+        height: bestCandidate.height,
+        center: bestCandidate.center,
       }
       this.solved = true
       return

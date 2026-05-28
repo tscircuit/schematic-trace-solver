@@ -13,10 +13,7 @@ import {
   getCenterFromAnchor,
   getRectBounds,
 } from "./geometry"
-import {
-  rectIntersectsAnyTrace,
-  rectIntersectsAnyPlacedLabel,
-} from "./collisions"
+import { rectIntersectsAnyTrace } from "./collisions"
 
 export function solveNetLabelPlacementForPortOnlyPin(params: {
   inputProblem: InputProblem
@@ -25,7 +22,6 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
   overlappingSameNetTraceGroup: OverlappingSameNetTraceGroup
   availableOrientations: FacingDirection[]
   netLabelWidth?: number
-  alreadyPlacedLabels?: NetLabelPlacement[]
 }): {
   placement: NetLabelPlacement | null
   testedCandidates: Array<{
@@ -47,7 +43,6 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     overlappingSameNetTraceGroup,
     availableOrientations,
     netLabelWidth,
-    alreadyPlacedLabels = [],
   } = params
 
   const pinId = overlappingSameNetTraceGroup.portOnlyPinId
@@ -104,9 +99,6 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     hostSegIndex: number
   }> = []
 
-  // Fallback: position valid except for label-label overlap
-  let labelOnlyFallbackPlacement: NetLabelPlacement | null = null
-
   for (const orientation of orientations) {
     const { width, height } = getDimsForOrientation({
       orientation,
@@ -159,43 +151,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
       continue
     }
 
-    // Label collision check against already-placed labels (soft: prefer
-    // non-colliding but fall back to colliding rather than failing)
-    if (
-      rectIntersectsAnyPlacedLabel(
-        bounds,
-        alreadyPlacedLabels,
-        overlappingSameNetTraceGroup.globalConnNetId,
-      )
-    ) {
-      if (!labelOnlyFallbackPlacement) {
-        labelOnlyFallbackPlacement = {
-          globalConnNetId: overlappingSameNetTraceGroup.globalConnNetId,
-          dcConnNetId: undefined,
-          netId: overlappingSameNetTraceGroup.netId,
-          mspConnectionPairIds: [],
-          pinIds: [pinId],
-          orientation,
-          anchorPoint: anchor,
-          width,
-          height,
-          center,
-        }
-      }
-      testedCandidates.push({
-        center,
-        width,
-        height,
-        bounds,
-        anchor,
-        orientation,
-        status: "trace-collision",
-        hostSegIndex: -1,
-      })
-      continue
-    }
-
-    // Found a valid placement (no chip, trace, or label collision)
+    // Found a valid placement
     testedCandidates.push({
       center,
       width,
@@ -221,11 +177,6 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     }
 
     return { placement, testedCandidates }
-  }
-
-  // Use label-only-colliding fallback before the pin-direction fallback
-  if (labelOnlyFallbackPlacement) {
-    return { placement: labelOnlyFallbackPlacement, testedCandidates }
   }
 
   // If no valid placements found, return placement using pin's facing direction
