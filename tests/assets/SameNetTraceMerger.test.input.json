@@ -1,0 +1,79 @@
+{
+  "inputProblem": {
+    "chips": [
+      {
+        "chipId": "U1",
+        "center": { "x": 0, "y": 0 },
+        "width": 1.6,
+        "height": 1.0,
+        "pins": [
+          { "pinId": "U1.1", "x": -0.8, "y": 0.3 },
+          { "pinId": "U1.2", "x": -0.8, "y": 0.0 },
+          { "pinId": "U1.3", "x": -0.8, "y": -0.3 }
+        ]
+      },
+      {
+        "chipId": "C1",
+        "center": { "x": -2.5, "y": 0.3 },
+        "width": 0.5,
+        "height": 0.5,
+        "pins": [
+          { "pinId": "C1.1", "x": -2.5, "y": 0.55 },
+          { "pinId": "C1.2", "x": -2.5, "y": 0.05 }
+        ]
+      },
+      {
+        "chipId": "C2",
+        "center": { "x": -2.5, "y": -0.3 },
+        "width": 0.5,
+        "height": 0.5,
+        "pins": [
+          { "pinId": "C2.1", "x": -2.5, "y": -0.05 },
+          { "pinId": "C2.2", "x": -2.5, "y": -0.55 }
+        ]
+      }
+    ],
+    "directConnections": [
+      { "pinIds": ["U1.1", "C1.1"], "netId": "VCC" },
+      { "pinIds": ["U1.2", "C2.1"], "netId": "EN" }
+    ],
+    "netConnections": [{ "netId": "GND", "pinIds": ["U1.3", "C1.2", "C2.2"] }],
+    "availableNetLabelOrientations": {
+      "VCC": ["y+"],
+      "EN": ["x-"],
+      "GND": ["y-"]
+    }
+  },
+  "traces": [
+    {
+      "mspPairId": "U1.3-C1.2",
+      "dcConnNetId": "GND",
+      "globalConnNetId": "GND",
+      "userNetId": "GND",
+      "pins": [],
+      "mspConnectionPairIds": [],
+      "pinIds": ["U1.3", "C1.2"],
+      "tracePath": [
+        { "x": -0.8, "y": -0.3 },
+        { "x": -1.8, "y": -0.3 },
+        { "x": -1.8, "y": 0.05 },
+        { "x": -2.5, "y": 0.05 }
+      ]
+    },
+    {
+      "mspPairId": "U1.3-C2.2",
+      "dcConnNetId": "GND",
+      "globalConnNetId": "GND",
+      "userNetId": "GND",
+      "pins": [],
+      "mspConnectionPairIds": [],
+      "pinIds": ["U1.3", "C2.2"],
+      "tracePath": [
+        { "x": -0.8, "y": -0.3 },
+        { "x": -1.82, "y": -0.3 },
+        { "x": -1.82, "y": -0.55 },
+        { "x": -2.5, "y": -0.55 }
+      ]
+    }
+  ]
+}
