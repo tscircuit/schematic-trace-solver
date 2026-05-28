@@ -15,15 +15,36 @@ import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatia
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 
-const ANCHOR_TRACE_CLEARANCE = 1e-4
-const SEGMENT_PARALLEL_EPS = 1e-6
-const CANDIDATE_STEP = 0.1
-
 type CandidateStatus =
   | "ok"
   | "chip-collision"
   | "trace-collision"
   | "label-collision"
+
+const ANCHOR_TRACE_CLEARANCE = 1e-4
+const SEGMENT_PARALLEL_EPS = 1e-6
+const CANDIDATE_STEP = 0.1
+
+const OUTWARD_DIR: Record<FacingDirection, { x: number; y: number }> = {
+  "x+": { x: 1, y: 0 },
+  "x-": { x: -1, y: 0 },
+  "y+": { x: 0, y: 1 },
+  "y-": { x: 0, y: -1 },
+}
+
+const CANDIDATE_STATUS_COLOR: Record<CandidateStatus, string> = {
+  "ok": "green",
+  "label-collision": "orange",
+  "trace-collision": "darkorange",
+  "chip-collision": "red",
+}
+
+const CANDIDATE_STATUS_FILL: Record<CandidateStatus, string> = {
+  "ok": "rgba(0, 200, 0, 0.25)",
+  "label-collision": "rgba(255, 160, 0, 0.2)",
+  "trace-collision": "rgba(200, 80, 0, 0.2)",
+  "chip-collision": "rgba(220, 0, 0, 0.15)",
+}
 
 type Candidate = {
   orientation: FacingDirection
@@ -144,9 +165,8 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   }
 
   private netLabelWidthOf(label: NetLabelPlacement): number | undefined {
-    return label.orientation === "x+" || label.orientation === "x-"
-      ? label.width
-      : label.height
+    if (label.orientation === "x+" || label.orientation === "x-") return label.width
+    return label.height
   }
 
   private buildCandidatesForLabel(label: NetLabelPlacement): Candidate[] {
@@ -164,14 +184,7 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
         netLabelWidth,
       })
       const baseCenter = getCenterFromAnchor(anchor, orientation, width, height)
-      const outwardDir =
-        orientation === "x+"
-          ? { x: 1, y: 0 }
-          : orientation === "x-"
-            ? { x: -1, y: 0 }
-            : orientation === "y+"
-              ? { x: 0, y: 1 }
-              : { x: 0, y: -1 }
+      const outwardDir = OUTWARD_DIR[orientation]
       const center = {
         x: baseCenter.x + outwardDir.x * ANCHOR_TRACE_CLEARANCE,
         y: baseCenter.y + outwardDir.y * ANCHOR_TRACE_CLEARANCE,
@@ -213,9 +226,12 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
           const isVertical =
             Math.abs(segStart.x - segEnd.x) < SEGMENT_PARALLEL_EPS
           if (!isHorizontal && !isVertical) continue
-          const perpendicularOrientations: FacingDirection[] = isHorizontal
-            ? ["y+", "y-"]
-            : ["x+", "x-"]
+          let perpendicularOrientations: FacingDirection[]
+          if (isHorizontal) {
+            perpendicularOrientations = ["y+", "y-"]
+          } else {
+            perpendicularOrientations = ["x+", "x-"]
+          }
           for (const anchor of sampleAnchorsAlongSegment(segStart, segEnd)) {
             for (const orientation of perpendicularOrientations) {
               candidates.push(
@@ -304,7 +320,12 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
 
     const candidate = this.candidateQueue[this.candidateIndex++]!
     const [labelA, labelB] = this.currentCollision
-    const fixedLabel = this.currentLabelToMove === labelB ? labelA : labelB
+    let fixedLabel: NetLabelPlacement
+    if (this.currentLabelToMove === labelB) {
+      fixedLabel = labelA
+    } else {
+      fixedLabel = labelB
+    }
     const obstacleLabels = [
       ...this.outputNetLabelPlacements.filter(
         (l) => l !== labelA && l !== labelB,
@@ -354,55 +375,54 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     for (const label of this.outputNetLabelPlacements) {
       const isInActiveCollision =
         this.currentCollision != null &&
-        (label === this.currentCollision[0] ||
-          label === this.currentCollision[1])
+        (label === this.currentCollision[0] || label === this.currentCollision[1])
+
+      let labelFill: string
+      let labelStroke: string
+      let labelText: string
+      let pointColor: string
+      if (isInActiveCollision) {
+        labelFill = "rgba(255, 0, 0, 0.2)"
+        labelStroke = "red"
+        labelText = `netId: ${label.netId}\nglobalConnNetId: ${label.globalConnNetId}\n⚠ COLLIDING`
+        pointColor = "red"
+      } else {
+        labelFill = getColorFromString(label.globalConnNetId, 0.35)
+        labelStroke = getColorFromString(label.globalConnNetId, 0.9)
+        labelText = `netId: ${label.netId}\nglobalConnNetId: ${label.globalConnNetId}`
+        pointColor = getColorFromString(label.globalConnNetId, 0.9)
+      }
+
       graphics.rects.push({
         center: label.center,
         width: label.width,
         height: label.height,
-        fill: isInActiveCollision
-          ? "rgba(255, 0, 0, 0.2)"
-          : getColorFromString(label.globalConnNetId, 0.35),
-        strokeColor: isInActiveCollision
-          ? "red"
-          : getColorFromString(label.globalConnNetId, 0.9),
-        label: `netId: ${label.netId}\nglobalConnNetId: ${label.globalConnNetId}${isInActiveCollision ? "\n⚠ COLLIDING" : ""}`,
+        fill: labelFill,
+        strokeColor: labelStroke,
+        label: labelText,
       } as any)
       graphics.points.push({
         x: label.anchorPoint.x,
         y: label.anchorPoint.y,
-        color: isInActiveCollision
-          ? "red"
-          : getColorFromString(label.globalConnNetId, 0.9),
+        color: pointColor,
         label: `anchorPoint\norientation: ${label.orientation}`,
       } as any)
     }
 
+    const movingNetId = this.currentLabelToMove ? this.currentLabelToMove.netId : "?"
     for (const c of this.candidateResults) {
-      const statusColor =
-        c.status === "ok"
-          ? "green"
-          : c.status === "label-collision"
-            ? "orange"
-            : c.status === "trace-collision"
-              ? "darkorange"
-              : "red"
-      const statusFill =
-        c.status === "ok"
-          ? "rgba(0, 200, 0, 0.25)"
-          : c.status === "label-collision"
-            ? "rgba(255, 160, 0, 0.2)"
-            : c.status === "trace-collision"
-              ? "rgba(200, 80, 0, 0.2)"
-              : "rgba(220, 0, 0, 0.15)"
+      const statusColor = CANDIDATE_STATUS_COLOR[c.status!]
+      const statusFill = CANDIDATE_STATUS_FILL[c.status!]
+      let strokeDash: string | undefined
+      if (c.status !== "ok") strokeDash = "4 2"
       graphics.rects.push({
         center: c.center,
         width: c.width,
         height: c.height,
         fill: statusFill,
         strokeColor: statusColor,
-        strokeDash: c.status === "ok" ? undefined : "4 2",
-        label: `candidate: ${c.status}\norientation: ${c.orientation}\nmoving: ${this.currentLabelToMove?.netId ?? "?"}`,
+        strokeDash,
+        label: `candidate: ${c.status}\norientation: ${c.orientation}\nmoving: ${movingNetId}`,
       } as any)
       graphics.points.push({
         x: c.anchor.x,
