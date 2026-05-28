@@ -33,14 +33,14 @@ const OUTWARD_DIR: Record<FacingDirection, { x: number; y: number }> = {
 }
 
 const CANDIDATE_STATUS_COLOR: Record<CandidateStatus, string> = {
-  "ok": "green",
+  ok: "green",
   "label-collision": "orange",
   "trace-collision": "darkorange",
   "chip-collision": "red",
 }
 
 const CANDIDATE_STATUS_FILL: Record<CandidateStatus, string> = {
-  "ok": "rgba(0, 200, 0, 0.25)",
+  ok: "rgba(0, 200, 0, 0.25)",
   "label-collision": "rgba(255, 160, 0, 0.2)",
   "trace-collision": "rgba(200, 80, 0, 0.2)",
   "chip-collision": "rgba(220, 0, 0, 0.15)",
@@ -165,7 +165,8 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   }
 
   private netLabelWidthOf(label: NetLabelPlacement): number | undefined {
-    if (label.orientation === "x+" || label.orientation === "x-") return label.width
+    if (label.orientation === "x+" || label.orientation === "x-")
+      return label.width
     return label.height
   }
 
@@ -375,7 +376,8 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     for (const label of this.outputNetLabelPlacements) {
       const isInActiveCollision =
         this.currentCollision != null &&
-        (label === this.currentCollision[0] || label === this.currentCollision[1])
+        (label === this.currentCollision[0] ||
+          label === this.currentCollision[1])
 
       let labelFill: string
       let labelStroke: string
@@ -409,7 +411,9 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
       } as any)
     }
 
-    const movingNetId = this.currentLabelToMove ? this.currentLabelToMove.netId : "?"
+    const movingNetId = this.currentLabelToMove
+      ? this.currentLabelToMove.netId
+      : "?"
     for (const c of this.candidateResults) {
       const statusColor = CANDIDATE_STATUS_COLOR[c.status!]
       const statusFill = CANDIDATE_STATUS_FILL[c.status!]
