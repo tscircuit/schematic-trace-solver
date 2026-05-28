@@ -310,6 +310,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
           overlappingSameNetTraceGroup: this.currentGroup,
           availableOrientations: fullOrients,
           netLabelWidth,
+          alreadyPlacedLabels: this.netLabelPlacements,
         })
         return
       }
@@ -349,6 +350,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
         netId
       ] ?? ["x+", "x-", "y+", "y-"],
       netLabelWidth,
+      alreadyPlacedLabels: this.netLabelPlacements,
     })
   }
 
