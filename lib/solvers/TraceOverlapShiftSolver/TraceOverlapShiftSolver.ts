@@ -1,13 +1,13 @@
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import type { InputProblem } from "lib/types/InputProblem"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"
-import {
-  TraceOverlapIssueSolver,
-  type OverlappingTraceSegmentLocator,
-} from "./TraceOverlapIssueSolver/TraceOverlapIssueSolver"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { InputProblem } from "lib/types/InputProblem"
 import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import {
+  type OverlappingTraceSegmentLocator,
+  TraceOverlapIssueSolver,
+} from "./TraceOverlapIssueSolver/TraceOverlapIssueSolver"
 
 type ConnNetId = string
 

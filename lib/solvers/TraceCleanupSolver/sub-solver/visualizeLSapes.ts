@@ -1,5 +1,5 @@
-import type { LShape } from "./findAllLShapedTurns"
 import type { GraphicsObject } from "graphics-debug"
+import type { LShape } from "./findAllLShapedTurns"
 
 /**
  * Visualizes L-shaped turns by drawing a blue circle at the corner point (p2)

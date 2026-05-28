@@ -1,6 +1,6 @@
 import type { Point } from "@tscircuit/math-utils"
-import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getSegmentIntersection } from "@tscircuit/math-utils/line-intersections"
+import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 
 export type CollisionInfo = {
   isColliding: boolean
