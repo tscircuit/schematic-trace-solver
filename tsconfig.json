@@ -2,9 +2,11 @@
   "compilerOptions": {
     // Environment setup & latest features
     "lib": ["ESNext", "DOM"],
+    "types": ["bun"],
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",
+    "ignoreDeprecations": "6.0",
     "jsx": "react-jsx",
     "allowJs": true,
 
