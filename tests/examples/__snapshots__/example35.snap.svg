@@ -1,0 +1,177 @@
+<svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="white" />
+  <g>
+    <circle data-type="point" data-label="U1.1
+x-" data-x="-1.05" data-y="0.30000000000000004" cx="40" cy="406.1349154032081" r="3" fill="hsl(319, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U1.2
+x-" data-x="-1.05" data-y="0.10000000000000003" cx="40" cy="430.74489123269615" r="3" fill="hsl(320, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U1.3
+x-" data-x="-1.05" data-y="-0.09999999999999998" cx="40" cy="455.35486706218416" r="3" fill="hsl(321, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U1.4
+x-" data-x="-1.05" data-y="-0.30000000000000004" cx="40" cy="479.9648428916722" r="3" fill="hsl(322, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U1.5
+x+" data-x="1.05" data-y="-0.30000000000000004" cx="298.40474620962425" cy="479.9648428916722" r="3" fill="hsl(323, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U1.6
+x+" data-x="1.05" data-y="-0.10000000000000003" cx="298.40474620962425" cy="455.35486706218416" r="3" fill="hsl(324, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U1.7
+x+" data-x="1.05" data-y="0.09999999999999998" cx="298.40474620962425" cy="430.74489123269615" r="3" fill="hsl(325, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U1.8
+x+" data-x="1.05" data-y="0.30000000000000004" cx="298.40474620962425" cy="406.1349154032081" r="3" fill="hsl(326, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U2.1
+x-" data-x="0.95" data-y="2.3" cx="286.09975829488025" cy="160.0351571083279" r="3" fill="hsl(200, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U2.2
+x-" data-x="0.95" data-y="2.1" cx="286.09975829488025" cy="184.6451329378159" r="3" fill="hsl(201, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U2.3
+x-" data-x="0.95" data-y="1.9" cx="286.09975829488025" cy="209.25510876730394" r="3" fill="hsl(202, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U2.4
+x-" data-x="0.95" data-y="1.7" cx="286.09975829488025" cy="233.86508459679195" r="3" fill="hsl(203, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U2.5
+x+" data-x="3.05" data-y="1.7" cx="544.5045045045044" cy="233.86508459679195" r="3" fill="hsl(204, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U2.6
+x+" data-x="3.05" data-y="1.9" cx="544.5045045045044" cy="209.25510876730394" r="3" fill="hsl(205, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U2.7
+x+" data-x="3.05" data-y="2.1" cx="544.5045045045044" cy="184.6451329378159" r="3" fill="hsl(206, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U2.8
+x+" data-x="3.05" data-y="2.3" cx="544.5045045045044" cy="160.0351571083279" r="3" fill="hsl(207, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="" data-x="1.6010000000000002" data-y="0.3" cx="366.20522961986376" cy="406.13491540320814" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="" data-x="1.05" data-y="-0.10000000000000003" cx="298.40474620962425" cy="455.35486706218416" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="" data-x="3.05" data-y="2.3" cx="544.5045045045044" cy="160.0351571083279" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="" data-x="1.05" data-y="0.09999999999999998" cx="298.40474620962425" cy="430.74489123269615" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="" data-x="3.05" data-y="2.1" cx="544.5045045045044" cy="184.6451329378159" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <polyline data-points="1.05,0.09999999999999998 3.05,2.1" data-type="line" data-label="" points="298.40474620962425,430.74489123269615 544.5045045045044,184.6451329378159" fill="none" stroke="hsl(312, 100%, 50%, 0.8)" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="1.05,-0.10000000000000003 3.05,2.3" data-type="line" data-label="" points="298.40474620962425,455.35486706218416 544.5045045045044,160.0351571083279" fill="none" stroke="hsl(88, 100%, 50%, 0.8)" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="1.05,-0.30000000000000004 1.05,0.30000000000000004" data-type="line" data-label="" points="298.40474620962425,479.9648428916722 298.40474620962425,406.1349154032081" fill="none" stroke="hsl(190, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
+  </g>
+  <g>
+    <polyline data-points="1.05,-0.30000000000000004 1.6010000000000002,-0.30000000000000004 1.6010000000000002,0.3 1.05,0.30000000000000004" data-type="line" data-label="" points="298.40474620962425,479.9648428916722 366.20522961986376,479.9648428916722 366.20522961986376,406.13491540320814 298.40474620962425,406.1349154032081" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="40" y="381.5249395737201" width="258.40474620962425" height="123.04987914744015" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.008126785714285715" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="schematic_component_1" data-x="2" data-y="2" x="286.09975829488025" y="135.42518127883983" width="258.4047462096242" height="123.04987914744015" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.008126785714285715" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="netId: VCC
+globalConnNetId: connectivity_net2" data-x="1.6010000000000002" data-y="0.54" x="353.90024170511975" y="347.07097341243684" width="24.609975829488064" height="59.06394199077124" fill="#ef444466" stroke="#ef4444" stroke-width="0.008126785714285715" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="netId: U1.CLK to U2.VCC
+globalConnNetId: connectivity_net1" data-x="1.276" data-y="-0.10000000000000003" x="298.52779608877165" y="443.04987914744015" width="55.3724456163481" height="24.609975829488008" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008126785714285715" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="netId: U1.CLK to U2.VCC
+globalConnNetId: connectivity_net1" data-x="3.276" data-y="2.3" x="544.6275543836518" y="147.7301691935839" width="55.37244561634816" height="24.609975829488008" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008126785714285715" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="netId: U1.IO3 to U2.IO3
+globalConnNetId: connectivity_net0" data-x="1.276" data-y="0.09999999999999998" x="298.52779608877165" y="418.43990331795214" width="55.3724456163481" height="24.609975829488008" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008126785714285715" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="netId: U1.IO3 to U2.IO3
+globalConnNetId: connectivity_net0" data-x="3.276" data-y="2.1" x="544.6275543836518" y="172.34014502307184" width="55.37244561634816" height="24.609975829488064" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.008126785714285715" />
+  </g>
+  <g id="crosshair" style="display: none">
+    <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
+    <line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5" /><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text>
+  </g>
+  <script>
+    <![CDATA[
+    document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const crosshair = svg.getElementById('crosshair');
+      const h = svg.getElementById('crosshair-h');
+      const v = svg.getElementById('crosshair-v');
+      const coords = svg.getElementById('coordinates');
+
+      crosshair.style.display = 'block';
+      h.setAttribute('x1', '0');
+      h.setAttribute('x2', '640');
+      h.setAttribute('y1', y);
+      h.setAttribute('y2', y);
+      v.setAttribute('x1', x);
+      v.setAttribute('x2', x);
+      v.setAttribute('y1', '0');
+      v.setAttribute('y2', '640');
+
+      // Calculate real coordinates using inverse transformation
+      const matrix = {
+        "a": 123.04987914744012,
+        "c": 0,
+        "e": 169.20237310481212,
+        "b": 0,
+        "d": -123.04987914744012,
+        "f": 443.04987914744015
+      };
+      // Manually invert and apply the affine transform
+      // Since we only use translate and scale, we can directly compute:
+      // x' = (x - tx) / sx
+      // y' = (y - ty) / sy
+      const sx = matrix.a;
+      const sy = matrix.d;
+      const tx = matrix.e;
+      const ty = matrix.f;
+      const realPoint = {
+        x: (x - tx) / sx,
+        y: (y - ty) / sy // Flip y back since we used negative scale
+      }
+
+      coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+      coords.setAttribute('x', (x + 5).toString());
+      coords.setAttribute('y', (y - 5).toString());
+    });
+    document.currentScript.parentElement.addEventListener('mouseleave', () => {
+      document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+    });
+    ]]>
+  </script>
+</svg>
