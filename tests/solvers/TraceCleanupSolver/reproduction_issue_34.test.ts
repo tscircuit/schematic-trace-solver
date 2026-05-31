@@ -7,6 +7,7 @@ test("TraceCombineSolver - simple parallel horizontal merge", () => {
   const trace1: SolvedTracePath = {
     mspPairId: "pair1",
     globalConnNetId: "net1",
+    dcConnNetId: "dc1",
     tracePath: [
       { x: 0, y: 1.0 },
       { x: 2, y: 1.0 },
@@ -19,6 +20,7 @@ test("TraceCombineSolver - simple parallel horizontal merge", () => {
   const trace2: SolvedTracePath = {
     mspPairId: "pair2",
     globalConnNetId: "net1",
+    dcConnNetId: "dc1",
     tracePath: [
       { x: 1, y: 1.02 },
       { x: 3, y: 1.02 },
@@ -47,6 +49,7 @@ test("TraceCombineSolver - connected multi-segment orthogonal stretching", () =>
   const trace1: SolvedTracePath = {
     mspPairId: "pair1",
     globalConnNetId: "net2",
+    dcConnNetId: "dc2",
     tracePath: [
       { x: 0, y: 0 },
       { x: 0, y: 1.0 },
@@ -61,6 +64,7 @@ test("TraceCombineSolver - connected multi-segment orthogonal stretching", () =>
   const trace2: SolvedTracePath = {
     mspPairId: "pair2",
     globalConnNetId: "net2",
+    dcConnNetId: "dc2",
     tracePath: [
       { x: 1, y: 1.02 },
       { x: 3, y: 1.02 },
