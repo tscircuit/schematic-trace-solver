@@ -29,7 +29,10 @@ test("TraceCombineSolver - simple parallel horizontal merge", () => {
   }
 
   // Run the combine solver
-  const result = TraceCombineSolver.tryCombineParallelTraces([trace1, trace2], 0.05)
+  const result = TraceCombineSolver.tryCombineParallelTraces(
+    [trace1, trace2],
+    0.05,
+  )
 
   // Verify that both horizontal segments have been shifted to the average Y coordinate (1.01)
   expect(result[0].tracePath[0].y).toBeCloseTo(1.01, 5)
@@ -69,7 +72,10 @@ test("TraceCombineSolver - connected multi-segment orthogonal stretching", () =>
   }
 
   // Run the combine solver
-  const result = TraceCombineSolver.tryCombineParallelTraces([trace1, trace2], 0.05)
+  const result = TraceCombineSolver.tryCombineParallelTraces(
+    [trace1, trace2],
+    0.05,
+  )
 
   // Trace 1 should be adjusted: (0,0) -> (0,1.01) -> (2,1.01)
   expect(result[0].tracePath[0].x).toBe(0)
