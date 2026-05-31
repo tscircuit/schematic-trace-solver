@@ -3,8 +3,8 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { simplifyPath } from "./simplifyPath"
 
 /**
-* TraceCombineSolver detects parallel orthogonal trace segments that belong to the same net and are separated by only a small configurable distance.
-* It simplifies the schematic layout by merging these nearby parallel traces into a single, cleaner routing path.
+ * TraceCombineSolver detects parallel orthogonal trace segments that belong to the same net and are separated by only a small configurable distance.
+ * It simplifies the schematic layout by merging these nearby parallel traces into a single, cleaner routing path.
  */
 export class TraceCombineSolver {
   /**
@@ -14,7 +14,10 @@ export class TraceCombineSolver {
    * @param threshold - The maximum distance between parallel segments to consider them "close" (default: 0.05).
    * @returns The updated list of trace paths.
    */
-  static tryCombineParallelTraces(traces: SolvedTracePath[], threshold = 0.05): SolvedTracePath[] {
+  static tryCombineParallelTraces(
+    traces: SolvedTracePath[],
+    threshold = 0.05,
+  ): SolvedTracePath[] {
     // Group traces by globalConnNetId
     const groupedByNet: Record<string, SolvedTracePath[]> = {}
     for (const trace of traces) {
@@ -47,7 +50,7 @@ export class TraceCombineSolver {
   private static combineDirection(
     netTraces: SolvedTracePath[],
     direction: "horizontal" | "vertical",
-    threshold: number
+    threshold: number,
   ) {
     const segments: Array<{
       trace: SolvedTracePath
@@ -114,7 +117,9 @@ export class TraceCombineSolver {
         // Check if they are close parallel lines
         if (Math.abs(segA.coord - segB.coord) <= threshold) {
           // Check if spans overlap in the other dimension
-          const overlap = Math.min(segA.maxSpan, segB.maxSpan) - Math.max(segA.minSpan, segB.minSpan)
+          const overlap =
+            Math.min(segA.maxSpan, segB.maxSpan) -
+            Math.max(segA.minSpan, segB.minSpan)
           if (overlap > 1e-4) {
             union(i, j)
           }

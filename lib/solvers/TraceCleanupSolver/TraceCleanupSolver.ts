@@ -22,7 +22,6 @@ import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
 import { TraceCombineSolver } from "./TraceCombineSolver"
 
-
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
@@ -31,7 +30,6 @@ type PipelineStep =
   | "balancing_l_shapes"
   | "untangling_traces"
   | "combining_parallel_traces"
-
 
 /**
  * TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
@@ -92,7 +90,6 @@ export class TraceCleanupSolver extends BaseSolver {
         this._runCombineParallelTracesStep()
         break
     }
-
   }
 
   private _runUntangleTracesStep() {
@@ -119,7 +116,6 @@ export class TraceCleanupSolver extends BaseSolver {
       this.pipelineStep = "combining_parallel_traces"
       return
     }
-
 
     this._processTrace("balancing_l_shapes")
   }
@@ -156,12 +152,13 @@ export class TraceCleanupSolver extends BaseSolver {
   }
 
   private _runCombineParallelTracesStep() {
-    this.outputTraces = TraceCombineSolver.tryCombineParallelTraces(this.outputTraces)
+    this.outputTraces = TraceCombineSolver.tryCombineParallelTraces(
+      this.outputTraces,
+    )
     this.solved = true
   }
 
   getOutput() {
-
     return {
       traces: this.outputTraces,
     }
