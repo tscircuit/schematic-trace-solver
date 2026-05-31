@@ -72,13 +72,13 @@ x-" data-x="1.6" data-y="-2.295" cx="353.6" cy="451.31999999999994" r="3" fill="
     <rect data-type="rect" data-label="schematic_component_1" data-x="2.7" data-y="-2.095" x="353.6" y="384.12" width="246.39999999999998" height="89.60000000000002" fill="hsl(24, 100%, 50%, 0.1)" stroke="black" stroke-width="0.008928571428571428" />
   </g>
   <g>
-    <rect data-type="rect" data-label="connectivity_net0" data-x="1.4000000000000001" data-y="-2.52" x="320" y="451.31999999999994" width="22.40000000000009" height="50.40000000000009" fill="none" stroke="hsl(40, 100%, 50%, 1)" stroke-width="0.008928571428571428" />
+    <rect data-type="rect" data-label="merged-group-J1-x-" data-x="1.374" data-y="-1.995" x="303.088" y="395.32" width="50.400000000000034" height="44.80000000000001" fill="hsl(296, 100%, 50%, 0.2)" stroke="hsl(296, 100%, 50%, 1)" stroke-width="0.008928571428571428" />
   </g>
   <g>
     <rect data-type="rect" data-label="connectivity_net1" data-x="1.4260000000000002" data-y="0.30000000000000004" x="308.91200000000003" y="149.48" width="50.400000000000034" height="22.400000000000006" fill="none" stroke="hsl(40, 100%, 50%, 1)" stroke-width="0.008928571428571428" />
   </g>
   <g>
-    <rect data-type="rect" data-label="merged-group-J1-x-" data-x="1.374" data-y="-1.995" x="303.088" y="395.32" width="50.400000000000034" height="44.80000000000001" fill="hsl(296, 100%, 50%, 0.2)" stroke="hsl(296, 100%, 50%, 1)" stroke-width="0.008928571428571428" />
+    <rect data-type="rect" data-label="connectivity_net0" data-x="1.4000000000000001" data-y="-2.52" x="320" y="451.31999999999994" width="22.40000000000009" height="50.40000000000009" fill="none" stroke="hsl(40, 100%, 50%, 1)" stroke-width="0.008928571428571428" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />

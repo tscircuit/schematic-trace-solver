@@ -65,19 +65,24 @@ x+" data-x="3.05" data-y="2.1" cx="544.5045045045044" cy="184.6451329378159" r="
 x+" data-x="3.05" data-y="2.3" cx="544.5045045045044" cy="160.0351571083279" r="3" fill="hsl(207, 100%, 50%, 0.8)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="1.6010000000000002" data-y="0.3" cx="366.20522961986376" cy="406.13491540320814" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: y+" data-x="1.6010000000000002" data-y="0.3" cx="366.20522961986376" cy="406.13491540320814" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="1.05" data-y="-0.10000000000000003" cx="298.40474620962425" cy="455.35486706218416" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="1.05" data-y="-0.10000000000000003" cx="298.40474620962425" cy="455.35486706218416" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="3.05" data-y="2.3" cx="544.5045045045044" cy="160.0351571083279" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="3.05" data-y="2.3" cx="544.5045045045044" cy="160.0351571083279" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="1.05" data-y="0.09999999999999998" cx="298.40474620962425" cy="430.74489123269615" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="1.05" data-y="0.09999999999999998" cx="298.40474620962425" cy="430.74489123269615" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="3.05" data-y="2.1" cx="544.5045045045044" cy="184.6451329378159" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="3.05" data-y="2.1" cx="544.5045045045044" cy="184.6451329378159" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="1.05,0.09999999999999998 3.05,2.1" data-type="line" data-label="" points="298.40474620962425,430.74489123269615 544.5045045045044,184.6451329378159" fill="none" stroke="hsl(312, 100%, 50%, 0.8)" stroke-width="1" />
