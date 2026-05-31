@@ -168,7 +168,7 @@ export const getConnectorTracePath = (
       : [source, { x: source.x, y: target.y }, target],
   )
 
-const simplifyOrthogonalPath = (path: Point[]) => {
+export const simplifyOrthogonalPath = (path: Point[]) => {
   const deduped = path.filter(
     (point, index) => index === 0 || !pointsEqual(point, path[index - 1]!),
   )
