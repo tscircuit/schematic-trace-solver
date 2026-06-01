@@ -280,6 +280,26 @@ export class NetLabelPlacementSolver extends BaseSolver {
     )?.netLabelWidth
   }
 
+  private getNetLabelHeightForGroup(
+    group: OverlappingSameNetTraceGroup,
+  ): number | undefined {
+    if (group.netId) {
+      const ncHeight = this.inputProblem.netConnections.find(
+        (nc) => nc.netId === group.netId,
+      )?.netLabelHeight
+      if (ncHeight !== undefined) return ncHeight
+    }
+
+    const pinIds = group.overlappingTraces?.pins.map((p) => p.pinId) ?? []
+    if (group.portOnlyPinId) {
+      pinIds.push(group.portOnlyPinId)
+    }
+
+    return this.inputProblem.netConnections.find((nc) =>
+      nc.pinIds.some((pid) => pinIds.includes(pid)),
+    )?.netLabelHeight
+  }
+
   override _step() {
     if (this.activeSubSolver?.solved) {
       this.netLabelPlacements.push(this.activeSubSolver.netLabelPlacement!)
@@ -304,12 +324,14 @@ export class NetLabelPlacementSolver extends BaseSolver {
       ) {
         this.triedAnyOrientationFallbackForCurrentGroup = true
         const netLabelWidth = this.getNetLabelWidthForGroup(this.currentGroup)
+        const netLabelHeight = this.getNetLabelHeightForGroup(this.currentGroup)
         this.activeSubSolver = new SingleNetLabelPlacementSolver({
           inputProblem: this.inputProblem,
           inputTraceMap: this.inputTraceMap,
           overlappingSameNetTraceGroup: this.currentGroup,
           availableOrientations: fullOrients,
           netLabelWidth,
+          netLabelHeight,
         })
         return
       }
@@ -340,6 +362,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
     this.triedAnyOrientationFallbackForCurrentGroup = false
 
     const netLabelWidth = this.getNetLabelWidthForGroup(this.currentGroup)
+    const netLabelHeight = this.getNetLabelHeightForGroup(this.currentGroup)
 
     this.activeSubSolver = new SingleNetLabelPlacementSolver({
       inputProblem: this.inputProblem,
@@ -349,6 +372,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
         netId
       ] ?? ["x+", "x-", "y+", "y-"],
       netLabelWidth,
+      netLabelHeight,
     })
   }
 
