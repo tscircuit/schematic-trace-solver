@@ -219,18 +219,20 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (rotatedCandidate) return rotatedCandidate
 
+    const orientation = orientations[0]!
+    const horizontalShiftedCandidate = isYOrientation(orientation)
+      ? this.findValidHorizontalShiftedCandidate(label, orientation, labelIndex)
+      : null
+    if (horizontalShiftedCandidate) return horizontalShiftedCandidate
+
     const shiftedCandidate = this.findValidShiftedCandidate(
       label,
-      orientations[0]!,
+      orientation,
       labelIndex,
     )
     if (shiftedCandidate) return shiftedCandidate
 
-    return this.findValidLateralShiftedCandidate(
-      label,
-      orientations[0]!,
-      labelIndex,
-    )
+    return this.findValidLateralShiftedCandidate(label, orientation, labelIndex)
   }
 
   private findValidRotatedCandidate(
@@ -302,6 +304,52 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       })
 
       if (candidate) return candidate
+    }
+
+    return null
+  }
+
+  private findValidHorizontalShiftedCandidate(
+    label: NetLabelPlacement,
+    orientation: "y+" | "y-",
+    labelIndex: number,
+  ) {
+    const initialBaseAnchor = this.getSearchStartAnchor(label, orientation)
+    const outwardDirection = this.getPerpendicularOutwardDirection(
+      label.anchorPoint,
+      orientation,
+    )
+    const maxSteps = Math.ceil(this.maxSearchDistance / LABEL_SEARCH_STEP)
+
+    for (let step = 0; step <= maxSteps; step++) {
+      const offsets =
+        outwardDirection.x === 0
+          ? step === 0
+            ? [0]
+            : [-step * LABEL_SEARCH_STEP, step * LABEL_SEARCH_STEP]
+          : [step * LABEL_SEARCH_STEP * outwardDirection.x]
+
+      for (const xOffset of offsets) {
+        const anchorPoint = {
+          x: initialBaseAnchor.x + xOffset,
+          y: label.anchorPoint.y,
+        }
+        const candidate = this.createCandidate(label, anchorPoint, orientation)
+        const result = this.evaluateCandidate(
+          candidate,
+          label,
+          labelIndex,
+          "lateral-shift",
+          0,
+          xOffset,
+        )
+        this.currentCandidateResults.push(result)
+
+        if (result.status === "valid") {
+          result.selected = true
+          return result
+        }
+      }
     }
 
     return null

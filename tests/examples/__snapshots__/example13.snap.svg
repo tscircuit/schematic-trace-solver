@@ -90,7 +90,7 @@ orientation: y+" data-x="1.475" data-y="0" cx="386.1404526987812" cy="352.501450
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-1.4509999999999998" data-y="-1.074" cx="195.9419616947185" cy="422.31456761462573" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y+" data-x="-1.4509999999999998" data-y="-1.125" cx="195.9419616947185" cy="425.62971561230415" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -102,7 +102,7 @@ orientation: y+" data-x="-3.75" data-y="2" cx="46.500290191526375" cy="222.49564
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="2.2990000000000004" data-y="0.301" cx="439.7028438769588" cy="332.9355774811376" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y+" data-x="2.149" data-y="0" cx="429.9524085896692" cy="352.5014509576321" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -223,10 +223,10 @@ orientation: y+" data-x="1.96375" data-y="3" cx="417.91062100986653" cy="157.492
     <polyline data-points="3.435,3 0.49249999999999994,3 0.49249999999999994,2 -2.45,2" data-type="line" data-label="" points="513.5461404526988,157.49274521183986 322.2751015670342,157.49274521183986 322.2751015670342,222.49564712710392 131.00406268136967,222.49564712710392" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="-1.15,-1.125 -1.4509999999999998,-1.125 -1.4509999999999998,-1.074" data-type="line" data-label="" points="215.507835171213,425.62971561230415 195.9419616947185,425.62971561230415 195.9419616947185,422.31456761462573" fill="none" stroke="purple" stroke-width="1" />
+    <polyline data-points="-1.15,-1.125 -1.15,-1.175 -1.4509999999999998,-1.175 -1.4509999999999998,-1.125" data-type="line" data-label="" points="215.507835171213,425.62971561230415 215.507835171213,428.8798607080674 195.9419616947185,428.8798607080674 195.9419616947185,425.62971561230415" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="2.45,0 2.2990000000000004,0 2.2990000000000004,0.301" data-type="line" data-label="" points="449.5182820661637,352.5014509576321 439.7028438769588,352.5014509576321 439.7028438769588,332.9355774811376" fill="none" stroke="purple" stroke-width="1" />
+    <polyline data-points="2.45,0 2.45,-0.05 2.149,-0.05 2.149,0" data-type="line" data-label="" points="449.5182820661637,352.5014509576321 449.5182820661637,355.7515960533953 429.9524085896692,355.7515960533953 429.9524085896692,352.5014509576321" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
     <rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="215.507835171213" y="230.62100986651194" width="149.50667440510733" height="243.76088218224027" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.015383928571428571" />
@@ -263,7 +263,7 @@ globalConnNetId: connectivity_net4" data-x="1.475" data-y="0.225" x="379.6401625
   </g>
   <g>
     <rect data-type="rect" data-label="netId: v5
-globalConnNetId: connectivity_net4" data-x="-1.4509999999999998" data-y="-0.8490000000000001" x="189.44167150319208" y="393.0632617527569" width="13.000580383052835" height="29.251305861868843" fill="#ef444466" stroke="#ef4444" stroke-width="0.015383928571428571" />
+globalConnNetId: connectivity_net4" data-x="-1.4509999999999998" data-y="-0.9" x="189.44167150319208" y="396.3784097504353" width="13.000580383052835" height="29.251305861868843" fill="#ef444466" stroke="#ef4444" stroke-width="0.015383928571428571" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: .PWR1 &gt; .FB to .R6 &gt; .pin2
@@ -275,7 +275,7 @@ globalConnNetId: connectivity_net0" data-x="-3.75" data-y="2.225" x="39.99999999
   </g>
   <g>
     <rect data-type="rect" data-label="netId: v3_3
-globalConnNetId: connectivity_net0" data-x="2.2990000000000004" data-y="0.526" x="433.20255368543235" y="303.68427161926877" width="13.000580383052863" height="29.251305861868786" fill="#ef444466" stroke="#ef4444" stroke-width="0.015383928571428571" />
+globalConnNetId: connectivity_net0" data-x="2.149" data-y="0.225" x="423.4521183981427" y="323.25014509576323" width="13.000580383052863" height="29.251305861868843" fill="#ef444466" stroke="#ef4444" stroke-width="0.015383928571428571" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: .LED1 &gt; .pos to .R8 &gt; .pin2

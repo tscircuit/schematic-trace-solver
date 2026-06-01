@@ -18,13 +18,13 @@ orientation: y+" data-x="0.30397715550000004" data-y="0.5800832909999993" cx="36
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="0.7106757555000014" data-y="-0.5290832909999993" cx="498.236705871802" cy="565.9516386779806" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y+" data-x="0.7106757555000014" data-y="-0.5800832909999993" cx="498.236705871802" cy="583.1443755831586" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="0.30397715550000004,0.5800832909999993 0.31067575550000137,-0.5800832909999993" data-type="line" data-label="" points="361.133528822698,192.03773223990865 363.3917105370715,583.1443755831586" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
   </g>
   <g>
-    <polyline data-points="0.31067575550000137,-0.5800832909999993 0.31067575550000137,-0.6300832909999994 0.7106757555000014,-0.6300832909999994 0.7106757555000014,-0.5290832909999993" data-type="line" data-label="" points="363.3917105370715,583.1443755831586 363.3917105370715,600 498.236705871802,600 498.236705871802,565.9516386779806" fill="none" stroke="purple" stroke-width="1" />
+    <polyline data-points="0.31067575550000137,-0.5800832909999993 0.31067575550000137,-0.6300832909999994 0.7106757555000014,-0.6300832909999994 0.7106757555000014,-0.5800832909999993" data-type="line" data-label="" points="363.3917105370715,583.1443755831586 363.3917105370715,600 498.236705871802,600 498.236705871802,583.1443755831586" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
     <rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="108.05204529451538" y="192.03773223990865" width="301.2139764800545" height="391.10664334324997" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.0029663688964285694" />
@@ -35,7 +35,7 @@ globalConnNetId: connectivity_net0" data-x="0.30397715550000004" data-y="0.80608
   </g>
   <g>
     <rect data-type="rect" data-label="netId: V3_3
-globalConnNetId: connectivity_net0" data-x="0.7106757555000014" data-y="-0.3040832909999993" x="464.5254570381194" y="414.25101892640873" width="67.42249766736518" height="151.70061975157182" fill="#ef444466" stroke="#ef4444" stroke-width="0.0029663688964285694" />
+globalConnNetId: connectivity_net0" data-x="0.7106757555000014" data-y="-0.35508329099999936" x="464.5254570381194" y="431.44375583158694" width="67.42249766736518" height="151.7006197515717" fill="#ef444466" stroke="#ef4444" stroke-width="0.0029663688964285694" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
