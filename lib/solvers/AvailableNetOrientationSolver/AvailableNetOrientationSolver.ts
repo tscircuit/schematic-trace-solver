@@ -11,7 +11,12 @@ import {
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
-import { EPS, LABEL_SEARCH_STEP, WICK_CLEARANCE } from "./constants"
+import {
+  EPS,
+  LABEL_SEARCH_STEP,
+  VERTICAL_LABEL_CLEARANCE,
+  WICK_CLEARANCE,
+} from "./constants"
 import {
   getConnectorTracePath,
   getMaxSearchDistance,
@@ -120,9 +125,16 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     this.setCurrentLabel(labelIndex)
     this.currentCandidateResults = []
 
-    const candidate = this.findCorrectedCandidate(label, labelIndex)
-    if (!candidate) return
+    this.useVerticalGap = true
+    let candidate = this.findCorrectedCandidate(label, labelIndex)
 
+    if (!candidate) {
+      this.useVerticalGap = false
+      this.currentCandidateResults = []
+      candidate = this.findCorrectedCandidate(label, labelIndex)
+    }
+
+    if (!candidate) return
     this.applyCandidate(label, candidate, labelIndex)
   }
 
@@ -207,18 +219,20 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (rotatedCandidate) return rotatedCandidate
 
+    const orientation = orientations[0]!
+    const horizontalShiftedCandidate = isYOrientation(orientation)
+      ? this.findValidHorizontalShiftedCandidate(label, orientation, labelIndex)
+      : null
+    if (horizontalShiftedCandidate) return horizontalShiftedCandidate
+
     const shiftedCandidate = this.findValidShiftedCandidate(
       label,
-      orientations[0]!,
+      orientation,
       labelIndex,
     )
     if (shiftedCandidate) return shiftedCandidate
 
-    return this.findValidLateralShiftedCandidate(
-      label,
-      orientations[0]!,
-      labelIndex,
-    )
+    return this.findValidLateralShiftedCandidate(label, orientation, labelIndex)
   }
 
   private findValidRotatedCandidate(
@@ -295,6 +309,52 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return null
   }
 
+  private findValidHorizontalShiftedCandidate(
+    label: NetLabelPlacement,
+    orientation: "y+" | "y-",
+    labelIndex: number,
+  ) {
+    const initialBaseAnchor = this.getSearchStartAnchor(label, orientation)
+    const outwardDirection = this.getPerpendicularOutwardDirection(
+      label.anchorPoint,
+      orientation,
+    )
+    const maxSteps = Math.ceil(this.maxSearchDistance / LABEL_SEARCH_STEP)
+
+    for (let step = 0; step <= maxSteps; step++) {
+      const offsets =
+        outwardDirection.x === 0
+          ? step === 0
+            ? [0]
+            : [-step * LABEL_SEARCH_STEP, step * LABEL_SEARCH_STEP]
+          : [step * LABEL_SEARCH_STEP * outwardDirection.x]
+
+      for (const xOffset of offsets) {
+        const anchorPoint = {
+          x: initialBaseAnchor.x + xOffset,
+          y: label.anchorPoint.y,
+        }
+        const candidate = this.createCandidate(label, anchorPoint, orientation)
+        const result = this.evaluateCandidate(
+          candidate,
+          label,
+          labelIndex,
+          "lateral-shift",
+          0,
+          xOffset,
+        )
+        this.currentCandidateResults.push(result)
+
+        if (result.status === "valid") {
+          result.selected = true
+          return result
+        }
+      }
+    }
+
+    return null
+  }
+
   /**
    * When all candidates fail for the current (unshifted) position, try
    * shifting the label anchor laterally — x for y-orientations, y for
@@ -318,34 +378,53 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       y: isXOrientation(orientation) ? 1 : 0,
     }
 
-    const maxSteps = Math.ceil(this.maxSearchDistance / LABEL_SEARCH_STEP)
+    const maxLateralSteps = Math.ceil(
+      this.maxSearchDistance / LABEL_SEARCH_STEP,
+    )
 
-    for (let step = 1; step <= maxSteps; step++) {
-      for (const sign of [-1, 1]) {
-        const lateralOffset = sign * step * LABEL_SEARCH_STEP
-        const baseAnchor = {
-          x: initialBaseAnchor.x + lateralDir.x * lateralOffset,
-          y: initialBaseAnchor.y + lateralDir.y * lateralOffset,
+    for (
+      let distance = LABEL_SEARCH_STEP;
+      distance <= this.maxSearchDistance + EPS;
+      distance += LABEL_SEARCH_STEP
+    ) {
+      for (let lateralStep = 1; lateralStep <= maxLateralSteps; lateralStep++) {
+        for (const sign of [-1, 1]) {
+          const lateralOffset = sign * lateralStep * LABEL_SEARCH_STEP
+          const baseAnchor = {
+            x: initialBaseAnchor.x + lateralDir.x * lateralOffset,
+            y: initialBaseAnchor.y + lateralDir.y * lateralOffset,
+          }
+          const maxSearchDistance = this.getLateralColumnMaxDistance(
+            label,
+            orientation,
+            baseAnchor,
+          )
+          if (distance > maxSearchDistance + EPS) continue
+
+          const anchorPoint = {
+            x: baseAnchor.x + direction.x * distance,
+            y: baseAnchor.y + direction.y * distance,
+          }
+          const candidate = this.createCandidate(
+            label,
+            anchorPoint,
+            orientation,
+          )
+          const result = this.evaluateCandidate(
+            candidate,
+            label,
+            labelIndex,
+            "lateral-shift",
+            distance,
+            lateralOffset,
+          )
+          this.currentCandidateResults.push(result)
+
+          if (result.status === "valid") {
+            result.selected = true
+            return result
+          }
         }
-
-        const maxSearchDistance = this.getLateralColumnMaxDistance(
-          label,
-          orientation,
-          baseAnchor,
-        )
-
-        const candidate = this.findValidCandidateInShiftColumn({
-          label,
-          labelIndex,
-          orientation,
-          direction,
-          baseAnchor,
-          maxSearchDistance,
-          outwardDistance: lateralOffset,
-          phase: "lateral-shift",
-        })
-
-        if (candidate) return candidate
       }
     }
 
@@ -567,16 +646,31 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )?.netLabelWidth
   }
 
+  private useVerticalGap = true
+
   private getCandidateStatus(
     candidate: CandidateLabel,
     label: NetLabelPlacement,
     labelIndex: number,
   ) {
-    const boundsStatus = this.getBoundsStatus(
+    const bodyStatus = this.getBoundsStatus(
       getRectBounds(candidate.center, candidate.width, candidate.height),
       labelIndex,
     )
-    if (boundsStatus !== "valid") return boundsStatus
+    if (bodyStatus !== "valid") return bodyStatus
+
+    if (this.useVerticalGap && isYOrientation(candidate.orientation)) {
+      // Horizontal-only clearance: expand x, keep y as narrow (width) dimension
+      const clearanceStatus = this.getBoundsStatus(
+        getRectBounds(
+          candidate.center,
+          candidate.width + 2 * VERTICAL_LABEL_CLEARANCE,
+          candidate.width,
+        ),
+        labelIndex,
+      )
+      if (clearanceStatus !== "valid") return clearanceStatus
+    }
 
     const connectorTrace = getConnectorTracePath(
       label.anchorPoint,

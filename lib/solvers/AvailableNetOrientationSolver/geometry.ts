@@ -40,7 +40,11 @@ export const traceCrossesBoundsInterior = (
   return false
 }
 
-const segmentCrossesBoundsInterior = (p1: Point, p2: Point, bounds: Bounds) => {
+export const segmentCrossesBoundsInterior = (
+  p1: Point,
+  p2: Point,
+  bounds: Bounds,
+) => {
   const interiorBounds = {
     minX: bounds.minX + TRACE_BOUNDARY_TOLERANCE,
     minY: bounds.minY + TRACE_BOUNDARY_TOLERANCE,
