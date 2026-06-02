@@ -45,18 +45,32 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     }
   }
 
-  override _step() {
-    // Shift only the overlapping segments, and move the shared endpoints
-    // (the last point of the previous segment and the first point of the next
-    // segment) so the polyline remains orthogonal without self-overlap.
-    const EPS = 1e-6
-
-    // Compute offsets for each island involved: alternate directions
-    const offsets = this.overlappingTraceSegments.map((_, idx) => {
+  private getBaseOffsets() {
+    return this.overlappingTraceSegments.map((_, idx) => {
       const n = Math.floor(idx / 2) + 1
       const signed = idx % 2 === 0 ? -n : n
       return signed * this.SHIFT_DISTANCE
     })
+  }
+
+  private getOffsetCandidates() {
+    const baseOffsets = this.getBaseOffsets()
+
+    return [baseOffsets, baseOffsets.map((offset) => -offset)]
+  }
+
+  private buildCorrectedTraceMap(offsets: number[]) {
+    const correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath> = {}
+
+    for (const group of this.overlappingTraceSegments) {
+      for (const { solvedTracePathIndex } of group.pathsWithOverlap) {
+        const trace =
+          this.traceNetIslands[group.connNetId][solvedTracePathIndex]
+        if (trace) correctedTraceMap[trace.mspPairId] = trace
+      }
+    }
+
+    const EPS = 1e-6
 
     const eq = (a: number, b: number) => Math.abs(a - b) < EPS
     const samePoint = (
@@ -79,7 +93,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
 
       for (const [pathIdx, segIdxSet] of byPath) {
         const original = this.traceNetIslands[group.connNetId][pathIdx]!
-        const current = this.correctedTraceMap[original.mspPairId] ?? original
+        const current = correctedTraceMap[original.mspPairId] ?? original
         const pts = current.tracePath.map((p) => ({ ...p }))
 
         const segIdxs = Array.from(segIdxSet).sort((a, b) => a - b)
@@ -132,13 +146,108 @@ export class TraceOverlapIssueSolver extends BaseSolver {
           }
         }
 
-        this.correctedTraceMap[original.mspPairId] = {
+        correctedTraceMap[original.mspPairId] = {
           ...current,
           tracePath: cleaned,
         }
       }
     })
 
+    return correctedTraceMap
+  }
+
+  private getAllTracePaths(
+    correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath>,
+  ) {
+    const allTracePaths: SolvedTracePath[] = []
+    const seen = new Set<MspConnectionPairId>()
+
+    for (const traces of Object.values(this.traceNetIslands)) {
+      for (const trace of traces) {
+        const corrected = correctedTraceMap[trace.mspPairId] ?? trace
+        if (seen.has(corrected.mspPairId)) continue
+        seen.add(corrected.mspPairId)
+        allTracePaths.push(corrected)
+      }
+    }
+
+    return allTracePaths
+  }
+
+  private countTraceCrossings(
+    correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath>,
+  ) {
+    const EPS = 1e-6
+    const traces = this.getAllTracePaths(correctedTraceMap)
+    let crossingCount = 0
+
+    const rangeContains = (value: number, a: number, b: number) =>
+      value > Math.min(a, b) + EPS && value < Math.max(a, b) - EPS
+
+    const rangeTouches = (value: number, a: number, b: number) =>
+      value >= Math.min(a, b) - EPS && value <= Math.max(a, b) + EPS
+
+    for (let ti = 0; ti < traces.length; ti++) {
+      for (let tj = ti + 1; tj < traces.length; tj++) {
+        const traceA = traces[ti]!
+        const traceB = traces[tj]!
+        if (traceA.globalConnNetId === traceB.globalConnNetId) continue
+
+        for (let ai = 0; ai < traceA.tracePath.length - 1; ai++) {
+          const a1 = traceA.tracePath[ai]!
+          const a2 = traceA.tracePath[ai + 1]!
+          const aVertical = Math.abs(a1.x - a2.x) < EPS
+          const aHorizontal = Math.abs(a1.y - a2.y) < EPS
+          if (!aVertical && !aHorizontal) continue
+
+          for (let bi = 0; bi < traceB.tracePath.length - 1; bi++) {
+            const b1 = traceB.tracePath[bi]!
+            const b2 = traceB.tracePath[bi + 1]!
+            const bVertical = Math.abs(b1.x - b2.x) < EPS
+            const bHorizontal = Math.abs(b1.y - b2.y) < EPS
+            if (!bVertical && !bHorizontal) continue
+            if (aVertical === bVertical) continue
+
+            const vertical = aVertical
+              ? { x: a1.x, y1: a1.y, y2: a2.y }
+              : { x: b1.x, y1: b1.y, y2: b2.y }
+            const horizontal = aHorizontal
+              ? { y: a1.y, x1: a1.x, x2: a2.x }
+              : { y: b1.y, x1: b1.x, x2: b2.x }
+
+            const crossesInterior =
+              rangeTouches(vertical.x, horizontal.x1, horizontal.x2) &&
+              rangeTouches(horizontal.y, vertical.y1, vertical.y2) &&
+              (rangeContains(vertical.x, horizontal.x1, horizontal.x2) ||
+                rangeContains(horizontal.y, vertical.y1, vertical.y2))
+
+            if (crossesInterior) crossingCount++
+          }
+        }
+      }
+    }
+
+    return crossingCount
+  }
+
+  private chooseBestCorrectedTraceMap() {
+    const candidates = this.getOffsetCandidates().map((offsets) => {
+      const correctedTraceMap = this.buildCorrectedTraceMap(offsets)
+      return {
+        correctedTraceMap,
+        crossingCount: this.countTraceCrossings(correctedTraceMap),
+      }
+    })
+
+    candidates.sort((a, b) => a.crossingCount - b.crossingCount)
+
+    return candidates[0]!.correctedTraceMap
+  }
+
+  override _step() {
+    // Shift the overlapping segments in the direction that produces the fewest
+    // crossings against the surrounding trace geometry.
+    this.correctedTraceMap = this.chooseBestCorrectedTraceMap()
     this.solved = true
   }
 
