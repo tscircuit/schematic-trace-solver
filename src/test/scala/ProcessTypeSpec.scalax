@@ -1,0 +1,7 @@
+import org.scalatest.funsuite.AnyFunSuite
+
+class ProcessTypeSpec extends AnyFunSuite {
+  test("dummy test just to check setup") {
+    assert(1 + 1 == 2)
+  }
+}
