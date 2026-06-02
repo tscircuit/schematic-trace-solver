@@ -429,6 +429,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const { width, height } = getDimsForOrientation({
       orientation,
       netLabelWidth: this.getNetLabelWidth(label),
+      netLabelHeight: this.getNetLabelHeight(label),
     })
 
     return this.getSideOffsetAnchor({
@@ -494,6 +495,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const { width, height } = getDimsForOrientation({
       orientation,
       netLabelWidth: this.getNetLabelWidth(label),
+      netLabelHeight: this.getNetLabelHeight(label),
     })
     const labelLength =
       orientation === "y+" || orientation === "y-" ? height : width
@@ -534,6 +536,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const { width, height } = getDimsForOrientation({
       orientation,
       netLabelWidth: this.getNetLabelWidth(label),
+      netLabelHeight: this.getNetLabelHeight(label),
     })
     return {
       orientation,
@@ -565,6 +568,19 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return this.inputProblem.netConnections.find((nc) =>
       nc.pinIds.some((pid) => label.pinIds.includes(pid)),
     )?.netLabelWidth
+  }
+
+  private getNetLabelHeight(label: NetLabelPlacement) {
+    if (label.netId) {
+      const ncHeight = this.inputProblem.netConnections.find(
+        (connection) => connection.netId === label.netId,
+      )?.netLabelHeight
+      if (ncHeight !== undefined) return ncHeight
+    }
+
+    return this.inputProblem.netConnections.find((nc) =>
+      nc.pinIds.some((pid) => label.pinIds.includes(pid)),
+    )?.netLabelHeight
   }
 
   private getCandidateStatus(
