@@ -4,9 +4,27 @@ import {
   isVertical,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
+const isSamePoint = (a: Point, b: Point) =>
+  Math.abs(a.x - b.x) < 1e-9 && Math.abs(a.y - b.y) < 1e-9
+
+export const removeDuplicateConsecutivePoints = (path: Point[]): Point[] => {
+  if (path.length < 2) return path
+
+  const dedupedPath: Point[] = [path[0]!]
+  for (let i = 1; i < path.length; i++) {
+    const point = path[i]!
+    if (!isSamePoint(dedupedPath[dedupedPath.length - 1]!, point)) {
+      dedupedPath.push(point)
+    }
+  }
+
+  return dedupedPath
+}
+
 export const simplifyPath = (path: Point[]): Point[] => {
+  path = removeDuplicateConsecutivePoints(path)
   if (path.length < 3) return path
-  const newPath: Point[] = [path[0]]
+  const newPath: Point[] = [path[0]!]
   for (let i = 1; i < path.length - 1; i++) {
     const p1 = newPath[newPath.length - 1]
     const p2 = path[i]
