@@ -17,16 +17,20 @@ x+" data-x="1.1" data-y="-0.10000000000000003" cx="487.83715012722644" cy="330.1
 x+" data-x="1.1" data-y="-0.30000000000000004" cx="487.83715012722644" cy="370.89058524173026" r="3" fill="hsl(322, 100%, 50%, 0.8)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="1.1" data-y="0.30000000000000004" cx="487.83715012722644" cy="248.75318066157763" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="1.1" data-y="0.30000000000000004" cx="487.83715012722644" cy="248.75318066157763" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="1.1" data-y="0.09999999999999998" cx="487.83715012722644" cy="289.46564885496184" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="1.1" data-y="0.09999999999999998" cx="487.83715012722644" cy="289.46564885496184" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="1.5510000000000002" data-y="0.4009999999999999" cx="579.6437659033079" cy="228.1933842239186" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: y+" data-x="1.5510000000000002" data-y="0.4009999999999999" cx="579.6437659033079" cy="228.1933842239186" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="" data-x="1.201" data-y="-0.5010000000000001" cx="508.39694656488547" cy="411.80661577608146" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: y-" data-x="1.201" data-y="-0.5010000000000001" cx="508.39694656488547" cy="411.80661577608146" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="1.1,-0.10000000000000003 1.5510000000000002,-0.10000000000000003 1.5510000000000002,0.4009999999999999" data-type="line" data-label="" points="487.83715012722644,330.17811704834605 579.6437659033079,330.17811704834605 579.6437659033079,228.1933842239186" fill="none" stroke="purple" stroke-width="1" />
