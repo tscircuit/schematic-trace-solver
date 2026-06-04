@@ -49,6 +49,8 @@ test("repro61: net-label-only connections should not produce traces", () => {
   // Verify that no schematic trace lines were solved/produced
   expect(solver.schematicTraceLinesSolver!.solvedTracePaths.length).toBe(0)
   if (solver.longDistancePairSolver) {
-    expect(solver.longDistancePairSolver.solvedLongDistanceTraces.length).toBe(0)
+    expect(solver.longDistancePairSolver.solvedLongDistanceTraces.length).toBe(
+      0,
+    )
   }
 })
