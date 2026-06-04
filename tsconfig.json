@@ -1,20 +1,16 @@
 {
   "compilerOptions": {
-    // Environment setup & latest features
-    "lib": ["ESNext", "DOM"],
-    "target": "ESNext",
-    "module": "Preserve",
+    "types": ["vitest/globals"],
+    "ignoreDeprecations": "5.0", 
     "moduleDetection": "force",
     "jsx": "react-jsx",
     "allowJs": true,
 
     "paths": {
-      "lib/*": ["lib/*"],
-      "site/*": ["site/*"],
-      "tests/*": ["tests/*"]
+      "lib/*": ["./lib/*"],
+      "site/*": ["./site/*"],
+      "tests/*": ["./tests/*"]
     },
-
-    "baseUrl": ".",
 
     // Bundler mode
     "moduleResolution": "bundler",
