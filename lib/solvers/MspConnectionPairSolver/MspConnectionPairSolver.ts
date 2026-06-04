@@ -75,7 +75,12 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    // Only queue nets that originated from directConnections. Nets that were
+    // introduced solely by netConnections (net-label-only) must not generate
+    // physical trace lines.
+    this.queuedDcNetIds = Object.keys(netConnMap.netMap).filter(
+      (netId) => netId in directConnMap.netMap,
+    )
   }
 
   override getConstructorParams(): ConstructorParameters<
