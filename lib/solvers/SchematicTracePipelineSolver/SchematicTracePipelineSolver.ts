@@ -27,6 +27,7 @@ import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementS
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
+import { SameNetTraceAlignmentSolver } from "../SameNetTraceAlignmentSolver/SameNetTraceAlignmentSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -82,6 +83,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
+  sameNetTraceAlignmentSolver?: SameNetTraceAlignmentSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -220,10 +222,26 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ]
     }),
     definePipelineStep(
+      "sameNetTraceAlignmentSolver",
+      SameNetTraceAlignmentSolver,
+      (instance) => {
+        const traces =
+          instance.traceCleanupSolver?.getOutput().traces ??
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces,
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
       (instance) => {
         const traces =
+          instance.sameNetTraceAlignmentSolver?.getOutput().traces ??
           instance.traceCleanupSolver?.getOutput().traces ??
           instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
@@ -239,6 +257,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     ),
     definePipelineStep("example28Solver", Example28Solver, (instance) => {
       const traces =
+        instance.sameNetTraceAlignmentSolver?.getOutput().traces ??
         instance.traceCleanupSolver?.getOutput().traces ??
         instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
