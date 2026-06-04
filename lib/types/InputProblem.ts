@@ -24,12 +24,14 @@ export interface InputChip {
 export interface InputDirectConnection {
   pinIds: [PinId, PinId]
   netId?: string
+  netLabelWidth?: number
 }
 
 export interface InputNetConnection {
   netId: string
   pinIds: Array<PinId>
   netLabelWidth?: number
+  netLabelHeight?: number
 }
 
 export interface InputProblem {

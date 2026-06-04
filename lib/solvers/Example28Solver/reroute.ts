@@ -1,5 +1,6 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { segmentIntersectsRect as segmentIntersectsLabelRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
@@ -73,9 +74,39 @@ export const generateRerouteCandidateResults = ({
   outputNetLabelPlacements: NetLabelPlacement[]
   chipObstacles: ChipObstacle[]
 }) => {
-  const rawCandidates = generateCandidatePaths(trace, label, inputProblem)
   const seen = new Set<string>()
   const candidateResults: RerouteCandidateResult[] = []
+  const horizontalSegmentPushCandidate = generateHorizontalSegmentPushCandidate(
+    trace,
+    label,
+  )
+
+  if (horizontalSegmentPushCandidate) {
+    candidateResults.push(
+      createCandidateResult({
+        trace,
+        obstacleLabel: label,
+        path: horizontalSegmentPushCandidate,
+        seen,
+        outputTraces,
+        outputNetLabelPlacements,
+        chipObstacles,
+        usesHorizontalSegmentPush: true,
+      }),
+    )
+  }
+
+  const rawCandidates = [
+    ...generateLabelHugCandidates(trace, label),
+    ...generateRerouteCandidates({
+      trace,
+      label,
+      problem: inputProblem,
+      paddingBuffer: LABEL_SIDE_CLEARANCE,
+      detourCount: 0,
+    }),
+    ...generateEndpointDetourCandidates(trace, label),
+  ]
 
   for (const rawCandidate of rawCandidates) {
     candidateResults.push(
@@ -94,22 +125,6 @@ export const generateRerouteCandidateResults = ({
   return candidateResults
 }
 
-const generateCandidatePaths = (
-  trace: SolvedTracePath,
-  label: NetLabelPlacement,
-  inputProblem: InputProblem,
-) => [
-  ...generateLabelHugCandidates(trace, label),
-  ...generateRerouteCandidates({
-    trace,
-    label,
-    problem: inputProblem,
-    paddingBuffer: LABEL_SIDE_CLEARANCE,
-    detourCount: 0,
-  }),
-  ...generateEndpointDetourCandidates(trace, label),
-]
-
 const createCandidateResult = ({
   trace,
   obstacleLabel,
@@ -118,6 +133,7 @@ const createCandidateResult = ({
   outputTraces,
   outputNetLabelPlacements,
   chipObstacles,
+  usesHorizontalSegmentPush,
 }: {
   trace: SolvedTracePath
   obstacleLabel: NetLabelPlacement
@@ -126,6 +142,7 @@ const createCandidateResult = ({
   outputTraces: SolvedTracePath[]
   outputNetLabelPlacements: NetLabelPlacement[]
   chipObstacles: ChipObstacle[]
+  usesHorizontalSegmentPush?: boolean
 }): RerouteCandidateResult => {
   const key = getPathKey(path)
 
@@ -133,6 +150,7 @@ const createCandidateResult = ({
     return {
       path,
       status: "duplicate",
+      usesHorizontalSegmentPush,
       selected: false,
     }
   }
@@ -143,6 +161,7 @@ const createCandidateResult = ({
     return {
       path,
       status: "chip-collision",
+      usesHorizontalSegmentPush,
       selected: false,
     }
   }
@@ -157,6 +176,7 @@ const createCandidateResult = ({
       outputNetLabelPlacements,
     }),
     status: "valid",
+    usesHorizontalSegmentPush,
     selected: false,
   }
 }
@@ -259,6 +279,13 @@ const selectBestReroutePath = ({
   outputNetLabelPlacements: NetLabelPlacement[]
   candidateResults: RerouteCandidateResult[]
 }) => {
+  for (const candidate of candidateResults) {
+    if (!candidate.usesHorizontalSegmentPush) continue
+    if (candidate.status !== "valid") continue
+    if (!candidate.score) continue
+    return candidate.path
+  }
+
   let bestPath: Point[] | null = null
   let bestScore = scoreTracePath({
     trace,
@@ -277,6 +304,99 @@ const selectBestReroutePath = ({
   }
 
   return bestPath
+}
+
+const generateHorizontalSegmentPushCandidate = (
+  trace: SolvedTracePath,
+  label: NetLabelPlacement,
+): Point[] | null => {
+  const labelDirection = dir(label.orientation)
+  if (labelDirection.x === 0) return null
+
+  const path = trace.tracePath
+  const bounds = getRectBounds(label.center, label.width, label.height)
+  const collidingVerticalSegmentIndex = path.findIndex((start, index) => {
+    const end = path[index + 1]
+    if (!end) return false
+    if (Math.abs(start.x - end.x) >= 1e-9) return false
+    return segmentIntersectsLabelRect(start, end, bounds)
+  })
+
+  if (
+    collidingVerticalSegmentIndex <= 0 ||
+    collidingVerticalSegmentIndex >= path.length - 2
+  ) {
+    return null
+  }
+
+  const previousAnchor = path[collidingVerticalSegmentIndex - 1]!
+  const verticalStart = path[collidingVerticalSegmentIndex]!
+  const verticalEnd = path[collidingVerticalSegmentIndex + 1]!
+  const nextAnchor = path[collidingVerticalSegmentIndex + 2]!
+
+  if (
+    Math.abs(previousAnchor.y - verticalStart.y) >= 1e-9 ||
+    Math.abs(verticalEnd.y - nextAnchor.y) >= 1e-9
+  ) {
+    return null
+  }
+
+  let segmentPushX = bounds.minX - LABEL_SIDE_CLEARANCE
+  if (labelDirection.x > 0) {
+    segmentPushX = bounds.maxX + LABEL_SIDE_CLEARANCE
+  }
+  const segmentPushStartY = getClearedHorizontalY({
+    start: previousAnchor,
+    end: { x: segmentPushX, y: verticalStart.y },
+    labelBounds: bounds,
+  })
+  const segmentPushEndY = getClearedHorizontalY({
+    start: { x: segmentPushX, y: verticalEnd.y },
+    end: nextAnchor,
+    labelBounds: bounds,
+  })
+
+  const segmentPushPath: Point[] = [
+    ...path.slice(0, collidingVerticalSegmentIndex - 1),
+    previousAnchor,
+  ]
+
+  if (Math.abs(previousAnchor.y - segmentPushStartY) >= 1e-9) {
+    segmentPushPath.push({ x: previousAnchor.x, y: segmentPushStartY })
+  }
+
+  segmentPushPath.push({ x: segmentPushX, y: segmentPushStartY })
+  segmentPushPath.push({ x: segmentPushX, y: segmentPushEndY })
+
+  if (Math.abs(nextAnchor.y - segmentPushEndY) >= 1e-9) {
+    segmentPushPath.push({ x: nextAnchor.x, y: segmentPushEndY })
+  }
+
+  segmentPushPath.push(
+    nextAnchor,
+    ...path.slice(collidingVerticalSegmentIndex + 3),
+  )
+
+  return simplifyPath(segmentPushPath)
+}
+
+const getClearedHorizontalY = ({
+  start,
+  end,
+  labelBounds,
+}: {
+  start: Point
+  end: Point
+  labelBounds: { minX: number; minY: number; maxX: number; maxY: number }
+}) => {
+  if (!segmentIntersectsLabelRect(start, end, labelBounds)) return start.y
+
+  const labelCenterY = (labelBounds.minY + labelBounds.maxY) / 2
+  if (start.y >= labelCenterY) {
+    return labelBounds.maxY + LABEL_HUG_CLEARANCE
+  }
+
+  return labelBounds.minY - LABEL_HUG_CLEARANCE
 }
 
 const markSelectedCandidate = (
