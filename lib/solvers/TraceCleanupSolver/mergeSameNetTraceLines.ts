@@ -24,6 +24,15 @@ function rangesOverlap(a0: number, a1: number, b0: number, b1: number) {
   return Math.max(a0, b0) <= Math.min(a1, b1) + EPSILON
 }
 
+function overlapLength(a0: number, a1: number, b0: number, b1: number) {
+  return Math.max(0, Math.min(a1, b1) - Math.max(a0, b0))
+}
+
+function hasSubstantialOverlap(a: SegmentRef, b: SegmentRef) {
+  const overlap = overlapLength(a.start, a.end, b.start, b.end)
+  return overlap >= Math.min(a.length, b.length) * 0.5 - EPSILON
+}
+
 function getInteriorOrthogonalSegments(
   trace: SolvedTracePath,
   traceIndex: number,
@@ -96,7 +105,8 @@ function buildSegmentClusters(
         if (
           current.axis === next.axis &&
           Math.abs(current.coord - next.coord) <= maxDistance + EPSILON &&
-          rangesOverlap(current.start, current.end, next.start, next.end)
+          rangesOverlap(current.start, current.end, next.start, next.end) &&
+          hasSubstantialOverlap(current, next)
         ) {
           visited.add(nextIndex)
           queue.push(nextIndex)

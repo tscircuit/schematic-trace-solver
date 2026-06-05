@@ -103,7 +103,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private _runMergeSameNetTraceLinesStep() {
     this.outputTraces = mergeSameNetTraceLines({
       traces: Array.from(this.tracesMap.values()),
-      maxDistance: this.input.paddingBuffer,
+      maxDistance: this.input.paddingBuffer / 2,
     })
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.pipelineStep = "minimizing_turns"
