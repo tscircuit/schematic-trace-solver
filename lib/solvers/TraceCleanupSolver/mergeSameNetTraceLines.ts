@@ -166,7 +166,7 @@ export function mergeSameNetTraceLines({
   }
 
   for (const traceIndexes of tracesByNet.values()) {
-    if (traceIndexes.length < 2) continue
+    if (traceIndexes.length !== 2) continue
 
     const segments = traceIndexes.flatMap((traceIndex) =>
       getInteriorOrthogonalSegments(outputTraces[traceIndex]!, traceIndex),
