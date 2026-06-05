@@ -137,12 +137,16 @@ function moveSegment(
   const p2 = points[segment.pointIndex + 1]!
 
   if (segment.axis === "y") {
+    if (Math.abs(p1.y - targetCoord) < EPSILON) return false
     p1.y = targetCoord
     p2.y = targetCoord
   } else {
+    if (Math.abs(p1.x - targetCoord) < EPSILON) return false
     p1.x = targetCoord
     p2.x = targetCoord
   }
+
+  return true
 }
 
 export function mergeSameNetTraceLines({
@@ -156,6 +160,7 @@ export function mergeSameNetTraceLines({
     ...trace,
     tracePath: trace.tracePath.map((point) => ({ ...point })),
   }))
+  const changedTraceIndexes = new Set<number>()
 
   const tracesByNet = new Map<string, number[]>()
   for (const [traceIndex, trace] of outputTraces.entries()) {
@@ -177,17 +182,22 @@ export function mergeSameNetTraceLines({
       if (cluster.length < 2) continue
       const targetCoord = getClusterTargetCoord(cluster)
       for (const segment of cluster) {
-        moveSegment(
+        const changed = moveSegment(
           outputTraces[segment.traceIndex]!.tracePath,
           segment,
           targetCoord,
         )
+        if (changed) changedTraceIndexes.add(segment.traceIndex)
       }
     }
   }
 
-  return outputTraces.map((trace) => ({
-    ...trace,
-    tracePath: simplifyPath(trace.tracePath),
-  }))
+  return outputTraces.map((trace, traceIndex) =>
+    changedTraceIndexes.has(traceIndex)
+      ? {
+          ...trace,
+          tracePath: simplifyPath(trace.tracePath),
+        }
+      : trace,
+  )
 }
