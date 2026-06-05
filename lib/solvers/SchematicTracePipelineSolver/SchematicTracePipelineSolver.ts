@@ -27,6 +27,7 @@ import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementS
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -391,6 +392,26 @@ export class SchematicTracePipelineSolver extends BaseSolver {
 
   getCurrentPhase(): string {
     return this.pipelineDef[this.currentPipelineStepIndex]?.solverName ?? "none"
+  }
+
+  getOutput(): { traces: SolvedTracePath[]; netLabelPlacements: NetLabelPlacement[] } {
+    const traces =
+      this.netLabelNetLabelCollisionSolver?.getOutput
+        ? this.netLabelTraceCollisionSolver?.getOutput().traces
+        : this.netLabelTraceCollisionSolver?.getOutput().traces ??
+          this.traceCleanupSolver?.getOutput().traces ??
+          this.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
+          this.schematicTraceLinesSolver?.solvedTracePaths ??
+          []
+
+    const netLabelPlacements =
+      this.netLabelNetLabelCollisionSolver?.getOutput().netLabelPlacements ??
+      this.netLabelTraceCollisionSolver?.getOutput().netLabelPlacements ??
+      this.traceLabelOverlapAvoidanceSolver?.getOutput().netLabelPlacements ??
+      this.netLabelPlacementSolver?.netLabelPlacements ??
+      []
+
+    return { traces: traces ?? [], netLabelPlacements }
   }
 
   override visualize(): GraphicsObject {
