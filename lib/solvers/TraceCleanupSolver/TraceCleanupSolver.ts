@@ -20,11 +20,13 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { mergeNearbySameNetSegments } from "./mergeNearbySameNetSegments"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "merging_same_net_segments"
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
@@ -66,10 +68,10 @@ export class TraceCleanupSolver extends BaseSolver {
         this.outputTraces = output.traces
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "merging_same_net_segments"
       } else if (this.activeSubSolver.failed) {
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "merging_same_net_segments"
       }
       return
     }
@@ -77,6 +79,9 @@ export class TraceCleanupSolver extends BaseSolver {
     switch (this.pipelineStep) {
       case "untangling_traces":
         this._runUntangleTracesStep()
+        break
+      case "merging_same_net_segments":
+        this._runMergeNearbySameNetSegmentsStep()
         break
       case "minimizing_turns":
         this._runMinimizeTurnsStep()
@@ -94,12 +99,19 @@ export class TraceCleanupSolver extends BaseSolver {
     })
   }
 
+  private _runMergeNearbySameNetSegmentsStep() {
+    this.outputTraces = mergeNearbySameNetSegments(
+      Array.from(this.tracesMap.values()),
+    )
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.traceIdQueue = Array.from(this.outputTraces.map((e) => e.mspPairId))
+    this.pipelineStep = "minimizing_turns"
+  }
+
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
       this.pipelineStep = "balancing_l_shapes"
-      this.traceIdQueue = Array.from(
-        this.input.allTraces.map((e) => e.mspPairId),
-      )
+      this.traceIdQueue = Array.from(this.outputTraces.map((e) => e.mspPairId))
       return
     }
 
