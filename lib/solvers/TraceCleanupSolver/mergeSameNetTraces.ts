@@ -4,7 +4,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
  * Merges same-net trace segments that are close together by aligning them to the same X or Y coordinate.
  */
 export const mergeSameNetTraces = (traces: SolvedTracePath[]): SolvedTracePath[] => {
-  const TOLERANCE = 0.05
+  const TOLERANCE = 0.01
   const updatedTraces = [...traces]
 
   // Group traces by net
