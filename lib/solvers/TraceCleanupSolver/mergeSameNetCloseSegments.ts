@@ -109,13 +109,15 @@ const findSameNetSegmentClusters = (
         if (visited.has(j)) continue
 
         const candidate = sorted[j]!
-        const touchesCluster = cluster.some(
+        const staysWithinAxisTolerance = cluster.every(
           (existing) =>
-            Math.abs(existing.fixedCoord - candidate.fixedCoord) <= tolerance &&
-            rangesAreClose(existing, candidate, tolerance),
+            Math.abs(existing.fixedCoord - candidate.fixedCoord) <= tolerance,
+        )
+        const rangesTouchCluster = cluster.some((existing) =>
+          rangesAreClose(existing, candidate, tolerance),
         )
 
-        if (touchesCluster) {
+        if (staysWithinAxisTolerance && rangesTouchCluster) {
           cluster.push(candidate)
           visited.add(j)
         }
