@@ -1,6 +1,7 @@
 import type { GraphicsObject, Line } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem } from "lib/types/InputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
@@ -102,6 +103,12 @@ export class TraceCleanupSolver extends BaseSolver {
   private _runMergeSameNetSegmentsStep() {
     this.outputTraces = mergeSameNetTraceSegments(
       Array.from(this.tracesMap.values()),
+      {
+        staticObstacles: getObstacleRects(this.input.inputProblem),
+        allLabelPlacements: this.input.allLabelPlacements,
+        mergedLabelNetIdMap: this.input.mergedLabelNetIdMap,
+        paddingBuffer: this.input.paddingBuffer,
+      },
     )
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.pipelineStep = "minimizing_turns"

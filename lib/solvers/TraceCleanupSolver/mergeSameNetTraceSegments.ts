@@ -1,16 +1,27 @@
 import type { Point } from "@tscircuit/math-utils"
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import {
   isHorizontal,
   isVertical,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import type { ChipWithBounds } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import { hasCollisions } from "./hasCollisions"
 import { isSegmentAnEndpointSegment } from "./isSegmentAnEndpointSegment"
 import { simplifyPath } from "./simplifyPath"
 
 const SAME_AXIS_TOLERANCE = 0.2
 const RANGE_GAP_TOLERANCE = 0.05
+const TRACE_WIDTH = 0.01
 
 type SegmentOrientation = "horizontal" | "vertical"
+
+type ObstacleBounds = {
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
+}
 
 interface TraceSegment {
   traceIndex: number
@@ -27,6 +38,13 @@ interface AxisAdjustment {
   pointIndex: number
   axis: "x" | "y"
   value: number
+}
+
+interface MergeSameNetTraceSegmentsOptions {
+  staticObstacles?: ChipWithBounds[]
+  allLabelPlacements?: NetLabelPlacement[]
+  mergedLabelNetIdMap?: Record<string, Set<string>>
+  paddingBuffer?: number
 }
 
 const rangesAreClose = (a: TraceSegment, b: TraceSegment) => {
@@ -78,6 +96,111 @@ const getTraceSegments = (traces: SolvedTracePath[]): TraceSegment[] => {
   }
 
   return segments
+}
+
+const adjustedSegmentPath = (
+  traces: SolvedTracePath[],
+  segment: TraceSegment,
+  axisValue: number,
+): [Point, Point] => {
+  const trace = traces[segment.traceIndex]!
+  const p1 = trace.tracePath[segment.segmentIndex]!
+  const p2 = trace.tracePath[segment.segmentIndex + 1]!
+
+  if (segment.orientation === "horizontal") {
+    return [
+      { x: p1.x, y: axisValue },
+      { x: p2.x, y: axisValue },
+    ]
+  }
+
+  return [
+    { x: axisValue, y: p1.y },
+    { x: axisValue, y: p2.y },
+  ]
+}
+
+const getTraceObstacleBounds = (
+  traces: SolvedTracePath[],
+  candidateNetId: string,
+  excludedTraceIndexes: Set<number>,
+): ObstacleBounds[] =>
+  traces.flatMap((trace, traceIndex) => {
+    if (excludedTraceIndexes.has(traceIndex)) return []
+    if (trace.globalConnNetId === candidateNetId) return []
+
+    return trace.tracePath.slice(0, -1).map((p1, segmentIndex) => {
+      const p2 = trace.tracePath[segmentIndex + 1]!
+
+      return {
+        minX: Math.min(p1.x, p2.x) - TRACE_WIDTH / 2,
+        minY: Math.min(p1.y, p2.y) - TRACE_WIDTH / 2,
+        maxX: Math.max(p1.x, p2.x) + TRACE_WIDTH / 2,
+        maxY: Math.max(p1.y, p2.y) + TRACE_WIDTH / 2,
+      }
+    })
+  })
+
+const isLabelAssociatedWithNet = (
+  label: NetLabelPlacement,
+  globalConnNetId: string,
+  mergedLabelNetIdMap: Record<string, Set<string>>,
+) => {
+  const originalNetIds = mergedLabelNetIdMap[label.globalConnNetId]
+  if (originalNetIds) return originalNetIds.has(globalConnNetId)
+
+  return label.globalConnNetId === globalConnNetId
+}
+
+const getLabelObstacleBounds = (
+  labels: NetLabelPlacement[],
+  candidateNetId: string,
+  mergedLabelNetIdMap: Record<string, Set<string>>,
+  paddingBuffer: number,
+): ObstacleBounds[] =>
+  labels
+    .filter(
+      (label) =>
+        !isLabelAssociatedWithNet(label, candidateNetId, mergedLabelNetIdMap),
+    )
+    .map((label) => ({
+      minX: label.center.x - label.width / 2 - paddingBuffer,
+      maxX: label.center.x + label.width / 2 + paddingBuffer,
+      minY: label.center.y - label.height / 2 - paddingBuffer,
+      maxY: label.center.y + label.height / 2 + paddingBuffer,
+    }))
+
+const canMergeSegmentsWithoutCollisions = (
+  traces: SolvedTracePath[],
+  a: TraceSegment,
+  b: TraceSegment,
+  mergedAxisValue: number,
+  options: MergeSameNetTraceSegmentsOptions,
+) => {
+  const obstacles = [
+    ...(options.staticObstacles ?? []),
+    ...getTraceObstacleBounds(
+      traces,
+      a.globalConnNetId,
+      new Set([a.traceIndex, b.traceIndex]),
+    ),
+    ...getLabelObstacleBounds(
+      options.allLabelPlacements ?? [],
+      a.globalConnNetId,
+      options.mergedLabelNetIdMap ?? {},
+      options.paddingBuffer ?? 0,
+    ),
+  ]
+
+  if (obstacles.length === 0) return true
+
+  return (
+    !hasCollisions(
+      adjustedSegmentPath(traces, a, mergedAxisValue),
+      obstacles,
+    ) &&
+    !hasCollisions(adjustedSegmentPath(traces, b, mergedAxisValue), obstacles)
+  )
 }
 
 const addAdjustment = (
@@ -143,6 +266,7 @@ const applyAdjustments = (
 
 export const mergeSameNetTraceSegments = (
   traces: SolvedTracePath[],
+  options: MergeSameNetTraceSegmentsOptions = {},
 ): SolvedTracePath[] => {
   const segments = getTraceSegments(traces)
   const adjustments: AxisAdjustment[] = []
@@ -160,6 +284,18 @@ export const mergeSameNetTraceSegments = (
       if (!rangesAreClose(a, b)) continue
 
       const mergedAxisValue = (a.axisValue + b.axisValue) / 2
+      if (
+        !canMergeSegmentsWithoutCollisions(
+          traces,
+          a,
+          b,
+          mergedAxisValue,
+          options,
+        )
+      ) {
+        continue
+      }
+
       addAdjustment(adjustments, a, mergedAxisValue)
       addAdjustment(adjustments, b, mergedAxisValue)
     }
