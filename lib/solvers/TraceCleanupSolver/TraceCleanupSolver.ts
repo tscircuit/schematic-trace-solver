@@ -118,11 +118,13 @@ export class TraceCleanupSolver extends BaseSolver {
     for (const trace of this.outputTraces) {
       if (!trace.mspPairId) continue
 
-      // FIX 2: Use mergedLabelNetIdMap to correctly group traces by net instead
+      // Use mergedLabelNetIdMap to correctly group traces by net instead
       // of splitting on '_', which is fragile and produces wrong keys for IDs
       // like "net_GND_to_net_VCC" (split would yield "net" for every trace).
       let baseNetId: string | undefined
-      for (const [netId, pairIds] of Object.entries(this.input.mergedLabelNetIdMap)) {
+      for (const [netId, pairIds] of Object.entries(
+        this.input.mergedLabelNetIdMap,
+      )) {
         if (pairIds.has(trace.mspPairId)) {
           baseNetId = netId
           break
@@ -147,10 +149,16 @@ export class TraceCleanupSolver extends BaseSolver {
 
           for (const pointA of traceA.tracePath) {
             for (const pointB of traceB.tracePath) {
-              if (Math.abs(pointA.y - pointB.y) > 0 && Math.abs(pointA.y - pointB.y) <= SNAP_THRESHOLD) {
+              if (
+                Math.abs(pointA.y - pointB.y) > 0 &&
+                Math.abs(pointA.y - pointB.y) <= SNAP_THRESHOLD
+              ) {
                 pointB.y = pointA.y
               }
-              if (Math.abs(pointA.x - pointB.x) > 0 && Math.abs(pointA.x - pointB.x) <= SNAP_THRESHOLD) {
+              if (
+                Math.abs(pointA.x - pointB.x) > 0 &&
+                Math.abs(pointA.x - pointB.x) <= SNAP_THRESHOLD
+              ) {
                 pointB.x = pointA.x
               }
             }
@@ -159,9 +167,8 @@ export class TraceCleanupSolver extends BaseSolver {
       }
     }
 
-    // FIX 1: Was `for (const trace of traces)` — `traces` was never declared.
-    // The correct reference is `this.outputTraces`, which is already mutated
-    // in-place by the snapping loop above.
+    // Fix: was `for (const trace of traces)` — `traces` was never declared.
+    // The correct reference is `this.outputTraces`.
     for (const trace of this.outputTraces) {
       const cleanPath = []
       for (const p of trace.tracePath) {
@@ -169,7 +176,9 @@ export class TraceCleanupSolver extends BaseSolver {
           cleanPath.push(p)
         } else {
           const last = cleanPath[cleanPath.length - 1]
-          if (!(Math.abs(last.x - p.x) < 0.001 && Math.abs(last.y - p.y) < 0.001)) {
+          if (
+            !(Math.abs(last.x - p.x) < 0.001 && Math.abs(last.y - p.y) < 0.001)
+          ) {
             cleanPath.push(p)
           }
         }
@@ -177,13 +186,10 @@ export class TraceCleanupSolver extends BaseSolver {
       trace.tracePath = cleanPath
     }
 
-    // FIX 3: Was `this.outputTraces = traces` — wrong variable (undeclared),
-    // and unnecessary since outputTraces was already mutated in-place above.
-    // Only the tracesMap rebuild is needed here.
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.solved = true
   }
- // work jhare
+
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
     const targetMspConnectionPairId = this.traceIdQueue.shift()!
     this.activeTraceId = targetMspConnectionPairId
@@ -245,5 +251,4 @@ export class TraceCleanupSolver extends BaseSolver {
     }
     return graphics
   }
-
 }
