@@ -183,7 +183,7 @@ export class TraceCleanupSolver extends BaseSolver {
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.solved = true
   }
-
+ // work jhare
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
     const targetMspConnectionPairId = this.traceIdQueue.shift()!
     this.activeTraceId = targetMspConnectionPairId
@@ -245,4 +245,5 @@ export class TraceCleanupSolver extends BaseSolver {
     }
     return graphics
   }
+
 }
