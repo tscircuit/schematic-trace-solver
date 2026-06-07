@@ -4,7 +4,23 @@ import {
   isVertical,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
+export const removeDuplicateConsecutivePoints = (
+  points: { x: number; y: number }[],
+): { x: number; y: number }[] => {
+  if (points.length === 0) return points
+  const result: { x: number; y: number }[] = [points[0]]
+  for (let i = 1; i < points.length; i++) {
+    const prev = result[result.length - 1]
+    const curr = points[i]
+    if (curr.x !== prev.x || curr.y !== prev.y) {
+      result.push(curr)
+    }
+  }
+  return result
+}
+
 export const simplifyPath = (path: Point[]): Point[] => {
+  path = removeDuplicateConsecutivePoints(path) as Point[]
   if (path.length < 3) return path
   const newPath: Point[] = [path[0]]
   for (let i = 1; i < path.length - 1; i++) {
