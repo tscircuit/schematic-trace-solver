@@ -34,7 +34,7 @@ test("mergeNearbySameNetSegments removes a tiny horizontal same-net jog without 
   ])
 })
 
-test("mergeNearbySameNetSegments aligns close same-net internal segments", () => {
+test("mergeNearbySameNetSegments aligns close same-net horizontal internal segments to the same Y", () => {
   const [referenceTrace, traceToAlign, otherNetTrace] =
     mergeNearbySameNetSegments([
       makeTrace("reference", "net-a", [
@@ -73,6 +73,51 @@ test("mergeNearbySameNetSegments aligns close same-net internal segments", () =>
     { x: 1, y: 3 },
     { x: 1, y: 1.05 },
     { x: 3, y: 1.05 },
+    { x: 3, y: 3 },
+  ])
+})
+
+test("mergeNearbySameNetSegments aligns close same-net vertical internal segments to the same X", () => {
+  const [referenceTrace, traceToAlign, otherNetTrace] =
+    mergeNearbySameNetSegments([
+      makeTrace("vertical-reference", "net-a", [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 1, y: 4 },
+        { x: 0, y: 4 },
+      ]),
+      makeTrace("vertical-same-net", "net-a", [
+        { x: 2, y: 1 },
+        { x: 1.05, y: 1 },
+        { x: 1.05, y: 3 },
+        { x: 2, y: 3 },
+      ]),
+      makeTrace("vertical-other-net", "net-b", [
+        { x: 3, y: 1 },
+        { x: 1.05, y: 1 },
+        { x: 1.05, y: 3 },
+        { x: 3, y: 3 },
+      ]),
+    ])
+
+  expect(referenceTrace.tracePath).toEqual([
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    { x: 1, y: 4 },
+    { x: 0, y: 4 },
+  ])
+
+  expect(traceToAlign.tracePath).toEqual([
+    { x: 2, y: 1 },
+    { x: 1, y: 1 },
+    { x: 1, y: 3 },
+    { x: 2, y: 3 },
+  ])
+
+  expect(otherNetTrace.tracePath).toEqual([
+    { x: 3, y: 1 },
+    { x: 1.05, y: 1 },
+    { x: 1.05, y: 3 },
     { x: 3, y: 3 },
   ])
 })
