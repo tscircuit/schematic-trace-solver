@@ -341,3 +341,36 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     return graphics
   }
 }
+
+
+- No extra comments
+
+// FILE: lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/SchematicTraceSingleLineSolver.ts
+import { getBounds, type GraphicsObject } from "graphics-debug"
+import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { Guideline } from "lib/solvers/GuidelinesSolver/GuidelinesSolver"
+import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type {
+  ChipId,
+  InputChip,
+  InputPin,
+  InputProblem,
+  PinId,
+} from "lib/types/InputProblem"
+import { calculateElbow } from "calculate-elbow"
+import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
+import { getRestrictedCenterLines } from "./getRestrictedCenterLines"
+
+type ChipPin = InputPin & { chipId: ChipId }
+
+export interface SolvedTracePath extends MspConnectionPair {
+  tracePath: Point[]
+  mspConnectionPairIds: MspConnectionPairId[]
+  pinIds: PinId[]
+}
+
+export class SchematicTraceLinesSolver extends BaseSolver {
+  inputProblem: InputProblem
+  mspConnection
