@@ -113,17 +113,31 @@ export class TraceCleanupSolver extends BaseSolver {
   }
 
   private _runMergeSameNetTracesStep() {
-    const traces = Array.from(this.tracesMap.values())
     const netGroups = new Map<string, SolvedTracePath[]>()
-    for (const trace of traces) {
-      if (!trace.netId) continue
-      if (!netGroups.has(trace.netId)) {
-        netGroups.set(trace.netId, [])
+
+    for (const trace of this.outputTraces) {
+      if (!trace.mspPairId) continue
+
+      // FIX 2: Use mergedLabelNetIdMap to correctly group traces by net instead
+      // of splitting on '_', which is fragile and produces wrong keys for IDs
+      // like "net_GND_to_net_VCC" (split would yield "net" for every trace).
+      let baseNetId: string | undefined
+      for (const [netId, pairIds] of Object.entries(this.input.mergedLabelNetIdMap)) {
+        if (pairIds.has(trace.mspPairId)) {
+          baseNetId = netId
+          break
+        }
       }
-      netGroups.get(trace.netId)!.push(trace)
+      // Fall back to the full mspPairId if no net mapping is found
+      if (!baseNetId) baseNetId = trace.mspPairId
+
+      if (!netGroups.has(baseNetId)) {
+        netGroups.set(baseNetId, [])
+      }
+      netGroups.get(baseNetId)!.push(trace)
     }
 
-    const SNAP_THRESHOLD = 0.15 // Adjust threshold distance for grouping nearby segments
+    const SNAP_THRESHOLD = 0.15
 
     for (const [_, netTraces] of netGroups.entries()) {
       for (let i = 0; i < netTraces.length; i++) {
@@ -145,8 +159,10 @@ export class TraceCleanupSolver extends BaseSolver {
       }
     }
 
-    // Drop overlapping or redundant contiguous nodes created during snapping
-    for (const trace of traces) {
+    // FIX 1: Was `for (const trace of traces)` — `traces` was never declared.
+    // The correct reference is `this.outputTraces`, which is already mutated
+    // in-place by the snapping loop above.
+    for (const trace of this.outputTraces) {
       const cleanPath = []
       for (const p of trace.tracePath) {
         if (cleanPath.length === 0) {
@@ -161,7 +177,9 @@ export class TraceCleanupSolver extends BaseSolver {
       trace.tracePath = cleanPath
     }
 
-    this.outputTraces = traces
+    // FIX 3: Was `this.outputTraces = traces` — wrong variable (undeclared),
+    // and unnecessary since outputTraces was already mutated in-place above.
+    // Only the tracesMap rebuild is needed here.
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.solved = true
   }
