@@ -1,43 +1,46 @@
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { InputPin, InputProblem } from "lib/types/InputProblem"
-import type { CandidateLabel } from "./types"
+def _merge_segments(self, segments):
+        """Merge overlapping segments into non-overlapping ones."""
+        merged_segments = []
+        for segment in segments:
+            if not merged_segments:
+                merged_segments.append(segment)
+                continue
+            last_segment = merged_segments[-1]
+            if last_segment._start < segment._start:
+                merged_segments[-1] = {
+                    "start": last_segment._start,
+                    "end": segment._start,
+                    "label": segment.label,
+                }
+                continue
+            if last_segment._end < segment._start:
+                merged_segments.append(segment)
+                continue
+            merged_segments[-1] = {
+                "start": last_segment._start,
+                "end": segment._start,
+                "label": segment.label,
+            }
+        return merged_segments
 
-export const getPinMap = (inputProblem: InputProblem) => {
-  const pinMap: Record<string, InputPin & { chipId: string }> = {}
-  for (const chip of inputProblem.chips) {
-    for (const pin of chip.pins) {
-      pinMap[pin.pinId] = { ...pin, chipId: chip.chipId }
-    }
-  }
-  return pinMap
-}
+    def _split_segments_by_start(self, segments):
+        """Split segments based on their start positions."""
+        new_segments = []
+        for segment in segments:
+            if segment._start < 0:
+                new_segments.append(segment)
+            else:
+                new_segments.append({
+                    "start": segment._start,
+                    "end": segment._start + segment._length,
+                    "label": segment.label,
+                })
+        return new_segments
 
-export const getTracePins = (
-  label: NetLabelPlacement,
-  pinMap: Record<string, InputPin & { chipId: string }>,
-): SolvedTracePath["pins"] => {
-  const pins = label.pinIds.flatMap((pinId) => {
-    const pin = pinMap[pinId]
-    return pin ? [pin] : []
-  })
-
-  if (pins.length >= 2) return [pins[0]!, pins[1]!]
-  if (pins.length === 1) return [pins[0]!, pins[0]!]
-
-  const syntheticPin = {
-    pinId: `${label.globalConnNetId}-netlabel-anchor`,
-    x: label.anchorPoint.x,
-    y: label.anchorPoint.y,
-    chipId: "available-net-orientation",
-  }
-  return [syntheticPin, syntheticPin]
-}
-
-export const toNetLabelPlacementPatch = (candidate: CandidateLabel) => ({
-  orientation: candidate.orientation,
-  anchorPoint: candidate.anchorPoint,
-  center: candidate.center,
-  width: candidate.width,
-  height: candidate.height,
-})
+    def _merge_segments_by_start(self, segments):
+        """Merge overlapping segments based on their start positions."""
+        merged_segments = []
+        for segment in segments:
+            if not merged_segments:
+                merged_segments.append(segment)
+                continue
