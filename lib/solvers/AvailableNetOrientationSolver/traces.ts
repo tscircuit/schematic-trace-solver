@@ -1,43 +1,30 @@
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { InputPin, InputProblem } from "lib/types/InputProblem"
-import type { CandidateLabel } from "./types"
+---
+// FILE: lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2.ts
+import { getBounds, type GraphicsObject } from "graphics-debug"
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { calculateElbow } from "calculate-elbow"
+import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
+import { getObstacleRects, type ChipWithBounds } from "./rect"
+import { findFirstCollision, isHorizontal, isVertical } from "./collisions"
+import {
+  aabbFromPoints,
+  candidateMidsFromSet,
+  midBetweenPointAndRect,
+  type Axis,
+} from "./mid"
+import { pathKey, shiftSegmentOrth } from "./pathOps"
 
-export const getPinMap = (inputProblem: InputProblem) => {
-  const pinMap: Record<string, InputPin & { chipId: string }> = {}
-  for (const chip of inputProblem.chips) {
-    for (const pin of chip.pins) {
-      pinMap[pin.pinId] = { ...pin, chipId: chip.chipId }
-    }
-  }
-  return pinMap
-}
+type PathKey = string
 
-export const getTracePins = (
-  label: NetLabelPlacement,
-  pinMap: Record<string, InputPin & { chipId: string }>,
-): SolvedTracePath["pins"] => {
-  const pins = label.pinIds.flatMap((pinId) => {
-    const pin = pinMap[pinId]
-    return pin ? [pin] : []
-  })
+export class SchematicTraceSingleLineSolver2 extends BaseSolver {
+  pins: MspConnectionPair["pins"]
+  inputProblem: InputProblem
+  chipMap: Record<string, InputChip>
 
-  if (pins.length >= 2) return [pins[0]!, pins[1]!]
-  if (pins.length === 1) return [pins[0]!, pins[0]!]
+  obstacles: ChipWithBounds[]
+  rectById: Map<string, ChipWithBounds>
+  aabb: { minX: number; maxX: number; minY: number; maxY: number }
 
-  const syntheticPin = {
-    pinId: `${label.globalConnNetId}-netlabel-anchor`,
-    x: label.anchorPoint.x,
-    y: label.anchorPoint.y,
-    chipId: "available-net-orientation",
-  }
-  return [syntheticPin, syntheticPin]
-}
-
-export const toNetLabelPlacementPatch = (candidate: CandidateLabel) => ({
-  orientation: candidate.orientation,
-  anchorPoint: candidate.anchorPoint,
-  center: candidate.center,
-  width: candidate.width,
-  height: candidate.height,
-})
+  // Handle the merge logic
+  merge_same_net_trace_lines = (lines: MspConnectionPair[]): MspConnectionPair
