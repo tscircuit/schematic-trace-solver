@@ -67,6 +67,18 @@ export class LongDistancePairSolver extends BaseSolver {
       }
     }
 
+    // Pins that participate in at least one direct (wire) connection. Only these
+    // are eligible to be routed as traces -- pins that are connected exclusively
+    // through net connections (net labels) must never be routed here, otherwise
+    // a net-label-only net (e.g. two capacitors sharing GND/VCC only via labels)
+    // would get a spurious trace drawn between its pins. See issue #79.
+    const directConnectedPinIds = new Set<PinId>()
+    for (const directConn of inputProblem.directConnections) {
+      for (const pinId of directConn.pinIds) {
+        directConnectedPinIds.add(pinId)
+      }
+    }
+
     // 2. Generate candidate pairs using N-Nearest-Neighbors approach
     const candidatePairs: Array<
       [InputPin & { chipId: string }, InputPin & { chipId: string }]
@@ -78,7 +90,9 @@ export class LongDistancePairSolver extends BaseSolver {
       if (allPinIdsInNet.length < 2) continue
 
       const unconnectedPinIds = allPinIdsInNet.filter(
-        (pinId) => !primaryConnectedPinIds.has(pinId),
+        (pinId) =>
+          !primaryConnectedPinIds.has(pinId) &&
+          directConnectedPinIds.has(pinId),
       )
 
       for (const unconnectedPinId of unconnectedPinIds) {
@@ -86,7 +100,11 @@ export class LongDistancePairSolver extends BaseSolver {
         if (!sourcePin) continue
 
         const neighbors = allPinIdsInNet
-          .filter((otherPinId) => otherPinId !== unconnectedPinId)
+          .filter(
+            (otherPinId) =>
+              otherPinId !== unconnectedPinId &&
+              directConnectedPinIds.has(otherPinId),
+          )
           .flatMap((otherPinId) => {
             const targetPin = pinMap.get(otherPinId)
             if (!targetPin) return [] // Gracefully handle missing pins
