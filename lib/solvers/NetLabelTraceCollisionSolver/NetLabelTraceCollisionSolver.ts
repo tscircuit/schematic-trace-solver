@@ -292,3 +292,33 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
     return graphics
   }
 }
+
+
+---
+
+import * as graphicsDebug from "graphics-debug"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import { SingleOverlapSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/SingleOverlapSolver/SingleOverlapSolver"
+import { getColorFromString } from "lib/utils/getColorFromString"
+
+function buildMergedObstacleLabel(
+  label: string | undefined,
+  netIds: number[] = [],
+): NetLabelPlacement {
+  const rectBounds = getRectBounds(label, netIds)
+  if (!rectBounds) return null
+
+  const overlap = segmentIntersectsRect(rectBounds, netIds)
+  if (overlap) {
+    // If there's a collision, we need to build the merged label
+    let newBound: Bounds = {
+      minX: rectBounds.minX,
+      minY: rectBounds.minY,
+      maxX: rectBounds.maxX,
+      maxY: rectBounds.maxY,
+    }
+    const
