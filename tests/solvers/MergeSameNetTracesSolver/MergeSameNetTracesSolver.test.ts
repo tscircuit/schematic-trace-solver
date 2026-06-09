@@ -5,19 +5,17 @@ import type { SolvedTracePath } from "../../../lib/solvers/SchematicTraceLinesSo
 
 test("MergeSameNetTracesSolver merges parallel traces of the same net", () => {
   const inputProblem: InputProblem = {
-    chipMap: {},
-    chipPinMap: {},
-    netMap: {},
-    pinStrongConnMap: {},
-    netConnMap: {},
-    chipGap: 0,
-    partitionGap: 0,
+    chips: [],
+    directConnections: [],
+    netConnections: [],
+    availableNetLabelOrientations: {},
   }
 
   const inputTracePaths: SolvedTracePath[] = [
     {
       mspPairId: "pair1",
       globalConnNetId: "net1",
+      dcConnNetId: "net1",
       tracePath: [
         { x: 0, y: 0 },
         { x: 1, y: 0 },
@@ -31,6 +29,7 @@ test("MergeSameNetTracesSolver merges parallel traces of the same net", () => {
     {
       mspPairId: "pair2",
       globalConnNetId: "net1",
+      dcConnNetId: "net1",
       tracePath: [
         { x: 0, y: 1 },
         { x: 1.2, y: 1 },
