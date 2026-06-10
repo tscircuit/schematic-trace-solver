@@ -347,7 +347,11 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     const cleaned: typeof pts = []
     for (const p of pts) {
       const prev = cleaned[cleaned.length - 1]
-      if (!prev || Math.abs(prev.x - p.x) > EPS || Math.abs(prev.y - p.y) > EPS) {
+      if (
+        !prev ||
+        Math.abs(prev.x - p.x) > EPS ||
+        Math.abs(prev.y - p.y) > EPS
+      ) {
         cleaned.push(p)
       }
     }
