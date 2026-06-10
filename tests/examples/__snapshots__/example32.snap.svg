@@ -114,7 +114,7 @@ orientation: x-" data-x="-2.38" data-y="3" cx="178.5308977846871" cy="158.942868
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y-" data-x="-2.9699999999999998" data-y="2.9699999999999998" cx="146.42829382044306" cy="160.57520404197436" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y-" data-x="-3.34" data-y="2.9699999999999998" cx="126.29615235134085" cy="160.57520404197436" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -150,7 +150,7 @@ orientation: x-" data-x="0.09999999999999981" data-y="2.4" cx="313.4706568208316
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-1.25" data-y="-1.5" cx="240.01554605518848" cy="403.793237465993" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y+" data-x="-1.3166666666666667" data-y="-1.5" cx="236.38813317787276" cy="403.793237465993" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -170,7 +170,7 @@ orientation: x-" data-x="3.45" data-y="1.5" cx="495.74815390594637" cy="240.5596
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-3" data-y="-1.5" cx="144.79595802565098" cy="403.793237465993" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y+" data-x="-2.75" data-y="-1.5" cx="158.3987563155849" cy="403.793237465993" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -178,7 +178,7 @@ orientation: x+" data-x="2.7" data-y="2.4" cx="454.93975903614455" cy="191.58958
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="3.4924999999999997" data-y="-1.5" cx="498.06062961523514" cy="403.793237465993" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y+" data-x="3.2466666666666666" data-y="-1.5" cx="484.6845446301334" cy="403.793237465993" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="-4.475,2.9699999999999998 -2.38,3" data-type="line" data-label="" points="64.53944811504081,160.57520404197436 178.5308977846871,158.94286824718228" fill="none" stroke="hsl(192, 100%, 50%, 0.8)" stroke-width="1" />
@@ -265,7 +265,7 @@ globalConnNetId: connectivity_net0" data-x="-2.606" data-y="3" x="153.9914496696
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
-globalConnNetId: connectivity_net6" data-x="-2.9699999999999998" data-y="2.82" x="140.9871745044695" y="160.57520404197436" width="10.882238631947132" height="16.323357947920698" fill="#00000066" stroke="#000000" stroke-width="0.018378571428571428" />
+globalConnNetId: connectivity_net6" data-x="-3.34" data-y="2.82" x="120.85503303536726" y="160.57520404197436" width="10.88223863194716" height="16.323357947920698" fill="#00000066" stroke="#000000" stroke-width="0.018378571428571428" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
@@ -301,7 +301,7 @@ globalConnNetId: connectivity_net2" data-x="-0.1250000000000002" data-y="2.4" x=
   </g>
   <g>
     <rect data-type="rect" data-label="netId: .R2 &gt; .pin2 to .U1 &gt; .THRES
-globalConnNetId: connectivity_net2" data-x="-1.25" data-y="-1.275" x="234.5744267392149" y="379.3082005441119" width="10.882238631947132" height="24.48503692188109" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.018378571428571428" />
+globalConnNetId: connectivity_net2" data-x="-1.3166666666666667" data-y="-1.275" x="230.9470138618992" y="379.3082005441119" width="10.88223863194716" height="24.48503692188109" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.018378571428571428" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: .U1 &gt; .OUT to .R3 &gt; .pin1
@@ -321,7 +321,7 @@ globalConnNetId: connectivity_net1" data-x="3.224" data-y="1.5" x="471.208705790
   </g>
   <g>
     <rect data-type="rect" data-label="netId: .U1 &gt; .DISCH to .R2 &gt; .pin1
-globalConnNetId: connectivity_net3" data-x="-3" data-y="-1.275" x="139.3548387096774" y="379.3082005441119" width="10.882238631947132" height="24.48503692188109" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.018378571428571428" />
+globalConnNetId: connectivity_net3" data-x="-2.75" data-y="-1.275" x="152.95763699961134" y="379.3082005441119" width="10.882238631947132" height="24.48503692188109" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.018378571428571428" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: .U1 &gt; .DISCH to .R2 &gt; .pin1
@@ -329,7 +329,7 @@ globalConnNetId: connectivity_net3" data-x="2.926" data-y="2.4" x="454.994170229
   </g>
   <g>
     <rect data-type="rect" data-label="netId: .R3 &gt; .pin2 to .D1 &gt; .pin1
-globalConnNetId: connectivity_net5" data-x="3.4924999999999997" data-y="-1.275" x="492.6195102992615" y="379.3082005441119" width="10.882238631947189" height="24.48503692188109" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.018378571428571428" />
+globalConnNetId: connectivity_net5" data-x="3.2466666666666666" data-y="-1.275" x="479.2434253141598" y="379.3082005441119" width="10.882238631947189" height="24.48503692188109" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.018378571428571428" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
