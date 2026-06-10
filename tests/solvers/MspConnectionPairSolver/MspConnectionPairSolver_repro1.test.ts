@@ -10,5 +10,8 @@ test("MspConnectionPairSolver_repro1", () => {
 
   solver.solve()
 
-  expect(solver.mspConnectionPairs.length).toBe(4)
+  expect(solver.mspConnectionPairs).toHaveLength(2)
+  expect(
+    solver.mspConnectionPairs.map((pair) => pair.userNetId).sort(),
+  ).toEqual(["EN", "VCC"])
 })
