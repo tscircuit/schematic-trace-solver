@@ -1,10 +1,15 @@
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import { findFirstCollision } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { InputProblem } from "lib/types/InputProblem"
 import { applyJogToTerminalSegment } from "./applyJogToTrace"
 
 type ConnNetId = string
+
+const EPS = 1e-6
 
 export interface OverlappingTraceSegmentLocator {
   connNetId: string
@@ -17,18 +22,21 @@ export interface OverlappingTraceSegmentLocator {
 export class TraceOverlapIssueSolver extends BaseSolver {
   overlappingTraceSegments: OverlappingTraceSegmentLocator[]
   traceNetIslands: Record<ConnNetId, Array<SolvedTracePath>>
+  obstacleRects: ReturnType<typeof getObstacleRects>
 
   SHIFT_DISTANCE = 0.1
 
   correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath> = {}
 
   constructor(params: {
+    inputProblem: InputProblem
     overlappingTraceSegments: OverlappingTraceSegmentLocator[]
     traceNetIslands: Record<ConnNetId, Array<SolvedTracePath>>
   }) {
     super()
     this.overlappingTraceSegments = params.overlappingTraceSegments
     this.traceNetIslands = params.traceNetIslands
+    this.obstacleRects = getObstacleRects(params.inputProblem)
 
     // Only add the relevant traces to the correctedTraceMap
     for (const { connNetId, pathsWithOverlap } of this
@@ -49,13 +57,14 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     // Shift only the overlapping segments, and move the shared endpoints
     // (the last point of the previous segment and the first point of the next
     // segment) so the polyline remains orthogonal without self-overlap.
-    const EPS = 1e-6
-
     // Compute offsets for each island involved: alternate directions
-    const offsets = this.overlappingTraceSegments.map((_, idx) => {
+    const offsets = this.overlappingTraceSegments.map((group, idx) => {
       const n = Math.floor(idx / 2) + 1
       const signed = idx % 2 === 0 ? -n : n
-      return signed * this.SHIFT_DISTANCE
+      return this.getObstacleAwareOffset({
+        group,
+        offset: signed * this.SHIFT_DISTANCE,
+      })
     })
 
     const eq = (a: number, b: number) => Math.abs(a - b) < EPS
@@ -81,8 +90,6 @@ export class TraceOverlapIssueSolver extends BaseSolver {
         const original = this.traceNetIslands[group.connNetId][pathIdx]!
         const current = this.correctedTraceMap[original.mspPairId] ?? original
         const pts = current.tracePath.map((p) => ({ ...p }))
-
-        const segIdxs = Array.from(segIdxSet).sort((a, b) => a - b)
 
         const segIdxsRev = Array.from(segIdxSet)
           .sort((a, b) => a - b)
@@ -140,6 +147,82 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     })
 
     this.solved = true
+  }
+
+  private getObstacleAwareOffset({
+    group,
+    offset,
+  }: {
+    group: OverlappingTraceSegmentLocator
+    offset: number
+  }) {
+    const blockingCollisions = this.getBlockingCollisions({ group, offset })
+    if (blockingCollisions.length === 0) return offset
+
+    return (
+      blockingCollisions
+        .flatMap(({ start, isVertical, obstacle }) => [
+          (isVertical ? obstacle.minX - start.x : obstacle.minY - start.y) -
+            this.SHIFT_DISTANCE,
+          (isVertical ? obstacle.maxX - start.x : obstacle.maxY - start.y) +
+            this.SHIFT_DISTANCE,
+        ])
+        .filter(
+          (candidateOffset) =>
+            this.getBlockingCollisions({ group, offset: candidateOffset })
+              .length === 0,
+        )
+        .sort((a, b) => Math.abs(a - offset) - Math.abs(b - offset))[0] ??
+      offset
+    )
+  }
+
+  private getBlockingCollisions({
+    group,
+    offset,
+  }: {
+    group: OverlappingTraceSegmentLocator
+    offset: number
+  }) {
+    const blockingCollisions: Array<{
+      start: SolvedTracePath["tracePath"][number]
+      isVertical: boolean
+      obstacle: ReturnType<typeof getObstacleRects>[number]
+    }> = []
+
+    for (const {
+      solvedTracePathIndex,
+      traceSegmentIndex,
+    } of group.pathsWithOverlap) {
+      const trace = this.traceNetIslands[group.connNetId][solvedTracePathIndex]!
+      const start = trace.tracePath[traceSegmentIndex]
+      const end = trace.tracePath[traceSegmentIndex + 1]
+      if (!start || !end) continue
+
+      const isVertical = Math.abs(start.x - end.x) < EPS
+      const isHorizontal = Math.abs(start.y - end.y) < EPS
+      if (!isVertical && !isHorizontal) continue
+
+      const shiftedSegment = isVertical
+        ? [
+            { ...start, x: start.x + offset },
+            { ...end, x: end.x + offset },
+          ]
+        : [
+            { ...start, y: start.y + offset },
+            { ...end, y: end.y + offset },
+          ]
+      const collision = findFirstCollision(shiftedSegment, this.obstacleRects)
+      if (collision) {
+        blockingCollisions.push({
+          start,
+          isVertical,
+          obstacle: collision.rect,
+        })
+      }
+    }
+
+    return blockingCollisions
   }
 
   override visualize(): GraphicsObject {
