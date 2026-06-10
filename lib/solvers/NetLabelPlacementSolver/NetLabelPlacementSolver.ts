@@ -55,6 +55,11 @@ export interface NetLabelPlacement {
   center: Point
 }
 
+const getTracePinIds = (trace: SolvedTracePath) =>
+  trace.pinIds?.length
+    ? trace.pinIds
+    : [trace.pins[0].pinId, trace.pins[1].pinId]
+
 /**
  * Places net labels in an available orientation along a trace in each group.
  *
@@ -154,11 +159,12 @@ export class NetLabelPlacementSolver extends BaseSolver {
       const adj: Record<string, Set<string>> = {}
       for (const pid of pinsInNet) adj[pid] = new Set()
       for (const t of byGlobal[globalConnNetId] ?? []) {
-        const a = t.pins[0].pinId
-        const b = t.pins[1].pinId
-        if (adj[a] && adj[b]) {
-          adj[a].add(b)
-          adj[b].add(a)
+        const tracePinIds = getTracePinIds(t).filter((pinId) => adj[pinId])
+        for (let i = 1; i < tracePinIds.length; i++) {
+          const a = tracePinIds[0]!
+          const b = tracePinIds[i]!
+          adj[a]!.add(b)
+          adj[b]!.add(a)
         }
       }
 
@@ -181,9 +187,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
         }
 
         // Collect traces fully inside this component
-        const compTraces = (byGlobal[globalConnNetId] ?? []).filter(
-          (t) =>
-            component.has(t.pins[0].pinId) && component.has(t.pins[1].pinId),
+        const compTraces = (byGlobal[globalConnNetId] ?? []).filter((t) =>
+          getTracePinIds(t).some((pinId) => component.has(pinId)),
         )
 
         if (compTraces.length > 0) {
