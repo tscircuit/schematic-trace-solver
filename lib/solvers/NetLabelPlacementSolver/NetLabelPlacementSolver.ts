@@ -250,6 +250,56 @@ export class NetLabelPlacementSolver extends BaseSolver {
     return groups
   }
 
+  private getNetLabelWidthForGroup(
+    group: OverlappingSameNetTraceGroup,
+  ): number | undefined {
+    if (group.netId) {
+      const ncWidth = this.inputProblem.netConnections.find(
+        (nc) => nc.netId === group.netId,
+      )?.netLabelWidth
+      if (ncWidth !== undefined) return ncWidth
+
+      const dcWidthByNetId = this.inputProblem.directConnections.find(
+        (dc) => dc.netId === group.netId,
+      )?.netLabelWidth
+      if (dcWidthByNetId !== undefined) return dcWidthByNetId
+    }
+
+    const pinIds = group.overlappingTraces?.pins.map((p) => p.pinId) ?? []
+    if (group.portOnlyPinId) {
+      pinIds.push(group.portOnlyPinId)
+    }
+
+    const dcWidthByPinId = this.inputProblem.directConnections.find((dc) =>
+      dc.pinIds.some((pid) => pinIds.includes(pid)),
+    )?.netLabelWidth
+    if (dcWidthByPinId !== undefined) return dcWidthByPinId
+
+    return this.inputProblem.netConnections.find((nc) =>
+      nc.pinIds.some((pid) => pinIds.includes(pid)),
+    )?.netLabelWidth
+  }
+
+  private getNetLabelHeightForGroup(
+    group: OverlappingSameNetTraceGroup,
+  ): number | undefined {
+    if (group.netId) {
+      const ncHeight = this.inputProblem.netConnections.find(
+        (nc) => nc.netId === group.netId,
+      )?.netLabelHeight
+      if (ncHeight !== undefined) return ncHeight
+    }
+
+    const pinIds = group.overlappingTraces?.pins.map((p) => p.pinId) ?? []
+    if (group.portOnlyPinId) {
+      pinIds.push(group.portOnlyPinId)
+    }
+
+    return this.inputProblem.netConnections.find((nc) =>
+      nc.pinIds.some((pid) => pinIds.includes(pid)),
+    )?.netLabelHeight
+  }
+
   override _step() {
     if (this.activeSubSolver?.solved) {
       this.netLabelPlacements.push(this.activeSubSolver.netLabelPlacement!)
@@ -273,17 +323,15 @@ export class NetLabelPlacementSolver extends BaseSolver {
         this.currentGroup
       ) {
         this.triedAnyOrientationFallbackForCurrentGroup = true
-        const netLabelWidth = this.currentGroup.netId
-          ? this.inputProblem.netConnections.find(
-              (nc) => nc.netId === this.currentGroup!.netId,
-            )?.netLabelWidth
-          : undefined
+        const netLabelWidth = this.getNetLabelWidthForGroup(this.currentGroup)
+        const netLabelHeight = this.getNetLabelHeightForGroup(this.currentGroup)
         this.activeSubSolver = new SingleNetLabelPlacementSolver({
           inputProblem: this.inputProblem,
           inputTraceMap: this.inputTraceMap,
           overlappingSameNetTraceGroup: this.currentGroup,
           availableOrientations: fullOrients,
           netLabelWidth,
+          netLabelHeight,
         })
         return
       }
@@ -313,11 +361,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
     this.currentGroup = nextOverlappingSameNetTraceGroup
     this.triedAnyOrientationFallbackForCurrentGroup = false
 
-    const netLabelWidth = this.currentGroup.netId
-      ? this.inputProblem.netConnections.find(
-          (nc) => nc.netId === this.currentGroup!.netId,
-        )?.netLabelWidth
-      : undefined
+    const netLabelWidth = this.getNetLabelWidthForGroup(this.currentGroup)
+    const netLabelHeight = this.getNetLabelHeightForGroup(this.currentGroup)
 
     this.activeSubSolver = new SingleNetLabelPlacementSolver({
       inputProblem: this.inputProblem,
@@ -327,6 +372,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
         netId
       ] ?? ["x+", "x-", "y+", "y-"],
       netLabelWidth,
+      netLabelHeight,
     })
   }
 

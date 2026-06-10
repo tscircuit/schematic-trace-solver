@@ -94,7 +94,7 @@
     }
   ],
   "availableNetLabelOrientations": {
-    "VCC": ["y-"],
+    "VCC": ["y+"],
     "OUT": ["x-", "x+"],
     "GND": ["y-"],
     "MMM": ["x+", "x-"]

@@ -4,6 +4,7 @@ import type { FacingDirection } from "lib/utils/dir"
 export type ChipId = string
 export type PinId = string
 export type NetId = string
+export type SectionId = string
 
 export interface InputPin {
   pinId: PinId
@@ -18,16 +19,19 @@ export interface InputChip {
   width: number
   height: number
   pins: Array<InputPin>
+  sectionId?: SectionId
 }
 export interface InputDirectConnection {
   pinIds: [PinId, PinId]
   netId?: string
+  netLabelWidth?: number
 }
 
 export interface InputNetConnection {
   netId: string
   pinIds: Array<PinId>
   netLabelWidth?: number
+  netLabelHeight?: number
 }
 
 export interface InputProblem {

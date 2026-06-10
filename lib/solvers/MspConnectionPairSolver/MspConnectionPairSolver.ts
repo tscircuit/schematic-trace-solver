@@ -12,6 +12,7 @@ import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCen
 import type { GraphicsObject } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 
 export type MspConnectionPairId = string
 
@@ -110,6 +111,9 @@ export class MspConnectionPairSolver extends BaseSolver {
         // Too far apart; skip creating an MSP pair for this net
         return
       }
+      if (arePinsInDifferentSchematicSections(this.inputProblem, p1, p2)) {
+        return
+      }
       // Avoid pairs that would cross restricted center lines
       const pinIdMap = new Map(Object.entries(this.pinMap)) as Map<
         PinId,
@@ -153,6 +157,11 @@ export class MspConnectionPairSolver extends BaseSolver {
       {
         maxDistance: this.maxMspPairDistance,
         forbidEdge: (a, b) =>
+          arePinsInDifferentSchematicSections(
+            this.inputProblem,
+            a as InputPin & { chipId: string },
+            b as InputPin & { chipId: string },
+          ) ||
           doesPairCrossRestrictedCenterLines({
             inputProblem: this.inputProblem,
             chipMap: this.chipMap,
@@ -166,6 +175,11 @@ export class MspConnectionPairSolver extends BaseSolver {
     for (const [pin1, pin2] of msp) {
       const p1Obj = this.pinMap[pin1!]!
       const p2Obj = this.pinMap[pin2!]!
+      if (
+        arePinsInDifferentSchematicSections(this.inputProblem, p1Obj, p2Obj)
+      ) {
+        continue
+      }
       // Skip any edge that would cross a restricted center line (safety filter)
       if (
         doesPairCrossRestrictedCenterLines({

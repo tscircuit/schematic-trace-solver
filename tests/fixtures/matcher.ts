@@ -1,6 +1,8 @@
 import { getSvgFromGraphicsObject, type GraphicsObject } from "graphics-debug"
 import { expect, type MatcherResult } from "bun:test"
 import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { colorAvailableNetOrientationLabels } from "lib/solvers/SchematicTracePipelineSolver/colorAvailableNetOrientationLabels"
+import type { InputProblem } from "lib/types/InputProblem"
 
 const getAllElms = (graphicsObject: GraphicsObject) => {
   return [
@@ -43,11 +45,30 @@ async function toMatchSolverSnapshot(
     )
   }
 
+  const inputProblem = getInputProblem(received)
+  if (received.solved && inputProblem) {
+    colorAvailableNetOrientationLabels(graphicsObject, inputProblem)
+  }
+
   const svg = getSvgFromGraphicsObject(graphicsObject, {
     backgroundColor: "white",
   })
 
   return expect(svg).toMatchSvgSnapshot(testPathOriginal, svgName)
+}
+
+const getInputProblem = (solver: BaseSolver): InputProblem | undefined => {
+  const maybeSolver = solver as BaseSolver & {
+    inputProblem?: InputProblem
+    input?: { inputProblem?: InputProblem }
+    params?: { inputProblem?: InputProblem }
+  }
+
+  return (
+    maybeSolver.inputProblem ??
+    maybeSolver.input?.inputProblem ??
+    maybeSolver.params?.inputProblem
+  )
 }
 
 expect.extend({
