@@ -1,6 +1,9 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { SolvedTracePath } from "../solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { doSegmentsIntersect, getSegmentIntersection } from "@tscircuit/math-utils"
+import {
+  doSegmentsIntersect,
+  getSegmentIntersection,
+} from "@tscircuit/math-utils"
 
 const pointsEqual = (a: Point, b: Point) => a.x === b.x && a.y === b.y
 
@@ -19,8 +22,10 @@ function isEndpointOnlyTouch(
     // Proper crossing — not endpoint-only
     // But if intersection equals both an endpoint of new and existing it's
     // a shared-endpoint touch.
-    const atNewEndpoint = pointsEqual(intersection, ns1) || pointsEqual(intersection, ns2)
-    const atExistingEndpoint = pointsEqual(intersection, es1) || pointsEqual(intersection, es2)
+    const atNewEndpoint =
+      pointsEqual(intersection, ns1) || pointsEqual(intersection, ns2)
+    const atExistingEndpoint =
+      pointsEqual(intersection, es1) || pointsEqual(intersection, es2)
     return atNewEndpoint && atExistingEndpoint
   }
 
@@ -87,7 +92,9 @@ export function trimTraceToSameNetJunction(
 
           const dist = (p: Point) =>
             Math.sqrt((p.x - ns1.x) ** 2 + (p.y - ns1.y) ** 2)
-          junctionPoint = candidates.reduce((a, b) => (dist(a) <= dist(b) ? a : b))
+          junctionPoint = candidates.reduce((a, b) =>
+            dist(a) <= dist(b) ? a : b,
+          )
         }
 
         // If junction is at ns1 (start of this segment) and it's also the
