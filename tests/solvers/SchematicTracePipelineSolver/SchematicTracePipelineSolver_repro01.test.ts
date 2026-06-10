@@ -1,6 +1,6 @@
-import type { InputProblem } from "lib/types/InputProblem";
-import { test, expect } from "bun:test";
-import { SchematicTracePipelineSolver } from "lib/index";
+import type { InputProblem } from "lib/types/InputProblem"
+import { test, expect } from "bun:test"
+import { SchematicTracePipelineSolver } from "lib/index"
 
 const inputProblem: InputProblem = {
   chips: [
@@ -101,11 +101,11 @@ const inputProblem: InputProblem = {
     GND: ["y-"],
   },
   maxMspPairDistance: 2,
-};
+}
 
 test("SchematicTracePipelineSolver_repro01", () => {
-  const solver = new SchematicTracePipelineSolver(inputProblem);
-  solver.solve();
+  const solver = new SchematicTracePipelineSolver(inputProblem)
+  solver.solve()
 
   // console.log(solver.schematicTraceLinesSolver!.solvedTracePaths)
-});
+})
