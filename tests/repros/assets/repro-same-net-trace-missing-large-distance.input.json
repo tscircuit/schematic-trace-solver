@@ -47,18 +47,12 @@
   "netConnections": [
     {
       "netId": "VCC",
-      "pinIds": [
-        "JP6.2",
-        "JP6.3",
-        "R1.2"
-      ],
+      "pinIds": ["JP6.2", "JP6.3", "R1.2"],
       "netLabelWidth": 0.48
     }
   ],
   "availableNetLabelOrientations": {
-    "VCC": [
-      "y+"
-    ]
+    "VCC": ["y+"]
   },
   "maxMspPairDistance": 2.4
 }
