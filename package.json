@@ -3,6 +3,15 @@
   "main": "dist/index.js",
   "version": "0.0.63",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tscircuit/schematic-trace-solver.git"
+  },
+  "homepage": "https://github.com/tscircuit/schematic-trace-solver#readme",
+  "bugs": {
+    "url": "https://github.com/tscircuit/schematic-trace-solver/issues"
+  },
   "scripts": {
     "start": "cosmos",
     "build": "tsup-node lib/index.ts --format esm --dts",
