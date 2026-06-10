@@ -8,7 +8,10 @@ import type {
 } from "lib/types/InputProblem"
 import { BaseSolver } from "../BaseSolver/BaseSolver"
 import { SchematicTraceSingleLineSolver2 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
-import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
+import {
+  doesTraceOverlapWithExistingTraces,
+  trimTraceToSameNetJunction,
+} from "lib/utils/does-trace-overlap-with-existing-traces"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"
@@ -134,14 +137,26 @@ export class LongDistancePairSolver extends BaseSolver {
     if (this.subSolver?.solved) {
       const newTracePath = this.subSolver.solvedTracePath
       if (newTracePath && this.currentCandidatePair) {
-        const isTraceClear = !doesTraceOverlapWithExistingTraces(
+        const [p1, p2] = this.currentCandidatePair
+        const globalConnNetId = this.netConnMap.getNetConnectedToId(p1.pinId)!
+
+        // Trim the path to the first junction with an existing same-net trace.
+        // This handles the case where the sub-solver routes through (or along)
+        // an already-solved same-net segment — we only need to extend to the
+        // nearest touch point, not retrace the existing segment.
+        const trimmedTracePath = trimTraceToSameNetJunction(
           newTracePath,
           this.allSolvedTraces,
+          globalConnNetId,
+        )
+
+        const isTraceClear = !doesTraceOverlapWithExistingTraces(
+          trimmedTracePath,
+          this.allSolvedTraces,
+          globalConnNetId,
         )
 
         if (isTraceClear) {
-          const [p1, p2] = this.currentCandidatePair
-          const globalConnNetId = this.netConnMap.getNetConnectedToId(p1.pinId)!
           const mspPairId = `${p1.pinId}-${p2.pinId}`
 
           const newSolvedTrace: SolvedTracePath = {
@@ -149,7 +164,7 @@ export class LongDistancePairSolver extends BaseSolver {
             dcConnNetId: globalConnNetId,
             globalConnNetId,
             pins: [p1, p2],
-            tracePath: newTracePath,
+            tracePath: trimmedTracePath,
             mspConnectionPairIds: [mspPairId],
             pinIds: [p1.pinId, p2.pinId],
           }
