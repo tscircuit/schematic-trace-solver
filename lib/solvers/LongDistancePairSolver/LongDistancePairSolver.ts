@@ -1,4 +1,7 @@
-import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import {
+  getConnectivityMapsFromInputProblem,
+  isGlobalNetHandledByLabels,
+} from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type {
   InputProblem,
@@ -74,6 +77,8 @@ export class LongDistancePairSolver extends BaseSolver {
     const addedPairKeys = new Set<string>()
 
     for (const netId of Object.keys(netConnMap.netMap)) {
+      if (isGlobalNetHandledByLabels(inputProblem, netConnMap, netId)) continue
+
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
 

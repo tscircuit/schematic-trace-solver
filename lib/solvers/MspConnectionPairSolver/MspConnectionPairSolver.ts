@@ -6,7 +6,10 @@ import type {
   PinId,
 } from "lib/types/InputProblem"
 import { ConnectivityMap } from "connectivity-map"
-import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
+import {
+  getConnectivityMapsFromInputProblem,
+  isGlobalNetHandledByLabels,
+} from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCenterLines"
 import type { GraphicsObject } from "graphics-debug"
@@ -75,7 +78,12 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    const directConnNetIds = new Set(Object.keys(directConnMap.netMap))
+    this.queuedDcNetIds = Object.keys(netConnMap.netMap).filter(
+      (netId) =>
+        directConnNetIds.has(netId) ||
+        !isGlobalNetHandledByLabels(inputProblem, netConnMap, netId),
+    )
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -94,7 +102,10 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     const dcNetId = this.queuedDcNetIds.shift()!
 
-    const allIds = this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[]
+    const routeConnMap = this.dcConnMap.netMap[dcNetId]
+      ? this.dcConnMap
+      : this.globalConnMap
+    const allIds = routeConnMap.getIdsConnectedToNet(dcNetId) as string[]
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
     if (directlyConnectedPins.length <= 1) {
