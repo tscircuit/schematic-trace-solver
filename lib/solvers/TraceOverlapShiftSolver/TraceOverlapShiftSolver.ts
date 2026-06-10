@@ -8,8 +8,24 @@ import {
   type OverlappingTraceSegmentLocator,
 } from "./TraceOverlapIssueSolver/TraceOverlapIssueSolver"
 import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
+import type { Point } from "@tscircuit/math-utils"
+import { simplifyPath } from "../TraceCleanupSolver/simplifyPath"
 
 type ConnNetId = string
+type SegmentOrientation = "vertical" | "horizontal"
+
+interface TraceSegmentRef {
+  connNetId: ConnNetId
+  pathIndex: number
+  trace: SolvedTracePath
+  traceSegmentIndex: number
+  orientation: SegmentOrientation
+  coord: number
+  min: number
+  max: number
+  length: number
+  isTerminal: boolean
+}
 
 /**
  * This solver finds traces that overlap (coincident and parallel) and aren't
@@ -42,7 +58,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
   correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath> = {}
 
-  cleanupPhase: "diagonals" | "done" | null = null
+  cleanupPhase: "same_net_alignment" | "diagonals" | "done" | null = null
 
   constructor(params: {
     inputProblem: InputProblem
@@ -213,6 +229,157 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     return null
   }
 
+  private getTraceSegments({
+    connNetId,
+    pathIndex,
+    trace,
+  }: {
+    connNetId: ConnNetId
+    pathIndex: number
+    trace: SolvedTracePath
+  }): TraceSegmentRef[] {
+    const EPS = 2e-3
+    const segments: TraceSegmentRef[] = []
+    const pts = trace.tracePath
+
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p1 = pts[i]!
+      const p2 = pts[i + 1]!
+      const isVertical = Math.abs(p1.x - p2.x) < EPS
+      const isHorizontal = Math.abs(p1.y - p2.y) < EPS
+      if (!isVertical && !isHorizontal) continue
+
+      const orientation: SegmentOrientation = isVertical
+        ? "vertical"
+        : "horizontal"
+      const coord = isVertical ? p1.x : p1.y
+      const a = isVertical ? p1.y : p1.x
+      const b = isVertical ? p2.y : p2.x
+
+      segments.push({
+        connNetId,
+        pathIndex,
+        trace,
+        traceSegmentIndex: i,
+        orientation,
+        coord,
+        min: Math.min(a, b),
+        max: Math.max(a, b),
+        length: Math.abs(a - b),
+        isTerminal: i === 0 || i === pts.length - 2,
+      })
+    }
+
+    return segments
+  }
+
+  private getRangeOverlap(a: TraceSegmentRef, b: TraceSegmentRef): number {
+    return Math.min(a.max, b.max) - Math.max(a.min, b.min)
+  }
+
+  private findNextSameNetAlignment(): {
+    movingSegment: TraceSegmentRef
+    targetCoord: number
+  } | null {
+    const EPS = 2e-3
+    const SAME_NET_ALIGNMENT_DISTANCE = 0.12
+
+    for (const [connNetId, traces] of Object.entries(this.traceNetIslands)) {
+      const segments = traces.flatMap((trace, pathIndex) =>
+        this.getTraceSegments({ connNetId, pathIndex, trace }),
+      )
+
+      for (let i = 0; i < segments.length; i++) {
+        for (let j = i + 1; j < segments.length; j++) {
+          const a = segments[i]!
+          const b = segments[j]!
+
+          if (a.trace.mspPairId === b.trace.mspPairId) continue
+          if (a.orientation !== b.orientation) continue
+
+          const coordDiff = Math.abs(a.coord - b.coord)
+          if (coordDiff <= EPS) continue
+          if (coordDiff > SAME_NET_ALIGNMENT_DISTANCE) continue
+          if (this.getRangeOverlap(a, b) <= EPS) continue
+
+          if (!a.isTerminal && b.isTerminal) {
+            return { movingSegment: a, targetCoord: b.coord }
+          }
+          if (!b.isTerminal && a.isTerminal) {
+            return { movingSegment: b, targetCoord: a.coord }
+          }
+          if (a.isTerminal && b.isTerminal) {
+            continue
+          }
+
+          if (a.length < b.length) {
+            return { movingSegment: a, targetCoord: b.coord }
+          }
+          return { movingSegment: b, targetCoord: a.coord }
+        }
+      }
+    }
+
+    return null
+  }
+
+  private removeConsecutiveDuplicatePoints(points: Point[]): Point[] {
+    const EPS = 1e-9
+    const cleaned: Point[] = []
+    for (const point of points) {
+      const previous = cleaned[cleaned.length - 1]
+      if (
+        !previous ||
+        Math.abs(previous.x - point.x) > EPS ||
+        Math.abs(previous.y - point.y) > EPS
+      ) {
+        cleaned.push(point)
+      }
+    }
+    return cleaned
+  }
+
+  private alignTraceSegmentToCoordinate(
+    segment: TraceSegmentRef,
+    targetCoord: number,
+  ): boolean {
+    const EPS = 2e-3
+    if (Math.abs(segment.coord - targetCoord) <= EPS) return false
+    if (segment.isTerminal) return false
+
+    const currentTrace =
+      this.correctedTraceMap[segment.trace.mspPairId] ?? segment.trace
+    const points = currentTrace.tracePath.map((point) => ({ ...point }))
+    const start = points[segment.traceSegmentIndex]
+    const end = points[segment.traceSegmentIndex + 1]
+    if (!start || !end) return false
+
+    if (segment.orientation === "vertical") {
+      start.x = targetCoord
+      end.x = targetCoord
+    } else {
+      start.y = targetCoord
+      end.y = targetCoord
+    }
+
+    this.correctedTraceMap[currentTrace.mspPairId] = {
+      ...currentTrace,
+      tracePath: simplifyPath(this.removeConsecutiveDuplicatePoints(points)),
+    }
+
+    return true
+  }
+
+  private findAndFixNextSameNetAlignment(): boolean {
+    const alignment = this.findNextSameNetAlignment()
+    if (!alignment) return false
+
+    return this.alignTraceSegmentToCoordinate(
+      alignment.movingSegment,
+      alignment.targetCoord,
+    )
+  }
+
   private findNextDiagonalSegment() {
     const EPS = 2e-3
     for (const mspPairId in this.correctedTraceMap) {
@@ -290,6 +457,16 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
     if (overlapIssue === null) {
       if (this.cleanupPhase === null) {
+        this.cleanupPhase = "same_net_alignment"
+      }
+
+      if (this.cleanupPhase === "same_net_alignment") {
+        const fixedSameNetAlignment = this.findAndFixNextSameNetAlignment()
+        if (fixedSameNetAlignment) {
+          this.traceNetIslands = this.computeTraceNetIslands()
+          this.cleanupPhase = null
+          return
+        }
         this.cleanupPhase = "diagonals"
       }
 
