@@ -72,31 +72,27 @@ function buildMergedObstacleLabel(
   }
 }
 
-interface TraceInnerLabelOverlap {
+interface TraceLabelOverlap {
   trace: SolvedTracePath
   label: NetLabelPlacement
 }
 
 /**
- * Detects overlaps where a trace's INTERIOR (non-endpoint) segments cross a label.
- * Traces are allowed to boundary a label at their endpoints (pin locations),
- * just not allowed to cross through it in the middle.
+ * Detects overlaps where a trace segment intersects a label from another net.
+ * Point-only contact is allowed by segmentIntersectsRect; positive overlap on
+ * a label edge is still a visual collision and should be rerouted.
  */
-function detectInnerTraceLabelOverlaps(
+function detectTraceLabelOverlaps(
   traces: SolvedTracePath[],
   labels: NetLabelPlacement[],
-): TraceInnerLabelOverlap[] {
-  const overlaps: TraceInnerLabelOverlap[] = []
+): TraceLabelOverlap[] {
+  const overlaps: TraceLabelOverlap[] = []
   for (const trace of traces) {
     for (const label of labels) {
       if (trace.globalConnNetId === label.globalConnNetId) continue
       const bounds = getRectBounds(label.center, label.width, label.height)
       const path = trace.tracePath
-      // Skip first and last segments — trace endpoints (pins) may legitimately
-      // sit inside or adjacent to labels of neighbouring nets.
-      const innerStart = 1
-      const innerEnd = path.length - 2
-      for (let i = innerStart; i < innerEnd; i++) {
+      for (let i = 0; i < path.length - 1; i++) {
         if (segmentIntersectsRect(path[i]!, path[i + 1]!, bounds)) {
           overlaps.push({ trace, label })
           break
@@ -183,7 +179,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
       return
     }
 
-    const overlaps = detectInnerTraceLabelOverlaps(
+    const overlaps = detectTraceLabelOverlaps(
       this.outputTraces,
       this.outputNetLabelPlacements,
     )
