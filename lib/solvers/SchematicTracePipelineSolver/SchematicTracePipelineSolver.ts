@@ -438,6 +438,15 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     return finalGraphics
   }
 
+  getOutput() {
+    const traces =
+      this.availableNetOrientationSolver?.traces ??
+      this.traceCleanupSolver?.getOutput().traces ??
+      this.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
+      []
+    return { traces }
+  }
+
   /**
    * A lightweight version of the visualize method that can be used to stream
    * progress
