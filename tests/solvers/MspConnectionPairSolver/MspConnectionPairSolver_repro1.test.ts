@@ -10,5 +10,7 @@ test("MspConnectionPairSolver_repro1", () => {
 
   solver.solve()
 
-  expect(solver.mspConnectionPairs.length).toBe(4)
+  // Two direct-connection nets (VCC, EN) produce one pair each. The GND
+  // net is a netConnection (label-only) and must not produce MSP pairs.
+  expect(solver.mspConnectionPairs.length).toBe(2)
 })

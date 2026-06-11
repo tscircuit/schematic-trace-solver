@@ -75,7 +75,10 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    // Only direct-connection nets should produce MSP pairs (and therefore
+    // routed traces). Net-label-only nets are handled separately by the
+    // NetLabelPlacementSolver, per the project README.
+    this.queuedDcNetIds = Object.keys(directConnMap.netMap)
   }
 
   override getConstructorParams(): ConstructorParameters<
