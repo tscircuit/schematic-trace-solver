@@ -474,28 +474,31 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }) {
     const { anchorPoint, labelAnchorPoint, orientation, width, height } = params
     const chipSide = this.getChipSideForPoint(labelAnchorPoint)
+    const sideClearance = this.getContainingChipSide(labelAnchorPoint)
+      ? WICK_CLEARANCE
+      : LABEL_SEARCH_STEP
     if (isYOrientation(orientation) && chipSide === "left") {
       return {
-        x: anchorPoint.x - width / 2 - WICK_CLEARANCE,
+        x: anchorPoint.x - width / 2 - sideClearance,
         y: anchorPoint.y,
       }
     }
     if (isYOrientation(orientation) && chipSide === "right") {
       return {
-        x: anchorPoint.x + width / 2 + WICK_CLEARANCE,
+        x: anchorPoint.x + width / 2 + sideClearance,
         y: anchorPoint.y,
       }
     }
     if (isXOrientation(orientation) && chipSide === "bottom") {
       return {
         x: anchorPoint.x,
-        y: anchorPoint.y - height / 2 - WICK_CLEARANCE,
+        y: anchorPoint.y - height / 2 - sideClearance,
       }
     }
     if (isXOrientation(orientation) && chipSide === "top") {
       return {
         x: anchorPoint.x,
-        y: anchorPoint.y + height / 2 + WICK_CLEARANCE,
+        y: anchorPoint.y + height / 2 + sideClearance,
       }
     }
     return anchorPoint
