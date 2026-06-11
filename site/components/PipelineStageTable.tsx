@@ -29,7 +29,7 @@ export const PipelineStageTable = ({
 
   const downloadParams = (stageName: string) => {
     const stage = pipelineSolver.pipelineDef.find(
-      (s) => s.solverName === stageName,
+      (s) => s && s.solverName === stageName,
     )
     if (!stage) return
 
@@ -50,6 +50,11 @@ export const PipelineStageTable = ({
       )
     }
   }
+
+  // Filter out any potential undefined elements in the pipeline definition
+  const validStages = pipelineSolver.pipelineDef.filter(
+    (stage): stage is NonNullable<typeof stage> => stage !== undefined,
+  )
 
   return (
     <div className="overflow-x-auto">
@@ -77,16 +82,18 @@ export const PipelineStageTable = ({
           </tr>
         </thead>
         <tbody>
-          {pipelineSolver.pipelineDef.map((stage, index) => {
+          {validStages.map((stage, index) => {
             const status = getStageStatus(index)
             const startIteration =
               pipelineSolver.firstIterationOfPhase[stage.solverName]
+
             const endIteration =
               status === "Solved"
-                ? (pipelineSolver.firstIterationOfPhase[stage.solverName] ||
+                ? (pipelineSolver.firstIterationOfPhase[stage.solverName] ??
                     0) +
-                  ((pipelineSolver as any)[stage.solverName]?.iterations || 0)
+                  ((pipelineSolver as any)[stage.solverName]?.iterations ?? 0)
                 : undefined
+
             const timeSpent = pipelineSolver.timeSpentOnPhase[stage.solverName]
 
             return (

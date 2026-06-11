@@ -320,16 +320,20 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     definePipelineStep(
       "sameNetTraceMergeSolver",
       SameNetTraceMergeSolver,
-      (instance) => [
-        {
-          inputProblem: instance.inputProblem,
-          // @ts-ignore
-          traces: instance.netLabelNetLabelCollisionSolver?.getOutput()?.traces || [],
-          // @ts-ignore
-          netLabelPlacements: instance.netLabelNetLabelCollisionSolver?.getOutput()?.netLabelPlacements || [],
-        },
-      ],
-    ),,
+      (instance) => {
+        // Fetch previous solver's output safely
+        const prevOutput =
+          instance.netLabelNetLabelCollisionSolver?.getOutput() as any
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces: prevOutput?.traces || [],
+            netLabelPlacements: prevOutput?.netLabelPlacements || [],
+          },
+        ]
+      },
+    ),
+    ,
   ]
 
   constructor(inputProblem: InputProblem) {
@@ -415,8 +419,11 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     const visualizations = [
       visualizeInputProblem(this.inputProblem),
       ...(this.pipelineDef
-        .map((p) => (this as any)[p.solverName]?.visualize())
-        .filter(Boolean)
+        .filter((p) => p !== undefined)
+        .map((p) => (this as any)[p!.solverName]?.visualize())
+        .filter(
+          (viz): viz is GraphicsObject => viz !== undefined && viz !== null,
+        )
         .map((viz, stepIndex) => {
           for (const rect of viz!.rects ?? []) {
             rect.step = stepIndex
