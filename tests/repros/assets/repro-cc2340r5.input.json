@@ -193,31 +193,19 @@
   ],
   "directConnections": [
     {
-      "pinIds": [
-        "U1.30",
-        "L1.2"
-      ],
+      "pinIds": ["U1.30", "L1.2"],
       "netId": ".U1 > .DCDC to L1.pin2"
     },
     {
-      "pinIds": [
-        "U1.1",
-        "U1.34"
-      ],
+      "pinIds": ["U1.1", "U1.34"],
       "netId": ".U1 > .pin1 to U1.pin34"
     },
     {
-      "pinIds": [
-        "C106.1",
-        "L1.1"
-      ],
+      "pinIds": ["C106.1", "L1.1"],
       "netId": ".C106 > .pin1 to L1.pin1"
     },
     {
-      "pinIds": [
-        "C107.1",
-        "C106.1"
-      ],
+      "pinIds": ["C107.1", "C106.1"],
       "netId": ".C107 > .pin1 to C106.pin1"
     }
   ],
@@ -240,56 +228,31 @@
     },
     {
       "netId": "WMCU_SWDIO",
-      "pinIds": [
-        "U1.11"
-      ],
+      "pinIds": ["U1.11"],
       "netLabelWidth": 1.32
     },
     {
       "netId": "WMCU_SWDCK",
-      "pinIds": [
-        "U1.12"
-      ],
+      "pinIds": ["U1.12"],
       "netLabelWidth": 1.32
     },
     {
       "netId": "ANT_RF",
-      "pinIds": [
-        "U1.39"
-      ],
+      "pinIds": ["U1.39"],
       "netLabelWidth": 0.84
     },
     {
       "netId": "GND",
-      "pinIds": [
-        "U1.40",
-        "U1.41",
-        "C105.2",
-        "C106.2",
-        "C107.2"
-      ],
+      "pinIds": ["U1.40", "U1.41", "C105.2", "C106.2", "C107.2"],
       "netLabelWidth": 0.48
     }
   ],
   "availableNetLabelOrientations": {
-    "WMCU_SWDIO": [
-      "x-",
-      "x+"
-    ],
-    "WMCU_SWDCK": [
-      "x-",
-      "x+"
-    ],
-    "VDDS": [
-      "y+"
-    ],
-    "GND": [
-      "y-"
-    ],
-    "ANT_RF": [
-      "x-",
-      "x+"
-    ]
+    "WMCU_SWDIO": ["x-", "x+"],
+    "WMCU_SWDCK": ["x-", "x+"],
+    "VDDS": ["y+"],
+    "GND": ["y-"],
+    "ANT_RF": ["x-", "x+"]
   },
   "maxMspPairDistance": 2.4
 }
