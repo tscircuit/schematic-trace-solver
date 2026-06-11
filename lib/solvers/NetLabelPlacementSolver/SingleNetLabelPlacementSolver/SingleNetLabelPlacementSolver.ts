@@ -15,6 +15,7 @@ import {
   getRectBounds,
 } from "./geometry"
 import { rectIntersectsAnyTrace } from "./collisions"
+import { rectOverlapsAnyObstacle, shouldAvoidObstacles } from "./obstacles"
 import { chooseHostTraceForGroup } from "./host"
 import { anchorsForSegment } from "./anchors"
 import { solveNetLabelPlacementForPortOnlyPin } from "./solvePortOnlyPin"
@@ -262,7 +263,11 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
             // Chip collision check
             const chips = this.chipObstacleSpatialIndex.getChipsInBounds(bounds)
-            if (chips.length > 0) {
+            if (
+              chips.length > 0 ||
+              (shouldAvoidObstacles(this.availableOrientations) &&
+                rectOverlapsAnyObstacle(bounds, this.inputProblem.obstacles))
+            ) {
               this.testedCandidates.push({
                 center: testCenter,
                 width,

@@ -14,6 +14,7 @@ import {
   getRectBounds,
 } from "./geometry"
 import { rectIntersectsAnyTrace } from "./collisions"
+import { rectOverlapsAnyObstacle, shouldAvoidObstacles } from "./obstacles"
 
 export function solveNetLabelPlacementForPortOnlyPin(params: {
   inputProblem: InputProblem
@@ -119,7 +120,11 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
 
     // Chip collision check
     const chips = chipObstacleSpatialIndex.getChipsInBounds(bounds)
-    if (chips.length > 0) {
+    if (
+      chips.length > 0 ||
+      (shouldAvoidObstacles(orientations) &&
+        rectOverlapsAnyObstacle(bounds, inputProblem.obstacles))
+    ) {
       testedCandidates.push({
         center,
         width,

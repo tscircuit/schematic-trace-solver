@@ -41,6 +41,18 @@ export const traceCrossesBoundsInterior = (
   return false
 }
 
+export const tracePathCrossesBoundsInterior = (
+  path: Point[],
+  bounds: Bounds,
+) => {
+  for (let i = 0; i < path.length - 1; i++) {
+    if (segmentCrossesBoundsInterior(path[i]!, path[i + 1]!, bounds)) {
+      return true
+    }
+  }
+  return false
+}
+
 const segmentCrossesBoundsInterior = (p1: Point, p2: Point, bounds: Bounds) => {
   const interiorBounds = {
     minX: bounds.minX + TRACE_BOUNDARY_TOLERANCE,
@@ -180,6 +192,24 @@ export const getConnectorTracePath = (
       ? [source, { x: target.x, y: source.y }, target]
       : [source, { x: source.x, y: target.y }, target],
   )
+
+/**
+ * Both L-shaped elbow variants from source to target. Callers pick the one
+ * that doesn't cross the label body.
+ */
+export const getConnectorTracePathVariants = (
+  source: Point,
+  target: Point,
+  orientation: FacingDirection,
+): Point[][] => {
+  const horizontalFirst = [source, { x: target.x, y: source.y }, target]
+  const verticalFirst = [source, { x: source.x, y: target.y }, target]
+  return (
+    isYOrientation(orientation)
+      ? [horizontalFirst, verticalFirst]
+      : [verticalFirst, horizontalFirst]
+  ).map(simplifyOrthogonalPath)
+}
 
 export const simplifyOrthogonalPath = (path: Point[]) => {
   const deduped = path.filter(

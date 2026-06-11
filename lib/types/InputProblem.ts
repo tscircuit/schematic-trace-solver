@@ -21,6 +21,18 @@ export interface InputChip {
   pins: Array<InputPin>
   sectionId?: SectionId
 }
+/**
+ * A rectangular keep-out region (e.g. component name/value text) that net
+ * labels should not be placed over. Only labels restricted to y+/y-
+ * orientations (power/ground rails) currently avoid these.
+ */
+export interface InputObstacle {
+  obstacleId: string
+  center: { x: number; y: number }
+  width: number
+  height: number
+}
+
 export interface InputDirectConnection {
   pinIds: [PinId, PinId]
   netId?: string
@@ -36,6 +48,7 @@ export interface InputNetConnection {
 
 export interface InputProblem {
   chips: Array<InputChip>
+  obstacles?: Array<InputObstacle>
   directConnections: Array<InputDirectConnection>
   netConnections: Array<InputNetConnection>
 

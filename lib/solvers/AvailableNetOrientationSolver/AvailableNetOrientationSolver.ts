@@ -13,7 +13,7 @@ import type { InputPin, InputProblem } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { EPS, LABEL_SEARCH_STEP, WICK_CLEARANCE } from "./constants"
 import {
-  getConnectorTracePath,
+  getConnectorTracePathVariants,
   getMaxSearchDistance,
   getSideDistances,
   isXOrientation,
@@ -22,10 +22,15 @@ import {
   rectsOverlap,
   simplifyOrthogonalPath,
   traceCrossesBoundsInterior,
+  tracePathCrossesBoundsInterior,
   tracePathIntersectsBounds,
   tracePathCrossesAnyBounds,
   tracePathCrossesAnyTrace,
 } from "./geometry"
+import {
+  rectOverlapsAnyObstacle,
+  shouldAvoidObstacles,
+} from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/obstacles"
 import { getPinMap, getTracePins, toNetLabelPlacementPatch } from "./traces"
 import type {
   AvailableNetOrientationSolverParams,
@@ -211,6 +216,19 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         labelIndex,
       )
       if (lateralCandidate) return lateralCandidate
+
+      // Last resort: searching along the orientation direction can be fully
+      // blocked (e.g. a y+ label on a chip's bottom pin points into the
+      // chip) — try anchors behind the original point. The self-crossing
+      // check above rejects candidates whose connector would run through the
+      // label body.
+      const reverseShiftedCandidate = this.findValidShiftedCandidate(
+        label,
+        orientations[0]!,
+        labelIndex,
+        { reverse: true },
+      )
+      if (reverseShiftedCandidate) return reverseShiftedCandidate
     }
 
     this.allowConnectorCrossings = false
@@ -253,8 +271,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     label: NetLabelPlacement,
     orientation: FacingDirection,
     labelIndex: number,
+    opts: { reverse?: boolean } = {},
   ) {
-    const direction = dir(orientation)
+    const forwardDirection = dir(orientation)
+    const direction = opts.reverse
+      ? { x: -forwardDirection.x, y: -forwardDirection.y }
+      : forwardDirection
     const initialBaseAnchor = this.getSearchStartAnchor(label, orientation)
     const outwardDirection = this.getPerpendicularOutwardDirection(
       label.anchorPoint,
@@ -342,6 +364,22 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         })
 
         if (candidate) return candidate
+
+        // Also search the opposite column (e.g. below a bottom pin for a y+
+        // label) — the connector-elbow choice keeps the wire out of the
+        // label body, and the self-crossing check rejects what it can't.
+        const reverseCandidate = this.findValidCandidateInShiftColumn({
+          label,
+          labelIndex,
+          orientation,
+          direction: { x: -direction.x, y: -direction.y },
+          baseAnchor,
+          maxSearchDistance: this.getSearchDistanceLimit(label, orientation),
+          outwardDistance: lateralOffset,
+          phase: "lateral-shift",
+        })
+
+        if (reverseCandidate) return reverseCandidate
       }
     }
 
@@ -427,28 +465,49 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     candidate: Pick<
       EvaluatedCandidate,
       "anchorPoint" | "orientation" | "phase"
-    >,
+    > &
+      Partial<Pick<EvaluatedCandidate, "center" | "width" | "height">>,
   ) {
+    // Prefer the elbow variant that doesn't run through the candidate label's
+    // own body
+    const candidateBounds =
+      candidate.center &&
+      candidate.width !== undefined &&
+      candidate.height !== undefined
+        ? getRectBounds(candidate.center, candidate.width, candidate.height)
+        : null
+    const pickVariant = (paths: Point[][]) => {
+      if (!candidateBounds) return paths[0]!
+      return (
+        paths.find(
+          (p) => !tracePathCrossesBoundsInterior(p, candidateBounds),
+        ) ?? paths[0]!
+      )
+    }
+
     if (candidate.phase === "lateral-shift") {
       const orientDir = dir(candidate.orientation)
       const kickedSource = {
         x: label.anchorPoint.x - orientDir.x * LABEL_SEARCH_STEP,
         y: label.anchorPoint.y - orientDir.y * LABEL_SEARCH_STEP,
       }
-      return simplifyOrthogonalPath([
-        label.anchorPoint,
-        ...getConnectorTracePath(
+      return pickVariant(
+        getConnectorTracePathVariants(
           kickedSource,
           candidate.anchorPoint,
           candidate.orientation,
+        ).map((path) =>
+          simplifyOrthogonalPath([label.anchorPoint, ...path]),
         ),
-      ])
+      )
     }
 
-    return getConnectorTracePath(
-      label.anchorPoint,
-      candidate.anchorPoint,
-      candidate.orientation,
+    return pickVariant(
+      getConnectorTracePathVariants(
+        label.anchorPoint,
+        candidate.anchorPoint,
+        candidate.orientation,
+      ),
     )
   }
 
@@ -630,8 +689,22 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const connectorTrace = this.getCandidateConnectorTrace(label, {
       anchorPoint: candidate.anchorPoint,
       orientation: candidate.orientation,
+      center: candidate.center,
+      width: candidate.width,
+      height: candidate.height,
       phase,
     })
+
+    // The connector must never run through the candidate label's own body
+    // (touching the anchor edge is fine)
+    if (
+      tracePathCrossesBoundsInterior(
+        connectorTrace,
+        getRectBounds(candidate.center, candidate.width, candidate.height),
+      )
+    ) {
+      return "trace-collision"
+    }
 
     if (
       !this.allowConnectorCrossings &&
@@ -664,6 +737,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   private getBoundsStatus(bounds: Bounds, labelIndex: number): CandidateStatus {
     if (this.chipObstacleSpatialIndex.getChipsInBounds(bounds).length > 0) {
+      return "chip-collision"
+    }
+    const label = this.outputNetLabelPlacements[labelIndex]
+    if (
+      label &&
+      shouldAvoidObstacles(this.getAvailableOrientations(label)) &&
+      rectOverlapsAnyObstacle(bounds, this.inputProblem.obstacles)
+    ) {
       return "chip-collision"
     }
     if (this.sharesChipBoundary(bounds)) {
