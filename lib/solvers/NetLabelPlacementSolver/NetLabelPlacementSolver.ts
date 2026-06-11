@@ -74,6 +74,10 @@ export class NetLabelPlacementSolver extends BaseSolver {
   declare activeSubSolver: SingleNetLabelPlacementSolver | null
 
   netLabelPlacements: Array<NetLabelPlacement> = []
+  unplaceableGroups: Array<{
+    group: OverlappingSameNetTraceGroup
+    error: string
+  }> = []
   currentGroup: OverlappingSameNetTraceGroup | null = null
   triedAnyOrientationFallbackForCurrentGroup = false
 
@@ -336,8 +340,19 @@ export class NetLabelPlacementSolver extends BaseSolver {
         return
       }
 
-      this.failed = true
-      this.error = this.activeSubSolver.error
+      // A single unplaceable label should not fail the entire pipeline —
+      // record the failure and continue with the remaining groups.
+      if (this.currentGroup) {
+        this.unplaceableGroups.push({
+          group: this.currentGroup,
+          error:
+            this.activeSubSolver.error ??
+            "Could not place net label without collisions",
+        })
+      }
+      this.activeSubSolver = null
+      this.currentGroup = null
+      this.triedAnyOrientationFallbackForCurrentGroup = false
       return
     }
 

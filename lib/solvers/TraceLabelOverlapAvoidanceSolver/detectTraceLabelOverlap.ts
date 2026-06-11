@@ -19,6 +19,14 @@ export interface TraceLabelOverlap {
  * @returns An array of TraceLabelOverlap objects, each indicating an overlap
  *          between a trace and a label.
  */
+/**
+ * A trace running exactly along a label's edge (zero-depth contact) is
+ * tolerated — only actual penetration into the label interior counts.
+ * Rerouting edge-contacts causes unnecessary detours that often create new
+ * trace-trace overlaps.
+ */
+const EDGE_CONTACT_TOLERANCE = 0.01
+
 export const detectTraceLabelOverlap = ({
   traces,
   netLabels = [],
@@ -30,7 +38,13 @@ export const detectTraceLabelOverlap = ({
 
   for (const trace of traces) {
     for (const label of netLabels) {
-      const labelBounds = getRectBounds(label.center, label.width, label.height)
+      const rawBounds = getRectBounds(label.center, label.width, label.height)
+      const labelBounds = {
+        minX: rawBounds.minX + EDGE_CONTACT_TOLERANCE,
+        minY: rawBounds.minY + EDGE_CONTACT_TOLERANCE,
+        maxX: rawBounds.maxX - EDGE_CONTACT_TOLERANCE,
+        maxY: rawBounds.maxY - EDGE_CONTACT_TOLERANCE,
+      }
 
       for (let j = 0; j < trace.tracePath.length - 1; j++) {
         const p1 = trace.tracePath[j]
