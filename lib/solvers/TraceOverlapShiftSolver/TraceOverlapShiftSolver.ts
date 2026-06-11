@@ -10,6 +10,8 @@ import {
 import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 
 type ConnNetId = string
+const EPS = 2e-3
+const SAME_NET_ALIGNMENT_DISTANCE = 0.1
 
 /**
  * This solver finds traces that overlap (coincident and parallel) and aren't
@@ -42,7 +44,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
   correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath> = {}
 
-  cleanupPhase: "diagonals" | "done" | null = null
+  cleanupPhase: "same_net_alignment" | "diagonals" | "done" | null = null
 
   constructor(params: {
     inputProblem: InputProblem
@@ -90,9 +92,6 @@ export class TraceOverlapShiftSolver extends BaseSolver {
   findNextOverlapIssue(): {
     overlappingTraceSegments: Array<OverlappingTraceSegmentLocator>
   } | null {
-    // Detect the next set of overlapping segments between two different net islands.
-    const EPS = 2e-3
-
     const netIds = Object.keys(this.traceNetIslands)
     // Compare each pair of different nets
     for (let i = 0; i < netIds.length; i++) {
@@ -214,7 +213,6 @@ export class TraceOverlapShiftSolver extends BaseSolver {
   }
 
   private findNextDiagonalSegment() {
-    const EPS = 2e-3
     for (const mspPairId in this.correctedTraceMap) {
       const tracePath = this.correctedTraceMap[mspPairId]!.tracePath
       for (let i = 0; i < tracePath.length - 1; i++) {
@@ -240,8 +238,6 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     }
 
     const { mspPairId, tracePath, i, p1, p2 } = diagonalInfo
-    const EPS = 2e-3
-
     const p0 = i > 0 ? tracePath[i - 1] : null
     const p3 = i + 2 < tracePath.length ? tracePath[i + 2] : null
 
@@ -269,6 +265,109 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     return true // Fixed one diagonal, return true to re-evaluate in next step
   }
 
+  private findAndAlignNextSameNetCloseSegment(): boolean {
+    const overlaps1D = (
+      a1: number,
+      a2: number,
+      b1: number,
+      b2: number,
+    ): boolean => {
+      const minA = Math.min(a1, a2)
+      const maxA = Math.max(a1, a2)
+      const minB = Math.min(b1, b2)
+      const maxB = Math.max(b1, b2)
+      return Math.min(maxA, maxB) - Math.max(minA, minB) > EPS
+    }
+
+    const isInternalSegment = (trace: SolvedTracePath, segmentIndex: number) =>
+      segmentIndex > 0 && segmentIndex < trace.tracePath.length - 2
+
+    for (const paths of Object.values(this.traceNetIslands)) {
+      for (let pa = 0; pa < paths.length; pa++) {
+        const pathA = paths[pa]!
+        for (let pb = pa + 1; pb < paths.length; pb++) {
+          const pathB = paths[pb]!
+
+          for (let sa = 0; sa < pathA.tracePath.length - 1; sa++) {
+            const a1 = pathA.tracePath[sa]!
+            const a2 = pathA.tracePath[sa + 1]!
+            const aVert = Math.abs(a1.x - a2.x) < EPS
+            const aHorz = Math.abs(a1.y - a2.y) < EPS
+            if (!aVert && !aHorz) continue
+
+            for (let sb = 0; sb < pathB.tracePath.length - 1; sb++) {
+              const b1 = pathB.tracePath[sb]!
+              const b2 = pathB.tracePath[sb + 1]!
+              const bVert = Math.abs(b1.x - b2.x) < EPS
+              const bHorz = Math.abs(b1.y - b2.y) < EPS
+              if (aVert !== bVert || aHorz !== bHorz) continue
+
+              if (aVert) {
+                const distance = Math.abs(a1.x - b1.x)
+                if (
+                  distance <= EPS ||
+                  distance > SAME_NET_ALIGNMENT_DISTANCE ||
+                  !overlaps1D(a1.y, a2.y, b1.y, b2.y)
+                ) {
+                  continue
+                }
+
+                if (isInternalSegment(pathB, sb)) {
+                  this.alignSegment(pathB, sb, "x", a1.x)
+                  return true
+                }
+                if (isInternalSegment(pathA, sa)) {
+                  this.alignSegment(pathA, sa, "x", b1.x)
+                  return true
+                }
+              } else {
+                const distance = Math.abs(a1.y - b1.y)
+                if (
+                  distance <= EPS ||
+                  distance > SAME_NET_ALIGNMENT_DISTANCE ||
+                  !overlaps1D(a1.x, a2.x, b1.x, b2.x)
+                ) {
+                  continue
+                }
+
+                if (isInternalSegment(pathB, sb)) {
+                  this.alignSegment(pathB, sb, "y", a1.y)
+                  return true
+                }
+                if (isInternalSegment(pathA, sa)) {
+                  this.alignSegment(pathA, sa, "y", b1.y)
+                  return true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return false
+  }
+
+  private alignSegment(
+    trace: SolvedTracePath,
+    segmentIndex: number,
+    axis: "x" | "y",
+    value: number,
+  ) {
+    const tracePath = trace.tracePath.map((point) => ({ ...point }))
+    tracePath[segmentIndex] = { ...tracePath[segmentIndex]!, [axis]: value }
+    tracePath[segmentIndex + 1] = {
+      ...tracePath[segmentIndex + 1]!,
+      [axis]: value,
+    }
+
+    this.correctedTraceMap[trace.mspPairId] = {
+      ...trace,
+      tracePath,
+    }
+    this.traceNetIslands = this.computeTraceNetIslands()
+  }
+
   override _step() {
     if (this.activeSubSolver?.solved) {
       for (const [mspPairId, newTrace] of Object.entries(
@@ -290,7 +389,15 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
     if (overlapIssue === null) {
       if (this.cleanupPhase === null) {
-        this.cleanupPhase = "diagonals"
+        this.cleanupPhase = "same_net_alignment"
+      }
+
+      if (this.cleanupPhase === "same_net_alignment") {
+        const alignedSameNetSegment = this.findAndAlignNextSameNetCloseSegment()
+        if (!alignedSameNetSegment) {
+          this.cleanupPhase = "diagonals"
+        }
+        return
       }
 
       if (this.cleanupPhase === "diagonals") {
