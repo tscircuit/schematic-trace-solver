@@ -57,13 +57,35 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     // Shift only the overlapping segments, and move the shared endpoints
     // (the last point of the previous segment and the first point of the next
     // segment) so the polyline remains orthogonal without self-overlap.
-    // Compute offsets for each island involved. The first island stays in
-    // place (shifting one side is enough to resolve the overlap and keeps
-    // its trace straight); the others alternate directions around it.
+    //
+    // Shifting a terminal (pin-attached) segment forces reconnection jogs, so
+    // when a group's overlap involves a terminal segment that group is kept
+    // stationary (the first such group) and the others shift around it.
+    // When every overlapping segment is internal, shifting is free of jogs —
+    // all groups shift in alternating directions, maximizing separation.
+    const groupHasTerminalOverlap = (
+      group: OverlappingTraceSegmentLocator,
+    ): boolean =>
+      group.pathsWithOverlap.some(
+        ({ solvedTracePathIndex, traceSegmentIndex }) => {
+          const path =
+            this.traceNetIslands[group.connNetId]?.[solvedTracePathIndex]
+          if (!path) return false
+          return (
+            traceSegmentIndex === 0 ||
+            traceSegmentIndex === path.tracePath.length - 2
+          )
+        },
+      )
+
+    const stationaryIdx = this.overlappingTraceSegments.findIndex(
+      groupHasTerminalOverlap,
+    )
+
     const offsets = this.overlappingTraceSegments.map((group, idx) => {
-      if (idx === 0) return 0
-      const n = Math.floor((idx + 1) / 2)
-      const signed = idx % 2 === 1 ? n : -n
+      if (idx === stationaryIdx) return 0
+      const n = Math.floor(idx / 2) + 1
+      const signed = idx % 2 === 0 ? -n : n
       return this.getObstacleAwareOffset({
         group,
         offset: signed * this.SHIFT_DISTANCE,
