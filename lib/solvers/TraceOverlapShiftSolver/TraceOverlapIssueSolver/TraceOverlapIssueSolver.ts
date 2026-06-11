@@ -57,10 +57,13 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     // Shift only the overlapping segments, and move the shared endpoints
     // (the last point of the previous segment and the first point of the next
     // segment) so the polyline remains orthogonal without self-overlap.
-    // Compute offsets for each island involved: alternate directions
+    // Compute offsets for each island involved. The first island stays in
+    // place (shifting one side is enough to resolve the overlap and keeps
+    // its trace straight); the others alternate directions around it.
     const offsets = this.overlappingTraceSegments.map((group, idx) => {
-      const n = Math.floor(idx / 2) + 1
-      const signed = idx % 2 === 0 ? -n : n
+      if (idx === 0) return 0
+      const n = Math.floor((idx + 1) / 2)
+      const signed = idx % 2 === 1 ? n : -n
       return this.getObstacleAwareOffset({
         group,
         offset: signed * this.SHIFT_DISTANCE,
@@ -76,6 +79,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     // For each net island group, shift only its overlapping segments and adjust adjacent joints
     this.overlappingTraceSegments.forEach((group, gidx) => {
       const offset = offsets[gidx]!
+      if (offset === 0) return
 
       // Gather unique segment indices per path
       const byPath: Map<number, Set<number>> = new Map()

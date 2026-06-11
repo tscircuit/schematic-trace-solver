@@ -9,6 +9,7 @@ import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/Schemati
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { doesPathOverlapOtherTraces } from "../../doesPathOverlapOtherTraces"
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath
@@ -16,6 +17,11 @@ interface SingleOverlapSolverInput {
   problem: InputProblem
   paddingBuffer: number
   detourCount: number
+  /**
+   * Other traces in the circuit — candidate paths that run collinear over a
+   * different net's trace are rejected.
+   */
+  otherTraces?: SolvedTracePath[]
 }
 
 const MAX_TRIES = 5
@@ -32,6 +38,7 @@ export class SingleOverlapSolver extends BaseSolver {
   problem: InputProblem
   obstacles: ReturnType<typeof getObstacleRects>
   label: NetLabelPlacement
+  otherTraces: SolvedTracePath[]
   _tried: number = 0
 
   constructor(solverInput: SingleOverlapSolverInput) {
@@ -39,6 +46,7 @@ export class SingleOverlapSolver extends BaseSolver {
     this.initialTrace = solverInput.trace
     this.problem = solverInput.problem
     this.label = solverInput.label
+    this.otherTraces = solverInput.otherTraces ?? []
 
     // Calculate an effective padding for this specific run based on the detourCount.
     const effectivePadding =
@@ -77,7 +85,14 @@ export class SingleOverlapSolver extends BaseSolver {
     const nextCandidatePath = this.queuedCandidatePaths.shift()!
     const simplifiedPath = simplifyPath(nextCandidatePath)
 
-    if (!isPathCollidingWithObstacles(simplifiedPath, this.obstacles)) {
+    if (
+      !isPathCollidingWithObstacles(simplifiedPath, this.obstacles) &&
+      !doesPathOverlapOtherTraces({
+        path: simplifiedPath,
+        globalConnNetId: this.initialTrace.globalConnNetId,
+        otherTraces: this.otherTraces,
+      })
+    ) {
       this.solvedTracePath = simplifiedPath
       this.solved = true
     }

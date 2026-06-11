@@ -53,6 +53,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private maxSearchDistance: number
   private pinMap: Record<string, InputPin & { chipId: string }>
+  /**
+   * When true, a candidate's connector trace may cross other traces
+   * perpendicularly (crossings are normal in schematics). Used as a second
+   * pass so the required orientation is kept whenever a retrace is possible.
+   */
+  private allowConnectorCrossings = false
 
   constructor(params: AvailableNetOrientationSolverParams) {
     super()
@@ -178,25 +184,37 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   private findCorrectedCandidate(label: NetLabelPlacement, labelIndex: number) {
     const orientations = this.getAvailableOrientations(label)
-    const rotatedCandidate = this.findValidRotatedCandidate(
-      label,
-      labelIndex,
-      orientations,
-    )
-    if (rotatedCandidate) return rotatedCandidate
 
-    const shiftedCandidate = this.findValidShiftedCandidate(
-      label,
-      orientations[0]!,
-      labelIndex,
-    )
-    if (shiftedCandidate) return shiftedCandidate
+    // First pass requires a crossing-free connector trace; if no candidate is
+    // found, retry allowing the connector to cross other traces — keeping the
+    // required orientation matters more than avoiding a trace crossing.
+    for (const allowConnectorCrossings of [false, true]) {
+      this.allowConnectorCrossings = allowConnectorCrossings
 
-    return this.findValidLateralShiftedCandidate(
-      label,
-      orientations[0]!,
-      labelIndex,
-    )
+      const rotatedCandidate = this.findValidRotatedCandidate(
+        label,
+        labelIndex,
+        orientations,
+      )
+      if (rotatedCandidate) return rotatedCandidate
+
+      const shiftedCandidate = this.findValidShiftedCandidate(
+        label,
+        orientations[0]!,
+        labelIndex,
+      )
+      if (shiftedCandidate) return shiftedCandidate
+
+      const lateralCandidate = this.findValidLateralShiftedCandidate(
+        label,
+        orientations[0]!,
+        labelIndex,
+      )
+      if (lateralCandidate) return lateralCandidate
+    }
+
+    this.allowConnectorCrossings = false
+    return null
   }
 
   private findValidRotatedCandidate(
@@ -615,7 +633,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       phase,
     })
 
-    if (tracePathCrossesAnyTrace(connectorTrace, this.traceMap)) {
+    if (
+      !this.allowConnectorCrossings &&
+      tracePathCrossesAnyTrace(connectorTrace, this.traceMap)
+    ) {
       return "trace-collision"
     }
 

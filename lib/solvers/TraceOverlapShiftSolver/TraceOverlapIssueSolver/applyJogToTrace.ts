@@ -29,6 +29,36 @@ export const applyJogToTerminalSegment = ({
       ? 1
       : -1
 
+  // Single-segment trace: both endpoints are pins, so jog at both ends and
+  // shift only the middle — neither endpoint may move off its pin.
+  if (si === 0 && pts.length === 2) {
+    if (isVertical) {
+      const jogYStart = start.y + segDir * JOG_SIZE
+      const jogYEnd = end.y - segDir * JOG_SIZE
+      pts.splice(
+        1,
+        0,
+        { x: start.x, y: jogYStart },
+        { x: start.x + offset, y: jogYStart },
+        { x: end.x + offset, y: jogYEnd },
+        { x: end.x, y: jogYEnd },
+      )
+    } else {
+      // Horizontal
+      const jogXStart = start.x + segDir * JOG_SIZE
+      const jogXEnd = end.x - segDir * JOG_SIZE
+      pts.splice(
+        1,
+        0,
+        { x: jogXStart, y: start.y },
+        { x: jogXStart, y: start.y + offset },
+        { x: jogXEnd, y: end.y + offset },
+        { x: jogXEnd, y: end.y },
+      )
+    }
+    return
+  }
+
   if (si === 0) {
     if (isVertical) {
       const jogY = start.y + segDir * JOG_SIZE

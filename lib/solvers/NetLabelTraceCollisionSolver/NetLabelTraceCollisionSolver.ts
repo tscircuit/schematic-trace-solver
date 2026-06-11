@@ -78,10 +78,13 @@ interface TraceLabelOverlap {
 }
 
 /**
- * Detects overlaps where a trace segment intersects a label from another net.
- * Point-only contact is allowed by segmentIntersectsRect; positive overlap on
- * a label edge is still a visual collision and should be rerouted.
+ * Detects overlaps where a trace segment penetrates the interior of a label
+ * from another net. The bounds are shrunk slightly so a trace running exactly
+ * along a label's edge (zero-depth contact) is tolerated — rerouting those
+ * causes unnecessary detours that often create new trace-trace overlaps.
  */
+const EDGE_CONTACT_TOLERANCE = 0.01
+
 function detectTraceLabelOverlaps(
   traces: SolvedTracePath[],
   labels: NetLabelPlacement[],
@@ -91,9 +94,15 @@ function detectTraceLabelOverlaps(
     for (const label of labels) {
       if (trace.globalConnNetId === label.globalConnNetId) continue
       const bounds = getRectBounds(label.center, label.width, label.height)
+      const shrunkBounds = {
+        minX: bounds.minX + EDGE_CONTACT_TOLERANCE,
+        minY: bounds.minY + EDGE_CONTACT_TOLERANCE,
+        maxX: bounds.maxX - EDGE_CONTACT_TOLERANCE,
+        maxY: bounds.maxY - EDGE_CONTACT_TOLERANCE,
+      }
       const path = trace.tracePath
       for (let i = 0; i < path.length - 1; i++) {
-        if (segmentIntersectsRect(path[i]!, path[i + 1]!, bounds)) {
+        if (segmentIntersectsRect(path[i]!, path[i + 1]!, shrunkBounds)) {
           overlaps.push({ trace, label })
           break
         }
@@ -226,6 +235,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
       problem: this.inputProblem,
       paddingBuffer: PADDING_BUFFER,
       detourCount,
+      otherTraces: this.outputTraces,
     })
   }
 

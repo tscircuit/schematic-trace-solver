@@ -98,16 +98,24 @@ export const balanceZShapes = ({
     let p1New: Point
     let p2New: Point
 
-    const isHVHShape = p0.y === p1.y && p1.x === p2.x && p2.y === p3.y
+    const eq = (a: number, b: number) => Math.abs(a - b) < TOLERANCE
+    const isHVHShape =
+      eq(p0.y, p1.y) && eq(p1.x, p2.x) && eq(p2.y, p3.y)
+    const isVHVShape =
+      eq(p0.x, p1.x) && eq(p1.y, p2.y) && eq(p2.x, p3.x)
 
     if (isHVHShape) {
       const idealX = (p0.x + p3.x) / 2
       p1New = { x: idealX, y: p1.y }
       p2New = { x: idealX, y: p2.y }
-    } else {
+    } else if (isVHVShape) {
       const idealY = (p0.y + p3.y) / 2
       p1New = { x: p1.x, y: idealY }
       p2New = { x: p2.x, y: idealY }
+    } else {
+      // Not an orthogonal Z shape (e.g. contains diagonal-ish float noise) —
+      // balancing would corrupt the path
+      return { ...targetTrace }
     }
 
     const collides =
@@ -126,18 +134,22 @@ export const balanceZShapes = ({
     return { ...targetTrace, tracePath: simplifyPath(newPath) }
   }
 
+  const eqf = (a: number, b: number) => Math.abs(a - b) < TOLERANCE
   for (let i = 1; i < newPath.length - 4; i++) {
     const p1 = newPath[i]!
     const p2 = newPath[i + 1]!
     const p3 = newPath[i + 2]!
     const p4 = newPath[i + 3]!
 
-    const isHVHZShape = p1.y === p2.y && p2.x === p3.x && p3.y === p4.y
-    const isVHVZShape = p1.x === p2.x && p2.y === p3.y && p3.x === p4.x
+    const isHVHZShape =
+      eqf(p1.y, p2.y) && eqf(p2.x, p3.x) && eqf(p3.y, p4.y)
+    const isVHVZShape =
+      eqf(p1.x, p2.x) && eqf(p2.y, p3.y) && eqf(p3.x, p4.x)
 
     const isCollinearHorizontal =
-      p1.y === p2.y && p2.y === p3.y && p3.y === p4.y
-    const isCollinearVertical = p1.x === p2.x && p2.x === p3.x && p3.x === p4.x
+      eqf(p1.y, p2.y) && eqf(p2.y, p3.y) && eqf(p3.y, p4.y)
+    const isCollinearVertical =
+      eqf(p1.x, p2.x) && eqf(p2.x, p3.x) && eqf(p3.x, p4.x)
     const isCollinear = isCollinearHorizontal || isCollinearVertical
 
     let isSameDirection = false

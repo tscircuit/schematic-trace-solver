@@ -19,6 +19,8 @@ export interface OverlapCollectionSolverInput {
   mergedNetLabelPlacements: NetLabelPlacement[]
   mergedLabelNetIdMap: Record<string, Set<string>>
   detourCounts: Map<string, number>
+  /** All traces in the circuit, used to avoid rerouting over other nets */
+  allCircuitTraces?: SolvedTracePath[]
 }
 
 /**
@@ -32,6 +34,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
   mergedLabelNetIdMap: Record<string, Set<string>>
 
   allTraces: SolvedTracePath[]
+  allCircuitTraces: SolvedTracePath[]
   modifiedTraces: SolvedTracePath[] = []
 
   private readonly PADDING_BUFFER = 0.1
@@ -51,6 +54,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
     this.mergedNetLabelPlacements = solverInput.mergedNetLabelPlacements
     this.mergedLabelNetIdMap = solverInput.mergedLabelNetIdMap
     this.allTraces = [...solverInput.traces]
+    this.allCircuitTraces = solverInput.allCircuitTraces ?? []
     this.detourCounts = solverInput.detourCounts
   }
 
@@ -150,6 +154,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
             problem: this.inputProblem,
             paddingBuffer: this.PADDING_BUFFER,
             detourCount: detourCount,
+            otherTraces: this.allCircuitTraces,
           })
         } else {
           const overlapId = `${traceToFix.mspPairId}-${labelToAvoid.globalConnNetId}`
@@ -192,6 +197,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
             problem: this.inputProblem,
             paddingBuffer: this.PADDING_BUFFER,
             detourCount: detourCount,
+            otherTraces: this.allCircuitTraces,
           })
         } else {
           const overlapId = `${traceToFix.mspPairId}-${labelToAvoid.globalConnNetId}`
@@ -211,6 +217,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
         problem: this.inputProblem,
         paddingBuffer: this.PADDING_BUFFER,
         detourCount: detourCount,
+        otherTraces: this.allCircuitTraces,
       })
     }
   }
