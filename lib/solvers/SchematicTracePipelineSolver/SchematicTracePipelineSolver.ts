@@ -21,7 +21,6 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
-import { TraceComponentObstacleAvoidanceSolver } from "../TraceComponentObstacleAvoidanceSolver/TraceComponentObstacleAvoidanceSolver"
 import { Example28Solver } from "../Example28Solver/Example28Solver"
 import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
 import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
@@ -77,7 +76,6 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
-  traceComponentObstacleAvoidanceSolver?: TraceComponentObstacleAvoidanceSolver
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
   vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
@@ -222,21 +220,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ]
     }),
     definePipelineStep(
-      "traceComponentObstacleAvoidanceSolver",
-      TraceComponentObstacleAvoidanceSolver,
-      (instance) => [
-        {
-          inputProblem: instance.inputProblem,
-          traces: instance.traceCleanupSolver!.getOutput().traces,
-        },
-      ],
-    ),
-    definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
       (instance) => {
         const traces =
-          instance.traceComponentObstacleAvoidanceSolver?.getOutput().traces ??
           instance.traceCleanupSolver?.getOutput().traces ??
           instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
@@ -252,7 +239,6 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     ),
     definePipelineStep("example28Solver", Example28Solver, (instance) => {
       const traces =
-        instance.traceComponentObstacleAvoidanceSolver?.getOutput().traces ??
         instance.traceCleanupSolver?.getOutput().traces ??
         instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
