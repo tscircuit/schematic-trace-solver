@@ -51,8 +51,28 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     // segment) so the polyline remains orthogonal without self-overlap.
     const EPS = 1e-6
 
+    // Groups containing a straight pin-to-pin trace (2 points, both endpoints
+    // are pins) keep their position when another group can shift instead:
+    // shifting such a trace would force jogs on an otherwise straight line.
+    const containsStraightPinToPinTrace = (
+      group: OverlappingTraceSegmentLocator,
+    ) =>
+      group.pathsWithOverlap.some(({ solvedTracePathIndex }) => {
+        const path =
+          this.traceNetIslands[group.connNetId][solvedTracePathIndex]!
+        return path.tracePath.length === 2
+      })
+
+    const groupShouldStayInPlace = this.overlappingTraceSegments.map(
+      containsStraightPinToPinTrace,
+    )
+    const someGroupCanShift = groupShouldStayInPlace.some(
+      (shouldStay) => !shouldStay,
+    )
+
     // Compute offsets for each island involved: alternate directions
-    const offsets = this.overlappingTraceSegments.map((_, idx) => {
+    const offsets = this.overlappingTraceSegments.map((_group, idx) => {
+      if (someGroupCanShift && groupShouldStayInPlace[idx]) return 0
       const n = Math.floor(idx / 2) + 1
       const signed = idx % 2 === 0 ? -n : n
       return signed * this.SHIFT_DISTANCE
@@ -67,6 +87,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     // For each net island group, shift only its overlapping segments and adjust adjacent joints
     this.overlappingTraceSegments.forEach((group, gidx) => {
       const offset = offsets[gidx]!
+      if (offset === 0) return
 
       // Gather unique segment indices per path
       const byPath: Map<number, Set<number>> = new Map()
