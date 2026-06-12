@@ -13,6 +13,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { isNetLabelOnlyPassivePinGroup } from "../../utils/isNetLabelOnlyPassivePinGroup"
 
 export type MspConnectionPairId = string
 
@@ -75,10 +76,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    // Only queue nets that have at least one direct-wire connection. Pins joined
-    // exclusively through net connections (net labels) must not be routed as
-    // traces here -- they get net labels placed in a later phase.
-    this.queuedDcNetIds = Object.keys(directConnMap.netMap)
+    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -97,13 +95,23 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     const dcNetId = this.queuedDcNetIds.shift()!
 
-    // Use the direct-wire connectivity map. globalConnMap also contains
-    // net-label membership, which would otherwise pull pins that should be left
-    // for net-label placement into MSP pairs (and thus into routed traces).
-    const allIds = this.dcConnMap.getIdsConnectedToNet(dcNetId) as string[]
+    const allIds = this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[]
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
     if (directlyConnectedPins.length <= 1) {
+      return
+    }
+
+    // Passive components joined exclusively through net labels must not be
+    // routed as traces -- each pin gets a net label placed in a later phase
+    // instead. Routing them produced a spurious trace alongside the net
+    // labels. See issue #79 (repro61).
+    if (
+      isNetLabelOnlyPassivePinGroup({
+        inputProblem: this.inputProblem,
+        pinIdsInNet: directlyConnectedPins,
+      })
+    ) {
       return
     }
 

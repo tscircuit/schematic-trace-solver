@@ -14,12 +14,7 @@ export const getConnectivityMapsFromInputProblem = (
     ])
   }
 
-  // Deep-clone the direct-connection netMap before seeding netConnMap.
-  // ConnectivityMap keeps a reference to the object it is constructed with (and
-  // mutates its inner arrays via addConnections), so passing directConnMap.netMap
-  // directly would let net-label connections leak back into directConnMap and
-  // pollute the pure direct-wire connectivity.
-  const netConnMap = new ConnectivityMap(structuredClone(directConnMap.netMap))
+  const netConnMap = new ConnectivityMap(directConnMap.netMap)
 
   for (const netConn of inputProblem.netConnections) {
     netConnMap.addConnections([[netConn.netId, ...netConn.pinIds]])

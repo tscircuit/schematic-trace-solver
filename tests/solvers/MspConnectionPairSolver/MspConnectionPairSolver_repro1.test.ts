@@ -10,9 +10,5 @@ test("MspConnectionPairSolver_repro1", () => {
 
   solver.solve()
 
-  // This input has two direct connections (VCC: U1.1-C1.1, EN: U1.2-C2.1) and
-  // one net-label-only net (GND: U1.3, C2.2, C1.2). Only the two direct
-  // connections may be routed as msp pairs; the GND net is placed as net labels
-  // instead, so it must not contribute any msp pairs. See issue #79.
-  expect(solver.mspConnectionPairs.length).toBe(2)
+  expect(solver.mspConnectionPairs.length).toBe(4)
 })

@@ -13,6 +13,7 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { isNetLabelOnlyPassivePinGroup } from "../../utils/isNetLabelOnlyPassivePinGroup"
 
 const NEAREST_NEIGHBOR_COUNT = 3
 
@@ -67,18 +68,6 @@ export class LongDistancePairSolver extends BaseSolver {
       }
     }
 
-    // Pins that participate in at least one direct (wire) connection. Only these
-    // are eligible to be routed as traces -- pins that are connected exclusively
-    // through net connections (net labels) must never be routed here, otherwise
-    // a net-label-only net (e.g. two capacitors sharing GND/VCC only via labels)
-    // would get a spurious trace drawn between its pins. See issue #79.
-    const directConnectedPinIds = new Set<PinId>()
-    for (const directConn of inputProblem.directConnections) {
-      for (const pinId of directConn.pinIds) {
-        directConnectedPinIds.add(pinId)
-      }
-    }
-
     // 2. Generate candidate pairs using N-Nearest-Neighbors approach
     const candidatePairs: Array<
       [InputPin & { chipId: string }, InputPin & { chipId: string }]
@@ -89,10 +78,20 @@ export class LongDistancePairSolver extends BaseSolver {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
 
+      // Passive components joined exclusively through net labels must not be
+      // routed as traces -- each pin gets a net label placed in a later phase
+      // instead. See issue #79 (repro61).
+      if (
+        isNetLabelOnlyPassivePinGroup({
+          inputProblem,
+          pinIdsInNet: allPinIdsInNet.filter((pinId) => pinMap.has(pinId)),
+        })
+      ) {
+        continue
+      }
+
       const unconnectedPinIds = allPinIdsInNet.filter(
-        (pinId) =>
-          !primaryConnectedPinIds.has(pinId) &&
-          directConnectedPinIds.has(pinId),
+        (pinId) => !primaryConnectedPinIds.has(pinId),
       )
 
       for (const unconnectedPinId of unconnectedPinIds) {
@@ -100,11 +99,7 @@ export class LongDistancePairSolver extends BaseSolver {
         if (!sourcePin) continue
 
         const neighbors = allPinIdsInNet
-          .filter(
-            (otherPinId) =>
-              otherPinId !== unconnectedPinId &&
-              directConnectedPinIds.has(otherPinId),
-          )
+          .filter((otherPinId) => otherPinId !== unconnectedPinId)
           .flatMap((otherPinId) => {
             const targetPin = pinMap.get(otherPinId)
             if (!targetPin) return [] // Gracefully handle missing pins
