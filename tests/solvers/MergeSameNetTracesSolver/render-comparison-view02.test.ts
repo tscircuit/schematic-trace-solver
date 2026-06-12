@@ -1,7 +1,7 @@
-import { test, expect } from "bun:test"
+import { expect, test } from "bun:test"
 import { MergeSameNetTracesSolver } from "lib/solvers/MergeSameNetTracesSolver/MergeSameNetTracesSolver"
-import type { InputProblem } from "lib/types/InputProblem"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 
 /**
