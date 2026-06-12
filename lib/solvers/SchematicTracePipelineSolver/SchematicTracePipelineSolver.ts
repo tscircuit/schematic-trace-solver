@@ -27,6 +27,7 @@ import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementS
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
+import { TraceMergeSolver } from "../TraceMergeSolver/TraceMergeSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -82,6 +83,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
+  traceMergeSolver?: TraceMergeSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -314,6 +316,23 @@ export class SchematicTracePipelineSolver extends BaseSolver {
               .netLabelPlacements,
         },
       ],
+    ),
+    definePipelineStep(
+      "traceMergeSolver",
+      TraceMergeSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          traces:
+            instance.netLabelNetLabelCollisionSolver?.getOutput().traces ??
+            instance.netLabelTraceCollisionSolver!.getOutput().traces,
+        },
+      ],
+      {
+        onSolved: (instance) => {
+          // Merge solver aligns traces, stored for visualization
+        },
+      },
     ),
   ]
 
