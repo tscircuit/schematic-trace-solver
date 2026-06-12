@@ -36,7 +36,7 @@ const pathIntersectsRect = (path: Array<{ x: number; y: number }>, rect: any) =>
     return segmentIntersectsRect(path[index - 1], point, rect)
   })
 
-test("repro130 bq27441 fuel gauge trace crosses C1 obstacle", () => {
+test("repro130 bq27441 fuel gauge trace does not cross C1 obstacle", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
   solver.solve()
 
@@ -54,7 +54,7 @@ test("repro130 bq27441 fuel gauge trace crosses C1 obstacle", () => {
   expect(c1).toBeDefined()
   expect(traceThroughC1).toBeDefined()
   expect(pathIntersectsRect(traceThroughC1!.tracePath, getChipRect(c1))).toBe(
-    true,
+    false,
   )
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
