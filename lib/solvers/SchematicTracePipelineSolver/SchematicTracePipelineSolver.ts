@@ -459,16 +459,4 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     colorAvailableNetOrientationLabels(finalGraphics, this.inputProblem)
     return finalGraphics
   }
-
-  /**
-   * A lightweight version of the visualize method that can be used to stream
-   * progress
-   */
-  override preview(): GraphicsObject {
-    if (this.activeSubSolver) {
-      return this.activeSubSolver.preview()
-    }
-
-    return super.preview()
-  }
 }

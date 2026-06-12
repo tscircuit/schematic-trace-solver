@@ -23,7 +23,6 @@ export class SameNetTraceMergeSolver extends BaseSolver {
 
     const segmentsByNet = this.traces.reduce(
       (acc, seg) => {
-        // Support different property names just in case
         const netId = seg.net_id || seg.netId || "unknown"
         if (!acc[netId]) acc[netId] = []
         acc[netId].push(seg)
@@ -125,10 +124,11 @@ export class SameNetTraceMergeSolver extends BaseSolver {
       netLabelPlacements: this.netLabelPlacements,
     }
   }
+
   override visualize(): any {
     const graphics: any = {
-      points: [],
       lines: [],
+      points: [],
       rects: [],
       circles: [],
       texts: [],
@@ -142,7 +142,6 @@ export class SameNetTraceMergeSolver extends BaseSolver {
           t.x2 !== undefined &&
           t.y2 !== undefined
         ) {
-          // Exactly matching their format
           graphics.lines.push({
             points: [
               { x: t.x1, y: t.y1 },
@@ -150,17 +149,9 @@ export class SameNetTraceMergeSolver extends BaseSolver {
             ],
             strokeColor: "blue",
           })
-
-          // Feeding explicit points to prevent bounding box calculation crash
-          graphics.points.push({ x: t.x1, y: t.y1 })
-          graphics.points.push({ x: t.x2, y: t.y2 })
+          graphics.points.push({ x: t.x1, y: t.y1 }, { x: t.x2, y: t.y2 })
         }
       }
-    }
-
-    // Safety net against empty states
-    if (graphics.points.length === 0) {
-      graphics.points.push({ x: 0, y: 0 })
     }
 
     return graphics
