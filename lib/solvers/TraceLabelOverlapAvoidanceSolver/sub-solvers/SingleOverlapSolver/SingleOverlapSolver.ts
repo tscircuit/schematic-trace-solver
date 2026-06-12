@@ -9,6 +9,7 @@ import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/Schemati
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath
@@ -17,9 +18,14 @@ interface SingleOverlapSolverInput {
   paddingBuffer: number
   detourCount: number
   tracesToAvoidOverlapping?: SolvedTracePath[]
+  /**
+   * All current net label placements. Candidate paths are rejected if they
+   * still intersect any of these labels (same-net labels are ignored).
+   */
+  allNetLabelPlacements?: NetLabelPlacement[]
 }
 
-const MAX_TRIES = 5
+const MAX_TRIES = 12
 const COINCIDENT_EPS = 2e-3
 
 /**
@@ -93,6 +99,8 @@ export class SingleOverlapSolver extends BaseSolver {
   obstacles: ReturnType<typeof getObstacleRects>
   label: NetLabelPlacement
   tracesToAvoidOverlapping: SolvedTracePath[]
+  allNetLabelPlacements: NetLabelPlacement[]
+  initiallyOverlappedLabelIds: Set<string>
   _tried: number = 0
 
   constructor(solverInput: SingleOverlapSolverInput) {
@@ -100,6 +108,15 @@ export class SingleOverlapSolver extends BaseSolver {
     this.initialTrace = solverInput.trace
     this.problem = solverInput.problem
     this.label = solverInput.label
+    this.allNetLabelPlacements = solverInput.allNetLabelPlacements ?? [
+      solverInput.label,
+    ]
+    this.initiallyOverlappedLabelIds = new Set(
+      detectTraceLabelOverlap({
+        traces: [solverInput.trace],
+        netLabels: this.allNetLabelPlacements,
+      }).map((o) => o.label.globalConnNetId),
+    )
     this.tracesToAvoidOverlapping = (
       solverInput.tracesToAvoidOverlapping ?? []
     ).filter((t) => t.globalConnNetId !== solverInput.trace.globalConnNetId)
@@ -141,7 +158,23 @@ export class SingleOverlapSolver extends BaseSolver {
     const nextCandidatePath = this.queuedCandidatePaths.shift()!
     const simplifiedPath = simplifyPath(nextCandidatePath)
 
+    // The candidate must clear the label being avoided (which may be a
+    // merged label that isn't part of allNetLabelPlacements) and must not
+    // introduce overlaps with labels the original path didn't touch.
+    // (Overlaps the original path already had are handled in later
+    // iterations, so they don't disqualify a candidate.)
+    const candidateLabelOverlaps = detectTraceLabelOverlap({
+      traces: [{ ...this.initialTrace, tracePath: simplifiedPath }],
+      netLabels: [this.label, ...this.allNetLabelPlacements],
+    })
+    const hasDisqualifyingLabelOverlap = candidateLabelOverlaps.some(
+      (o) =>
+        o.label.globalConnNetId === this.label.globalConnNetId ||
+        !this.initiallyOverlappedLabelIds.has(o.label.globalConnNetId),
+    )
+
     if (
+      !hasDisqualifyingLabelOverlap &&
       !isPathCollidingWithObstacles(simplifiedPath, this.obstacles) &&
       !doesPathCoincideWithTraces(simplifiedPath, this.tracesToAvoidOverlapping)
     ) {

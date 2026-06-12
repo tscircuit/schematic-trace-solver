@@ -71,14 +71,17 @@ export const generateFourPointDetourCandidates = ({
     }
     exitPoint = initialTrace.tracePath[exitIndex]
   } else {
-    // STRATEGY 1: Single Label - find the first intersecting segment
+    // STRATEGY 1: Single Label - find the first segment intersecting the
+    // actual (unpadded) label bounds. Using the padded bounds here can pick
+    // a segment that merely touches the padding instead of the segment that
+    // really crosses the label, producing detours around the wrong segment.
     let collidingSegIndex = -1
     for (let i = 0; i < initialTrace.tracePath.length - 1; i++) {
       if (
         segmentIntersectsRect(
           initialTrace.tracePath[i],
           initialTrace.tracePath[i + 1],
-          { ...paddedLabelBounds, chipId: "temp-obstacle" },
+          { ...labelBounds, chipId: "temp-obstacle" },
         )
       ) {
         collidingSegIndex = i
@@ -104,6 +107,16 @@ export const generateFourPointDetourCandidates = ({
     // More horizontal
     const yCandidates = [paddedLabelBounds.maxY, paddedLabelBounds.minY]
     for (const newY of yCandidates) {
+      // Direct-connect variant: keep the entry/exit x coordinates and only
+      // jog around the label at newY. Avoids the connector legs that hug the
+      // padded box edges, which often coincide with a neighboring pin-row
+      // trace sitting exactly one padding away from the label.
+      candidateDetours.push([
+        { x: entryPoint.x, y: newY },
+        { x: exitPoint.x, y: newY },
+      ])
+    }
+    for (const newY of yCandidates) {
       candidateDetours.push(
         dx > 0 // Left-to-right
           ? [
@@ -124,6 +137,13 @@ export const generateFourPointDetourCandidates = ({
   } else {
     // More vertical
     const xCandidates = [paddedLabelBounds.maxX, paddedLabelBounds.minX]
+    for (const newX of xCandidates) {
+      // Direct-connect variant (see horizontal case above)
+      candidateDetours.push([
+        { x: newX, y: entryPoint.y },
+        { x: newX, y: exitPoint.y },
+      ])
+    }
     for (const newX of xCandidates) {
       candidateDetours.push(
         dy > 0 // Top-to-bottom
