@@ -14,7 +14,14 @@ export const getConnectivityMapsFromInputProblem = (
     ])
   }
 
-  const netConnMap = new ConnectivityMap(directConnMap.netMap)
+  // Deep-clone netMap so that netConnMap.addConnections() cannot mutate
+  // directConnMap's arrays. A shallow copy is insufficient because
+  // ConnectivityMap.addConnections() pushes into existing array values.
+  const netConnMap = new ConnectivityMap(
+    Object.fromEntries(
+      Object.entries(directConnMap.netMap).map(([k, v]) => [k, [...v]]),
+    ),
+  )
 
   for (const netConn of inputProblem.netConnections) {
     netConnMap.addConnections([[netConn.netId, ...netConn.pinIds]])
