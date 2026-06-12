@@ -333,7 +333,6 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
-    ,
   ]
 
   constructor(inputProblem: InputProblem) {
