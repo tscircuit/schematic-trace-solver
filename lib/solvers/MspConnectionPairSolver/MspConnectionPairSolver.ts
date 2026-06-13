@@ -13,6 +13,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { isNetLabelOnlyPassivePinGroup } from "../../utils/isNetLabelOnlyPassivePinGroup"
 
 export type MspConnectionPairId = string
 
@@ -98,6 +99,19 @@ export class MspConnectionPairSolver extends BaseSolver {
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
     if (directlyConnectedPins.length <= 1) {
+      return
+    }
+
+    // Passive components joined exclusively through net labels must not be
+    // routed as traces -- each pin gets a net label placed in a later phase
+    // instead. Routing them produced a spurious trace alongside the net
+    // labels. See issue #79 (repro61).
+    if (
+      isNetLabelOnlyPassivePinGroup({
+        inputProblem: this.inputProblem,
+        pinIdsInNet: directlyConnectedPins,
+      })
+    ) {
       return
     }
 
