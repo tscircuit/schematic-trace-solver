@@ -75,7 +75,19 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    // Only queue nets that have at least one pin in a direct connection.
+    // Net-only nets (connected via netConnections) should be handled by
+    // NetLabelPlacementSolver, not routed as trace pairs. (fixes #79)
+    const directPinIds = new Set<string>()
+    for (const dc of inputProblem.directConnections) {
+      for (const pid of dc.pinIds) {
+        directPinIds.add(pid)
+      }
+    }
+    this.queuedDcNetIds = Object.keys(netConnMap.netMap).filter((netId) => {
+      const ids = netConnMap.getIdsConnectedToNet(netId) as string[]
+      return ids.some((id) => directPinIds.has(id))
+    })
   }
 
   override getConstructorParams(): ConstructorParameters<
