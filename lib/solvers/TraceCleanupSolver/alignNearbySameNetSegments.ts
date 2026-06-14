@@ -25,6 +25,8 @@ const getSegments = (traces: SolvedTracePath[]): SegmentRef[] => {
   const segments: SegmentRef[] = []
 
   for (const trace of traces) {
+    if (trace.tracePath.length !== 2) continue
+
     for (let i = 0; i < trace.tracePath.length - 1; i++) {
       const p1 = trace.tracePath[i]!
       const p2 = trace.tracePath[i + 1]!
@@ -45,6 +47,24 @@ const getSegments = (traces: SolvedTracePath[]): SegmentRef[] => {
   }
 
   return segments
+}
+
+const segmentStillMatches = (
+  trace: SolvedTracePath,
+  segment: SegmentRef,
+  threshold: number,
+) => {
+  const p1 = trace.tracePath[segment.segmentIndex]
+  const p2 = trace.tracePath[segment.segmentIndex + 1]
+  if (!p1 || !p2) return false
+
+  const isHorizontal = Math.abs(p1.y - p2.y) < EPS
+  const isVertical = Math.abs(p1.x - p2.x) < EPS
+  if (segment.orientation === "horizontal") {
+    return isHorizontal && Math.abs(p1.y - segment.axis) <= threshold + EPS
+  }
+
+  return isVertical && Math.abs(p1.x - segment.axis) <= threshold + EPS
 }
 
 const alignSegment = (
@@ -108,13 +128,18 @@ export const alignNearbySameNetSegments = (
 
   for (const netTraces of tracesByNet.values()) {
     const segments = getSegments(netTraces)
+    const alignedSegments = new Set<string>()
 
     for (let i = 0; i < segments.length; i++) {
       const a = segments[i]!
+      const aKey = `${a.traceId}:${a.segmentIndex}`
+      if (alignedSegments.has(aKey)) continue
 
       for (let j = i + 1; j < segments.length; j++) {
         const b = segments[j]!
+        const bKey = `${b.traceId}:${b.segmentIndex}`
         if (a.traceId === b.traceId) continue
+        if (alignedSegments.has(bKey)) continue
         if (a.orientation !== b.orientation) continue
         if (!rangesOverlap(a, b)) continue
         if (Math.abs(a.axis - b.axis) > threshold) continue
@@ -122,9 +147,14 @@ export const alignNearbySameNetSegments = (
         const targetAxis = (a.axis + b.axis) / 2
         const traceA = outputMap.get(a.traceId)!
         const traceB = outputMap.get(b.traceId)!
+        if (!segmentStillMatches(traceA, a, threshold)) continue
+        if (!segmentStillMatches(traceB, b, threshold)) continue
 
         outputMap.set(a.traceId, alignSegment(traceA, a, targetAxis))
         outputMap.set(b.traceId, alignSegment(traceB, b, targetAxis))
+        alignedSegments.add(aKey)
+        alignedSegments.add(bKey)
+        break
       }
     }
   }
