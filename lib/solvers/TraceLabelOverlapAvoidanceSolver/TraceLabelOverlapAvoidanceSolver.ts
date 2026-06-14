@@ -42,10 +42,13 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
 
   labelMergingSolver?: MergedNetLabelObstacleSolver
 
+  allInputTraces: SolvedTracePath[]
+
   constructor(solverInput: TraceLabelOverlapAvoidanceSolverInput) {
     super()
     this.inputProblem = solverInput.inputProblem
     this.unprocessedTraces = [...solverInput.traces]
+    this.allInputTraces = solverInput.traces
     this.netLabelPlacements = solverInput.netLabelPlacements
     this.cleanTraces = []
     this.subSolvers = []
@@ -88,6 +91,9 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
           mergedNetLabelPlacements: mergingOutput.netLabelPlacements,
           mergedLabelNetIdMap: mergingOutput.mergedLabelNetIdMap,
           detourCounts: this.detourCounts,
+          tracesToAvoidOverlapping: this.allInputTraces.filter(
+            (t) => t.mspPairId !== currentTargetTrace.mspPairId,
+          ),
         })
         this.subSolvers.push(subSolver)
       }
