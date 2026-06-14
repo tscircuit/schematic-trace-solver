@@ -3,12 +3,20 @@ import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipeline
 import inputProblem from "./assets/repro126-trace-overlap-box-resistor.input.json"
 import "tests/fixtures/matcher"
 
-test("repro126 trace overlaps R2 box", () => {
+test("repro126 net-label-only connection does not route through R2 box", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
   solver.solve()
 
   expect(
     solver.traceOverlapShiftSolver!.correctedTraceMap["U1.3-R2.2"],
-  ).toBeDefined()
+  ).toBeUndefined()
+  expect(
+    solver
+      .netLabelPlacementSolver!.netLabelPlacements.filter(
+        (label) => label.netId === "GND",
+      )
+      .flatMap((label) => label.pinIds)
+      .sort(),
+  ).toEqual(["R2.2", "U1.3"])
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

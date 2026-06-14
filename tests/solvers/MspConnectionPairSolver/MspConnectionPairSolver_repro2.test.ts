@@ -1,5 +1,7 @@
 import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import { test, expect } from "bun:test"
+import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import type { InputProblem } from "lib/types/InputProblem"
 
 test("MspConnectionPairSolver should solve problem correctly", () => {
   const input = {
@@ -89,4 +91,97 @@ test("MspConnectionPairSolver should solve problem correctly", () => {
 
   // Add more specific assertions based on expected output
   // expect(solver.netLabelPlacementSolver!.netLabelPlacements).toMatchInlineSnapshot()
+})
+
+const netLabelOnlyInput: InputProblem = {
+  chips: [
+    {
+      chipId: "schematic_component_0",
+      center: { x: -1, y: 0 },
+      width: 1,
+      height: 1,
+      pins: [{ pinId: "C1.1", x: -0.5, y: 0 }],
+    },
+    {
+      chipId: "schematic_component_1",
+      center: { x: 1, y: 0 },
+      width: 1,
+      height: 1,
+      pins: [{ pinId: "C2.1", x: 0.5, y: 0 }],
+    },
+  ],
+  directConnections: [],
+  netConnections: [{ netId: "GND", pinIds: ["C1.1", "C2.1"] }],
+  availableNetLabelOrientations: {},
+  maxMspPairDistance: 10,
+}
+
+test("net-label-only connections do not mutate the direct connectivity map", () => {
+  const { directConnMap, netConnMap } =
+    getConnectivityMapsFromInputProblem(netLabelOnlyInput)
+  const netOnlyMapId = Object.keys(netConnMap.netMap)[0]!
+
+  expect(Object.keys(directConnMap.netMap)).toHaveLength(0)
+  expect(netConnMap.getIdsConnectedToNet(netOnlyMapId)).toEqual([
+    "GND",
+    "C1.1",
+    "C2.1",
+  ])
+})
+
+test("MspConnectionPairSolver does not route net-label-only connections", () => {
+  const solver = new MspConnectionPairSolver({
+    inputProblem: netLabelOnlyInput,
+  })
+
+  solver.solve()
+
+  expect(solver.mspConnectionPairs).toHaveLength(0)
+})
+
+test("MspConnectionPairSolver skips nets that have no directly wired pins", () => {
+  const inputProblem: InputProblem = {
+    chips: [
+      {
+        chipId: "schematic_component_0",
+        center: { x: -1, y: 0 },
+        width: 1,
+        height: 1,
+        pins: [{ pinId: "A1", x: -0.5, y: 0 }],
+      },
+      {
+        chipId: "schematic_component_1",
+        center: { x: 1, y: 0 },
+        width: 1,
+        height: 1,
+        pins: [{ pinId: "A2", x: 0.5, y: 0 }],
+      },
+      {
+        chipId: "schematic_component_2",
+        center: { x: -1, y: 2 },
+        width: 1,
+        height: 1,
+        pins: [{ pinId: "B1", x: -0.5, y: 2 }],
+      },
+      {
+        chipId: "schematic_component_3",
+        center: { x: 1, y: 2 },
+        width: 1,
+        height: 1,
+        pins: [{ pinId: "B2", x: 0.5, y: 2 }],
+      },
+    ],
+    directConnections: [{ netId: "SIG", pinIds: ["A1", "A2"] }],
+    netConnections: [{ netId: "GND", pinIds: ["B1", "B2"] }],
+    availableNetLabelOrientations: {},
+    maxMspPairDistance: 10,
+  }
+
+  const solver = new MspConnectionPairSolver({ inputProblem })
+
+  expect(solver.queuedDcNetIds).toHaveLength(1)
+
+  solver.solve()
+
+  expect(solver.mspConnectionPairs).toHaveLength(1)
 })
