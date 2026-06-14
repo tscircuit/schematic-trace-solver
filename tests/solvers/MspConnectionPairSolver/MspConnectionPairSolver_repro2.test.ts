@@ -138,3 +138,50 @@ test("MspConnectionPairSolver does not route net-label-only connections", () => 
 
   expect(solver.mspConnectionPairs).toHaveLength(0)
 })
+
+test("MspConnectionPairSolver skips nets that have no directly wired pins", () => {
+  const inputProblem: InputProblem = {
+    chips: [
+      {
+        chipId: "schematic_component_0",
+        center: { x: -1, y: 0 },
+        width: 1,
+        height: 1,
+        pins: [{ pinId: "A1", x: -0.5, y: 0 }],
+      },
+      {
+        chipId: "schematic_component_1",
+        center: { x: 1, y: 0 },
+        width: 1,
+        height: 1,
+        pins: [{ pinId: "A2", x: 0.5, y: 0 }],
+      },
+      {
+        chipId: "schematic_component_2",
+        center: { x: -1, y: 2 },
+        width: 1,
+        height: 1,
+        pins: [{ pinId: "B1", x: -0.5, y: 2 }],
+      },
+      {
+        chipId: "schematic_component_3",
+        center: { x: 1, y: 2 },
+        width: 1,
+        height: 1,
+        pins: [{ pinId: "B2", x: 0.5, y: 2 }],
+      },
+    ],
+    directConnections: [{ netId: "SIG", pinIds: ["A1", "A2"] }],
+    netConnections: [{ netId: "GND", pinIds: ["B1", "B2"] }],
+    availableNetLabelOrientations: {},
+    maxMspPairDistance: 10,
+  }
+
+  const solver = new MspConnectionPairSolver({ inputProblem })
+
+  expect(solver.queuedDcNetIds).toHaveLength(1)
+
+  solver.solve()
+
+  expect(solver.mspConnectionPairs).toHaveLength(1)
+})
