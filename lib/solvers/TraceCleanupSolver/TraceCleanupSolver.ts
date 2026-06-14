@@ -1,11 +1,11 @@
-import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject, Line } from "graphics-debug"
-import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
-import { balanceZShapes } from "./balanceZShapes"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type { InputProblem } from "lib/types/InputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { balanceZShapes } from "./balanceZShapes"
+import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -18,8 +18,9 @@ interface TraceCleanupSolverInput {
   paddingBuffer: number
 }
 
-import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
+import { alignSameNetTraceSegments } from "./alignSameNetTraceSegments"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -27,6 +28,7 @@ import { is4PointRectangle } from "./is4PointRectangle"
 type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
+  | "aligning_same_net_traces"
   | "untangling_traces"
 
 /**
@@ -84,6 +86,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "aligning_same_net_traces":
+        this._runAlignSameNetTracesStep()
+        break
     }
   }
 
@@ -108,11 +113,20 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "aligning_same_net_traces"
       return
     }
 
     this._processTrace("balancing_l_shapes")
+  }
+
+  private _runAlignSameNetTracesStep() {
+    this.outputTraces = alignSameNetTraceSegments({
+      ...this.input,
+      traces: Array.from(this.tracesMap.values()),
+    })
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.solved = true
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
