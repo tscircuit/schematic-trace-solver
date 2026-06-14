@@ -75,7 +75,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(directConnMap.netMap)
+    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
   }
 
   override getConstructorParams(): ConstructorParameters<

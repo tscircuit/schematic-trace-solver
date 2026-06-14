@@ -73,9 +73,7 @@ test("cross-section input connections are not visualized as future traces", () =
 test("net-label-only connections do not create physical trace pairs", () => {
   const inputProblem = createInputProblem()
   inputProblem.directConnections = []
-  inputProblem.netConnections = [
-    { netId: "SIG", pinIds: ["U1.1", "U2.1"] },
-  ]
+  inputProblem.netConnections = [{ netId: "SIG", pinIds: ["U1.1", "U2.1"] }]
   inputProblem.availableNetLabelOrientations = {
     SIG: ["x+", "x-"],
   }
