@@ -108,11 +108,84 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
+      // Execute the Advanced Collinear Same-Net Trace Merging Pass
+      this._mergeCloseSameNetTraces()
       this.solved = true
       return
     }
 
     this._processTrace("balancing_l_shapes")
+  }
+
+  /**
+   * Scans and snaps nearby horizontal and vertical same-net trace segments
+   * and repairs connected adjacent trace joints to avoid trace breakages.
+   */
+  private _mergeCloseSameNetTraces() {
+    const maxSnapDistance = 0.05 // Align within geometric padding thresholds
+
+    for (const trace of this.outputTraces) {
+      const currentNet = trace.globalConnNetId
+      const path = trace.tracePath
+
+      // Iterate through internal segments to avoid breaking core pin terminals
+      for (let i = 1; i < path.length - 2; i++) {
+        const p1 = path[i]
+        const p2 = path[i + 1]
+
+        // Handle Horizontal Line Alignment Pass
+        if (p1.y === p2.y) {
+          for (const sibling of this.outputTraces) {
+            if (sibling.globalConnNetId !== currentNet) continue
+
+            for (let j = 0; j < sibling.tracePath.length - 1; j++) {
+              const s1 = sibling.tracePath[j]
+              const s2 = sibling.tracePath[j + 1]
+
+              if (s1.y === s2.y && Math.abs(p1.y - s1.y) <= maxSnapDistance && p1.y !== s1.y) {
+                const targetY = s1.y
+                
+                // Align current segment
+                p1.y = targetY
+                p2.y = targetY
+                
+                // Keep connected lines intact by stretching the neighboring elbow joint elements
+                if (path[i - 1]) path[i - 1].y = targetY
+                if (path[i + 2]) path[i + 2].y = targetY
+                break
+              }
+            }
+          }
+        }
+        // Handle Vertical Line Alignment Pass
+        else if (p1.x === p2.x) {
+          for (const sibling of this.outputTraces) {
+            if (sibling.globalConnNetId !== currentNet) continue
+
+            for (let j = 0; j < sibling.tracePath.length - 1; j++) {
+              const s1 = sibling.tracePath[j]
+              const s2 = sibling.tracePath[j + 1]
+
+              if (s1.x === s2.x && Math.abs(p1.x - s1.x) <= maxSnapDistance && p1.x !== s1.x) {
+                const targetX = s1.x
+                
+                // Align current segment
+                p1.x = targetX
+                p2.x = targetX
+                
+                // Keep connected lines intact by stretching the neighboring elbow joint elements
+                if (path[i - 1]) path[i - 1].x = targetX
+                if (path[i + 2]) path[i + 2].x = targetX
+                break
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // Remap current state updates to memory map caches
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
