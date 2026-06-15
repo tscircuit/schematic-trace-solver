@@ -142,13 +142,17 @@ export class TraceCleanupSolver extends BaseSolver {
               const s1 = sibling.tracePath[j]
               const s2 = sibling.tracePath[j + 1]
 
-              if (s1.y === s2.y && Math.abs(p1.y - s1.y) <= maxSnapDistance && p1.y !== s1.y) {
+              if (
+                s1.y === s2.y &&
+                Math.abs(p1.y - s1.y) <= maxSnapDistance &&
+                p1.y !== s1.y
+              ) {
                 const targetY = s1.y
-                
+
                 // Align current segment
                 p1.y = targetY
                 p2.y = targetY
-                
+
                 // Keep connected lines intact by stretching the neighboring elbow joint elements
                 if (path[i - 1]) path[i - 1].y = targetY
                 if (path[i + 2]) path[i + 2].y = targetY
@@ -166,13 +170,17 @@ export class TraceCleanupSolver extends BaseSolver {
               const s1 = sibling.tracePath[j]
               const s2 = sibling.tracePath[j + 1]
 
-              if (s1.x === s2.x && Math.abs(p1.x - s1.x) <= maxSnapDistance && p1.x !== s1.x) {
+              if (
+                s1.x === s2.x &&
+                Math.abs(p1.x - s1.x) <= maxSnapDistance &&
+                p1.x !== s1.x
+              ) {
                 const targetX = s1.x
-                
+
                 // Align current segment
                 p1.x = targetX
                 p2.x = targetX
-                
+
                 // Keep connected lines intact by stretching the neighboring elbow joint elements
                 if (path[i - 1]) path[i - 1].x = targetX
                 if (path[i + 2]) path[i + 2].x = targetX
@@ -183,7 +191,7 @@ export class TraceCleanupSolver extends BaseSolver {
         }
       }
     }
-    
+
     // Remap current state updates to memory map caches
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
   }
