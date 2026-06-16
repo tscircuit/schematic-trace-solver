@@ -1,0 +1,139 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_16",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 4.4,
+      "height": 2,
+      "pins": [
+        {
+          "pinId": "U3.1",
+          "x": 2.6,
+          "y": 0.8499999999999999
+        },
+        {
+          "pinId": "U3.2",
+          "x": 2.6,
+          "y": 0.6499999999999999
+        },
+        {
+          "pinId": "U3.3",
+          "x": 2.6,
+          "y": 0.44999999999999996
+        },
+        {
+          "pinId": "U3.4",
+          "x": 2.6,
+          "y": 0.10000000000000009
+        },
+        {
+          "pinId": "U3.5",
+          "x": 2.6,
+          "y": -0.09999999999999987
+        },
+        {
+          "pinId": "U3.6",
+          "x": 2.6,
+          "y": -0.44999999999999984
+        },
+        {
+          "pinId": "U3.7",
+          "x": 2.6,
+          "y": -0.6499999999999999
+        },
+        {
+          "pinId": "U3.8",
+          "x": 2.6,
+          "y": -0.8499999999999999
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_17",
+      "center": {
+        "x": 3.2,
+        "y": -1.4
+      },
+      "width": 1.1,
+      "height": 0.7789106999999986,
+      "pins": [
+        {
+          "pinId": "R8.1",
+          "x": 2.6500000000000004,
+          "y": -1.4
+        },
+        {
+          "pinId": "R8.2",
+          "x": 3.75,
+          "y": -1.4
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_18",
+      "center": {
+        "x": 3.2,
+        "y": -2.4
+      },
+      "width": 1.1,
+      "height": 0.7789106999999986,
+      "pins": [
+        {
+          "pinId": "R9.1",
+          "x": 2.6500000000000004,
+          "y": -2.4
+        },
+        {
+          "pinId": "R9.2",
+          "x": 3.75,
+          "y": -2.4
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "pinIds": ["U3.8", "R8.2", "R9.2"],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "D_MINUS",
+      "pinIds": ["U3.3"],
+      "netLabelWidth": 0.96
+    },
+    {
+      "netId": "D_PLUS",
+      "pinIds": ["U3.2"],
+      "netLabelWidth": 0.84
+    },
+    {
+      "netId": "VBUS",
+      "pinIds": ["U3.1"],
+      "netLabelWidth": 0.6
+    },
+    {
+      "netId": "CC1",
+      "pinIds": ["U3.4", "R8.1"],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "CC2",
+      "pinIds": ["U3.5", "R9.1"],
+      "netLabelWidth": 0.48
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "D_MINUS": ["x-", "x+"],
+    "D_PLUS": ["x-", "x+"],
+    "GND": ["y-"],
+    "VBUS": ["y+"],
+    "CC1": ["x-", "x+"],
+    "CC2": ["x-", "x+"]
+  },
+  "maxMspPairDistance": 2.4
+}
