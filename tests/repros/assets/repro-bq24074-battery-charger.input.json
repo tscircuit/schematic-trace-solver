@@ -154,126 +154,66 @@
   "netConnections": [
     {
       "netId": "IN",
-      "pinIds": [
-        "J1.1",
-        "U1.13",
-        "C1.1"
-      ],
+      "pinIds": ["J1.1", "U1.13", "C1.1"],
       "netLabelWidth": 0.36
     },
     {
       "netId": "GND",
-      "pinIds": [
-        "J1.2",
-        "U1.4",
-        "U1.6",
-        "U1.8",
-        "U1.14",
-        "C1.2",
-        "BT1.3"
-      ],
+      "pinIds": ["J1.2", "U1.4", "U1.6", "U1.8", "U1.14", "C1.2", "BT1.3"],
       "netLabelWidth": 0.48
     },
     {
       "netId": "TS",
-      "pinIds": [
-        "U1.1",
-        "BT1.1"
-      ],
+      "pinIds": ["U1.1", "BT1.1"],
       "netLabelWidth": 0.36
     },
     {
       "netId": "BAT",
-      "pinIds": [
-        "U1.2",
-        "BT1.2"
-      ],
+      "pinIds": ["U1.2", "BT1.2"],
       "netLabelWidth": 0.48
     },
     {
       "netId": "OUT",
-      "pinIds": [
-        "U1.5",
-        "U1.10"
-      ],
+      "pinIds": ["U1.5", "U1.10"],
       "netLabelWidth": 0.48
     },
     {
       "netId": "N_PGOOD_LED",
-      "pinIds": [
-        "U1.7"
-      ],
+      "pinIds": ["U1.7"],
       "netLabelWidth": 1.44
     },
     {
       "netId": "N_CHG_LED",
-      "pinIds": [
-        "U1.9"
-      ],
+      "pinIds": ["U1.9"],
       "netLabelWidth": 1.2
     },
     {
       "netId": "ILIM",
-      "pinIds": [
-        "U1.12"
-      ],
+      "pinIds": ["U1.12"],
       "netLabelWidth": 0.6
     },
     {
       "netId": "ITERM",
-      "pinIds": [
-        "U1.15"
-      ],
+      "pinIds": ["U1.15"],
       "netLabelWidth": 0.72
     },
     {
       "netId": "ISET",
-      "pinIds": [
-        "U1.16"
-      ],
+      "pinIds": ["U1.16"],
       "netLabelWidth": 0.6
     }
   ],
   "availableNetLabelOrientations": {
-    "IN": [
-      "x-",
-      "x+"
-    ],
-    "GND": [
-      "y-"
-    ],
-    "TS": [
-      "x-",
-      "x+"
-    ],
-    "BAT": [
-      "x-",
-      "x+"
-    ],
-    "N_PGOOD_LED": [
-      "x-",
-      "x+"
-    ],
-    "N_CHG_LED": [
-      "x-",
-      "x+"
-    ],
-    "OUT": [
-      "x-",
-      "x+"
-    ],
-    "ITERM": [
-      "x-",
-      "x+"
-    ],
-    "ILIM": [
-      "x-",
-      "x+"
-    ],
-    "ISET": [
-      "x-",
-      "x+"
-    ]
+    "IN": ["x-", "x+"],
+    "GND": ["y-"],
+    "TS": ["x-", "x+"],
+    "BAT": ["x-", "x+"],
+    "N_PGOOD_LED": ["x-", "x+"],
+    "N_CHG_LED": ["x-", "x+"],
+    "OUT": ["x-", "x+"],
+    "ITERM": ["x-", "x+"],
+    "ILIM": ["x-", "x+"],
+    "ISET": ["x-", "x+"]
   },
   "maxMspPairDistance": 2.4
 }
