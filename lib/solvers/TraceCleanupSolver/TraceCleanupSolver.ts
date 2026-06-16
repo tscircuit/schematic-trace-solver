@@ -20,6 +20,7 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { mergeSameNetTraces } from "./mergeSameNetTraces"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -28,6 +29,7 @@ type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
+  | "merging_parallel_segments"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
@@ -84,6 +86,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "merging_parallel_segments":
+        this._runMergeParallelSegmentsStep()
+        break
     }
   }
 
@@ -108,11 +113,22 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "merging_parallel_segments"
       return
     }
 
     this._processTrace("balancing_l_shapes")
+  }
+
+  private _runMergeParallelSegmentsStep() {
+    this.tracesMap = new Map(
+      this.outputTraces.map((t) => [t.mspPairId, t]),
+    )
+    const allTraces = Array.from(this.tracesMap.values())
+    const mergedTraces = mergeSameNetTraces(allTraces)
+    this.outputTraces = mergedTraces
+    this.tracesMap = new Map(mergedTraces.map((t) => [t.mspPairId, t]))
+    this.solved = true
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
