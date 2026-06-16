@@ -27,6 +27,7 @@ import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementS
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
+import { SameNetTraceMergeSolver } from "../SameNetTraceMergeSolver/SameNetTraceMergeSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -76,6 +77,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
+  sameNetTraceMergeSolver?: SameNetTraceMergeSolver
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
   vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
@@ -224,6 +226,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       NetLabelPlacementSolver,
       (instance) => {
         const traces =
+          instance.sameNetTraceMergeSolver?.getOutput().traces ??
           instance.traceCleanupSolver?.getOutput().traces ??
           instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
@@ -239,6 +242,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     ),
     definePipelineStep("example28Solver", Example28Solver, (instance) => {
       const traces =
+        instance.sameNetTraceMergeSolver?.getOutput().traces ??
         instance.traceCleanupSolver?.getOutput().traces ??
         instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
@@ -289,9 +293,14 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       ],
     ),
+    // Runs late — after the net-label-orientation phases have routed every
+    // label lead — so it can collapse same-net "double line" artifacts (issue
+    // #34) on the fully routed traces that are actually rendered, including the
+    // label leads those phases reintroduce. Its output is what the schematic
+    // render consumes (via netLabelTraceCollisionSolver below).
     definePipelineStep(
-      "netLabelTraceCollisionSolver",
-      NetLabelTraceCollisionSolver,
+      "sameNetTraceMergeSolver",
+      SameNetTraceMergeSolver,
       (instance) => [
         {
           inputProblem: instance.inputProblem,
@@ -299,6 +308,18 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           netLabelPlacements:
             instance.traceAnchoredNetLabelOverlapSolver!
               .outputNetLabelPlacements,
+        },
+      ],
+    ),
+    definePipelineStep(
+      "netLabelTraceCollisionSolver",
+      NetLabelTraceCollisionSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          traces: instance.sameNetTraceMergeSolver!.getOutput().traces,
+          netLabelPlacements:
+            instance.sameNetTraceMergeSolver!.getOutput().netLabelPlacements,
         },
       ],
     ),
