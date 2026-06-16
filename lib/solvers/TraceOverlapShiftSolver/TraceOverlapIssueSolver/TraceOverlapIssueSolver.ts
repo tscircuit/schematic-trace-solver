@@ -180,21 +180,56 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     const blockingCollisions = this.getBlockingCollisions({ group, offset })
     if (blockingCollisions.length === 0) return offset
 
-    return (
-      blockingCollisions
-        .flatMap(({ start, isVertical, obstacle }) => [
-          (isVertical ? obstacle.minX - start.x : obstacle.minY - start.y) -
-            this.SHIFT_DISTANCE,
-          (isVertical ? obstacle.maxX - start.x : obstacle.maxY - start.y) +
-            this.SHIFT_DISTANCE,
-        ])
+    const crossesThroughObstacle = (candidateOffset: number) =>
+      blockingCollisions.some(({ start, isVertical, obstacle }) => {
+        let orig: number
+        let min: number
+        let max: number
+        if (isVertical) {
+          orig = start.x
+          min = obstacle.minX
+          max = obstacle.maxX
+        } else {
+          orig = start.y
+          min = obstacle.minY
+          max = obstacle.maxY
+        }
+        const next = orig + candidateOffset
+        return (
+          (orig <= min + EPS && next >= max - EPS) ||
+          (orig >= max - EPS && next <= min + EPS)
+        )
+      })
+
+    const edges = blockingCollisions.map(({ start, isVertical, obstacle }) => {
+      if (isVertical) {
+        return {
+          coord: start.x,
+          lowEdge: obstacle.minX,
+          highEdge: obstacle.maxX,
+        }
+      }
+      return { coord: start.y, lowEdge: obstacle.minY, highEdge: obstacle.maxY }
+    })
+
+    const bestCandidate = (clearance: number) => {
+      const candidates = edges.flatMap(({ coord, lowEdge, highEdge }) => [
+        lowEdge - coord - clearance,
+        highEdge - coord + clearance,
+      ])
+      return candidates
+        .filter((candidateOffset) => !crossesThroughObstacle(candidateOffset))
         .filter(
           (candidateOffset) =>
             this.getBlockingCollisions({ group, offset: candidateOffset })
               .length === 0,
         )
-        .sort((a, b) => Math.abs(a - offset) - Math.abs(b - offset))[0] ??
-      offset
+        .sort((a, b) => Math.abs(a - offset) - Math.abs(b - offset))[0]
+    }
+
+    const EDGE_MARGIN = this.SHIFT_DISTANCE / 10
+    return (
+      bestCandidate(this.SHIFT_DISTANCE) ?? bestCandidate(EDGE_MARGIN) ?? offset
     )
   }
 
