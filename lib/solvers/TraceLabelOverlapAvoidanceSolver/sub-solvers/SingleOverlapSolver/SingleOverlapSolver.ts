@@ -9,6 +9,7 @@ import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/Schemati
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath
@@ -141,7 +142,17 @@ export class SingleOverlapSolver extends BaseSolver {
     const nextCandidatePath = this.queuedCandidatePaths.shift()!
     const simplifiedPath = simplifyPath(nextCandidatePath)
 
+    // A candidate is only valid if it actually clears the label it is meant to
+    // avoid. Without this check a "detour" that still grazes the label (e.g. one
+    // built around the wrong segment) would be accepted as solved.
+    const stillOverlapsLabel =
+      detectTraceLabelOverlap({
+        traces: [{ ...this.initialTrace, tracePath: simplifiedPath }],
+        netLabels: [this.label],
+      }).length > 0
+
     if (
+      !stillOverlapsLabel &&
       !isPathCollidingWithObstacles(simplifiedPath, this.obstacles) &&
       !doesPathCoincideWithTraces(simplifiedPath, this.tracesToAvoidOverlapping)
     ) {
