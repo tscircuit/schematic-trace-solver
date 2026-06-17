@@ -1,0 +1,88 @@
+{
+  "chipMap": {
+    "schematic_component_0": {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 0.8935117710000002,
+      "height": 1.1601665819999987,
+      "pins": [
+        {
+          "pinId": "Q1.1",
+          "x": 0.30397715550000004,
+          "y": 0.5800832909999993
+        },
+        {
+          "pinId": "Q1.2",
+          "x": 0.31067575550000137,
+          "y": -0.5800832909999993
+        },
+        {
+          "pinId": "Q1.3",
+          "x": -0.4467558855000001,
+          "y": -0.10250625000000019
+        }
+      ]
+    }
+  },
+  "pins": [
+    {
+      "pinId": "Q1.1",
+      "x": 0.30397715550000004,
+      "y": 0.5800832909999993,
+      "_facingDirection": "y+",
+      "chipId": "schematic_component_0"
+    },
+    {
+      "pinId": "Q1.2",
+      "x": 0.31067575550000137,
+      "y": -0.5800832909999993,
+      "_facingDirection": "y-",
+      "chipId": "schematic_component_0"
+    }
+  ],
+  "guidelines": [],
+  "inputProblem": {
+    "chips": [
+      {
+        "chipId": "schematic_component_0",
+        "center": {
+          "x": 0,
+          "y": 0
+        },
+        "width": 0.8935117710000002,
+        "height": 1.1601665819999987,
+        "pins": [
+          {
+            "pinId": "Q1.1",
+            "x": 0.30397715550000004,
+            "y": 0.5800832909999993
+          },
+          {
+            "pinId": "Q1.2",
+            "x": 0.31067575550000137,
+            "y": -0.5800832909999993
+          },
+          {
+            "pinId": "Q1.3",
+            "x": -0.4467558855000001,
+            "y": -0.10250625000000019
+          }
+        ]
+      }
+    ],
+    "directConnections": [],
+    "netConnections": [
+      {
+        "netId": "V3_3",
+        "pinIds": ["Q1.1", "Q1.2"]
+      }
+    ],
+    "availableNetLabelOrientations": {
+      "V3_3": ["y+"]
+    },
+    "maxMspPairDistance": 2
+  }
+}

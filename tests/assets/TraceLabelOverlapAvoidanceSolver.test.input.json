@@ -1,0 +1,424 @@
+{
+  "netLabelPlacements": [
+    {
+      "globalConnNetId": "connectivity_net0",
+      "dcConnNetId": "connectivity_net0",
+      "netId": ".V1 > .pin1 to .L1 > .pin1",
+      "mspConnectionPairIds": ["V1.1-L1.1"],
+      "pinIds": ["V1.1", "L1.1"],
+      "orientation": "x+",
+      "anchorPoint": {
+        "x": -5.005,
+        "y": 2.7600000000000002
+      },
+      "width": 0.45,
+      "height": 0.2,
+      "center": {
+        "x": -4.78,
+        "y": 2.7600000000000002
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net3",
+      "dcConnNetId": "connectivity_net3",
+      "netId": "GND",
+      "mspConnectionPairIds": ["C1.2-M1.2"],
+      "pinIds": ["C1.2", "M1.2"],
+      "orientation": "y-",
+      "anchorPoint": {
+        "x": 3,
+        "y": -0.78
+      },
+      "width": 0.2,
+      "height": 0.3,
+      "center": {
+        "x": 3,
+        "y": -0.93
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net3",
+      "netId": "GND",
+      "mspConnectionPairIds": [],
+      "pinIds": ["R1.2"],
+      "orientation": "y-",
+      "anchorPoint": {
+        "x": 6,
+        "y": -0.55
+      },
+      "width": 0.2,
+      "height": 0.3,
+      "center": {
+        "x": 6,
+        "y": -0.7010000000000001
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net3",
+      "dcConnNetId": "connectivity_net3",
+      "netId": "GND",
+      "mspConnectionPairIds": ["V1.2-V2.2"],
+      "pinIds": ["V1.2", "V2.2"],
+      "orientation": "y-",
+      "anchorPoint": {
+        "x": -4.995,
+        "y": -0.6458008
+      },
+      "width": 0.2,
+      "height": 0.3,
+      "center": {
+        "x": -4.995,
+        "y": -0.7958008
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net1",
+      "dcConnNetId": "connectivity_net1",
+      "netId": ".L1 > .pin2 to .M1 > .drain",
+      "mspConnectionPairIds": ["L1.2-D1.1"],
+      "pinIds": ["L1.2", "D1.1"],
+      "orientation": "y+",
+      "anchorPoint": {
+        "x": 0.78,
+        "y": 2.97
+      },
+      "width": 0.2,
+      "height": 0.45,
+      "center": {
+        "x": 0.78,
+        "y": 3.1950000000000003
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net1",
+      "netId": ".L1 > .pin2 to .M1 > .drain",
+      "mspConnectionPairIds": [],
+      "pinIds": ["M1.1"],
+      "orientation": "y+",
+      "anchorPoint": {
+        "x": 0.3,
+        "y": 0.58
+      },
+      "width": 0.2,
+      "height": 0.45,
+      "center": {
+        "x": 0.3,
+        "y": 0.8059999999999999
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net2",
+      "dcConnNetId": "connectivity_net2",
+      "netId": ".D1 > .cathode to .R1 > .pin1",
+      "mspConnectionPairIds": ["D1.2-C1.1"],
+      "pinIds": ["D1.2", "C1.1"],
+      "orientation": "y+",
+      "anchorPoint": {
+        "x": 3.7199999999999998,
+        "y": 3
+      },
+      "width": 0.2,
+      "height": 0.45,
+      "center": {
+        "x": 3.7199999999999998,
+        "y": 3.225
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net2",
+      "netId": ".D1 > .cathode to .R1 > .pin1",
+      "mspConnectionPairIds": [],
+      "pinIds": ["R1.1"],
+      "orientation": "y+",
+      "anchorPoint": {
+        "x": 6,
+        "y": 0.55
+      },
+      "width": 0.2,
+      "height": 0.45,
+      "center": {
+        "x": 6,
+        "y": 0.776
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net4",
+      "dcConnNetId": "connectivity_net4",
+      "netId": ".M1 > .gate to .V2 > .pin1",
+      "mspConnectionPairIds": ["M1.3-V2.1"],
+      "pinIds": ["M1.3", "V2.1"],
+      "orientation": "y+",
+      "anchorPoint": {
+        "x": -1.08373445,
+        "y": -0.09999999999999987
+      },
+      "width": 0.2,
+      "height": 0.45,
+      "center": {
+        "x": -1.08373445,
+        "y": 0.12500000000000014
+      }
+    }
+  ],
+  "traces": [
+    {
+      "mspPairId": "L1.2-D1.1",
+      "dcConnNetId": "connectivity_net1",
+      "globalConnNetId": "connectivity_net1",
+      "userNetId": ".L1 > .pin2 to .M1 > .drain",
+      "pins": [
+        {
+          "pinId": "L1.2",
+          "x": 0.58,
+          "y": 2.97,
+          "_facingDirection": "x+",
+          "chipId": "schematic_component_1"
+        },
+        {
+          "pinId": "D1.1",
+          "x": 2.48,
+          "y": 3,
+          "chipId": "schematic_component_2",
+          "_facingDirection": "x-"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": 0.58,
+          "y": 2.97
+        },
+        {
+          "x": 0.78,
+          "y": 2.97
+        },
+        {
+          "x": 1.53,
+          "y": 2.97
+        },
+        {
+          "x": 1.53,
+          "y": 3
+        },
+        {
+          "x": 2.28,
+          "y": 3
+        },
+        {
+          "x": 2.48,
+          "y": 3
+        }
+      ],
+      "mspConnectionPairIds": ["L1.2-D1.1"],
+      "pinIds": ["L1.2", "D1.1"]
+    },
+    {
+      "mspPairId": "V1.1-L1.1",
+      "dcConnNetId": "connectivity_net0",
+      "globalConnNetId": "connectivity_net0",
+      "pins": [
+        {
+          "pinId": "V1.1",
+          "x": -5.005,
+          "y": 2.54,
+          "chipId": "schematic_component_0",
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "L1.1",
+          "x": -0.58,
+          "y": 2.98,
+          "_facingDirection": "x-",
+          "chipId": "schematic_component_1"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -5.005,
+          "y": 2.54
+        },
+        {
+          "x": -5.005,
+          "y": 2.9800000000000004
+        },
+        {
+          "x": -0.5800000000000001,
+          "y": 2.9800000000000004
+        }
+      ],
+      "mspConnectionPairIds": ["V1.1-L1.1"],
+      "pinIds": ["V1.1", "L1.1"]
+    },
+    {
+      "mspPairId": "D1.2-C1.1",
+      "dcConnNetId": "connectivity_net2",
+      "globalConnNetId": "connectivity_net2",
+      "pins": [
+        {
+          "pinId": "D1.2",
+          "x": 3.52,
+          "y": 3,
+          "chipId": "schematic_component_2",
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "C1.1",
+          "x": 3,
+          "y": 0.49500000000000005,
+          "_facingDirection": "y+",
+          "chipId": "schematic_component_3"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": 3.52,
+          "y": 3
+        },
+        {
+          "x": 3.7199999999999998,
+          "y": 3
+        },
+        {
+          "x": 3.7199999999999998,
+          "y": 1.7474999999999996
+        },
+        {
+          "x": 3,
+          "y": 1.7474999999999996
+        },
+        {
+          "x": 3,
+          "y": 0.49500000000000005
+        }
+      ],
+      "mspConnectionPairIds": ["D1.2-C1.1"],
+      "pinIds": ["D1.2", "C1.1"]
+    },
+    {
+      "mspPairId": "C1.2-M1.2",
+      "dcConnNetId": "connectivity_net3",
+      "globalConnNetId": "connectivity_net3",
+      "pins": [
+        {
+          "pinId": "C1.2",
+          "x": 3,
+          "y": -0.49500000000000005,
+          "_facingDirection": "y-",
+          "chipId": "schematic_component_3"
+        },
+        {
+          "pinId": "M1.2",
+          "x": 0.31,
+          "y": -0.58,
+          "_facingDirection": "y-",
+          "chipId": "schematic_component_6"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": 3,
+          "y": -0.4950000000000001
+        },
+        {
+          "x": 3,
+          "y": -0.78
+        },
+        {
+          "x": 0.31,
+          "y": -0.78
+        },
+        {
+          "x": 0.31,
+          "y": -0.58
+        }
+      ],
+      "mspConnectionPairIds": ["C1.2-M1.2"],
+      "pinIds": ["C1.2", "M1.2"]
+    },
+    {
+      "mspPairId": "V1.2-V2.2",
+      "dcConnNetId": "connectivity_net3",
+      "globalConnNetId": "connectivity_net3",
+      "pins": [
+        {
+          "pinId": "V1.2",
+          "x": -4.995,
+          "y": 1.46,
+          "chipId": "schematic_component_0",
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "V2.2",
+          "x": -3.0000622,
+          "y": -0.4458008,
+          "chipId": "schematic_component_5",
+          "_facingDirection": "y-"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -4.995,
+          "y": 1.46
+        },
+        {
+          "x": -4.995,
+          "y": -0.6458008
+        },
+        {
+          "x": -3.0000622,
+          "y": -0.6458008
+        },
+        {
+          "x": -3.0000622,
+          "y": -0.4458007999999998
+        }
+      ],
+      "mspConnectionPairIds": ["V1.2-V2.2"],
+      "pinIds": ["V1.2", "V2.2"]
+    },
+    {
+      "mspPairId": "M1.3-V2.1",
+      "dcConnNetId": "connectivity_net4",
+      "globalConnNetId": "connectivity_net4",
+      "pins": [
+        {
+          "pinId": "M1.3",
+          "x": -0.445,
+          "y": -0.1,
+          "_facingDirection": "x-",
+          "chipId": "schematic_component_6"
+        },
+        {
+          "pinId": "V2.1",
+          "x": -2.9999378,
+          "y": 0.4458008,
+          "chipId": "schematic_component_5",
+          "_facingDirection": "y+"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.44499999999999984,
+          "y": -0.09999999999999987
+        },
+        {
+          "x": -1.7224689,
+          "y": -0.09999999999999987
+        },
+        {
+          "x": -1.7224689,
+          "y": 0.6458008000000002
+        },
+        {
+          "x": -2.9999378,
+          "y": 0.6458008000000002
+        },
+        {
+          "x": -2.9999378,
+          "y": 0.4458008
+        }
+      ],
+      "mspConnectionPairIds": ["M1.3-V2.1"],
+      "pinIds": ["M1.3", "V2.1"]
+    }
+  ]
+}
