@@ -54,17 +54,70 @@ function countDoubleLines(traces: any[]): number {
   return count
 }
 
+const rectOf = (c: { x: number; y: number }, w: number, h: number) => ({
+  minX: c.x - w / 2,
+  maxX: c.x + w / 2,
+  minY: c.y - h / 2,
+  maxY: c.y + h / 2,
+})
+
+/** Net-label boxes that overlap a chip box (the #34-review regression). */
+function countNetLabelChipOverlaps(
+  netLabelPlacements: Array<{
+    center: { x: number; y: number }
+    width: number
+    height: number
+  }>,
+  chips: Array<{
+    center: { x: number; y: number }
+    width: number
+    height: number
+  }>,
+): number {
+  let n = 0
+  for (const label of netLabelPlacements) {
+    const lb = rectOf(label.center, label.width, label.height)
+    for (const chip of chips) {
+      const cb = rectOf(chip.center, chip.width, chip.height)
+      if (
+        lb.minX < cb.maxX - EPS &&
+        lb.maxX > cb.minX + EPS &&
+        lb.minY < cb.maxY - EPS &&
+        lb.maxY > cb.minY + EPS
+      )
+        n++
+    }
+  }
+  return n
+}
+
 // InputProblem from a real @tscircuit/core circuit: IC U1 with VDD1/VDD2/VDD3 on
 // one net (DEBUG=Group_doInitialSchematicTraceRender → group-trace-render-input-problem).
 test("repro34 multi-VDD net-label double line (issue #34)", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
   solver.solve()
 
+  const beforeDoubles = countDoubleLines(
+    solver.availableNetOrientationSolver!.traces,
+  )
+  const afterDoubles = countDoubleLines(
+    solver.netLabelTraceCollisionSolver!.getOutput().traces,
+  )
+
+  // The same-net double lines are present after net-label orientation...
+  expect(beforeDoubles).toBeGreaterThan(0)
+  // ...and the merge collapses them — except a collapse is skipped when it would
+  // pull the net label onto a chip box (the detour is the label's clearance), so
+  // the count drops sharply (here 4 -> 1) while a clearance detour can remain.
+  expect(afterDoubles).toBeLessThanOrEqual(1)
+
+  // The reviewer-flagged invariant (rushabhcodes "label overlap with box"): no
+  // relocated net-label box may overlap a chip box.
   expect(
-    countDoubleLines(solver.availableNetOrientationSolver!.traces),
-  ).toBeGreaterThan(0)
-  expect(
-    countDoubleLines(solver.netLabelTraceCollisionSolver!.getOutput().traces),
+    countNetLabelChipOverlaps(
+      solver.sameNetTraceMergeSolver!.getOutput().netLabelPlacements,
+      solver.inputProblem.chips,
+    ),
   ).toBe(0)
 
   expect(solver.availableNetOrientationSolver!).toMatchSolverSnapshot(

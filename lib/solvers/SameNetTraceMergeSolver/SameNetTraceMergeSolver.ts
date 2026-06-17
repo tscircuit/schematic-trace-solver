@@ -299,27 +299,29 @@ export class SameNetTraceMergeSolver extends BaseSolver {
         changed = false
         const out: typeof pathPts = []
         for (let i = 0; i < pathPts.length; ) {
-          if (
-            i + 3 < pathPts.length &&
-            isCollapsibleUShape(
-              pathPts[i]!,
-              pathPts[i + 1]!,
-              pathPts[i + 2]!,
-              pathPts[i + 3]!,
-              this.mergeThreshold,
-              this.minOverlap,
-            )
-          ) {
+          if (i + 3 < pathPts.length) {
             const a = pathPts[i]!
             const b = pathPts[i + 1]!
             const c = pathPts[i + 2]!
             const d = pathPts[i + 3]!
-            this.relocateLabelForCollapsedU(a, b, c, d)
-            pushPointIfNew(out, a)
-            pushPointIfNew(out, d)
-            i += 3
-            changed = true
-            continue
+            if (
+              isCollapsibleUShape(
+                a,
+                b,
+                c,
+                d,
+                this.mergeThreshold,
+                this.minOverlap,
+              ) &&
+              !this.collapseWouldRelocateLabelOntoChip(a, b, c, d)
+            ) {
+              this.relocateLabelForCollapsedU(a, b, c, d)
+              pushPointIfNew(out, a)
+              pushPointIfNew(out, d)
+              i += 3
+              changed = true
+              continue
+            }
           }
           pushPointIfNew(out, pathPts[i]!)
           i++
@@ -342,29 +344,48 @@ export class SameNetTraceMergeSolver extends BaseSolver {
     c: { x: number; y: number },
     d: { x: number; y: number },
   ) {
-    const verticalCollapse = Math.abs(a.x - d.x) < EPS
     for (const label of this.outputNetLabelPlacements) {
       const anc = label.anchorPoint
-      const onRemoved =
-        pointOnSegment(anc, a, b) ||
-        pointOnSegment(anc, b, c) ||
-        pointOnSegment(anc, c, d)
-      if (!onRemoved) continue
-      let newX = anc.x
-      let newY = anc.y
-      if (verticalCollapse) {
-        newX = a.x
-        newY = clamp(anc.y, Math.min(a.y, d.y), Math.max(a.y, d.y))
-      } else {
-        newY = a.y
-        newX = clamp(anc.x, Math.min(a.x, d.x), Math.max(a.x, d.x))
-      }
-      const dx = newX - anc.x
-      const dy = newY - anc.y
+      const proj = projectAnchorOntoCollapsedU(anc, a, b, c, d)
+      if (!proj) continue
+      const dx = proj.x - anc.x
+      const dy = proj.y - anc.y
       if (Math.abs(dx) < EPS && Math.abs(dy) < EPS) continue
-      label.anchorPoint = { x: newX, y: newY }
+      label.anchorPoint = { x: proj.x, y: proj.y }
       label.center = { x: label.center.x + dx, y: label.center.y + dy }
     }
+  }
+
+  /**
+   * Would collapsing the U [a,b,c,d] drag a relocated net-label box onto a
+   * component (chip) box? The detour's outward bulge is precisely what gives the
+   * label its clearance from the chip, so collapsing it can pull the label box
+   * into the chip (the #34-review "label overlap with box" regression). When it
+   * would, we skip the collapse and leave the detour + label where the placement
+   * solver positioned them. Chip boxes come from the pipeline-corrected
+   * inputProblem (expandChipsToFitPins), i.e. the box that actually renders.
+   */
+  private collapseWouldRelocateLabelOntoChip(
+    a: { x: number; y: number },
+    b: { x: number; y: number },
+    c: { x: number; y: number },
+    d: { x: number; y: number },
+  ): boolean {
+    for (const label of this.outputNetLabelPlacements) {
+      const anc = label.anchorPoint
+      const proj = projectAnchorOntoCollapsedU(anc, a, b, c, d)
+      if (!proj) continue
+      const dx = proj.x - anc.x
+      const dy = proj.y - anc.y
+      if (Math.abs(dx) < EPS && Math.abs(dy) < EPS) continue
+      const newCenter = { x: label.center.x + dx, y: label.center.y + dy }
+      const labelBox = rectFromCenter(newCenter, label.width, label.height)
+      for (const chip of this.inputProblem.chips) {
+        const chipBox = rectFromCenter(chip.center, chip.width, chip.height)
+        if (rectsOverlap(labelBox, chipBox)) return true
+      }
+    }
+    return false
   }
 
   getOutput() {
@@ -450,6 +471,61 @@ function sameY(a: { y: number }, b: { y: number }) {
 
 function clamp(v: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, v))
+}
+
+interface Rect {
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
+}
+
+function rectFromCenter(
+  c: { x: number; y: number },
+  w: number,
+  h: number,
+): Rect {
+  return {
+    minX: c.x - w / 2,
+    maxX: c.x + w / 2,
+    minY: c.y - h / 2,
+    maxY: c.y + h / 2,
+  }
+}
+
+/** Positive-area overlap (EPS slack so coincident edges do not count). */
+function rectsOverlap(a: Rect, b: Rect): boolean {
+  return (
+    a.minX < b.maxX - EPS &&
+    a.maxX > b.minX + EPS &&
+    a.minY < b.maxY - EPS &&
+    a.maxY > b.minY + EPS
+  )
+}
+
+/**
+ * Project a net-label anchor that lay on a collapsed U-detour [a,b,c,d] onto the
+ * straightened segment a->d. Returns the new anchor point, or null if the anchor
+ * was not on the removed geometry (the arms a-b / c-d or the apex b-c).
+ */
+function projectAnchorOntoCollapsedU(
+  anc: { x: number; y: number },
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  c: { x: number; y: number },
+  d: { x: number; y: number },
+): { x: number; y: number } | null {
+  const onRemoved =
+    pointOnSegment(anc, a, b) ||
+    pointOnSegment(anc, b, c) ||
+    pointOnSegment(anc, c, d)
+  if (!onRemoved) return null
+  if (Math.abs(a.x - d.x) < EPS) {
+    // vertical collapse: straightened segment is the vertical line x = a.x
+    return { x: a.x, y: clamp(anc.y, Math.min(a.y, d.y), Math.max(a.y, d.y)) }
+  }
+  // horizontal collapse: straightened segment is the horizontal line y = a.y
+  return { x: clamp(anc.x, Math.min(a.x, d.x), Math.max(a.x, d.x)), y: a.y }
 }
 
 /** Is point p on the axis-aligned segment u->v (within EPS)? */
