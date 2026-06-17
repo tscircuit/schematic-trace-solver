@@ -146,7 +146,7 @@ orientation: y+" data-x="-3.651" data-y="1.9509999999999998" cx="110.05494505494
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="0.19899999999999982" data-y="3.001" cx="321.5934065934066" cy="149.6153846153846" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: x-" data-x="0.2999999999999998" data-y="2.8" cx="327.14285714285717" cy="160.65934065934067" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -253,9 +253,6 @@ orientation: y+" data-x="3.4924999999999997" data-y="-1.5" cx="502.5549450549450
     <polyline data-points="-3.55,1.5 -3.651,1.5 -3.651,1.9509999999999998" data-type="line" data-label="" points="115.60439560439559,232.08791208791212 110.05494505494505,232.08791208791212 110.05494505494505,207.30769230769232" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="0.2999999999999998,2.8 0.19899999999999982,2.8 0.19899999999999982,3.001" data-type="line" data-label="" points="327.14285714285717,160.65934065934067 321.5934065934066,160.65934065934067 321.5934065934066,149.6153846153846" fill="none" stroke="purple" stroke-width="1" />
-  </g>
-  <g>
     <polyline data-points="2.7,2.8 2.801,2.8 2.801,3.001" data-type="line" data-label="" points="459.0109890109891,160.65934065934067 464.5604395604396,160.65934065934067 464.5604395604396,149.6153846153846" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
@@ -333,7 +330,7 @@ globalConnNetId: connectivity_net7" data-x="-3.651" data-y="2.101" x="104.560439
   </g>
   <g>
     <rect data-type="rect" data-label="netId: VCC
-globalConnNetId: connectivity_net7" data-x="0.19899999999999982" data-y="3.151" x="316.0989010989011" y="133.13186813186815" width="10.989010989011035" height="16.483516483516468" fill="#ef444466" stroke="#ef4444" stroke-width="0.018199999999999997" />
+globalConnNetId: connectivity_net7" data-x="0.14899999999999983" data-y="2.8" x="310.6043956043956" y="155.16483516483518" width="16.483516483516496" height="10.989010989010978" fill="#ef444466" stroke="#ef4444" stroke-width="0.018199999999999997" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: VCC

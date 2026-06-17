@@ -71,25 +71,30 @@ export const generateFourPointDetourCandidates = ({
     }
     exitPoint = initialTrace.tracePath[exitIndex]
   } else {
-    // STRATEGY 1: Single Label - find the first intersecting segment
-    let collidingSegIndex = -1
+    // STRATEGY 1: Single Label - reroute around the contiguous span of segments
+    // that actually overlap the label. Detection uses the *unpadded* bounds so
+    // a short pin stub that merely pokes into the padding zone is not mistaken
+    // for the real crossing (which would leave the offending segment in place
+    // and create a useless loop).
+    let firstCollidingSeg = -1
+    let lastCollidingSeg = -1
     for (let i = 0; i < initialTrace.tracePath.length - 1; i++) {
       if (
         segmentIntersectsRect(
           initialTrace.tracePath[i],
           initialTrace.tracePath[i + 1],
-          { ...paddedLabelBounds, chipId: "temp-obstacle" },
+          { ...labelBounds, chipId: "temp-obstacle" },
         )
       ) {
-        collidingSegIndex = i
-        break
+        if (firstCollidingSeg === -1) firstCollidingSeg = i
+        lastCollidingSeg = i
       }
     }
 
-    if (collidingSegIndex === -1) return []
+    if (firstCollidingSeg === -1) return []
 
-    entryIndex = collidingSegIndex
-    exitIndex = collidingSegIndex + 1
+    entryIndex = firstCollidingSeg
+    exitIndex = lastCollidingSeg + 1
     entryPoint = initialTrace.tracePath[entryIndex]
     exitPoint = initialTrace.tracePath[exitIndex]
   }
