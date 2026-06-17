@@ -148,11 +148,9 @@ export class TraceCleanupSolver extends BaseSolver {
 
   getOutput() {
     return {
-      // traces: this.outputTraces,
-      traces: mergeCollinearTraces(this.outputTraces),
+      traces: this.outputTraces,
     }
   }
-  
 
   override visualize(): GraphicsObject {
     if (this.activeSubSolver) {
@@ -180,35 +178,3 @@ export class TraceCleanupSolver extends BaseSolver {
     return graphics
   }
 }
-function mergeCollinearTraces(traces: any[]): any[] {
-  return traces.map((trace: any) => {
-    if (!trace || !trace.tracePath || trace.tracePath.length <= 2) {
-      return trace;
-    }
-
-    const newPath: any[] = [trace.tracePath[0]];
-
-    for (let i = 1; i < trace.tracePath.length - 1; i++) {
-      const prev = newPath[newPath.length - 1];
-      const curr = trace.tracePath[i];
-      const next = trace.tracePath[i + 1];
-
-      if (!prev || !curr || !next) continue;
-
-      const isHorizontalCollinear = (prev.y === curr.y && curr.y === next.y);
-      const isVerticalCollinear = (prev.x === curr.x && curr.x === next.x);
-
-      if (!isHorizontalCollinear && !isVerticalCollinear) {
-        newPath.push(curr);
-      }
-    }
-
-    newPath.push(trace.tracePath[trace.tracePath.length - 1]);
-
-    return {
-      ...trace,
-      tracePath: newPath
-    };
-  });
-}
-
