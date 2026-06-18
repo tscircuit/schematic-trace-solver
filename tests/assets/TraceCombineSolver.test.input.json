@@ -1,0 +1,70 @@
+{
+  "inputProblem": {
+    "chips": [
+      {
+        "chipId": "chip_0",
+        "center": { "x": 0, "y": 0 },
+        "width": 2,
+        "height": 1,
+        "pins": [
+          { "pinId": "A.1", "x": -1, "y": 0 },
+          { "pinId": "A.2", "x": 0, "y": 0 },
+          { "pinId": "A.3", "x": 1, "y": 0 }
+        ]
+      },
+      {
+        "chipId": "chip_1",
+        "center": { "x": 4, "y": 0 },
+        "width": 1,
+        "height": 0.5,
+        "pins": [{ "pinId": "B.1", "x": 3.5, "y": 0 }]
+      }
+    ],
+    "directConnections": [],
+    "netConnections": [
+      { "netId": "NET0", "pinIds": ["A.1", "A.2", "A.3", "B.1"] }
+    ],
+    "availableNetLabelOrientations": {}
+  },
+  "traces": [
+    {
+      "mspPairId": "A.1-A.2",
+      "dcConnNetId": "net0",
+      "globalConnNetId": "NET0",
+      "userNetId": "NET0",
+      "pins": [
+        { "pinId": "A.1", "x": -1, "y": 0, "chipId": "chip_0" },
+        { "pinId": "A.2", "x": 0, "y": 0, "chipId": "chip_0" }
+      ],
+      "tracePath": [{ "x": -1, "y": 0 }, { "x": 0, "y": 0 }],
+      "mspConnectionPairIds": ["A.1-A.2"],
+      "pinIds": ["A.1", "A.2"]
+    },
+    {
+      "mspPairId": "A.2-A.3",
+      "dcConnNetId": "net0",
+      "globalConnNetId": "NET0",
+      "userNetId": "NET0",
+      "pins": [
+        { "pinId": "A.2", "x": 0, "y": 0, "chipId": "chip_0" },
+        { "pinId": "A.3", "x": 1, "y": 0, "chipId": "chip_0" }
+      ],
+      "tracePath": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }],
+      "mspConnectionPairIds": ["A.2-A.3"],
+      "pinIds": ["A.2", "A.3"]
+    },
+    {
+      "mspPairId": "A.3-B.1",
+      "dcConnNetId": "net0",
+      "globalConnNetId": "NET0",
+      "userNetId": "NET0",
+      "pins": [
+        { "pinId": "A.3", "x": 1, "y": 0, "chipId": "chip_0" },
+        { "pinId": "B.1", "x": 3.5, "y": 0, "chipId": "chip_1" }
+      ],
+      "tracePath": [{ "x": 1, "y": 0 }, { "x": 3.5, "y": 0 }],
+      "mspConnectionPairIds": ["A.3-B.1"],
+      "pinIds": ["A.3", "B.1"]
+    }
+  ]
+}
