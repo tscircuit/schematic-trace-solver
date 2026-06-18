@@ -88,8 +88,7 @@ const isInteriorSegment = (
   trace: SolvedTracePath,
   segmentStartIndex: number,
 ): boolean =>
-  segmentStartIndex > 0 &&
-  segmentStartIndex + 1 < trace.tracePath.length - 1
+  segmentStartIndex > 0 && segmentStartIndex + 1 < trace.tracePath.length - 1
 
 /**
  * Return an updated trace where segment `segmentStartIndex` has been snapped
@@ -147,11 +146,7 @@ export const mergeNearbySameNetSegments = (
   const segments: SegmentRef[] = []
   for (let traceIndex = 0; traceIndex < output.length; traceIndex++) {
     const trace = output[traceIndex]!
-    for (
-      let segIdx = 0;
-      segIdx < trace.tracePath.length - 1;
-      segIdx++
-    ) {
+    for (let segIdx = 0; segIdx < trace.tracePath.length - 1; segIdx++) {
       if (!isInteriorSegment(trace, segIdx)) continue
       const seg = getSegmentRef(trace, traceIndex, segIdx)
       if (seg) segments.push(seg)
@@ -211,8 +206,7 @@ export const mergeNearbySameNetSegments = (
 
     // Snap all group members to the average fixed coordinate
     const mergedCoord =
-      component.reduce((sum, seg) => sum + seg.fixedCoord, 0) /
-      component.length
+      component.reduce((sum, seg) => sum + seg.fixedCoord, 0) / component.length
 
     for (const seg of component) {
       output[seg.traceIndex] = moveSegmentToFixedCoord(
