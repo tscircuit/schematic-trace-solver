@@ -32,8 +32,12 @@ export const arePinsInDifferentSchematicSections = (
 
   if (sectionByChipId.size === 0) return false
 
+  // Pins without an explicit section belong to an implicit "no-section"
+  // section. Traces must not cross between sections, so a sectioned pin and an
+  // unsectioned pin (or two differently-named sections) count as different.
+  // `undefined !== undefined` is false, so two unsectioned pins compare equal.
   const s1 = getSectionNameForPin(sectionByChipId, sectionByPinId, p1)
   const s2 = getSectionNameForPin(sectionByChipId, sectionByPinId, p2)
 
-  return !!s1 && !!s2 && s1 !== s2
+  return s1 !== s2
 }
