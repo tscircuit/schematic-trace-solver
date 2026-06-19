@@ -13,6 +13,7 @@ interface TraceSegment {
   rangeStart: number
   rangeEnd: number
   length: number
+  movable: boolean
 }
 
 const DEFAULT_CLOSE_SEGMENT_DISTANCE = 0.18
@@ -43,7 +44,8 @@ const shouldGroupSegments = (a: TraceSegment, b: TraceSegment, distance: number)
   a.netId === b.netId &&
   a.orientation === b.orientation &&
   Math.abs(a.fixedCoord - b.fixedCoord) <= distance &&
-  rangesOverlap(a, b)
+  rangesOverlap(a, b) &&
+  (a.movable || b.movable)
 
 const findRoot = (parents: number[], index: number): number => {
   let root = index
@@ -64,11 +66,11 @@ const union = (parents: number[], a: number, b: number) => {
   if (rootA !== rootB) parents[rootB] = rootA
 }
 
-const collectMovableSegments = (traces: SolvedTracePath[]): TraceSegment[] => {
+const collectSegments = (traces: SolvedTracePath[]): TraceSegment[] => {
   const segments: TraceSegment[] = []
 
   traces.forEach((trace, traceIndex) => {
-    for (let segmentIndex = 1; segmentIndex < trace.tracePath.length - 2; segmentIndex++) {
+    for (let segmentIndex = 0; segmentIndex < trace.tracePath.length - 1; segmentIndex++) {
       const start = trace.tracePath[segmentIndex]
       const end = trace.tracePath[segmentIndex + 1]
       const orientation = getSegmentOrientation(start, end)
@@ -87,6 +89,7 @@ const collectMovableSegments = (traces: SolvedTracePath[]): TraceSegment[] => {
         rangeStart,
         rangeEnd,
         length: rangeEnd - rangeStart,
+        movable: segmentIndex > 0 && segmentIndex < trace.tracePath.length - 2,
       })
     }
   })
@@ -110,7 +113,7 @@ export const mergeNearbySameNetSegments = (
     ...trace,
     tracePath: trace.tracePath.map((point) => ({ ...point })),
   }))
-  const segments = collectMovableSegments(outputTraces)
+  const segments = collectSegments(outputTraces)
 
   if (segments.length < 2) return outputTraces
 
@@ -133,11 +136,13 @@ export const mergeNearbySameNetSegments = (
   })
 
   for (const group of groups.values()) {
-    if (group.length < 2) continue
+    if (group.length < 2 || !group.some((segment) => segment.movable)) continue
 
     const targetFixedCoord = chooseTargetFixedCoord(group)
 
     for (const segment of group) {
+      if (!segment.movable) continue
+
       const tracePath = outputTraces[segment.traceIndex].tracePath
       const start = tracePath[segment.segmentIndex]
       const end = tracePath[segment.segmentIndex + 1]
