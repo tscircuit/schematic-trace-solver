@@ -3,6 +3,8 @@ import type { GraphicsObject, Line } from "graphics-debug"
 import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
 import { balanceZShapes } from "./balanceZShapes"
 import { mergeNearbySameNetSegments } from "./mergeNearbySameNetSegments"
+import { hasCollisions } from "./hasCollisions"
+import { hasCollisionsWithLabels } from "./hasCollisionsWithLabels"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
@@ -121,8 +123,24 @@ export class TraceCleanupSolver extends BaseSolver {
   }
 
   private _runMergeNearbySameNetSegmentsStep() {
-    this.outputTraces = mergeNearbySameNetSegments(this.outputTraces)
-    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    const mergedTraces = mergeNearbySameNetSegments(this.outputTraces)
+    const chipObstacles = this.input.inputProblem.chips.map((chip) => ({
+      minX: chip.center.x - chip.width / 2,
+      maxX: chip.center.x + chip.width / 2,
+      minY: chip.center.y - chip.height / 2,
+      maxY: chip.center.y + chip.height / 2,
+    }))
+
+    const hasUnsafeMerge = mergedTraces.some((trace) =>
+      hasCollisions(trace.tracePath, chipObstacles) ||
+      hasCollisionsWithLabels(trace.tracePath, this.input.allLabelPlacements),
+    )
+
+    if (!hasUnsafeMerge) {
+      this.outputTraces = mergedTraces
+      this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    }
+
     this.solved = true
   }
 
