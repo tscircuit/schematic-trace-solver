@@ -26,11 +26,17 @@ const getSegmentOrientation = (
   start: Point,
   end: Point,
 ): SegmentOrientation | null => {
-  if (Math.abs(start.y - end.y) < EPSILON && Math.abs(start.x - end.x) > EPSILON) {
+  if (
+    Math.abs(start.y - end.y) < EPSILON &&
+    Math.abs(start.x - end.x) > EPSILON
+  ) {
     return "horizontal"
   }
 
-  if (Math.abs(start.x - end.x) < EPSILON && Math.abs(start.y - end.y) > EPSILON) {
+  if (
+    Math.abs(start.x - end.x) < EPSILON &&
+    Math.abs(start.y - end.y) > EPSILON
+  ) {
     return "vertical"
   }
 
@@ -38,9 +44,14 @@ const getSegmentOrientation = (
 }
 
 const rangesOverlap = (a: TraceSegment, b: TraceSegment): boolean =>
-  Math.max(a.rangeStart, b.rangeStart) <= Math.min(a.rangeEnd, b.rangeEnd) + EPSILON
+  Math.max(a.rangeStart, b.rangeStart) <=
+  Math.min(a.rangeEnd, b.rangeEnd) + EPSILON
 
-const shouldGroupSegments = (a: TraceSegment, b: TraceSegment, distance: number): boolean =>
+const shouldGroupSegments = (
+  a: TraceSegment,
+  b: TraceSegment,
+  distance: number,
+): boolean =>
   a.netId === b.netId &&
   a.orientation === b.orientation &&
   Math.abs(a.fixedCoord - b.fixedCoord) <= distance &&
@@ -69,15 +80,25 @@ const union = (parents: number[], a: number, b: number) => {
 const collectSegments = (traces: SolvedTracePath[]): TraceSegment[] => {
   const segments: TraceSegment[] = []
 
-  traces.forEach((trace, traceIndex) => {
-    for (let segmentIndex = 0; segmentIndex < trace.tracePath.length - 1; segmentIndex++) {
+  for (const [traceIndex, trace] of traces.entries()) {
+    for (
+      let segmentIndex = 0;
+      segmentIndex < trace.tracePath.length - 1;
+      segmentIndex++
+    ) {
       const start = trace.tracePath[segmentIndex]
       const end = trace.tracePath[segmentIndex + 1]
       const orientation = getSegmentOrientation(start, end)
       if (!orientation) continue
 
-      const rangeStart = orientation === "horizontal" ? Math.min(start.x, end.x) : Math.min(start.y, end.y)
-      const rangeEnd = orientation === "horizontal" ? Math.max(start.x, end.x) : Math.max(start.y, end.y)
+      const rangeStart =
+        orientation === "horizontal"
+          ? Math.min(start.x, end.x)
+          : Math.min(start.y, end.y)
+      const rangeEnd =
+        orientation === "horizontal"
+          ? Math.max(start.x, end.x)
+          : Math.max(start.y, end.y)
       const fixedCoord = orientation === "horizontal" ? start.y : start.x
 
       segments.push({
@@ -92,7 +113,7 @@ const collectSegments = (traces: SolvedTracePath[]): TraceSegment[] => {
         movable: segmentIndex > 0 && segmentIndex < trace.tracePath.length - 2,
       })
     }
-  })
+  }
 
   return segments
 }
@@ -128,15 +149,17 @@ export const mergeNearbySameNetSegments = (
   }
 
   const groups = new Map<number, TraceSegment[]>()
-  segments.forEach((segment, index) => {
+  for (const [index, segment] of segments.entries()) {
     const root = findRoot(parents, index)
     const group = groups.get(root) ?? []
     group.push(segment)
     groups.set(root, group)
-  })
+  }
 
   for (const group of groups.values()) {
-    if (group.length < 2 || !group.some((segment) => segment.movable)) continue
+    if (group.length < 2 || !group.some((segment) => segment.movable)) {
+      continue
+    }
 
     const targetFixedCoord = chooseTargetFixedCoord(group)
 
