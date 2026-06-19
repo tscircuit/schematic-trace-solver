@@ -131,10 +131,13 @@ export class TraceCleanupSolver extends BaseSolver {
       maxY: chip.center.y + chip.height / 2,
     }))
 
-    const hasUnsafeMerge = mergedTraces.some((trace) =>
-      hasCollisions(trace.tracePath, chipObstacles) ||
-      hasCollisionsWithLabels(trace.tracePath, this.input.allLabelPlacements),
-    )
+    const hasUnsafeMerge = mergedTraces.some((trace) => {
+      if (hasCollisions(trace.tracePath, chipObstacles)) return true
+      return hasCollisionsWithLabels(
+        trace.tracePath,
+        this.input.allLabelPlacements,
+      )
+    })
 
     if (!hasUnsafeMerge) {
       this.outputTraces = mergedTraces
