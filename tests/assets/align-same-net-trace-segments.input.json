@@ -1,0 +1,59 @@
+{
+  "inputProblem": {
+    "chips": [],
+    "directConnections": [],
+    "netConnections": [],
+    "availableNetLabelOrientations": {}
+  },
+  "allTraces": [
+    {
+      "mspPairId": "horizontal-anchor",
+      "dcConnNetId": "horizontal-net",
+      "globalConnNetId": "horizontal-net",
+      "tracePath": [{ "x": 0, "y": 0 }, { "x": 4, "y": 0 }],
+      "mspConnectionPairIds": ["horizontal-anchor"],
+      "pinIds": [],
+      "pins": []
+    },
+    {
+      "mspPairId": "horizontal-nearby",
+      "dcConnNetId": "horizontal-net",
+      "globalConnNetId": "horizontal-net",
+      "tracePath": [
+        { "x": 0.5, "y": 1 },
+        { "x": 0.5, "y": 0.05 },
+        { "x": 3.5, "y": 0.05 },
+        { "x": 3.5, "y": 1 }
+      ],
+      "mspConnectionPairIds": ["horizontal-nearby"],
+      "pinIds": [],
+      "pins": []
+    },
+    {
+      "mspPairId": "vertical-anchor",
+      "dcConnNetId": "vertical-net",
+      "globalConnNetId": "vertical-net",
+      "tracePath": [{ "x": 6, "y": 0 }, { "x": 6, "y": 4 }],
+      "mspConnectionPairIds": ["vertical-anchor"],
+      "pinIds": [],
+      "pins": []
+    },
+    {
+      "mspPairId": "vertical-nearby",
+      "dcConnNetId": "vertical-net",
+      "globalConnNetId": "vertical-net",
+      "tracePath": [
+        { "x": 7, "y": 0.5 },
+        { "x": 6.05, "y": 0.5 },
+        { "x": 6.05, "y": 3.5 },
+        { "x": 7, "y": 3.5 }
+      ],
+      "mspConnectionPairIds": ["vertical-nearby"],
+      "pinIds": [],
+      "pins": []
+    }
+  ],
+  "allLabelPlacements": [],
+  "mergedLabelNetIdMap": {},
+  "paddingBuffer": 0
+}
