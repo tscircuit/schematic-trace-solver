@@ -65,6 +65,53 @@ export class SchematicTraceLinesSolver extends BaseSolver {
   }
 
   override _step() {
+    // if (this.activeSubSolver?.solved) {
+    //   this.solvedTracePaths.push({
+    //     ...this.currentConnectionPair!,
+    //     tracePath: this.activeSubSolver!.solvedTracePath!,
+    //     mspConnectionPairIds: [this.currentConnectionPair!.mspPairId],
+    //     pinIds: [
+    //       this.currentConnectionPair!.pins[0].pinId,
+    //       this.currentConnectionPair!.pins[1].pinId,
+    //     ],
+    //   })
+    //   this.activeSubSolver = null
+    //   this.currentConnectionPair = null
+    // }
+    // if (this.activeSubSolver?.failed) {
+    //   // Record the failure for this connection and continue to the next pair
+    //   if (this.currentConnectionPair) {
+    //     this.failedConnectionPairs.push({
+    //       ...this.currentConnectionPair,
+    //       error: this.activeSubSolver.error || undefined,
+    //     })
+    //   }
+    //   this.activeSubSolver = null
+    //   this.currentConnectionPair = null
+    //   // Do not fail the whole solver; proceed to schedule the next pair
+    // }
+
+    // if (this.activeSubSolver) {
+    //   this.activeSubSolver.step()
+    //   return
+    // }
+
+    // const connectionPair = this.queuedConnectionPairs.shift()
+
+    // if (!connectionPair) {
+    //   this.solved = true
+    //   return
+    // }
+
+    // this.currentConnectionPair = connectionPair
+
+    // const { pins } = connectionPair
+
+    // this.activeSubSolver = new SchematicTraceSingleLineSolver2({
+    //   inputProblem: this.inputProblem,
+    //   pins,
+    //   chipMap: this.chipMap,
+    // })
     if (this.activeSubSolver?.solved) {
       this.solvedTracePaths.push({
         ...this.currentConnectionPair!,
@@ -96,7 +143,30 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       return
     }
 
-    const connectionPair = this.queuedConnectionPairs.shift()
+    // --- PATCH START ---
+    let connectionPair = this.queuedConnectionPairs.shift()
+
+    // Loop through queued items to skip any net-label-only pairings
+    while (connectionPair) {
+      const pin0 = connectionPair.pins[0]
+      const pin1 = connectionPair.pins[1]
+
+      // Check if the pin objects or their parent structures indicate a net label connection
+      const isNetLabelOnly = 
+        (pin0 as any).hasNetLabel || 
+        (pin1 as any).hasNetLabel || 
+        (connectionPair as any).isNetLabelOnly
+
+      if (isNetLabelOnly) {
+        // Skip routing physical lines for net-label-only connections and grab the next item
+        connectionPair = this.queuedConnectionPairs.shift()
+        continue
+      }
+      
+      // Found a valid connection that requires a physical trace line
+      break
+    }
+    // --- PATCH END ---
 
     if (!connectionPair) {
       this.solved = true
@@ -112,6 +182,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       pins,
       chipMap: this.chipMap,
     })
+  
   }
 
   override visualize(): GraphicsObject {
