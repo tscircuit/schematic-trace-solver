@@ -152,9 +152,9 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       const pin1 = connectionPair.pins[1]
 
       // Check if the pin objects or their parent structures indicate a net label connection
-      const isNetLabelOnly = 
-        (pin0 as any).hasNetLabel || 
-        (pin1 as any).hasNetLabel || 
+      const isNetLabelOnly =
+        (pin0 as any).hasNetLabel ||
+        (pin1 as any).hasNetLabel ||
         (connectionPair as any).isNetLabelOnly
 
       if (isNetLabelOnly) {
@@ -162,7 +162,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
         connectionPair = this.queuedConnectionPairs.shift()
         continue
       }
-      
+
       // Found a valid connection that requires a physical trace line
       break
     }
@@ -182,7 +182,6 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       pins,
       chipMap: this.chipMap,
     })
-  
   }
 
   override visualize(): GraphicsObject {
