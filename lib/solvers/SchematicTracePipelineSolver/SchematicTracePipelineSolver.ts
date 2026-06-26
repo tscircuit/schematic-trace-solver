@@ -27,6 +27,7 @@ import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementS
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
+import { mergeCollinearTraces } from "lib/utils/mergeCollinearTraces"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -391,6 +392,27 @@ export class SchematicTracePipelineSolver extends BaseSolver {
 
   getCurrentPhase(): string {
     return this.pipelineDef[this.currentPipelineStepIndex]?.solverName ?? "none"
+  }
+
+  /**
+   * Returns the final merged output of the pipeline.
+   *
+   * Traces that belong to the same net and share the same X or Y coordinate
+   * (collinear) with overlapping or adjacent extents are merged into a single
+   * trace segment, eliminating visual clutter (issue #34).
+   */
+  getOutput(): {
+    traces: SolvedTracePath[]
+    netLabelPlacements: ReturnType<
+      NetLabelNetLabelCollisionSolver["getOutput"]
+    >["netLabelPlacements"]
+  } {
+    const rawTraces =
+      this.netLabelTraceCollisionSolver?.getOutput().traces ?? []
+    const mergedTraces = mergeCollinearTraces(rawTraces)
+    const netLabelPlacements =
+      this.netLabelNetLabelCollisionSolver?.getOutput().netLabelPlacements ?? []
+    return { traces: mergedTraces, netLabelPlacements }
   }
 
   override visualize(): GraphicsObject {
