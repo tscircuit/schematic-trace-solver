@@ -37,4 +37,4 @@ bun.lock
 .vercel
 .aider*
 
-*.diff.png
+*.diff.png.home/
