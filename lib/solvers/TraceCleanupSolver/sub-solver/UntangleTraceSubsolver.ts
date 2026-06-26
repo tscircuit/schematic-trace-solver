@@ -2,6 +2,7 @@ import { BaseSolver } from "../../BaseSolver/BaseSolver"
 import type { InputProblem } from "../../../types/InputProblem"
 import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { NetLabelPlacement } from "../../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 
 import { findAllLShapedTurns, type LShape } from "./findAllLShapedTurns"
 import { getTraceObstacles } from "./getTraceObstacles"
@@ -57,6 +58,7 @@ type VisualizationMode =
  */
 export class UntangleTraceSubsolver extends BaseSolver {
   private input: UntangleTraceSubsolverInput
+  private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private lShapesToProcess: LShape[] = []
   private visualizationMode: VisualizationMode = "l_shapes"
 
@@ -85,6 +87,14 @@ export class UntangleTraceSubsolver extends BaseSolver {
     super()
     this.input = solverInput
     this.visualizationMode = "l_shapes"
+
+    this.chipObstacleSpatialIndex =
+      this.input.inputProblem._chipObstacleSpatialIndex ??
+      new ChipObstacleSpatialIndex(this.input.inputProblem.chips)
+    if (!this.input.inputProblem._chipObstacleSpatialIndex) {
+      this.input.inputProblem._chipObstacleSpatialIndex =
+        this.chipObstacleSpatialIndex
+    }
 
     for (const trace of this.input.allTraces) {
       const lShapes = findAllLShapedTurns(trace.tracePath)
@@ -232,6 +242,20 @@ export class UntangleTraceSubsolver extends BaseSolver {
       this.currentLShape!.traceId,
     )
 
+    // Untangling must never move a trace through a component body. The candidate
+    // only covers the rerouted corner (not the pin-terminal segments), so reject
+    // any candidate that crosses a chip; the original (component-clear) path is
+    // kept instead, so this stage only ever improves or leaves the trace valid.
+    if (
+      !collisionResult?.isColliding &&
+      this._doesCandidateCrossChip(currentCandidate)
+    ) {
+      this.lastCollision = null
+      this.collidingCandidate = currentCandidate
+      this.currentCandidateIndex++
+      return
+    }
+
     if (!collisionResult?.isColliding) {
       this.bestRouteFound = currentCandidate
       this.lastCollision = null
@@ -241,6 +265,24 @@ export class UntangleTraceSubsolver extends BaseSolver {
       this.collidingCandidate = currentCandidate
       this.currentCandidateIndex++
     }
+  }
+
+  /**
+   * Returns true if any segment of the candidate reroute passes through a
+   * schematic component (chip) body.
+   */
+  private _doesCandidateCrossChip(candidate: Point[]): boolean {
+    for (let i = 0; i < candidate.length - 1; i++) {
+      if (
+        this.chipObstacleSpatialIndex.doesOrthogonalLineIntersectChip([
+          candidate[i]!,
+          candidate[i + 1]!,
+        ])
+      ) {
+        return true
+      }
+    }
+    return false
   }
 
   private _applyBestRoute(bestRoute: Point[]) {
