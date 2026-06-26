@@ -1,136 +1,136 @@
 <svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
   <rect width="100%" height="100%" fill="white" />
   <g>
-    <circle data-type="point" data-label="PIN1_PIN2.1
-x-" data-x="-3.5005768910000006" data-y="1.4489565000000004" cx="78.07900088054879" cy="222.46748102503187" r="3" fill="hsl(328, 100%, 50%, 0.8)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: y+" data-x="-3.7" data-y="-1.55" cx="64.29709027580694" cy="429.72204945375677" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <circle data-type="point" data-label="PIN1_PIN2.2
-x-" data-x="-3.5005768910000006" data-y="1.4489565000000004" cx="78.07900088054879" cy="222.46748102503187" r="3" fill="hsl(328, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="PIN1_PIN2.3
-x+" data-x="-2.4994231089999994" data-y="1.4485175000000003" cx="147.26763199913816" cy="222.49781982972618" r="3" fill="hsl(328, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="PIN1_PIN2.4
-x+" data-x="-2.4994231089999994" data-y="1.4485175000000003" cx="147.26763199913816" cy="222.49781982972618" r="3" fill="hsl(328, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="PIN1_PIN3.1
-x-" data-x="-0.5005768910000006" data-y="1.4489565000000004" cx="285.40568444070533" cy="222.46748102503187" r="3" fill="hsl(208, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="PIN1_PIN3.2
-x-" data-x="-0.5005768910000006" data-y="1.4489565000000004" cx="285.40568444070533" cy="222.46748102503187" r="3" fill="hsl(208, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="PIN1_PIN3.3
-x+" data-x="0.5005768910000006" data-y="1.4485175000000003" cx="354.59431555929467" cy="222.49781982972618" r="3" fill="hsl(208, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="PIN1_PIN3.4
-x+" data-x="0.5005768910000006" data-y="1.4485175000000003" cx="354.59431555929467" cy="222.49781982972618" r="3" fill="hsl(208, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="PIN1_PIN4.1
-x-" data-x="2.4994231089999994" data-y="1.4489565000000004" cx="492.7323680008618" cy="222.46748102503187" r="3" fill="hsl(88, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="PIN1_PIN4.2
-x-" data-x="2.4994231089999994" data-y="1.4489565000000004" cx="492.7323680008618" cy="222.46748102503187" r="3" fill="hsl(88, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="PIN1_PIN4.3
-x+" data-x="3.5005768910000006" data-y="1.4485175000000003" cx="561.9209991194512" cy="222.49781982972618" r="3" fill="hsl(88, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="PIN1_PIN4.4
-x+" data-x="3.5005768910000006" data-y="1.4485175000000003" cx="561.9209991194512" cy="222.49781982972618" r="3" fill="hsl(88, 100%, 50%, 0.8)" />
+    <circle data-type="point" data-label="anchorPoint
+orientation: y+" data-x="-3.7" data-y="1.55" cx="64.29709027580694" cy="215.484476441595" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="PIN2_PIN3.1
-x-" data-x="-3.5005768910000006" data-y="-1.5510434999999996" cx="78.07900088054879" cy="429.7941645851884" r="3" fill="hsl(240, 100%, 50%, 0.8)" />
+x-" data-x="-3.5" data-y="-1.55" cx="78.11886917981738" cy="429.72204945375677" r="3" fill="hsl(240, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="PIN2_PIN3.2
-x-" data-x="-3.5005768910000006" data-y="-1.5510434999999996" cx="78.07900088054879" cy="429.7941645851884" r="3" fill="hsl(240, 100%, 50%, 0.8)" />
+x-" data-x="-3.5" data-y="-1.55" cx="78.11886917981738" cy="429.72204945375677" r="3" fill="hsl(240, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="PIN1_PIN2.1
+x-" data-x="-3.5" data-y="1.45" cx="78.11886917981738" cy="222.39536589360023" r="3" fill="hsl(328, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="PIN1_PIN2.2
+x-" data-x="-3.5" data-y="1.45" cx="78.11886917981738" cy="222.39536589360023" r="3" fill="hsl(328, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="anchorPoint
+orientation: x-" data-x="-3.5" data-y="1.45" cx="78.11886917981738" cy="222.39536589360023" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="PIN2_PIN3.3
-x+" data-x="-2.4994231089999994" data-y="-1.5514824999999997" cx="147.26763199913816" cy="429.8245033898827" r="3" fill="hsl(240, 100%, 50%, 0.8)" />
+x+" data-x="-2.5" data-y="-1.55" cx="147.22776369986957" cy="429.72204945375677" r="3" fill="hsl(240, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="PIN2_PIN3.4
-x+" data-x="-2.4994231089999994" data-y="-1.5514824999999997" cx="147.26763199913816" cy="429.8245033898827" r="3" fill="hsl(240, 100%, 50%, 0.8)" />
+x+" data-x="-2.5" data-y="-1.55" cx="147.22776369986957" cy="429.72204945375677" r="3" fill="hsl(240, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="-2.5" data-y="-1.55" cx="147.22776369986957" cy="429.72204945375677" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="PIN1_PIN2.3
+x+" data-x="-2.5" data-y="1.45" cx="147.22776369986957" cy="222.39536589360023" r="3" fill="hsl(328, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="PIN1_PIN2.4
+x+" data-x="-2.5" data-y="1.45" cx="147.22776369986957" cy="222.39536589360023" r="3" fill="hsl(328, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="PIN2_PIN4.1
-x-" data-x="-0.5005768910000006" data-y="-1.5510434999999996" cx="285.40568444070533" cy="429.7941645851884" r="3" fill="hsl(120, 100%, 50%, 0.8)" />
+x-" data-x="-0.5" data-y="-1.55" cx="285.4455527399739" cy="429.72204945375677" r="3" fill="hsl(120, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="PIN2_PIN4.2
-x-" data-x="-0.5005768910000006" data-y="-1.5510434999999996" cx="285.40568444070533" cy="429.7941645851884" r="3" fill="hsl(120, 100%, 50%, 0.8)" />
+x-" data-x="-0.5" data-y="-1.55" cx="285.4455527399739" cy="429.72204945375677" r="3" fill="hsl(120, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="PIN1_PIN3.1
+x-" data-x="-0.5" data-y="1.45" cx="285.4455527399739" cy="222.39536589360023" r="3" fill="hsl(208, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="PIN1_PIN3.2
+x-" data-x="-0.5" data-y="1.45" cx="285.4455527399739" cy="222.39536589360023" r="3" fill="hsl(208, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="PIN2_PIN4.3
-x+" data-x="0.5005768910000006" data-y="-1.5514824999999997" cx="354.59431555929467" cy="429.8245033898827" r="3" fill="hsl(120, 100%, 50%, 0.8)" />
+x+" data-x="0.5" data-y="-1.55" cx="354.5544472600261" cy="429.72204945375677" r="3" fill="hsl(120, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="PIN2_PIN4.4
-x+" data-x="0.5005768910000006" data-y="-1.5514824999999997" cx="354.59431555929467" cy="429.8245033898827" r="3" fill="hsl(120, 100%, 50%, 0.8)" />
+x+" data-x="0.5" data-y="-1.55" cx="354.5544472600261" cy="429.72204945375677" r="3" fill="hsl(120, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="0.5" data-y="-1.55" cx="354.5544472600261" cy="429.72204945375677" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="PIN1_PIN3.3
+x+" data-x="0.5" data-y="1.45" cx="354.5544472600261" cy="222.39536589360023" r="3" fill="hsl(208, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="PIN1_PIN3.4
+x+" data-x="0.5" data-y="1.45" cx="354.5544472600261" cy="222.39536589360023" r="3" fill="hsl(208, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="0.5" data-y="1.45" cx="354.5544472600261" cy="222.39536589360023" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="PIN3_PIN4.1
-x-" data-x="2.4994231089999994" data-y="-1.5510434999999996" cx="492.7323680008618" cy="429.7941645851884" r="3" fill="hsl(152, 100%, 50%, 0.8)" />
+x-" data-x="2.5" data-y="-1.55" cx="492.77223630013043" cy="429.72204945375677" r="3" fill="hsl(152, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="PIN3_PIN4.2
-x-" data-x="2.4994231089999994" data-y="-1.5510434999999996" cx="492.7323680008618" cy="429.7941645851884" r="3" fill="hsl(152, 100%, 50%, 0.8)" />
+x-" data-x="2.5" data-y="-1.55" cx="492.77223630013043" cy="429.72204945375677" r="3" fill="hsl(152, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="PIN1_PIN4.1
+x-" data-x="2.5" data-y="1.45" cx="492.77223630013043" cy="222.39536589360023" r="3" fill="hsl(88, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="PIN1_PIN4.2
+x-" data-x="2.5" data-y="1.45" cx="492.77223630013043" cy="222.39536589360023" r="3" fill="hsl(88, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="anchorPoint
+orientation: x-" data-x="2.5" data-y="1.45" cx="492.77223630013043" cy="222.39536589360023" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="PIN3_PIN4.3
-x+" data-x="3.5005768910000006" data-y="-1.5514824999999997" cx="561.9209991194512" cy="429.8245033898827" r="3" fill="hsl(152, 100%, 50%, 0.8)" />
+x+" data-x="3.5" data-y="-1.55" cx="561.8811308201826" cy="429.72204945375677" r="3" fill="hsl(152, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="PIN3_PIN4.4
-x+" data-x="3.5005768910000006" data-y="-1.5514824999999997" cx="561.9209991194512" cy="429.8245033898827" r="3" fill="hsl(152, 100%, 50%, 0.8)" />
+x+" data-x="3.5" data-y="-1.55" cx="561.8811308201826" cy="429.72204945375677" r="3" fill="hsl(152, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-3.7005768910000008" data-y="1.5499565000000004" cx="64.25722197653835" cy="215.4874826785066" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: x+" data-x="3.5" data-y="-1.55" cx="561.8811308201826" cy="429.72204945375677" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="PIN1_PIN4.3
+x+" data-x="3.5" data-y="1.45" cx="561.8811308201826" cy="222.39536589360023" r="3" fill="hsl(88, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="PIN1_PIN4.4
+x+" data-x="3.5" data-y="1.45" cx="561.8811308201826" cy="222.39536589360023" r="3" fill="hsl(88, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: x-" data-x="2.4994231089999994" data-y="1.4489565000000004" cx="492.7323680008618" cy="222.46748102503187" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: x-" data-x="-3.5005768910000006" data-y="1.4489565000000004" cx="78.07900088054879" cy="222.46748102503187" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-3.7005768910000008" data-y="-1.5510434999999996" cx="64.25722197653835" cy="429.7941645851884" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: x+" data-x="0.5005768910000006" data-y="1.4485175000000003" cx="354.59431555929467" cy="222.49781982972618" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: x+" data-x="-2.4994231089999994" data-y="-1.5514824999999997" cx="147.26763199913816" cy="429.8245033898827" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: x+" data-x="3.5005768910000006" data-y="-1.5514824999999997" cx="561.9209991194512" cy="429.8245033898827" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="3.7005768910000008" data-y="1.4485175000000003" cx="575.7427780234616" cy="222.49781982972618" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: x+" data-x="0.5005768910000006" data-y="-1.5514824999999997" cx="354.59431555929467" cy="429.8245033898827" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y+" data-x="3.7" data-y="1.45" cx="575.7029097241931" cy="222.39536589360023" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="-3.5005768910000006,1.4489565000000004 -0.5005768910000006,1.4489565000000004" data-type="line" data-label="" points="78.07900088054879,222.46748102503187 285.40568444070533,222.46748102503187" fill="none" stroke="hsl(340, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
@@ -178,22 +178,22 @@ orientation: x+" data-x="0.5005768910000006" data-y="-1.5514824999999997" cx="35
     <polyline data-points="3.5005768910000006,1.4485175000000003 4.051576891000001,1.4485175000000003 4.051576891000001,-1.4504824999999997 3.5005768910000006,-1.4504824999999997 3.5005768910000006,-1.5514824999999997" data-type="line" data-label="" points="561.9209991194512,222.49781982972618 600,222.49781982972618 600,422.84450504335746 561.9209991194512,422.84450504335746 561.9209991194512,429.8245033898827" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <rect data-type="rect" data-label="schematic_component_0" data-x="-3" data-y="1.5" x="78.07900088054879" y="203.41678494384536" width="69.18863111858937" height="31.04627244750455" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.014469917467857146" />
+    <rect data-type="rect" data-label="schematic_component_0" data-x="-3" data-y="1.5" x="78.11886917981738" y="203.39041990058587" width="69.10889452005219" height="31.099002534023498" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.014469917467857146" />
   </g>
   <g>
-    <rect data-type="rect" data-label="schematic_component_1" data-x="0" data-y="1.5" x="285.40568444070533" y="203.41678494384536" width="69.18863111858934" height="31.04627244750455" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.014469917467857146" />
+    <rect data-type="rect" data-label="schematic_component_1" data-x="0" data-y="1.5" x="285.4455527399739" y="203.39041990058587" width="69.10889452005222" height="31.099002534023498" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.014469917467857146" />
   </g>
   <g>
-    <rect data-type="rect" data-label="schematic_component_2" data-x="3" data-y="1.5" x="492.7323680008618" y="203.41678494384536" width="69.18863111858934" height="31.04627244750455" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.014469917467857146" />
+    <rect data-type="rect" data-label="schematic_component_2" data-x="3" data-y="1.5" x="492.77223630013043" y="203.39041990058587" width="69.10889452005222" height="31.099002534023498" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.014469917467857146" />
   </g>
   <g>
-    <rect data-type="rect" data-label="schematic_component_3" data-x="-3" data-y="-1.5" x="78.07900088054879" y="410.74346850400184" width="69.18863111858937" height="31.046272447504577" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.014469917467857146" />
+    <rect data-type="rect" data-label="schematic_component_3" data-x="-3" data-y="-1.5" x="78.11886917981738" y="410.7171034607424" width="69.10889452005219" height="31.099002534023498" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.014469917467857146" />
   </g>
   <g>
-    <rect data-type="rect" data-label="schematic_component_4" data-x="0" data-y="-1.5" x="285.40568444070533" y="410.74346850400184" width="69.18863111858934" height="31.046272447504577" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.014469917467857146" />
+    <rect data-type="rect" data-label="schematic_component_4" data-x="0" data-y="-1.5" x="285.4455527399739" y="410.7171034607424" width="69.10889452005222" height="31.099002534023498" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.014469917467857146" />
   </g>
   <g>
-    <rect data-type="rect" data-label="schematic_component_5" data-x="3" data-y="-1.5" x="492.7323680008618" y="410.74346850400184" width="69.18863111858934" height="31.046272447504577" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.014469917467857146" />
+    <rect data-type="rect" data-label="schematic_component_5" data-x="3" data-y="-1.5" x="492.77223630013043" y="410.7171034607424" width="69.10889452005222" height="31.099002534023498" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.014469917467857146" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: PIN1

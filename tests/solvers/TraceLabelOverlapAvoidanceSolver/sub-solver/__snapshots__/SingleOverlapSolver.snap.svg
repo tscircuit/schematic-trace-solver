@@ -1,48 +1,48 @@
 <svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
   <rect width="100%" height="100%" fill="white" />
   <g>
-    <circle data-type="point" data-label="U1.1
-x+" data-x="1.2000000000000002" data-y="-0.30000000000000004" cx="308.80000000000007" cy="241.88" r="3" fill="hsl(319, 100%, 50%, 0.8)" />
-  </g>
-  <g>
     <circle data-type="point" data-label="U1.2
-x-" data-x="-1.2000000000000002" data-y="-0.30000000000000004" cx="40" cy="241.88" r="3" fill="hsl(320, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="U1.3
-x+" data-x="1.2000000000000002" data-y="0.09999999999999998" cx="308.80000000000007" cy="197.08" r="3" fill="hsl(321, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="U1.4
-x-" data-x="-1.2000000000000002" data-y="0.30000000000000004" cx="40" cy="174.68" r="3" fill="hsl(322, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="U1.5
-x-" data-x="-1.2000000000000002" data-y="0.10000000000000003" cx="40" cy="197.07999999999998" r="3" fill="hsl(323, 100%, 50%, 0.8)" />
+x-" data-x="-1.2" data-y="-0.3" cx="40" cy="241.88" r="3" fill="hsl(320, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="U1.6
-x-" data-x="-1.2000000000000002" data-y="-0.09999999999999998" cx="40" cy="219.48" r="3" fill="hsl(324, 100%, 50%, 0.8)" />
+x-" data-x="-1.2" data-y="-0.1" cx="40" cy="219.48" r="3" fill="hsl(324, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U1.5
+x-" data-x="-1.2" data-y="0.1" cx="40" cy="197.08" r="3" fill="hsl(323, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U1.4
+x-" data-x="-1.2" data-y="0.3" cx="40" cy="174.68" r="3" fill="hsl(322, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U1.1
+x+" data-x="1.2" data-y="-0.3" cx="308.8" cy="241.88" r="3" fill="hsl(319, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="U1.7
-x+" data-x="1.2000000000000002" data-y="-0.10000000000000003" cx="308.80000000000007" cy="219.48000000000002" r="3" fill="hsl(325, 100%, 50%, 0.8)" />
+x+" data-x="1.2" data-y="-0.1" cx="308.8" cy="219.48" r="3" fill="hsl(325, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="U1.3
+x+" data-x="1.2" data-y="0.1" cx="308.8" cy="197.08" r="3" fill="hsl(321, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="U1.8
-x+" data-x="1.2000000000000002" data-y="0.30000000000000004" cx="308.80000000000007" cy="174.68" r="3" fill="hsl(326, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="J1.1
-x-" data-x="1.6" data-y="-1.895" cx="353.6" cy="420.52" r="3" fill="hsl(218, 100%, 50%, 0.8)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="J1.2
-x-" data-x="1.6" data-y="-2.095" cx="353.6" cy="442.92" r="3" fill="hsl(219, 100%, 50%, 0.8)" />
+x+" data-x="1.2" data-y="0.3" cx="308.8" cy="174.68" r="3" fill="hsl(326, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="J1.3
-x-" data-x="1.6" data-y="-2.295" cx="353.6" cy="465.31999999999994" r="3" fill="hsl(220, 100%, 50%, 0.8)" />
+x-" data-x="1.6" data-y="-2.29" cx="353.6" cy="464.76" r="3" fill="hsl(220, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J1.2
+x-" data-x="1.6" data-y="-2.1" cx="353.6" cy="443.48" r="3" fill="hsl(219, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J1.1
+x-" data-x="1.6" data-y="-1.89" cx="353.6" cy="419.96" r="3" fill="hsl(218, 100%, 50%, 0.8)" />
   </g>
   <g>
     <polyline data-points="1.2000000000000002,-0.30000000000000004 1.6,-2.295" data-type="line" data-label="" points="308.80000000000007,241.88 353.6,465.31999999999994" fill="none" stroke="hsl(157, 100%, 50%, 0.1)" stroke-width="1" stroke-dasharray="4 2" />
@@ -57,13 +57,13 @@ x-" data-x="1.6" data-y="-2.295" cx="353.6" cy="465.31999999999994" r="3" fill="
     <polyline data-points="1.2000000000000002,-0.30000000000000004 1.4000000000000001,-0.30000000000000004 1.4000000000000001,-1.6949999999999998 1.049,-1.6949999999999998 1.049,-2.2950000000000004 1.6,-2.295" data-type="line" data-label="" points="308.80000000000007,241.88 331.20000000000005,241.88 331.20000000000005,398.12 291.88800000000003,398.12 291.88800000000003,465.32000000000005 353.6,465.31999999999994" fill="none" stroke="green" stroke-width="1" />
   </g>
   <g>
-    <rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="40" y="152.28" width="268.80000000000007" height="111.99999999999997" fill="hsl(24, 100%, 50%, 0.1)" stroke="black" stroke-width="0.008928571428571428" />
+    <rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="40" y="152.28" width="268.8" height="111.99999999999997" fill="hsl(24, 100%, 50%, 0.1)" stroke="black" stroke-width="0.008928571428571428" />
   </g>
   <g>
     <rect data-type="rect" data-label="schematic_component_1" data-x="2.7" data-y="-2.095" x="353.6" y="398.12" width="246.39999999999998" height="89.60000000000002" fill="hsl(24, 100%, 50%, 0.1)" stroke="black" stroke-width="0.008928571428571428" />
   </g>
   <g>
-    <rect data-type="rect" data-label="" data-x="1.374" data-y="-1.995" x="303.088" y="409.32" width="50.400000000000034" height="44.80000000000001" fill="rgba(255, 0, 0, 0.2)" stroke="black" stroke-width="0.008928571428571428" />
+    <rect data-type="rect" data-label="" data-x="1.374" data-y="-1.995" x="303.08799999999997" y="409.32000000000005" width="50.40000000000009" height="44.799999999999955" fill="rgba(255, 0, 0, 0.2)" stroke="black" stroke-width="0.008928571428571428" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
@@ -95,7 +95,7 @@ x-" data-x="1.6" data-y="-2.295" cx="353.6" cy="465.31999999999994" r="3" fill="
       const matrix = {
         "a": 112,
         "c": 0,
-        "e": 174.40000000000003,
+        "e": 174.4,
         "b": 0,
         "d": -112,
         "f": 208.28
