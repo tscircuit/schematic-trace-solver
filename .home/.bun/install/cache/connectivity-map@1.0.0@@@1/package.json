@@ -1,0 +1,29 @@
+{
+  "name": "connectivity-map",
+  "version": "1.0.0",
+  "description": "A module for managing connectivity between nodes in a network",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup --format esm --sourcemap --dts",
+    "test": "bun test",
+    "dev": "tsup --watch --format esm --sourcemap --dts",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "bun-types": "latest",
+    "tsup": "^8.5.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@biomejs/biome": "^2.2.2"
+  }
+}

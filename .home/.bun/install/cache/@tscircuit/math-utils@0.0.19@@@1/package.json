@@ -1,0 +1,36 @@
+{
+  "name": "@tscircuit/math-utils",
+  "main": "dist/index.js",
+  "version": "0.0.19",
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./line-intersections": {
+      "import": "./dist/line-intersections.js",
+      "types": "./dist/line-intersections.d.ts"
+    },
+    "./nearest-box": {
+      "import": "./dist/nearest-box.js",
+      "types": "./dist/nearest-box.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup-node src --format esm --dts --sourcemap"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/bun": "latest",
+    "tsup": "^8.2.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

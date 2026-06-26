@@ -27,7 +27,7 @@ import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementS
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
-import { mergeCollinearTraces } from "lib/utils/mergeCollinearTraces"
+import { mergeCollinearTraces } from "lib/utils/merge-collinear-traces"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string

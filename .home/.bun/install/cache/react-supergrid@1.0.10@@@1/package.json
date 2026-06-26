@@ -1,0 +1,35 @@
+{
+  "name": "react-supergrid",
+  "version": "1.0.10",
+  "description": "",
+  "main": "dist/SuperGrid.js",
+  "repository": "tscircuit/supergrid",
+  "scripts": {
+    "build": "tsup ./src --dts --sourcemap",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "react": "*",
+    "react-dom": "*",
+    "transformation-matrix": "*"
+  },
+  "devDependencies": {
+    "@storybook/blocks": "^7.2.3",
+    "@storybook/react": "^7.2.3",
+    "@storybook/react-vite": "^7.2.3",
+    "@storybook/testing-library": "^0.2.0",
+    "@types/react": "^18.2.20",
+    "esbuild": "^0.19.1",
+    "prop-types": "^15.8.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "storybook": "^7.2.3",
+    "transformation-matrix": "^2.15.0",
+    "tsup": "^7.2.0",
+    "use-mouse-matrix-transform": "^1.1.5"
+  }
+}
