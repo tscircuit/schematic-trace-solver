@@ -20,6 +20,7 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { mergeSameNetCloseTraceLines } from "./mergeSameNetCloseTraceLines"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -108,6 +109,10 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
+      this.outputTraces = mergeSameNetCloseTraceLines(this.outputTraces, {
+        mergeDistance: this.input.paddingBuffer,
+      })
+      this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
       this.solved = true
       return
     }
