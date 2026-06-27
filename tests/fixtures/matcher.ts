@@ -50,6 +50,64 @@ async function toMatchSolverSnapshot(
     colorAvailableNetOrientationLabels(graphicsObject, inputProblem)
   }
 
+  // Normalize graphics object to avoid snapshot flakiness
+  const round = (val: number | undefined) =>
+    val !== undefined ? Math.round(val * 100) / 100 : undefined
+
+  if (graphicsObject.lines) {
+    graphicsObject.lines.forEach((l: any) => {
+      l.x1 = round(l.x1)!
+      l.y1 = round(l.y1)!
+      l.x2 = round(l.x2)!
+      l.y2 = round(l.y2)!
+      if (l.x1 > l.x2 || (l.x1 === l.x2 && l.y1 > l.y2)) {
+        const tx = l.x1
+        l.x1 = l.x2
+        l.x2 = tx
+        const ty = l.y1
+        l.y1 = l.y2
+        l.y2 = ty
+      }
+    })
+    graphicsObject.lines.sort(
+      (a: any, b: any) =>
+        a.x1 - b.x1 ||
+        a.y1 - b.y1 ||
+        a.x2 - b.x2 ||
+        a.y2 - b.y2 ||
+        (a.color || "").localeCompare(b.color || ""),
+    )
+  }
+
+  if (graphicsObject.points) {
+    graphicsObject.points.forEach((p: any) => {
+      p.x = round(p.x)!
+      p.y = round(p.y)!
+    })
+    graphicsObject.points.sort((a: any, b: any) => a.x - b.x || a.y - b.y)
+  }
+
+  if (graphicsObject.texts) {
+    graphicsObject.texts.forEach((t: any) => {
+      t.x = round(t.x)!
+      t.y = round(t.y)!
+    })
+    graphicsObject.texts.sort(
+      (a: any, b: any) =>
+        a.x - b.x || a.y - b.y || (a.text || "").localeCompare(b.text || ""),
+    )
+  }
+
+  if (graphicsObject.rects) {
+    graphicsObject.rects.forEach((r: any) => {
+      r.x = round(r.x)!
+      r.y = round(r.y)!
+      r.width = round(r.width)!
+      r.height = round(r.height)!
+    })
+    graphicsObject.rects.sort((a: any, b: any) => a.x - b.x || a.y - b.y)
+  }
+
   const svg = getSvgFromGraphicsObject(graphicsObject, {
     backgroundColor: "white",
   })

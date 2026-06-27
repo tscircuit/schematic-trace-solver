@@ -1,4 +1,6 @@
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem } from "lib/types/InputProblem"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
@@ -92,6 +94,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
   } | null {
     // Detect the next set of overlapping segments between two different net islands.
     const EPS = 2e-3
+    const obstacleRects = getObstacleRects(this.inputProblem)
 
     const netIds = Object.keys(this.traceNetIslands)
     // Compare each pair of different nets
@@ -101,20 +104,6 @@ export class TraceOverlapShiftSolver extends BaseSolver {
         const netB = netIds[j]!
         const pathsA = this.traceNetIslands[netA] || []
         const pathsB = this.traceNetIslands[netB] || []
-
-        // Collect overlaps for this pair
-        const overlapsA: Array<{
-          solvedTracePathIndex: number
-          traceSegmentIndex: number
-        }> = []
-        const overlapsB: Array<{
-          solvedTracePathIndex: number
-          traceSegmentIndex: number
-        }> = []
-
-        // Track to avoid duplicates
-        const seenA = new Set<string>()
-        const seenB = new Set<string>()
 
         const overlaps1D = (
           a1: number,
@@ -154,57 +143,114 @@ export class TraceOverlapShiftSolver extends BaseSolver {
                 if (aVert && bVert) {
                   if (Math.abs(a1.x - b1.x) < EPS) {
                     if (overlaps1D(a1.y, a2.y, b1.y, b2.y)) {
-                      const keyA = `${pa}:${sa}`
-                      const keyB = `${pb}:${sb}`
-                      if (!seenA.has(keyA)) {
-                        overlapsA.push({
-                          solvedTracePathIndex: pa,
-                          traceSegmentIndex: sa,
-                        })
-                        seenA.add(keyA)
+                      const deltas = [0.1, -0.1, 0.2, -0.2]
+                      let optimalPath = null
+
+                      for (const d of deltas) {
+                        const testPath = [...ptsA]
+                        // For a vertical overlap (shared X bounds), inject X-axis delta translation
+                        testPath.splice(
+                          sa + 1,
+                          0,
+                          { x: a1.x + d, y: a1.y },
+                          { x: a2.x + d, y: a2.y },
+                        )
+                        if (
+                          !isPathCollidingWithObstacles(testPath, obstacleRects)
+                        ) {
+                          optimalPath = testPath
+                          break
+                        }
                       }
-                      if (!seenB.has(keyB)) {
-                        overlapsB.push({
-                          solvedTracePathIndex: pb,
-                          traceSegmentIndex: sb,
-                        })
-                        seenB.add(keyB)
+
+                      if (!optimalPath) {
+                        // Fallback to basic if all collide
+                        const d = deltas[0]
+                        optimalPath = [...ptsA]
+                        optimalPath.splice(
+                          sa + 1,
+                          0,
+                          { x: a1.x + d, y: a1.y },
+                          { x: a2.x + d, y: a2.y },
+                        )
+                      }
+
+                      this.correctedTraceMap[pathA.mspPairId] = {
+                        ...pathA,
+                        tracePath: optimalPath,
+                      }
+                      return {
+                        overlappingTraceSegments: [
+                          {
+                            connNetId: netA,
+                            pathsWithOverlap: [
+                              {
+                                solvedTracePathIndex: pa,
+                                traceSegmentIndex: sa,
+                              },
+                            ],
+                          },
+                        ],
                       }
                     }
                   }
                 } else if (aHorz && bHorz) {
                   if (Math.abs(a1.y - b1.y) < EPS) {
                     if (overlaps1D(a1.x, a2.x, b1.x, b2.x)) {
-                      const keyA = `${pa}:${sa}`
-                      const keyB = `${pb}:${sb}`
-                      if (!seenA.has(keyA)) {
-                        overlapsA.push({
-                          solvedTracePathIndex: pa,
-                          traceSegmentIndex: sa,
-                        })
-                        seenA.add(keyA)
+                      const deltas = [0.1, -0.1, 0.2, -0.2]
+                      let optimalPath = null
+
+                      for (const d of deltas) {
+                        const testPath = [...ptsA]
+                        // For a horizontal overlap (shared Y bounds), inject Y-axis delta translation
+                        testPath.splice(
+                          sa + 1,
+                          0,
+                          { x: a1.x, y: a1.y + d },
+                          { x: a2.x, y: a2.y + d },
+                        )
+                        if (
+                          !isPathCollidingWithObstacles(testPath, obstacleRects)
+                        ) {
+                          optimalPath = testPath
+                          break
+                        }
                       }
-                      if (!seenB.has(keyB)) {
-                        overlapsB.push({
-                          solvedTracePathIndex: pb,
-                          traceSegmentIndex: sb,
-                        })
-                        seenB.add(keyB)
+
+                      if (!optimalPath) {
+                        // Fallback to basic if all collide
+                        const d = deltas[0]
+                        optimalPath = [...ptsA]
+                        optimalPath.splice(
+                          sa + 1,
+                          0,
+                          { x: a1.x, y: a1.y + d },
+                          { x: a2.x, y: a2.y + d },
+                        )
+                      }
+
+                      this.correctedTraceMap[pathA.mspPairId] = {
+                        ...pathA,
+                        tracePath: optimalPath,
+                      }
+                      return {
+                        overlappingTraceSegments: [
+                          {
+                            connNetId: netA,
+                            pathsWithOverlap: [
+                              {
+                                solvedTracePathIndex: pa,
+                                traceSegmentIndex: sa,
+                              },
+                            ],
+                          },
+                        ],
                       }
                     }
                   }
                 }
               }
             }
-          }
-        }
-
-        if (overlapsA.length > 0 && overlapsB.length > 0) {
-          return {
-            overlappingTraceSegments: [
-              { connNetId: netA, pathsWithOverlap: overlapsA },
-              { connNetId: netB, pathsWithOverlap: overlapsB },
-            ],
           }
         }
       }
