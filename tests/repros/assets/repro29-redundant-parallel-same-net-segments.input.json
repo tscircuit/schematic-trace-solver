@@ -1,0 +1,31 @@
+{
+  "chips": [
+    {
+      "chipId": "JP6",
+      "center": { "x": -1.0, "y": 0.15 },
+      "width": 1.4,
+      "height": 0.8,
+      "pins": [
+        { "pinId": "JP6.1", "x": -0.3, "y": -0.05 },
+        { "pinId": "JP6.2", "x": -0.3, "y": 0.05 }
+      ]
+    },
+    {
+      "chipId": "R1",
+      "center": { "x": 4.5, "y": 0.7 },
+      "width": 0.4,
+      "height": 1.0,
+      "pins": [
+        { "pinId": "R1.1", "x": 4.5, "y": 0.2 },
+        { "pinId": "R1.2", "x": 4.5, "y": 1.2 }
+      ]
+    }
+  ],
+  "directConnections": [
+    { "pinIds": ["JP6.2", "R1.1"], "netId": "vout-r1" },
+    { "pinIds": ["R1.1", "R1.2"], "netId": "sj2-bridge" }
+  ],
+  "netConnections": [{ "netId": "VOUT", "pinIds": ["JP6.2", "R1.1", "R1.2"] }],
+  "availableNetLabelOrientations": {},
+  "maxMspPairDistance": 6
+}
