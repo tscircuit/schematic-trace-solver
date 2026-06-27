@@ -13,6 +13,7 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { isNetLabelOnlyPassivePinGroup } from "../../utils/isNetLabelOnlyPassivePinGroup"
 
 const NEAREST_NEIGHBOR_COUNT = 3
 
@@ -76,6 +77,18 @@ export class LongDistancePairSolver extends BaseSolver {
     for (const netId of Object.keys(netConnMap.netMap)) {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
+
+      // Passive components joined exclusively through net labels must not be
+      // routed as traces -- each pin gets a net label placed in a later phase
+      // instead. See issue #79 (repro61).
+      if (
+        isNetLabelOnlyPassivePinGroup({
+          inputProblem,
+          pinIdsInNet: allPinIdsInNet.filter((pinId) => pinMap.has(pinId)),
+        })
+      ) {
+        continue
+      }
 
       const unconnectedPinIds = allPinIdsInNet.filter(
         (pinId) => !primaryConnectedPinIds.has(pinId),
