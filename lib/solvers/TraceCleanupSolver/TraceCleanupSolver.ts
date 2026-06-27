@@ -20,6 +20,7 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { mergeNearbySameNetTraceSegments } from "./mergeNearbySameNetTraceSegments"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -27,6 +28,7 @@ import { is4PointRectangle } from "./is4PointRectangle"
 type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
+  | "merging_same_net_segments"
   | "untangling_traces"
 
 /**
@@ -84,6 +86,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "merging_same_net_segments":
+        this._runMergingSameNetSegmentsStep()
+        break
     }
   }
 
@@ -108,11 +113,25 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "merging_same_net_segments"
       return
     }
 
     this._processTrace("balancing_l_shapes")
+  }
+
+  private _runMergingSameNetSegmentsStep() {
+    const result = mergeNearbySameNetTraceSegments(
+      Array.from(this.tracesMap.values()),
+      {
+        snapDistance: this.input.paddingBuffer,
+      },
+    )
+
+    this.outputTraces = result.traces
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.stats.sameNetSegmentMergeCount = result.mergeCount
+    this.solved = true
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
