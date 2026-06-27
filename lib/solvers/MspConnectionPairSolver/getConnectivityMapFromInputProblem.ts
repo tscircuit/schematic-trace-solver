@@ -14,7 +14,10 @@ export const getConnectivityMapsFromInputProblem = (
     ])
   }
 
-  const netConnMap = new ConnectivityMap(directConnMap.netMap)
+  // ConnectivityMap mutates the supplied map as connections are added.
+  // Keep the direct-only map isolated from net-label connectivity so callers
+  // can distinguish physical wires from logical net connections.
+  const netConnMap = new ConnectivityMap({ ...directConnMap.netMap })
 
   for (const netConn of inputProblem.netConnections) {
     netConnMap.addConnections([[netConn.netId, ...netConn.pinIds]])
