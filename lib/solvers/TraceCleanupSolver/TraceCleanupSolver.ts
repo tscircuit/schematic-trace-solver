@@ -20,11 +20,17 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import {
+  findCloseSameNetTraceGroups,
+  type CloseSameNetTraceGroup,
+} from "./sub-solver/findCloseSameNetTraceGroups"
+import { combineCloseSameNetTraceGroups } from "./sub-solver/combineCloseSameNetTraceGroups"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "combining_same_net_traces"
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
@@ -42,6 +48,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private outputTraces: SolvedTracePath[]
   private traceIdQueue: string[]
   private tracesMap: Map<string, SolvedTracePath>
+  private closeSameNetTraceGroups: CloseSameNetTraceGroup[] = []
   private pipelineStep: PipelineStep = "untangling_traces"
   private activeTraceId: string | null = null // New property
   override activeSubSolver: BaseSolver | null = null
@@ -53,6 +60,9 @@ export class TraceCleanupSolver extends BaseSolver {
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.traceIdQueue = Array.from(
       solverInput.allTraces.map((e) => e.mspPairId),
+    )
+    this.closeSameNetTraceGroups = findCloseSameNetTraceGroups(
+      solverInput.allTraces,
     )
   }
 
@@ -66,10 +76,10 @@ export class TraceCleanupSolver extends BaseSolver {
         this.outputTraces = output.traces
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "combining_same_net_traces"
       } else if (this.activeSubSolver.failed) {
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "combining_same_net_traces"
       }
       return
     }
@@ -77,6 +87,9 @@ export class TraceCleanupSolver extends BaseSolver {
     switch (this.pipelineStep) {
       case "untangling_traces":
         this._runUntangleTracesStep()
+        break
+      case "combining_same_net_traces":
+        this._runCombineSameNetTracesStep()
         break
       case "minimizing_turns":
         this._runMinimizeTurnsStep()
@@ -92,6 +105,18 @@ export class TraceCleanupSolver extends BaseSolver {
       ...this.input,
       allTraces: Array.from(this.tracesMap.values()),
     })
+  }
+
+  private _runCombineSameNetTracesStep() {
+    this.outputTraces = combineCloseSameNetTraceGroups(
+      Array.from(this.tracesMap.values()),
+    )
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.traceIdQueue = Array.from(this.outputTraces.map((e) => e.mspPairId))
+    this.closeSameNetTraceGroups = findCloseSameNetTraceGroups(
+      this.outputTraces,
+    )
+    this.pipelineStep = "minimizing_turns"
   }
 
   private _runMinimizeTurnsStep() {
@@ -149,6 +174,7 @@ export class TraceCleanupSolver extends BaseSolver {
   getOutput() {
     return {
       traces: this.outputTraces,
+      closeSameNetTraceGroups: this.closeSameNetTraceGroups,
     }
   }
 
@@ -171,10 +197,11 @@ export class TraceCleanupSolver extends BaseSolver {
     for (const trace of this.outputTraces) {
       const line: Line = {
         points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
-        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue", // Highlight active trace
+        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue",
       }
       graphics.lines!.push(line)
     }
+
     return graphics
   }
 }
