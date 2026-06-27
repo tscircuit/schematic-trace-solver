@@ -19,6 +19,7 @@ import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceS
 import { correctPinsInsideChips } from "./correctPinsInsideChip"
 import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
+import { SameNetTraceCombineSolver } from "../SameNetTraceCombineSolver/SameNetTraceCombineSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
 import { Example28Solver } from "../Example28Solver/Example28Solver"
@@ -71,6 +72,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   // guidelinesSolver?: GuidelinesSolver
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   longDistancePairSolver?: LongDistancePairSolver
+  sameNetTraceCombineSolver?: SameNetTraceCombineSolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
   labelMergingSolver?: MergedNetLabelObstacleSolver
@@ -142,13 +144,25 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
+      "sameNetTraceCombineSolver",
+      SameNetTraceCombineSolver,
+      () => [
+        {
+          inputProblem: this.inputProblem,
+          inputTracePaths:
+            this.longDistancePairSolver!.getOutput().allTracesMerged,
+        },
+      ],
+    ),
+    definePipelineStep(
       "traceOverlapShiftSolver",
       TraceOverlapShiftSolver,
       () => [
         {
           inputProblem: this.inputProblem,
           inputTracePaths:
-            this.longDistancePairSolver?.getOutput().allTracesMerged!,
+            this.sameNetTraceCombineSolver?.getOutput().traces ??
+            this.longDistancePairSolver!.getOutput().allTracesMerged,
           globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
         },
       ],
