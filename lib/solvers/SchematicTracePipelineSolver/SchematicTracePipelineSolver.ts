@@ -27,6 +27,7 @@ import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementS
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
+import { SameNetTraceMergeSolver } from "../../SameNetTraceMergeSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -82,6 +83,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
+  sameNetTraceMergeSolver?: SameNetTraceMergeSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -315,6 +317,22 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         },
       ],
     ),
+    definePipelineStep(
+      "sameNetTraceMergeSolver",
+      SameNetTraceMergeSolver,
+      (instance) => {
+        // Fetch previous solver's output safely
+        const prevOutput =
+          instance.netLabelNetLabelCollisionSolver?.getOutput() as any
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces: prevOutput?.traces || [],
+            netLabelPlacements: prevOutput?.netLabelPlacements || [],
+          },
+        ]
+      },
+    ),
   ]
 
   constructor(inputProblem: InputProblem) {
@@ -400,8 +418,11 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     const visualizations = [
       visualizeInputProblem(this.inputProblem),
       ...(this.pipelineDef
-        .map((p) => (this as any)[p.solverName]?.visualize())
-        .filter(Boolean)
+        .filter((p) => p !== undefined)
+        .map((p) => (this as any)[p!.solverName]?.visualize())
+        .filter(
+          (viz): viz is GraphicsObject => viz !== undefined && viz !== null,
+        )
         .map((viz, stepIndex) => {
           for (const rect of viz!.rects ?? []) {
             rect.step = stepIndex
@@ -436,17 +457,5 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     }
     colorAvailableNetOrientationLabels(finalGraphics, this.inputProblem)
     return finalGraphics
-  }
-
-  /**
-   * A lightweight version of the visualize method that can be used to stream
-   * progress
-   */
-  override preview(): GraphicsObject {
-    if (this.activeSubSolver) {
-      return this.activeSubSolver.preview()
-    }
-
-    return super.preview()
   }
 }
