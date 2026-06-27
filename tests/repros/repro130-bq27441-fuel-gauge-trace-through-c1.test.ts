@@ -52,9 +52,8 @@ test("repro130 bq27441 fuel gauge trace does not cross C1 obstacle", () => {
   )
 
   expect(c1).toBeDefined()
-  expect(traceThroughC1).toBeDefined()
-  expect(pathIntersectsRect(traceThroughC1!.tracePath, getChipRect(c1))).toBe(
-    false,
-  )
+  // Net-label-only PGND connections no longer produce routed traces; the
+  // connection is represented by individual net labels on each pin instead.
+  expect(traceThroughC1).toBeUndefined()
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
