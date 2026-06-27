@@ -132,25 +132,32 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     const [PA, PB] = this.pins
     const collision = findFirstCollision(path, this.obstacles)
 
-    if (!collision) {
+  if (!collision) {
       // Sanity check: ensure path still connects PA -> PB
       const first = path[0]!
       const last = path[path.length - 1]!
       const EPS = 1e-9
       const samePoint = (p: Point, q: Point) =>
         Math.abs(p.x - q.x) < EPS && Math.abs(p.y - q.y) < EPS
+
       if (
         samePoint(first, { x: PA.x, y: PA.y }) &&
         samePoint(last, { x: PB.x, y: PB.y })
       ) {
-        this.solvedTracePath = path
+        // Issue #78 Fix: Üst üste binen (duplicate) noktaları temizle
+        const cleanPath: Point[] = []
+        for (let i = 0; i < path.length; i++) {
+          if (i === 0 || !samePoint(path[i]!, path[i - 1]!)) {
+            cleanPath.push(path[i]!)
+          }
+        }
+        this.solvedTracePath = cleanPath
         this.solved = true
       }
       return
     }
 
     let { segIndex, rect } = collision
-
     // Never move the first or last segments - move adjacent segment instead
     const isFirstSegment = segIndex === 0
     const isLastSegment = segIndex === path.length - 2
