@@ -94,6 +94,14 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     const dcNetId = this.queuedDcNetIds.shift()!
 
+    // Check if this net should only have net labels (e.g. VCC, GND)
+    const netName = dcNetId.toLowerCase()
+    const isNetLabelOnly = netName.includes("vcc") || netName.includes("gnd")
+
+    if (isNetLabelOnly) {
+      return
+    }
+
     const allIds = this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[]
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
