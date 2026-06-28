@@ -94,7 +94,7 @@ orientation: x-" data-x="-4.260000000000002" data-y="2.1149999999999998" cx="140
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y-" data-x="-2.6550000000000002" data-y="-0.30500000000000027" cx="247.24672228843863" cy="309.15375446960667" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y-" data-x="-2.445" data-y="-0.30500000000000027" cx="261.26340882002387" cy="309.15375446960667" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -110,7 +110,11 @@ orientation: y-" data-x="-2.654" data-y="-3.3060000000000005" cx="247.3134684147
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: x-" data-x="-2.531" data-y="-0.9190000000000002" cx="255.523241954708" cy="350.1358760429082" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: x-" data-x="-1.9500000000000002" data-y="-0.7000000000000001" cx="294.30274135876044" cy="335.51847437425505" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="-2.755" data-y="-2.705" cx="240.57210965435044" cy="469.34445768772343" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -241,9 +245,6 @@ orientation: x-" data-x="0.599" data-y="-2.7009999999999996" cx="464.43861740166
     <polyline data-points="1.9500000000000002,-0.2499999999999999 2.1500000000000004,-0.2499999999999999 2.1500000000000004,0.85 1.9500000000000002,0.85" data-type="line" data-label="" points="554.6126340882001,305.48271752085816 567.9618593563766,305.48271752085816 567.9618593563766,232.06197854588797 554.6126340882001,232.06197854588797" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <polyline data-points="-1.9500000000000002,-0.7000000000000001 -2.531,-0.7000000000000001 -2.531,-1.7025000000000001 -2.3525,-1.7025000000000001 -2.3525,-2.705 -2.755,-2.705" data-type="line" data-label="" points="294.30274135876044,335.51847437425505 255.523241954708,335.51847437425505 255.523241954708,402.4314660309892 267.4374255065554,402.4314660309892 267.4374255065554,469.34445768772343 240.57210965435044,469.34445768772343" fill="none" stroke="purple" stroke-width="1" />
-  </g>
-  <g>
     <polyline data-points="-3.160000000000001,2.1149999999999998 -3.059000000000001,2.1149999999999998 -3.059000000000001,1.664" data-type="line" data-label="" points="213.53992848629318,147.62812872467228 220.28128724672226,147.62812872467228 220.28128724672226,177.73063170441003" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
@@ -286,7 +287,7 @@ globalConnNetId: connectivity_net0" data-x="-4.441000000000002" data-y="2.114999
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
-globalConnNetId: connectivity_net1" data-x="-2.6550000000000002" data-y="-0.5450000000000003" x="240.5721096543504" y="309.15375446960667" width="13.349225268176411" height="32.038140643623365" fill="#00000066" stroke="#000000" stroke-width="0.01498214285714286" />
+globalConnNetId: connectivity_net1" data-x="-2.445" data-y="-0.5450000000000003" x="254.58879618593568" y="309.15375446960667" width="13.34922526817644" height="32.038140643623365" fill="#00000066" stroke="#000000" stroke-width="0.01498214285714286" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
@@ -302,7 +303,11 @@ globalConnNetId: connectivity_net1" data-x="-2.654" data-y="-3.5460000000000003"
   </g>
   <g>
     <rect data-type="rect" data-label="netId: TS
-globalConnNetId: connectivity_net2" data-x="-2.7110000000000003" data-y="-0.9190000000000002" x="231.49463647199048" y="343.46126340882" width="24.028605482717524" height="13.349225268176383" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01498214285714286" />
+globalConnNetId: connectivity_net2" data-x="-2.1310000000000002" data-y="-0.7000000000000001" x="270.20738974970203" y="328.84386174016686" width="24.028605482717524" height="13.349225268176383" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01498214285714286" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="netId: TS
+globalConnNetId: connectivity_net2" data-x="-2.574" data-y="-2.705" x="240.63885578069133" y="462.6698450536352" width="24.028605482717552" height="13.34922526817644" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.01498214285714286" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: BAT

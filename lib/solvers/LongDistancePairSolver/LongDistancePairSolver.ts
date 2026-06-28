@@ -20,6 +20,10 @@ const distance = (p1: InputPin, p2: InputPin) => {
   return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
 }
 
+const manhattanDistance = (p1: InputPin, p2: InputPin) => {
+  return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)
+}
+
 export class LongDistancePairSolver extends BaseSolver {
   public solvedLongDistanceTraces: SolvedTracePath[] = []
   private queuedCandidatePairs: Array<
@@ -34,6 +38,7 @@ export class LongDistancePairSolver extends BaseSolver {
   private netConnMap: ConnectivityMap
   private newlyConnectedPinIds = new Set<PinId>()
   private allSolvedTraces: SolvedTracePath[] = []
+  private maxMspPairDistance: number
 
   constructor(
     private params: {
@@ -49,6 +54,7 @@ export class LongDistancePairSolver extends BaseSolver {
 
     this.inputProblem = inputProblem
     this.allSolvedTraces = [...alreadySolvedTraces]
+    this.maxMspPairDistance = inputProblem.maxMspPairDistance ?? 1
 
     // 1. Create initial maps and sets for efficient lookup
     const primaryConnectedPinIds = new Set<PinId>()
@@ -90,6 +96,11 @@ export class LongDistancePairSolver extends BaseSolver {
           .flatMap((otherPinId) => {
             const targetPin = pinMap.get(otherPinId)
             if (!targetPin) return [] // Gracefully handle missing pins
+            if (
+              manhattanDistance(sourcePin, targetPin) > this.maxMspPairDistance
+            ) {
+              return []
+            }
             return [
               {
                 pin: targetPin,
@@ -178,6 +189,10 @@ export class LongDistancePairSolver extends BaseSolver {
     while (this.queuedCandidatePairs.length > 0) {
       const nextPair = this.queuedCandidatePairs.shift()!
       const [p1, p2] = nextPair
+
+      if (manhattanDistance(p1, p2) > this.maxMspPairDistance) {
+        continue
+      }
 
       if (
         this.newlyConnectedPinIds.has(p1.pinId) ||
