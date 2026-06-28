@@ -78,6 +78,21 @@ export class NetLabelPlacementSolver extends BaseSolver {
   currentGroup: OverlappingSameNetTraceGroup | null = null
   triedAnyOrientationFallbackForCurrentGroup = false
 
+  // constructor(params: {
+  //   inputProblem: InputProblem
+  //   inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
+  // }) {
+  //   super()
+  //   this.inputProblem = params.inputProblem
+  //   this.inputTraceMap = params.inputTraceMap
+
+  //   this.overlappingSameNetTraceGroups =
+  //     this.computeOverlappingSameNetTraceGroups()
+
+  //   this.queuedOverlappingSameNetTraceGroups = [
+  //     ...this.overlappingSameNetTraceGroups,
+  //   ]
+  // }
   constructor(params: {
     inputProblem: InputProblem
     inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
@@ -89,9 +104,25 @@ export class NetLabelPlacementSolver extends BaseSolver {
     this.overlappingSameNetTraceGroups =
       this.computeOverlappingSameNetTraceGroups()
 
+    //   // --- PATCH START: Sort "port only" net labels first ---
+    //   this.queuedOverlappingSameNetTraceGroups = [
+    //     ...this.overlappingSameNetTraceGroups,
+    //   ].sort((a, b) => {
+    //     const aIsPortOnly = a.portOnlyPinId ? 1 : 0
+    //     const bIsPortOnly = b.portOnlyPinId ? 1 : 0
+    //     return bIsPortOnly - aIsPortOnly // Moves portOnly items to the front
+    //   })
+    //   // --- PATCH END ---
+    // }
+    // --- PATCH START: Sort "port only" net labels first ---
     this.queuedOverlappingSameNetTraceGroups = [
       ...this.overlappingSameNetTraceGroups,
-    ]
+    ].sort((a, b) => {
+      const aIsPortOnly = a.portOnlyPinId ? 1 : 0
+      const bIsPortOnly = b.portOnlyPinId ? 1 : 0
+      return bIsPortOnly - aIsPortOnly // Moves portOnly items to the front
+    })
+    // --- PATCH END ---
   }
 
   computeOverlappingSameNetTraceGroups(): Array<OverlappingSameNetTraceGroup> {
