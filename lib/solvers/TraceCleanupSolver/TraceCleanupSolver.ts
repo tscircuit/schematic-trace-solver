@@ -25,17 +25,13 @@ import { is4PointRectangle } from "./is4PointRectangle"
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "untangling_traces"
   | "minimizing_turns"
   | "balancing_l_shapes"
-  | "untangling_traces"
+  | "merging_same_net_traces"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
- * It operates in a multi-step pipeline:
- * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
- * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
- * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
- * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
  */
 export class TraceCleanupSolver extends BaseSolver {
   private input: TraceCleanupSolverInput
@@ -43,7 +39,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private traceIdQueue: string[]
   private tracesMap: Map<string, SolvedTracePath>
   private pipelineStep: PipelineStep = "untangling_traces"
-  private activeTraceId: string | null = null // New property
+  private activeTraceId: string | null = null
   override activeSubSolver: BaseSolver | null = null
 
   constructor(solverInput: TraceCleanupSolverInput) {
@@ -84,6 +80,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "merging_same_net_traces":
+        this._runMergeSameNetTracesStep()
+        break
     }
   }
 
@@ -102,17 +101,93 @@ export class TraceCleanupSolver extends BaseSolver {
       )
       return
     }
-
     this._processTrace("minimizing_turns")
   }
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "merging_same_net_traces"
       return
     }
-
     this._processTrace("balancing_l_shapes")
+  }
+
+  private _runMergeSameNetTracesStep() {
+    const netGroups = new Map<string, SolvedTracePath[]>()
+
+    for (const trace of this.outputTraces) {
+      if (!trace.mspPairId) continue
+
+      // Use mergedLabelNetIdMap to correctly group traces by net instead
+      // of splitting on '_', which is fragile and produces wrong keys for IDs
+      // like "net_GND_to_net_VCC" (split would yield "net" for every trace).
+      let baseNetId: string | undefined
+      for (const [netId, pairIds] of Object.entries(
+        this.input.mergedLabelNetIdMap,
+      )) {
+        if (pairIds.has(trace.mspPairId)) {
+          baseNetId = netId
+          break
+        }
+      }
+      // Fall back to the full mspPairId if no net mapping is found
+      if (!baseNetId) baseNetId = trace.mspPairId
+
+      if (!netGroups.has(baseNetId)) {
+        netGroups.set(baseNetId, [])
+      }
+      netGroups.get(baseNetId)!.push(trace)
+    }
+
+    const SNAP_THRESHOLD = 0.15
+
+    for (const [_, netTraces] of netGroups.entries()) {
+      for (let i = 0; i < netTraces.length; i++) {
+        for (let j = i + 1; j < netTraces.length; j++) {
+          const traceA = netTraces[i]
+          const traceB = netTraces[j]
+
+          for (const pointA of traceA.tracePath) {
+            for (const pointB of traceB.tracePath) {
+              if (
+                Math.abs(pointA.y - pointB.y) > 0 &&
+                Math.abs(pointA.y - pointB.y) <= SNAP_THRESHOLD
+              ) {
+                pointB.y = pointA.y
+              }
+              if (
+                Math.abs(pointA.x - pointB.x) > 0 &&
+                Math.abs(pointA.x - pointB.x) <= SNAP_THRESHOLD
+              ) {
+                pointB.x = pointA.x
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Fix: was `for (const trace of traces)` — `traces` was never declared.
+    // The correct reference is `this.outputTraces`.
+    for (const trace of this.outputTraces) {
+      const cleanPath = []
+      for (const p of trace.tracePath) {
+        if (cleanPath.length === 0) {
+          cleanPath.push(p)
+        } else {
+          const last = cleanPath[cleanPath.length - 1]
+          if (
+            !(Math.abs(last.x - p.x) < 0.001 && Math.abs(last.y - p.y) < 0.001)
+          ) {
+            cleanPath.push(p)
+          }
+        }
+      }
+      trace.tracePath = cleanPath
+    }
+
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.solved = true
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
@@ -125,7 +200,6 @@ export class TraceCleanupSolver extends BaseSolver {
     }
 
     const allTraces = Array.from(this.tracesMap.values())
-
     let updatedTrace: SolvedTracePath
 
     if (step === "minimizing_turns") {
@@ -171,7 +245,7 @@ export class TraceCleanupSolver extends BaseSolver {
     for (const trace of this.outputTraces) {
       const line: Line = {
         points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
-        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue", // Highlight active trace
+        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue",
       }
       graphics.lines!.push(line)
     }
