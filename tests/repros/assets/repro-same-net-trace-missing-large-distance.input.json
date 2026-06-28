@@ -1,0 +1,58 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -3.5,
+        "y": 0.15
+      },
+      "width": 0.6,
+      "height": 1.4,
+      "pins": [
+        {
+          "pinId": "JP6.2",
+          "x": -3.2,
+          "y": -0.2
+        },
+        {
+          "pinId": "JP6.3",
+          "x": -3.2,
+          "y": 0.5
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 3.5,
+        "y": 0
+      },
+      "width": 1.1,
+      "height": 0.4,
+      "pins": [
+        {
+          "pinId": "R1.1",
+          "x": 4.05,
+          "y": 0
+        },
+        {
+          "pinId": "R1.2",
+          "x": 2.95,
+          "y": 0
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "VCC",
+      "pinIds": ["JP6.2", "JP6.3", "R1.2"],
+      "netLabelWidth": 0.48
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "VCC": ["y+"]
+  },
+  "maxMspPairDistance": 2.4
+}
