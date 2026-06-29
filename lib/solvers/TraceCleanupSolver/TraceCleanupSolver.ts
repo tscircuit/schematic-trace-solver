@@ -20,11 +20,13 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { alignNearbySameNetTraceSegments } from "./alignNearbySameNetTraceSegments"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "aligning_same_net_traces"
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
@@ -42,7 +44,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private outputTraces: SolvedTracePath[]
   private traceIdQueue: string[]
   private tracesMap: Map<string, SolvedTracePath>
-  private pipelineStep: PipelineStep = "untangling_traces"
+  private pipelineStep: PipelineStep = "aligning_same_net_traces"
   private activeTraceId: string | null = null // New property
   override activeSubSolver: BaseSolver | null = null
 
@@ -75,6 +77,9 @@ export class TraceCleanupSolver extends BaseSolver {
     }
 
     switch (this.pipelineStep) {
+      case "aligning_same_net_traces":
+        this._runAlignSameNetTracesStep()
+        break
       case "untangling_traces":
         this._runUntangleTracesStep()
         break
@@ -85,6 +90,15 @@ export class TraceCleanupSolver extends BaseSolver {
         this._runBalanceLShapesStep()
         break
     }
+  }
+
+  private _runAlignSameNetTracesStep() {
+    this.outputTraces = alignNearbySameNetTraceSegments({
+      ...this.input,
+      traces: this.outputTraces,
+    })
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.pipelineStep = "untangling_traces"
   }
 
   private _runUntangleTracesStep() {
