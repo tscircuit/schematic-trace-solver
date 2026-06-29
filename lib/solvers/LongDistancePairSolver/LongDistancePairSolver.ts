@@ -13,12 +13,15 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 
 const NEAREST_NEIGHBOR_COUNT = 3
 
 const distance = (p1: InputPin, p2: InputPin) => {
   return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
 }
+
+const getPairKey = (pin1: PinId, pin2: PinId) => [pin1, pin2].sort().join("--")
 
 export class LongDistancePairSolver extends BaseSolver {
   public solvedLongDistanceTraces: SolvedTracePath[] = []
@@ -34,6 +37,7 @@ export class LongDistancePairSolver extends BaseSolver {
   private netConnMap: ConnectivityMap
   private newlyConnectedPinIds = new Set<PinId>()
   private allSolvedTraces: SolvedTracePath[] = []
+  private directConnectionPairKeys: Set<string>
 
   constructor(
     private params: {
@@ -49,6 +53,11 @@ export class LongDistancePairSolver extends BaseSolver {
 
     this.inputProblem = inputProblem
     this.allSolvedTraces = [...alreadySolvedTraces]
+    this.directConnectionPairKeys = new Set(
+      inputProblem.directConnections.map((dc) =>
+        getPairKey(dc.pinIds[0], dc.pinIds[1]),
+      ),
+    )
 
     // 1. Create initial maps and sets for efficient lookup
     const primaryConnectedPinIds = new Set<PinId>()
@@ -76,8 +85,19 @@ export class LongDistancePairSolver extends BaseSolver {
     for (const netId of Object.keys(netConnMap.netMap)) {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
+      const pinIdsInNet = allPinIdsInNet.filter((pinId) => pinMap.has(pinId))
+      if (pinIdsInNet.length === 2) {
+        const [pin1, pin2] = pinIdsInNet
+        const p1 = pinMap.get(pin1!)!
+        const p2 = pinMap.get(pin2!)!
+        const userNetId = this.getUserNetIdForPair(pin1!, pin2!)
+        const canSkipPair =
+          !this.directConnectionPairKeys.has(getPairKey(pin1!, pin2!)) &&
+          this.canUsePortOnlyLabelsForPair(p1, p2, userNetId)
+        if (canSkipPair) continue
+      }
 
-      const unconnectedPinIds = allPinIdsInNet.filter(
+      const unconnectedPinIds = pinIdsInNet.filter(
         (pinId) => !primaryConnectedPinIds.has(pinId),
       )
 
@@ -85,7 +105,7 @@ export class LongDistancePairSolver extends BaseSolver {
         const sourcePin = pinMap.get(unconnectedPinId)
         if (!sourcePin) continue
 
-        const neighbors = allPinIdsInNet
+        const neighbors = pinIdsInNet
           .filter((otherPinId) => otherPinId !== unconnectedPinId)
           .flatMap((otherPinId) => {
             const targetPin = pinMap.get(otherPinId)
@@ -110,10 +130,7 @@ export class LongDistancePairSolver extends BaseSolver {
           ) {
             continue
           }
-          const pairKey = pair
-            .map((p) => p.pinId)
-            .sort()
-            .join("--")
+          const pairKey = getPairKey(pair[0].pinId, pair[1].pinId)
 
           if (!addedPairKeys.has(pairKey)) {
             candidatePairs.push(pair)
@@ -224,6 +241,36 @@ export class LongDistancePairSolver extends BaseSolver {
     }
 
     return graphics
+  }
+
+  private getUserNetIdForPair(pin1: PinId, pin2: PinId) {
+    return this.inputProblem.netConnections.find(
+      (nc) => nc.pinIds.includes(pin1) && nc.pinIds.includes(pin2),
+    )?.netId
+  }
+
+  private canUsePortOnlyLabelsForPair(
+    p1: InputPin & { chipId: string },
+    p2: InputPin & { chipId: string },
+    userNetId?: string,
+  ) {
+    if (!userNetId) return false
+    const availableOrientations =
+      this.inputProblem.availableNetLabelOrientations[userNetId] ?? []
+    if (availableOrientations.length === 0) return false
+
+    const chip1 = this.chipMap[p1.chipId]
+    const chip2 = this.chipMap[p2.chipId]
+    if (!chip1 || !chip2) return false
+    if (chip1.pins.length !== 2 || chip2.pins.length !== 2) return false
+
+    const p1Direction = p1._facingDirection ?? getPinDirection(p1, chip1)
+    const p2Direction = p2._facingDirection ?? getPinDirection(p2, chip2)
+
+    return (
+      availableOrientations.includes(p1Direction) &&
+      availableOrientations.includes(p2Direction)
+    )
   }
 
   public getOutput(): {
