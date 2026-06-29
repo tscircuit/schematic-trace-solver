@@ -13,6 +13,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 
 export type MspConnectionPairId = string
 
@@ -36,6 +37,7 @@ export class MspConnectionPairSolver extends BaseSolver {
 
   pinMap: Record<string, InputPin & { chipId: string }>
   userNetIdByPinId: Record<string, string | undefined>
+  directConnectionPairIds: Set<string>
 
   constructor({ inputProblem }: { inputProblem: InputProblem }) {
     super()
@@ -62,7 +64,11 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     // Build a mapping from PinId to user-provided netId (if any)
     this.userNetIdByPinId = {}
+    this.directConnectionPairIds = new Set()
     for (const dc of inputProblem.directConnections) {
+      this.directConnectionPairIds.add(
+        this.getPairId(dc.pinIds[0], dc.pinIds[1]),
+      )
       if (dc.netId) {
         const [a, b] = dc.pinIds
         this.userNetIdByPinId[a] = dc.netId
@@ -134,6 +140,12 @@ export class MspConnectionPairSolver extends BaseSolver {
       const globalConnNetId = this.globalConnMap.getNetConnectedToId(pin1!)!
       const userNetId =
         this.userNetIdByPinId[pin1!] ?? this.userNetIdByPinId[pin2!]
+      if (
+        !this.isDirectConnectionPair(pin1!, pin2!) &&
+        this.canUsePortOnlyLabelsForPair(p1, p2, userNetId)
+      ) {
+        return
+      }
 
       this.mspConnectionPairs.push({
         mspPairId: `${pin1}-${pin2}`,
@@ -204,6 +216,38 @@ export class MspConnectionPairSolver extends BaseSolver {
         pins: [p1Obj, p2Obj],
       })
     }
+  }
+
+  private getPairId(pin1: PinId, pin2: PinId) {
+    return [pin1, pin2].sort().join("::")
+  }
+
+  private isDirectConnectionPair(pin1: PinId, pin2: PinId) {
+    return this.directConnectionPairIds.has(this.getPairId(pin1, pin2))
+  }
+
+  private canUsePortOnlyLabelsForPair(
+    p1: InputPin & { chipId: string },
+    p2: InputPin & { chipId: string },
+    userNetId?: string,
+  ) {
+    if (!userNetId) return false
+    const availableOrientations =
+      this.inputProblem.availableNetLabelOrientations[userNetId] ?? []
+    if (availableOrientations.length === 0) return false
+
+    const chip1 = this.chipMap[p1.chipId]
+    const chip2 = this.chipMap[p2.chipId]
+    if (!chip1 || !chip2) return false
+    if (chip1.pins.length !== 2 || chip2.pins.length !== 2) return false
+
+    const p1Direction = p1._facingDirection ?? getPinDirection(p1, chip1)
+    const p2Direction = p2._facingDirection ?? getPinDirection(p2, chip2)
+
+    return (
+      availableOrientations.includes(p1Direction) &&
+      availableOrientations.includes(p2Direction)
+    )
   }
 
   override visualize(): GraphicsObject {
