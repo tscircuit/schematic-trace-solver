@@ -31,6 +31,12 @@ export const balanceZShapes = ({
 
   const TOLERANCE = 1e-5
 
+  // Axis-aligned segment classification must tolerate floating-point drift:
+  // coordinates that are "the same" can differ by a rounding epsilon (e.g. a
+  // vertical leg whose endpoints are 1.85 vs 1.8500000000000003). Strict `===`
+  // would misclassify such a Z-shape and "balance" it into diagonal segments.
+  const coordsEqual = (a: number, b: number) => Math.abs(a - b) < TOLERANCE
+
   const obstacleTraces = traces.filter(
     (t) => t.mspPairId !== targetMspConnectionPairId,
   )
@@ -98,7 +104,10 @@ export const balanceZShapes = ({
     let p1New: Point
     let p2New: Point
 
-    const isHVHShape = p0.y === p1.y && p1.x === p2.x && p2.y === p3.y
+    const isHVHShape =
+      coordsEqual(p0.y, p1.y) &&
+      coordsEqual(p1.x, p2.x) &&
+      coordsEqual(p2.y, p3.y)
 
     if (isHVHShape) {
       const idealX = (p0.x + p3.x) / 2
@@ -132,12 +141,23 @@ export const balanceZShapes = ({
     const p3 = newPath[i + 2]!
     const p4 = newPath[i + 3]!
 
-    const isHVHZShape = p1.y === p2.y && p2.x === p3.x && p3.y === p4.y
-    const isVHVZShape = p1.x === p2.x && p2.y === p3.y && p3.x === p4.x
+    const isHVHZShape =
+      coordsEqual(p1.y, p2.y) &&
+      coordsEqual(p2.x, p3.x) &&
+      coordsEqual(p3.y, p4.y)
+    const isVHVZShape =
+      coordsEqual(p1.x, p2.x) &&
+      coordsEqual(p2.y, p3.y) &&
+      coordsEqual(p3.x, p4.x)
 
     const isCollinearHorizontal =
-      p1.y === p2.y && p2.y === p3.y && p3.y === p4.y
-    const isCollinearVertical = p1.x === p2.x && p2.x === p3.x && p3.x === p4.x
+      coordsEqual(p1.y, p2.y) &&
+      coordsEqual(p2.y, p3.y) &&
+      coordsEqual(p3.y, p4.y)
+    const isCollinearVertical =
+      coordsEqual(p1.x, p2.x) &&
+      coordsEqual(p2.x, p3.x) &&
+      coordsEqual(p3.x, p4.x)
     const isCollinear = isCollinearHorizontal || isCollinearVertical
 
     let isSameDirection = false
