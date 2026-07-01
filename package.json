@@ -1,15 +1,25 @@
 {
+ fix-snapshots-clean
+  "name": "schematic-trace-solver",
+  "version": "1.0.0",
+
   "name": "@tscircuit/schematic-trace-solver",
   "main": "dist/index.js",
   "version": "0.0.73",
   "type": "module",
+ main
   "scripts": {
-    "start": "cosmos",
-    "build": "tsup-node lib/index.ts --format esm --dts",
+    "test": "vitest",
+    "type-check": "tsc --noEmit",
     "format": "biome format --write .",
     "format:check": "biome format ."
   },
   "devDependencies": {
+ fix-snapshots-clean
+    "@biomejs/biome": "latest",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+
     "@biomejs/biome": "^2.2.2",
     "@react-hook/resize-observer": "^2.0.2",
     "@tscircuit/math-utils": "^0.0.19",
@@ -24,9 +34,11 @@
     "react-cosmos-plugin-vite": "^7.0.0",
     "react-dom": "^19.1.1",
     "tsup": "^8.5.0",
-    "vite": "^7.1.3"
+    "vite": "^7.1.3",
+    "vitest": "^1.6.0"
   },
   "peerDependencies": {
     "typescript": "^5"
+ main
   }
 }
