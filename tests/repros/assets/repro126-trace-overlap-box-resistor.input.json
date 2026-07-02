@@ -58,6 +58,10 @@
     {
       "pinIds": ["U1.4", "R1.2"],
       "netId": "U1.FB to R1.pin2"
+    },
+    {
+      "pinIds": ["U1.3", "R2.2"],
+      "netId": "GND"
     }
   ],
   "netConnections": [

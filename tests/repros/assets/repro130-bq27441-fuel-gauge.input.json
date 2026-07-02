@@ -298,6 +298,10 @@
     {
       "pinIds": ["R1.2", "U1.7"],
       "netId": "R1.pin2 to U1.SRN"
+    },
+    {
+      "pinIds": ["U1.3", "C1.2"],
+      "netId": "PGND"
     }
   ],
   "netConnections": [
