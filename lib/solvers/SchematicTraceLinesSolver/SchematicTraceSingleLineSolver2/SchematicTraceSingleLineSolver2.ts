@@ -12,7 +12,12 @@ import type { Point } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
 import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
 import { getObstacleRects, type ChipWithBounds } from "./rect"
-import { findFirstCollision, isHorizontal, isVertical } from "./collisions"
+import {
+  findFirstCollision,
+  isHorizontal,
+  isVertical,
+  countPathCrossings,
+} from "./collisions"
 import {
   aabbFromPoints,
   candidateMidsFromSet,
@@ -36,6 +41,9 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
   solvedTracePath: Point[] | null = null
 
+  private existingTracePaths: Point[][] = []
+  private bestCandidate: { path: Point[]; score: number } | null = null
+
   private queue: Array<{ path: Point[]; collisionChipIds: Set<ChipId> }> = []
   private visited: Set<PathKey> = new Set()
 
@@ -43,11 +51,13 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     pins: MspConnectionPair["pins"]
     inputProblem: InputProblem
     chipMap: Record<string, InputChip>
+    existingTracePaths?: Point[][]
   }) {
     super()
     this.pins = params.pins
     this.inputProblem = params.inputProblem
     this.chipMap = params.chipMap
+    this.existingTracePaths = params.existingTracePaths ?? []
 
     // Ensure facing directions are present
     for (const pin of this.pins) {
@@ -122,6 +132,11 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     const state = this.queue.shift()
     if (!state) {
+      if (this.bestCandidate) {
+        this.solvedTracePath = this.bestCandidate.path
+        this.solved = true
+        return
+      }
       this.failed = true
       this.error = "No collision-free path found"
       return
@@ -143,8 +158,11 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         samePoint(first, { x: PA.x, y: PA.y }) &&
         samePoint(last, { x: PB.x, y: PB.y })
       ) {
-        this.solvedTracePath = path
-        this.solved = true
+        const crossings = countPathCrossings(path, this.existingTracePaths)
+        const score = crossings * 1000 + this.pathLength(path)
+        if (!this.bestCandidate || score < this.bestCandidate.score) {
+          this.bestCandidate = { path, score }
+        }
       }
       return
     }

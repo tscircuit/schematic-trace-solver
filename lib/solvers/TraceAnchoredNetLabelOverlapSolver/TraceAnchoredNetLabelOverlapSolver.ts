@@ -163,7 +163,9 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
       if (!label) continue
 
       search.labelIndex = labelIndex
-      search.candidates = this.getCandidatesForLabel(label)
+      search.candidates = this.getCandidatesForLabel(label).sort(
+        (a, b) => a.distanceFromOriginal - b.distanceFromOriginal,
+      )
       search.candidateIndex = 0
       if (search.candidates.length > 0) return true
     }
