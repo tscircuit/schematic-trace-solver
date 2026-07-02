@@ -1,3 +1,4 @@
+import type { Box } from "@tscircuit/math-utils"
 import type { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import type { FacingDirection } from "lib/utils/dir"
 
@@ -38,6 +39,7 @@ export interface InputProblem {
   chips: Array<InputChip>
   directConnections: Array<InputDirectConnection>
   netConnections: Array<InputNetConnection>
+  obstacles?: Array<Box>
 
   availableNetLabelOrientations: Record<NetId, FacingDirection[]>
   maxMspPairDistance?: number
