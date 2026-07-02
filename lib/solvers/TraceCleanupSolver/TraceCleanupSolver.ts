@@ -19,6 +19,7 @@ interface TraceCleanupSolverInput {
 }
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
+import { mergeSameNetCloseTraces } from "./mergeSameNetCloseTraces"
 import { is4PointRectangle } from "./is4PointRectangle"
 
 /**
@@ -108,6 +109,7 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
+      this.outputTraces = mergeSameNetCloseTraces(this.outputTraces)
       this.solved = true
       return
     }
