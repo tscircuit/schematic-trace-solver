@@ -15,11 +15,11 @@ export interface InputPin {
 }
 
 export interface TextBoxes {
-  chipId: ChipId
+  chipId?: ChipId
   center: { x: number; y: number }
   width: number
   height: number
-  text: string
+  text?: string
 }
 
 export interface InputChip {
