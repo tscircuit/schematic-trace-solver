@@ -1,0 +1,64 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 1.5,
+      "height": 0.8,
+      "pins": [
+        {
+          "pinId": "U1.1",
+          "x": -1.15,
+          "y": 0.2
+        },
+        {
+          "pinId": "U1.2",
+          "x": -1.15,
+          "y": 0
+        },
+        {
+          "pinId": "U1.3",
+          "x": -1.15,
+          "y": -0.2
+        },
+        {
+          "pinId": "U1.4",
+          "x": 1.15,
+          "y": 0.1
+        },
+        {
+          "pinId": "U1.5",
+          "x": 1.15,
+          "y": -0.1
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "VDD",
+      "pinIds": ["U1.1", "U1.2", "U1.3"],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "VOUT",
+      "pinIds": ["U1.4"],
+      "netLabelWidth": 0.6
+    },
+    {
+      "netId": "GND",
+      "pinIds": ["U1.5"],
+      "netLabelWidth": 0.48
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "VDD": ["y+"],
+    "VOUT": ["y+"],
+    "GND": ["y-"]
+  },
+  "maxMspPairDistance": 2.4
+}
