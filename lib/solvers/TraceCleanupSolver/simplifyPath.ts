@@ -5,37 +5,38 @@ import {
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
 export const simplifyPath = (path: Point[]): Point[] => {
-  if (path.length < 3) return path
-  const newPath: Point[] = [path[0]]
-  for (let i = 1; i < path.length - 1; i++) {
-    const p1 = newPath[newPath.length - 1]
-    const p2 = path[i]
-    const p3 = path[i + 1]
-    if (
-      (isVertical(p1, p2) && isVertical(p2, p3)) ||
-      (isHorizontal(p1, p2) && isHorizontal(p2, p3))
-    ) {
-      continue
-    }
-    newPath.push(p2)
-  }
-  newPath.push(path[path.length - 1])
+  if (path.length < 2) return path
 
-  if (newPath.length < 3) return newPath
-  const finalPath: Point[] = [newPath[0]]
-  for (let i = 1; i < newPath.length - 1; i++) {
-    const p1 = finalPath[finalPath.length - 1]
-    const p2 = newPath[i]
-    const p3 = newPath[i + 1]
+  // Step 1: Remove duplicate points
+  const noDuplicates: Point[] = [path[0]]
+  for (let i = 1; i < path.length; i++) {
+    const prev = noDuplicates[noDuplicates.length - 1]
+    const current = path[i]
     if (
-      (isVertical(p1, p2) && isVertical(p2, p3)) ||
-      (isHorizontal(p1, p2) && isHorizontal(p2, p3))
+      Math.abs(current.x - prev.x) > 1e-9 ||
+      Math.abs(current.y - prev.y) > 1e-9
     ) {
-      continue
+      noDuplicates.push(current)
     }
-    finalPath.push(p2)
   }
-  finalPath.push(newPath[newPath.length - 1])
 
-  return finalPath
+  if (noDuplicates.length < 3) return noDuplicates
+
+  // Step 2: Remove points that lie on the same straight line
+  const result: Point[] = [noDuplicates[0]]
+  for (let i = 1; i < noDuplicates.length - 1; i++) {
+    const p1 = result[result.length - 1]
+    const p2 = noDuplicates[i]
+    const p3 = noDuplicates[i + 1]
+
+    const vertical = isVertical(p1, p2) && isVertical(p2, p3)
+    const horizontal = isHorizontal(p1, p2) && isHorizontal(p2, p3)
+
+    if (!vertical && !horizontal) {
+      result.push(p2)
+    }
+  }
+  result.push(noDuplicates[noDuplicates.length - 1])
+
+  return result
 }
