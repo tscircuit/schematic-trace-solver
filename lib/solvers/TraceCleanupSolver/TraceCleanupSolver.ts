@@ -20,6 +20,7 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { TraceCombineSolver } from "./TraceCombineSolver"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -28,9 +29,10 @@ type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
+  | "combining_parallel_traces"
 
 /**
- * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
+ * TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
  * It operates in a multi-step pipeline:
  * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
  * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
@@ -84,6 +86,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "combining_parallel_traces":
+        this._runCombineParallelTracesStep()
+        break
     }
   }
 
@@ -108,7 +113,7 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "combining_parallel_traces"
       return
     }
 
@@ -144,6 +149,13 @@ export class TraceCleanupSolver extends BaseSolver {
 
     this.tracesMap.set(targetMspConnectionPairId, updatedTrace)
     this.outputTraces = Array.from(this.tracesMap.values())
+  }
+
+  private _runCombineParallelTracesStep() {
+    this.outputTraces = TraceCombineSolver.tryCombineParallelTraces(
+      this.outputTraces,
+    )
+    this.solved = true
   }
 
   getOutput() {
