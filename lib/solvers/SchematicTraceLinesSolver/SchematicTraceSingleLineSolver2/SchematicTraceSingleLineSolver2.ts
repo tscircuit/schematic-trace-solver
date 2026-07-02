@@ -12,7 +12,12 @@ import type { Point } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
 import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
 import { getObstacleRects, type ChipWithBounds } from "./rect"
-import { findFirstCollision, isHorizontal, isVertical, countPathCrossings } from "./collisions"
+import {
+  findFirstCollision,
+  isHorizontal,
+  isVertical,
+  countPathCrossings,
+} from "./collisions"
 import {
   aabbFromPoints,
   candidateMidsFromSet,
