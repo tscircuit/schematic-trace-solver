@@ -24,7 +24,6 @@ import {
   traceCrossesBoundsInterior,
   tracePathIntersectsBounds,
   tracePathCrossesAnyBounds,
-  tracePathCrossesAnyTrace,
 } from "./geometry"
 import { getPinMap, getTracePins, toNetLabelPlacementPatch } from "./traces"
 import type {
@@ -617,10 +616,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       orientation: candidate.orientation,
       phase,
     })
-
-    if (tracePathCrossesAnyTrace(connectorTrace, this.traceMap)) {
-      return "trace-collision"
-    }
 
     for (const chip of this.chipObstacleSpatialIndex.chips) {
       if (tracePathCrossesAnyBounds(connectorTrace, chip.bounds)) {
