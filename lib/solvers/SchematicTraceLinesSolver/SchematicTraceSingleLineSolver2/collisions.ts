@@ -72,3 +72,61 @@ export const isPathCollidingWithObstacles = (
   }
   return false // No collisions found
 }
+
+/** True when one segment is axis-aligned horizontal and the other vertical and they meet. */
+export const orthogonalSegmentsCross = (
+  a: Point,
+  b: Point,
+  c: Point,
+  d: Point,
+  eps = EPS,
+): boolean => {
+  const abVert = isVertical(a, b, eps)
+  const abHorz = isHorizontal(a, b, eps)
+  const cdVert = isVertical(c, d, eps)
+  const cdHorz = isHorizontal(c, d, eps)
+
+  if (abVert && cdHorz) {
+    const x = a.x
+    const y = c.y
+    return (
+      x >= Math.min(c.x, d.x) - eps &&
+      x <= Math.max(c.x, d.x) + eps &&
+      y >= Math.min(a.y, b.y) - eps &&
+      y <= Math.max(a.y, b.y) + eps
+    )
+  }
+
+  if (abHorz && cdVert) {
+    const x = c.x
+    const y = a.y
+    return (
+      y >= Math.min(c.y, d.y) - eps &&
+      y <= Math.max(c.y, d.y) + eps &&
+      x >= Math.min(a.x, b.x) - eps &&
+      x <= Math.max(a.x, b.x) + eps
+    )
+  }
+
+  return false
+}
+
+/** Count perpendicular crossings against already-routed trace paths. */
+export const countPathCrossings = (
+  path: Point[],
+  existingPaths: Point[][],
+): number => {
+  let count = 0
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i]!
+    const b = path[i + 1]!
+    for (const other of existingPaths) {
+      for (let j = 0; j < other.length - 1; j++) {
+        if (orthogonalSegmentsCross(a, b, other[j]!, other[j + 1]!)) {
+          count++
+        }
+      }
+    }
+  }
+  return count
+}
