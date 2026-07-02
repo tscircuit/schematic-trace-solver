@@ -20,11 +20,15 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { mergeSameNetCloseSegments } from "./mergeSameNetCloseSegments"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "merging_same_net_segments"
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
@@ -66,10 +70,10 @@ export class TraceCleanupSolver extends BaseSolver {
         this.outputTraces = output.traces
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "merging_same_net_segments"
       } else if (this.activeSubSolver.failed) {
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "merging_same_net_segments"
       }
       return
     }
@@ -77,6 +81,9 @@ export class TraceCleanupSolver extends BaseSolver {
     switch (this.pipelineStep) {
       case "untangling_traces":
         this._runUntangleTracesStep()
+        break
+      case "merging_same_net_segments":
+        this._runMergeSameNetSegmentsStep()
         break
       case "minimizing_turns":
         this._runMinimizeTurnsStep()
@@ -92,6 +99,95 @@ export class TraceCleanupSolver extends BaseSolver {
       ...this.input,
       allTraces: Array.from(this.tracesMap.values()),
     })
+  }
+
+  private _runMergeSameNetSegmentsStep() {
+    this.outputTraces = mergeSameNetCloseSegments(
+      Array.from(this.tracesMap.values()),
+      {
+        canAcceptTraces: (candidateTraces, changedTraceIndexes) =>
+          this._canAcceptSameNetMerge(candidateTraces, changedTraceIndexes),
+      },
+    )
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.pipelineStep = "minimizing_turns"
+  }
+
+  private _canAcceptSameNetMerge(
+    candidateTraces: SolvedTracePath[],
+    changedTraceIndexes: Set<number>,
+  ) {
+    const staticObstacles = getObstacleRects(this.input.inputProblem)
+
+    const traceIntersectsAnyRect = (
+      trace: SolvedTracePath,
+      rects: Array<{
+        chipId: string
+        minX: number
+        minY: number
+        maxX: number
+        maxY: number
+      }>,
+    ) => {
+      for (let i = 0; i < trace.tracePath.length - 1; i++) {
+        const start = trace.tracePath[i]!
+        const end = trace.tracePath[i + 1]!
+        for (const rect of rects) {
+          if (segmentIntersectsRect(start, end, rect)) return true
+        }
+      }
+      return false
+    }
+
+    for (const traceIndex of changedTraceIndexes) {
+      const candidateTrace = candidateTraces[traceIndex]!
+
+      const otherTraceObstacles = candidateTraces
+        .filter(
+          (otherTrace) =>
+            otherTrace.mspPairId !== candidateTrace.mspPairId &&
+            otherTrace.globalConnNetId !== candidateTrace.globalConnNetId,
+        )
+        .flatMap((otherTrace, otherTraceIndex) =>
+          otherTrace.tracePath.slice(0, -1).map((start, pointIndex) => {
+            const end = otherTrace.tracePath[pointIndex + 1]!
+            return {
+              chipId: `trace-obstacle-${otherTraceIndex}-${pointIndex}`,
+              minX: Math.min(start.x, end.x),
+              minY: Math.min(start.y, end.y),
+              maxX: Math.max(start.x, end.x),
+              maxY: Math.max(start.y, end.y),
+            }
+          }),
+        )
+
+      const filteredLabels = this.input.allLabelPlacements.filter((label) => {
+        const originalNetIds =
+          this.input.mergedLabelNetIdMap[label.globalConnNetId]
+        if (originalNetIds) {
+          return !originalNetIds.has(candidateTrace.globalConnNetId)
+        }
+        return label.globalConnNetId !== candidateTrace.globalConnNetId
+      })
+
+      const labelBounds = filteredLabels.map((label) => ({
+        chipId: `label-obstacle-${label.globalConnNetId}`,
+        minX: label.center.x - label.width / 2 - this.input.paddingBuffer,
+        maxX: label.center.x + label.width / 2 + this.input.paddingBuffer,
+        minY: label.center.y - label.height / 2 - this.input.paddingBuffer,
+        maxY: label.center.y + label.height / 2 + this.input.paddingBuffer,
+      }))
+
+      if (
+        traceIntersectsAnyRect(candidateTrace, staticObstacles) ||
+        traceIntersectsAnyRect(candidateTrace, otherTraceObstacles) ||
+        traceIntersectsAnyRect(candidateTrace, labelBounds)
+      ) {
+        return false
+      }
+    }
+
+    return true
   }
 
   private _runMinimizeTurnsStep() {
