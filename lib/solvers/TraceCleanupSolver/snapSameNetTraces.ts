@@ -2,13 +2,14 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { simplifyPath } from "./simplifyPath"
 
 const GEOM_EPS = 1e-6
-// Replace lines 5-11 with this:
-function isVertical(p, next) {
+// Replace your existing find blocks with this:
+const vertXA = traceA.tracePath.find((p, i, arr) => {
+  if (i === arr.length - 1) return false;
   return (
-    Math.abs(p.x - next.x) < 1e-6 &&
-    Math.abs(p.y - next.y) > 1e-6
+    Math.abs(p.x - arr[i + 1].x) < 1e-6 &&
+    Math.abs(p.y - arr[i + 1].y) > 1e-6
   );
-}
+});
 function overlaps1D(
   a1: number,
   a2: number,
