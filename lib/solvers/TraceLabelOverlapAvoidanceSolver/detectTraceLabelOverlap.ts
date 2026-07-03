@@ -34,6 +34,9 @@ export const detectTraceLabelOverlap = ({
         const p2 = trace.tracePath[j + 1]
 
         if (segmentIntersectsRect(p1, p2, labelBounds)) {
+          if (trace.globalConnNetId === label.globalConnNetId) {
+            break
+          }
           overlaps.push({ trace, label })
           break // Break from the inner-most loop (segment loop)
         }
