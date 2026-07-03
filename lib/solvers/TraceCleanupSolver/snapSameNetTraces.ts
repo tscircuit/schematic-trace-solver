@@ -1,8 +1,6 @@
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { simplifyPath } from "./simplifyPath"
 
-const GEOM_EPS = 1e-6
-// Replace your existing find blocks with this:
 const vertXA = traceA.tracePath.find((p, i, arr) => {
   if (i === arr.length - 1) return false;
   return (
