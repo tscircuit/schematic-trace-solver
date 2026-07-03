@@ -46,18 +46,21 @@ function snapBetweenTraces(
   const pathB = traceB.tracePath
   let snapped = false
 
-  return {
-  Math.abs(p.x - arr[i + 1].x) < 1e-6 &&
-  Math.abs(p.y - arr[i + 1].y) > 1e-6
-}
-    const aIsVert = Math.abs(a1.x - a2.x) < GEOM_EPS
-    const aIsHorz = Math.abs(a1.y - a2.y) < GEOM_EPS
-    if (!aIsVert && !aIsHorz) continue
+  // Line 49
+for (let sa = 0; sa < pathA.length - 1; sa++) {
+  const a1 = pathA[sa]!
+  const a2 = pathA[sa + 1]!
 
-    return {
-  Math.abs(p.x - arr[i + 1].x) < 1e-6 &&
-  Math.abs(p.y - arr[i + 1].y) > 1e-6
-}
+  // Line 53
+  const aIsVert = Math.abs(a1.x - a2.x) < GEOM_EPS
+  const aIsHorz = Math.abs(a1.y - a2.y) < GEOM_EPS
+  if (!aIsVert && !aIsHorz) continue
+
+  // Line 57
+  for (let sb = 0; sb < pathB.length - 1; sb++) {
+    const b1 = pathB[sb]!
+    const b2 = pathB[sb + 1]!
+
       const bIsVert = Math.abs(b1.x - b2.x) < GEOM_EPS
       const bIsHorz = Math.abs(b1.y - b2.y) < GEOM_EPS
       if (!bIsVert && !bIsHorz) continue
