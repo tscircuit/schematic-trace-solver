@@ -58,8 +58,9 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
   chipObstacleSpatialIndex: ChipObstacleSpatialIndex
 
-  // Optional override for the width of the net label (per netId)
+  // Optional override for the width/height of the net label (per netId)
   netLabelWidth?: number
+  netLabelHeight?: number
 
   netLabelPlacement: NetLabelPlacement | null = null
   testedCandidates: Array<{
@@ -79,6 +80,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     overlappingSameNetTraceGroup: OverlappingSameNetTraceGroup
     availableOrientations: FacingDirection[]
     netLabelWidth?: number
+    netLabelHeight?: number
   }) {
     super()
     this.inputProblem = params.inputProblem
@@ -86,6 +88,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     this.overlappingSameNetTraceGroup = params.overlappingSameNetTraceGroup
     this.availableOrientations = params.availableOrientations
     this.netLabelWidth = params.netLabelWidth
+    this.netLabelHeight = params.netLabelHeight
 
     this.chipObstacleSpatialIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
@@ -101,6 +104,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       overlappingSameNetTraceGroup: this.overlappingSameNetTraceGroup,
       availableOrientations: this.availableOrientations,
       netLabelWidth: this.netLabelWidth,
+      netLabelHeight: this.netLabelHeight,
     }
   }
 
@@ -119,6 +123,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         overlappingSameNetTraceGroup: this.overlappingSameNetTraceGroup,
         availableOrientations: this.availableOrientations,
         netLabelWidth: this.netLabelWidth,
+        netLabelHeight: this.netLabelHeight,
       })
       this.testedCandidates.push(...res.testedCandidates)
       if (res.placement) {
@@ -230,6 +235,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
             const { width, height } = getDimsForOrientation({
               orientation,
               netLabelWidth: this.netLabelWidth,
+              netLabelHeight: this.netLabelHeight,
             })
             const center = getCenterFromAnchor(
               anchor,

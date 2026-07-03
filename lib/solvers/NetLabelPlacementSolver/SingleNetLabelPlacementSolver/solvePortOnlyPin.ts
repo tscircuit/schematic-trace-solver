@@ -22,6 +22,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
   overlappingSameNetTraceGroup: OverlappingSameNetTraceGroup
   availableOrientations: FacingDirection[]
   netLabelWidth?: number
+  netLabelHeight?: number
 }): {
   placement: NetLabelPlacement | null
   testedCandidates: Array<{
@@ -43,6 +44,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     overlappingSameNetTraceGroup,
     availableOrientations,
     netLabelWidth,
+    netLabelHeight,
   } = params
 
   const pinId = overlappingSameNetTraceGroup.portOnlyPinId
@@ -103,6 +105,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     const { width, height } = getDimsForOrientation({
       orientation,
       netLabelWidth,
+      netLabelHeight,
     })
     // Place label fully outside the chip: shift center slightly outward
     const baseCenter = getCenterFromAnchor(anchor, orientation, width, height)

@@ -31,6 +31,7 @@ export interface InputNetConnection {
   netId: string
   pinIds: Array<PinId>
   netLabelWidth?: number
+  netLabelHeight?: number
 }
 
 export interface InputProblem {

@@ -170,8 +170,15 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     return label.height
   }
 
+  private netLabelHeightOf(label: NetLabelPlacement): number | undefined {
+    if (label.orientation === "x+" || label.orientation === "x-")
+      return label.height
+    return label.width
+  }
+
   private buildCandidatesForLabel(label: NetLabelPlacement): Candidate[] {
     const netLabelWidth = this.netLabelWidthOf(label)
+    const netLabelHeight = this.netLabelHeightOf(label)
     const candidates: Candidate[] = []
 
     const buildCandidate = (
@@ -183,6 +190,7 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
       const { width, height } = getDimsForOrientation({
         orientation,
         netLabelWidth,
+        netLabelHeight,
       })
       const baseCenter = getCenterFromAnchor(anchor, orientation, width, height)
       const outwardDir = OUTWARD_DIR[orientation]

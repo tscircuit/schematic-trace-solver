@@ -65,7 +65,8 @@
     {
       "netId": "SWD",
       "pinIds": ["U3.25", "R5.2"],
-      "netLabelWidth": 0.48
+      "netLabelWidth": 0.48,
+      "netLabelHeight": 0.48
     },
     {
       "netId": "CLK",

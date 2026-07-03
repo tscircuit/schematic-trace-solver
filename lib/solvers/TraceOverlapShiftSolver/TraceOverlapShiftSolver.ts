@@ -309,6 +309,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     const { overlappingTraceSegments } = overlapIssue
 
     this.activeSubSolver = new TraceOverlapIssueSolver({
+      inputProblem: this.inputProblem,
       overlappingTraceSegments,
       traceNetIslands: this.traceNetIslands,
     })

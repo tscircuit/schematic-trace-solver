@@ -30,6 +30,7 @@ export const generateCandidatesAlongTrace = (params: {
     getTraceVertexDistances(traceLocation.trace),
   )
   const netLabelWidth = getNetLabelWidth(inputProblem, label)
+  const netLabelHeight = getNetLabelHeight(inputProblem, label)
   const candidates: LabelCandidate[] = []
   const seenCandidateKeys = new Set<string>()
 
@@ -55,6 +56,7 @@ export const generateCandidatesAlongTrace = (params: {
           point,
           orientation,
           netLabelWidth,
+          netLabelHeight,
           traceLocation,
           pathDistance,
           label,
@@ -109,6 +111,7 @@ const createCandidate = (params: {
   point: Point
   orientation: FacingDirection
   netLabelWidth: number
+  netLabelHeight?: number
   traceLocation: TraceLocation
   pathDistance: number
   label: NetLabelPlacement
@@ -117,6 +120,7 @@ const createCandidate = (params: {
     point,
     orientation,
     netLabelWidth,
+    netLabelHeight,
     traceLocation,
     pathDistance,
     label,
@@ -124,6 +128,7 @@ const createCandidate = (params: {
   const { width, height } = getDimsForOrientation({
     orientation,
     netLabelWidth,
+    netLabelHeight,
   })
 
   return {
@@ -358,6 +363,20 @@ const getNetLabelWidth = (
   }
 
   return label.width
+}
+
+const getNetLabelHeight = (
+  inputProblem: InputProblem,
+  label: NetLabelPlacement,
+): number | undefined => {
+  const ncHeightByNetId = inputProblem.netConnections.find(
+    (connection) => connection.netId === label.netId,
+  )?.netLabelHeight
+  if (ncHeightByNetId !== undefined) return ncHeightByNetId
+
+  return inputProblem.netConnections.find((nc) =>
+    nc.pinIds.some((pid) => label.pinIds.includes(pid)),
+  )?.netLabelHeight
 }
 
 const roundDistance = (distance: number) => Number(distance.toFixed(6))
