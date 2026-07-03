@@ -1,43 +1,6 @@
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { simplifyPath } from "./simplifyPath"
 
-const vertXA = traceA.tracePath.find((p, i, arr) => {
-  if (i === arr.length - 1) return false;
-  return (
-    Math.abs(p.x - arr[i + 1].x) < 1e-6 &&
-    Math.abs(p.y - arr[i + 1].y) > 1e-6
-  );
-});
-function overlaps1D(
-  a1: number,
-  a2: number,
-  b1: number,
-  b2: number,
-  minOverlap = GEOM_EPS,
-): boolean {
-  const minA = Math.min(a1, a2)
-  const maxA = Math.max(a1, a2)
-  const minB = Math.min(b1, b2)
-  const maxB = Math.max(b1, b2)
-  return Math.min(maxA, maxB) - Math.max(minA, minB) > minOverlap
-}
-
-/**
- * Mutates close parallel segments between two same-net traces so they share
- * the exact same axis-aligned coordinate.
- *
- * For two vertical segments (same X within `threshold`) whose Y ranges
- * overlap, we snap both to the arithmetic mean X.
- *
- * For two horizontal segments (same Y within `threshold`) whose X ranges
- * overlap, we snap both to the arithmetic mean Y.
- *
- * Because the paths are orthogonal, adjusting a single coordinate on the two
- * endpoints of a segment only elongates or shortens the adjacent perpendicular
- * segments — the overall topology is preserved.
- *
- * Returns `true` if at least one snap was applied.
- */
 function snapBetweenTraces(
   traceA: SolvedTracePath,
   traceB: SolvedTracePath,
