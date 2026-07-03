@@ -2,11 +2,13 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { simplifyPath } from "./simplifyPath"
 
 const GEOM_EPS = 1e-6
-
-/**
- * Returns true when the 1-D intervals [a1,a2] and [b1,b2] overlap by more
- * than `minOverlap`.
- */
+// Replace lines 5-11 with this:
+function isVertical(p, next) {
+  return (
+    Math.abs(p.x - next.x) < 1e-6 &&
+    Math.abs(p.y - next.y) > 1e-6
+  );
+}
 function overlaps1D(
   a1: number,
   a2: number,
