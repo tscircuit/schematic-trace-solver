@@ -5,7 +5,9 @@ import {
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { InputProblem } from "lib/types/InputProblem"
+import { dedupeOrientations } from "lib/utils/dedupeOrientations"
 import type { FacingDirection } from "lib/utils/dir"
+import { getOrientationConstraint } from "lib/utils/getOrientationConstraint"
 import {
   EPS,
   getManhattanDistance,
@@ -144,41 +146,6 @@ const createCandidate = (params: {
     selected: false,
   }
 }
-
-const getOrientationConstraint = (
-  inputProblem: InputProblem,
-  label: NetLabelPlacement,
-): FacingDirection[] | null => {
-  const availableOrientations = inputProblem.availableNetLabelOrientations ?? {}
-  for (const netId of getOrientationConstraintKeys(inputProblem, label)) {
-    if (Object.hasOwn(availableOrientations, netId)) {
-      return dedupeOrientations(
-        (availableOrientations[netId] ?? [])
-          .map(normalizeFacingDirection)
-          .filter(
-            (orientation): orientation is FacingDirection =>
-              orientation !== undefined,
-          ),
-      )
-    }
-  }
-
-  return null
-}
-
-const getOrientationConstraintKeys = (
-  inputProblem: InputProblem,
-  label: NetLabelPlacement,
-) =>
-  dedupeStrings([
-    label.netId,
-    label.globalConnNetId,
-    ...inputProblem.netConnections
-      .filter((connection) =>
-        label.pinIds.some((pinId) => connection.pinIds.includes(pinId)),
-      )
-      .map((connection) => connection.netId),
-  ])
 
 const getUnconstrainedOrientations = (params: {
   label: NetLabelPlacement
@@ -380,33 +347,6 @@ const getNetLabelHeight = (
 }
 
 const roundDistance = (distance: number) => Number(distance.toFixed(6))
-
-const dedupeOrientations = (orientations: FacingDirection[]) => [
-  ...new Set(orientations),
-]
-
-const normalizeFacingDirection = (
-  value: string,
-): FacingDirection | undefined => {
-  switch (value) {
-    case "x+":
-    case "+x":
-      return "x+"
-    case "x-":
-    case "-x":
-      return "x-"
-    case "y+":
-    case "+y":
-      return "y+"
-    case "y-":
-    case "-y":
-      return "y-"
-  }
-}
-
-const dedupeStrings = (values: Array<string | undefined>) => [
-  ...new Set(values.filter((value): value is string => value !== undefined)),
-]
 
 const isSamePlacement = (
   label: NetLabelPlacement,
