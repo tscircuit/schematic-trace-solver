@@ -49,17 +49,17 @@ function snapBetweenTraces(
   const pathB = traceB.tracePath
   let snapped = false
 
-  // Line 49
+  
 for (let sa = 0; sa < pathA.length - 1; sa++) {
   const a1 = pathA[sa]!
   const a2 = pathA[sa + 1]!
 
-  // Line 53
+  
   const aIsVert = Math.abs(a1.x - a2.x) < GEOM_EPS
   const aIsHorz = Math.abs(a1.y - a2.y) < GEOM_EPS
   if (!aIsVert && !aIsHorz) continue
 
-  // Line 57
+  
   for (let sb = 0; sb < pathB.length - 1; sb++) {
     const b1 = pathB[sb]!
     const b2 = pathB[sb + 1]!
@@ -127,7 +127,7 @@ export function snapSameNetTraces(
 ): SolvedTracePath[] {
   if (traces.length === 0) return traces
 
-  // Group traces by net, keeping a mutable clone of each path.
+  
   const updatedMap = new Map<string, SolvedTracePath>(
     traces.map((t) => [
       t.mspPairId,
@@ -138,7 +138,7 @@ export function snapSameNetTraces(
     ]),
   )
 
-  // Build net → trace list mapping using the mutable clones.
+  
   const netGroups = new Map<string, SolvedTracePath[]>()
   for (const trace of updatedMap.values()) {
     const netId = trace.globalConnNetId
@@ -146,7 +146,7 @@ export function snapSameNetTraces(
     netGroups.get(netId)!.push(trace)
   }
 
-  // Iterate until stable or max passes reached.
+  
   for (let pass = 0; pass < maxPasses; pass++) {
     let anySnapped = false
 
@@ -168,6 +168,6 @@ export function snapSameNetTraces(
     if (!anySnapped) break
   }
 
-  // Return traces in the original order, with updated paths.
+  
   return traces.map((t) => updatedMap.get(t.mspPairId)!)
 }
