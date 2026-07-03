@@ -10,6 +10,7 @@ import {
   getCenterFromAnchor,
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import { getNetLabelOrientationConstraint } from "lib/solvers/NetLabelPlacementSolver/getNetLabelOrientationConstraint"
 import { rectIntersectsAnyTrace } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
@@ -24,6 +25,8 @@ type CandidateStatus =
 const ANCHOR_TRACE_CLEARANCE = 1e-4
 const SEGMENT_PARALLEL_EPS = 1e-6
 const CANDIDATE_STEP = 0.1
+
+const ALL_NET_LABEL_ORIENTATIONS: FacingDirection[] = ["x+", "x-", "y+", "y-"]
 
 const OUTWARD_DIR: Record<FacingDirection, { x: number; y: number }> = {
   "x+": { x: 1, y: 0 },
@@ -214,12 +217,15 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     const isPortOnly = label.mspConnectionPairIds.length === 0
 
     if (isPortOnly) {
-      const allOrientations: FacingDirection[] = ["x+", "x-", "y+", "y-"]
-      const orderedOrientations = [
-        label.orientation,
-        ...allOrientations.filter((o) => o !== label.orientation),
-      ]
-      for (const orientation of orderedOrientations) {
+      const orientationConstraint = getNetLabelOrientationConstraint(
+        this.inputProblem,
+        label,
+      )
+      const allowedOrientations = this.getCandidateOrientations(
+        label,
+        orientationConstraint,
+      )
+      for (const orientation of allowedOrientations) {
         candidates.push(buildCandidate(orientation, label.anchorPoint))
       }
     } else {
@@ -258,6 +264,21 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     }
 
     return candidates
+  }
+
+  private getCandidateOrientations(
+    label: NetLabelPlacement,
+    orientationConstraint: FacingDirection[] | null,
+  ) {
+    const orientations = orientationConstraint ?? ALL_NET_LABEL_ORIENTATIONS
+    if (!orientations.includes(label.orientation)) return orientations
+
+    return [
+      label.orientation,
+      ...orientations.filter(
+        (orientation) => orientation !== label.orientation,
+      ),
+    ]
   }
 
   private checkCandidate(

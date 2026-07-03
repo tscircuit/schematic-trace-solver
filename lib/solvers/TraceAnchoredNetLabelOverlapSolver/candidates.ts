@@ -4,6 +4,8 @@ import {
   getDimsForOrientation,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { dedupeOrientations } from "lib/solvers/NetLabelPlacementSolver/dedupeOrientations"
+import { getNetLabelOrientationConstraint } from "lib/solvers/NetLabelPlacementSolver/getNetLabelOrientationConstraint"
 import type { InputProblem } from "lib/types/InputProblem"
 import { dedupeOrientations } from "lib/utils/dedupeOrientations"
 import type { FacingDirection } from "lib/utils/dir"
@@ -18,6 +20,7 @@ import {
 import type { Bounds, LabelCandidate, TraceLocation } from "./types"
 
 const CANDIDATE_STEP = 0.1
+const ALL_NET_LABEL_ORIENTATIONS: FacingDirection[] = ["x+", "x-", "y+", "y-"]
 
 export const generateCandidatesAlongTrace = (params: {
   inputProblem: InputProblem
@@ -26,7 +29,10 @@ export const generateCandidatesAlongTrace = (params: {
 }) => {
   const { inputProblem, label, traceLocation } = params
   const traceLength = getTraceLength(traceLocation.trace)
-  const orientationConstraint = getOrientationConstraint(inputProblem, label)
+  const orientationConstraint = getNetLabelOrientationConstraint(
+    inputProblem,
+    label,
+  )
   const candidateDistances = getCandidateDistances(
     traceLength,
     getTraceVertexDistances(traceLocation.trace),
@@ -159,7 +165,7 @@ const getUnconstrainedOrientations = (params: {
       inputProblem,
       point,
     }),
-    ...ALL_ORIENTATIONS,
+    ...ALL_NET_LABEL_ORIENTATIONS,
   ])
 }
 
@@ -249,8 +255,6 @@ const getNormalizedCenterDistance = (
   center: number,
   span: number,
 ) => Math.abs(value - center) / Math.max(EPS, span / 2)
-
-const ALL_ORIENTATIONS: FacingDirection[] = ["x+", "x-", "y+", "y-"]
 
 const getFlippedOrientation = (
   orientation: FacingDirection,

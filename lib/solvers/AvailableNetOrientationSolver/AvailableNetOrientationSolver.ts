@@ -1,4 +1,4 @@
-import type { Point } from "@tscircuit/math-utils"
+import { pointToSegmentDistance, type Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
@@ -112,6 +112,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   private shouldProcessLabel(label: NetLabelPlacement) {
     const orientations = this.getAvailableOrientations(label)
+    if (
+      orientations.length > 0 &&
+      !orientations.includes(label.orientation) &&
+      this.shouldAllowInlineTraceLabelToKeepOrientation(label, orientations)
+    ) {
+      return false
+    }
     return orientations.length > 0 && !orientations.includes(label.orientation)
   }
 
@@ -184,18 +191,29 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (rotatedCandidate) return rotatedCandidate
 
-    const shiftedCandidate = this.findValidShiftedCandidate(
+    const shiftedOrientations = this.getPreferredOrientations(
       label,
-      orientations[0]!,
-      labelIndex,
+      orientations,
     )
-    if (shiftedCandidate) return shiftedCandidate
+    for (const orientation of shiftedOrientations) {
+      const shiftedCandidate = this.findValidShiftedCandidate(
+        label,
+        orientation,
+        labelIndex,
+      )
+      if (shiftedCandidate) return shiftedCandidate
+    }
 
-    return this.findValidLateralShiftedCandidate(
-      label,
-      orientations[0]!,
-      labelIndex,
-    )
+    for (const orientation of shiftedOrientations) {
+      const lateralShiftedCandidate = this.findValidLateralShiftedCandidate(
+        label,
+        orientation,
+        labelIndex,
+      )
+      if (lateralShiftedCandidate) return lateralShiftedCandidate
+    }
+
+    return null
   }
 
   private findValidRotatedCandidate(
@@ -230,12 +248,37 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return this.inputProblem.availableNetLabelOrientations[effectiveNetId] ?? []
   }
 
+  private getPreferredOrientations(
+    label: NetLabelPlacement,
+    orientations: FacingDirection[],
+  ) {
+    if (this.isPortOnlyLabel(label)) return orientations.slice(0, 1)
+
+    const chipOutwardDirection = this.getChipOutwardDirection(label.anchorPoint)
+    if (!chipOutwardDirection) return orientations
+
+    const scoredOrientations = orientations.map((orientation, index) => ({
+      orientation,
+      index,
+      score: this.getDirectionDot(dir(orientation), chipOutwardDirection),
+    }))
+
+    const hasOutwardOrientation = scoredOrientations.some(
+      ({ score }) => score > 0,
+    )
+
+    return scoredOrientations
+      .filter(({ score }) => !hasOutwardOrientation || score >= 0)
+      .sort((a, b) => b.score - a.score || a.index - b.index)
+      .map(({ orientation }) => orientation)
+  }
+
   private findValidShiftedCandidate(
     label: NetLabelPlacement,
     orientation: FacingDirection,
     labelIndex: number,
   ) {
-    const direction = dir(orientation)
+    const direction = this.getSearchDirection(label, orientation)
     const initialBaseAnchor = this.getSearchStartAnchor(label, orientation)
     const outwardDirection = this.getPerpendicularOutwardDirection(
       label.anchorPoint,
@@ -277,16 +320,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
    * shifting the label anchor laterally — x for y-orientations, y for
    * x-orientations — and re-attempting the required orientation.
    *
-   * Offsets are tried in alternating sign order:
-   *   -1·step, +1·step, -2·step, +2·step, …
-   * so the nearest escape routes are tested first.
+   * Offsets are tried nearest-first. For labels already anchored on a trace,
+   * prefer the host trace's direction before trying the opposite side.
    */
   private findValidLateralShiftedCandidate(
     label: NetLabelPlacement,
     orientation: FacingDirection,
     labelIndex: number,
   ): EvaluatedCandidate | null {
-    const direction = dir(orientation)
+    const direction = this.getSearchDirection(label, orientation)
     const initialBaseAnchor = this.getSearchStartAnchor(label, orientation)
 
     // Lateral axis: perpendicular to the orientation direction
@@ -298,7 +340,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const maxSteps = Math.ceil(this.maxSearchDistance / LABEL_SEARCH_STEP)
 
     for (let step = 1; step <= maxSteps; step++) {
-      for (const sign of [-1, 1]) {
+      for (const sign of this.getLateralShiftSigns(label, orientation)) {
         const lateralOffset = sign * step * LABEL_SEARCH_STEP
         const baseAnchor = {
           x: initialBaseAnchor.x + lateralDir.x * lateralOffset,
@@ -522,6 +564,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     orientation: FacingDirection,
     baseAnchor: Point,
   ) {
+    if (!this.isPortOnlyLabel(label)) {
+      const chipOutwardDirection = this.getChipOutwardDirection(
+        label.anchorPoint,
+      )
+      if (
+        chipOutwardDirection &&
+        this.getDirectionDot(dir(orientation), chipOutwardDirection) > 0
+      ) {
+        return this.getSearchDistanceLimit(label, orientation)
+      }
+    }
+
     const chipId = label.pinIds
       .map((pid) => this.pinMap[pid]?.chipId)
       .find(Boolean)
@@ -541,6 +595,117 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return this.getSearchDistanceLimit(label, orientation)
+  }
+
+  private getSearchDirection(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+  ): Point {
+    if (this.isPortOnlyLabel(label)) return dir(orientation)
+    if (this.isInlineTraceLabel(label)) {
+      return dir(orientation)
+    }
+
+    const orientationDirection = dir(orientation)
+    const chipOutwardDirection = this.getChipOutwardDirection(label.anchorPoint)
+    if (
+      chipOutwardDirection &&
+      orientationDirection.x === -chipOutwardDirection.x &&
+      orientationDirection.y === -chipOutwardDirection.y
+    ) {
+      return chipOutwardDirection
+    }
+    return orientationDirection
+  }
+
+  private getLateralShiftSigns(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+  ) {
+    const traceSegment = this.getTraceSegmentContainingAnchor(label)
+    if (!traceSegment) return [-1, 1]
+
+    const [start, end] = traceSegment
+    if (isYOrientation(orientation) && Math.abs(start.y - end.y) <= EPS) {
+      const sign = Math.sign(end.x - start.x)
+      if (sign !== 0) return [sign, -sign]
+    }
+    if (isXOrientation(orientation) && Math.abs(start.x - end.x) <= EPS) {
+      const sign = Math.sign(end.y - start.y)
+      if (sign !== 0) return [sign, -sign]
+    }
+
+    return [-1, 1]
+  }
+
+  private isPortOnlyLabel(label: NetLabelPlacement) {
+    return label.mspConnectionPairIds.length === 0 && label.pinIds.length === 1
+  }
+
+  // Inline vertical labels already sit on a horizontal trace, so enforcing
+  // horizontal available orientations would add connector length unnecessarily.
+  private shouldAllowInlineTraceLabelToKeepOrientation(
+    label: NetLabelPlacement,
+    orientations: FacingDirection[],
+  ) {
+    if (!this.isInlineVerticalTraceLabel(label)) return false
+
+    return !orientations.some((orientation) =>
+      this.isSameOrientationAxis(orientation, label.orientation),
+    )
+  }
+
+  private isInlineTraceLabel(label: NetLabelPlacement) {
+    if (this.isPortOnlyLabel(label)) return false
+
+    return Boolean(this.getTraceSegmentContainingAnchor(label))
+  }
+
+  private isInlineVerticalTraceLabel(label: NetLabelPlacement) {
+    const traceSegment = this.getTraceSegmentContainingAnchor(label)
+    if (!traceSegment) return false
+
+    const [start, end] = traceSegment
+    return (
+      isYOrientation(label.orientation) && Math.abs(start.y - end.y) <= EPS
+    )
+  }
+
+  private getTraceSegmentContainingAnchor(label: NetLabelPlacement) {
+    for (const mspPairId of label.mspConnectionPairIds) {
+      const trace = this.traceMap[mspPairId]
+      if (!trace) continue
+      for (let i = 0; i < trace.tracePath.length - 1; i++) {
+        if (
+          pointToSegmentDistance(
+            label.anchorPoint,
+            trace.tracePath[i]!,
+            trace.tracePath[i + 1]!,
+          ) <= EPS
+        ) {
+          return [trace.tracePath[i]!, trace.tracePath[i + 1]!] as const
+        }
+      }
+    }
+
+    return null
+  }
+
+  private getChipOutwardDirection(point: Point): Point | null {
+    const chipSide = this.getChipSideForPoint(point)
+    if (chipSide === "left") return { x: -1, y: 0 }
+    if (chipSide === "right") return { x: 1, y: 0 }
+    if (chipSide === "bottom") return { x: 0, y: -1 }
+    if (chipSide === "top") return { x: 0, y: 1 }
+    return null
+  }
+
+  private getDirectionDot(a: Point, b: Point) {
+    return a.x * b.x + a.y * b.y
+  }
+
+  private isSameOrientationAxis(a: FacingDirection, b: FacingDirection) {
+    return (a[0] === "x" && b[0] === "x") || (a[0] === "y" && b[0] === "y")
   }
 
   private createCandidate(
