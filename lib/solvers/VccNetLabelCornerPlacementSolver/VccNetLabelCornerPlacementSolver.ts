@@ -23,6 +23,7 @@ import type {
   VccNetLabelCornerPlacementSolverParams,
 } from "./types"
 import { visualizeVccNetLabelCornerPlacementSolver } from "./visualize"
+import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 export class VccNetLabelCornerPlacementSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -171,6 +172,8 @@ export class VccNetLabelCornerPlacementSolver extends BaseSolver {
     labelIndex: number,
   ): CornerCandidateStatus {
     if (this.intersectsAnyChip(bounds)) return "chip-collision"
+    if (rectIntersectsAnyTextBox(bounds, this.inputProblem))
+      return "chip-collision"
     if (traceCrossesBoundsInterior(bounds, this.traceMap)) {
       return "trace-collision"
     }

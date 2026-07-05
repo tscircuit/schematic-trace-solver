@@ -110,6 +110,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
     this.activeSubSolver = new SchematicTraceSingleLineSolver2({
       inputProblem: this.inputProblem,
       pins,
+      connectionPair,
       chipMap: this.chipMap,
     })
   }

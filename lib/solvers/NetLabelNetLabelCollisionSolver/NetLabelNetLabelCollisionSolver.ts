@@ -14,6 +14,7 @@ import { rectIntersectsAnyTrace } from "lib/solvers/NetLabelPlacementSolver/Sing
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
+import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 type CandidateStatus =
   | "ok"
@@ -268,6 +269,8 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     const { bounds, hostPairId, hostSegIndex } = candidate
 
     if (this.chipIndex.getChipsInBounds(bounds).length > 0)
+      return "chip-collision"
+    if (rectIntersectsAnyTextBox(bounds, this.inputProblem))
       return "chip-collision"
 
     if (

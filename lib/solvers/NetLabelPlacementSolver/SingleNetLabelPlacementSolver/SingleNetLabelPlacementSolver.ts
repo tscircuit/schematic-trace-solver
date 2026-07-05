@@ -19,6 +19,7 @@ import { chooseHostTraceForGroup } from "./host"
 import { anchorsForSegment } from "./anchors"
 import { solveNetLabelPlacementForPortOnlyPin } from "./solvePortOnlyPin"
 import { visualizeSingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver_visualize"
+import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 export {
   NET_LABEL_HORIZONTAL_WIDTH,
@@ -70,7 +71,12 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     bounds: { minX: number; minY: number; maxX: number; maxY: number }
     anchor: { x: number; y: number }
     orientation: FacingDirection
-    status: "ok" | "chip-collision" | "trace-collision" | "parallel-to-segment"
+    status:
+      | "ok"
+      | "chip-collision"
+      | "trace-collision"
+      | "text-collision"
+      | "parallel-to-segment"
     hostSegIndex: number
   }> = []
 
@@ -271,6 +277,20 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
                 anchor,
                 orientation,
                 status: "chip-collision",
+                hostSegIndex: si,
+              })
+              continue
+            }
+
+            if (rectIntersectsAnyTextBox(bounds, this.inputProblem)) {
+              this.testedCandidates.push({
+                center: testCenter,
+                width,
+                height,
+                bounds,
+                anchor,
+                orientation,
+                status: "text-collision",
                 hostSegIndex: si,
               })
               continue

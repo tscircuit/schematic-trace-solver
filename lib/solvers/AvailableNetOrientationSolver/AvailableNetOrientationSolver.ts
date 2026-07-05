@@ -36,6 +36,7 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
+import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 export class AvailableNetOrientationSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -641,6 +642,9 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   private getBoundsStatus(bounds: Bounds, labelIndex: number): CandidateStatus {
     if (this.chipObstacleSpatialIndex.getChipsInBounds(bounds).length > 0) {
+      return "chip-collision"
+    }
+    if (rectIntersectsAnyTextBox(bounds, this.inputProblem)) {
       return "chip-collision"
     }
     if (this.sharesChipBoundary(bounds)) {

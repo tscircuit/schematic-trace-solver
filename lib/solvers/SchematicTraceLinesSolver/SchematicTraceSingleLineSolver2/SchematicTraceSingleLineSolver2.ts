@@ -20,16 +20,21 @@ import {
   type Axis,
 } from "./mid"
 import { pathKey, shiftSegmentOrth } from "./pathOps"
+import type { FacingDirection } from "lib/utils/dir"
+import { getDimsForOrientation } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import type { RectPadding } from "lib/utils/textBoxBounds"
 
 type PathKey = string
 
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
+  connectionPair?: MspConnectionPair
   inputProblem: InputProblem
   chipMap: Record<string, InputChip>
 
   obstacles: ChipWithBounds[]
   rectById: Map<string, ChipWithBounds>
+  textObstacleIds: Set<string>
   aabb: { minX: number; maxX: number; minY: number; maxY: number }
 
   baseElbow: Point[]
@@ -41,11 +46,13 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
   constructor(params: {
     pins: MspConnectionPair["pins"]
+    connectionPair?: MspConnectionPair
     inputProblem: InputProblem
     chipMap: Record<string, InputChip>
   }) {
     super()
     this.pins = params.pins
+    this.connectionPair = params.connectionPair
     this.inputProblem = params.inputProblem
     this.chipMap = params.chipMap
 
@@ -57,9 +64,15 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       }
     }
 
-    // Build obstacle rects from chips
-    this.obstacles = getObstacleRects(this.inputProblem)
+    // Build obstacle rects from chips and schematic text boxes. Text boxes are
+    // padded by the label footprint for this net so labels have clearance too.
+    this.obstacles = getObstacleRects(this.inputProblem, {
+      textBoxPadding: this.getTextBoxPaddingForConnectionPair(),
+    })
     this.rectById = new Map(this.obstacles.map((r) => [r.chipId, r]))
+    this.textObstacleIds = new Set(
+      this.obstacles.filter((r) => r.isTextBox).map((r) => r.chipId),
+    )
 
     // Build initial elbow path
     const [pin1, pin2] = this.pins
@@ -94,8 +107,90 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     return {
       chipMap: this.chipMap,
       pins: this.pins,
+      connectionPair: this.connectionPair,
       inputProblem: this.inputProblem,
     }
+  }
+
+  private getTextBoxPaddingForConnectionPair(): RectPadding {
+    if (!this.inputProblem.textBoxes?.length) return {}
+
+    const netId = this.connectionPair?.userNetId
+    if (!netId) return {}
+
+    const orientations =
+      this.inputProblem.availableNetLabelOrientations[netId] ??
+      (["x+", "x-", "y+", "y-"] as FacingDirection[])
+    const netLabelWidth = this.getNetLabelWidthForConnectionPair(netId)
+    const netLabelHeight = this.getNetLabelHeightForConnectionPair(netId)
+    const padding: Required<RectPadding> = {
+      minX: 0,
+      minY: 0,
+      maxX: 0,
+      maxY: 0,
+    }
+
+    for (const orientation of orientations) {
+      const { width, height } = getDimsForOrientation({
+        orientation,
+        netLabelWidth,
+        netLabelHeight,
+      })
+
+      if (orientation === "y+" || orientation === "y-") {
+        padding.minX = Math.max(padding.minX, width / 2)
+        padding.maxX = Math.max(padding.maxX, width / 2)
+        if (orientation === "y+") {
+          padding.minY = Math.max(padding.minY, height)
+        } else {
+          padding.maxY = Math.max(padding.maxY, height)
+        }
+      } else {
+        padding.minY = Math.max(padding.minY, height / 2)
+        padding.maxY = Math.max(padding.maxY, height / 2)
+        if (orientation === "x+") {
+          padding.minX = Math.max(padding.minX, width)
+        } else {
+          padding.maxX = Math.max(padding.maxX, width)
+        }
+      }
+    }
+
+    return padding
+  }
+
+  private getNetLabelWidthForConnectionPair(netId: string) {
+    const ncWidth = this.inputProblem.netConnections.find(
+      (nc) => nc.netId === netId,
+    )?.netLabelWidth
+    if (ncWidth !== undefined) return ncWidth
+
+    const dcWidthByNetId = this.inputProblem.directConnections.find(
+      (dc) => dc.netId === netId,
+    )?.netLabelWidth
+    if (dcWidthByNetId !== undefined) return dcWidthByNetId
+
+    const pinIds = this.pins.map((p) => p.pinId)
+    const dcWidthByPinId = this.inputProblem.directConnections.find((dc) =>
+      dc.pinIds.some((pid) => pinIds.includes(pid)),
+    )?.netLabelWidth
+    if (dcWidthByPinId !== undefined) return dcWidthByPinId
+
+    return this.inputProblem.netConnections.find((nc) =>
+      nc.pinIds.some((pid) => pinIds.includes(pid)),
+    )?.netLabelWidth
+  }
+
+  private getNetLabelHeightForConnectionPair(netId: string) {
+    const ncHeight = this.inputProblem.netConnections.find(
+      (nc) => nc.netId === netId,
+    )?.netLabelHeight
+    if (ncHeight !== undefined) return ncHeight
+
+    const pinIds = this.pins.map((p) => p.pinId)
+    return this.inputProblem.netConnections.find((nc) =>
+      nc.pinIds.some((pid) => pinIds.includes(pid)),
+    )?.netLabelHeight
   }
 
   private axisOfSegment(a: Point, b: Point): Axis | null {
@@ -130,7 +225,15 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     const { path, collisionChipIds } = state
 
     const [PA, PB] = this.pins
-    const collision = findFirstCollision(path, this.obstacles)
+    const collision = findFirstCollision(path, this.obstacles, {
+      excludeRectIdsForSegment: (segIndex) => {
+        const lastSegIndex = path.length - 2
+        if (segIndex === 0 || segIndex === lastSegIndex) {
+          return this.textObstacleIds
+        }
+        return new Set<string>()
+      },
+    })
 
     if (!collision) {
       // Sanity check: ensure path still connects PA -> PB
