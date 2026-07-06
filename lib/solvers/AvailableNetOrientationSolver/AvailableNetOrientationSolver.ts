@@ -38,6 +38,8 @@ import type {
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
+const LABEL_TRACE_CLEARANCE = 0.1
+
 export class AvailableNetOrientationSolver extends BaseSolver {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
@@ -606,10 +608,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     phase: CandidatePhase
   }) {
     const { candidate, label, labelIndex, phase } = params
-    const boundsStatus = this.getBoundsStatus(
-      getRectBounds(candidate.center, candidate.width, candidate.height),
+    const boundsStatus = this.getBoundsStatus({
+      bounds: getRectBounds(
+        candidate.center,
+        candidate.width,
+        candidate.height,
+      ),
       labelIndex,
-    )
+      label,
+    })
     if (boundsStatus !== "valid") return boundsStatus
 
     const connectorTrace = this.getCandidateConnectorTrace(label, {
@@ -640,7 +647,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return "valid"
   }
 
-  private getBoundsStatus(bounds: Bounds, labelIndex: number): CandidateStatus {
+  private getBoundsStatus(candidateBoundsCheck: {
+    bounds: Bounds
+    labelIndex: number
+    label: NetLabelPlacement
+  }): CandidateStatus {
+    const { bounds, labelIndex, label } = candidateBoundsCheck
+
     if (this.chipObstacleSpatialIndex.getChipsInBounds(bounds).length > 0) {
       return "chip-collision"
     }
@@ -653,10 +666,57 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     if (traceCrossesBoundsInterior(bounds, this.traceMap)) {
       return "trace-collision"
     }
+    if (this.isTraceTooCloseToLabel(bounds, label)) {
+      return "trace-clearance-violation"
+    }
     if (this.intersectsAnyOtherNetLabel(bounds, labelIndex)) {
       return "netlabel-collision"
     }
     return "valid"
+  }
+
+  private isTraceTooCloseToLabel(bounds: Bounds, label: NetLabelPlacement) {
+    if (!this.shouldCheckTraceClearanceForLabel(label)) return false
+
+    const clearanceBounds = this.getLabelTraceClearanceBounds(bounds)
+    for (const trace of Object.values(this.traceMap)) {
+      if (trace.globalConnNetId === label.globalConnNetId) continue
+      if (tracePathIntersectsBounds(trace.tracePath, clearanceBounds)) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  private getLabelTraceClearanceBounds(bounds: Bounds): Bounds {
+    return {
+      minX: bounds.minX - LABEL_TRACE_CLEARANCE,
+      minY: bounds.minY - LABEL_TRACE_CLEARANCE,
+      maxX: bounds.maxX + LABEL_TRACE_CLEARANCE,
+      maxY: bounds.maxY + LABEL_TRACE_CLEARANCE,
+    }
+  }
+
+  private shouldCheckTraceClearanceForLabel(label: NetLabelPlacement) {
+    if (!this.isPortOnlyLabel(label)) return false
+    if (!this.hasRoutedLabelOnSameNet(label)) return false
+
+    const orientations = this.getAvailableOrientations(label)
+    return orientations.length === 1
+  }
+
+  private hasRoutedLabelOnSameNet(label: NetLabelPlacement) {
+    for (const otherLabel of this.outputNetLabelPlacements) {
+      if (otherLabel.globalConnNetId !== label.globalConnNetId) continue
+      if (otherLabel.mspConnectionPairIds.length > 0) return true
+    }
+
+    return false
+  }
+
+  private isPortOnlyLabel(label: NetLabelPlacement) {
+    return label.mspConnectionPairIds.length === 0
   }
 
   private intersectsAnyOtherNetLabel(bounds: Bounds, labelIndex: number) {

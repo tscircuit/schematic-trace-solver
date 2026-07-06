@@ -32,6 +32,7 @@ export type CandidateStatus =
   | "chip-collision"
   | "text-collision"
   | "trace-collision"
+  | "trace-clearance-violation"
   | "netlabel-collision"
 
 export type CandidatePhase = "rotate" | "shift" | "lateral-shift"
