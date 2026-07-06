@@ -24,7 +24,6 @@ import {
   traceCrossesBoundsInterior,
   tracePathIntersectsBounds,
   tracePathCrossesAnyBounds,
-  tracePathCrossesAnyTrace,
 } from "./geometry"
 import { getPinMap, getTracePins, toNetLabelPlacementPatch } from "./traces"
 import type {
@@ -37,6 +36,7 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
+import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 export class AvailableNetOrientationSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -618,10 +618,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       phase,
     })
 
-    if (tracePathCrossesAnyTrace(connectorTrace, this.traceMap)) {
-      return "trace-collision"
-    }
-
     for (const chip of this.chipObstacleSpatialIndex.chips) {
       if (tracePathCrossesAnyBounds(connectorTrace, chip.bounds)) {
         return "chip-collision"
@@ -647,6 +643,9 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private getBoundsStatus(bounds: Bounds, labelIndex: number): CandidateStatus {
     if (this.chipObstacleSpatialIndex.getChipsInBounds(bounds).length > 0) {
       return "chip-collision"
+    }
+    if (rectIntersectsAnyTextBox(bounds, this.inputProblem)) {
+      return "text-collision"
     }
     if (this.sharesChipBoundary(bounds)) {
       return "chip-collision"

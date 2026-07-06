@@ -14,10 +14,12 @@ import { rectIntersectsAnyTrace } from "lib/solvers/NetLabelPlacementSolver/Sing
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
+import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 type CandidateStatus =
   | "ok"
   | "chip-collision"
+  | "text-collision"
   | "trace-collision"
   | "label-collision"
 
@@ -37,6 +39,7 @@ const CANDIDATE_STATUS_COLOR: Record<CandidateStatus, string> = {
   "label-collision": "orange",
   "trace-collision": "darkorange",
   "chip-collision": "red",
+  "text-collision": "purple",
 }
 
 const CANDIDATE_STATUS_FILL: Record<CandidateStatus, string> = {
@@ -44,6 +47,7 @@ const CANDIDATE_STATUS_FILL: Record<CandidateStatus, string> = {
   "label-collision": "rgba(255, 160, 0, 0.2)",
   "trace-collision": "rgba(200, 80, 0, 0.2)",
   "chip-collision": "rgba(220, 0, 0, 0.15)",
+  "text-collision": "rgba(128, 0, 128, 0.15)",
 }
 
 type Candidate = {
@@ -269,6 +273,8 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
 
     if (this.chipIndex.getChipsInBounds(bounds).length > 0)
       return "chip-collision"
+    if (rectIntersectsAnyTextBox(bounds, this.inputProblem))
+      return "text-collision"
 
     if (
       rectIntersectsAnyTrace(bounds, this.traceMap, hostPairId, hostSegIndex)
