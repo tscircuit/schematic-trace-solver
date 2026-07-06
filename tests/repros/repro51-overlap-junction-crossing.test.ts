@@ -95,6 +95,5 @@ test("repro51 overlap junction crossing keeps VCC and GND separated", () => {
     }
   }
 
-
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
