@@ -11,7 +11,12 @@ import {
   detectTraceLabelOverlap,
   type TraceLabelOverlap,
 } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
-import type { InputPin, InputProblem } from "lib/types/InputProblem"
+import type {
+  ChipId,
+  InputPin,
+  InputProblem,
+  PinId,
+} from "lib/types/InputProblem"
 import { dir } from "lib/utils/dir"
 import { moveAttachedLabelsToReroutedTrace } from "./labelMovement"
 import { findBestReroutePath } from "./reroute"
@@ -34,7 +39,7 @@ export class Example28Solver extends BaseSolver {
   currentCandidateResults: RerouteCandidateResult[] = []
 
   private chipObstacles: ReturnType<typeof getObstacleRects>
-  private pinMap: Record<string, InputPin & { chipId: string }>
+  private pinMap: Record<PinId, InputPin & { chipId: ChipId }>
 
   constructor(params: Example28SolverParams) {
     super()
@@ -277,7 +282,7 @@ const createPortOnlyLabelConnectorTrace = ({
 }: {
   label: NetLabelPlacement
   movedLabel: NetLabelPlacement
-  pinMap: Record<string, InputPin & { chipId: string }>
+  pinMap: Record<PinId, InputPin & { chipId: ChipId }>
 }): SolvedTracePath => {
   const mspPairId = getPortOnlyLabelConnectorMspPairId(label)
 
