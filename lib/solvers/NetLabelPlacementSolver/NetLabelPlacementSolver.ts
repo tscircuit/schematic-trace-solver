@@ -301,6 +301,20 @@ export class NetLabelPlacementSolver extends BaseSolver {
     )?.netLabelHeight
   }
 
+  private getAvailableOrientationsForGroup(
+    group: OverlappingSameNetTraceGroup,
+  ): FacingDirection[] {
+    const netId = group.netId ?? group.globalConnNetId
+    return this.inputProblem.availableNetLabelOrientations[netId] ?? []
+  }
+
+  private hasOrientationConstraintForGroup(
+    group: OverlappingSameNetTraceGroup,
+  ) {
+    const netId = group.netId ?? group.globalConnNetId
+    return Object.hasOwn(this.inputProblem.availableNetLabelOrientations, netId)
+  }
+
   override _step() {
     if (this.activeSubSolver?.solved) {
       this.netLabelPlacements.push(this.activeSubSolver.netLabelPlacement!)
@@ -321,7 +335,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
       if (
         !this.triedAnyOrientationFallbackForCurrentGroup &&
         !isAlreadyFull &&
-        this.currentGroup
+        this.currentGroup &&
+        !this.hasOrientationConstraintForGroup(this.currentGroup)
       ) {
         this.triedAnyOrientationFallbackForCurrentGroup = true
         const netLabelWidth = this.getNetLabelWidthForGroup(this.currentGroup)
@@ -360,10 +375,6 @@ export class NetLabelPlacementSolver extends BaseSolver {
       return
     }
 
-    const netId =
-      nextOverlappingSameNetTraceGroup.netId ??
-      nextOverlappingSameNetTraceGroup.globalConnNetId
-
     this.currentGroup = nextOverlappingSameNetTraceGroup
     this.triedAnyOrientationFallbackForCurrentGroup = false
 
@@ -374,9 +385,9 @@ export class NetLabelPlacementSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       inputTraceMap: this.inputTraceMap,
       overlappingSameNetTraceGroup: nextOverlappingSameNetTraceGroup,
-      availableOrientations: this.inputProblem.availableNetLabelOrientations[
-        netId
-      ] ?? ["x+", "x-", "y+", "y-"],
+      availableOrientations: this.getAvailableOrientationsForGroup(
+        nextOverlappingSameNetTraceGroup,
+      ),
       netLabelWidth,
       netLabelHeight,
     })

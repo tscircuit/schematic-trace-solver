@@ -122,7 +122,7 @@ x-" data-x="2.0500000000000003" data-y="-4.255" cx="453.9681963929909" cy="437.5
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="1.8499999999999999" data-y="0.7749999999999999" cx="444.5467897086677" cy="200.58367027620386" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y-" data-x="1.8499999999999999" data-y="0.42500000000000004" cx="444.5467897086677" cy="217.0711319737694" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -146,7 +146,7 @@ orientation: y-" data-x="2.8394553499999997" data-y="1.6349999999999998" cx="491
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: x+" data-x="2.4472276749999997" data-y="-0.42499999999999993" cx="472.68041375520664" cy="257.1121103821429" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: x+" data-x="1.65" data-y="-0.42499999999999993" cx="435.12538302434456" cy="257.1121103821429" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -183,10 +183,6 @@ orientation: y+" data-x="2.8394553499999997" data-y="2.7350000000000003" cx="491
   <g>
     <circle data-type="point" data-label="anchorPoint
 orientation: x-" data-x="-2.5650000000000004" data-y="-1.1576361625" cx="236.56923715223374" cy="291.62442657491476" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-1.9525" data-y="-0.3500000000000001" cx="265.4222951229735" cy="253.5790828755217" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -440,7 +436,7 @@ orientation: x-" data-x="-4.32945535" data-y="-1.276909040625" cx="153.450980008
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
-globalConnNetId: connectivity_net0" data-x="1.8499999999999999" data-y="1.0151" x="439.83608636650615" y="177.9675835304861" width="9.42140668432313" height="22.61137604237561" fill="#00000066" stroke="#000000" stroke-width="0.021228252499999996" />
+globalConnNetId: connectivity_net0" data-x="1.8499999999999999" data-y="0.18500000000000005" x="439.83608636650615" y="217.0711319737694" width="9.42140668432313" height="22.61137604237561" fill="#00000066" stroke="#000000" stroke-width="0.021228252499999996" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
@@ -464,7 +460,7 @@ globalConnNetId: connectivity_net1" data-x="2.8394553499999997" data-y="1.154" x
   </g>
   <g>
     <rect data-type="rect" data-label="netId: SDA
-globalConnNetId: connectivity_net2" data-x="2.687227675" data-y="-0.42499999999999993" x="472.68041375520664" y="252.40140703998128" width="22.61137604237564" height="9.421406684323188" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.021228252499999996" />
+globalConnNetId: connectivity_net2" data-x="1.89" data-y="-0.42499999999999993" x="435.12538302434456" y="252.40140703998128" width="22.611376042375582" height="9.421406684323188" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.021228252499999996" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: SDA
@@ -501,10 +497,6 @@ globalConnNetId: connectivity_net4" data-x="2.8394553499999997" data-y="2.916000
   <g>
     <rect data-type="rect" data-label="netId: BUS_HIGH
 globalConnNetId: connectivity_net5" data-x="-3.1050000000000004" data-y="-1.1576361625" x="185.69364105688862" y="286.91372323275317" width="50.87559609534512" height="9.421406684323188" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.021228252499999996" />
-  </g>
-  <g>
-    <rect data-type="rect" data-label="netId: LOAD_CHARGER
-globalConnNetId: connectivity_net6" data-x="-1.9525" data-y="0.42999999999999994" x="260.7115917808119" y="180.09211073780097" width="9.421406684323188" height="73.48697213772073" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.021228252499999996" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: LOAD_CHARGER

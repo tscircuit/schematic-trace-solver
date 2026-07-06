@@ -118,7 +118,31 @@ orientation: y+" data-x="-2.35" data-y="0.1" cx="176.9565217391304" cy="310.9000
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="-3.4" data-y="-0.09999999999999992" cx="113.04347826086953" cy="323.0739130434783" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="-3.4" data-y="-0.2999999999999999" cx="113.04347826086953" cy="335.24782608695654" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="-3.4" data-y="-0.49999999999999994" cx="113.04347826086953" cy="347.4217391304348" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="anchorPoint
 orientation: y-" data-x="0" data-y="-1.5999999999999999" cx="320" cy="414.3782608695652" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="anchorPoint
+orientation: x-" data-x="3.4" data-y="-0.5" cx="526.9565217391305" cy="347.42173913043484" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="anchorPoint
+orientation: x-" data-x="3.4" data-y="-0.3000000000000001" cx="526.9565217391305" cy="335.24782608695654" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="anchorPoint
+orientation: x-" data-x="3.4" data-y="-0.10000000000000003" cx="526.9565217391305" cy="323.0739130434783" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
@@ -226,8 +250,32 @@ globalConnNetId: connectivity_net9" data-x="-3.199" data-y="-0.7" x="113.1043478
 globalConnNetId: connectivity_net4" data-x="-2.35" data-y="0.325" x="170.86956521739128" y="283.5086956521739" width="12.17391304347828" height="27.39130434782612" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.016428571428571428" />
   </g>
   <g>
+    <rect data-type="rect" data-label="netId: pinheader.JP1 &gt; port.pin5 to .U1 &gt; .pin3
+globalConnNetId: connectivity_net3" data-x="-3.175" data-y="-0.09999999999999992" x="113.04347826086953" y="316.98695652173916" width="27.39130434782612" height="12.173913043478251" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.016428571428571428" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="netId: pinheader.JP1 &gt; port.pin4 to .U1 &gt; .pin4
+globalConnNetId: connectivity_net2" data-x="-3.175" data-y="-0.2999999999999999" x="113.04347826086953" y="329.1608695652174" width="27.39130434782612" height="12.173913043478251" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.016428571428571428" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="netId: pinheader.JP1 &gt; port.pin3 to .U1 &gt; .pin5
+globalConnNetId: connectivity_net1" data-x="-3.175" data-y="-0.49999999999999994" x="113.04347826086953" y="341.33478260869566" width="27.39130434782612" height="12.173913043478308" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.016428571428571428" />
+  </g>
+  <g>
     <rect data-type="rect" data-label="netId: GND
 globalConnNetId: connectivity_net0" data-x="0" data-y="-1.7499999999999998" x="313.9130434782609" y="414.3782608695652" width="12.173913043478251" height="18.260869565217376" fill="#00000066" stroke="#000000" stroke-width="0.016428571428571428" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="netId: pinheader.JP2 &gt; port.pin3 to .U1 &gt; .pin10
+globalConnNetId: connectivity_net5" data-x="3.175" data-y="-0.5" x="499.5652173913044" y="341.33478260869566" width="27.39130434782612" height="12.173913043478308" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.016428571428571428" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="netId: pinheader.JP2 &gt; port.pin4 to .U1 &gt; .pin11
+globalConnNetId: connectivity_net6" data-x="3.175" data-y="-0.3000000000000001" x="499.5652173913044" y="329.1608695652174" width="27.39130434782612" height="12.173913043478308" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.016428571428571428" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="netId: pinheader.JP2 &gt; port.pin5 to .U1 &gt; .pin12
+globalConnNetId: connectivity_net7" data-x="3.175" data-y="-0.10000000000000003" x="499.5652173913044" y="316.98695652173916" width="27.39130434782612" height="12.173913043478251" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.016428571428571428" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: pinheader.JP2 &gt; port.pin6 to .U1 &gt; .pin13

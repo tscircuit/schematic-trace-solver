@@ -225,14 +225,13 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         const isV = Math.abs(a.x - b.x) < EPS
         if (!isH && !isV) continue
 
-        // Only consider orientations perpendicular to the segment to avoid
-        // self-overlap with the host segment.
         const segmentAllowed: FacingDirection[] = isH
           ? (["y+", "y-"] as FacingDirection[])
           : (["x+", "x-"] as FacingDirection[])
-        const candidateOrients = orientations.filter((o) =>
-          segmentAllowed.includes(o),
-        )
+        const hasOrientationConstraint = this.availableOrientations.length > 0
+        const candidateOrients = hasOrientationConstraint
+          ? orientations
+          : orientations.filter((o) => segmentAllowed.includes(o))
         if (candidateOrients.length === 0) continue
 
         const anchors = anchorsForSegment(a, b)
