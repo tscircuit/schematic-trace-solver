@@ -6,6 +6,7 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { combineSameNetTraceSegments } from "./combineSameNetTraceSegments"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -28,13 +29,15 @@ type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
+  | "combining_same_net_segments"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
  * It operates in a multi-step pipeline:
  * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
- * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
- * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
+ * 2. **Combining Same-Net Segments**: It aligns close, parallel segments that belong to the same net.
+ * 3. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
+ * 4. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
  * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
  */
 export class TraceCleanupSolver extends BaseSolver {
@@ -66,10 +69,10 @@ export class TraceCleanupSolver extends BaseSolver {
         this.outputTraces = output.traces
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "combining_same_net_segments"
       } else if (this.activeSubSolver.failed) {
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "combining_same_net_segments"
       }
       return
     }
@@ -77,6 +80,9 @@ export class TraceCleanupSolver extends BaseSolver {
     switch (this.pipelineStep) {
       case "untangling_traces":
         this._runUntangleTracesStep()
+        break
+      case "combining_same_net_segments":
+        this._runCombineSameNetSegmentsStep()
         break
       case "minimizing_turns":
         this._runMinimizeTurnsStep()
@@ -92,6 +98,17 @@ export class TraceCleanupSolver extends BaseSolver {
       ...this.input,
       allTraces: Array.from(this.tracesMap.values()),
     })
+  }
+
+  private _runCombineSameNetSegmentsStep() {
+    this.outputTraces = combineSameNetTraceSegments(
+      Array.from(this.tracesMap.values()),
+      {
+        distanceThreshold: this.input.paddingBuffer,
+      },
+    )
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.pipelineStep = "minimizing_turns"
   }
 
   private _runMinimizeTurnsStep() {
