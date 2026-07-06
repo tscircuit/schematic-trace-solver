@@ -36,6 +36,7 @@ export class MspConnectionPairSolver extends BaseSolver {
 
   pinMap: Record<string, InputPin & { chipId: string }>
   userNetIdByPinId: Record<string, string | undefined>
+  directlyConnectedPinIds: Set<string>
 
   constructor({ inputProblem }: { inputProblem: InputProblem }) {
     super()
@@ -75,7 +76,17 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
-    this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+    this.directlyConnectedPinIds = new Set<string>()
+    for (const dc of inputProblem.directConnections) {
+      for (const pid of dc.pinIds) {
+        this.directlyConnectedPinIds.add(pid)
+      }
+    }
+
+    this.queuedDcNetIds = Object.keys(netConnMap.netMap).filter((netId) => {
+      const pinsInNet = netConnMap.getIdsConnectedToNet(netId)
+      return pinsInNet.some((pinId) => this.directlyConnectedPinIds.has(pinId))
+    })
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -95,7 +106,9 @@ export class MspConnectionPairSolver extends BaseSolver {
     const dcNetId = this.queuedDcNetIds.shift()!
 
     const allIds = this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[]
-    const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
+    const directlyConnectedPins = allIds.filter(
+      (id) => !!this.pinMap[id] && this.directlyConnectedPinIds.has(id),
+    )
 
     if (directlyConnectedPins.length <= 1) {
       return

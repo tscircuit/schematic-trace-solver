@@ -14,7 +14,11 @@ export const getConnectivityMapsFromInputProblem = (
     ])
   }
 
-  const netConnMap = new ConnectivityMap(directConnMap.netMap)
+  const copiedNetMap: Record<string, string[]> = {}
+  for (const [k, v] of Object.entries(directConnMap.netMap)) {
+    copiedNetMap[k] = [...v]
+  }
+  const netConnMap = new ConnectivityMap(copiedNetMap)
 
   for (const netConn of inputProblem.netConnections) {
     netConnMap.addConnections([[netConn.netId, ...netConn.pinIds]])
