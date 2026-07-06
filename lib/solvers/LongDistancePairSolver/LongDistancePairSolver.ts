@@ -13,6 +13,7 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { isNetLabelOnlyPassiveNet } from "../../utils/isNetLabelOnlyPassiveNet"
 
 const NEAREST_NEIGHBOR_COUNT = 3
 
@@ -76,6 +77,12 @@ export class LongDistancePairSolver extends BaseSolver {
     for (const netId of Object.keys(netConnMap.netMap)) {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
+
+      // Passive components joined exclusively through net labels shouldn't be
+      // hard-wired together — every pin gets a net label instead (issue #79)
+      if (isNetLabelOnlyPassiveNet({ inputProblem, pinIds: allPinIdsInNet })) {
+        continue
+      }
 
       const unconnectedPinIds = allPinIdsInNet.filter(
         (pinId) => !primaryConnectedPinIds.has(pinId),

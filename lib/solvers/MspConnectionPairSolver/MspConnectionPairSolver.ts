@@ -13,6 +13,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { isNetLabelOnlyPassiveNet } from "../../utils/isNetLabelOnlyPassiveNet"
 
 export type MspConnectionPairId = string
 
@@ -98,6 +99,17 @@ export class MspConnectionPairSolver extends BaseSolver {
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
     if (directlyConnectedPins.length <= 1) {
+      return
+    }
+
+    // Passive components joined exclusively through net labels shouldn't be
+    // hard-wired together — every pin gets a net label instead (issue #79)
+    if (
+      isNetLabelOnlyPassiveNet({
+        inputProblem: this.inputProblem,
+        pinIds: directlyConnectedPins,
+      })
+    ) {
       return
     }
 
