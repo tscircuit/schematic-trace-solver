@@ -20,6 +20,8 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { removeNetSegmentDuplicates } from "./removeNetSegmentDuplicates"
+import { simplifyPath } from "./simplifyPath"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -49,7 +51,7 @@ export class TraceCleanupSolver extends BaseSolver {
   constructor(solverInput: TraceCleanupSolverInput) {
     super()
     this.input = solverInput
-    this.outputTraces = [...solverInput.allTraces]
+    this.outputTraces = removeNetSegmentDuplicates(solverInput.allTraces)
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.traceIdQueue = Array.from(
       solverInput.allTraces.map((e) => e.mspPairId),
@@ -63,7 +65,7 @@ export class TraceCleanupSolver extends BaseSolver {
         const output = (
           this.activeSubSolver as UntangleTraceSubsolver
         ).getOutput()
-        this.outputTraces = output.traces
+        this.outputTraces = removeNetSegmentDuplicates(output.traces)
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
         this.pipelineStep = "minimizing_turns"
@@ -142,8 +144,14 @@ export class TraceCleanupSolver extends BaseSolver {
       })
     }
 
-    this.tracesMap.set(targetMspConnectionPairId, updatedTrace)
-    this.outputTraces = Array.from(this.tracesMap.values())
+    this.tracesMap.set(targetMspConnectionPairId, {
+      ...updatedTrace,
+      tracePath: simplifyPath(updatedTrace.tracePath),
+    })
+    this.outputTraces = removeNetSegmentDuplicates(
+      Array.from(this.tracesMap.values()),
+    )
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
   }
 
   getOutput() {
