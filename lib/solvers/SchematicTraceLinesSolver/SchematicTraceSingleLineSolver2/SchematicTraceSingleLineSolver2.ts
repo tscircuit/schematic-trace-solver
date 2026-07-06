@@ -2,16 +2,11 @@ import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type {
-  ChipId,
-  InputChip,
-  InputProblem,
-  PinId,
-} from "lib/types/InputProblem"
+import type { InputChip, InputProblem, PinId } from "lib/types/InputProblem"
 import type { Point } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
 import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
-import { getObstacleRects, type ChipWithBounds } from "./rect"
+import { getObstacleRects, type ObstacleRect } from "./rect"
 import { findFirstCollision, isHorizontal, isVertical } from "./collisions"
 import {
   aabbFromPoints,
@@ -32,16 +27,16 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   inputProblem: InputProblem
   chipMap: Record<string, InputChip>
 
-  obstacles: ChipWithBounds[]
-  rectById: Map<string, ChipWithBounds>
-  textObstacleIds: Set<string>
+  obstacles: ObstacleRect[]
+  textObstacles: Set<ObstacleRect>
   aabb: { minX: number; maxX: number; minY: number; maxY: number }
 
   baseElbow: Point[]
 
   solvedTracePath: Point[] | null = null
 
-  private queue: Array<{ path: Point[]; collisionChipIds: Set<ChipId> }> = []
+  private queue: Array<{ path: Point[]; collisionRects: Set<ObstacleRect> }> =
+    []
   private visited: Set<PathKey> = new Set()
 
   constructor(params: {
@@ -69,9 +64,8 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     this.obstacles = getObstacleRects(this.inputProblem, {
       textBoxPadding: this.getTextBoxPaddingForConnectionPair(),
     })
-    this.rectById = new Map(this.obstacles.map((r) => [r.chipId, r]))
-    this.textObstacleIds = new Set(
-      this.obstacles.filter((r) => r.isTextBox).map((r) => r.chipId),
+    this.textObstacles = new Set(
+      this.obstacles.filter((r) => r.kind === "text_box"),
     )
 
     // Build initial elbow path
@@ -97,7 +91,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     )
 
     // Seed search
-    this.queue.push({ path: this.baseElbow, collisionChipIds: new Set() })
+    this.queue.push({ path: this.baseElbow, collisionRects: new Set() })
     this.visited.add(pathKey(this.baseElbow))
   }
 
@@ -222,16 +216,16 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       return
     }
 
-    const { path, collisionChipIds } = state
+    const { path, collisionRects } = state
 
     const [PA, PB] = this.pins
     const collision = findFirstCollision(path, this.obstacles, {
-      excludeRectIdsForSegment: (segIndex) => {
+      excludeRectsForSegment: (segIndex) => {
         const lastSegIndex = path.length - 2
         if (segIndex === 0 || segIndex === lastSegIndex) {
-          return this.textObstacleIds
+          return this.textObstacles
         }
-        return new Set<string>()
+        return new Set<ObstacleRect>()
       },
     })
 
@@ -285,7 +279,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     // Note: PA and PB are already defined above
     const candidates: number[] = []
 
-    if (collisionChipIds.size === 0) {
+    if (collisionRects.size === 0) {
       // First collision on this search branch: use mid(PA, C) and mid(PB, C)
       const m1 = midBetweenPointAndRect(axis, { x: PA.x, y: PA.y }, rect)
       const m2 = midBetweenPointAndRect(axis, { x: PB.x, y: PB.y }, rect)
@@ -296,20 +290,14 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       candidates.push(...uniqueCandidates)
     } else {
       // Subsequent collisions: mid between C and nearest rect/bounds from the set
-      const mids = candidateMidsFromSet(
-        axis,
-        rect,
-        this.rectById,
-        collisionChipIds,
-        this.aabb,
-      )
+      const mids = candidateMidsFromSet(axis, rect, collisionRects, this.aabb)
       candidates.push(...mids)
     }
 
     // Generate new shifted paths, order by total path length (shorter first)
     const newStates: Array<{
       path: Point[]
-      collisionRectIds: Set<string>
+      collisionRects: Set<ObstacleRect>
       len: number
     }> = []
 
@@ -319,15 +307,15 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       const key = pathKey(newPath)
       if (this.visited.has(key)) continue
       this.visited.add(key)
-      const nextSet = new Set(collisionChipIds)
-      nextSet.add(rect.chipId)
+      const nextSet = new Set(collisionRects)
+      nextSet.add(rect)
       const len = this.pathLength(newPath)
-      newStates.push({ path: newPath, collisionRectIds: nextSet, len })
+      newStates.push({ path: newPath, collisionRects: nextSet, len })
     }
 
     newStates.sort((a, b) => a.len - b.len)
     for (const st of newStates) {
-      this.queue.push({ path: st.path, collisionChipIds: st.collisionRectIds })
+      this.queue.push({ path: st.path, collisionRects: st.collisionRects })
     }
   }
 
@@ -357,7 +345,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     })
 
     // Draw all the new candidates
-    for (const { path, collisionChipIds: collisionRectIds } of this.queue) {
+    for (const { path } of this.queue) {
       g.lines!.push({ points: path, strokeColor: "teal", strokeDash: "2 2" })
     }
 

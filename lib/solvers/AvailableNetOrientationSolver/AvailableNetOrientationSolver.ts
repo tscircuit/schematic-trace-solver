@@ -645,7 +645,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       return "chip-collision"
     }
     if (rectIntersectsAnyTextBox(bounds, this.inputProblem)) {
-      return "chip-collision"
+      return "text-collision"
     }
     if (this.sharesChipBoundary(bounds)) {
       return "chip-collision"

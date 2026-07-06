@@ -229,7 +229,7 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
     const bounds = getLabelBounds(candidate)
     if (this.intersectsAnyChip(bounds)) return "chip-collision"
     if (rectIntersectsAnyTextBox(bounds, this.inputProblem))
-      return "chip-collision"
+      return "text-collision"
     if (traceCrossesBoundsInterior(bounds, this.traces))
       return "trace-collision"
     if (this.intersectsAnyOtherLabel(bounds, labelIndex)) {

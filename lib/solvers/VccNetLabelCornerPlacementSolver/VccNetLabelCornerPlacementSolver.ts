@@ -173,7 +173,7 @@ export class VccNetLabelCornerPlacementSolver extends BaseSolver {
   ): CornerCandidateStatus {
     if (this.intersectsAnyChip(bounds)) return "chip-collision"
     if (rectIntersectsAnyTextBox(bounds, this.inputProblem))
-      return "chip-collision"
+      return "text-collision"
     if (traceCrossesBoundsInterior(bounds, this.traceMap)) {
       return "trace-collision"
     }
