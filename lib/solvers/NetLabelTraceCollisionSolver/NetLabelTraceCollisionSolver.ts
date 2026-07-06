@@ -1,13 +1,66 @@
+import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { SingleOverlapSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/SingleOverlapSolver/SingleOverlapSolver"
-import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import {
+  getCenterFromAnchor,
+  getRectBounds,
+} from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import type { InputProblem } from "lib/types/InputProblem"
+
+const ON_PATH_EPS = 1e-6
+
+function getClosestPointOnSegment(params: {
+  point: Point
+  segmentStart: Point
+  segmentEnd: Point
+}): Point {
+  const { point, segmentStart, segmentEnd } = params
+  const dx = segmentEnd.x - segmentStart.x
+  const dy = segmentEnd.y - segmentStart.y
+  const segmentLengthSq = dx * dx + dy * dy
+  if (segmentLengthSq === 0) return { x: segmentStart.x, y: segmentStart.y }
+  const projection =
+    ((point.x - segmentStart.x) * dx + (point.y - segmentStart.y) * dy) /
+    segmentLengthSq
+  const clampedProjection = Math.max(0, Math.min(1, projection))
+  return {
+    x: segmentStart.x + clampedProjection * dx,
+    y: segmentStart.y + clampedProjection * dy,
+  }
+}
+
+function getClosestPointOnPath(point: Point, path: Point[]): Point {
+  let closestPoint: Point = path[0]!
+  let closestDistSq = Infinity
+  for (let i = 0; i < path.length - 1; i++) {
+    const candidatePoint = getClosestPointOnSegment({
+      point,
+      segmentStart: path[i]!,
+      segmentEnd: path[i + 1]!,
+    })
+    const dx = candidatePoint.x - point.x
+    const dy = candidatePoint.y - point.y
+    const candidateDistSq = dx * dx + dy * dy
+    if (candidateDistSq < closestDistSq) {
+      closestDistSq = candidateDistSq
+      closestPoint = candidatePoint
+    }
+  }
+  return closestPoint
+}
+
+function isPointOnPath(point: Point, path: Point[]): boolean {
+  const closestPoint = getClosestPointOnPath(point, path)
+  return (
+    Math.hypot(closestPoint.x - point.x, closestPoint.y - point.y) < ON_PATH_EPS
+  )
+}
 
 /**
  * Merges all labels that touch/overlap with each other (transitively) around
@@ -159,10 +212,12 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
             (t) => t.mspPairId === this.activeSubSolver!.initialTrace.mspPairId,
           )
           if (idx !== -1) {
+            const oldPath = this.outputTraces[idx]!.tracePath
             this.outputTraces[idx] = {
               ...this.outputTraces[idx],
               tracePath: solvedPath,
             }
+            this.reanchorLabelsOnMovedTrace(this.outputTraces[idx]!, oldPath)
           }
         }
         this.activeSubSolver = null
@@ -227,6 +282,37 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
       paddingBuffer: PADDING_BUFFER,
       detourCount,
     })
+  }
+
+  /**
+   * When a trace is rerouted, net labels that were anchored on the old path
+   * can be left floating in space. Snap their anchor back onto the new path.
+   */
+  private reanchorLabelsOnMovedTrace(
+    movedTrace: SolvedTracePath,
+    oldPath: Point[],
+  ) {
+    for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
+      const label = this.outputNetLabelPlacements[i]!
+      if (label.globalConnNetId !== movedTrace.globalConnNetId) continue
+      if (isPointOnPath(label.anchorPoint, movedTrace.tracePath)) continue
+      if (!isPointOnPath(label.anchorPoint, oldPath)) continue
+
+      const newAnchor = getClosestPointOnPath(
+        label.anchorPoint,
+        movedTrace.tracePath,
+      )
+      this.outputNetLabelPlacements[i] = {
+        ...label,
+        anchorPoint: newAnchor,
+        center: getCenterFromAnchor(
+          newAnchor,
+          label.orientation,
+          label.width,
+          label.height,
+        ),
+      }
+    }
   }
 
   getOutput() {
