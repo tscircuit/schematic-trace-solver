@@ -2,31 +2,31 @@
   <rect width="100%" height="100%" fill="white" />
   <g>
     <circle data-type="point" data-label="U1.3
-x+" data-x="1.05" data-y="-0.1" cx="398.5365853658536" cy="313.1707317073171" r="3" fill="hsl(321, 100%, 50%, 0.8)" />
+x+" data-x="1.05" data-y="-0.1" cx="359.5652173913043" cy="313.9130434782609" r="3" fill="hsl(321, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="U1.4
-x+" data-x="1.05" data-y="0.1" cx="398.5365853658536" cy="279.0243902439025" r="3" fill="hsl(322, 100%, 50%, 0.8)" />
+x+" data-x="1.05" data-y="0.1" cx="359.5652173913043" cy="283.47826086956525" r="3" fill="hsl(322, 100%, 50%, 0.8)" />
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y-" data-x="1.25" data-y="-0.1" cx="432.68292682926824" cy="313.1707317073171" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: y-" data-x="2.5300000000000002" data-y="-0.1" cx="584.7826086956521" cy="313.9130434782609" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
-    <polyline data-points="1.05,-0.1 1.05,0.1" data-type="line" data-label="" points="398.5365853658536,313.1707317073171 398.5365853658536,279.0243902439025" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
+    <polyline data-points="1.05,-0.1 1.05,0.1" data-type="line" data-label="" points="359.5652173913043,313.9130434782609 359.5652173913043,283.47826086956525" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
   </g>
   <g>
-    <polyline data-points="1.05,-0.1 1.25,-0.1 1.25,0.1 1.05,0.1" data-type="line" data-label="" points="398.5365853658536,313.1707317073171 432.68292682926824,313.1707317073171 432.68292682926824,279.0243902439025 398.5365853658536,279.0243902439025" fill="none" stroke="purple" stroke-width="1" />
+    <polyline data-points="1.05,-0.1 2.5300000000000002,-0.1 2.5300000000000002,0.1 1.05,0.1" data-type="line" data-label="" points="359.5652173913043,313.9130434782609 584.7826086956521,313.9130434782609 584.7826086956521,283.47826086956525 359.5652173913043,283.47826086956525" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
-    <rect data-type="rect" data-label="U1" data-x="0" data-y="0" x="40" y="244.87804878048783" width="358.5365853658536" height="102.43902439024387" fill="hsl(164, 100%, 50%, 0.8)" stroke="black" stroke-width="0.005857142857142858" />
+    <rect data-type="rect" data-label="U1" data-x="0" data-y="0" x="40.00000000000006" y="253.0434782608696" width="319.56521739130426" height="91.30434782608691" fill="hsl(164, 100%, 50%, 0.8)" stroke="black" stroke-width="0.006571428571428573" />
   </g>
   <g>
-    <rect data-type="rect" data-label="SOMETHING_THAT_IS_LONG" data-x="0.79" data-y="-0.43" x="108.29268292682927" y="354.1463414634147" width="491.7073170731707" height="30.73170731707313" fill="rgba(160, 0, 220, 0.14)" stroke="black" stroke-width="0.005857142857142858" />
+    <rect data-type="rect" data-label="SOMETHING_THAT_IS_LONG" data-x="0.79" data-y="-0.43" x="100.86956521739135" y="350.4347826086956" width="438.26086956521726" height="27.39130434782612" fill="rgba(160, 0, 220, 0.14)" stroke="black" stroke-width="0.006571428571428573" />
   </g>
   <g>
     <rect data-type="rect" data-label="netId: GND
-globalConnNetId: connectivity_net0" data-x="1.25" data-y="-0.33999999999999997" x="415.60975609756093" y="313.1707317073171" width="34.14634146341467" height="81.95121951219511" fill="#00000066" stroke="#000000" stroke-width="0.005857142857142858" />
+globalConnNetId: connectivity_net0" data-x="2.5300000000000002" data-y="-0.33999999999999997" x="569.5652173913043" y="313.9130434782609" width="30.43478260869574" height="73.04347826086956" fill="#00000066" stroke="#000000" stroke-width="0.006571428571428573" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
@@ -56,12 +56,12 @@ globalConnNetId: connectivity_net0" data-x="1.25" data-y="-0.33999999999999997" 
 
       // Calculate real coordinates using inverse transformation
       const matrix = {
-        "a": 170.73170731707316,
+        "a": 152.17391304347822,
         "c": 0,
-        "e": 219.2682926829268,
+        "e": 199.7826086956522,
         "b": 0,
-        "d": -170.73170731707316,
-        "f": 296.0975609756098
+        "d": -152.17391304347822,
+        "f": 298.69565217391306
       };
       // Manually invert and apply the affine transform
       // Since we only use translate and scale, we can directly compute:

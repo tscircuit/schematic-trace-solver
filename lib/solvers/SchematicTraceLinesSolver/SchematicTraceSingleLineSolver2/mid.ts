@@ -1,5 +1,5 @@
 import type { Point } from "@tscircuit/math-utils"
-import type { ChipWithBounds } from "./rect"
+import type { ObstacleRect } from "./rect"
 
 const EPS = 1e-9
 
@@ -15,7 +15,7 @@ export const aabbFromPoints = (a: Point, b: Point) => ({
 export const midBetweenPointAndRect = (
   axis: Axis,
   p: Point,
-  r: ChipWithBounds,
+  r: ObstacleRect,
   eps = EPS,
 ): number[] => {
   if (axis === "x") {
@@ -41,15 +41,12 @@ export const midBetweenPointAndRect = (
 
 export const candidateMidsFromSet = (
   axis: Axis,
-  colliding: ChipWithBounds,
-  rectsById: Map<string, ChipWithBounds>,
-  collisionRectIds: Set<string>,
+  colliding: ObstacleRect,
+  collisionRects: Set<ObstacleRect>,
   aabb: { minX: number; maxX: number; minY: number; maxY: number },
   eps = EPS,
 ): number[] => {
-  const setRects = [...collisionRectIds]
-    .map((id) => rectsById.get(id))
-    .filter((r): r is ChipWithBounds => !!r)
+  const setRects = [...collisionRects]
 
   if (axis === "x") {
     const leftBoundaries = [aabb.minX, ...setRects.map((r) => r.maxX)].filter(
