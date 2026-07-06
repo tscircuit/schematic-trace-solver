@@ -25,6 +25,7 @@ export type TraceCornerCandidate = {
 export type CornerCandidateStatus =
   | "valid"
   | "chip-collision"
+  | "text-collision"
   | "trace-collision"
   | "netlabel-collision"
 

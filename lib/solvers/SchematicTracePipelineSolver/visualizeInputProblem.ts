@@ -47,6 +47,17 @@ export const visualizeInputProblem = (
     }
   }
 
+  for (const textBox of inputProblem.textBoxes ?? []) {
+    graphics.rects.push({
+      label: textBox.text ?? "schematic_text",
+      center: textBox.center,
+      width: textBox.width,
+      height: textBox.height,
+      fill: "rgba(160, 0, 220, 0.14)",
+      strokeColor: "rgba(160, 0, 220, 0.9)",
+    } as any)
+  }
+
   for (const directConn of inputProblem.directConnections) {
     const [pinId1, pinId2] = directConn.pinIds
     const pin1 = pinIdMap.get(pinId1)!
