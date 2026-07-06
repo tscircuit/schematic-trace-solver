@@ -281,6 +281,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
       problem: this.inputProblem,
       paddingBuffer: PADDING_BUFFER,
       detourCount,
+      tracesToAvoidOverlapping: this.outputTraces,
     })
   }
 
