@@ -59,10 +59,16 @@ test("repro61 net-label-only passive nets are not hard-wired together", () => {
     expect(placement.pinIds).toHaveLength(1)
   }
   expect(
-    placements.filter((p) => p.netId === "GND").map((p) => p.pinIds[0]).sort(),
+    placements
+      .filter((p) => p.netId === "GND")
+      .map((p) => p.pinIds[0])
+      .sort(),
   ).toEqual(["C1.1", "C2.1"])
   expect(
-    placements.filter((p) => p.netId === "VCC").map((p) => p.pinIds[0]).sort(),
+    placements
+      .filter((p) => p.netId === "VCC")
+      .map((p) => p.pinIds[0])
+      .sort(),
   ).toEqual(["C1.2", "C2.2"])
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
