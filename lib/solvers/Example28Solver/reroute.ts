@@ -21,7 +21,6 @@ import type {
 } from "./types"
 
 const LABEL_SIDE_CLEARANCE = 0.1
-const LABEL_HUG_CLEARANCE = 0.001
 
 export const findBestReroutePath = ({
   trace,
@@ -188,6 +187,8 @@ const generateEndpointDetourCandidates = (
   const start = trace.tracePath[0]
   const end = trace.tracePath[trace.tracePath.length - 1]
   if (!start || !end) return []
+  const startExit = trace.tracePath[1] ?? start
+  const endEntry = trace.tracePath[trace.tracePath.length - 2] ?? end
 
   const bounds = getRectBounds(label.center, label.width, label.height)
   const padding = LABEL_SIDE_CLEARANCE
@@ -204,18 +205,22 @@ const generateEndpointDetourCandidates = (
     candidates.push(
       [
         start,
-        { x: start.x, y: topY },
+        startExit,
+        { x: startExit.x, y: topY },
         { x: sideX, y: topY },
         { x: sideX, y: bottomY },
-        { x: end.x, y: bottomY },
+        { x: endEntry.x, y: bottomY },
+        endEntry,
         end,
       ],
       [
         start,
-        { x: start.x, y: bottomY },
+        startExit,
+        { x: startExit.x, y: bottomY },
         { x: sideX, y: bottomY },
         { x: sideX, y: topY },
-        { x: end.x, y: topY },
+        { x: endEntry.x, y: topY },
+        endEntry,
         end,
       ],
     )
@@ -231,6 +236,8 @@ const generateLabelHugCandidates = (
   const start = trace.tracePath[0]
   const end = trace.tracePath[trace.tracePath.length - 1]
   if (!start || !end) return []
+  const startExit = trace.tracePath[1] ?? start
+  const endEntry = trace.tracePath[trace.tracePath.length - 2] ?? end
 
   const labelDirection = dir(label.orientation)
   if (labelDirection.x === 0) return []
@@ -240,27 +247,31 @@ const generateLabelHugCandidates = (
     labelDirection.x < 0
       ? bounds.minX - LABEL_SIDE_CLEARANCE
       : bounds.maxX + LABEL_SIDE_CLEARANCE
-  const topY = bounds.maxY + LABEL_HUG_CLEARANCE
-  const bottomY = bounds.minY - LABEL_HUG_CLEARANCE
-  const startsAboveEnd = start.y >= end.y
+  const topY = bounds.maxY + LABEL_SIDE_CLEARANCE
+  const bottomY = bounds.minY - LABEL_SIDE_CLEARANCE
+  const startsAboveEnd = startExit.y >= endEntry.y
   const firstY = startsAboveEnd ? topY : bottomY
   const secondY = startsAboveEnd ? bottomY : topY
 
   return [
     [
       start,
-      { x: start.x, y: firstY },
+      startExit,
+      { x: startExit.x, y: firstY },
       { x: sideX, y: firstY },
       { x: sideX, y: secondY },
-      { x: end.x, y: secondY },
+      { x: endEntry.x, y: secondY },
+      endEntry,
       end,
     ],
     [
       start,
-      { x: start.x, y: secondY },
+      startExit,
+      { x: startExit.x, y: secondY },
       { x: sideX, y: secondY },
       { x: sideX, y: firstY },
-      { x: end.x, y: firstY },
+      { x: endEntry.x, y: firstY },
+      endEntry,
       end,
     ],
   ]
@@ -393,10 +404,10 @@ const getClearedHorizontalY = ({
 
   const labelCenterY = (labelBounds.minY + labelBounds.maxY) / 2
   if (start.y >= labelCenterY) {
-    return labelBounds.maxY + LABEL_HUG_CLEARANCE
+    return labelBounds.maxY + LABEL_SIDE_CLEARANCE
   }
 
-  return labelBounds.minY - LABEL_HUG_CLEARANCE
+  return labelBounds.minY - LABEL_SIDE_CLEARANCE
 }
 
 const markSelectedCandidate = (
