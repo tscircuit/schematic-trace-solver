@@ -22,8 +22,8 @@ import {
   rectsOverlap,
   simplifyOrthogonalPath,
   traceCrossesBoundsInterior,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyBounds,
+  tracePathIntersectsBounds,
 } from "./geometry"
 import { getPinMap, getTracePins, toNetLabelPlacementPatch } from "./traces"
 import type {
@@ -107,7 +107,17 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       }
     }
 
-    return indices
+    return indices.sort(
+      (a, b) =>
+        this.getAvailableOrientationPriority(
+          this.outputNetLabelPlacements[b]!,
+        ) -
+        this.getAvailableOrientationPriority(this.outputNetLabelPlacements[a]!),
+    )
+  }
+
+  private getAvailableOrientationPriority(label: NetLabelPlacement) {
+    return this.getAvailableOrientations(label).some(isYOrientation) ? 1 : 0
   }
 
   private shouldProcessLabel(label: NetLabelPlacement) {
@@ -176,53 +186,128 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private findCorrectedCandidate(label: NetLabelPlacement, labelIndex: number) {
-    const orientations = this.getAvailableOrientations(label)
-    const rotatedCandidate = this.findValidRotatedCandidate(
+    const orientations = this.getPreferredOrientations(
       label,
-      labelIndex,
+      this.getAvailableOrientations(label),
+    )
+    const candidateResults: EvaluatedCandidate[] = []
+
+    for (const orientation of orientations) {
+      candidateResults.push(
+        this.evaluateCandidate(
+          this.createCandidate(
+            label,
+            this.getSearchStartAnchor(label, orientation),
+            orientation,
+          ),
+          label,
+          labelIndex,
+          "rotate",
+        ),
+      )
+    }
+
+    for (const orientation of orientations) {
+      candidateResults.push(
+        ...this.getShiftedCandidateResults(label, orientation, labelIndex),
+      )
+    }
+
+    for (const orientation of orientations) {
+      candidateResults.push(
+        ...this.getLateralShiftedCandidateResults(
+          label,
+          orientation,
+          labelIndex,
+        ),
+      )
+    }
+
+    this.currentCandidateResults = candidateResults
+    const selectedCandidate = this.selectBestCandidate(
+      label,
       orientations,
+      candidateResults,
     )
-    if (rotatedCandidate) return rotatedCandidate
+    if (selectedCandidate) selectedCandidate.selected = true
 
-    const shiftedCandidate = this.findValidShiftedCandidate(
-      label,
-      orientations[0]!,
-      labelIndex,
+    return selectedCandidate
+  }
+
+  private selectBestCandidate(
+    label: NetLabelPlacement,
+    orientations: FacingDirection[],
+    candidateResults: EvaluatedCandidate[],
+  ) {
+    return candidateResults
+      .filter((candidate) => candidate.status === "valid")
+      .sort((a, b) => {
+        const scoreDelta =
+          this.getCandidateScore(label, orientations, a) -
+          this.getCandidateScore(label, orientations, b)
+        if (Math.abs(scoreDelta) > EPS) return scoreDelta
+
+        const phaseDelta =
+          this.getPhasePenalty(a.phase) - this.getPhasePenalty(b.phase)
+        if (phaseDelta !== 0) return phaseDelta
+
+        const orientationDelta =
+          orientations.indexOf(a.orientation) -
+          orientations.indexOf(b.orientation)
+        if (orientationDelta !== 0) return orientationDelta
+
+        return (
+          a.anchorPoint.x - b.anchorPoint.x || a.anchorPoint.y - b.anchorPoint.y
+        )
+      })[0]
+  }
+
+  private getCandidateScore(
+    label: NetLabelPlacement,
+    orientations: FacingDirection[],
+    candidate: EvaluatedCandidate,
+  ) {
+    const anchorMovement =
+      Math.abs(candidate.anchorPoint.x - label.anchorPoint.x) +
+      Math.abs(candidate.anchorPoint.y - label.anchorPoint.y)
+    const connectorLength = this.getPathLength(
+      this.getCandidateConnectorTrace(label, candidate),
     )
-    if (shiftedCandidate) return shiftedCandidate
+    const orientationPenalty =
+      orientations.indexOf(candidate.orientation) * 0.05
+    const outwardDirection = this.getChipOutwardDirection(label.anchorPoint)
+    const outwardBonus = outwardDirection
+      ? this.getDirectionDot(dir(candidate.orientation), outwardDirection) * 0.2
+      : 0
 
-    return this.findValidLateralShiftedCandidate(
-      label,
-      orientations[0]!,
-      labelIndex,
+    return (
+      anchorMovement +
+      connectorLength * 0.1 +
+      this.getPhasePenalty(candidate.phase) +
+      orientationPenalty -
+      outwardBonus
     )
   }
 
-  private findValidRotatedCandidate(
-    label: NetLabelPlacement,
-    labelIndex: number,
-    orientations: FacingDirection[],
-  ) {
-    for (const orientation of orientations) {
-      const candidate = this.createCandidate(
-        label,
-        this.getSearchStartAnchor(label, orientation),
-        orientation,
-      )
-      const result = this.evaluateCandidate(
-        candidate,
-        label,
-        labelIndex,
-        "rotate",
-      )
-      this.currentCandidateResults.push(result)
-      if (result.status === "valid") {
-        result.selected = true
-        return result
-      }
+  private getPhasePenalty(phase: CandidatePhase) {
+    switch (phase) {
+      case "rotate":
+        return 0
+      case "shift":
+        return 0.1
+      case "lateral-shift":
+        return 0.2
     }
+  }
 
-    return null
+  private getPathLength(path: Point[]) {
+    let length = 0
+    for (let i = 0; i < path.length - 1; i++) {
+      const start = path[i]!
+      const end = path[i + 1]!
+      length += Math.abs(end.x - start.x) + Math.abs(end.y - start.y)
+    }
+    return length
   }
 
   private getAvailableOrientations(label: NetLabelPlacement) {
@@ -230,7 +315,24 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return this.inputProblem.availableNetLabelOrientations[effectiveNetId] ?? []
   }
 
-  private findValidShiftedCandidate(
+  private getPreferredOrientations(
+    label: NetLabelPlacement,
+    orientations: FacingDirection[],
+  ) {
+    const chipOutwardDirection = this.getChipOutwardDirection(label.anchorPoint)
+    if (!chipOutwardDirection) return orientations
+
+    return orientations
+      .map((orientation, index) => ({
+        orientation,
+        index,
+        score: this.getDirectionDot(dir(orientation), chipOutwardDirection),
+      }))
+      .sort((a, b) => b.score - a.score || a.index - b.index)
+      .map(({ orientation }) => orientation)
+  }
+
+  private getShiftedCandidateResults(
     label: NetLabelPlacement,
     orientation: FacingDirection,
     labelIndex: number,
@@ -246,6 +348,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       outwardDirection.x === 0 && outwardDirection.y === 0
         ? 0
         : this.maxSearchDistance
+    const results: EvaluatedCandidate[] = []
 
     for (
       let outwardDistance = 0;
@@ -256,20 +359,20 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         x: initialBaseAnchor.x + outwardDirection.x * outwardDistance,
         y: initialBaseAnchor.y + outwardDirection.y * outwardDistance,
       }
-      const candidate = this.findValidCandidateInShiftColumn({
-        label,
-        labelIndex,
-        orientation,
-        direction,
-        baseAnchor,
-        maxSearchDistance,
-        outwardDistance,
-      })
-
-      if (candidate) return candidate
+      results.push(
+        ...this.getCandidateResultsInShiftColumn({
+          label,
+          labelIndex,
+          orientation,
+          direction,
+          baseAnchor,
+          maxSearchDistance,
+          outwardDistance,
+        }),
+      )
     }
 
-    return null
+    return results
   }
 
   /**
@@ -281,11 +384,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
    *   -1·step, +1·step, -2·step, +2·step, …
    * so the nearest escape routes are tested first.
    */
-  private findValidLateralShiftedCandidate(
+  private getLateralShiftedCandidateResults(
     label: NetLabelPlacement,
     orientation: FacingDirection,
     labelIndex: number,
-  ): EvaluatedCandidate | null {
+  ) {
     const direction = dir(orientation)
     const initialBaseAnchor = this.getSearchStartAnchor(label, orientation)
 
@@ -296,6 +399,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     const maxSteps = Math.ceil(this.maxSearchDistance / LABEL_SEARCH_STEP)
+    const results: EvaluatedCandidate[] = []
 
     for (let step = 1; step <= maxSteps; step++) {
       for (const sign of [-1, 1]) {
@@ -311,25 +415,25 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           baseAnchor,
         )
 
-        const candidate = this.findValidCandidateInShiftColumn({
-          label,
-          labelIndex,
-          orientation,
-          direction,
-          baseAnchor,
-          maxSearchDistance,
-          outwardDistance: lateralOffset,
-          phase: "lateral-shift",
-        })
-
-        if (candidate) return candidate
+        results.push(
+          ...this.getCandidateResultsInShiftColumn({
+            label,
+            labelIndex,
+            orientation,
+            direction,
+            baseAnchor,
+            maxSearchDistance,
+            outwardDistance: lateralOffset,
+            phase: "lateral-shift",
+          }),
+        )
       }
     }
 
-    return null
+    return results
   }
 
-  private findValidCandidateInShiftColumn(params: {
+  private getCandidateResultsInShiftColumn(params: {
     label: NetLabelPlacement
     labelIndex: number
     orientation: FacingDirection
@@ -349,6 +453,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       outwardDistance,
       phase = "shift",
     } = params
+    const results: EvaluatedCandidate[] = []
 
     for (
       let distance = LABEL_SEARCH_STEP;
@@ -368,16 +473,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         distance,
         outwardDistance,
       )
-      this.currentCandidateResults.push(result)
+      results.push(result)
 
-      if (result.status === "valid") {
-        result.selected = true
-        return result
-      }
       if (result.status === "trace-collision") break
     }
 
-    return null
+    return results
   }
 
   private evaluateCandidate(
@@ -522,6 +623,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     orientation: FacingDirection,
     baseAnchor: Point,
   ) {
+    const chipOutwardDirection = this.getChipOutwardDirection(label.anchorPoint)
+    if (
+      chipOutwardDirection &&
+      this.getDirectionDot(dir(orientation), chipOutwardDirection) > 0
+    ) {
+      return this.getSearchDistanceLimit(label, orientation)
+    }
+
     const chipId = label.pinIds
       .map((pid) => this.pinMap[pid]?.chipId)
       .find(Boolean)
@@ -541,6 +650,19 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return this.getSearchDistanceLimit(label, orientation)
+  }
+
+  private getChipOutwardDirection(point: Point): Point | null {
+    const chipSide = this.getChipSideForPoint(point)
+    if (chipSide === "left") return { x: -1, y: 0 }
+    if (chipSide === "right") return { x: 1, y: 0 }
+    if (chipSide === "bottom") return { x: 0, y: -1 }
+    if (chipSide === "top") return { x: 0, y: 1 }
+    return null
+  }
+
+  private getDirectionDot(a: Point, b: Point) {
+    return a.x * b.x + a.y * b.y
   }
 
   private createCandidate(
