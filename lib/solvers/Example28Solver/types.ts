@@ -13,6 +13,7 @@ export interface Example28SolverParams {
 
 export type TracePathScore = {
   labelIntersections: number
+  displacedAttachedLabels: number
   labelHugDistance: number
   traceIntersections: number
   pathLength: number

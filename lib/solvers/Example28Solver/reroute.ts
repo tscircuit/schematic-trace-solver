@@ -14,6 +14,8 @@ import {
   getPathLength,
   isPathCollidingWithChipInterior,
 } from "./geometry"
+import { getMovedAnchorPointForReroute } from "./getMovedAnchorPointForReroute"
+import { isLabelAttachedToTrace } from "./isLabelAttachedToTrace"
 import type {
   ChipObstacle,
   RerouteCandidateResult,
@@ -22,6 +24,7 @@ import type {
 
 const LABEL_SIDE_CLEARANCE = 0.1
 const LABEL_HUG_CLEARANCE = 0.001
+const ATTACHED_LABEL_MOVE_TOLERANCE = 0.05
 
 export const findBestReroutePath = ({
   trace,
@@ -429,10 +432,50 @@ const scoreTracePath = ({
       traces: [candidateTrace],
       netLabels: outputNetLabelPlacements,
     }).length,
+    displacedAttachedLabels: countDisplacedAttachedLabels({
+      trace,
+      tracePath,
+      outputNetLabelPlacements,
+    }),
     labelHugDistance: getLabelHugDistance(tracePath, obstacleLabel),
     traceIntersections: countTraceIntersections(candidateTrace, outputTraces),
     pathLength: getPathLength(tracePath),
   }
+}
+
+const countDisplacedAttachedLabels = ({
+  trace,
+  tracePath,
+  outputNetLabelPlacements,
+}: {
+  trace: SolvedTracePath
+  tracePath: Point[]
+  outputNetLabelPlacements: NetLabelPlacement[]
+}) => {
+  if (tracePath === trace.tracePath) return 0
+
+  let displacedAttachedLabels = 0
+
+  for (const label of outputNetLabelPlacements) {
+    if (!isLabelAttachedToTrace(label, trace)) continue
+
+    const movedAnchorPoint = getMovedAnchorPointForReroute(
+      label.anchorPoint,
+      trace.tracePath,
+      tracePath,
+    )
+    if (!movedAnchorPoint) continue
+
+    const displacement =
+      Math.abs(movedAnchorPoint.x - label.anchorPoint.x) +
+      Math.abs(movedAnchorPoint.y - label.anchorPoint.y)
+
+    if (displacement <= ATTACHED_LABEL_MOVE_TOLERANCE) continue
+
+    displacedAttachedLabels += 1
+  }
+
+  return displacedAttachedLabels
 }
 
 const countTraceIntersections = (
@@ -450,6 +493,9 @@ const countTraceIntersections = (
 const isBetterScore = (score: TracePathScore, bestScore: TracePathScore) => {
   if (score.labelIntersections !== bestScore.labelIntersections) {
     return score.labelIntersections < bestScore.labelIntersections
+  }
+  if (score.displacedAttachedLabels !== bestScore.displacedAttachedLabels) {
+    return score.displacedAttachedLabels < bestScore.displacedAttachedLabels
   }
   if (score.labelHugDistance !== bestScore.labelHugDistance) {
     return score.labelHugDistance < bestScore.labelHugDistance
