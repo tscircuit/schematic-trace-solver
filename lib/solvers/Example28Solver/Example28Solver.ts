@@ -155,7 +155,7 @@ export class Example28Solver extends BaseSolver {
     if (traceIndex === -1) return
 
     const currentTrace = this.outputTraces[traceIndex]!
-    if (this.tryMoveLabelOutward(overlap)) return
+    if (this.tryMoveLabelOutward(overlap.label)) return
 
     const rerouteResult = findBestReroutePath({
       trace: currentTrace,
@@ -182,13 +182,13 @@ export class Example28Solver extends BaseSolver {
     })
   }
 
-  private tryMoveLabelOutward(overlap: TraceLabelOverlap) {
+  private tryMoveLabelOutward(labelToMove: NetLabelPlacement) {
     const labelIndex = this.outputNetLabelPlacements.findIndex(
       (label) =>
-        label.globalConnNetId === overlap.label.globalConnNetId &&
-        label.anchorPoint.x === overlap.label.anchorPoint.x &&
-        label.anchorPoint.y === overlap.label.anchorPoint.y &&
-        label.pinIds.join(",") === overlap.label.pinIds.join(","),
+        label.globalConnNetId === labelToMove.globalConnNetId &&
+        label.anchorPoint.x === labelToMove.anchorPoint.x &&
+        label.anchorPoint.y === labelToMove.anchorPoint.y &&
+        label.pinIds.join(",") === labelToMove.pinIds.join(","),
     )
     if (labelIndex === -1) return false
 
