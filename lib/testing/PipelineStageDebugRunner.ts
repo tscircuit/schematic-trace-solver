@@ -1,9 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
-import {
-  getPngBufferFromGraphicsObject,
-  getSvgFromGraphicsObject,
-} from "graphics-debug"
+import * as graphicsDebug from "graphics-debug"
+import { getSvgFromGraphicsObject } from "graphics-debug"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
@@ -262,6 +260,25 @@ export class PipelineStageDebugRunner {
   }
 
   private renderGraphicsToPng(graphics: GraphicsObject): Promise<Uint8Array> {
+    const getPngBufferFromGraphicsObject = (
+      graphicsDebug as unknown as {
+        getPngBufferFromGraphicsObject?: (
+          graphics: GraphicsObject,
+          opts: {
+            backgroundColor: string
+            pngWidth: number
+            pngHeight: number
+          },
+        ) => Promise<Uint8Array>
+      }
+    ).getPngBufferFromGraphicsObject
+
+    if (!getPngBufferFromGraphicsObject) {
+      throw new Error(
+        "graphics-debug does not provide getPngBufferFromGraphicsObject; run with --no-png --svg or upgrade graphics-debug",
+      )
+    }
+
     return getPngBufferFromGraphicsObject(graphics, {
       backgroundColor: "white",
       pngWidth: this.pngWidth,
