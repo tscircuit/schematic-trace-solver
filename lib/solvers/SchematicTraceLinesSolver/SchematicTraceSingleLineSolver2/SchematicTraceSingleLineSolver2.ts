@@ -220,11 +220,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     for (let i = 1; i < path.length - 2; i++) {
       const a = path[i]!
       const b = path[i + 1]!
-      if (
-        isHorizontal(a, b) &&
-        a.y > this.aabb.minY &&
-        a.y < this.aabb.maxY
-      ) {
+      if (isHorizontal(a, b) && a.y > this.aabb.minY && a.y < this.aabb.maxY) {
         penalty += 10
       } else if (
         isVertical(a, b) &&
