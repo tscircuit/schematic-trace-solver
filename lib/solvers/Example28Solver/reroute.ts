@@ -14,6 +14,7 @@ import {
   getPathLength,
   isPathCollidingWithChipInterior,
 } from "./geometry"
+import { doesPathRunAlongChipBoundary } from "./doesPathRunAlongChipBoundary"
 import type {
   ChipObstacle,
   RerouteCandidateResult,
@@ -157,6 +158,15 @@ const createCandidateResult = ({
   seen.add(key)
 
   if (isPathCollidingWithChipInterior(path, chipObstacles)) {
+    return {
+      path,
+      status: "chip-collision",
+      usesHorizontalSegmentPush,
+      selected: false,
+    }
+  }
+
+  if (doesPathRunAlongChipBoundary(path, chipObstacles)) {
     return {
       path,
       status: "chip-collision",
