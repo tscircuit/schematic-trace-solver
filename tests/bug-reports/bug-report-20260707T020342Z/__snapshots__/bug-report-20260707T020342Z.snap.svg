@@ -58,11 +58,7 @@ orientation: y+" data-x="2.8500000000000005" data-y="1.1" cx="487.1506468707937"
   </g>
   <g>
     <circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="4" data-y="0.55" cx="558.8720939341806" cy="285.3866059824524" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
-  </g>
-  <g>
-    <circle data-type="point" data-label="anchorPoint
-orientation: y-" data-x="4" data-y="-0.55" cx="558.8720939341806" cy="353.9897292604747" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+orientation: x+" data-x="4" data-y="0.6875" cx="558.8720939341806" cy="276.8112155726996" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
   </g>
   <g>
     <polyline data-points="-4.005,0.54 -2.6500000000000004,1.1" data-type="line" data-label="" points="59.628455897300256,286.0102707395253 144.13503048068222,251.08504434344127" fill="none" stroke="hsl(168, 100%, 50%, 0.8)" stroke-width="1" />
@@ -104,7 +100,13 @@ orientation: y-" data-x="4" data-y="-0.55" cx="558.8720939341806" cy="353.989729
     <polyline data-points="0.04999999999999982,1.1 -0.04999999999999982,1.1" data-type="line" data-label="" points="312.52451489037327,251.08504434344127 306.287867319644,251.08504434344127" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
+    <polyline data-points="4,0.55 4,0.8250000000000001 0,0.8250000000000001 0,1.1 0.04999999999999982,1.1" data-type="line" data-label="" points="558.8720939341806,285.3866059824524 558.8720939341806,268.2358251629468 309.40619110500865,268.2358251629468 309.40619110500865,251.08504434344127 312.52451489037327,251.08504434344127" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
     <polyline data-points="-0.04999999999999982,-1.1 0.04999999999999982,-1.1" data-type="line" data-label="" points="306.287867319644,388.29129089948583 312.52451489037327,388.29129089948583" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="4,-0.55 4,-0.8250000000000001 0,-0.8250000000000001 0,-1.1 0.04999999999999982,-1.1" data-type="line" data-label="" points="558.8720939341806,353.9897292604747 558.8720939341806,371.1405100799803 309.40619110500865,371.1405100799803 309.40619110500865,388.29129089948583 312.52451489037327,388.29129089948583" fill="none" stroke="purple" stroke-width="1" />
   </g>
   <g>
     <rect data-type="rect" data-label="schematic_component_0" data-x="-4" data-y="0" x="40" y="286.0102707395253" width="39.88057655167344" height="67.35579376387648" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.016034255401785713" />
@@ -145,12 +147,8 @@ globalConnNetId: connectivity_net0" data-x="-3.78" data-y="0.8200000000000001" x
 globalConnNetId: connectivity_net1" data-x="2.8500000000000005" data-y="1.3250000000000002" x="480.91399930006435" y="223.0201302751594" width="12.473295141458607" height="28.064914068281865" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.016034255401785713" />
   </g>
   <g>
-    <rect data-type="rect" data-label="netId: .D1 &gt; .CATHODE to .R1 &gt; .pin1
-globalConnNetId: connectivity_net2" data-x="4" data-y="0.776" x="552.6354463634513" y="257.2593254384633" width="12.473295141458607" height="28.064914068281837" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.016034255401785713" />
-  </g>
-  <g>
-    <rect data-type="rect" data-label="netId: .D2 &gt; .ANODE to .R1 &gt; .pin2
-globalConnNetId: connectivity_net3" data-x="4" data-y="-0.776" x="552.6354463634513" y="354.05209573618197" width="12.473295141458607" height="28.064914068281837" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.016034255401785713" />
+    <rect data-type="rect" data-label="netId: .D1 &gt; .CATHODE to .D3 &gt; .CATHODE
+globalConnNetId: connectivity_net2" data-x="4.225" data-y="0.6875" x="558.8720939341806" y="270.5745680019703" width="28.064914068281723" height="12.473295141458607" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.016034255401785713" />
   </g>
   <g id="crosshair" style="display: none">
     <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />

@@ -29,6 +29,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
   obstacles: ObstacleRect[]
   textObstacles: Set<ObstacleRect>
+  endpointTextObstacles: Set<ObstacleRect>
   aabb: { minX: number; maxX: number; minY: number; maxY: number }
 
   baseElbow: Point[]
@@ -66,6 +67,15 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     })
     this.textObstacles = new Set(
       this.obstacles.filter((r) => r.kind === "text_box"),
+    )
+    const endpointChipIds = new Set(this.pins.map((pin) => pin.chipId))
+    this.endpointTextObstacles = new Set(
+      endpointChipIds.size > 1
+        ? this.obstacles.filter(
+            (r) =>
+              r.kind === "text_box" && endpointChipIds.has(r.textBox.chipId),
+          )
+        : [],
     )
 
     // Build initial elbow path
@@ -224,6 +234,9 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         const lastSegIndex = path.length - 2
         if (segIndex === 0 || segIndex === lastSegIndex) {
           return this.textObstacles
+        }
+        if (segIndex === 1 || segIndex === lastSegIndex - 1) {
+          return this.endpointTextObstacles
         }
         return new Set<ObstacleRect>()
       },
