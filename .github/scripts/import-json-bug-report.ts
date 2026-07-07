@@ -48,15 +48,19 @@ async function main() {
   const reportId = `bug-report-${timestamp}`
   const branchName = `json-bug-report/${reportId}`
   const reportDir = path.join("tests", "bug-reports", reportId)
+  const siteReportDir = path.join("site", "bug-reports")
   const reportDirAbs = path.join(repoRoot, reportDir)
   const jsonPath = path.join(reportDir, `${reportId}.json`)
   const testPath = path.join(reportDir, `${reportId}.test.ts`)
+  const pagePath = path.join(siteReportDir, `${reportId}.page.tsx`)
 
   writeOutput("report_id", reportId)
   writeOutput("branch_name", branchName)
   writeOutput("report_dir", reportDir)
+  writeOutput("site_report_dir", siteReportDir)
   writeOutput("json_path", jsonPath)
   writeOutput("test_path", testPath)
+  writeOutput("page_path", pagePath)
 
   if (fs.existsSync(reportDirAbs)) {
     writeOutput("created", "false")
@@ -70,15 +74,17 @@ async function main() {
   assertInputProblem(jsonAttachment.value)
 
   fs.mkdirSync(reportDirAbs, { recursive: true })
+  fs.mkdirSync(path.join(repoRoot, siteReportDir), { recursive: true })
   fs.writeFileSync(
     path.join(repoRoot, jsonPath),
     `${JSON.stringify(jsonAttachment.value, null, 2)}\n`,
   )
   fs.writeFileSync(path.join(repoRoot, testPath), getTestFile(reportId))
+  fs.writeFileSync(path.join(repoRoot, pagePath), getPageFile(reportId))
 
   writeOutput("created", "true")
   writeOutput("attachment_url", jsonAttachment.url)
-  console.log(`Generated ${jsonPath} and ${testPath}`)
+  console.log(`Generated ${jsonPath}, ${testPath}, and ${pagePath}`)
 }
 
 function isJsonBugReportIssue(issue: IssueEvent["issue"], body: string) {
@@ -455,6 +461,14 @@ test("${reportId}", () => {
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
+`
+}
+
+function getPageFile(reportId: string) {
+  return `import { PipelineDebugger } from "site/components/PipelineDebugger"
+import inputProblem from "../../tests/bug-reports/${reportId}/${reportId}.json"
+
+export default () => <PipelineDebugger inputProblem={inputProblem as any} />
 `
 }
 
