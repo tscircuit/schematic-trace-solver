@@ -6,6 +6,7 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { mergeSameNetTraceSegments } from "./mergeSameNetTraceSegments"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -49,11 +50,12 @@ export class TraceCleanupSolver extends BaseSolver {
   constructor(solverInput: TraceCleanupSolverInput) {
     super()
     this.input = solverInput
-    this.outputTraces = [...solverInput.allTraces]
+    this.outputTraces = mergeSameNetTraceSegments({
+      traces: solverInput.allTraces,
+      tolerance: solverInput.paddingBuffer,
+    })
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
-    this.traceIdQueue = Array.from(
-      solverInput.allTraces.map((e) => e.mspPairId),
-    )
+    this.traceIdQueue = Array.from(this.outputTraces.map((e) => e.mspPairId))
   }
 
   override _step() {
@@ -97,9 +99,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
       this.pipelineStep = "balancing_l_shapes"
-      this.traceIdQueue = Array.from(
-        this.input.allTraces.map((e) => e.mspPairId),
-      )
+      this.traceIdQueue = Array.from(this.outputTraces.map((e) => e.mspPairId))
       return
     }
 
