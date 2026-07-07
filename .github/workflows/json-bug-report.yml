@@ -64,7 +64,7 @@ jobs:
 
       - name: Format generated test
         if: steps.import.outputs.created == 'true'
-        run: ./node_modules/.bin/biome format --write "${{ steps.import.outputs.test_path }}"
+        run: ./node_modules/.bin/biome format --write "${{ steps.import.outputs.test_path }}" "${{ steps.import.outputs.page_path }}"
 
       - name: Open pull request
         id: pr
@@ -82,6 +82,7 @@ jobs:
           git config user.email "tscircuit-bot@users.noreply.github.com"
           git checkout -B "$BRANCH_NAME"
           git add "${{ steps.import.outputs.report_dir }}"
+          git add "${{ steps.import.outputs.page_path }}"
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
@@ -96,7 +97,7 @@ jobs:
           {
             echo "Generated from #${ISSUE_NUMBER}."
             echo
-            echo "Adds a snapshot-only regression test for the attached JSON solver input."
+            echo "Adds a snapshot-only regression test and debugger page for the attached JSON solver input."
             echo
             echo "Workflow run: ${RUN_URL}"
           } > "$pr_body_file"
