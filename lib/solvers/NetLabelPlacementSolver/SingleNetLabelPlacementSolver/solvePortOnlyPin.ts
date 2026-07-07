@@ -14,6 +14,7 @@ import {
   getRectBounds,
 } from "./geometry"
 import { rectIntersectsAnyTrace } from "./collisions"
+import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 export function solveNetLabelPlacementForPortOnlyPin(params: {
   inputProblem: InputProblem
@@ -32,7 +33,12 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     bounds: { minX: number; minY: number; maxX: number; maxY: number }
     anchor: { x: number; y: number }
     orientation: FacingDirection
-    status: "ok" | "chip-collision" | "trace-collision" | "parallel-to-segment"
+    status:
+      | "ok"
+      | "chip-collision"
+      | "trace-collision"
+      | "text-collision"
+      | "parallel-to-segment"
     hostSegIndex: number
   }>
   error?: string
@@ -97,7 +103,12 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     bounds: { minX: number; minY: number; maxX: number; maxY: number }
     anchor: { x: number; y: number }
     orientation: FacingDirection
-    status: "ok" | "chip-collision" | "trace-collision" | "parallel-to-segment"
+    status:
+      | "ok"
+      | "chip-collision"
+      | "trace-collision"
+      | "text-collision"
+      | "parallel-to-segment"
     hostSegIndex: number
   }> = []
 
@@ -128,6 +139,20 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
         anchor,
         orientation,
         status: "chip-collision",
+        hostSegIndex: -1,
+      })
+      continue
+    }
+
+    if (rectIntersectsAnyTextBox(bounds, inputProblem)) {
+      testedCandidates.push({
+        center,
+        width,
+        height,
+        bounds,
+        anchor,
+        orientation,
+        status: "text-collision",
         hostSegIndex: -1,
       })
       continue

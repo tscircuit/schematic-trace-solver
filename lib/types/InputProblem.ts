@@ -13,6 +13,15 @@ export interface InputPin {
 
   _facingDirection?: "x+" | "x-" | "y+" | "y-"
 }
+
+export interface TextBoxes {
+  chipId?: ChipId
+  center: { x: number; y: number }
+  width: number
+  height: number
+  text?: string
+}
+
 export interface InputChip {
   chipId: ChipId
   center: { x: number; y: number }
@@ -38,6 +47,7 @@ export interface InputProblem {
   chips: Array<InputChip>
   directConnections: Array<InputDirectConnection>
   netConnections: Array<InputNetConnection>
+  textBoxes?: Array<TextBoxes>
 
   availableNetLabelOrientations: Record<NetId, FacingDirection[]>
   maxMspPairDistance?: number

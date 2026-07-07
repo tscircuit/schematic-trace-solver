@@ -14,14 +14,14 @@ import {
   getPathLength,
   isPathCollidingWithChipInterior,
 } from "./geometry"
+import { doesPathRunAlongChipBoundary } from "./doesPathRunAlongChipBoundary"
 import type {
   ChipObstacle,
   RerouteCandidateResult,
   TracePathScore,
 } from "./types"
 
-const LABEL_SIDE_CLEARANCE = 0.1
-const LABEL_HUG_CLEARANCE = 0.001
+const LABEL_CLEARANCE = 0.1
 
 export const findBestReroutePath = ({
   trace,
@@ -102,7 +102,7 @@ export const generateRerouteCandidateResults = ({
       trace,
       label,
       problem: inputProblem,
-      paddingBuffer: LABEL_SIDE_CLEARANCE,
+      paddingBuffer: LABEL_CLEARANCE,
       detourCount: 0,
     }),
     ...generateEndpointDetourCandidates(trace, label),
@@ -166,6 +166,15 @@ const createCandidateResult = ({
     }
   }
 
+  if (doesPathRunAlongChipBoundary(path, chipObstacles)) {
+    return {
+      path,
+      status: "chip-collision",
+      usesHorizontalSegmentPush,
+      selected: false,
+    }
+  }
+
   return {
     path,
     score: scoreTracePath({
@@ -188,9 +197,11 @@ const generateEndpointDetourCandidates = (
   const start = trace.tracePath[0]
   const end = trace.tracePath[trace.tracePath.length - 1]
   if (!start || !end) return []
+  const startExit = trace.tracePath[1] ?? start
+  const endEntry = trace.tracePath[trace.tracePath.length - 2] ?? end
 
   const bounds = getRectBounds(label.center, label.width, label.height)
-  const padding = LABEL_SIDE_CLEARANCE
+  const padding = LABEL_CLEARANCE
   const labelDirection = dir(label.orientation)
   const labelSideX =
     labelDirection.x < 0 ? bounds.minX - padding : bounds.maxX + padding
@@ -204,18 +215,22 @@ const generateEndpointDetourCandidates = (
     candidates.push(
       [
         start,
-        { x: start.x, y: topY },
+        startExit,
+        { x: startExit.x, y: topY },
         { x: sideX, y: topY },
         { x: sideX, y: bottomY },
-        { x: end.x, y: bottomY },
+        { x: endEntry.x, y: bottomY },
+        endEntry,
         end,
       ],
       [
         start,
-        { x: start.x, y: bottomY },
+        startExit,
+        { x: startExit.x, y: bottomY },
         { x: sideX, y: bottomY },
         { x: sideX, y: topY },
-        { x: end.x, y: topY },
+        { x: endEntry.x, y: topY },
+        endEntry,
         end,
       ],
     )
@@ -231,6 +246,8 @@ const generateLabelHugCandidates = (
   const start = trace.tracePath[0]
   const end = trace.tracePath[trace.tracePath.length - 1]
   if (!start || !end) return []
+  const startExit = trace.tracePath[1] ?? start
+  const endEntry = trace.tracePath[trace.tracePath.length - 2] ?? end
 
   const labelDirection = dir(label.orientation)
   if (labelDirection.x === 0) return []
@@ -238,29 +255,33 @@ const generateLabelHugCandidates = (
   const bounds = getRectBounds(label.center, label.width, label.height)
   const sideX =
     labelDirection.x < 0
-      ? bounds.minX - LABEL_SIDE_CLEARANCE
-      : bounds.maxX + LABEL_SIDE_CLEARANCE
-  const topY = bounds.maxY + LABEL_HUG_CLEARANCE
-  const bottomY = bounds.minY - LABEL_HUG_CLEARANCE
-  const startsAboveEnd = start.y >= end.y
+      ? bounds.minX - LABEL_CLEARANCE
+      : bounds.maxX + LABEL_CLEARANCE
+  const topY = bounds.maxY + LABEL_CLEARANCE
+  const bottomY = bounds.minY - LABEL_CLEARANCE
+  const startsAboveEnd = startExit.y >= endEntry.y
   const firstY = startsAboveEnd ? topY : bottomY
   const secondY = startsAboveEnd ? bottomY : topY
 
   return [
     [
       start,
-      { x: start.x, y: firstY },
+      startExit,
+      { x: startExit.x, y: firstY },
       { x: sideX, y: firstY },
       { x: sideX, y: secondY },
-      { x: end.x, y: secondY },
+      { x: endEntry.x, y: secondY },
+      endEntry,
       end,
     ],
     [
       start,
-      { x: start.x, y: secondY },
+      startExit,
+      { x: startExit.x, y: secondY },
       { x: sideX, y: secondY },
       { x: sideX, y: firstY },
-      { x: end.x, y: firstY },
+      { x: endEntry.x, y: firstY },
+      endEntry,
       end,
     ],
   ]
@@ -341,9 +362,9 @@ const generateHorizontalSegmentPushCandidate = (
     return null
   }
 
-  let segmentPushX = bounds.minX - LABEL_SIDE_CLEARANCE
+  let segmentPushX = bounds.minX - LABEL_CLEARANCE
   if (labelDirection.x > 0) {
-    segmentPushX = bounds.maxX + LABEL_SIDE_CLEARANCE
+    segmentPushX = bounds.maxX + LABEL_CLEARANCE
   }
   const segmentPushStartY = getClearedHorizontalY({
     start: previousAnchor,
@@ -393,10 +414,10 @@ const getClearedHorizontalY = ({
 
   const labelCenterY = (labelBounds.minY + labelBounds.maxY) / 2
   if (start.y >= labelCenterY) {
-    return labelBounds.maxY + LABEL_HUG_CLEARANCE
+    return labelBounds.maxY + LABEL_CLEARANCE
   }
 
-  return labelBounds.minY - LABEL_HUG_CLEARANCE
+  return labelBounds.minY - LABEL_CLEARANCE
 }
 
 const markSelectedCandidate = (

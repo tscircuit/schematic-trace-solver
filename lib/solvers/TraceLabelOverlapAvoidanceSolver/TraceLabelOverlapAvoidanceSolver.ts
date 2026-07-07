@@ -57,9 +57,6 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   override _step() {
     if (this.phase === "searching_for_overlaps") {
       if (this.unprocessedTraces.length === 0) {
-        console.log(
-          `Dispatch phase complete. Created ${this.subSolvers.length} sub-solvers.`,
-        )
         this.phase = "fixing_overlaps"
         return
       }
@@ -99,7 +96,6 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
       }
     } else if (this.phase === "fixing_overlaps") {
       if (this.subSolvers.every((s) => s.solved || s.failed)) {
-        console.log("All sub-solvers finished.")
         // Final merge for pipeline compatibility
         if (!this.labelMergingSolver) {
           this.labelMergingSolver = new MergedNetLabelObstacleSolver({
