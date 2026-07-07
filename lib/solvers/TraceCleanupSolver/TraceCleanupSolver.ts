@@ -2,6 +2,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject, Line } from "graphics-debug"
 import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
 import { balanceZShapes } from "./balanceZShapes"
+import { mergeSameNetTraces } from "./mergeSameNetTraces"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
@@ -28,6 +29,7 @@ type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
+  | "merging_same_net_traces"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
@@ -66,7 +68,7 @@ export class TraceCleanupSolver extends BaseSolver {
         this.outputTraces = output.traces
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "merging_same_net_traces"
       } else if (this.activeSubSolver.failed) {
         this.activeSubSolver = null
         this.pipelineStep = "minimizing_turns"
@@ -77,6 +79,9 @@ export class TraceCleanupSolver extends BaseSolver {
     switch (this.pipelineStep) {
       case "untangling_traces":
         this._runUntangleTracesStep()
+        break
+      case "merging_same_net_traces":
+        this._runMergeSameNetTracesStep()
         break
       case "minimizing_turns":
         this._runMinimizeTurnsStep()
@@ -92,6 +97,12 @@ export class TraceCleanupSolver extends BaseSolver {
       ...this.input,
       allTraces: Array.from(this.tracesMap.values()),
     })
+  }
+
+  private _runMergeSameNetTracesStep() {
+    this.outputTraces = mergeSameNetTraces(this.outputTraces)
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.pipelineStep = "minimizing_turns"
   }
 
   private _runMinimizeTurnsStep() {
