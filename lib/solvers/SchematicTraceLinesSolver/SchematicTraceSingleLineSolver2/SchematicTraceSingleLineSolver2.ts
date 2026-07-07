@@ -73,7 +73,9 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       endpointChipIds.size > 1
         ? this.obstacles.filter(
             (r) =>
-              r.kind === "text_box" && endpointChipIds.has(r.textBox.chipId),
+              r.kind === "text_box" &&
+              r.textBox.chipId !== undefined &&
+              endpointChipIds.has(r.textBox.chipId),
           )
         : [],
     )
