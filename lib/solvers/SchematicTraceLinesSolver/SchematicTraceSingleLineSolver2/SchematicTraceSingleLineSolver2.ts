@@ -203,14 +203,41 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     return null
   }
 
-  private pathLength(pts: Point[]): number {
+  private pathCost(pts: Point[]): number {
     let sum = 0
     for (let i = 0; i < pts.length - 1; i++) {
       sum +=
         Math.abs(pts[i + 1]!.x - pts[i]!.x) +
         Math.abs(pts[i + 1]!.y - pts[i]!.y)
     }
+    for (let i = 1; i < pts.length - 2; i++) {
+      const a = pts[i]!
+      const b = pts[i + 1]!
+      if (
+        isHorizontal(a, b) &&
+        a.y > this.aabb.minY &&
+        a.y < this.aabb.maxY
+      ) {
+        sum += 10
+      } else if (
+        isVertical(a, b) &&
+        a.x > this.aabb.minX &&
+        a.x < this.aabb.maxX
+      ) {
+        sum += 10
+      }
+    }
     return sum
+  }
+
+  private isSegmentOutsidePinBand(a: Point, b: Point): boolean {
+    if (isHorizontal(a, b)) {
+      return a.y <= this.aabb.minY || a.y >= this.aabb.maxY
+    }
+    if (isVertical(a, b)) {
+      return a.x <= this.aabb.minX || a.x >= this.aabb.maxX
+    }
+    return false
   }
 
   override _step() {
@@ -235,7 +262,21 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         if (segIndex === 0 || segIndex === lastSegIndex) {
           return this.textObstacles
         }
-        if (segIndex === 1 || segIndex === lastSegIndex - 1) {
+        const adjacentEndpointSegIndex =
+          segIndex === 1
+            ? 2
+            : segIndex === lastSegIndex - 1
+              ? lastSegIndex - 2
+              : null
+        if (
+          adjacentEndpointSegIndex !== null &&
+          adjacentEndpointSegIndex >= 0 &&
+          adjacentEndpointSegIndex < lastSegIndex &&
+          this.isSegmentOutsidePinBand(
+            path[adjacentEndpointSegIndex]!,
+            path[adjacentEndpointSegIndex + 1]!,
+          )
+        ) {
           return this.endpointTextObstacles
         }
         return new Set<ObstacleRect>()
@@ -259,6 +300,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       return
     }
 
+    const originalSegIndex = collision.segIndex
     let { segIndex, rect } = collision
 
     // Never move the first or last segments - move adjacent segment instead
@@ -314,16 +356,65 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       len: number
     }> = []
 
-    for (const coord of candidates) {
-      const newPath = shiftSegmentOrth(path, segIndex, axis, coord)
-      if (!newPath) continue
+    const addShiftedCandidate = (
+      candidateSegIndex: number,
+      candidateAxis: Axis,
+      coord: number,
+    ) => {
+      const newPath = shiftSegmentOrth(
+        path,
+        candidateSegIndex,
+        candidateAxis,
+        coord,
+      )
+      if (!newPath) return
       const key = pathKey(newPath)
-      if (this.visited.has(key)) continue
+      if (this.visited.has(key)) return
       this.visited.add(key)
       const nextSet = new Set(collisionRects)
       nextSet.add(rect)
-      const len = this.pathLength(newPath)
+      const len = this.pathCost(newPath)
       newStates.push({ path: newPath, collisionRects: nextSet, len })
+    }
+
+    for (const coord of candidates) {
+      addShiftedCandidate(segIndex, axis, coord)
+    }
+
+    const lastSegIndex = path.length - 2
+    const adjacentSegmentIndexes =
+      originalSegIndex === 1
+        ? [2]
+        : originalSegIndex === lastSegIndex - 1
+          ? [lastSegIndex - 2]
+          : []
+
+    for (const adjacentSegIndex of adjacentSegmentIndexes) {
+      if (adjacentSegIndex < 0 || adjacentSegIndex >= lastSegIndex) continue
+      const adjacentAxis = this.axisOfSegment(
+        path[adjacentSegIndex]!,
+        path[adjacentSegIndex + 1]!,
+      )
+      if (!adjacentAxis || adjacentAxis === axis) continue
+
+      const adjacentCandidates = [
+        ...midBetweenPointAndRect(adjacentAxis, { x: PA.x, y: PA.y }, rect),
+        ...midBetweenPointAndRect(adjacentAxis, { x: PB.x, y: PB.y }, rect),
+      ]
+      if (collisionRects.size > 0) {
+        adjacentCandidates.push(
+          ...candidateMidsFromSet(
+            adjacentAxis,
+            rect,
+            collisionRects,
+            this.aabb,
+          ),
+        )
+      }
+
+      for (const coord of [...new Set(adjacentCandidates)]) {
+        addShiftedCandidate(adjacentSegIndex, adjacentAxis, coord)
+      }
     }
 
     newStates.sort((a, b) => a.len - b.len)
