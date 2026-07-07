@@ -1,0 +1,75 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`POW: TraceCleanupSolver snapshot shows BEFORE and AFTER cleaned trace 1`] = `
+{
+  "AFTER": [
+    {
+      "cleaned": [
+        {
+          "x": 0,
+          "y": 0,
+        },
+        {
+          "x": 20,
+          "y": 0,
+        },
+        {
+          "x": 20,
+          "y": 20,
+        },
+      ],
+      "id": "pow-demo",
+      "original": [
+        {
+          "x": 0,
+          "y": 0,
+        },
+        {
+          "x": 10,
+          "y": 0,
+        },
+        {
+          "x": 20,
+          "y": 0,
+        },
+        {
+          "x": 20,
+          "y": 10,
+        },
+        {
+          "x": 20,
+          "y": 20,
+        },
+      ],
+    },
+  ],
+  "BEFORE": [
+    {
+      "id": "pow-demo",
+      "mspPairId": "pow-test",
+      "tracePath": [
+        {
+          "x": 0,
+          "y": 0,
+        },
+        {
+          "x": 10,
+          "y": 0,
+        },
+        {
+          "x": 20,
+          "y": 0,
+        },
+        {
+          "x": 20,
+          "y": 10,
+        },
+        {
+          "x": 20,
+          "y": 20,
+        },
+      ],
+    },
+  ],
+}
+`;
