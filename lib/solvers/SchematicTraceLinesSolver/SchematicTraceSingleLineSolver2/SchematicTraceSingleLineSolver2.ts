@@ -203,31 +203,40 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     return null
   }
 
-  private pathCost(pts: Point[]): number {
+  private pathLength(pts: Point[]): number {
     let sum = 0
     for (let i = 0; i < pts.length - 1; i++) {
       sum +=
         Math.abs(pts[i + 1]!.x - pts[i]!.x) +
         Math.abs(pts[i + 1]!.y - pts[i]!.y)
     }
-    for (let i = 1; i < pts.length - 2; i++) {
-      const a = pts[i]!
-      const b = pts[i + 1]!
+    return sum
+  }
+
+  private getPinBandPenalty(path: Point[]): number {
+    let penalty = 0
+    for (let i = 1; i < path.length - 2; i++) {
+      const a = path[i]!
+      const b = path[i + 1]!
       if (
         isHorizontal(a, b) &&
         a.y > this.aabb.minY &&
         a.y < this.aabb.maxY
       ) {
-        sum += 10
+        penalty += 10
       } else if (
         isVertical(a, b) &&
         a.x > this.aabb.minX &&
         a.x < this.aabb.maxX
       ) {
-        sum += 10
+        penalty += 10
       }
     }
-    return sum
+    return penalty
+  }
+
+  private pathCost(path: Point[]): number {
+    return this.pathLength(path) + this.getPinBandPenalty(path)
   }
 
   private isSegmentOutsidePinBand(a: Point, b: Point): boolean {
