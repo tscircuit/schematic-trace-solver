@@ -20,12 +20,27 @@ import type {
 import { dir } from "lib/utils/dir"
 import { moveAttachedLabelsToReroutedTrace } from "./labelMovement"
 import { findBestReroutePath } from "./reroute"
+import {
+  scoreSolutionTracePath,
+  type TracePathScore,
+} from "./scoreSolutionTracePath"
 import type { Example28SolverParams, RerouteCandidateResult } from "./types"
 import { visualizeExample28Solver } from "./visualize"
 
 const LABEL_OUTWARD_STEP = 0.1
 const LABEL_MAX_OUTWARD_STEPS = 10
 const LABEL_TRACE_CLEARANCE = 0.1
+
+const isScoreBetter = (
+  rerouteScore: TracePathScore | null,
+  labelMoveScore: TracePathScore,
+) => {
+  if (!rerouteScore) return false
+  if (rerouteScore.chipEdgeRuns !== labelMoveScore.chipEdgeRuns) {
+    return rerouteScore.chipEdgeRuns < labelMoveScore.chipEdgeRuns
+  }
+  return rerouteScore.traceCrossings < labelMoveScore.traceCrossings
+}
 
 export class Example28Solver extends BaseSolver {
   inputProblem: InputProblem
@@ -160,7 +175,7 @@ export class Example28Solver extends BaseSolver {
     if (traceIndex === -1) return
 
     const currentTrace = this.outputTraces[traceIndex]!
-    if (this.tryMoveLabelOutward(overlap.label)) return
+    const labelMove = this.tryMoveLabelOutward(overlap.label)
 
     const rerouteResult = findBestReroutePath({
       trace: currentTrace,
@@ -171,6 +186,29 @@ export class Example28Solver extends BaseSolver {
       chipObstacles: this.chipObstacles,
     })
     this.currentCandidateResults = rerouteResult.candidateResults
+
+    let rerouteScore: TracePathScore | null = null
+    if (rerouteResult.bestPath) {
+      rerouteScore = scoreSolutionTracePath({
+        traces: [{ ...currentTrace, tracePath: rerouteResult.bestPath }],
+        outputTraces: this.outputTraces,
+        chipObstacles: this.chipObstacles,
+      })
+    }
+
+    if (labelMove) {
+      const labelMoveScore = scoreSolutionTracePath({
+        traces: [labelMove.connectorTrace, currentTrace],
+        outputTraces: this.outputTraces,
+        chipObstacles: this.chipObstacles,
+      })
+      if (!isScoreBetter(rerouteScore, labelMoveScore)) {
+        this.outputNetLabelPlacements[labelMove.labelIndex] =
+          labelMove.movedLabel
+        this.outputTraces.push(labelMove.connectorTrace)
+        return
+      }
+    }
 
     if (!rerouteResult.bestPath) return
 
@@ -195,21 +233,21 @@ export class Example28Solver extends BaseSolver {
         label.anchorPoint.y === labelToMove.anchorPoint.y &&
         label.pinIds.join(",") === labelToMove.pinIds.join(","),
     )
-    if (labelIndex === -1) return false
+    if (labelIndex === -1) return null
 
     const label = this.outputNetLabelPlacements[labelIndex]!
-    if (label.mspConnectionPairIds.length > 0) return false
-    if (label.pinIds.length !== 1) return false
+    if (label.mspConnectionPairIds.length > 0) return null
+    if (label.pinIds.length !== 1) return null
     if (
       this.outputNetLabelPlacements.filter(
         (otherLabel) => otherLabel.globalConnNetId === label.globalConnNetId,
       ).length !== 1
     ) {
-      return false
+      return null
     }
 
     const outward = dir(label.orientation)
-    if (outward.x === 0 && outward.y === 0) return false
+    if (outward.x === 0 && outward.y === 0) return null
 
     for (let step = 1; step <= LABEL_MAX_OUTWARD_STEPS; step++) {
       const distance = step * LABEL_OUTWARD_STEP
@@ -252,12 +290,10 @@ export class Example28Solver extends BaseSolver {
         continue
       }
 
-      this.outputNetLabelPlacements[labelIndex] = candidate
-      this.outputTraces.push(connectorTrace)
-      return true
+      return { labelIndex, movedLabel: candidate, connectorTrace }
     }
 
-    return false
+    return null
   }
 
   override visualize(): GraphicsObject {
