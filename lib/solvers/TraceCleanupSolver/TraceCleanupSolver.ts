@@ -20,6 +20,7 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { alignNearbySameNetTraceSegments } from "./alignNearbySameNetTraceSegments"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -27,6 +28,7 @@ import { is4PointRectangle } from "./is4PointRectangle"
 type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
+  | "aligning_same_net_segments"
   | "untangling_traces"
 
 /**
@@ -84,6 +86,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "aligning_same_net_segments":
+        this._runAlignSameNetSegmentsStep()
+        break
     }
   }
 
@@ -108,11 +113,23 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "aligning_same_net_segments"
       return
     }
 
     this._processTrace("balancing_l_shapes")
+  }
+
+  private _runAlignSameNetSegmentsStep() {
+    this.outputTraces = alignNearbySameNetTraceSegments({
+      traces: this.outputTraces,
+      inputProblem: this.input.inputProblem,
+      allLabelPlacements: this.input.allLabelPlacements,
+      mergedLabelNetIdMap: this.input.mergedLabelNetIdMap,
+      paddingBuffer: this.input.paddingBuffer,
+    })
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.solved = true
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
