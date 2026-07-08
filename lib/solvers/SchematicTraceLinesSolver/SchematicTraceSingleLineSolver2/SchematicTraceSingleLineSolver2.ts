@@ -210,28 +210,26 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
    * Attempts to calculate a direct route between two pins if they are very close together.
    * This prevents complex routing logic from taking over for trivial connections.
    *
-   * @param pin1 The first pin in the connection pair
-   * @param pin2 The second pin in the connection pair
-   * @returns A direct short path if valid, or null if the pins are too far apart or incompatible.
    */
   private calculateDirectShortPath(
     pin1: MspConnectionPair["pins"][number],
     pin2: MspConnectionPair["pins"][number],
   ): Point[] | null {
-    const routingDistance = Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
-    
+    const routingDistance =
+      Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
+
     // If the distance is too large, fallback to the standard complex routing solver
     if (routingDistance > MAX_SHORT_TRACE_DISTANCE) return null
 
     const start = { x: pin1.x, y: pin1.y }
     const end = { x: pin2.x, y: pin2.y }
-    
+
     // First, try a simple orthogonal route if the pins are facing perpendicular directions
     const orthogonalRoute = this.calculateShortOrthogonalRoute(pin1, pin2)
     if (orthogonalRoute) return orthogonalRoute
 
     let candidatePaths: Point[][] = []
-    
+
     // If the pins are completely offset (neither perfectly aligned horizontally nor vertically),
     // we evaluate standard two-segment L-shaped routes.
     if (pin1.x !== pin2.x && pin1.y !== pin2.y) {
@@ -271,13 +269,9 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   }
 
   /**
-   * Calculates a short orthogonal (perpendicular) route when the source and destination pins 
+   * Calculates a short orthogonal (perpendicular) route when the source and destination pins
    * are oriented at a 90-degree angle to one another (e.g., one faces X and the other faces Y).
    * It creates a minimal step-out to avoid overlapping pin bodies.
-   *
-   * @param pin1 The first pin in the connection pair
-   * @param pin2 The second pin in the connection pair
-   * @returns An orthogonal routing path if applicable, or null otherwise.
    */
   private calculateShortOrthogonalRoute(
     pin1: MspConnectionPair["pins"][number],
@@ -309,7 +303,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         { x: routeX, y: end.y },
         end,
       ]
-    } 
+    }
     // Handle case where pin1 faces horizontally and pin2 faces vertically
     else if (firstDir?.startsWith("x") && lastDir?.startsWith("y")) {
       let xOffset = -SHORT_TRACE_OVERSHOOT
