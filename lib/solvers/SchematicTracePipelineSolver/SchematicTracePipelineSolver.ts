@@ -64,7 +64,12 @@ function definePipelineStep<
 export interface SchematicTracePipelineSolverParams {
   inputProblem: InputProblem
   allowLongDistanceTraces?: boolean
+  hideRatsNet?: boolean
 }
+
+type SchematicTracePipelineSolverInput =
+  | InputProblem
+  | SchematicTracePipelineSolverParams
 
 export class SchematicTracePipelineSolver extends BaseSolver {
   mspConnectionPairSolver?: MspConnectionPairSolver
@@ -89,6 +94,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   firstIterationOfPhase: Record<string, number>
 
   inputProblem: InputProblem
+  hideRatsNet: boolean
 
   pipelineDef = [
     definePipelineStep(
@@ -317,9 +323,14 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     ),
   ]
 
-  constructor(inputProblem: InputProblem) {
+  constructor(inputProblemOrParams: SchematicTracePipelineSolverInput) {
     super()
-    this.inputProblem = this.cloneAndCorrectInputProblem(inputProblem)
+    const params =
+      "inputProblem" in inputProblemOrParams
+        ? inputProblemOrParams
+        : { inputProblem: inputProblemOrParams }
+    this.hideRatsNet = params.hideRatsNet ?? false
+    this.inputProblem = this.cloneAndCorrectInputProblem(params.inputProblem)
     this.MAX_ITERATIONS = 1e6
     this.startTimeOfPhase = {}
     this.endTimeOfPhase = {}
@@ -330,7 +341,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   override getConstructorParams(): ConstructorParameters<
     typeof SchematicTracePipelineSolver
   >[0] {
-    return this.inputProblem
+    return {
+      inputProblem: this.inputProblem,
+      hideRatsNet: this.hideRatsNet,
+    }
   }
 
   currentPipelineStepIndex = 0
@@ -339,6 +353,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     const cloned: InputProblem = structuredClone({
       ...original,
       _chipObstacleSpatialIndex: undefined,
+      _hideRatsNet: this.hideRatsNet,
     })
 
     // First, expand chips so existing pin coordinates sit on or within their edges without shrinking.
@@ -398,7 +413,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       return this.activeSubSolver.visualize()
 
     const visualizations = [
-      visualizeInputProblem(this.inputProblem),
+      visualizeInputProblem(this.inputProblem, {
+        hideRatsNet: this.hideRatsNet,
+      }),
       ...(this.pipelineDef
         .map((p) => (this as any)[p.solverName]?.visualize())
         .filter(Boolean)
