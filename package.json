@@ -29,8 +29,5 @@
   },
   "peerDependencies": {
     "typescript": "^5"
-  },
-  "dependencies": {
-    "tscircuit": "^0.0.2017"
   }
 }
