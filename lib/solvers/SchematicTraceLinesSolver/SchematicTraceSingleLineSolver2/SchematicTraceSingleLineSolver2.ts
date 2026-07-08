@@ -20,7 +20,7 @@ import { getDimsForOrientation } from "lib/solvers/NetLabelPlacementSolver/Singl
 import type { RectPadding } from "lib/utils/textBoxBounds"
 
 type PathKey = string
-const MAX_SHORT_TRACE_DISTANCE = 0.15
+const MAX_SHORT_TRACE_DISTANCE = 0.4
 const SHORT_TRACE_OVERSHOOT = MAX_SHORT_TRACE_DISTANCE / 7.5
 
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
