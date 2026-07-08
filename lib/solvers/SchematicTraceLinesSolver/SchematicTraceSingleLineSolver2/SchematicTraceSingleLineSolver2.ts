@@ -80,21 +80,25 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         : [],
     )
 
-    // Build initial elbow path
     const [pin1, pin2] = this.pins
-    this.baseElbow = calculateElbow(
-      {
-        x: pin1.x,
-        y: pin1.y,
-        facingDirection: pin1._facingDirection!,
-      },
-      {
-        x: pin2.x,
-        y: pin2.y,
-        facingDirection: pin2._facingDirection!,
-      },
-      { overshoot: 0.2 },
-    )
+    const directShortPath = this.getDirectShortPath(pin1, pin2)
+
+    // Build initial elbow path
+    this.baseElbow =
+      directShortPath ??
+      calculateElbow(
+        {
+          x: pin1.x,
+          y: pin1.y,
+          facingDirection: pin1._facingDirection!,
+        },
+        {
+          x: pin2.x,
+          y: pin2.y,
+          facingDirection: pin2._facingDirection!,
+        },
+        { overshoot: 0.2 },
+      )
 
     // Bounds defined by PA and PB
     this.aabb = aabbFromPoints(
@@ -197,6 +201,19 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     return this.inputProblem.netConnections.find((nc) =>
       nc.pinIds.some((pid) => pinIds.includes(pid)),
     )?.netLabelHeight
+  }
+
+  private getDirectShortPath(
+    pin1: MspConnectionPair["pins"][number],
+    pin2: MspConnectionPair["pins"][number],
+  ): Point[] | null {
+    const manhattanDist = Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
+    if (manhattanDist > 0.15) return null
+
+    return [
+      { x: pin1.x, y: pin1.y },
+      { x: pin2.x, y: pin2.y },
+    ]
   }
 
   private axisOfSegment(a: Point, b: Point): Axis | null {
