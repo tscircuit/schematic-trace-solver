@@ -209,7 +209,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     pin2: MspConnectionPair["pins"][number],
   ): Point[] | null {
     const manhattanDist = Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
-    if (manhattanDist > 0.3) return null
+    if (manhattanDist > 0.15) return null
 
     if (pin1.x !== pin2.x && pin1.y !== pin2.y) {
       return [
