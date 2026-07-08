@@ -99,6 +99,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         },
         { overshoot: 0.2 },
       )
+    this.solvedTracePath = directShortPath
 
     // Bounds defined by PA and PB
     this.aabb = aabbFromPoints(
@@ -209,6 +210,14 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   ): Point[] | null {
     const manhattanDist = Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
     if (manhattanDist > 0.15) return null
+
+    if (pin1.x !== pin2.x && pin1.y !== pin2.y) {
+      return [
+        { x: pin1.x, y: pin1.y },
+        { x: pin2.x, y: pin1.y },
+        { x: pin2.x, y: pin2.y },
+      ]
+    }
 
     return [
       { x: pin1.x, y: pin1.y },
