@@ -20,6 +20,9 @@ import { getDimsForOrientation } from "lib/solvers/NetLabelPlacementSolver/Singl
 import type { RectPadding } from "lib/utils/textBoxBounds"
 
 type PathKey = string
+const SHORT_TRACE_MAX_MANHATTAN_DISTANCE = 0.15
+const SHORT_TRACE_DOGLEG_OVERSHOOT =
+  SHORT_TRACE_MAX_MANHATTAN_DISTANCE / 7.5
 
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
@@ -209,7 +212,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     pin2: MspConnectionPair["pins"][number],
   ): Point[] | null {
     const manhattanDist = Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
-    if (manhattanDist > 0.15) return null
+    if (manhattanDist > SHORT_TRACE_MAX_MANHATTAN_DISTANCE) return null
 
     const start = { x: pin1.x, y: pin1.y }
     const end = { x: pin2.x, y: pin2.y }
@@ -239,7 +242,12 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         y: pin2.y,
         facingDirection: pin2._facingDirection!,
       },
-      { overshoot: Math.min(0.2, Math.max(0.02, manhattanDist / 4)) },
+      {
+        overshoot: Math.min(
+          0.2,
+          Math.max(SHORT_TRACE_DOGLEG_OVERSHOOT, manhattanDist / 4),
+        ),
+      },
     )
   }
 
@@ -255,7 +263,10 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     const lastDir = pin2._facingDirection
     if (!firstDir?.startsWith("y") || !lastDir?.startsWith("x")) return null
 
-    const yOffset = firstDir === "y+" ? 0.02 : -0.02
+    const yOffset =
+      firstDir === "y+"
+        ? SHORT_TRACE_DOGLEG_OVERSHOOT
+        : -SHORT_TRACE_DOGLEG_OVERSHOOT
     const doglegY = start.y + yOffset
     const doglegX = (start.x + end.x) / 2
     const path = [
