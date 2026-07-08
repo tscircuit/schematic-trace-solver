@@ -211,18 +211,87 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     const manhattanDist = Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
     if (manhattanDist > 0.15) return null
 
-    if (pin1.x !== pin2.x && pin1.y !== pin2.y) {
-      return [
-        { x: pin1.x, y: pin1.y },
-        { x: pin2.x, y: pin1.y },
-        { x: pin2.x, y: pin2.y },
-      ]
+    const start = { x: pin1.x, y: pin1.y }
+    const end = { x: pin2.x, y: pin2.y }
+    const doglegPath = this.getShortDoglegPath(start, end, pin1, pin2)
+    if (doglegPath) return doglegPath
+
+    const candidatePaths =
+      pin1.x !== pin2.x && pin1.y !== pin2.y
+        ? [
+            [start, { x: pin2.x, y: pin1.y }, end],
+            [start, { x: pin1.x, y: pin2.y }, end],
+          ]
+        : [[start, end]]
+
+    for (const path of candidatePaths) {
+      if (this.pathMatchesPinDirections(path, pin1, pin2)) return path
     }
 
-    return [
-      { x: pin1.x, y: pin1.y },
-      { x: pin2.x, y: pin2.y },
+    return calculateElbow(
+      {
+        x: pin1.x,
+        y: pin1.y,
+        facingDirection: pin1._facingDirection!,
+      },
+      {
+        x: pin2.x,
+        y: pin2.y,
+        facingDirection: pin2._facingDirection!,
+      },
+      { overshoot: Math.min(0.2, Math.max(0.02, manhattanDist / 4)) },
+    )
+  }
+
+  private getShortDoglegPath(
+    start: Point,
+    end: Point,
+    pin1: MspConnectionPair["pins"][number],
+    pin2: MspConnectionPair["pins"][number],
+  ): Point[] | null {
+    if (pin1.x === pin2.x || pin1.y === pin2.y) return null
+
+    const firstDir = pin1._facingDirection
+    const lastDir = pin2._facingDirection
+    if (!firstDir?.startsWith("y") || !lastDir?.startsWith("x")) return null
+
+    const yOffset = firstDir === "y+" ? 0.02 : -0.02
+    const doglegY = start.y + yOffset
+    const doglegX = (start.x + end.x) / 2
+    const path = [
+      start,
+      { x: start.x, y: doglegY },
+      { x: doglegX, y: doglegY },
+      { x: doglegX, y: end.y },
+      end,
     ]
+
+    return this.pathMatchesPinDirections(path, pin1, pin2) ? path : null
+  }
+
+  private segmentDirection(from: Point, to: Point): FacingDirection | null {
+    if (to.x > from.x) return "x+"
+    if (to.x < from.x) return "x-"
+    if (to.y > from.y) return "y+"
+    if (to.y < from.y) return "y-"
+    return null
+  }
+
+  private pathMatchesPinDirections(
+    path: Point[],
+    pin1: MspConnectionPair["pins"][number],
+    pin2: MspConnectionPair["pins"][number],
+  ): boolean {
+    const firstDirection = this.segmentDirection(path[0]!, path[1]!)
+    const lastDirection = this.segmentDirection(
+      path[path.length - 1]!,
+      path[path.length - 2]!,
+    )
+
+    return (
+      firstDirection === pin1._facingDirection &&
+      lastDirection === pin2._facingDirection
+    )
   }
 
   private axisOfSegment(a: Point, b: Point): Axis | null {
