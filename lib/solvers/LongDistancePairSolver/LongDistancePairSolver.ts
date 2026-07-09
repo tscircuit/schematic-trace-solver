@@ -73,6 +73,15 @@ export class LongDistancePairSolver extends BaseSolver {
     > = []
     const addedPairKeys = new Set<string>()
 
+    // Connections the caller designated as net labels (they carry a
+    // netLabelWidth) must not be routed as full wires — they belong to
+    // NetLabelPlacementSolver. Exclude their pin pairs from the candidates.
+    const netLabelPairKeys = new Set<string>()
+    for (const directConnection of inputProblem.directConnections) {
+      if (directConnection.netLabelWidth == null) continue
+      netLabelPairKeys.add([...directConnection.pinIds].sort().join("--"))
+    }
+
     for (const netId of Object.keys(netConnMap.netMap)) {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
@@ -114,6 +123,8 @@ export class LongDistancePairSolver extends BaseSolver {
             .map((p) => p.pinId)
             .sort()
             .join("--")
+
+          if (netLabelPairKeys.has(pairKey)) continue
 
           if (!addedPairKeys.has(pairKey)) {
             candidatePairs.push(pair)
