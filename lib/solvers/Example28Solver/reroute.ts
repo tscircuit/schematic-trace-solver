@@ -8,13 +8,13 @@ import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceS
 import { generateRerouteCandidates } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/rerouteCollidingTrace"
 import type { InputProblem } from "lib/types/InputProblem"
 import { dir } from "lib/utils/dir"
+import { getChipBoundaryOverlap } from "./doesPathRunAlongChipBoundary"
 import {
   countPathIntersections,
   getPathKey,
   getPathLength,
   isPathCollidingWithChipInterior,
 } from "./geometry"
-import { getChipBoundaryOverlap } from "./doesPathRunAlongChipBoundary"
 import type {
   ChipObstacle,
   RerouteCandidateResult,
@@ -22,6 +22,43 @@ import type {
 } from "./types"
 
 const LABEL_CLEARANCE = 0.1
+// How many LABEL_CLEARANCE-wide corridors to try before giving up on finding a
+// free one for a pushed segment.
+const MAX_CORRIDOR_SHIFTS = 16
+
+/**
+ * Whether a vertical trace segment of a different net already runs along the
+ * corridor at `x`, overlapping the [lowY, highY] span (within a corridor width).
+ */
+const corridorHasOtherNetTrace = ({
+  x,
+  lowY,
+  highY,
+  outputTraces,
+  netId,
+}: {
+  x: number
+  lowY: number
+  highY: number
+  outputTraces: SolvedTracePath[]
+  netId: string
+}): boolean => {
+  for (const other of outputTraces) {
+    if (other.globalConnNetId === netId) continue
+    const path = other.tracePath
+    for (let i = 0; i + 1 < path.length; i++) {
+      const start = path[i]!
+      const end = path[i + 1]!
+      if (Math.abs(start.x - end.x) >= 1e-9) continue
+      if (Math.abs(start.x - x) >= LABEL_CLEARANCE / 2) continue
+      const segLowY = Math.min(start.y, end.y)
+      const segHighY = Math.max(start.y, end.y)
+      if (Math.min(highY, segHighY) - Math.max(lowY, segLowY) > 1e-6)
+        return true
+    }
+  }
+  return false
+}
 
 export const findBestReroutePath = ({
   trace,
@@ -78,8 +115,11 @@ export const generateRerouteCandidateResults = ({
   const seen = new Set<string>()
   const candidateResults: RerouteCandidateResult[] = []
   const horizontalSegmentPushCandidate = generateHorizontalSegmentPushCandidate(
-    trace,
-    label,
+    {
+      trace,
+      label,
+      outputTraces,
+    },
   )
 
   if (horizontalSegmentPushCandidate) {
@@ -328,10 +368,15 @@ const selectBestReroutePath = ({
   return bestPath
 }
 
-const generateHorizontalSegmentPushCandidate = (
-  trace: SolvedTracePath,
-  label: NetLabelPlacement,
-): Point[] | null => {
+const generateHorizontalSegmentPushCandidate = ({
+  trace,
+  label,
+  outputTraces,
+}: {
+  trace: SolvedTracePath
+  label: NetLabelPlacement
+  outputTraces: SolvedTracePath[]
+}): Point[] | null => {
   const labelDirection = dir(label.orientation)
   if (labelDirection.x === 0) return null
 
@@ -366,6 +411,25 @@ const generateHorizontalSegmentPushCandidate = (
   let segmentPushX = bounds.minX - LABEL_CLEARANCE
   if (labelDirection.x > 0) {
     segmentPushX = bounds.maxX + LABEL_CLEARANCE
+  }
+
+  // Two traces escaping the same label block would otherwise be pushed to the
+  // identical corridor and stack on one line. Slide the corridor further out
+  // until it no longer coincides with a different-net trace already routed
+  // there, giving each escaping trace its own parallel corridor.
+  const corridorStep = labelDirection.x > 0 ? LABEL_CLEARANCE : -LABEL_CLEARANCE
+  const verticalLowY = Math.min(verticalStart.y, verticalEnd.y)
+  const verticalHighY = Math.max(verticalStart.y, verticalEnd.y)
+  for (let shift = 0; shift < MAX_CORRIDOR_SHIFTS; shift++) {
+    const occupied = corridorHasOtherNetTrace({
+      x: segmentPushX,
+      lowY: verticalLowY,
+      highY: verticalHighY,
+      outputTraces,
+      netId: trace.globalConnNetId,
+    })
+    if (!occupied) break
+    segmentPushX += corridorStep
   }
   const segmentPushStartY = getClearedHorizontalY({
     start: previousAnchor,
