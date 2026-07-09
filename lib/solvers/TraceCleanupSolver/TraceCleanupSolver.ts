@@ -25,6 +25,7 @@ import { is4PointRectangle } from "./is4PointRectangle"
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
@@ -97,7 +98,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
       this.pipelineStep = "balancing_l_shapes"
-      this.traceIdQueue = Array.from(
+this.traceIdQueue = Array.from(
         this.input.allTraces.map((e) => e.mspPairId),
       )
       return
@@ -147,8 +148,38 @@ export class TraceCleanupSolver extends BaseSolver {
   }
 
   getOutput() {
+    const tolerance = 0.01;
+    const finalTraces = this.outputTraces.map(t => {
+      const path = t.tracePath || [];
+      if (path.length <= 2) return t;
+
+      const newPath: Array<{ x: number; y: number }> = [path[0]];
+      
+      for (let i = 1; i < path.length - 1; i++) {
+        const prev = newPath[newPath.length - 1];
+        const curr = path[i];
+        const next = path[i + 1];
+
+        const isCollinearX = Math.abs(prev.x - curr.x) <= tolerance && Math.abs(curr.x - next.x) <= tolerance;
+        const isCollinearY = Math.abs(prev.y - curr.y) <= tolerance && Math.abs(curr.y - next.y) <= tolerance;
+
+        if (!isCollinearX && !isCollinearY) {
+          newPath.push(curr);
+        }
+      }
+      
+      if (path.length > 1) {
+        newPath.push(path[path.length - 1]);
+      }
+
+      return {
+        ...t,
+        tracePath: newPath
+      };
+    });
+
     return {
-      traces: this.outputTraces,
+      traces: finalTraces,
     }
   }
 
@@ -171,7 +202,7 @@ export class TraceCleanupSolver extends BaseSolver {
     for (const trace of this.outputTraces) {
       const line: Line = {
         points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
-        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue", // Highlight active trace
+        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue",
       }
       graphics.lines!.push(line)
     }
