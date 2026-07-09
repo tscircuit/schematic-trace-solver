@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
-import inputProblem from "./assets/repro147-netlabel-overlap-trace.input.json"
+import inputProblem from "./assets/repro-netlabel-overlap-trace.input.json"
 import "tests/fixtures/matcher"
 
 // Regression (from @tscircuit/core repro147): a GND net label ends up overlapping

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
-import inputProblem from "./assets/repro149-rectifier-trace-overlap.input.json"
+import inputProblem from "./assets/repro-rectifier-trace-overlap.input.json"
 import "tests/fixtures/matcher"
 
 // Regression (from @tscircuit/core half-bridge-rectifier): the R1->C1 connection

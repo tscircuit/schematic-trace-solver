@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
-import inputProblem from "./assets/repro148-missing-trace-netlabel.input.json"
+import inputProblem from "./assets/repro-missing-trace-netlabel.input.json"
 import "tests/fixtures/matcher"
 
 // Regression (from @tscircuit/core repro148): the RESET connection between R3 and
