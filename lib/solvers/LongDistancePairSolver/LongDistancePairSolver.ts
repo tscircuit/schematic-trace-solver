@@ -13,6 +13,7 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { getNetLabelDirectConnectionPairKeys } from "../../utils/getNetLabelDirectConnectionPairKeys"
 
 const NEAREST_NEIGHBOR_COUNT = 3
 
@@ -73,14 +74,10 @@ export class LongDistancePairSolver extends BaseSolver {
     > = []
     const addedPairKeys = new Set<string>()
 
-    // Connections the caller designated as net labels (they carry a
-    // netLabelWidth) must not be routed as full wires — they belong to
-    // NetLabelPlacementSolver. Exclude their pin pairs from the candidates.
-    const netLabelPairKeys = new Set<string>()
-    for (const directConnection of inputProblem.directConnections) {
-      if (directConnection.netLabelWidth == null) continue
-      netLabelPairKeys.add([...directConnection.pinIds].sort().join("--"))
-    }
+    // Connections the caller designated as net labels must not be routed as
+    // full wires — they belong to NetLabelPlacementSolver. Exclude their pin
+    // pairs from the candidates.
+    const netLabelPairKeys = getNetLabelDirectConnectionPairKeys(inputProblem)
 
     for (const netId of Object.keys(netConnMap.netMap)) {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)

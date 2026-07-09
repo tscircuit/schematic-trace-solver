@@ -13,6 +13,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { getNetLabelDirectConnectionPairKeys } from "../../utils/getNetLabelDirectConnectionPairKeys"
 
 export type MspConnectionPairId = string
 
@@ -36,6 +37,7 @@ export class MspConnectionPairSolver extends BaseSolver {
 
   pinMap: Record<string, InputPin & { chipId: string }>
   userNetIdByPinId: Record<string, string | undefined>
+  netLabelPairKeys: Set<string>
 
   constructor({ inputProblem }: { inputProblem: InputProblem }) {
     super()
@@ -75,7 +77,16 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
 
+    // Connections the caller designated as net labels must not be routed as
+    // wires (they belong to NetLabelPlacementSolver), even when the two pins
+    // are close enough to pass maxMspPairDistance.
+    this.netLabelPairKeys = getNetLabelDirectConnectionPairKeys(inputProblem)
+
     this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+  }
+
+  private isNetLabelPair(pinId1: PinId, pinId2: PinId): boolean {
+    return this.netLabelPairKeys.has([pinId1, pinId2].sort().join("--"))
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -103,6 +114,10 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     if (directlyConnectedPins.length === 2) {
       const [pin1, pin2] = directlyConnectedPins
+      if (this.isNetLabelPair(pin1!, pin2!)) {
+        // Rendered as a net label, not a wire
+        return
+      }
       const p1 = this.pinMap[pin1!]!
       const p2 = this.pinMap[pin2!]!
       // Enforce max pair distance (use Manhattan to match orthogonal routing metric)
@@ -173,6 +188,10 @@ export class MspConnectionPairSolver extends BaseSolver {
     )
 
     for (const [pin1, pin2] of msp) {
+      if (this.isNetLabelPair(pin1!, pin2!)) {
+        // Rendered as a net label, not a wire
+        continue
+      }
       const p1Obj = this.pinMap[pin1!]!
       const p2Obj = this.pinMap[pin2!]!
       if (
