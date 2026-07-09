@@ -1,0 +1,115 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -4,
+        "y": 3
+      },
+      "width": 0.9499999999999997,
+      "height": 0.29000000000000004,
+      "pins": [
+        {
+          "pinId": "B1.1",
+          "x": -4.45,
+          "y": 2.9699999999999998,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "B1.2",
+          "x": -3.55,
+          "y": 2.9699999999999998,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "power"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -2,
+        "y": 3
+      },
+      "width": 0.7599999999999998,
+      "height": 0.5,
+      "pins": [
+        {
+          "pinId": "SW1.1",
+          "x": -2.38,
+          "y": 3,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "SW1.2",
+          "x": -1.62,
+          "y": 3,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "power"
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -3,
+        "y": 1.5
+      },
+      "width": 0.5999999999999996,
+      "height": 0.8399999999999999,
+      "pins": [
+        {
+          "pinId": "C3.1",
+          "x": -3.3,
+          "y": 1.5,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "C3.2",
+          "x": -2.7,
+          "y": 1.5,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "power"
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": [
+        "B1.1",
+        "SW1.1"
+      ],
+      "netId": ".B1 > .pin1 to .SW1 > .pin1"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "pinIds": [
+        "B1.2",
+        "C3.2"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48
+    },
+    {
+      "netId": "VCC",
+      "pinIds": [
+        "SW1.2",
+        "C3.1"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "VCC": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ]
+  },
+  "maxMspPairDistance": 2.4
+}
