@@ -74,8 +74,11 @@ export class LongDistancePairSolver extends BaseSolver {
     const addedPairKeys = new Set<string>()
 
     for (const netId of Object.keys(netConnMap.netMap)) {
-      const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
+      const allPinIdsInNet = netConnMap
+        .getIdsConnectedToNet(netId)
+        .filter((pinId) => pinMap.has(pinId))
       if (allPinIdsInNet.length < 2) continue
+      if (this.isRepeatedSinglePinNetLabelNet(allPinIdsInNet)) continue
 
       const unconnectedPinIds = allPinIdsInNet.filter(
         (pinId) => !primaryConnectedPinIds.has(pinId),
@@ -123,6 +126,43 @@ export class LongDistancePairSolver extends BaseSolver {
       }
     }
     this.queuedCandidatePairs = candidatePairs
+  }
+
+  private isRepeatedSinglePinNetLabelNet(pinIdsInNet: PinId[]) {
+    const userNetIds = new Set<string>()
+
+    for (const pinId of pinIdsInNet) {
+      for (const netConn of this.inputProblem.netConnections) {
+        if (netConn.pinIds.includes(pinId)) {
+          userNetIds.add(netConn.netId)
+        }
+      }
+    }
+
+    if (userNetIds.size !== 1) return false
+
+    const [userNetId] = [...userNetIds]
+    const matchingNetConnections = this.inputProblem.netConnections.filter(
+      (netConn) => netConn.netId === userNetId,
+    )
+
+    if (matchingNetConnections.length < 2) return false
+    if (matchingNetConnections.some((netConn) => netConn.pinIds.length !== 1)) {
+      return false
+    }
+
+    const netConnectionPinIds = new Set(
+      matchingNetConnections.flatMap((netConn) => netConn.pinIds),
+    )
+
+    if (netConnectionPinIds.size !== pinIdsInNet.length) return false
+    if (pinIdsInNet.some((pinId) => !netConnectionPinIds.has(pinId))) {
+      return false
+    }
+
+    return !this.inputProblem.directConnections.some((directConn) =>
+      directConn.pinIds.some((pinId) => netConnectionPinIds.has(pinId)),
+    )
   }
 
   override getConstructorParams() {
