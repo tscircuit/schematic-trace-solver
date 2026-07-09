@@ -7,7 +7,10 @@ const MAX_SHORT_TRACE_DISTANCE = 0.15
 const SHORT_TRACE_OVERSHOOT = MAX_SHORT_TRACE_DISTANCE / 7.5
 const FALLBACK_ELBOW_MAX_OVERSHOOT = 0.2
 
-export function segmentDirection(from: Point, to: Point): FacingDirection | null {
+export function segmentDirection(
+  from: Point,
+  to: Point,
+): FacingDirection | null {
   if (to.x > from.x) return "x+"
   if (to.x < from.x) return "x-"
   if (to.y > from.y) return "y+"
@@ -105,8 +108,7 @@ export function calculateDirectShortPath(
   pin1: MspConnectionPair["pins"][number],
   pin2: MspConnectionPair["pins"][number],
 ): Point[] | null {
-  const routingDistance =
-    Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
+  const routingDistance = Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
 
   // If the distance is too large, fallback to the standard complex routing solver
   if (routingDistance > MAX_SHORT_TRACE_DISTANCE) return null
