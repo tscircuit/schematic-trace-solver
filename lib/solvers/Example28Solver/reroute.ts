@@ -14,7 +14,7 @@ import {
   getPathLength,
   isPathCollidingWithChipInterior,
 } from "./geometry"
-import { doesPathRunAlongChipBoundary } from "./doesPathRunAlongChipBoundary"
+import { getChipBoundaryOverlap } from "./doesPathRunAlongChipBoundary"
 import type {
   ChipObstacle,
   RerouteCandidateResult,
@@ -52,6 +52,7 @@ export const findBestReroutePath = ({
     outputTraces,
     outputNetLabelPlacements,
     candidateResults,
+    chipObstacles,
   })
 
   markSelectedCandidate(candidateResults, bestPath)
@@ -166,15 +167,11 @@ const createCandidateResult = ({
     }
   }
 
-  if (doesPathRunAlongChipBoundary(path, chipObstacles)) {
-    return {
-      path,
-      status: "chip-collision",
-      usesHorizontalSegmentPush,
-      selected: false,
-    }
-  }
-
+  // Note: a path that merely runs along a chip boundary is NOT rejected here.
+  // It is a valid route, just a lower-quality one — scoreTracePath penalizes it
+  // via chipBoundaryOverlap so it loses only to routes that are otherwise as
+  // good. Hard-rejecting it discarded the best available route when every
+  // alternative overlapped a label or another trace.
   return {
     path,
     score: scoreTracePath({
@@ -183,6 +180,7 @@ const createCandidateResult = ({
       obstacleLabel,
       outputTraces,
       outputNetLabelPlacements,
+      chipObstacles,
     }),
     status: "valid",
     usesHorizontalSegmentPush,
@@ -293,12 +291,14 @@ const selectBestReroutePath = ({
   outputTraces,
   outputNetLabelPlacements,
   candidateResults,
+  chipObstacles,
 }: {
   trace: SolvedTracePath
   obstacleLabel: NetLabelPlacement
   outputTraces: SolvedTracePath[]
   outputNetLabelPlacements: NetLabelPlacement[]
   candidateResults: RerouteCandidateResult[]
+  chipObstacles: ChipObstacle[]
 }) => {
   for (const candidate of candidateResults) {
     if (!candidate.usesHorizontalSegmentPush) continue
@@ -314,6 +314,7 @@ const selectBestReroutePath = ({
     obstacleLabel,
     outputTraces,
     outputNetLabelPlacements,
+    chipObstacles,
   })
 
   for (const candidate of candidateResults) {
@@ -437,12 +438,14 @@ const scoreTracePath = ({
   obstacleLabel,
   outputTraces,
   outputNetLabelPlacements,
+  chipObstacles,
 }: {
   trace: SolvedTracePath
   tracePath: Point[]
   obstacleLabel: NetLabelPlacement
   outputTraces: SolvedTracePath[]
   outputNetLabelPlacements: NetLabelPlacement[]
+  chipObstacles: ChipObstacle[]
 }): TracePathScore => {
   const candidateTrace = { ...trace, tracePath }
   return {
@@ -452,6 +455,7 @@ const scoreTracePath = ({
     }).length,
     labelHugDistance: getLabelHugDistance(tracePath, obstacleLabel),
     traceIntersections: countTraceIntersections(candidateTrace, outputTraces),
+    chipBoundaryOverlap: getChipBoundaryOverlap(tracePath, chipObstacles),
     pathLength: getPathLength(tracePath),
   }
 }
@@ -469,6 +473,21 @@ const countTraceIntersections = (
 }
 
 const isBetterScore = (score: TracePathScore, bestScore: TracePathScore) => {
+  // A route with no label overlap is always preferred over one with any. This
+  // is separate from the full overlap count below so that a *clean* route wins
+  // even if it hugs a chip boundary, while a route that must overlap a label is
+  // still steered away from also hugging a boundary.
+  const scoreHasLabelOverlap = score.labelIntersections > 0
+  const bestHasLabelOverlap = bestScore.labelIntersections > 0
+  if (scoreHasLabelOverlap !== bestHasLabelOverlap) {
+    // Reached only when exactly one route overlaps a label; the clean one wins.
+    return !scoreHasLabelOverlap
+  }
+  // Boundary hugging is only accepted as the price of a clean route; once a
+  // label overlap is unavoidable, avoid hugging a boundary on top of it.
+  if (score.chipBoundaryOverlap !== bestScore.chipBoundaryOverlap) {
+    return score.chipBoundaryOverlap < bestScore.chipBoundaryOverlap
+  }
   if (score.labelIntersections !== bestScore.labelIntersections) {
     return score.labelIntersections < bestScore.labelIntersections
   }

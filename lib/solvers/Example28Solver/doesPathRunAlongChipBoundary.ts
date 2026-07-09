@@ -20,6 +20,24 @@ export const doesPathRunAlongChipBoundary = (
   return false
 }
 
+/** Total length of the path that runs along (overlapping) a chip boundary. */
+export const getChipBoundaryOverlap = (
+  path: Point[],
+  chipObstacles: ChipObstacle[],
+) => {
+  let total = 0
+  for (let i = 0; i < path.length - 1; i++) {
+    const start = path[i]!
+    const end = path[i + 1]!
+    for (const obstacle of chipObstacles) {
+      if (!segmentRunsAlongRectBoundary(start, end, obstacle)) continue
+      const overlap = getSegmentOverlapWithRectSpan(start, end, obstacle)
+      if (overlap > EPS) total += overlap
+    }
+  }
+  return total
+}
+
 const getSegmentOverlapWithRectSpan = (
   start: Point,
   end: Point,
