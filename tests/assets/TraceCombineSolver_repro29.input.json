@@ -1,0 +1,51 @@
+{
+  "inputProblem": {
+    "chips": [
+      {
+        "chipId": "U1",
+        "center": { "x": 0, "y": 0 },
+        "width": 2,
+        "height": 2,
+        "pins": [
+          { "pinId": "U1.1", "x": -1, "y": 0.5 },
+          { "pinId": "U1.2", "x": 1, "y": 0.5 }
+        ]
+      }
+    ],
+    "directConnections": [
+      {
+        "pinIds": ["U1.1", "U1.2"],
+        "netId": "SIG"
+      }
+    ],
+    "netConnections": []
+  },
+  "inputTracePaths": [
+    {
+      "mspPairId": "trace-a",
+      "dcConnNetId": "net-sig",
+      "globalConnNetId": "net-sig",
+      "userNetId": "SIG",
+      "pins": [
+        { "pinId": "U1.1", "chipId": "U1", "x": -1, "y": 0.5 },
+        { "pinId": "U1.2", "chipId": "U1", "x": 1, "y": 0.5 }
+      ],
+      "tracePath": [{ "x": 0, "y": 1 }, { "x": 4, "y": 1 }],
+      "mspConnectionPairIds": ["trace-a"],
+      "pinIds": ["U1.1", "U1.2"]
+    },
+    {
+      "mspPairId": "trace-b",
+      "dcConnNetId": "net-sig",
+      "globalConnNetId": "net-sig",
+      "userNetId": "SIG",
+      "pins": [
+        { "pinId": "U1.1", "chipId": "U1", "x": -1, "y": 0.5 },
+        { "pinId": "U1.2", "chipId": "U1", "x": 1, "y": 0.5 }
+      ],
+      "tracePath": [{ "x": 0, "y": 1.1 }, { "x": 4, "y": 1.1 }],
+      "mspConnectionPairIds": ["trace-b"],
+      "pinIds": ["U1.1", "U1.2"]
+    }
+  ]
+}
