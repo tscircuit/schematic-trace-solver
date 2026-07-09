@@ -233,10 +233,6 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     return penalty
   }
 
-  private pathCost(path: Point[]): number {
-    return this.pathLength(path) + this.getPinBandPenalty(path)
-  }
-
   private isSegmentOutsidePinBand(a: Point, b: Point): boolean {
     if (isHorizontal(a, b)) {
       return a.y <= this.aabb.minY || a.y >= this.aabb.maxY
@@ -356,11 +352,15 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       candidates.push(...mids)
     }
 
-    // Generate new shifted paths, order by total path length (shorter first)
+    // Generate new shifted paths. Order by path length first, then prefer paths
+    // that stay out of the pin band. The pin-band preference is a tiebreaker
+    // only: it must never make the solver pick a longer route (a flat additive
+    // penalty would, discarding a shorter valid route in favor of a detour).
     const newStates: Array<{
       path: Point[]
       collisionRects: Set<ObstacleRect>
-      len: number
+      length: number
+      pinBandPenalty: number
     }> = []
 
     const addShiftedCandidate = (
@@ -380,8 +380,12 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       this.visited.add(key)
       const nextSet = new Set(collisionRects)
       nextSet.add(rect)
-      const len = this.pathCost(newPath)
-      newStates.push({ path: newPath, collisionRects: nextSet, len })
+      newStates.push({
+        path: newPath,
+        collisionRects: nextSet,
+        length: this.pathLength(newPath),
+        pinBandPenalty: this.getPinBandPenalty(newPath),
+      })
     }
 
     for (const coord of candidates) {
@@ -424,7 +428,9 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       }
     }
 
-    newStates.sort((a, b) => a.len - b.len)
+    newStates.sort(
+      (a, b) => a.length - b.length || a.pinBandPenalty - b.pinBandPenalty,
+    )
     for (const st of newStates) {
       this.queue.push({ path: st.path, collisionRects: st.collisionRects })
     }
