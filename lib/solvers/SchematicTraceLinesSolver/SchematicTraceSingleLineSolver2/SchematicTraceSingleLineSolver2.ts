@@ -18,6 +18,7 @@ import { pathKey, shiftSegmentOrth } from "./pathOps"
 import type { FacingDirection } from "lib/utils/dir"
 import { getDimsForOrientation } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { RectPadding } from "lib/utils/textBoxBounds"
+import { calculateDirectShortPath } from "./calculateDirectShortPath"
 
 type PathKey = string
 
@@ -80,21 +81,26 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         : [],
     )
 
-    // Build initial elbow path
     const [pin1, pin2] = this.pins
-    this.baseElbow = calculateElbow(
-      {
-        x: pin1.x,
-        y: pin1.y,
-        facingDirection: pin1._facingDirection!,
-      },
-      {
-        x: pin2.x,
-        y: pin2.y,
-        facingDirection: pin2._facingDirection!,
-      },
-      { overshoot: 0.2 },
-    )
+    const directShortPath = calculateDirectShortPath(pin1, pin2)
+
+    // Build initial elbow path
+    this.baseElbow =
+      directShortPath ??
+      calculateElbow(
+        {
+          x: pin1.x,
+          y: pin1.y,
+          facingDirection: pin1._facingDirection!,
+        },
+        {
+          x: pin2.x,
+          y: pin2.y,
+          facingDirection: pin2._facingDirection!,
+        },
+        { overshoot: 0.2 },
+      )
+    this.solvedTracePath = directShortPath
 
     // Bounds defined by PA and PB
     this.aabb = aabbFromPoints(
