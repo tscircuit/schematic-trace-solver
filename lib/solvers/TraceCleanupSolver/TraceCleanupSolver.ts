@@ -20,6 +20,7 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { mergeSameNetCollinearTraces } from "./mergeSameNetCollinearTraces"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -49,11 +50,9 @@ export class TraceCleanupSolver extends BaseSolver {
   constructor(solverInput: TraceCleanupSolverInput) {
     super()
     this.input = solverInput
-    this.outputTraces = [...solverInput.allTraces]
+    this.outputTraces = mergeSameNetCollinearTraces(solverInput.allTraces)
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
-    this.traceIdQueue = Array.from(
-      solverInput.allTraces.map((e) => e.mspPairId),
-    )
+    this.traceIdQueue = Array.from(this.outputTraces.map((e) => e.mspPairId))
   }
 
   override _step() {
@@ -97,9 +96,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
       this.pipelineStep = "balancing_l_shapes"
-      this.traceIdQueue = Array.from(
-        this.input.allTraces.map((e) => e.mspPairId),
-      )
+      this.traceIdQueue = Array.from(this.outputTraces.map((e) => e.mspPairId))
       return
     }
 
