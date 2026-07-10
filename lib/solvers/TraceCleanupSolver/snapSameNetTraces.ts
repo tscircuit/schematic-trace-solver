@@ -1,42 +1,6 @@
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { simplifyPath } from "./simplifyPath"
 
-const GEOM_EPS = 1e-6
-
-/**
- * Returns true when the 1-D intervals [a1,a2] and [b1,b2] overlap by more
- * than `minOverlap`.
- */
-function overlaps1D(
-  a1: number,
-  a2: number,
-  b1: number,
-  b2: number,
-  minOverlap = GEOM_EPS,
-): boolean {
-  const minA = Math.min(a1, a2)
-  const maxA = Math.max(a1, a2)
-  const minB = Math.min(b1, b2)
-  const maxB = Math.max(b1, b2)
-  return Math.min(maxA, maxB) - Math.max(minA, minB) > minOverlap
-}
-
-/**
- * Mutates close parallel segments between two same-net traces so they share
- * the exact same axis-aligned coordinate.
- *
- * For two vertical segments (same X within `threshold`) whose Y ranges
- * overlap, we snap both to the arithmetic mean X.
- *
- * For two horizontal segments (same Y within `threshold`) whose X ranges
- * overlap, we snap both to the arithmetic mean Y.
- *
- * Because the paths are orthogonal, adjusting a single coordinate on the two
- * endpoints of a segment only elongates or shortens the adjacent perpendicular
- * segments — the overall topology is preserved.
- *
- * Returns `true` if at least one snap was applied.
- */
 function snapBetweenTraces(
   traceA: SolvedTracePath,
   traceB: SolvedTracePath,
@@ -46,17 +10,20 @@ function snapBetweenTraces(
   const pathB = traceB.tracePath
   let snapped = false
 
-  for (let sa = 0; sa < pathA.length - 1; sa++) {
-    const a1 = pathA[sa]!
-    const a2 = pathA[sa + 1]!
+  
+for (let sa = 0; sa < pathA.length - 1; sa++) {
+  const a1 = pathA[sa]!
+  const a2 = pathA[sa + 1]!
 
-    const aIsVert = Math.abs(a1.x - a2.x) < GEOM_EPS
-    const aIsHorz = Math.abs(a1.y - a2.y) < GEOM_EPS
-    if (!aIsVert && !aIsHorz) continue
+  
+  const aIsVert = Math.abs(a1.x - a2.x) < GEOM_EPS
+  const aIsHorz = Math.abs(a1.y - a2.y) < GEOM_EPS
+  if (!aIsVert && !aIsHorz) continue
 
-    for (let sb = 0; sb < pathB.length - 1; sb++) {
-      const b1 = pathB[sb]!
-      const b2 = pathB[sb + 1]!
+  
+  for (let sb = 0; sb < pathB.length - 1; sb++) {
+    const b1 = pathB[sb]!
+    const b2 = pathB[sb + 1]!
 
       const bIsVert = Math.abs(b1.x - b2.x) < GEOM_EPS
       const bIsHorz = Math.abs(b1.y - b2.y) < GEOM_EPS
@@ -121,7 +88,7 @@ export function snapSameNetTraces(
 ): SolvedTracePath[] {
   if (traces.length === 0) return traces
 
-  // Group traces by net, keeping a mutable clone of each path.
+  
   const updatedMap = new Map<string, SolvedTracePath>(
     traces.map((t) => [
       t.mspPairId,
@@ -132,7 +99,7 @@ export function snapSameNetTraces(
     ]),
   )
 
-  // Build net → trace list mapping using the mutable clones.
+  
   const netGroups = new Map<string, SolvedTracePath[]>()
   for (const trace of updatedMap.values()) {
     const netId = trace.globalConnNetId
@@ -140,7 +107,7 @@ export function snapSameNetTraces(
     netGroups.get(netId)!.push(trace)
   }
 
-  // Iterate until stable or max passes reached.
+  
   for (let pass = 0; pass < maxPasses; pass++) {
     let anySnapped = false
 
@@ -162,6 +129,6 @@ export function snapSameNetTraces(
     if (!anySnapped) break
   }
 
-  // Return traces in the original order, with updated paths.
+  
   return traces.map((t) => updatedMap.get(t.mspPairId)!)
 }

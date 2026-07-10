@@ -42,10 +42,13 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
 
   labelMergingSolver?: MergedNetLabelObstacleSolver
 
+  allInputTraces: SolvedTracePath[]
+
   constructor(solverInput: TraceLabelOverlapAvoidanceSolverInput) {
     super()
     this.inputProblem = solverInput.inputProblem
     this.unprocessedTraces = [...solverInput.traces]
+    this.allInputTraces = solverInput.traces
     this.netLabelPlacements = solverInput.netLabelPlacements
     this.cleanTraces = []
     this.subSolvers = []
@@ -54,9 +57,6 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
   override _step() {
     if (this.phase === "searching_for_overlaps") {
       if (this.unprocessedTraces.length === 0) {
-        console.log(
-          `Dispatch phase complete. Created ${this.subSolvers.length} sub-solvers.`,
-        )
         this.phase = "fixing_overlaps"
         return
       }
@@ -88,12 +88,14 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
           mergedNetLabelPlacements: mergingOutput.netLabelPlacements,
           mergedLabelNetIdMap: mergingOutput.mergedLabelNetIdMap,
           detourCounts: this.detourCounts,
+          tracesToAvoidOverlapping: this.allInputTraces.filter(
+            (t) => t.mspPairId !== currentTargetTrace.mspPairId,
+          ),
         })
         this.subSolvers.push(subSolver)
       }
     } else if (this.phase === "fixing_overlaps") {
       if (this.subSolvers.every((s) => s.solved || s.failed)) {
-        console.log("All sub-solvers finished.")
         // Final merge for pipeline compatibility
         if (!this.labelMergingSolver) {
           this.labelMergingSolver = new MergedNetLabelObstacleSolver({

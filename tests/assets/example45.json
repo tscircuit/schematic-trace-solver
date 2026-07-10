@@ -1,0 +1,121 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 7,
+        "y": 0.7
+      },
+      "width": 1,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "IC2.15",
+          "x": 7.9,
+          "y": 0.7
+        }
+      ],
+      "sectionId": "mcu"
+    },
+    {
+      "chipId": "schematic_component_19",
+      "center": {
+        "x": 11.8,
+        "y": 0.19999999999999998
+      },
+      "width": 0.7699999999999996,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "CONN1.1",
+          "x": 11.015,
+          "y": 0.5
+        },
+        {
+          "pinId": "CONN1.2",
+          "x": 11.015,
+          "y": 0.30000000000000004
+        },
+        {
+          "pinId": "CONN1.3",
+          "x": 11.015,
+          "y": 0.10000000000000003
+        },
+        {
+          "pinId": "CONN1.4",
+          "x": 11.015,
+          "y": -0.10000000000000003
+        }
+      ],
+      "sectionId": "i2c"
+    },
+    {
+      "chipId": "schematic_component_20",
+      "center": {
+        "x": 9.6,
+        "y": 0.7
+      },
+      "width": 1.1000000000000014,
+      "height": 0.7789106999999991,
+      "pins": [
+        {
+          "pinId": "R10.1",
+          "x": 9.05,
+          "y": 0.7
+        },
+        {
+          "pinId": "R10.2",
+          "x": 10.15,
+          "y": 0.7
+        }
+      ],
+      "sectionId": "i2c"
+    },
+    {
+      "chipId": "schematic_component_21",
+      "center": {
+        "x": 9.6,
+        "y": -0.3
+      },
+      "width": 1.1000000000000014,
+      "height": 0.7789106999999987,
+      "pins": [
+        {
+          "pinId": "R11.1",
+          "x": 9.05,
+          "y": -0.3
+        },
+        {
+          "pinId": "R11.2",
+          "x": 10.15,
+          "y": -0.3
+        }
+      ],
+      "sectionId": "i2c"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "V3V3",
+      "pinIds": ["CONN1.2", "R10.1", "R11.1"],
+      "netLabelWidth": 0.6
+    },
+    {
+      "netId": "SDA",
+      "pinIds": ["IC2.15", "CONN1.3", "R10.2"],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "SCL",
+      "pinIds": ["CONN1.4", "R11.2"],
+      "netLabelWidth": 0.48
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "V3V3": ["y+"],
+    "SDA": ["x-", "x+"],
+    "SCL": ["x-", "x+"]
+  },
+  "maxMspPairDistance": 2.4
+}

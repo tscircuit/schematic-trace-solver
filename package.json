@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/schematic-trace-solver",
   "main": "dist/index.js",
-  "version": "0.0.62",
+  "version": "0.0.78",
   "type": "module",
   "scripts": {
     "start": "cosmos",
@@ -24,9 +24,16 @@
     "react-cosmos-plugin-vite": "^7.0.0",
     "react-dom": "^19.1.1",
     "tsup": "^8.5.0",
-    "vite": "^7.1.3"
+    "vite": "^7.1.3",
+    "vitest": "^2.0.0"
   },
-  "peerDependencies": {
+    "peerDependencies": {
     "typescript": "^5"
+  },
+    "overrides": {
+    "sharp": "0.0.0"
   }
 }
+
+
+
