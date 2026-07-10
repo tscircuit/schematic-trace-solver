@@ -31,5 +31,5 @@
     "noPropertyAccessFromIndexSignature": false,
 
     "types": ["vitest/globals"]
-  }
-}
+  },
+
