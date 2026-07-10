@@ -317,9 +317,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     ),
   ]
 
-  constructor(inputProblem: InputProblem, opts: Options = {}) {
+  constructor(inputProblem: InputProblem, opts?: Options) {
     super()
-    this.hideRatsNet = opts.hideRatsNet ?? false
+    this.hideRatsNet = opts?.hideRatsNet ?? false
     this.inputProblem = this.cloneAndCorrectInputProblem(inputProblem)
     this.MAX_ITERATIONS = 1e6
     this.startTimeOfPhase = {}
