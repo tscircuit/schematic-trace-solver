@@ -23,7 +23,7 @@ import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolve
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
 import { Example28Solver } from "../Example28Solver/Example28Solver"
 import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
-import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
+import { RailNetLabelCornerPlacementSolver } from "../RailNetLabelCornerPlacementSolver/RailNetLabelCornerPlacementSolver"
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
@@ -77,7 +77,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   traceCleanupSolver?: TraceCleanupSolver
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
-  vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
+  railNetLabelCornerPlacementSolver?: RailNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
@@ -264,8 +264,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ],
     ),
     definePipelineStep(
-      "vccNetLabelCornerPlacementSolver",
-      VccNetLabelCornerPlacementSolver,
+      "railNetLabelCornerPlacementSolver",
+      RailNetLabelCornerPlacementSolver,
       (instance) => {
         return [
           {
@@ -285,7 +285,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           inputProblem: instance.inputProblem,
           traces: instance.availableNetOrientationSolver!.traces,
           netLabelPlacements:
-            instance.vccNetLabelCornerPlacementSolver!.outputNetLabelPlacements,
+            instance.railNetLabelCornerPlacementSolver!
+              .outputNetLabelPlacements,
         },
       ],
     ),
