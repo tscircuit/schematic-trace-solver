@@ -6,6 +6,9 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
+import { is4PointRectangle } from "./is4PointRectangle"
+import { mergeNearbySameNetSegments } from "./mergeNearbySameNetSegments"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -18,9 +21,6 @@ interface TraceCleanupSolverInput {
   paddingBuffer: number
 }
 
-import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
-import { is4PointRectangle } from "./is4PointRectangle"
-
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
@@ -28,14 +28,15 @@ type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
+  | "merging_same_net_segments"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
  * It operates in a multi-step pipeline:
  * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
- * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
- * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
- * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
+ * 2. **Minimizing Turns**: It then minimizes unnecessary turns in each trace.
+ * 3. **Balancing L-Shapes**: It balances L/Z-shaped segments for a more consistent layout.
+ * 4. **Merging Same-Net Segments**: Finally, it aligns nearby parallel same-net segments when the move is collision-safe.
  */
 export class TraceCleanupSolver extends BaseSolver {
   private input: TraceCleanupSolverInput
@@ -43,7 +44,8 @@ export class TraceCleanupSolver extends BaseSolver {
   private traceIdQueue: string[]
   private tracesMap: Map<string, SolvedTracePath>
   private pipelineStep: PipelineStep = "untangling_traces"
-  private activeTraceId: string | null = null // New property
+  private activeTraceId: string | null = null
+  mergedSameNetSegmentCount = 0
   override activeSubSolver: BaseSolver | null = null
 
   constructor(solverInput: TraceCleanupSolverInput) {
@@ -84,6 +86,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "merging_same_net_segments":
+        this._runMergeSameNetSegmentsStep()
+        break
     }
   }
 
@@ -108,11 +113,27 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "merging_same_net_segments"
       return
     }
 
     this._processTrace("balancing_l_shapes")
+  }
+
+  private _runMergeSameNetSegmentsStep() {
+    const result = mergeNearbySameNetSegments(
+      Array.from(this.tracesMap.values()),
+      {
+        inputProblem: this.input.inputProblem,
+        allLabelPlacements: this.input.allLabelPlacements,
+        mergedLabelNetIdMap: this.input.mergedLabelNetIdMap,
+      },
+    )
+
+    this.outputTraces = result.traces
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.mergedSameNetSegmentCount = result.mergedSegmentCount
+    this.solved = true
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
@@ -171,7 +192,7 @@ export class TraceCleanupSolver extends BaseSolver {
     for (const trace of this.outputTraces) {
       const line: Line = {
         points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
-        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue", // Highlight active trace
+        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue",
       }
       graphics.lines!.push(line)
     }
