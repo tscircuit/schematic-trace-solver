@@ -12,7 +12,7 @@ type SegmentRef = {
   traceIndex: number
   startIndex: number
   orientation: SegmentOrientation
-  fixedAxis: number
+  axis: number
   min: number
   max: number
   length: number
@@ -31,7 +31,7 @@ export interface MergeNearbySameNetSegmentsOptions {
 const EPSILON = 1e-6
 const DEFAULT_AXIS_TOLERANCE = 0.1
 const DEFAULT_GAP_TOLERANCE = 0.2
-const DEFAULT_MAX_PASSES = 4
+const DEFAULT_MAX_PASSES = 50
 
 const getNetKey = (trace: SolvedTracePath) =>
   trace.userNetId ?? trace.globalConnNetId ?? trace.dcConnNetId
@@ -57,7 +57,7 @@ const getOrientation = (
   return null
 }
 
-const getSegmentRefs = (traces: SolvedTracePath[]): SegmentRef[] => {
+const getSegments = (traces: SolvedTracePath[]): SegmentRef[] => {
   const segments: SegmentRef[] = []
 
   for (const [traceIndex, trace] of traces.entries()) {
@@ -79,10 +79,10 @@ const getSegmentRefs = (traces: SolvedTracePath[]): SegmentRef[] => {
         traceIndex,
         startIndex,
         orientation,
-        fixedAxis: horizontal ? startPoint.y : startPoint.x,
+        axis: horizontal ? startPoint.y : startPoint.x,
         min: Math.min(start, end),
         max: Math.max(start, end),
-        length: Math.abs(start - end),
+        length: Math.abs(end - start),
         movable: startIndex > 0 && startIndex + 1 < trace.tracePath.length - 1,
       })
     }
@@ -99,54 +99,18 @@ const getIntervalGap = (first: SegmentRef, second: SegmentRef) => {
   )
 }
 
-const getMovedPoints = (
-  trace: SolvedTracePath,
+const getAffectedSegmentIndexes = (segment: SegmentRef) =>
+  [segment.startIndex - 1, segment.startIndex, segment.startIndex + 1].filter(
+    (index) => index >= 0,
+  )
+
+const moveSegmentInPath = (
+  path: Point[],
   segment: SegmentRef,
   targetAxis: number,
 ) => {
-  const startPoint = { ...trace.tracePath[segment.startIndex]! }
-  const endPoint = { ...trace.tracePath[segment.startIndex + 1]! }
-
-  if (segment.orientation === "horizontal") {
-    startPoint.y = targetAxis
-    endPoint.y = targetAxis
-  } else {
-    startPoint.x = targetAxis
-    endPoint.x = targetAxis
-  }
-
-  return { startPoint, endPoint }
-}
-
-const getMovedSegment = (
-  trace: SolvedTracePath,
-  segment: SegmentRef,
-  targetAxis: number,
-): SegmentRef => {
-  const { startPoint, endPoint } = getMovedPoints(trace, segment, targetAxis)
-
-  return {
-    ...segment,
-    fixedAxis: targetAxis,
-    min:
-      segment.orientation === "horizontal"
-        ? Math.min(startPoint.x, endPoint.x)
-        : Math.min(startPoint.y, endPoint.y),
-    max:
-      segment.orientation === "horizontal"
-        ? Math.max(startPoint.x, endPoint.x)
-        : Math.max(startPoint.y, endPoint.y),
-  }
-}
-
-const moveSegmentToAxis = (
-  traces: SolvedTracePath[],
-  segment: SegmentRef,
-  targetAxis: number,
-) => {
-  const trace = traces[segment.traceIndex]!
-  const startPoint = trace.tracePath[segment.startIndex]!
-  const endPoint = trace.tracePath[segment.startIndex + 1]!
+  const startPoint = path[segment.startIndex]!
+  const endPoint = path[segment.startIndex + 1]!
 
   if (segment.orientation === "horizontal") {
     startPoint.y = targetAxis
@@ -157,29 +121,70 @@ const moveSegmentToAxis = (
   }
 }
 
-const rangesOverlap = (first: SegmentRef, second: SegmentRef) =>
-  Math.min(first.max, second.max) - Math.max(first.min, second.min) > EPSILON
+const rangesOverlap = (
+  firstMin: number,
+  firstMax: number,
+  secondMin: number,
+  secondMax: number,
+) => Math.min(firstMax, secondMax) - Math.max(firstMin, secondMin) > EPSILON
 
-const segmentRefsCollide = (first: SegmentRef, second: SegmentRef) => {
-  if (first.orientation === second.orientation) {
+const axisAlignedSegmentsIntersect = (
+  firstStart: Point,
+  firstEnd: Point,
+  secondStart: Point,
+  secondEnd: Point,
+) => {
+  const firstOrientation = getOrientation(firstStart, firstEnd)
+  const secondOrientation = getOrientation(secondStart, secondEnd)
+  if (!firstOrientation || !secondOrientation) return false
+
+  if (firstOrientation === secondOrientation) {
+    if (firstOrientation === "horizontal") {
+      return (
+        Math.abs(firstStart.y - secondStart.y) < EPSILON &&
+        rangesOverlap(
+          Math.min(firstStart.x, firstEnd.x),
+          Math.max(firstStart.x, firstEnd.x),
+          Math.min(secondStart.x, secondEnd.x),
+          Math.max(secondStart.x, secondEnd.x),
+        )
+      )
+    }
+
     return (
-      Math.abs(first.fixedAxis - second.fixedAxis) < EPSILON &&
-      rangesOverlap(first, second)
+      Math.abs(firstStart.x - secondStart.x) < EPSILON &&
+      rangesOverlap(
+        Math.min(firstStart.y, firstEnd.y),
+        Math.max(firstStart.y, firstEnd.y),
+        Math.min(secondStart.y, secondEnd.y),
+        Math.max(secondStart.y, secondEnd.y),
+      )
     )
   }
 
-  const horizontal = first.orientation === "horizontal" ? first : second
-  const vertical = first.orientation === "vertical" ? first : second
+  const horizontal =
+    firstOrientation === "horizontal"
+      ? { start: firstStart, end: firstEnd }
+      : { start: secondStart, end: secondEnd }
+  const vertical =
+    firstOrientation === "vertical"
+      ? { start: firstStart, end: firstEnd }
+      : { start: secondStart, end: secondEnd }
+
+  const horizontalMinX = Math.min(horizontal.start.x, horizontal.end.x)
+  const horizontalMaxX = Math.max(horizontal.start.x, horizontal.end.x)
+  const verticalMinY = Math.min(vertical.start.y, vertical.end.y)
+  const verticalMaxY = Math.max(vertical.start.y, vertical.end.y)
 
   return (
-    vertical.fixedAxis > horizontal.min + EPSILON &&
-    vertical.fixedAxis < horizontal.max - EPSILON &&
-    horizontal.fixedAxis > vertical.min + EPSILON &&
-    horizontal.fixedAxis < vertical.max - EPSILON
+    vertical.start.x > horizontalMinX + EPSILON &&
+    vertical.start.x < horizontalMaxX - EPSILON &&
+    horizontal.start.y > verticalMinY + EPSILON &&
+    horizontal.start.y < verticalMaxY - EPSILON
   )
 }
 
-const getDifferentNetLabelBounds = (
+const getLabelBounds = (
   trace: SolvedTracePath,
   allLabelPlacements: NetLabelPlacement[],
   mergedLabelNetIdMap: Record<string, Set<string>>,
@@ -204,44 +209,83 @@ const canMoveSegmentToAxis = (
   options: MergeNearbySameNetSegmentsOptions,
 ) => {
   const trace = traces[segment.traceIndex]!
-  const movedSegment = getMovedSegment(trace, segment, targetAxis)
-  const { startPoint, endPoint } = getMovedPoints(trace, segment, targetAxis)
-  const netKey = getNetKey(trace)
+  const candidatePath = trace.tracePath.map((point) => ({ ...point }))
+  moveSegmentInPath(candidatePath, segment, targetAxis)
 
-  for (const otherSegment of getSegmentRefs(traces)) {
-    if (
-      otherSegment.traceIndex === segment.traceIndex &&
-      otherSegment.startIndex === segment.startIndex
-    ) {
-      continue
-    }
+  const affectedSegmentIndexes = getAffectedSegmentIndexes(segment).filter(
+    (index) => index < candidatePath.length - 1,
+  )
 
-    const otherTrace = traces[otherSegment.traceIndex]!
-    if (getNetKey(otherTrace) === netKey) continue
-    if (segmentRefsCollide(movedSegment, otherSegment)) return false
-  }
-
-  if (options.inputProblem) {
-    const intersectsObstacle = getObstacleRects(options.inputProblem).some(
-      (obstacle) =>
-        segmentIntersectsRect(startPoint, endPoint, {
-          ...obstacle,
-          minX: obstacle.minX + EPSILON,
-          maxX: obstacle.maxX - EPSILON,
-          minY: obstacle.minY + EPSILON,
-          maxY: obstacle.maxY - EPSILON,
-        }),
-    )
-    if (intersectsObstacle) return false
-  }
-
-  const intersectsLabel = getDifferentNetLabelBounds(
+  const staticObstacles = options.inputProblem
+    ? getObstacleRects(options.inputProblem).map((obstacle) => ({
+        ...obstacle,
+        minX: obstacle.minX + EPSILON,
+        maxX: obstacle.maxX - EPSILON,
+        minY: obstacle.minY + EPSILON,
+        maxY: obstacle.maxY - EPSILON,
+      }))
+    : []
+  const labelBounds = getLabelBounds(
     trace,
     options.allLabelPlacements ?? [],
     options.mergedLabelNetIdMap ?? {},
-  ).some((bounds) => segmentIntersectsRect(startPoint, endPoint, bounds))
+  )
 
-  return !intersectsLabel
+  for (const affectedIndex of affectedSegmentIndexes) {
+    const startPoint = candidatePath[affectedIndex]!
+    const endPoint = candidatePath[affectedIndex + 1]!
+
+    if (
+      staticObstacles.some((obstacle) =>
+        segmentIntersectsRect(startPoint, endPoint, obstacle),
+      ) ||
+      labelBounds.some((bounds) =>
+        segmentIntersectsRect(startPoint, endPoint, bounds),
+      )
+    ) {
+      return false
+    }
+
+    for (const otherTrace of traces) {
+      if (getNetKey(otherTrace) === getNetKey(trace)) continue
+
+      for (
+        let otherIndex = 0;
+        otherIndex < otherTrace.tracePath.length - 1;
+        otherIndex++
+      ) {
+        if (
+          axisAlignedSegmentsIntersect(
+            startPoint,
+            endPoint,
+            otherTrace.tracePath[otherIndex]!,
+            otherTrace.tracePath[otherIndex + 1]!,
+          )
+        ) {
+          return false
+        }
+      }
+    }
+  }
+
+  return true
+}
+
+const chooseTargetAndMovingSegment = (
+  first: SegmentRef,
+  second: SegmentRef,
+): { target: SegmentRef; moving: SegmentRef } | null => {
+  if (!first.movable && !second.movable) return null
+  if (!first.movable) return { target: first, moving: second }
+  if (!second.movable) return { target: second, moving: first }
+  if (first.length > second.length) return { target: first, moving: second }
+  if (second.length > first.length) return { target: second, moving: first }
+
+  return first.traceIndex < second.traceIndex ||
+    (first.traceIndex === second.traceIndex &&
+      first.startIndex < second.startIndex)
+    ? { target: first, moving: second }
+    : { target: second, moving: first }
 }
 
 export const mergeNearbySameNetSegments = (
@@ -264,10 +308,14 @@ export const mergeNearbySameNetSegments = (
   let mergedSegmentCount = 0
 
   for (let pass = 0; pass < maxPasses; pass++) {
+    const segments = getSegments(outputTraces)
     let changedThisPass = false
-    const segments = getSegmentRefs(outputTraces)
 
-    for (let firstIndex = 0; firstIndex < segments.length; firstIndex++) {
+    search: for (
+      let firstIndex = 0;
+      firstIndex < segments.length;
+      firstIndex++
+    ) {
       const first = segments[firstIndex]!
       const firstTrace = outputTraces[first.traceIndex]!
       const firstNetKey = getNetKey(firstTrace)
@@ -281,81 +329,37 @@ export const mergeNearbySameNetSegments = (
         const second = segments[secondIndex]!
         const secondTrace = outputTraces[second.traceIndex]!
 
-        if (first.traceIndex === second.traceIndex) continue
         if (first.orientation !== second.orientation) continue
         if (firstNetKey !== getNetKey(secondTrace)) continue
-        const axisDistance = Math.abs(first.fixedAxis - second.fixedAxis)
+        const axisDistance = Math.abs(first.axis - second.axis)
         if (axisDistance < EPSILON || axisDistance > axisTolerance) continue
         if (getIntervalGap(first, second) > gapTolerance) continue
-        if (!first.movable && !second.movable) continue
 
-        if (!first.movable) {
-          if (
-            !canMoveSegmentToAxis(
-              outputTraces,
-              second,
-              first.fixedAxis,
-              options,
-            )
-          ) {
-            continue
-          }
-          moveSegmentToAxis(outputTraces, second, first.fixedAxis)
-        } else if (!second.movable) {
-          if (
-            !canMoveSegmentToAxis(
-              outputTraces,
-              first,
-              second.fixedAxis,
-              options,
-            )
-          ) {
-            continue
-          }
-          moveSegmentToAxis(outputTraces, first, second.fixedAxis)
-        } else if (first.length === second.length) {
-          const targetAxis = (first.fixedAxis + second.fixedAxis) / 2
-          if (
-            !canMoveSegmentToAxis(outputTraces, first, targetAxis, options) ||
-            !canMoveSegmentToAxis(outputTraces, second, targetAxis, options)
-          ) {
-            continue
-          }
-          moveSegmentToAxis(outputTraces, first, targetAxis)
-          moveSegmentToAxis(outputTraces, second, targetAxis)
-        } else if (first.length > second.length) {
-          if (
-            !canMoveSegmentToAxis(
-              outputTraces,
-              second,
-              first.fixedAxis,
-              options,
-            )
-          ) {
-            continue
-          }
-          moveSegmentToAxis(outputTraces, second, first.fixedAxis)
-        } else {
-          if (
-            !canMoveSegmentToAxis(
-              outputTraces,
-              first,
-              second.fixedAxis,
-              options,
-            )
-          ) {
-            continue
-          }
-          moveSegmentToAxis(outputTraces, first, second.fixedAxis)
+        const selected = chooseTargetAndMovingSegment(first, second)
+        if (!selected) continue
+        if (
+          !canMoveSegmentToAxis(
+            outputTraces,
+            selected.moving,
+            selected.target.axis,
+            options,
+          )
+        ) {
+          continue
         }
 
+        moveSegmentInPath(
+          outputTraces[selected.moving.traceIndex]!.tracePath,
+          selected.moving,
+          selected.target.axis,
+        )
+        outputTraces[selected.moving.traceIndex]!.tracePath = simplifyPath(
+          outputTraces[selected.moving.traceIndex]!.tracePath,
+        )
         mergedSegmentCount++
         changedThisPass = true
+        break search
       }
-    }
-
-    for (const trace of outputTraces) {
-      trace.tracePath = simplifyPath(trace.tracePath)
     }
 
     if (!changedThisPass) break
