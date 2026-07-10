@@ -8,6 +8,7 @@ import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceS
 import { generateRerouteCandidates } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/rerouteCollidingTrace"
 import type { InputProblem } from "lib/types/InputProblem"
 import { dir } from "lib/utils/dir"
+import { getChipBoundaryOverlap } from "./doesPathRunAlongChipBoundary"
 import {
   countPathIntersections,
   getPathKey,
@@ -20,8 +21,44 @@ import type {
   TracePathScore,
 } from "./types"
 
-const LABEL_SIDE_CLEARANCE = 0.1
-const LABEL_HUG_CLEARANCE = 0.001
+const LABEL_CLEARANCE = 0.1
+// How many LABEL_CLEARANCE-wide corridors to try before giving up on finding a
+// free one for a pushed segment.
+const MAX_CORRIDOR_SHIFTS = 16
+
+/**
+ * Whether a vertical trace segment of a different net already runs along the
+ * corridor at `x`, overlapping the [lowY, highY] span (within a corridor width).
+ */
+const corridorHasOtherNetTrace = ({
+  x,
+  lowY,
+  highY,
+  outputTraces,
+  netId,
+}: {
+  x: number
+  lowY: number
+  highY: number
+  outputTraces: SolvedTracePath[]
+  netId: string
+}): boolean => {
+  for (const other of outputTraces) {
+    if (other.globalConnNetId === netId) continue
+    const path = other.tracePath
+    for (let i = 0; i + 1 < path.length; i++) {
+      const start = path[i]!
+      const end = path[i + 1]!
+      if (Math.abs(start.x - end.x) >= 1e-9) continue
+      if (Math.abs(start.x - x) >= LABEL_CLEARANCE / 2) continue
+      const segLowY = Math.min(start.y, end.y)
+      const segHighY = Math.max(start.y, end.y)
+      if (Math.min(highY, segHighY) - Math.max(lowY, segLowY) > 1e-6)
+        return true
+    }
+  }
+  return false
+}
 
 export const findBestReroutePath = ({
   trace,
@@ -52,6 +89,7 @@ export const findBestReroutePath = ({
     outputTraces,
     outputNetLabelPlacements,
     candidateResults,
+    chipObstacles,
   })
 
   markSelectedCandidate(candidateResults, bestPath)
@@ -77,8 +115,11 @@ export const generateRerouteCandidateResults = ({
   const seen = new Set<string>()
   const candidateResults: RerouteCandidateResult[] = []
   const horizontalSegmentPushCandidate = generateHorizontalSegmentPushCandidate(
-    trace,
-    label,
+    {
+      trace,
+      label,
+      outputTraces,
+    },
   )
 
   if (horizontalSegmentPushCandidate) {
@@ -102,7 +143,7 @@ export const generateRerouteCandidateResults = ({
       trace,
       label,
       problem: inputProblem,
-      paddingBuffer: LABEL_SIDE_CLEARANCE,
+      paddingBuffer: LABEL_CLEARANCE,
       detourCount: 0,
     }),
     ...generateEndpointDetourCandidates(trace, label),
@@ -166,6 +207,11 @@ const createCandidateResult = ({
     }
   }
 
+  // Note: a path that merely runs along a chip boundary is NOT rejected here.
+  // It is a valid route, just a lower-quality one — scoreTracePath penalizes it
+  // via chipBoundaryOverlap so it loses only to routes that are otherwise as
+  // good. Hard-rejecting it discarded the best available route when every
+  // alternative overlapped a label or another trace.
   return {
     path,
     score: scoreTracePath({
@@ -174,6 +220,7 @@ const createCandidateResult = ({
       obstacleLabel,
       outputTraces,
       outputNetLabelPlacements,
+      chipObstacles,
     }),
     status: "valid",
     usesHorizontalSegmentPush,
@@ -188,9 +235,11 @@ const generateEndpointDetourCandidates = (
   const start = trace.tracePath[0]
   const end = trace.tracePath[trace.tracePath.length - 1]
   if (!start || !end) return []
+  const startExit = trace.tracePath[1] ?? start
+  const endEntry = trace.tracePath[trace.tracePath.length - 2] ?? end
 
   const bounds = getRectBounds(label.center, label.width, label.height)
-  const padding = LABEL_SIDE_CLEARANCE
+  const padding = LABEL_CLEARANCE
   const labelDirection = dir(label.orientation)
   const labelSideX =
     labelDirection.x < 0 ? bounds.minX - padding : bounds.maxX + padding
@@ -204,18 +253,22 @@ const generateEndpointDetourCandidates = (
     candidates.push(
       [
         start,
-        { x: start.x, y: topY },
+        startExit,
+        { x: startExit.x, y: topY },
         { x: sideX, y: topY },
         { x: sideX, y: bottomY },
-        { x: end.x, y: bottomY },
+        { x: endEntry.x, y: bottomY },
+        endEntry,
         end,
       ],
       [
         start,
-        { x: start.x, y: bottomY },
+        startExit,
+        { x: startExit.x, y: bottomY },
         { x: sideX, y: bottomY },
         { x: sideX, y: topY },
-        { x: end.x, y: topY },
+        { x: endEntry.x, y: topY },
+        endEntry,
         end,
       ],
     )
@@ -231,6 +284,8 @@ const generateLabelHugCandidates = (
   const start = trace.tracePath[0]
   const end = trace.tracePath[trace.tracePath.length - 1]
   if (!start || !end) return []
+  const startExit = trace.tracePath[1] ?? start
+  const endEntry = trace.tracePath[trace.tracePath.length - 2] ?? end
 
   const labelDirection = dir(label.orientation)
   if (labelDirection.x === 0) return []
@@ -238,29 +293,33 @@ const generateLabelHugCandidates = (
   const bounds = getRectBounds(label.center, label.width, label.height)
   const sideX =
     labelDirection.x < 0
-      ? bounds.minX - LABEL_SIDE_CLEARANCE
-      : bounds.maxX + LABEL_SIDE_CLEARANCE
-  const topY = bounds.maxY + LABEL_HUG_CLEARANCE
-  const bottomY = bounds.minY - LABEL_HUG_CLEARANCE
-  const startsAboveEnd = start.y >= end.y
+      ? bounds.minX - LABEL_CLEARANCE
+      : bounds.maxX + LABEL_CLEARANCE
+  const topY = bounds.maxY + LABEL_CLEARANCE
+  const bottomY = bounds.minY - LABEL_CLEARANCE
+  const startsAboveEnd = startExit.y >= endEntry.y
   const firstY = startsAboveEnd ? topY : bottomY
   const secondY = startsAboveEnd ? bottomY : topY
 
   return [
     [
       start,
-      { x: start.x, y: firstY },
+      startExit,
+      { x: startExit.x, y: firstY },
       { x: sideX, y: firstY },
       { x: sideX, y: secondY },
-      { x: end.x, y: secondY },
+      { x: endEntry.x, y: secondY },
+      endEntry,
       end,
     ],
     [
       start,
-      { x: start.x, y: secondY },
+      startExit,
+      { x: startExit.x, y: secondY },
       { x: sideX, y: secondY },
       { x: sideX, y: firstY },
-      { x: end.x, y: firstY },
+      { x: endEntry.x, y: firstY },
+      endEntry,
       end,
     ],
   ]
@@ -272,12 +331,14 @@ const selectBestReroutePath = ({
   outputTraces,
   outputNetLabelPlacements,
   candidateResults,
+  chipObstacles,
 }: {
   trace: SolvedTracePath
   obstacleLabel: NetLabelPlacement
   outputTraces: SolvedTracePath[]
   outputNetLabelPlacements: NetLabelPlacement[]
   candidateResults: RerouteCandidateResult[]
+  chipObstacles: ChipObstacle[]
 }) => {
   for (const candidate of candidateResults) {
     if (!candidate.usesHorizontalSegmentPush) continue
@@ -293,6 +354,7 @@ const selectBestReroutePath = ({
     obstacleLabel,
     outputTraces,
     outputNetLabelPlacements,
+    chipObstacles,
   })
 
   for (const candidate of candidateResults) {
@@ -306,10 +368,15 @@ const selectBestReroutePath = ({
   return bestPath
 }
 
-const generateHorizontalSegmentPushCandidate = (
-  trace: SolvedTracePath,
-  label: NetLabelPlacement,
-): Point[] | null => {
+const generateHorizontalSegmentPushCandidate = ({
+  trace,
+  label,
+  outputTraces,
+}: {
+  trace: SolvedTracePath
+  label: NetLabelPlacement
+  outputTraces: SolvedTracePath[]
+}): Point[] | null => {
   const labelDirection = dir(label.orientation)
   if (labelDirection.x === 0) return null
 
@@ -341,9 +408,28 @@ const generateHorizontalSegmentPushCandidate = (
     return null
   }
 
-  let segmentPushX = bounds.minX - LABEL_SIDE_CLEARANCE
+  let segmentPushX = bounds.minX - LABEL_CLEARANCE
   if (labelDirection.x > 0) {
-    segmentPushX = bounds.maxX + LABEL_SIDE_CLEARANCE
+    segmentPushX = bounds.maxX + LABEL_CLEARANCE
+  }
+
+  // Two traces escaping the same label block would otherwise be pushed to the
+  // identical corridor and stack on one line. Slide the corridor further out
+  // until it no longer coincides with a different-net trace already routed
+  // there, giving each escaping trace its own parallel corridor.
+  const corridorStep = labelDirection.x > 0 ? LABEL_CLEARANCE : -LABEL_CLEARANCE
+  const verticalLowY = Math.min(verticalStart.y, verticalEnd.y)
+  const verticalHighY = Math.max(verticalStart.y, verticalEnd.y)
+  for (let shift = 0; shift < MAX_CORRIDOR_SHIFTS; shift++) {
+    const occupied = corridorHasOtherNetTrace({
+      x: segmentPushX,
+      lowY: verticalLowY,
+      highY: verticalHighY,
+      outputTraces,
+      netId: trace.globalConnNetId,
+    })
+    if (!occupied) break
+    segmentPushX += corridorStep
   }
   const segmentPushStartY = getClearedHorizontalY({
     start: previousAnchor,
@@ -393,10 +479,10 @@ const getClearedHorizontalY = ({
 
   const labelCenterY = (labelBounds.minY + labelBounds.maxY) / 2
   if (start.y >= labelCenterY) {
-    return labelBounds.maxY + LABEL_HUG_CLEARANCE
+    return labelBounds.maxY + LABEL_CLEARANCE
   }
 
-  return labelBounds.minY - LABEL_HUG_CLEARANCE
+  return labelBounds.minY - LABEL_CLEARANCE
 }
 
 const markSelectedCandidate = (
@@ -416,12 +502,14 @@ const scoreTracePath = ({
   obstacleLabel,
   outputTraces,
   outputNetLabelPlacements,
+  chipObstacles,
 }: {
   trace: SolvedTracePath
   tracePath: Point[]
   obstacleLabel: NetLabelPlacement
   outputTraces: SolvedTracePath[]
   outputNetLabelPlacements: NetLabelPlacement[]
+  chipObstacles: ChipObstacle[]
 }): TracePathScore => {
   const candidateTrace = { ...trace, tracePath }
   return {
@@ -431,6 +519,7 @@ const scoreTracePath = ({
     }).length,
     labelHugDistance: getLabelHugDistance(tracePath, obstacleLabel),
     traceIntersections: countTraceIntersections(candidateTrace, outputTraces),
+    chipBoundaryOverlap: getChipBoundaryOverlap(tracePath, chipObstacles),
     pathLength: getPathLength(tracePath),
   }
 }
@@ -448,6 +537,21 @@ const countTraceIntersections = (
 }
 
 const isBetterScore = (score: TracePathScore, bestScore: TracePathScore) => {
+  // A route with no label overlap is always preferred over one with any. This
+  // is separate from the full overlap count below so that a *clean* route wins
+  // even if it hugs a chip boundary, while a route that must overlap a label is
+  // still steered away from also hugging a boundary.
+  const scoreHasLabelOverlap = score.labelIntersections > 0
+  const bestHasLabelOverlap = bestScore.labelIntersections > 0
+  if (scoreHasLabelOverlap !== bestHasLabelOverlap) {
+    // Reached only when exactly one route overlaps a label; the clean one wins.
+    return !scoreHasLabelOverlap
+  }
+  // Boundary hugging is only accepted as the price of a clean route; once a
+  // label overlap is unavoidable, avoid hugging a boundary on top of it.
+  if (score.chipBoundaryOverlap !== bestScore.chipBoundaryOverlap) {
+    return score.chipBoundaryOverlap < bestScore.chipBoundaryOverlap
+  }
   if (score.labelIntersections !== bestScore.labelIntersections) {
     return score.labelIntersections < bestScore.labelIntersections
   }

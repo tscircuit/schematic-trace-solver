@@ -18,6 +18,7 @@ import { pathKey, shiftSegmentOrth } from "./pathOps"
 import type { FacingDirection } from "lib/utils/dir"
 import { getDimsForOrientation } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { RectPadding } from "lib/utils/textBoxBounds"
+import { calculateDirectShortPath } from "./calculateDirectShortPath"
 
 type PathKey = string
 
@@ -29,6 +30,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
   obstacles: ObstacleRect[]
   textObstacles: Set<ObstacleRect>
+  endpointTextObstacles: Set<ObstacleRect>
   aabb: { minX: number; maxX: number; minY: number; maxY: number }
 
   baseElbow: Point[]
@@ -67,22 +69,38 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     this.textObstacles = new Set(
       this.obstacles.filter((r) => r.kind === "text_box"),
     )
+    const endpointChipIds = new Set(this.pins.map((pin) => pin.chipId))
+    this.endpointTextObstacles = new Set(
+      endpointChipIds.size > 1
+        ? this.obstacles.filter(
+            (r) =>
+              r.kind === "text_box" &&
+              r.textBox.chipId !== undefined &&
+              endpointChipIds.has(r.textBox.chipId),
+          )
+        : [],
+    )
+
+    const [pin1, pin2] = this.pins
+    const directShortPath = calculateDirectShortPath(pin1, pin2)
 
     // Build initial elbow path
-    const [pin1, pin2] = this.pins
-    this.baseElbow = calculateElbow(
-      {
-        x: pin1.x,
-        y: pin1.y,
-        facingDirection: pin1._facingDirection!,
-      },
-      {
-        x: pin2.x,
-        y: pin2.y,
-        facingDirection: pin2._facingDirection!,
-      },
-      { overshoot: 0.2 },
-    )
+    this.baseElbow =
+      directShortPath ??
+      calculateElbow(
+        {
+          x: pin1.x,
+          y: pin1.y,
+          facingDirection: pin1._facingDirection!,
+        },
+        {
+          x: pin2.x,
+          y: pin2.y,
+          facingDirection: pin2._facingDirection!,
+        },
+        { overshoot: 0.2 },
+      )
+    this.solvedTracePath = directShortPath
 
     // Bounds defined by PA and PB
     this.aabb = aabbFromPoints(
@@ -203,6 +221,34 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     return sum
   }
 
+  private getPinBandPenalty(path: Point[]): number {
+    let penalty = 0
+    for (let i = 1; i < path.length - 2; i++) {
+      const a = path[i]!
+      const b = path[i + 1]!
+      if (isHorizontal(a, b) && a.y > this.aabb.minY && a.y < this.aabb.maxY) {
+        penalty += 10
+      } else if (
+        isVertical(a, b) &&
+        a.x > this.aabb.minX &&
+        a.x < this.aabb.maxX
+      ) {
+        penalty += 10
+      }
+    }
+    return penalty
+  }
+
+  private isSegmentOutsidePinBand(a: Point, b: Point): boolean {
+    if (isHorizontal(a, b)) {
+      return a.y <= this.aabb.minY || a.y >= this.aabb.maxY
+    }
+    if (isVertical(a, b)) {
+      return a.x <= this.aabb.minX || a.x >= this.aabb.maxX
+    }
+    return false
+  }
+
   override _step() {
     if (this.solvedTracePath) {
       this.solved = true
@@ -225,6 +271,23 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         if (segIndex === 0 || segIndex === lastSegIndex) {
           return this.textObstacles
         }
+        const adjacentEndpointSegIndex =
+          segIndex === 1
+            ? 2
+            : segIndex === lastSegIndex - 1
+              ? lastSegIndex - 2
+              : null
+        if (
+          adjacentEndpointSegIndex !== null &&
+          adjacentEndpointSegIndex >= 0 &&
+          adjacentEndpointSegIndex < lastSegIndex &&
+          this.isSegmentOutsidePinBand(
+            path[adjacentEndpointSegIndex]!,
+            path[adjacentEndpointSegIndex + 1]!,
+          )
+        ) {
+          return this.endpointTextObstacles
+        }
         return new Set<ObstacleRect>()
       },
     })
@@ -246,6 +309,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       return
     }
 
+    const originalSegIndex = collision.segIndex
     let { segIndex, rect } = collision
 
     // Never move the first or last segments - move adjacent segment instead
@@ -294,26 +358,85 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       candidates.push(...mids)
     }
 
-    // Generate new shifted paths, order by total path length (shorter first)
+    // Generate new shifted paths. Order by path length first, then prefer paths
+    // that stay out of the pin band. The pin-band preference is a tiebreaker
+    // only: it must never make the solver pick a longer route (a flat additive
+    // penalty would, discarding a shorter valid route in favor of a detour).
     const newStates: Array<{
       path: Point[]
       collisionRects: Set<ObstacleRect>
-      len: number
+      length: number
+      pinBandPenalty: number
     }> = []
 
-    for (const coord of candidates) {
-      const newPath = shiftSegmentOrth(path, segIndex, axis, coord)
-      if (!newPath) continue
+    const addShiftedCandidate = (
+      candidateSegIndex: number,
+      candidateAxis: Axis,
+      coord: number,
+    ) => {
+      const newPath = shiftSegmentOrth(
+        path,
+        candidateSegIndex,
+        candidateAxis,
+        coord,
+      )
+      if (!newPath) return
       const key = pathKey(newPath)
-      if (this.visited.has(key)) continue
+      if (this.visited.has(key)) return
       this.visited.add(key)
       const nextSet = new Set(collisionRects)
       nextSet.add(rect)
-      const len = this.pathLength(newPath)
-      newStates.push({ path: newPath, collisionRects: nextSet, len })
+      newStates.push({
+        path: newPath,
+        collisionRects: nextSet,
+        length: this.pathLength(newPath),
+        pinBandPenalty: this.getPinBandPenalty(newPath),
+      })
     }
 
-    newStates.sort((a, b) => a.len - b.len)
+    for (const coord of candidates) {
+      addShiftedCandidate(segIndex, axis, coord)
+    }
+
+    const lastSegIndex = path.length - 2
+    const adjacentSegmentIndexes =
+      originalSegIndex === 1
+        ? [2]
+        : originalSegIndex === lastSegIndex - 1
+          ? [lastSegIndex - 2]
+          : []
+
+    for (const adjacentSegIndex of adjacentSegmentIndexes) {
+      if (adjacentSegIndex < 0 || adjacentSegIndex >= lastSegIndex) continue
+      const adjacentAxis = this.axisOfSegment(
+        path[adjacentSegIndex]!,
+        path[adjacentSegIndex + 1]!,
+      )
+      if (!adjacentAxis || adjacentAxis === axis) continue
+
+      const adjacentCandidates = [
+        ...midBetweenPointAndRect(adjacentAxis, { x: PA.x, y: PA.y }, rect),
+        ...midBetweenPointAndRect(adjacentAxis, { x: PB.x, y: PB.y }, rect),
+      ]
+      if (collisionRects.size > 0) {
+        adjacentCandidates.push(
+          ...candidateMidsFromSet(
+            adjacentAxis,
+            rect,
+            collisionRects,
+            this.aabb,
+          ),
+        )
+      }
+
+      for (const coord of [...new Set(adjacentCandidates)]) {
+        addShiftedCandidate(adjacentSegIndex, adjacentAxis, coord)
+      }
+    }
+
+    newStates.sort(
+      (a, b) => a.length - b.length || a.pinBandPenalty - b.pinBandPenalty,
+    )
     for (const st of newStates) {
       this.queue.push({ path: st.path, collisionRects: st.collisionRects })
     }
