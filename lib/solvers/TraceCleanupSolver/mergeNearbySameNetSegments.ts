@@ -329,39 +329,67 @@ export const mergeNearbySameNetSegments = (
         const second = segments[secondIndex]!
         const secondTrace = outputTraces[second.traceIndex]!
 
-        if (
-          first.traceIndex === second.traceIndex &&
-          Math.min(first.length, second.length) < gapTolerance
-        ) {
-          continue
-        }
+        if (first.traceIndex === second.traceIndex) continue
         if (first.orientation !== second.orientation) continue
         if (firstNetKey !== getNetKey(secondTrace)) continue
         const axisDistance = Math.abs(first.axis - second.axis)
         if (axisDistance < EPSILON || axisDistance > axisTolerance) continue
         if (getIntervalGap(first, second) > gapTolerance) continue
 
-        const selected = chooseTargetAndMovingSegment(first, second)
-        if (!selected) continue
         if (
-          !canMoveSegmentToAxis(
-            outputTraces,
+          first.movable &&
+          second.movable &&
+          Math.abs(first.length - second.length) < EPSILON &&
+          Math.min(first.max, second.max) - Math.max(first.min, second.min) >
+            EPSILON
+        ) {
+          const targetAxis = (first.axis + second.axis) / 2
+          if (
+            !canMoveSegmentToAxis(outputTraces, first, targetAxis, options) ||
+            !canMoveSegmentToAxis(outputTraces, second, targetAxis, options)
+          ) {
+            continue
+          }
+
+          moveSegmentInPath(
+            outputTraces[first.traceIndex]!.tracePath,
+            first,
+            targetAxis,
+          )
+          moveSegmentInPath(
+            outputTraces[second.traceIndex]!.tracePath,
+            second,
+            targetAxis,
+          )
+          outputTraces[first.traceIndex]!.tracePath = simplifyPath(
+            outputTraces[first.traceIndex]!.tracePath,
+          )
+          outputTraces[second.traceIndex]!.tracePath = simplifyPath(
+            outputTraces[second.traceIndex]!.tracePath,
+          )
+        } else {
+          const selected = chooseTargetAndMovingSegment(first, second)
+          if (!selected) continue
+          if (
+            !canMoveSegmentToAxis(
+              outputTraces,
+              selected.moving,
+              selected.target.axis,
+              options,
+            )
+          ) {
+            continue
+          }
+
+          moveSegmentInPath(
+            outputTraces[selected.moving.traceIndex]!.tracePath,
             selected.moving,
             selected.target.axis,
-            options,
           )
-        ) {
-          continue
+          outputTraces[selected.moving.traceIndex]!.tracePath = simplifyPath(
+            outputTraces[selected.moving.traceIndex]!.tracePath,
+          )
         }
-
-        moveSegmentInPath(
-          outputTraces[selected.moving.traceIndex]!.tracePath,
-          selected.moving,
-          selected.target.axis,
-        )
-        outputTraces[selected.moving.traceIndex]!.tracePath = simplifyPath(
-          outputTraces[selected.moving.traceIndex]!.tracePath,
-        )
         mergedSegmentCount++
         changedThisPass = true
         break search
