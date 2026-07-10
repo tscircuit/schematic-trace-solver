@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test"
+import { expect, test } from "vitest"
 import { SingleNetLabelPlacementSolver } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/SingleNetLabelPlacementSolver"
 import { input } from "site/SingleNetLabelPlacementSolver/SingleNetLabelPlacementSolver01.page"
 
