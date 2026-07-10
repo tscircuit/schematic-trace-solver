@@ -20,11 +20,13 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { snapSameNetParallelTraces } from "./snapSameNetParallelTraces"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "snapping_same_net_parallel_traces"
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
@@ -66,10 +68,10 @@ export class TraceCleanupSolver extends BaseSolver {
         this.outputTraces = output.traces
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "snapping_same_net_parallel_traces"
       } else if (this.activeSubSolver.failed) {
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "snapping_same_net_parallel_traces"
       }
       return
     }
@@ -77,6 +79,9 @@ export class TraceCleanupSolver extends BaseSolver {
     switch (this.pipelineStep) {
       case "untangling_traces":
         this._runUntangleTracesStep()
+        break
+      case "snapping_same_net_parallel_traces":
+        this._runSnapSameNetParallelTracesStep()
         break
       case "minimizing_turns":
         this._runMinimizeTurnsStep()
@@ -92,6 +97,16 @@ export class TraceCleanupSolver extends BaseSolver {
       ...this.input,
       allTraces: Array.from(this.tracesMap.values()),
     })
+  }
+
+  private _runSnapSameNetParallelTracesStep() {
+    const snapped = snapSameNetParallelTraces(
+      Array.from(this.tracesMap.values()),
+    )
+    this.outputTraces = snapped
+    this.tracesMap = new Map(snapped.map((t) => [t.mspPairId, t]))
+    this.traceIdQueue = Array.from(this.input.allTraces.map((e) => e.mspPairId))
+    this.pipelineStep = "minimizing_turns"
   }
 
   private _runMinimizeTurnsStep() {
