@@ -3,7 +3,7 @@ import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetL
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 
-export interface VccNetLabelCornerPlacementSolverParams {
+export interface RailNetLabelCornerPlacementSolverParams {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]

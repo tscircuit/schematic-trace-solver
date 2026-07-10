@@ -21,12 +21,12 @@ import type {
   CornerCandidateStatus,
   EvaluatedCornerCandidate,
   TraceCornerCandidate,
-  VccNetLabelCornerPlacementSolverParams,
+  RailNetLabelCornerPlacementSolverParams,
 } from "./types"
-import { visualizeVccNetLabelCornerPlacementSolver } from "./visualize"
+import { visualizeRailNetLabelCornerPlacementSolver } from "./visualize"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
-export class VccNetLabelCornerPlacementSolver extends BaseSolver {
+export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
@@ -41,7 +41,7 @@ export class VccNetLabelCornerPlacementSolver extends BaseSolver {
   private shouldAdvanceToNextLabel = false
   private traceMap: Record<string, SolvedTracePath>
 
-  constructor(params: VccNetLabelCornerPlacementSolverParams) {
+  constructor(params: RailNetLabelCornerPlacementSolverParams) {
     super()
     this.inputProblem = params.inputProblem
     this.traces = params.traces
@@ -55,7 +55,7 @@ export class VccNetLabelCornerPlacementSolver extends BaseSolver {
   }
 
   override getConstructorParams(): ConstructorParameters<
-    typeof VccNetLabelCornerPlacementSolver
+    typeof RailNetLabelCornerPlacementSolver
   >[0] {
     return {
       inputProblem: this.inputProblem,
@@ -277,7 +277,7 @@ export class VccNetLabelCornerPlacementSolver extends BaseSolver {
   }
 
   override visualize(): GraphicsObject {
-    return visualizeVccNetLabelCornerPlacementSolver({
+    return visualizeRailNetLabelCornerPlacementSolver({
       inputProblem: this.inputProblem,
       traces: this.traces,
       outputNetLabelPlacements: this.outputNetLabelPlacements,
