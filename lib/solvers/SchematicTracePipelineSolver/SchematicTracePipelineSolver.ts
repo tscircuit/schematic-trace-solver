@@ -61,15 +61,9 @@ function definePipelineStep<
   }
 }
 
-export interface SchematicTracePipelineSolverParams {
-  inputProblem: InputProblem
-  allowLongDistanceTraces?: boolean
+interface Options {
   hideRatsNet?: boolean
 }
-
-type SchematicTracePipelineSolverInput =
-  | InputProblem
-  | SchematicTracePipelineSolverParams
 
 export class SchematicTracePipelineSolver extends BaseSolver {
   mspConnectionPairSolver?: MspConnectionPairSolver
@@ -323,14 +317,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     ),
   ]
 
-  constructor(inputProblemOrParams: SchematicTracePipelineSolverInput) {
+  constructor(inputProblem: InputProblem, opts: Options = {}) {
     super()
-    const params =
-      "inputProblem" in inputProblemOrParams
-        ? inputProblemOrParams
-        : { inputProblem: inputProblemOrParams }
-    this.hideRatsNet = params.hideRatsNet ?? false
-    this.inputProblem = this.cloneAndCorrectInputProblem(params.inputProblem)
+    this.hideRatsNet = opts.hideRatsNet ?? false
+    this.inputProblem = this.cloneAndCorrectInputProblem(inputProblem)
     this.MAX_ITERATIONS = 1e6
     this.startTimeOfPhase = {}
     this.endTimeOfPhase = {}
@@ -340,11 +330,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
 
   override getConstructorParams(): ConstructorParameters<
     typeof SchematicTracePipelineSolver
-  >[0] {
-    return {
-      inputProblem: this.inputProblem,
-      hideRatsNet: this.hideRatsNet,
-    }
+  > {
+    return [this.inputProblem, { hideRatsNet: this.hideRatsNet }]
   }
 
   currentPipelineStepIndex = 0
