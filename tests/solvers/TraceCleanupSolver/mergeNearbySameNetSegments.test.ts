@@ -58,7 +58,27 @@ test("aligns close vertical same-net internal segments", () => {
   expect(result.traces[1]!.tracePath[2]!.x).toBe(0)
 })
 
-test("flattens a tiny same-trace jog without moving path endpoints", () => {
+test("averages equally sized movable same-net segments", () => {
+  const result = mergeNearbySameNetSegments([
+    makeTrace("first", "N1", [
+      { x: 0, y: 1 },
+      { x: 1, y: 0 },
+      { x: 4, y: 0 },
+      { x: 5, y: 1 },
+    ]),
+    makeTrace("second", "N1", [
+      { x: 0, y: 2 },
+      { x: 1, y: 0.08 },
+      { x: 4, y: 0.08 },
+      { x: 5, y: 2 },
+    ]),
+  ])
+
+  expect(result.traces[0]!.tracePath[1]!.y).toBe(0.04)
+  expect(result.traces[1]!.tracePath[1]!.y).toBe(0.04)
+})
+
+test("does not align segments from the same trace", () => {
   const original = makeTrace("jog", "N1", [
     { x: 0, y: 0 },
     { x: 2, y: 0 },
@@ -68,13 +88,8 @@ test("flattens a tiny same-trace jog without moving path endpoints", () => {
   ])
   const result = mergeNearbySameNetSegments([original])
 
-  expect(result.traces[0]!.tracePath[0]).toEqual({ x: 0, y: 0 })
-  expect(result.traces[0]!.tracePath.at(-1)).toEqual({ x: 4, y: 1 })
-  expect(result.traces[0]!.tracePath).toEqual([
-    { x: 0, y: 0 },
-    { x: 4, y: 0 },
-    { x: 4, y: 1 },
-  ])
+  expect(result.traces[0]!.tracePath).toEqual(original.tracePath)
+  expect(result.mergedSegmentCount).toBe(0)
 })
 
 test("does not align segments from different nets", () => {
