@@ -53,4 +53,5 @@ export interface InputProblem {
   maxMspPairDistance?: number
 
   _chipObstacleSpatialIndex?: ChipObstacleSpatialIndex
+  _hideRatsNet?: boolean
 }
