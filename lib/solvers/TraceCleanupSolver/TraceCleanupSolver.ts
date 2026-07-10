@@ -20,6 +20,7 @@ interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { mergeCloseSameNetTraces } from "./mergeCloseSameNetTraces"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -28,6 +29,7 @@ type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
+  | "merging_close_same_net_traces"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
@@ -66,10 +68,10 @@ export class TraceCleanupSolver extends BaseSolver {
         this.outputTraces = output.traces
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "merging_close_same_net_traces"
       } else if (this.activeSubSolver.failed) {
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this.pipelineStep = "merging_close_same_net_traces"
       }
       return
     }
@@ -78,6 +80,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "untangling_traces":
         this._runUntangleTracesStep()
         break
+      case "merging_close_same_net_traces":
+        this._runMergeCloseSameNetTracesStep()
+        break
       case "minimizing_turns":
         this._runMinimizeTurnsStep()
         break
@@ -85,6 +90,17 @@ export class TraceCleanupSolver extends BaseSolver {
         this._runBalanceLShapesStep()
         break
     }
+  }
+
+  private _runMergeCloseSameNetTracesStep() {
+    const merged = mergeCloseSameNetTraces({
+      traces: Array.from(this.tracesMap.values()),
+      paddingBuffer: this.input.paddingBuffer,
+    })
+    this.outputTraces = merged
+    this.tracesMap = new Map(merged.map((t) => [t.mspPairId, t]))
+    this.traceIdQueue = Array.from(merged.map((e) => e.mspPairId))
+    this.pipelineStep = "minimizing_turns"
   }
 
   private _runUntangleTracesStep() {
