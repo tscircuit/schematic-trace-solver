@@ -9,6 +9,7 @@ import {
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import {
+  EPS,
   getDistance,
   getTraceCorners,
   isTraceLine,
@@ -197,8 +198,13 @@ export class VccNetLabelCornerPlacementSolver extends BaseSolver {
   }
 
   private shouldProcessLabel(label: NetLabelPlacement) {
+    // Power/ground rail labels (VCC, GND, V3_3, ...) have a fixed vertical
+    // orientation and read best snapped to a trace corner rather than floating
+    // mid-segment. Signal labels (x+/x-) are left where they are.
+    const isVerticalRailLabel =
+      label.orientation === "y+" || label.orientation === "y-"
     return (
-      label.netId === "VCC" &&
+      isVerticalRailLabel &&
       this.getCornerCandidatesForLabel(label).length > 0
     )
   }
@@ -220,18 +226,32 @@ export class VccNetLabelCornerPlacementSolver extends BaseSolver {
   }
 
   private getCornerCandidatesForLabel(label: NetLabelPlacement) {
+    const isVertical =
+      label.orientation === "y+" || label.orientation === "y-"
     const candidates: TraceCornerCandidate[] = []
     const seenCornerKeys = new Set<string>()
 
     for (const trace of this.getTraceLinesForLabel(label)) {
-      for (const anchorPoint of getTraceCorners(trace.tracePath)) {
+      const path = trace.tracePath
+      const pins = [path[0]!, path[path.length - 1]!]
+      for (const anchorPoint of getTraceCorners(path)) {
         const key = `${anchorPoint.x}:${anchorPoint.y}`
         if (seenCornerKeys.has(key)) continue
         seenCornerKeys.add(key)
+        const pinAligned = pins.some((pin) => {
+          if (isVertical) return Math.abs(pin.x - anchorPoint.x) < EPS
+          return Math.abs(pin.y - anchorPoint.y) < EPS
+        })
+        // Only pin-aligned corners are worth snapping a rail label to (a clean
+        // stub off a pin). Non-aligned corners are no better than where the
+        // label already is, so they aren't offered as candidates — this keeps
+        // already-well-placed labels untouched.
+        if (!pinAligned) continue
         candidates.push({
           anchorPoint,
           traceId: trace.mspPairId,
           distance: getDistance(anchorPoint, label.anchorPoint),
+          pinAligned,
         })
       }
     }
