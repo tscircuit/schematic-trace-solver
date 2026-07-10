@@ -83,8 +83,7 @@ const getSegments = (traces: SolvedTracePath[]): SegmentRef[] => {
         min: Math.min(start, end),
         max: Math.max(start, end),
         length: Math.abs(end - start),
-        movable:
-          startIndex > 0 && startIndex + 1 < trace.tracePath.length - 1,
+        movable: startIndex > 0 && startIndex + 1 < trace.tracePath.length - 1,
       })
     }
   }
@@ -312,7 +311,11 @@ export const mergeNearbySameNetSegments = (
     const segments = getSegments(outputTraces)
     let changedThisPass = false
 
-    search: for (let firstIndex = 0; firstIndex < segments.length; firstIndex++) {
+    search: for (
+      let firstIndex = 0;
+      firstIndex < segments.length;
+      firstIndex++
+    ) {
       const first = segments[firstIndex]!
       const firstTrace = outputTraces[first.traceIndex]!
       const firstNetKey = getNetKey(firstTrace)
