@@ -9,9 +9,14 @@ export const visualizeInputProblem = (
   opts: {
     chipAlpha?: number
     connectionAlpha?: number
+    hideRatsNet?: boolean
   } = {},
 ): GraphicsObject => {
-  const { connectionAlpha = 0.8, chipAlpha = 0.8 } = opts
+  const {
+    connectionAlpha = 0.8,
+    chipAlpha = 0.8,
+    hideRatsNet = inputProblem._hideRatsNet ?? false,
+  } = opts
   const graphics: Pick<
     Required<GraphicsObject>,
     "lines" | "points" | "rects"
@@ -58,48 +63,50 @@ export const visualizeInputProblem = (
     } as any)
   }
 
-  for (const directConn of inputProblem.directConnections) {
-    const [pinId1, pinId2] = directConn.pinIds
-    const pin1 = pinIdMap.get(pinId1)!
-    const pin2 = pinIdMap.get(pinId2)!
-    if (arePinsInDifferentSchematicSections(inputProblem, pin1, pin2)) {
-      continue
+  if (!hideRatsNet) {
+    for (const directConn of inputProblem.directConnections) {
+      const [pinId1, pinId2] = directConn.pinIds
+      const pin1 = pinIdMap.get(pinId1)!
+      const pin2 = pinIdMap.get(pinId2)!
+      if (arePinsInDifferentSchematicSections(inputProblem, pin1, pin2)) {
+        continue
+      }
+      graphics.lines.push({
+        points: [
+          {
+            x: pin1.x,
+            y: pin1.y,
+          },
+          {
+            x: pin2.x,
+            y: pin2.y,
+          },
+        ],
+        strokeColor: getColorFromString(
+          directConn.netId ?? `${pinId1}-${pinId2}`,
+          connectionAlpha,
+        ),
+      })
     }
-    graphics.lines.push({
-      points: [
-        {
-          x: pin1.x,
-          y: pin1.y,
-        },
-        {
-          x: pin2.x,
-          y: pin2.y,
-        },
-      ],
-      strokeColor: getColorFromString(
-        directConn.netId ?? `${pinId1}-${pinId2}`,
-        connectionAlpha,
-      ),
-    })
-  }
 
-  for (const netConn of inputProblem.netConnections) {
-    const pins = netConn.pinIds.map((pinId) => pinIdMap.get(pinId)!)
-    for (let i = 0; i < pins.length - 1; i++) {
-      for (let j = i + 1; j < pins.length; j++) {
-        const pin1 = pins[i]!
-        const pin2 = pins[j]!
-        if (arePinsInDifferentSchematicSections(inputProblem, pin1, pin2)) {
-          continue
+    for (const netConn of inputProblem.netConnections) {
+      const pins = netConn.pinIds.map((pinId) => pinIdMap.get(pinId)!)
+      for (let i = 0; i < pins.length - 1; i++) {
+        for (let j = i + 1; j < pins.length; j++) {
+          const pin1 = pins[i]!
+          const pin2 = pins[j]!
+          if (arePinsInDifferentSchematicSections(inputProblem, pin1, pin2)) {
+            continue
+          }
+          graphics.lines.push({
+            points: [
+              { x: pin1.x, y: pin1.y },
+              { x: pin2.x, y: pin2.y },
+            ],
+            strokeColor: getColorFromString(netConn.netId, connectionAlpha),
+            strokeDash: "4 2",
+          })
         }
-        graphics.lines.push({
-          points: [
-            { x: pin1.x, y: pin1.y },
-            { x: pin2.x, y: pin2.y },
-          ],
-          strokeColor: getColorFromString(netConn.netId, connectionAlpha),
-          strokeDash: "4 2",
-        })
       }
     }
   }
