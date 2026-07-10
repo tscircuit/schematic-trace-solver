@@ -83,8 +83,7 @@ const getSegmentRefs = (traces: SolvedTracePath[]): SegmentRef[] => {
         min: Math.min(start, end),
         max: Math.max(start, end),
         length: Math.abs(start - end),
-        movable:
-          startIndex > 0 && startIndex + 1 < trace.tracePath.length - 1,
+        movable: startIndex > 0 && startIndex + 1 < trace.tracePath.length - 1,
       })
     }
   }
@@ -206,11 +205,7 @@ const canMoveSegmentToAxis = (
 ) => {
   const trace = traces[segment.traceIndex]!
   const movedSegment = getMovedSegment(trace, segment, targetAxis)
-  const { startPoint, endPoint } = getMovedPoints(
-    trace,
-    segment,
-    targetAxis,
-  )
+  const { startPoint, endPoint } = getMovedPoints(trace, segment, targetAxis)
   const netKey = getNetKey(trace)
 
   for (const otherSegment of getSegmentRefs(traces)) {
@@ -321,18 +316,8 @@ export const mergeNearbySameNetSegments = (
         } else if (first.length === second.length) {
           const targetAxis = (first.fixedAxis + second.fixedAxis) / 2
           if (
-            !canMoveSegmentToAxis(
-              outputTraces,
-              first,
-              targetAxis,
-              options,
-            ) ||
-            !canMoveSegmentToAxis(
-              outputTraces,
-              second,
-              targetAxis,
-              options,
-            )
+            !canMoveSegmentToAxis(outputTraces, first, targetAxis, options) ||
+            !canMoveSegmentToAxis(outputTraces, second, targetAxis, options)
           ) {
             continue
           }
