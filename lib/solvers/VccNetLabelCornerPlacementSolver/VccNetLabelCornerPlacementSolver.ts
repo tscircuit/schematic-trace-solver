@@ -204,8 +204,7 @@ export class VccNetLabelCornerPlacementSolver extends BaseSolver {
     const isVerticalRailLabel =
       label.orientation === "y+" || label.orientation === "y-"
     return (
-      isVerticalRailLabel &&
-      this.getCornerCandidatesForLabel(label).length > 0
+      isVerticalRailLabel && this.getCornerCandidatesForLabel(label).length > 0
     )
   }
 
@@ -226,8 +225,7 @@ export class VccNetLabelCornerPlacementSolver extends BaseSolver {
   }
 
   private getCornerCandidatesForLabel(label: NetLabelPlacement) {
-    const isVertical =
-      label.orientation === "y+" || label.orientation === "y-"
+    const isVertical = label.orientation === "y+" || label.orientation === "y-"
     const candidates: TraceCornerCandidate[] = []
     const seenCornerKeys = new Set<string>()
 
