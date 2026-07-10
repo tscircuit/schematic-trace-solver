@@ -329,6 +329,12 @@ export const mergeNearbySameNetSegments = (
         const second = segments[secondIndex]!
         const secondTrace = outputTraces[second.traceIndex]!
 
+        if (
+          first.traceIndex === second.traceIndex &&
+          Math.min(first.length, second.length) < gapTolerance
+        ) {
+          continue
+        }
         if (first.orientation !== second.orientation) continue
         if (firstNetKey !== getNetKey(secondTrace)) continue
         const axisDistance = Math.abs(first.axis - second.axis)
