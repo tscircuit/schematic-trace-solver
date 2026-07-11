@@ -24,8 +24,9 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
-    "types": ["vitest/globals"]
-  }
+    "types": ["vitest/globals", "vite/client"]
+  },
+  "include": ["lib", "tests", "site"],
+  "exclude": ["node_modules", "dist"]
 }
-
 
