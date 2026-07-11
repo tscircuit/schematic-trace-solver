@@ -10,6 +10,7 @@
     "format:check": "biome format ."
   },
   "devDependencies": {
+    "vitest": "^2.0.0"
     "@biomejs/biome": "^2.2.2",
     "@react-hook/resize-observer": "^2.0.2",
     "@tscircuit/math-utils": "^0.0.19",
@@ -25,7 +26,6 @@
     "react-dom": "^19.1.1",
     "tsup": "^8.5.0",
     "vite": "^7.1.3",
-    "vitest": "^2.0.0"
   },
     "peerDependencies": {
     "typescript": "^5"
