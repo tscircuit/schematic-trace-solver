@@ -31,7 +31,7 @@
     "typescript": "^5"
   },
     "overrides": {
-    "sharp": "0.0.0"
+  "sharp": "^0.32.[span_4](start_span)6"
   }
 }
 
