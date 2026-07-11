@@ -15,7 +15,7 @@ const makePath = (
 })
 
 describe("snapSameNetTraces", () => {
-  it("snaps vertical segments on same net to mean X", () => {
+  it("snaps two same-net vertical segments that are close together", () => {
     const traces: SolvedTracePath[] = [
       makePath("A", "VCC", [
         { x: 1.0, y: 0 },
@@ -29,18 +29,16 @@ describe("snapSameNetTraces", () => {
 
     const result = snapSameNetTraces(traces, 0.05)
     
-    // Don't use.find() - just grab the traces directly
     const traceA = result.find((t) => t.mspPairId() === "A")!
     const traceB = result.find((t) => t.mspPairId() === "B")!
     
-    // These segments are still vertical, so just check X of first point
+    // Don't use.find() on tracePath - just check the points directly
     const xA = traceA.tracePath[0].x
     const xB = traceB.tracePath[0].x
 
-    expect(xA).toBeDefined()
-    expect(xB).toBeDefined()
-    expect(Math.abs(xA - xB)).toBeLessThan(1e-6) // Both snapped to same X
-    expect(xA).toBeCloseTo(1.015, 6) // Should snap to midpoint
+    expect(xA).toBeCloseTo(1.015, 6)
+    expect(xB).toBeCloseTo(1.015, 6)
+    expect(Math.abs(xA - xB)).toBeLessThan(1e-6)
   })
 
   it("does NOT snap segments from different nets", () => {
