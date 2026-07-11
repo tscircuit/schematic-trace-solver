@@ -63,6 +63,7 @@ export class MspConnectionPairSolver extends BaseSolver {
     // Build a mapping from PinId to user-provided netId (if any)
     this.userNetIdByPinId = {}
     for (const dc of inputProblem.directConnections ?? []) {
+      if (!dc) continue
       if (dc.netId) {
         const [a, b] = dc.pinIds
         this.userNetIdByPinId[a] = dc.netId
@@ -70,6 +71,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
     }
     for (const nc of inputProblem.netConnections ?? []) {
+      if (!nc) continue
       for (const pid of nc.pinIds) {
         this.userNetIdByPinId[pid] = nc.netId
       }

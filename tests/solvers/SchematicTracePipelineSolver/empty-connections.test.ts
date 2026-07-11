@@ -17,16 +17,18 @@ test("pipeline solver handles empty directConnections and netConnections", () =>
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
+  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
 })
 
 test("pipeline solver handles undefined directConnections and netConnections", () => {
   const solver = new SchematicTracePipelineSolver({
     chips: [],
-    directConnections: undefined as any,
-    netConnections: undefined as any,
+    directConnections: undefined,
+    netConnections: undefined,
     availableNetLabelOrientations: {},
   })
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
+  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
 })

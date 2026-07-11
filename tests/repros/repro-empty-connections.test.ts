@@ -18,30 +18,33 @@ test("solver handles empty connections without crashing", () => {
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
+  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
 })
 
 test("solver handles undefined connections without crashing", () => {
   const solver = new SchematicTracePipelineSolver({
     chips: [],
-    directConnections: undefined as any,
-    netConnections: undefined as any,
+    directConnections: undefined,
+    netConnections: undefined,
     availableNetLabelOrientations: {},
   })
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
+  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
 })
 
 test("solver handles all fields undefined without crashing", () => {
   const solver = new SchematicTracePipelineSolver({
-    chips: undefined as any,
-    directConnections: undefined as any,
-    netConnections: undefined as any,
+    chips: undefined,
+    directConnections: undefined,
+    netConnections: undefined,
     availableNetLabelOrientations: {},
   })
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
+  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
 })
 
 test("solver handles missing availableNetLabelOrientations without crashing", () => {
@@ -49,23 +52,40 @@ test("solver handles missing availableNetLabelOrientations without crashing", ()
     chips: [],
     directConnections: [],
     netConnections: [],
-    availableNetLabelOrientations: undefined as any,
+    availableNetLabelOrientations: undefined,
   })
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
+  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
 })
 
 test("MspConnectionPairSolver handles undefined connections directly without crashing", () => {
   const solver = new MspConnectionPairSolver({
     inputProblem: {
-      chips: undefined as any,
-      directConnections: undefined as any,
-      netConnections: undefined as any,
+      chips: undefined,
+      directConnections: undefined,
+      netConnections: undefined,
       availableNetLabelOrientations: {},
     },
   })
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
+  expect(Array.isArray(solver.mspConnectionPairs)).toBe(true)
+})
+
+test("solver handles directConnections array with undefined elements without crashing", () => {
+  // Intentional as any: we deliberately pass a sparse/corrupted array to prove
+  // the element-level null guards (Fix E) protect against individual null entries.
+  const solver = new SchematicTracePipelineSolver({
+    chips: [],
+    directConnections: [undefined] as any,
+    netConnections: [],
+    availableNetLabelOrientations: {},
+  })
+  solver.solve()
+  expect(solver.solved).toBe(true)
+  expect(solver.failed).toBe(false)
+  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
 })

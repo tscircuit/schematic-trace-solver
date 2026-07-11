@@ -344,11 +344,23 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       _hideRatsNet: this.hideRatsNet,
     })
 
-    // Ensure required array/object fields are present even when caller omits them
-    cloned.chips ??= []
-    cloned.directConnections ??= []
-    cloned.netConnections ??= []
-    cloned.availableNetLabelOrientations ??= {}
+    // Ensure required array/object fields are present even when caller passes
+    // a non-array (e.g. null, a number) instead of an array/object.
+    // Also filter out any null/undefined elements within the arrays so
+    // downstream solvers never encounter sparse/corrupted entries.
+    cloned.chips = Array.isArray(cloned.chips) ? cloned.chips.filter(Boolean) : []
+    cloned.directConnections = Array.isArray(cloned.directConnections)
+      ? cloned.directConnections.filter(Boolean)
+      : []
+    cloned.netConnections = Array.isArray(cloned.netConnections)
+      ? cloned.netConnections.filter(Boolean)
+      : []
+    cloned.availableNetLabelOrientations =
+      cloned.availableNetLabelOrientations != null &&
+      typeof cloned.availableNetLabelOrientations === "object" &&
+      !Array.isArray(cloned.availableNetLabelOrientations)
+        ? cloned.availableNetLabelOrientations
+        : {}
 
     // First, expand chips so existing pin coordinates sit on or within their edges without shrinking.
     expandChipsToFitPins(cloned)
