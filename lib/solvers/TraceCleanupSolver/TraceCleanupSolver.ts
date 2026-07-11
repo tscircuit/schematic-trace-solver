@@ -1,4 +1,5 @@
-import type { InputProblem } from "lib/types/InputProblem"
+import { snapSameNetTraces } from "./snapSameNetTraces"
+  import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject, Line } from "graphics-debug"
 import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
 import { balanceZShapes } from "./balanceZShapes"
@@ -6,7 +7,6 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { snapSameNetTraces } from "./snapSameNetTraces"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -26,9 +26,9 @@ import { is4PointRectangle } from "./is4PointRectangle"
  * Represents the different stages or steps within the trace cleanup pipeline.
  */
 type PipelineStep =
+  | "untangling_traces"
   | "minimizing_turns"
   | "balancing_l_shapes"
-  | "untangling_traces"
   | "snapping_same_net"
 
 /**
@@ -114,12 +114,11 @@ export class TraceCleanupSolver extends BaseSolver {
   }
 
   private _runBalanceLShapesStep() {
-    if (this.traceIdQueue.length === 0) {
-      this.pipelineStep = "snapping_same_net"
-      return
-    }
-
-    this._processTrace("balancing_l_shapes")
+  if (this.traceIdQueue.length === 0) {
+    this.pipelineStep = "snapping_same_net"
+    return
+  }
+  this._processTrace("balancing_l_shapes")
   }
 
   private _runSnapSameNetStep() {
