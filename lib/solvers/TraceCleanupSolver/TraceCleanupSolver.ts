@@ -1,3 +1,4 @@
+
 import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject, Line } from "graphics-debug"
 import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
@@ -6,6 +7,7 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { mergeCloseSameNetTraces } from "./mergeCloseSameNetTraces"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -27,6 +29,7 @@ import { is4PointRectangle } from "./is4PointRectangle"
 type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
+  | "merging_close_same_net_traces"
   | "untangling_traces"
 
 /**
@@ -84,6 +87,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "merging_close_same_net_traces":
+        this._runMergeCloseSameNetTracesStep()
+        break
     }
   }
 
@@ -108,11 +114,20 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "merging_close_same_net_traces"
       return
     }
 
     this._processTrace("balancing_l_shapes")
+  }
+
+  private _runMergeCloseSameNetTracesStep() {
+    this.outputTraces = mergeCloseSameNetTraces({
+      traces: Array.from(this.tracesMap.values()),
+      maxMergeDistance: Math.max(this.input.paddingBuffer * 2, 0.1),
+    })
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.solved = true
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
