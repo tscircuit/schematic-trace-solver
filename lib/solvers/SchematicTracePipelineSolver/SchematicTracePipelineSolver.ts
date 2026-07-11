@@ -348,7 +348,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     // a non-array (e.g. null, a number) instead of an array/object.
     // Also filter out any null/undefined elements within the arrays so
     // downstream solvers never encounter sparse/corrupted entries.
-    cloned.chips = Array.isArray(cloned.chips) ? cloned.chips.filter(Boolean) : []
+    cloned.chips = Array.isArray(cloned.chips)
+      ? cloned.chips.filter(Boolean)
+      : []
     cloned.directConnections = Array.isArray(cloned.directConnections)
       ? cloned.directConnections.filter(Boolean)
       : []

@@ -374,9 +374,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       inputTraceMap: this.inputTraceMap,
       overlappingSameNetTraceGroup: nextOverlappingSameNetTraceGroup,
-      availableOrientations: (this.inputProblem.availableNetLabelOrientations ?? {})[
-        netId
-      ] ?? ["x+", "x-", "y+", "y-"],
+      availableOrientations: (this.inputProblem.availableNetLabelOrientations ??
+        {})[netId] ?? ["x+", "x-", "y+", "y-"],
       netLabelWidth,
       netLabelHeight,
     })

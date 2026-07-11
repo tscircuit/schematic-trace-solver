@@ -18,7 +18,9 @@ test("solver handles empty connections without crashing", () => {
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
-  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
+  expect(
+    Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths),
+  ).toBe(true)
 })
 
 test("solver handles undefined connections without crashing", () => {
@@ -31,7 +33,9 @@ test("solver handles undefined connections without crashing", () => {
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
-  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
+  expect(
+    Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths),
+  ).toBe(true)
 })
 
 test("solver handles all fields undefined without crashing", () => {
@@ -44,7 +48,9 @@ test("solver handles all fields undefined without crashing", () => {
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
-  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
+  expect(
+    Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths),
+  ).toBe(true)
 })
 
 test("solver handles missing availableNetLabelOrientations without crashing", () => {
@@ -57,7 +63,9 @@ test("solver handles missing availableNetLabelOrientations without crashing", ()
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
-  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
+  expect(
+    Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths),
+  ).toBe(true)
 })
 
 test("MspConnectionPairSolver handles undefined connections directly without crashing", () => {
@@ -87,5 +95,7 @@ test("solver handles directConnections array with undefined elements without cra
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
-  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
+  expect(
+    Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths),
+  ).toBe(true)
 })

@@ -290,7 +290,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   private getAvailableOrientations(label: NetLabelPlacement) {
     const effectiveNetId = label.netId ?? label.globalConnNetId
-    return (this.inputProblem.availableNetLabelOrientations ?? {})[effectiveNetId] ?? []
+    return (
+      (this.inputProblem.availableNetLabelOrientations ?? {})[effectiveNetId] ??
+      []
+    )
   }
 
   private findValidShiftedCandidate(

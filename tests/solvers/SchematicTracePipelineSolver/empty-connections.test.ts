@@ -17,7 +17,9 @@ test("pipeline solver handles empty directConnections and netConnections", () =>
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
-  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
+  expect(
+    Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths),
+  ).toBe(true)
 })
 
 test("pipeline solver handles undefined directConnections and netConnections", () => {
@@ -30,5 +32,7 @@ test("pipeline solver handles undefined directConnections and netConnections", (
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
-  expect(Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths)).toBe(true)
+  expect(
+    Array.isArray(solver.schematicTraceLinesSolver?.solvedTracePaths),
+  ).toBe(true)
 })
