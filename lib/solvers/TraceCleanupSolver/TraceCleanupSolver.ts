@@ -1,5 +1,5 @@
 import { snapSameNetTraces } from "./snapSameNetTraces"
-  import type { InputProblem } from "lib/types/InputProblem"
+import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject, Line } from "graphics-debug"
 import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
 import { balanceZShapes } from "./balanceZShapes"
@@ -7,6 +7,8 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { UntangleTraceSubSolver } from "./sub-solver/UntangleTraceSubSolver"
+import { is4PointRectangle } from "./is4PointRectangle"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -18,9 +20,6 @@ interface TraceCleanupSolverInput {
   mergedLabelNetIdMap: Record<string, Set<string>>
   paddingBuffer: number
 }
-
-import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
-import { is4PointRectangle } from "./is4PointRectangle"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -37,8 +36,7 @@ type PipelineStep =
  * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
  * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
  * 3. **Balancing L-Shapes**: It balances L-shaped trace segments to create more visually appealing and consistent layouts.
- * 4. **Snapping Same-Net Traces**: Finally, parallel segments that belong to the same net and are very close together
- *    are snapped to the exact same X (vertical) or Y (horizontal) coordinate, eliminating near-coincident trace lines.
+ * 4. **Snapping Same-Net Traces**: Finally, parallel segments that belong to the same net and are very close together are snapped to the exact same X (vertical) or Y (horizontal) coordinate, eliminating near-coincident trace lines.
  * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
  */
 export class TraceCleanupSolver extends BaseSolver {
@@ -54,9 +52,9 @@ export class TraceCleanupSolver extends BaseSolver {
     super()
     this.input = solverInput
     this.outputTraces = [...solverInput.allTraces]
-    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId(), t]))
     this.traceIdQueue = Array.from(
-      solverInput.allTraces.map((e) => e.mspPairId),
+      solverInput.allTraces.map((t) => t.mspPairId()),
     )
   }
 
@@ -65,10 +63,10 @@ export class TraceCleanupSolver extends BaseSolver {
       this.activeSubSolver.step()
       if (this.activeSubSolver.solved) {
         const output = (
-          this.activeSubSolver as UntangleTraceSubsolver
+          this.activeSubSolver as UntangleTraceSubSolver
         ).getOutput()
         this.outputTraces = output.traces
-        this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+        this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId(), t]))
         this.activeSubSolver = null
         this.pipelineStep = "minimizing_turns"
       } else if (this.activeSubSolver.failed) {
@@ -80,7 +78,7 @@ export class TraceCleanupSolver extends BaseSolver {
 
     switch (this.pipelineStep) {
       case "untangling_traces":
-        this._runUntangleTracesStep()
+        this._runUntangleStep()
         break
       case "minimizing_turns":
         this._runMinimizeTurnsStep()
@@ -94,102 +92,59 @@ export class TraceCleanupSolver extends BaseSolver {
     }
   }
 
-  private _runUntangleTracesStep() {
-    this.activeSubSolver = new UntangleTraceSubsolver({
-      ...this.input,
-      allTraces: Array.from(this.tracesMap.values()),
+  private _runUntangleStep() {
+    const problem = this.input.inputProblem
+    this.activeSubSolver = new UntangleTraceSubSolver({
+      inputProblem: problem,
+      traces: this.outputTraces,
     })
   }
 
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
+      this.traceIdQueue = Array.from(this.tracesMap.keys())
       this.pipelineStep = "balancing_l_shapes"
-      this.traceIdQueue = Array.from(
-        this.input.allTraces.map((e) => e.mspPairId),
-      )
       return
     }
 
-    this._processTrace("minimizing_turns")
+    const traceId = this.traceIdQueue.shift()!
+    const trace = this.tracesMap.get(traceId)!
+    const newTrace = minimizeTurnsWithFilteredLabels(trace, this.input)
+    this.tracesMap.set(traceId, newTrace)
   }
 
   private _runBalanceLShapesStep() {
-  if (this.traceIdQueue.length === 0) {
-    this.pipelineStep = "snapping_same_net"
-    return
-  }
-  this._processTrace("balancing_l_shapes")
+    if (this.traceIdQueue.length === 0) {
+      this.traceIdQueue = Array.from(this.tracesMap.keys())
+      this.pipelineStep = "snapping_same_net"
+      return
+    }
+
+    const traceId = this.traceIdQueue.shift()!
+    const trace = this.tracesMap.get(traceId)!
+    const newTrace = balanceZShapes(trace, this.input)
+    this.tracesMap.set(traceId, newTrace)
   }
 
   private _runSnapSameNetStep() {
-    const snapped = snapSameNetTraces(Array.from(this.tracesMap.values()))
+    const traces = Array.from(this.tracesMap.values())
+    const snapped = snapSameNetTraces(traces)
+
     for (const trace of snapped) {
-      this.tracesMap.set(trace.mspPairId, trace)
+      this.tracesMap.set(trace.mspPairId(), trace)
     }
+
     this.outputTraces = Array.from(this.tracesMap.values())
     this.solved = true
   }
 
-  private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
-    const targetMspConnectionPairId = this.traceIdQueue.shift()!
-    this.activeTraceId = targetMspConnectionPairId
-    const originalTrace = this.tracesMap.get(targetMspConnectionPairId)!
-
-    if (is4PointRectangle(originalTrace.tracePath)) {
-      return
-    }
-
-    const allTraces = Array.from(this.tracesMap.values())
-
-    let updatedTrace: SolvedTracePath
-
-    if (step === "minimizing_turns") {
-      updatedTrace = minimizeTurnsWithFilteredLabels({
-        ...this.input,
-        targetMspConnectionPairId,
-        traces: allTraces,
-      })
-    } else {
-      updatedTrace = balanceZShapes({
-        ...this.input,
-        targetMspConnectionPairId,
-        traces: allTraces,
-      })
-    }
-
-    this.tracesMap.set(targetMspConnectionPairId, updatedTrace)
-    this.outputTraces = Array.from(this.tracesMap.values())
-  }
-
-  getOutput() {
+  override getOutput() {
     return {
       traces: this.outputTraces,
     }
   }
 
   override visualize(): GraphicsObject {
-    if (this.activeSubSolver) {
-      return this.activeSubSolver.visualize()
-    }
-
-    const graphics = visualizeInputProblem(this.input.inputProblem, {
-      chipAlpha: 0.1,
-      connectionAlpha: 0.1,
-    })
-
-    if (!graphics.lines) graphics.lines = []
-    if (!graphics.points) graphics.points = []
-    if (!graphics.rects) graphics.rects = []
-    if (!graphics.circles) graphics.circles = []
-    if (!graphics.texts) graphics.texts = []
-
-    for (const trace of this.outputTraces) {
-      const line: Line = {
-        points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
-        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue",
-      }
-      graphics.lines!.push(line)
-    }
-    return graphics
+    return visualizeInputProblem(this.input.inputProblem)
   }
 }
