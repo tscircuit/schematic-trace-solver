@@ -32,7 +32,6 @@ describe("snapSameNetTraces", () => {
     const traceA = result.find((t) => t.mspPairId() === "A")!
     const traceB = result.find((t) => t.mspPairId() === "B")!
     
-    // Don't use.find() on tracePath - just check the points directly
     const xA = traceA.tracePath[0].x
     const xB = traceB.tracePath[0].x
 
@@ -78,5 +77,13 @@ describe("snapSameNetTraces", () => {
     snapSameNetTraces(traces, 0.05)
     
     expect(traces[0].tracePath[0].x).toBe(originalX)
+  })
+
+  it("handles empty and single trace lists", () => {
+    expect(snapSameNetTraces([])).toEqual([])
+    
+    const single = [makePath("X", "NET", [{ x: 1, y: 0 }, { x: 1, y: 1 }])]
+    const result = snapSameNetTraces(single)
+    expect(result[0].tracePath[0].x).toBeCloseTo(1, 9)
   })
 })
