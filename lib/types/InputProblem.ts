@@ -44,12 +44,12 @@ export interface InputNetConnection {
 }
 
 export interface InputProblem {
-  chips: Array<InputChip>
-  directConnections: Array<InputDirectConnection>
-  netConnections: Array<InputNetConnection>
+  chips?: Array<InputChip>
+  directConnections?: Array<InputDirectConnection>
+  netConnections?: Array<InputNetConnection>
   textBoxes?: Array<TextBoxes>
 
-  availableNetLabelOrientations: Record<NetId, FacingDirection[]>
+  availableNetLabelOrientations?: Record<NetId, FacingDirection[]>
   maxMspPairDistance?: number
 
   _chipObstacleSpatialIndex?: ChipObstacleSpatialIndex

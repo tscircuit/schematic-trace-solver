@@ -5,7 +5,7 @@ import type { CandidateLabel } from "./types"
 
 export const getPinMap = (inputProblem: InputProblem) => {
   const pinMap: Record<string, InputPin & { chipId: string }> = {}
-  for (const chip of inputProblem.chips) {
+  for (const chip of inputProblem.chips ?? []) {
     for (const pin of chip.pins) {
       pinMap[pin.pinId] = { ...pin, chipId: chip.chipId }
     }

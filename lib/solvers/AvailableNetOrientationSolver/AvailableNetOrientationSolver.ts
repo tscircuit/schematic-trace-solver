@@ -68,7 +68,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     this.pinMap = getPinMap(params.inputProblem)
     this.chipObstacleSpatialIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
-      new ChipObstacleSpatialIndex(params.inputProblem.chips)
+      new ChipObstacleSpatialIndex(params.inputProblem.chips ?? [])
     this.maxSearchDistance = getMaxSearchDistance(params.inputProblem)
     this.queuedLabelIndices = this.getProcessableLabelIndices()
     this.setCurrentLabel(this.queuedLabelIndices[0] ?? null)
@@ -290,7 +290,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   private getAvailableOrientations(label: NetLabelPlacement) {
     const effectiveNetId = label.netId ?? label.globalConnNetId
-    return this.inputProblem.availableNetLabelOrientations[effectiveNetId] ?? []
+    return (this.inputProblem.availableNetLabelOrientations ?? {})[effectiveNetId] ?? []
   }
 
   private findValidShiftedCandidate(
@@ -627,36 +627,36 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   private getNetLabelWidth(label: NetLabelPlacement) {
     if (label.netId) {
-      const ncWidth = this.inputProblem.netConnections.find(
+      const ncWidth = (this.inputProblem.netConnections ?? []).find(
         (connection) => connection.netId === label.netId,
       )?.netLabelWidth
       if (ncWidth !== undefined) return ncWidth
 
-      const dcWidthByNetId = this.inputProblem.directConnections.find(
+      const dcWidthByNetId = (this.inputProblem.directConnections ?? []).find(
         (dc) => dc.netId === label.netId,
       )?.netLabelWidth
       if (dcWidthByNetId !== undefined) return dcWidthByNetId
     }
 
-    const dcWidthByPinId = this.inputProblem.directConnections.find((dc) =>
-      dc.pinIds.some((pid) => label.pinIds.includes(pid)),
+    const dcWidthByPinId = (this.inputProblem.directConnections ?? []).find(
+      (dc) => dc.pinIds.some((pid) => label.pinIds.includes(pid)),
     )?.netLabelWidth
     if (dcWidthByPinId !== undefined) return dcWidthByPinId
 
-    return this.inputProblem.netConnections.find((nc) =>
+    return (this.inputProblem.netConnections ?? []).find((nc) =>
       nc.pinIds.some((pid) => label.pinIds.includes(pid)),
     )?.netLabelWidth
   }
 
   private getNetLabelHeight(label: NetLabelPlacement) {
     if (label.netId) {
-      const ncHeight = this.inputProblem.netConnections.find(
+      const ncHeight = (this.inputProblem.netConnections ?? []).find(
         (connection) => connection.netId === label.netId,
       )?.netLabelHeight
       if (ncHeight !== undefined) return ncHeight
     }
 
-    return this.inputProblem.netConnections.find((nc) =>
+    return (this.inputProblem.netConnections ?? []).find((nc) =>
       nc.pinIds.some((pid) => label.pinIds.includes(pid)),
     )?.netLabelHeight
   }

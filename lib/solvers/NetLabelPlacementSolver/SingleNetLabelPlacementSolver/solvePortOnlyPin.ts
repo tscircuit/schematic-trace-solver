@@ -65,7 +65,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
   // Find pin coordinates and facing direction
   let pin: { x: number; y: number } | null = null
   let pinFacingDirection: FacingDirection | null = null
-  for (const chip of inputProblem.chips) {
+  for (const chip of inputProblem.chips ?? []) {
     const p = chip.pins.find((pp) => pp.pinId === pinId)
     if (p) {
       pin = { x: p.x, y: p.y }

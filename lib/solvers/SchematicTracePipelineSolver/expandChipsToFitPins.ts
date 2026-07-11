@@ -11,7 +11,7 @@ import type { InputProblem } from "lib/types/InputProblem"
  * - Clears cached _facingDirection on pins since geometry changed.
  */
 export const expandChipsToFitPins = (problem: InputProblem) => {
-  for (const chip of problem.chips) {
+  for (const chip of problem.chips ?? []) {
     const halfWidth = chip.width / 2
     const halfHeight = chip.height / 2
 

@@ -123,7 +123,7 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     this.outputNetLabelPlacements = [...params.netLabelPlacements]
     this.chipIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
-      new ChipObstacleSpatialIndex(params.inputProblem.chips)
+      new ChipObstacleSpatialIndex(params.inputProblem.chips ?? [])
     this.traceMap = Object.fromEntries(
       params.traces.map((t) => [t.mspPairId, t]),
     ) as Record<MspConnectionPairId, SolvedTracePath>

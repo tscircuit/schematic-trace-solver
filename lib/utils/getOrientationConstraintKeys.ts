@@ -9,7 +9,7 @@ export const getOrientationConstraintKeys = (
   dedupeStrings([
     label.netId,
     label.globalConnNetId,
-    ...inputProblem.netConnections
+    ...(inputProblem.netConnections ?? [])
       .filter((connection) =>
         label.pinIds.some((pinId) => connection.pinIds.includes(pinId)),
       )

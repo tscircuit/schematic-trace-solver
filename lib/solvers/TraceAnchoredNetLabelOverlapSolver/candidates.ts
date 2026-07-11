@@ -273,7 +273,7 @@ type ChipBounds = Bounds & {
 }
 
 const getChipBounds = (inputProblem: InputProblem): ChipBounds => {
-  if (inputProblem.chips.length === 0) {
+  if ((inputProblem.chips ?? []).length === 0) {
     return {
       minX: 0,
       minY: 0,
@@ -284,7 +284,7 @@ const getChipBounds = (inputProblem: InputProblem): ChipBounds => {
     }
   }
 
-  const bounds = inputProblem.chips.reduce<Bounds>(
+  const bounds = (inputProblem.chips ?? []).reduce<Bounds>(
     (acc, chip) => ({
       minX: Math.min(acc.minX, chip.center.x - chip.width / 2),
       minY: Math.min(acc.minY, chip.center.y - chip.height / 2),
@@ -310,17 +310,17 @@ const getNetLabelWidth = (
   inputProblem: InputProblem,
   label: NetLabelPlacement,
 ) => {
-  const ncWidthByNetId = inputProblem.netConnections.find(
+  const ncWidthByNetId = (inputProblem.netConnections ?? []).find(
     (connection) => connection.netId === label.netId,
   )?.netLabelWidth
   if (ncWidthByNetId !== undefined) return ncWidthByNetId
 
-  const dcWidth = inputProblem.directConnections.find((dc) =>
+  const dcWidth = (inputProblem.directConnections ?? []).find((dc) =>
     dc.pinIds.some((pid) => label.pinIds.includes(pid)),
   )?.netLabelWidth
   if (dcWidth !== undefined) return dcWidth
 
-  const ncWidthByPinId = inputProblem.netConnections.find((nc) =>
+  const ncWidthByPinId = (inputProblem.netConnections ?? []).find((nc) =>
     nc.pinIds.some((pid) => label.pinIds.includes(pid)),
   )?.netLabelWidth
   if (ncWidthByPinId !== undefined) return ncWidthByPinId
@@ -336,12 +336,12 @@ const getNetLabelHeight = (
   inputProblem: InputProblem,
   label: NetLabelPlacement,
 ): number | undefined => {
-  const ncHeightByNetId = inputProblem.netConnections.find(
+  const ncHeightByNetId = (inputProblem.netConnections ?? []).find(
     (connection) => connection.netId === label.netId,
   )?.netLabelHeight
   if (ncHeightByNetId !== undefined) return ncHeightByNetId
 
-  return inputProblem.netConnections.find((nc) =>
+  return (inputProblem.netConnections ?? []).find((nc) =>
     nc.pinIds.some((pid) => label.pinIds.includes(pid)),
   )?.netLabelHeight
 }

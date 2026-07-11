@@ -27,7 +27,7 @@ export function chooseHostTraceForGroup(params: {
     mspConnectionPairIds,
   } = params
   const chipsById: Record<string, InputChip> = Object.fromEntries(
-    inputProblem.chips.map((c) => [c.chipId, c]),
+    (inputProblem.chips ?? []).map((c) => [c.chipId, c]),
   )
 
   let groupTraces = Object.values(inputTraceMap).filter(

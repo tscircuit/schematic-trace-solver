@@ -209,7 +209,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   }
 
   private intersectsAnyChip(bounds: Bounds) {
-    return this.inputProblem.chips.some((chip) =>
+    return (this.inputProblem.chips ?? []).some((chip) =>
       rectsOverlap(bounds, getRectBounds(chip.center, chip.width, chip.height)),
     )
   }

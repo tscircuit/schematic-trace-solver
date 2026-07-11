@@ -27,13 +27,13 @@ export const visualizeInputProblem = (
   }
 
   const pinIdMap = new Map<PinId, InputPin>()
-  for (const chip of inputProblem.chips) {
+  for (const chip of inputProblem.chips ?? []) {
     for (const pin of chip.pins) {
       pinIdMap.set(pin.pinId, pin)
     }
   }
 
-  for (const chip of inputProblem.chips) {
+  for (const chip of inputProblem.chips ?? []) {
     graphics.rects.push({
       label: chip.chipId,
       center: chip.center,
@@ -64,7 +64,7 @@ export const visualizeInputProblem = (
   }
 
   if (!hideRatsNet) {
-    for (const directConn of inputProblem.directConnections) {
+    for (const directConn of inputProblem.directConnections ?? []) {
       const [pinId1, pinId2] = directConn.pinIds
       const pin1 = pinIdMap.get(pinId1)!
       const pin2 = pinIdMap.get(pinId2)!
@@ -89,7 +89,7 @@ export const visualizeInputProblem = (
       })
     }
 
-    for (const netConn of inputProblem.netConnections) {
+    for (const netConn of inputProblem.netConnections ?? []) {
       const pins = netConn.pinIds.map((pinId) => pinIdMap.get(pinId)!)
       for (let i = 0; i < pins.length - 1; i++) {
         for (let j = i + 1; j < pins.length; j++) {

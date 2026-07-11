@@ -56,7 +56,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     this.chipMap = params.chipMap
     this.chipObstacleSpatialIndex =
       this.inputProblem._chipObstacleSpatialIndex ||
-      new ChipObstacleSpatialIndex(this.inputProblem.chips)
+      new ChipObstacleSpatialIndex(this.inputProblem.chips ?? [])
 
     if (!this.inputProblem._chipObstacleSpatialIndex) {
       this.inputProblem._chipObstacleSpatialIndex =
@@ -64,7 +64,7 @@ export class SchematicTraceSingleLineSolver extends BaseSolver {
     }
 
     // Build a lookup of all pins by id and attach chipId to each pin entry
-    for (const chip of this.inputProblem.chips) {
+    for (const chip of this.inputProblem.chips ?? []) {
       for (const pin of chip.pins) {
         this.pinIdMap.set(pin.pinId, { ...pin, chipId: chip.chipId })
       }

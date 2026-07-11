@@ -212,7 +212,7 @@ const sameY = (a: Point, b: Point) => Math.abs(a.y - b.y) <= EPS
 
 export const getMaxSearchDistance = (inputProblem: InputProblem) => {
   const maxChipWidth = Math.max(
-    ...inputProblem.chips.map((chip) => chip.width),
+    ...(inputProblem.chips ?? []).map((chip) => chip.width),
     1,
   )
   return maxChipWidth * 3

@@ -2,7 +2,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { getInputChipBounds } from "../GuidelinesSolver/getInputChipBounds"
 
 export const correctPinsInsideChips = (problem: InputProblem) => {
-  for (const chip of problem.chips) {
+  for (const chip of problem.chips ?? []) {
     const bounds = getInputChipBounds(chip)
     for (const pin of chip.pins) {
       const isInside =
