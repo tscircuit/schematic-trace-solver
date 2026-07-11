@@ -344,6 +344,11 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       _hideRatsNet: this.hideRatsNet,
     })
 
+    // Ensure required array fields are present even when caller omits them
+    cloned.chips ??= []
+    cloned.directConnections ??= []
+    cloned.netConnections ??= []
+
     // First, expand chips so existing pin coordinates sit on or within their edges without shrinking.
     expandChipsToFitPins(cloned)
     // Then, for any remaining pins that are still inside due to mixed extremes, snap them to the nearest edge.

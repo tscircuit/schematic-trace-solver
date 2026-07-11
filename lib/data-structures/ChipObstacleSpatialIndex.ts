@@ -10,7 +10,7 @@ export interface SpatiallyIndexedChip extends InputChip {
 
 export class ChipObstacleSpatialIndex {
   chips: Array<SpatiallyIndexedChip>
-  spatialIndex: Flatbush
+  spatialIndex: Flatbush | null
   spatialIndexIdToChip: Map<number, SpatiallyIndexedChip>
 
   constructor(chips: InputChip[]) {
@@ -21,6 +21,13 @@ export class ChipObstacleSpatialIndex {
     }))
 
     this.spatialIndexIdToChip = new Map()
+
+    if (chips.length === 0) {
+      // Flatbush requires at least 1 item; skip index construction for empty input
+      this.spatialIndex = null
+      return
+    }
+
     this.spatialIndex = new Flatbush(chips.length)
 
     for (const chip of this.chips) {
@@ -37,6 +44,7 @@ export class ChipObstacleSpatialIndex {
   }
 
   getChipsInBounds(bounds: Bounds): Array<InputChip & { bounds: Bounds }> {
+    if (!this.spatialIndex) return []
     const chipSpatialIndexIds = this.spatialIndex.search(
       bounds.minX,
       bounds.minY,
