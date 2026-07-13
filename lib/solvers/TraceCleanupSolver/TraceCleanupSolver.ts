@@ -2,6 +2,9 @@ import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject, Line } from "graphics-debug"
 import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
 import { balanceZShapes } from "./balanceZShapes"
+import { mergeNearbySameNetSegments } from "./mergeNearbySameNetSegments"
+import { hasCollisions } from "./hasCollisions"
+import { hasCollisionsWithLabels } from "./hasCollisionsWithLabels"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
@@ -28,6 +31,7 @@ type PipelineStep =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "untangling_traces"
+  | "merging_nearby_same_net_segments"
 
 /**
  * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
@@ -84,6 +88,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "merging_nearby_same_net_segments":
+        this._runMergeNearbySameNetSegmentsStep()
+        break
     }
   }
 
@@ -108,11 +115,36 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this.pipelineStep = "merging_nearby_same_net_segments"
       return
     }
 
     this._processTrace("balancing_l_shapes")
+  }
+
+  private _runMergeNearbySameNetSegmentsStep() {
+    const mergedTraces = mergeNearbySameNetSegments(this.outputTraces)
+    const chipObstacles = this.input.inputProblem.chips.map((chip) => ({
+      minX: chip.center.x - chip.width / 2,
+      maxX: chip.center.x + chip.width / 2,
+      minY: chip.center.y - chip.height / 2,
+      maxY: chip.center.y + chip.height / 2,
+    }))
+
+    const hasUnsafeMerge = mergedTraces.some((trace) => {
+      if (hasCollisions(trace.tracePath, chipObstacles)) return true
+      return hasCollisionsWithLabels(
+        trace.tracePath,
+        this.input.allLabelPlacements,
+      )
+    })
+
+    if (!hasUnsafeMerge) {
+      this.outputTraces = mergedTraces
+      this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    }
+
+    this.solved = true
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
