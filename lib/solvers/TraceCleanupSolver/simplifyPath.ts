@@ -5,12 +5,24 @@ import {
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
 export const simplifyPath = (path: Point[]): Point[] => {
-  if (path.length < 3) return path
-  const newPath: Point[] = [path[0]]
-  for (let i = 1; i < path.length - 1; i++) {
+  const dedupedPath: Point[] = []
+  for (const pt of path) {
+    if (dedupedPath.length === 0) {
+      dedupedPath.push(pt)
+    } else {
+      const last = dedupedPath[dedupedPath.length - 1]
+      if (last.x !== pt.x || last.y !== pt.y) {
+        dedupedPath.push(pt)
+      }
+    }
+  }
+
+  if (dedupedPath.length < 3) return dedupedPath
+  const newPath: Point[] = [dedupedPath[0]]
+  for (let i = 1; i < dedupedPath.length - 1; i++) {
     const p1 = newPath[newPath.length - 1]
-    const p2 = path[i]
-    const p3 = path[i + 1]
+    const p2 = dedupedPath[i]
+    const p3 = dedupedPath[i + 1]
     if (
       (isVertical(p1, p2) && isVertical(p2, p3)) ||
       (isHorizontal(p1, p2) && isHorizontal(p2, p3))
@@ -19,23 +31,7 @@ export const simplifyPath = (path: Point[]): Point[] => {
     }
     newPath.push(p2)
   }
-  newPath.push(path[path.length - 1])
+  newPath.push(dedupedPath[dedupedPath.length - 1])
 
-  if (newPath.length < 3) return newPath
-  const finalPath: Point[] = [newPath[0]]
-  for (let i = 1; i < newPath.length - 1; i++) {
-    const p1 = finalPath[finalPath.length - 1]
-    const p2 = newPath[i]
-    const p3 = newPath[i + 1]
-    if (
-      (isVertical(p1, p2) && isVertical(p2, p3)) ||
-      (isHorizontal(p1, p2) && isHorizontal(p2, p3))
-    ) {
-      continue
-    }
-    finalPath.push(p2)
-  }
-  finalPath.push(newPath[newPath.length - 1])
-
-  return finalPath
+  return newPath
 }
