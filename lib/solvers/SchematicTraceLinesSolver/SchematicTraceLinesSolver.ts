@@ -50,6 +50,11 @@ export class SchematicTraceLinesSolver extends BaseSolver {
     this.chipMap = params.chipMap
 
     this.queuedConnectionPairs = [...this.mspConnectionPairs]
+
+    if (this.queuedConnectionPairs.length === 0) {
+      // No connection pairs to route; solve immediately with an empty result.
+      this.solved = true
+    }
   }
 
   override getConstructorParams(): ConstructorParameters<

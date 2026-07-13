@@ -76,6 +76,14 @@ export class MspConnectionPairSolver extends BaseSolver {
     }
 
     this.queuedDcNetIds = Object.keys(netConnMap.netMap)
+
+    if (
+      inputProblem.directConnections.length === 0 &&
+      inputProblem.netConnections.length === 0
+    ) {
+      // No connections to route; solve immediately with an empty result.
+      this.solved = true
+    }
   }
 
   override getConstructorParams(): ConstructorParameters<

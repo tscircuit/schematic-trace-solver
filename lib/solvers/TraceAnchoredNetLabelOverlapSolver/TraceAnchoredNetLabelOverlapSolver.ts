@@ -50,6 +50,12 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
     this.traces = params.traces
     this.netLabelPlacements = params.netLabelPlacements
     this.outputNetLabelPlacements = [...params.netLabelPlacements]
+
+    if (this.outputNetLabelPlacements.length === 0) {
+      // No labels to resolve overlaps for; solve immediately with an
+      // empty result.
+      this.solved = true
+    }
   }
 
   override getConstructorParams(): ConstructorParameters<
