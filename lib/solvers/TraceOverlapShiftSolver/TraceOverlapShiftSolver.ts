@@ -262,11 +262,24 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     if (prevIsHorizontal) score2++
     if (nextIsVertical) score2++
 
-    const elbowPoint = score1 < score2 ? elbow1 : elbow2
+    let elbowPoint = score1 < score2 ? elbow1 : elbow2
 
-    // Replace [p1, p2] with [p1, elbowPoint, p2]
+    const elbowEqP1 =
+      Math.abs(elbowPoint.x - p1.x) < EPS && Math.abs(elbowPoint.y - p1.y) < EPS
+    const elbowEqP2 =
+      Math.abs(elbowPoint.x - p2.x) < EPS && Math.abs(elbowPoint.y - p2.y) < EPS
+
+    if (elbowEqP1) {
+      tracePath[i + 1] = { ...p2, x: p1.x, y: p1.y }
+      return true
+    }
+    if (elbowEqP2) {
+      tracePath[i] = { ...p1, x: p2.x, y: p2.y }
+      return true
+    }
+
     tracePath.splice(i + 1, 0, elbowPoint)
-    return true // Fixed one diagonal, return true to re-evaluate in next step
+    return true
   }
 
   override _step() {
