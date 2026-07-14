@@ -35,6 +35,37 @@ export const segmentIntersectsRect = <TRect extends RectBounds>(
   }
 }
 
+export const segmentOverlapsRectBoundary = <TRect extends RectBounds>(
+  a: Point,
+  b: Point,
+  r: TRect,
+  eps = EPS,
+): boolean => {
+  if (isVertical(a, b, eps)) {
+    const onVerticalBoundary =
+      Math.abs(a.x - r.minX) <= eps || Math.abs(a.x - r.maxX) <= eps
+    if (!onVerticalBoundary) return false
+
+    const overlap =
+      Math.min(Math.max(a.y, b.y), r.maxY) -
+      Math.max(Math.min(a.y, b.y), r.minY)
+    return overlap > eps
+  }
+
+  if (isHorizontal(a, b, eps)) {
+    const onHorizontalBoundary =
+      Math.abs(a.y - r.minY) <= eps || Math.abs(a.y - r.maxY) <= eps
+    if (!onHorizontalBoundary) return false
+
+    const overlap =
+      Math.min(Math.max(a.x, b.x), r.maxX) -
+      Math.max(Math.min(a.x, b.x), r.minX)
+    return overlap > eps
+  }
+
+  return false
+}
+
 export const findFirstCollision = <TRect extends RectBounds>(
   pts: Point[],
   rects: TRect[],

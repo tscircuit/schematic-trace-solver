@@ -1,24 +1,29 @@
-import type { GraphicsObject } from "graphics-debug"
-import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { InputChip, InputProblem, PinId } from "lib/types/InputProblem"
 import type { Point } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
+import type { GraphicsObject } from "graphics-debug"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import { getDimsForOrientation } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type { InputChip, InputProblem } from "lib/types/InputProblem"
+import type { FacingDirection } from "lib/utils/dir"
+import type { RectPadding } from "lib/utils/textBoxBounds"
 import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
-import { getObstacleRects, type ObstacleRect } from "./rect"
-import { findFirstCollision, isHorizontal, isVertical } from "./collisions"
+import { calculateDirectShortPath } from "./calculateDirectShortPath"
 import {
+  findFirstCollision,
+  isHorizontal,
+  isVertical,
+  segmentOverlapsRectBoundary,
+} from "./collisions"
+import {
+  type Axis,
   aabbFromPoints,
   candidateMidsFromSet,
   midBetweenPointAndRect,
-  type Axis,
 } from "./mid"
 import { pathKey, shiftSegmentOrth } from "./pathOps"
-import type { FacingDirection } from "lib/utils/dir"
-import { getDimsForOrientation } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import type { RectPadding } from "lib/utils/textBoxBounds"
-import { calculateDirectShortPath } from "./calculateDirectShortPath"
+import { getObstacleRects, type ObstacleRect } from "./rect"
 
 type PathKey = string
 
@@ -268,9 +273,42 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     const collision = findFirstCollision(path, this.obstacles, {
       excludeRectsForSegment: (segIndex) => {
         const lastSegIndex = path.length - 2
+        const excludedRects = new Set<ObstacleRect>()
+
         if (segIndex === 0 || segIndex === lastSegIndex) {
-          return this.textObstacles
+          for (const textObstacle of this.textObstacles) {
+            excludedRects.add(textObstacle)
+          }
         }
+
+        const segmentStart = path[segIndex]!
+        const segmentEnd = path[segIndex + 1]!
+        const endpointEpsilon = 1e-9
+        const segmentTouchesPin = (pin: MspConnectionPair["pins"][number]) =>
+          [segmentStart, segmentEnd].some(
+            (point) =>
+              Math.abs(point.x - pin.x) <= endpointEpsilon &&
+              Math.abs(point.y - pin.y) <= endpointEpsilon,
+          )
+
+        for (const pin of this.pins) {
+          if (!segmentTouchesPin(pin)) continue
+          const endpointChipObstacle = this.obstacles.find(
+            (obstacle) =>
+              obstacle.kind === "chip" && obstacle.chipId === pin.chipId,
+          )
+          if (
+            endpointChipObstacle &&
+            segmentOverlapsRectBoundary(
+              segmentStart,
+              segmentEnd,
+              endpointChipObstacle,
+            )
+          ) {
+            excludedRects.add(endpointChipObstacle)
+          }
+        }
+
         const adjacentEndpointSegIndex =
           segIndex === 1
             ? 2
@@ -286,9 +324,12 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
             path[adjacentEndpointSegIndex + 1]!,
           )
         ) {
-          return this.endpointTextObstacles
+          for (const textObstacle of this.endpointTextObstacles) {
+            excludedRects.add(textObstacle)
+          }
         }
-        return new Set<ObstacleRect>()
+
+        return excludedRects
       },
     })
 
