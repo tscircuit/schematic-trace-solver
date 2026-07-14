@@ -2,11 +2,18 @@ import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetL
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 
-const labelIsAnchored = (label: NetLabelPlacement, traces: SolvedTracePath[]) =>
-  traces.some(
-    (trace) =>
-      trace.globalConnNetId === label.globalConnNetId &&
-      tracePathContainsPoint(trace.tracePath, label.anchorPoint),
+const getAnchoredTraceIds = (
+  label: NetLabelPlacement,
+  traces: SolvedTracePath[],
+) =>
+  new Set(
+    traces
+      .filter(
+        (trace) =>
+          trace.globalConnNetId === label.globalConnNetId &&
+          tracePathContainsPoint(trace.tracePath, label.anchorPoint),
+      )
+      .map((trace) => trace.mspPairId),
   )
 
 export const preservesLabelAnchors = (
@@ -14,6 +21,10 @@ export const preservesLabelAnchors = (
   before: SolvedTracePath[],
   after: SolvedTracePath[],
 ) =>
-  labels.every(
-    (label) => !labelIsAnchored(label, before) || labelIsAnchored(label, after),
-  )
+  labels.every((label) => {
+    const anchoredBefore = getAnchoredTraceIds(label, before)
+    if (anchoredBefore.size === 0) return true
+
+    const anchoredAfter = getAnchoredTraceIds(label, after)
+    return [...anchoredBefore].every((traceId) => anchoredAfter.has(traceId))
+  })
