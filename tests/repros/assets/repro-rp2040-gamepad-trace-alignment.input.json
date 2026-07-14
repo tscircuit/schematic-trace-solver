@@ -49,12 +49,108 @@
         { "pinId": "J2.38", "x": 1.778, "y": 1.905 },
         { "pinId": "J2.39", "x": 1.778, "y": 2.159 },
         { "pinId": "J2.40", "x": 1.778, "y": 2.413 },
-        { "pinId": "J2.D2", "x": 0, "y": -6.604 }
+        { "pinId": "J2.TP1", "x": -0.762, "y": 6.35 },
+        { "pinId": "J2.TP2", "x": -0.508, "y": 6.35 },
+        { "pinId": "J2.TP3", "x": -0.254, "y": 6.35 },
+        { "pinId": "J2.TP4", "x": 0, "y": 6.35 },
+        { "pinId": "J2.TP5", "x": 0.254, "y": 6.35 },
+        { "pinId": "J2.TP6", "x": 0.508, "y": 6.35 },
+        { "pinId": "J2.D1", "x": -0.254, "y": -6.35 },
+        { "pinId": "J2.D2", "x": 0, "y": -6.35 },
+        { "pinId": "J2.D3", "x": 0.254, "y": -6.35 }
+      ]
+    },
+    {
+      "chipId": "USB1",
+      "center": {
+        "x": -8.5,
+        "y": 2.3
+      },
+      "width": 1.5,
+      "height": 3.6,
+      "pins": [
+        { "pinId": "USB1.1", "x": -7.75, "y": 3.86 },
+        { "pinId": "USB1.2", "x": -7.75, "y": 3.6 },
+        { "pinId": "USB1.3", "x": -7.75, "y": 3.34 },
+        { "pinId": "USB1.4", "x": -7.75, "y": 3.08 },
+        { "pinId": "USB1.5", "x": -7.75, "y": 2.82 },
+        { "pinId": "USB1.6", "x": -7.75, "y": 2.56 },
+        { "pinId": "USB1.7", "x": -7.75, "y": 2.3 },
+        { "pinId": "USB1.8", "x": -7.75, "y": 2.04 },
+        { "pinId": "USB1.9", "x": -7.75, "y": 1.78 },
+        { "pinId": "USB1.10", "x": -7.75, "y": 1.52 },
+        { "pinId": "USB1.11", "x": -7.75, "y": 1.26 },
+        { "pinId": "USB1.12", "x": -7.75, "y": 1 },
+        { "pinId": "USB1.13", "x": -7.75, "y": 0.74 }
+      ]
+    },
+    {
+      "chipId": "R1",
+      "center": {
+        "x": -5.4,
+        "y": 1.2
+      },
+      "width": 0.5,
+      "height": 1,
+      "pins": [
+        { "pinId": "R1.1", "x": -5.4, "y": 1.75 },
+        { "pinId": "R1.2", "x": -5.4, "y": 0.65 }
+      ]
+    },
+    {
+      "chipId": "R2",
+      "center": {
+        "x": -4,
+        "y": 1.2
+      },
+      "width": 0.5,
+      "height": 1,
+      "pins": [
+        { "pinId": "R2.1", "x": -4, "y": 1.75 },
+        { "pinId": "R2.2", "x": -4, "y": 0.65 }
       ]
     }
   ],
-  "directConnections": [],
+  "directConnections": [
+    {
+      "pinIds": ["USB1.4", "R1.1"],
+      "netId": "USB1.CC1 to R1.1"
+    },
+    {
+      "pinIds": ["USB1.10", "R2.1"],
+      "netId": "USB1.CC2 to R2.1"
+    }
+  ],
   "netConnections": [
+    {
+      "netId": "GNDPWR",
+      "pinIds": [
+        "USB1.1",
+        "USB1.12",
+        "USB1.13",
+        "R1.2",
+        "R2.2",
+        "J2.TP1"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.66
+    },
+    {
+      "netId": "V5",
+      "pinIds": ["USB1.2", "USB1.11", "J2.40"],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.3
+    },
+    {
+      "netId": "D-",
+      "pinIds": ["USB1.5", "USB1.7"],
+      "netLabelWidth": 0.3
+    },
+    {
+      "netId": "D+",
+      "pinIds": ["USB1.6", "USB1.8"],
+      "netLabelWidth": 0.3
+    },
     { "netId": "SDA", "pinIds": ["J2.1"], "netLabelWidth": 0.36 },
     { "netId": "SCL", "pinIds": ["J2.2"], "netLabelWidth": 0.36 },
     { "netId": "UP", "pinIds": ["J2.4"], "netLabelWidth": 0.3 },
@@ -131,6 +227,10 @@
     "R5": ["x+"],
     "L5": ["x+"],
     "LED-RGB": ["x+"],
+    "GNDPWR": ["y-"],
+    "V5": ["y+"],
+    "D-": ["x+"],
+    "D+": ["x+"],
     "GND": ["y-"]
   },
   "maxMspPairDistance": 8
