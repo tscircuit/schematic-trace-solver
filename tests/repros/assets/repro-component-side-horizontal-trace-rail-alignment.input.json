@@ -1,0 +1,35 @@
+{
+  "chips": [
+    {
+      "chipId": "U1",
+      "center": { "x": 0, "y": 0 },
+      "width": 8,
+      "height": 2,
+      "pins": [
+        { "pinId": "U1.1", "x": -3, "y": 1, "_facingDirection": "y+" },
+        { "pinId": "U1.2", "x": -2, "y": 1, "_facingDirection": "y+" },
+        { "pinId": "U1.3", "x": -1, "y": 1, "_facingDirection": "y+" },
+        { "pinId": "U1.4", "x": 0, "y": 1, "_facingDirection": "y+" },
+        { "pinId": "U1.5", "x": 1, "y": 1, "_facingDirection": "y+" },
+        { "pinId": "U1.6", "x": 2, "y": 1, "_facingDirection": "y+" },
+        { "pinId": "U1.7", "x": 3, "y": 1, "_facingDirection": "y+" }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "BUS",
+      "pinIds": ["U1.1", "U1.3", "U1.5", "U1.7"]
+    },
+    { "netId": "S1", "pinIds": ["U1.2"], "netLabelWidth": 0.42 },
+    { "netId": "S2", "pinIds": ["U1.4"], "netLabelWidth": 0.42 },
+    { "netId": "S3", "pinIds": ["U1.6"], "netLabelWidth": 0.42 }
+  ],
+  "availableNetLabelOrientations": {
+    "S1": ["y+"],
+    "S2": ["y+"],
+    "S3": ["y+"]
+  },
+  "maxMspPairDistance": 10
+}

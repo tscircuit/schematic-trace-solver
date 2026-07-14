@@ -152,7 +152,6 @@ export class LongDistancePairSolver extends BaseSolver {
             tracePath: newTracePath,
             mspConnectionPairIds: [mspPairId],
             pinIds: [p1.pinId, p2.pinId],
-            traceRole: "routed",
           }
 
           this.solvedLongDistanceTraces.push(newSolvedTrace)

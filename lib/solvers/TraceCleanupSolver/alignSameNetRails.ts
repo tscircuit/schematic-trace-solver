@@ -13,14 +13,15 @@ import {
   getObstacleRects,
   type ObstacleRect,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
-import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
+import type { InputChip, InputPin, InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
-import type { InputProblem } from "lib/types/InputProblem"
+import { simplifyPath } from "./simplifyPath"
 
 const EPS = 2e-3
 
 type RailOrientation = "horizontal" | "vertical"
+type ComponentSide = "left" | "right" | "top" | "bottom"
 
 type RailSegment = {
   traceId: string
@@ -30,15 +31,24 @@ type RailSegment = {
   coordinate: number
   minAlong: number
   maxAlong: number
+  componentId: string
+  componentSide: ComponentSide
+}
+
+type AlignmentScore = {
+  railCount: number
+  turnCount: number
+  visibleLength: number
+  logicalLength: number
+  otherNetCrossings: number
+  displacement: number
+  coordinate: number
 }
 
 type AlignmentCandidate = {
   traces: SolvedTracePath[]
   changedTraceIds: string[]
-  pathLength: number
-  otherNetCrossings: number
-  displacement: number
-  coordinate: number
+  score: AlignmentScore
 }
 
 const nearlyEqual = (a: number, b: number) => Math.abs(a - b) < EPS
@@ -59,15 +69,10 @@ const getOrientation = (a: Point, b: Point): RailOrientation | null => {
   return null
 }
 
-/**
- * A movable rail is an internal orthogonal segment with perpendicular legs on
- * both sides. Moving it changes only bend coordinates and never a trace endpoint.
- */
-const getMovableRailSegments = (trace: SolvedTracePath): RailSegment[] => {
-  if (trace.traceRole === "net-label-connector") return []
-
-  const segments: RailSegment[] = []
+const getMovableRailSegments = (trace: SolvedTracePath) => {
+  const segments: Omit<RailSegment, "componentId" | "componentSide">[] = []
   const path = trace.tracePath
+
   for (let segmentIndex = 1; segmentIndex < path.length - 2; segmentIndex++) {
     const previous = path[segmentIndex - 1]!
     const start = path[segmentIndex]!
@@ -98,6 +103,99 @@ const getMovableRailSegments = (trace: SolvedTracePath): RailSegment[] => {
   return segments
 }
 
+const getPinSide = (pin: InputPin, chip: InputChip): ComponentSide => {
+  if (pin._facingDirection === "x-") return "left"
+  if (pin._facingDirection === "x+") return "right"
+  if (pin._facingDirection === "y+") return "top"
+  if (pin._facingDirection === "y-") return "bottom"
+
+  const bounds = {
+    left: chip.center.x - chip.width / 2,
+    right: chip.center.x + chip.width / 2,
+    top: chip.center.y + chip.height / 2,
+    bottom: chip.center.y - chip.height / 2,
+  }
+  const distances: Array<[ComponentSide, number]> = [
+    ["left", Math.abs(pin.x - bounds.left)],
+    ["right", Math.abs(pin.x - bounds.right)],
+    ["top", Math.abs(pin.y - bounds.top)],
+    ["bottom", Math.abs(pin.y - bounds.bottom)],
+  ]
+  distances.sort((a, b) => a[1] - b[1])
+  return distances[0]![0]
+}
+
+const railIsOutsideComponentSide = (
+  segment: Omit<RailSegment, "componentId" | "componentSide">,
+  chip: InputChip,
+  side: ComponentSide,
+) => {
+  const minX = chip.center.x - chip.width / 2
+  const maxX = chip.center.x + chip.width / 2
+  const minY = chip.center.y - chip.height / 2
+  const maxY = chip.center.y + chip.height / 2
+
+  if (side === "left")
+    return (
+      segment.orientation === "vertical" && segment.coordinate <= minX + EPS
+    )
+  if (side === "right")
+    return (
+      segment.orientation === "vertical" && segment.coordinate >= maxX - EPS
+    )
+  if (side === "top")
+    return (
+      segment.orientation === "horizontal" && segment.coordinate >= maxY - EPS
+    )
+  return (
+    segment.orientation === "horizontal" && segment.coordinate <= minY + EPS
+  )
+}
+
+/**
+ * Associate internal rails with the component side they route around. A rail
+ * can be split into several collinear runs by an earlier collision detour, so
+ * every qualifying run is retained and moved as one cleanup operation.
+ * Generated label connectors are excluded by eligibleTraceIds before this
+ * function runs.
+ */
+const getComponentSideRailSegments = (
+  trace: SolvedTracePath,
+  chipMap: Map<string, InputChip>,
+): RailSegment[] => {
+  const movableSegments = getMovableRailSegments(trace)
+  const segments: RailSegment[] = []
+
+  for (const segment of movableSegments) {
+    const associations = trace.pins.flatMap((pin, pinIndex) => {
+      const chip = chipMap.get(pin.chipId)
+      if (!chip) return []
+      const componentSide = getPinSide(pin, chip)
+      if (!railIsOutsideComponentSide(segment, chip, componentSide)) return []
+      return [
+        {
+          componentId: chip.chipId,
+          componentSide,
+          distanceFromEndpoint:
+            pinIndex === 0
+              ? segment.segmentIndex
+              : trace.tracePath.length - 2 - segment.segmentIndex,
+        },
+      ]
+    })
+    associations.sort((a, b) => a.distanceFromEndpoint - b.distanceFromEndpoint)
+    const association = associations[0]
+    if (!association) continue
+    segments.push({
+      ...segment,
+      componentId: association.componentId,
+      componentSide: association.componentSide,
+    })
+  }
+
+  return segments
+}
+
 const rangesTouchOrOverlap = (a: RailSegment, b: RailSegment) =>
   Math.min(a.maxAlong, b.maxAlong) - Math.max(a.minAlong, b.minAlong) >= -EPS
 
@@ -121,6 +219,7 @@ const corridorIsClear = (
   b: RailSegment,
   obstacles: ObstacleRect[],
 ) => {
+  if (!rangesTouchOrOverlap(a, b)) return true
   const [start, end] = getCorridor(a, b)
   return !obstacles.some((obstacle) =>
     segmentIntersectsRect(start, end, obstacle),
@@ -129,9 +228,14 @@ const corridorIsClear = (
 
 const getRailGroups = (
   traces: SolvedTracePath[],
+  eligibleTraceIds: ReadonlySet<string>,
+  inputProblem: InputProblem,
   obstacles: ObstacleRect[],
 ): RailSegment[][] => {
-  const segments = traces.flatMap(getMovableRailSegments)
+  const chipMap = new Map(inputProblem.chips.map((chip) => [chip.chipId, chip]))
+  const segments = traces
+    .filter((trace) => eligibleTraceIds.has(trace.mspPairId))
+    .flatMap((trace) => getComponentSideRailSegments(trace, chipMap))
   const traceMap = new Map(traces.map((trace) => [trace.mspPairId, trace]))
   const visited = new Set<number>()
   const groups: RailSegment[][] = []
@@ -166,6 +270,8 @@ const getRailGroups = (
         if (
           candidate.globalConnNetId !== start.globalConnNetId ||
           candidate.orientation !== start.orientation ||
+          candidate.componentId !== start.componentId ||
+          candidate.componentSide !== start.componentSide ||
           (!rangesTouchOrOverlap(current, candidate) &&
             !areTopologicallyRelated(current, candidate)) ||
           !corridorIsClear(current, candidate, obstacles)
@@ -179,7 +285,9 @@ const getRailGroups = (
 
     if (
       new Set(group.map((segment) => segment.traceId)).size >= 2 &&
-      new Set(group.map((segment) => segment.coordinate)).size >= 2
+      group.some(
+        (segment) => !nearlyEqual(segment.coordinate, group[0]!.coordinate),
+      )
     ) {
       groups.push(group)
     }
@@ -251,10 +359,6 @@ const isPointOnPath = (point: Point, path: Point[]) =>
     .slice(0, -1)
     .some((start, index) => isPointOnSegment(point, start, path[index + 1]!))
 
-/**
- * Labels that were anchored to routed geometry must remain anchored. Port-only
- * labels that were never on a trace are intentionally ignored.
- */
 const preservesExistingLabelAnchors = (
   labels: NetLabelPlacement[],
   before: SolvedTracePath[],
@@ -288,13 +392,87 @@ const countOtherNetCrossings = (
   return crossings
 }
 
-const isBetterCandidate = (
-  candidate: AlignmentCandidate,
-  best: AlignmentCandidate | null,
-) => {
-  if (!best) return true
-  if (!nearlyEqual(candidate.pathLength, best.pathLength))
-    return candidate.pathLength < best.pathLength
+const getDistinctCoordinates = (coordinates: number[]) => {
+  const distinct: number[] = []
+  for (const coordinate of coordinates) {
+    if (!distinct.some((item) => nearlyEqual(item, coordinate))) {
+      distinct.push(coordinate)
+    }
+  }
+  return distinct
+}
+
+type Interval = { coordinate: number; min: number; max: number }
+
+const getMergedIntervalLength = (intervals: Interval[]) => {
+  const groups: Interval[][] = []
+  for (const interval of intervals) {
+    const group = groups.find((items) =>
+      nearlyEqual(items[0]!.coordinate, interval.coordinate),
+    )
+    if (group) group.push(interval)
+    else groups.push([interval])
+  }
+
+  return groups.reduce((total, group) => {
+    const sorted = [...group].sort((a, b) => a.min - b.min)
+    let groupLength = 0
+    let currentMin = sorted[0]!.min
+    let currentMax = sorted[0]!.max
+    for (const interval of sorted.slice(1)) {
+      if (interval.min <= currentMax + EPS) {
+        currentMax = Math.max(currentMax, interval.max)
+      } else {
+        groupLength += currentMax - currentMin
+        currentMin = interval.min
+        currentMax = interval.max
+      }
+    }
+    return total + groupLength + currentMax - currentMin
+  }, 0)
+}
+
+/** Length of the rendered same-net geometry after overlapping runs are merged. */
+const getVisibleLength = (traces: SolvedTracePath[]) => {
+  const horizontal: Interval[] = []
+  const vertical: Interval[] = []
+  for (const trace of traces) {
+    for (let index = 0; index < trace.tracePath.length - 1; index++) {
+      const start = trace.tracePath[index]!
+      const end = trace.tracePath[index + 1]!
+      if (isHorizontal(start, end)) {
+        horizontal.push({
+          coordinate: start.y,
+          min: Math.min(start.x, end.x),
+          max: Math.max(start.x, end.x),
+        })
+      } else if (isVertical(start, end)) {
+        vertical.push({
+          coordinate: start.x,
+          min: Math.min(start.y, end.y),
+          max: Math.max(start.y, end.y),
+        })
+      }
+    }
+  }
+  return getMergedIntervalLength(horizontal) + getMergedIntervalLength(vertical)
+}
+
+const getTurnCount = (traces: SolvedTracePath[]) =>
+  traces.reduce(
+    (total, trace) => total + Math.max(0, trace.tracePath.length - 2),
+    0,
+  )
+
+const scoreIsBetter = (candidate: AlignmentScore, best: AlignmentScore) => {
+  if (candidate.railCount !== best.railCount)
+    return candidate.railCount < best.railCount
+  if (candidate.turnCount !== best.turnCount)
+    return candidate.turnCount < best.turnCount
+  if (!nearlyEqual(candidate.visibleLength, best.visibleLength))
+    return candidate.visibleLength < best.visibleLength
+  if (!nearlyEqual(candidate.logicalLength, best.logicalLength))
+    return candidate.logicalLength < best.logicalLength
   if (candidate.otherNetCrossings !== best.otherNetCrossings)
     return candidate.otherNetCrossings < best.otherNetCrossings
   if (!nearlyEqual(candidate.displacement, best.displacement))
@@ -302,37 +480,55 @@ const isBetterCandidate = (
   return candidate.coordinate < best.coordinate
 }
 
+const isReadabilityImprovement = (
+  candidate: AlignmentScore,
+  baseline: AlignmentScore,
+) =>
+  candidate.railCount < baseline.railCount &&
+  candidate.turnCount <= baseline.turnCount &&
+  (candidate.turnCount < baseline.turnCount ||
+    candidate.visibleLength <= baseline.visibleLength + EPS)
+
 const evaluateGroup = ({
   group,
   traces,
   netLabelPlacements,
   obstacles,
+  eligibleTraceIds,
 }: {
   group: RailSegment[]
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   obstacles: ObstacleRect[]
+  eligibleTraceIds: ReadonlySet<string>
 }): AlignmentCandidate | null => {
   const groupTraceIds = new Set(group.map((segment) => segment.traceId))
   const originalGroupTraces = traces.filter((trace) =>
     groupTraceIds.has(trace.mspPairId),
   )
-  const crossAxisSpan =
-    Math.max(...group.map((segment) => segment.coordinate)) -
-    Math.min(...group.map((segment) => segment.coordinate))
-  const alongAxisSpan =
-    Math.max(...group.map((segment) => segment.maxAlong)) -
-    Math.min(...group.map((segment) => segment.minAlong))
-  // Parallel runs that are farther apart than their combined span represent
-  // separate routing regions, not a shared visual rail.
-  if (crossAxisSpan > alongAxisSpan + EPS) return null
   const baselineCrossings = countOtherNetCrossings(originalGroupTraces, traces)
-  const coordinates = [...new Set(group.map((segment) => segment.coordinate))]
+  const baseline: AlignmentScore = {
+    railCount: getDistinctCoordinates(
+      group.map((segment) => segment.coordinate),
+    ).length,
+    turnCount: getTurnCount(originalGroupTraces),
+    visibleLength: getVisibleLength(originalGroupTraces),
+    logicalLength: originalGroupTraces.reduce(
+      (sum, trace) => sum + getPathLength(trace.tracePath),
+      0,
+    ),
+    otherNetCrossings: baselineCrossings,
+    displacement: 0,
+    coordinate: Number.NEGATIVE_INFINITY,
+  }
+  const coordinates = getDistinctCoordinates(
+    group.map((segment) => segment.coordinate),
+  )
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
   )
-  const connectorTraces = traces.filter(
-    (trace) => trace.traceRole === "net-label-connector",
+  const immutableTraces = traces.filter(
+    (trace) => !eligibleTraceIds.has(trace.mspPairId),
   )
 
   let best: AlignmentCandidate | null = null
@@ -362,11 +558,6 @@ const evaluateGroup = ({
     const allCandidateTraces = traces.map(
       (trace) => candidateMap.get(trace.mspPairId) ?? trace,
     )
-    const pathLength = candidateTraces.reduce(
-      (sum, trace) => sum + getPathLength(trace.tracePath),
-      0,
-    )
-
     const candidatesAreClear = candidateTraces.every(
       (candidate) =>
         !isPathCollidingWithObstacles(candidate.tracePath, obstacles) &&
@@ -377,7 +568,7 @@ const evaluateGroup = ({
         !doesPathCoincideWithTraces(candidate.tracePath, otherNetTraces) &&
         !doesPathCoincideWithTraces(
           candidate.tracePath,
-          connectorTraces.filter(
+          immutableTraces.filter(
             (trace) => trace.mspPairId !== candidate.mspPairId,
           ),
         ),
@@ -398,20 +589,14 @@ const evaluateGroup = ({
     )
     if (otherNetCrossings > baselineCrossings) continue
 
-    const candidate: AlignmentCandidate = {
-      traces: allCandidateTraces,
-      changedTraceIds: candidateTraces
-        .filter((trace) => {
-          const original = traces.find(
-            (item) => item.mspPairId === trace.mspPairId,
-          )!
-          if (trace.tracePath.length !== original.tracePath.length) return true
-          return trace.tracePath.some(
-            (point, index) => !pointsEqual(point, original.tracePath[index]!),
-          )
-        })
-        .map((trace) => trace.mspPairId),
-      pathLength,
+    const score: AlignmentScore = {
+      railCount: 1,
+      turnCount: getTurnCount(candidateTraces),
+      visibleLength: getVisibleLength(candidateTraces),
+      logicalLength: candidateTraces.reduce(
+        (sum, trace) => sum + getPathLength(trace.tracePath),
+        0,
+      ),
       otherNetCrossings,
       displacement: group.reduce(
         (sum, segment) => sum + Math.abs(segment.coordinate - coordinate),
@@ -419,21 +604,42 @@ const evaluateGroup = ({
       ),
       coordinate,
     }
-    if (candidate.changedTraceIds.length === 0) continue
-    if (isBetterCandidate(candidate, best)) best = candidate
+    if (!isReadabilityImprovement(score, baseline)) continue
+
+    const changedTraceIds = candidateTraces
+      .filter((trace) => {
+        const original = traces.find(
+          (item) => item.mspPairId === trace.mspPairId,
+        )!
+        if (trace.tracePath.length !== original.tracePath.length) return true
+        return trace.tracePath.some(
+          (point, index) => !pointsEqual(point, original.tracePath[index]!),
+        )
+      })
+      .map((trace) => trace.mspPairId)
+    if (changedTraceIds.length === 0) continue
+
+    const candidate: AlignmentCandidate = {
+      traces: allCandidateTraces,
+      changedTraceIds,
+      score,
+    }
+    if (!best || scoreIsBetter(candidate.score, best.score)) best = candidate
   }
 
   return best
 }
 
-export const alignTraceRails = ({
+export const alignSameNetRails = ({
   inputProblem,
   traces,
   netLabelPlacements,
+  eligibleTraceIds,
 }: {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  eligibleTraceIds: ReadonlySet<string>
 }): {
   traces: SolvedTracePath[]
   alignedRailGroupCount: number
@@ -449,7 +655,12 @@ export const alignTraceRails = ({
   )
 
   for (let pass = 0; pass < maximumPasses; pass++) {
-    const groups = getRailGroups(outputTraces, obstacles)
+    const groups = getRailGroups(
+      outputTraces,
+      eligibleTraceIds,
+      inputProblem,
+      obstacles,
+    )
     let applied: AlignmentCandidate | null = null
     for (const group of groups) {
       applied = evaluateGroup({
@@ -457,6 +668,7 @@ export const alignTraceRails = ({
         traces: outputTraces,
         netLabelPlacements,
         obstacles,
+        eligibleTraceIds,
       })
       if (applied) break
     }

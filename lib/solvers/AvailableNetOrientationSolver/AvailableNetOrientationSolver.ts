@@ -161,7 +161,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       tracePath,
       mspConnectionPairIds: [mspPairId],
       pinIds: label.pinIds,
-      traceRole: "net-label-connector",
     }
 
     this.traces.push(connectorTrace)

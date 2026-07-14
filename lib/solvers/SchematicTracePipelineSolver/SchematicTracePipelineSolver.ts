@@ -27,7 +27,6 @@ import { RailNetLabelCornerPlacementSolver } from "../RailNetLabelCornerPlacemen
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
-import { TraceRailAlignmentSolver } from "../TraceRailAlignmentSolver/TraceRailAlignmentSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -81,7 +80,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   railNetLabelCornerPlacementSolver?: RailNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
-  traceRailAlignmentSolver?: TraceRailAlignmentSolver
+  finalTraceCleanupSolver?: TraceCleanupSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
 
   startTimeOfPhase: Record<string, number>
@@ -306,17 +305,30 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ],
     ),
     definePipelineStep(
-      "traceRailAlignmentSolver",
-      TraceRailAlignmentSolver,
-      (instance) => [
-        {
-          inputProblem: instance.inputProblem,
-          traces: instance.netLabelTraceCollisionSolver!.getOutput().traces,
-          netLabelPlacements:
-            instance.netLabelTraceCollisionSolver!.getOutput()
-              .netLabelPlacements,
-        },
-      ],
+      "finalTraceCleanupSolver",
+      TraceCleanupSolver,
+      (instance) => {
+        const collisionOutput =
+          instance.netLabelTraceCollisionSolver!.getOutput()
+        const labelMergingOutput =
+          instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput()
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            allTraces: collisionOutput.traces,
+            allLabelPlacements: collisionOutput.netLabelPlacements,
+            mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
+            paddingBuffer: 0.1,
+            operations: ["aligning_same_net_rails"],
+            eligibleTraceIds: new Set(
+              instance
+                .traceCleanupSolver!.getOutput()
+                .traces.map((trace) => trace.mspPairId),
+            ),
+          },
+        ]
+      },
     ),
     definePipelineStep(
       "netLabelNetLabelCollisionSolver",
@@ -324,9 +336,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => [
         {
           inputProblem: instance.inputProblem,
-          traces: instance.traceRailAlignmentSolver!.getOutput().traces,
+          traces: instance.finalTraceCleanupSolver!.getOutput().traces,
           netLabelPlacements:
-            instance.traceRailAlignmentSolver!.getOutput().netLabelPlacements,
+            instance.netLabelTraceCollisionSolver!.getOutput()
+              .netLabelPlacements,
         },
       ],
     ),
