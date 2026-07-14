@@ -331,5 +331,6 @@ const createPortOnlyLabelConnectorTrace = ({
     tracePath: [label.anchorPoint, movedLabel.anchorPoint],
     mspConnectionPairIds: [mspPairId],
     pinIds: label.pinIds,
+    isNetLabelConnector: true,
   }
 }

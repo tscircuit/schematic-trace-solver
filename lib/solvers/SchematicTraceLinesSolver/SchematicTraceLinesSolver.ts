@@ -16,6 +16,8 @@ export interface SolvedTracePath extends MspConnectionPair {
   tracePath: Point[]
   mspConnectionPairIds: MspConnectionPairId[]
   pinIds: PinId[]
+  /** Generated geometry that connects a moved net label back to its host trace. */
+  isNetLabelConnector?: boolean
 }
 
 export class SchematicTraceLinesSolver extends BaseSolver {

@@ -141,7 +141,12 @@ export const alignSameNetTraceRails = ({
       for (const side of SIDES) {
         const sameChipNetTraces = outputTraces.filter((trace) => {
           const [firstPin, secondPin] = trace.pins
-          if (!firstPin || !secondPin || firstPin.pinId === secondPin.pinId)
+          if (
+            trace.isNetLabelConnector ||
+            !firstPin ||
+            !secondPin ||
+            firstPin.pinId === secondPin.pinId
+          )
             return false
           return (
             trace.globalConnNetId === globalConnNetId &&

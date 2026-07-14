@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { alignSameNetTraceRails } from "lib/solvers/NetLabelTraceCollisionSolver/alignSameNetTraceRails"
+import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 
@@ -169,4 +170,78 @@ test("preserves earlier side alignment when aligning an orthogonal rail", () => 
     { x: 0, y: -3 },
     { x: 0, y: -2 },
   ])
+})
+
+test("does not align real traces to generated net-label connectors", () => {
+  const realTrace = createTrace("gnd-real", "U1.1", "U1.2", [
+    { x: -1, y: 1 },
+    { x: -1.5, y: 1 },
+    { x: -1.5, y: 0 },
+    { x: -1, y: 0 },
+  ])
+  const labelConnector = {
+    ...createTrace("gnd-label-connector", "U1.1", "U1.2", [
+      { x: -1.5, y: 1 },
+      { x: -2.5, y: 1 },
+      { x: -2.5, y: 1.5 },
+    ]),
+    isNetLabelConnector: true,
+  }
+
+  const result = alignSameNetTraceRails({
+    inputProblem,
+    traces: [realTrace, labelConnector],
+    netLabelPlacements: [],
+  })
+
+  expect(result.alignedRailGroupCount).toBe(0)
+  expect(result.alignedTraceCount).toBe(0)
+  expect(result.traces).toEqual([realTrace, labelConnector])
+})
+
+test("pipeline keeps a same-chip rail direct when its label needs a connector", () => {
+  const pipelineInput: InputProblem = {
+    chips: [
+      {
+        chipId: "U3",
+        center: { x: 0, y: 0 },
+        width: 2.8,
+        height: 1.4,
+        pins: [
+          { pinId: "U3.3", x: 1.4, y: -0.3 },
+          { pinId: "U3.7", x: 1.4, y: -0.5 },
+        ],
+      },
+    ],
+    directConnections: [],
+    netConnections: [
+      {
+        netId: "V3_3",
+        pinIds: ["U3.3", "U3.7"],
+        netLabelWidth: 0.42,
+        netLabelHeight: 0.6,
+      },
+    ],
+    textBoxes: [],
+    availableNetLabelOrientations: { V3_3: ["y+"] },
+    maxMspPairDistance: 2.4,
+  }
+  const solver = new SchematicTracePipelineSolver(pipelineInput)
+
+  solver.solve()
+
+  const traces = solver.netLabelTraceCollisionSolver!.getOutput().traces
+  const realTrace = traces.find((trace) => trace.mspPairId === "U3.3-U3.7")!
+  const labelConnector = traces.find((trace) => trace.isNetLabelConnector)!
+  expect(realTrace.tracePath).toEqual([
+    { x: 1.4, y: -0.3 },
+    { x: 1.5999999999999999, y: -0.3 },
+    { x: 1.5999999999999999, y: -0.5 },
+    { x: 1.4, y: -0.5 },
+  ])
+  expect(labelConnector.mspPairId).toBe("available-net-orientation-0-V3_3")
+  expect(solver.netLabelTraceCollisionSolver!.stats).toMatchObject({
+    alignedRailGroupCount: 0,
+    alignedTraceCount: 0,
+  })
 })
