@@ -33,7 +33,7 @@ test("pipeline does not stretch a real loop toward a generated label connector",
 
   solver.solve()
 
-  const traces = solver.finalTraceCleanupSolver!.getOutput().traces
+  const traces = solver.traceCleanupSolver2!.getOutput().traces
   const realTrace = traces.find((trace) => trace.mspPairId === "U3.3-U3.7")!
   const labelConnector = traces.find((trace) =>
     trace.mspPairId.startsWith("available-net-orientation-"),
@@ -45,7 +45,7 @@ test("pipeline does not stretch a real loop toward a generated label connector",
     { x: 1.4, y: -0.5 },
   ])
   expect(labelConnector.mspPairId).toBe("available-net-orientation-0-V3_3")
-  expect(solver.finalTraceCleanupSolver!.stats).toMatchObject({
+  expect(solver.traceCleanupSolver2!.stats).toMatchObject({
     alignedRailGroupCount: 0,
     alignedTraceCount: 0,
   })

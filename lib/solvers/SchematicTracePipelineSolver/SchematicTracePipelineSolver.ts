@@ -81,7 +81,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   preAlignmentNetLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
-  finalTraceCleanupSolver?: TraceCleanupSolver
+  traceCleanupSolver2?: TraceCleanupSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
 
   startTimeOfPhase: Record<string, number>
@@ -306,7 +306,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ],
     ),
     definePipelineStep(
-      "finalTraceCleanupSolver",
+      "traceCleanupSolver2",
       TraceCleanupSolver,
       (instance) => {
         const collisionOutput =
@@ -341,7 +341,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         return [
           {
             inputProblem: instance.inputProblem,
-            traces: instance.finalTraceCleanupSolver!.getOutput().traces,
+            traces: instance.traceCleanupSolver2!.getOutput().traces,
             netLabelPlacements: previousCollisionOutput.netLabelPlacements,
           },
         ]

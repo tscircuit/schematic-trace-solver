@@ -28,10 +28,10 @@ test("reproduces RP2040 gamepad trace routing", () => {
   expect(leftRailXs.size).toBe(1)
   expect(rightRailXs.size).toBe(1)
   expect(
-    solver.finalTraceCleanupSolver!.stats.alignedRailGroupCount,
+    solver.traceCleanupSolver2!.stats.alignedRailGroupCount,
   ).toBeGreaterThanOrEqual(2)
   expect(
-    solver.finalTraceCleanupSolver!.stats.alignedTraceCount,
+    solver.traceCleanupSolver2!.stats.alignedTraceCount,
   ).toBeGreaterThanOrEqual(8)
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
