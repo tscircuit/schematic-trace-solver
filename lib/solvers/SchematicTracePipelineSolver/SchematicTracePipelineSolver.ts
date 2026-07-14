@@ -27,6 +27,7 @@ import { RailNetLabelCornerPlacementSolver } from "../RailNetLabelCornerPlacemen
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
+import { TraceRailAlignmentSolver } from "../TraceRailAlignmentSolver/TraceRailAlignmentSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -80,6 +81,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   railNetLabelCornerPlacementSolver?: RailNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
+  traceRailAlignmentSolver?: TraceRailAlignmentSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
 
   startTimeOfPhase: Record<string, number>
@@ -304,8 +306,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ],
     ),
     definePipelineStep(
-      "netLabelNetLabelCollisionSolver",
-      NetLabelNetLabelCollisionSolver,
+      "traceRailAlignmentSolver",
+      TraceRailAlignmentSolver,
       (instance) => [
         {
           inputProblem: instance.inputProblem,
@@ -313,6 +315,18 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           netLabelPlacements:
             instance.netLabelTraceCollisionSolver!.getOutput()
               .netLabelPlacements,
+        },
+      ],
+    ),
+    definePipelineStep(
+      "netLabelNetLabelCollisionSolver",
+      NetLabelNetLabelCollisionSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          traces: instance.traceRailAlignmentSolver!.getOutput().traces,
+          netLabelPlacements:
+            instance.traceRailAlignmentSolver!.getOutput().netLabelPlacements,
         },
       ],
     ),

@@ -16,8 +16,8 @@ export interface SolvedTracePath extends MspConnectionPair {
   tracePath: Point[]
   mspConnectionPairIds: MspConnectionPairId[]
   pinIds: PinId[]
-  /** Generated geometry that connects a moved net label back to its host trace. */
-  isNetLabelConnector?: boolean
+  /** Semantic role used by post-routing solvers. Older inputs default to routed. */
+  traceRole?: "routed" | "net-label-connector"
 }
 
 export class SchematicTraceLinesSolver extends BaseSolver {
@@ -76,6 +76,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
           this.currentConnectionPair!.pins[0].pinId,
           this.currentConnectionPair!.pins[1].pinId,
         ],
+        traceRole: "routed",
       })
       this.activeSubSolver = null
       this.currentConnectionPair = null
