@@ -79,6 +79,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   availableNetOrientationSolver?: AvailableNetOrientationSolver
   railNetLabelCornerPlacementSolver?: RailNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
+  preAlignmentNetLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   finalTraceCleanupSolver?: TraceCleanupSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
@@ -292,7 +293,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ],
     ),
     definePipelineStep(
-      "netLabelTraceCollisionSolver",
+      "preAlignmentNetLabelTraceCollisionSolver",
       NetLabelTraceCollisionSolver,
       (instance) => [
         {
@@ -309,7 +310,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       TraceCleanupSolver,
       (instance) => {
         const collisionOutput =
-          instance.netLabelTraceCollisionSolver!.getOutput()
+          instance.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
         const labelMergingOutput =
           instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput()
 
@@ -331,12 +332,28 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
+      "netLabelTraceCollisionSolver",
+      NetLabelTraceCollisionSolver,
+      (instance) => {
+        const previousCollisionOutput =
+          instance.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces: instance.finalTraceCleanupSolver!.getOutput().traces,
+            netLabelPlacements: previousCollisionOutput.netLabelPlacements,
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
       "netLabelNetLabelCollisionSolver",
       NetLabelNetLabelCollisionSolver,
       (instance) => [
         {
           inputProblem: instance.inputProblem,
-          traces: instance.finalTraceCleanupSolver!.getOutput().traces,
+          traces: instance.netLabelTraceCollisionSolver!.getOutput().traces,
           netLabelPlacements:
             instance.netLabelTraceCollisionSolver!.getOutput()
               .netLabelPlacements,

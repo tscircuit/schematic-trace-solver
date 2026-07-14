@@ -11,7 +11,7 @@ test("reproduces RP2040 gamepad trace routing", () => {
   solver.solve()
 
   const finalTraces = solver
-    .finalTraceCleanupSolver!.getOutput()
+    .netLabelTraceCollisionSolver!.getOutput()
     .traces.filter((trace) => trace.userNetId === "GND")
   const leftRailXs = new Set<number>()
   const rightRailXs = new Set<number>()
