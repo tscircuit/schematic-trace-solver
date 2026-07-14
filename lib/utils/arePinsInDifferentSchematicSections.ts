@@ -21,7 +21,7 @@ export const arePinsInDifferentSchematicSections = (
   const sectionByChipId = new Map<string, string>()
   const sectionByPinId = new Map<string, string>()
 
-  for (const chip of inputProblem.chips) {
+  for (const chip of inputProblem.chips ?? []) {
     if (!chip.sectionId) continue
 
     sectionByChipId.set(chip.chipId, chip.sectionId)

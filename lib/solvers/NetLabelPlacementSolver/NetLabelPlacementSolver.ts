@@ -109,7 +109,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
     )
 
     const pinIdToPinMap = new Map<string, unknown>()
-    for (const chip of this.inputProblem.chips) {
+    for (const chip of this.inputProblem.chips ?? []) {
       for (const pin of chip.pins) {
         pinIdToPinMap.set(pin.pinId, pin)
       }
@@ -117,14 +117,14 @@ export class NetLabelPlacementSolver extends BaseSolver {
 
     // Map pins to user-provided netIds (if any)
     const userNetIdByPinId: Record<string, string | undefined> = {}
-    for (const dc of this.inputProblem.directConnections) {
+    for (const dc of this.inputProblem.directConnections ?? []) {
       if (dc.netId) {
         const [a, b] = dc.pinIds
         userNetIdByPinId[a] = dc.netId
         userNetIdByPinId[b] = dc.netId
       }
     }
-    for (const nc of this.inputProblem.netConnections) {
+    for (const nc of this.inputProblem.netConnections ?? []) {
       for (const pid of nc.pinIds) {
         userNetIdByPinId[pid] = nc.netId
       }
@@ -132,7 +132,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
 
     const groups: Array<OverlappingSameNetTraceGroup> = []
 
-    const allPinIds = this.inputProblem.chips.flatMap((c) =>
+    const allPinIds = (this.inputProblem.chips ?? []).flatMap((c) =>
       c.pins.map((p) => p.pinId),
     )
 
@@ -255,12 +255,12 @@ export class NetLabelPlacementSolver extends BaseSolver {
     group: OverlappingSameNetTraceGroup,
   ): number | undefined {
     if (group.netId) {
-      const ncWidth = this.inputProblem.netConnections.find(
+      const ncWidth = (this.inputProblem.netConnections ?? []).find(
         (nc) => nc.netId === group.netId,
       )?.netLabelWidth
       if (ncWidth !== undefined) return ncWidth
 
-      const dcWidthByNetId = this.inputProblem.directConnections.find(
+      const dcWidthByNetId = (this.inputProblem.directConnections ?? []).find(
         (dc) => dc.netId === group.netId,
       )?.netLabelWidth
       if (dcWidthByNetId !== undefined) return dcWidthByNetId
@@ -271,12 +271,12 @@ export class NetLabelPlacementSolver extends BaseSolver {
       pinIds.push(group.portOnlyPinId)
     }
 
-    const dcWidthByPinId = this.inputProblem.directConnections.find((dc) =>
-      dc.pinIds.some((pid) => pinIds.includes(pid)),
+    const dcWidthByPinId = (this.inputProblem.directConnections ?? []).find(
+      (dc) => dc.pinIds.some((pid) => pinIds.includes(pid)),
     )?.netLabelWidth
     if (dcWidthByPinId !== undefined) return dcWidthByPinId
 
-    return this.inputProblem.netConnections.find((nc) =>
+    return (this.inputProblem.netConnections ?? []).find((nc) =>
       nc.pinIds.some((pid) => pinIds.includes(pid)),
     )?.netLabelWidth
   }
@@ -285,7 +285,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
     group: OverlappingSameNetTraceGroup,
   ): number | undefined {
     if (group.netId) {
-      const ncHeight = this.inputProblem.netConnections.find(
+      const ncHeight = (this.inputProblem.netConnections ?? []).find(
         (nc) => nc.netId === group.netId,
       )?.netLabelHeight
       if (ncHeight !== undefined) return ncHeight
@@ -296,7 +296,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
       pinIds.push(group.portOnlyPinId)
     }
 
-    return this.inputProblem.netConnections.find((nc) =>
+    return (this.inputProblem.netConnections ?? []).find((nc) =>
       nc.pinIds.some((pid) => pinIds.includes(pid)),
     )?.netLabelHeight
   }
@@ -374,9 +374,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       inputTraceMap: this.inputTraceMap,
       overlappingSameNetTraceGroup: nextOverlappingSameNetTraceGroup,
-      availableOrientations: this.inputProblem.availableNetLabelOrientations[
-        netId
-      ] ?? ["x+", "x-", "y+", "y-"],
+      availableOrientations: (this.inputProblem.availableNetLabelOrientations ??
+        {})[netId] ?? ["x+", "x-", "y+", "y-"],
       netLabelWidth,
       netLabelHeight,
     })

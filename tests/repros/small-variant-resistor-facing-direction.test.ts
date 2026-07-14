@@ -17,7 +17,7 @@ test("small-variant resistor with facing directions routes from the sides", () =
 
   solver.solve()
 
-  const resistor = solver.inputProblem.chips.find(
+  const resistor = (solver.inputProblem.chips ?? []).find(
     (c) => c.chipId === "schematic_component_1",
   )!
   // Terminals keep their symbol-provided facing instead of being re-detected as

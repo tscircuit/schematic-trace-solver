@@ -8,7 +8,7 @@ export const getInputProblemBounds = (inputProblem: InputProblem) => {
     minY: Infinity,
     maxY: -Infinity,
   }
-  for (const chip of inputProblem.chips) {
+  for (const chip of inputProblem.chips ?? []) {
     const chipBounds = getInputChipBounds(chip)
     bounds.minX = Math.min(bounds.minX, chipBounds.minX)
     bounds.maxX = Math.max(bounds.maxX, chipBounds.maxX)

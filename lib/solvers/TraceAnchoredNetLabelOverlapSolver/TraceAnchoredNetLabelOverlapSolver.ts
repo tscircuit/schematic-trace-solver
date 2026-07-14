@@ -255,7 +255,7 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
   }
 
   private intersectsAnyChip(bounds: Bounds) {
-    return this.inputProblem.chips.some((chip) =>
+    return (this.inputProblem.chips ?? []).some((chip) =>
       rectsTouchOrOverlap(
         bounds,
         getRectBounds(chip.center, chip.width, chip.height),

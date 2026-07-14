@@ -90,7 +90,7 @@ export class UntangleTraceSubsolver extends BaseSolver {
 
     this.chipObstacleSpatialIndex =
       this.input.inputProblem._chipObstacleSpatialIndex ??
-      new ChipObstacleSpatialIndex(this.input.inputProblem.chips)
+      new ChipObstacleSpatialIndex(this.input.inputProblem.chips ?? [])
     if (!this.input.inputProblem._chipObstacleSpatialIndex) {
       this.input.inputProblem._chipObstacleSpatialIndex =
         this.chipObstacleSpatialIndex

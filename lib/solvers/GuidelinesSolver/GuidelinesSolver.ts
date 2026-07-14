@@ -60,7 +60,7 @@ export class GuidelinesSolver extends BaseSolver {
       },
     ]
     this.chipPairsGenerator = getGeneratorForAllChipPairs(
-      this.inputProblem.chips,
+      this.inputProblem.chips ?? [],
     )
 
     this.usedXGuidelines = new Set()

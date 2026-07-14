@@ -71,7 +71,7 @@ export class MergedNetLabelObstacleSolver extends BaseSolver {
       case "grouping_labels":
         this.labelGroups = groupLabelsByChipAndOrientation({
           labels: this.filteredLabels,
-          chips: this.inputProblem.chips,
+          chips: this.inputProblem.chips ?? [],
         })
         this.groupKeysToProcess = Object.keys(this.labelGroups)
         this.pipelineStep = "merging_groups"

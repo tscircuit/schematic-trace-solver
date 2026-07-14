@@ -35,6 +35,7 @@ const getAvailableOrientationsForRect = (
   label: string | undefined,
   availableOrientations: InputProblem["availableNetLabelOrientations"],
 ) => {
+  if (!availableOrientations) return undefined
   for (const netId of getNetIdsFromRectLabel(label)) {
     if (Object.hasOwn(availableOrientations, netId)) {
       return availableOrientations[netId]

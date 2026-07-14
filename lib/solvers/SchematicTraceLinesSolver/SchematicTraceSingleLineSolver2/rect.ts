@@ -30,7 +30,7 @@ export const getObstacleRects = (
   problem: InputProblem,
   opts: { textBoxPadding?: RectPadding } = {},
 ): ObstacleRect[] => {
-  const chipRects = problem.chips.map(chipToRect)
+  const chipRects = (problem.chips ?? []).map(chipToRect)
   const textBoxRects = (problem.textBoxes ?? []).map((textBox) => {
     const b = getTextBoxBounds(textBox, opts.textBoxPadding)
     return {

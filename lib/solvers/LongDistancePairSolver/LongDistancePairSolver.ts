@@ -60,7 +60,7 @@ export class LongDistancePairSolver extends BaseSolver {
     const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
     this.netConnMap = netConnMap
     const pinMap = new Map<PinId, InputPin & { chipId: string }>()
-    for (const chip of inputProblem.chips) {
+    for (const chip of inputProblem.chips ?? []) {
       this.chipMap[chip.chipId] = chip
       for (const pin of chip.pins) {
         pinMap.set(pin.pinId, { ...pin, chipId: chip.chipId })

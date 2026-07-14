@@ -139,7 +139,7 @@ export class Example28Solver extends BaseSolver {
   private hasExplicitOrientationConstraint(label: NetLabelPlacement) {
     const effectiveNetId = label.netId ?? label.globalConnNetId
     return Object.hasOwn(
-      this.inputProblem.availableNetLabelOrientations,
+      this.inputProblem.availableNetLabelOrientations ?? {},
       effectiveNetId,
     )
   }

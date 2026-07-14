@@ -98,7 +98,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
     this.chipObstacleSpatialIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
-      new ChipObstacleSpatialIndex(params.inputProblem.chips)
+      new ChipObstacleSpatialIndex(params.inputProblem.chips ?? [])
   }
 
   override getConstructorParams(): ConstructorParameters<
