@@ -10,5 +10,27 @@ test("reproduces RP2040 gamepad trace routing", () => {
 
   solver.solve()
 
+  const finalTraces = solver
+    .netLabelTraceCollisionSolver!.getOutput()
+    .traces.filter((trace) => trace.userNetId === "GND")
+  const leftRailXs = new Set<number>()
+  const rightRailXs = new Set<number>()
+  for (const trace of finalTraces) {
+    for (let i = 0; i < trace.tracePath.length - 1; i++) {
+      const start = trace.tracePath[i]!
+      const end = trace.tracePath[i + 1]!
+      if (Math.abs(start.x - end.x) > 1e-6) continue
+      if (start.x < -1.778 - 1e-6) leftRailXs.add(start.x)
+      if (start.x > 1.778 + 1e-6) rightRailXs.add(start.x)
+    }
+  }
+
+  expect(leftRailXs.size).toBe(1)
+  expect(rightRailXs.size).toBe(1)
+  expect(solver.netLabelTraceCollisionSolver!.stats).toMatchObject({
+    alignedRailGroupCount: 2,
+    alignedTraceCount: 8,
+  })
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

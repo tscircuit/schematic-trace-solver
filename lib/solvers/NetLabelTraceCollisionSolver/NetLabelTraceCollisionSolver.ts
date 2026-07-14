@@ -12,6 +12,7 @@ import {
 import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import type { InputProblem } from "lib/types/InputProblem"
+import { alignSameNetTraceRails } from "./alignSameNetTraceRails"
 
 const ON_PATH_EPS = 1e-6
 
@@ -176,6 +177,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
   override activeSubSolver: SingleOverlapSolver | null = null
   private recentlyFailed = new Set<string>()
   private detourCounts = new Map<string, number>()
+  private railAlignmentComplete = false
 
   private currentOverlap: {
     trace: SolvedTracePath
@@ -245,6 +247,18 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
     })
 
     if (actionable.length === 0) {
+      if (!this.railAlignmentComplete) {
+        const alignment = alignSameNetTraceRails({
+          inputProblem: this.inputProblem,
+          traces: this.outputTraces,
+          netLabelPlacements: this.outputNetLabelPlacements,
+        })
+        this.outputTraces = alignment.traces
+        this.stats.alignedRailGroupCount = alignment.alignedRailGroupCount
+        this.stats.alignedTraceCount = alignment.alignedTraceCount
+        this.railAlignmentComplete = true
+        return
+      }
       this.solved = true
       return
     }
