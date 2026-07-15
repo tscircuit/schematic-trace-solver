@@ -1,0 +1,237 @@
+{
+  "chips": [
+    {
+      "chipId": "J2",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 2.54,
+      "height": 11.684,
+      "pins": [
+        { "pinId": "J2.1", "x": -1.778, "y": 2.413 },
+        { "pinId": "J2.2", "x": -1.778, "y": 2.159 },
+        { "pinId": "J2.3", "x": -1.778, "y": 1.905 },
+        { "pinId": "J2.4", "x": -1.778, "y": 1.651 },
+        { "pinId": "J2.5", "x": -1.778, "y": 1.397 },
+        { "pinId": "J2.6", "x": -1.778, "y": 1.143 },
+        { "pinId": "J2.7", "x": -1.778, "y": 0.889 },
+        { "pinId": "J2.8", "x": -1.778, "y": 0.635 },
+        { "pinId": "J2.9", "x": -1.778, "y": 0.381 },
+        { "pinId": "J2.10", "x": -1.778, "y": 0.127 },
+        { "pinId": "J2.11", "x": -1.778, "y": -0.127 },
+        { "pinId": "J2.12", "x": -1.778, "y": -0.381 },
+        { "pinId": "J2.13", "x": -1.778, "y": -0.635 },
+        { "pinId": "J2.14", "x": -1.778, "y": -0.889 },
+        { "pinId": "J2.15", "x": -1.778, "y": -1.143 },
+        { "pinId": "J2.16", "x": -1.778, "y": -1.397 },
+        { "pinId": "J2.17", "x": -1.778, "y": -1.651 },
+        { "pinId": "J2.18", "x": -1.778, "y": -1.905 },
+        { "pinId": "J2.19", "x": -1.778, "y": -2.159 },
+        { "pinId": "J2.20", "x": -1.778, "y": -2.413 },
+        { "pinId": "J2.21", "x": 1.778, "y": -2.413 },
+        { "pinId": "J2.22", "x": 1.778, "y": -2.159 },
+        { "pinId": "J2.23", "x": 1.778, "y": -1.905 },
+        { "pinId": "J2.24", "x": 1.778, "y": -1.651 },
+        { "pinId": "J2.25", "x": 1.778, "y": -1.397 },
+        { "pinId": "J2.26", "x": 1.778, "y": -1.143 },
+        { "pinId": "J2.27", "x": 1.778, "y": -0.889 },
+        { "pinId": "J2.28", "x": 1.778, "y": -0.635 },
+        { "pinId": "J2.29", "x": 1.778, "y": -0.381 },
+        { "pinId": "J2.30", "x": 1.778, "y": -0.127 },
+        { "pinId": "J2.31", "x": 1.778, "y": 0.127 },
+        { "pinId": "J2.32", "x": 1.778, "y": 0.381 },
+        { "pinId": "J2.33", "x": 1.778, "y": 0.635 },
+        { "pinId": "J2.34", "x": 1.778, "y": 0.889 },
+        { "pinId": "J2.35", "x": 1.778, "y": 1.143 },
+        { "pinId": "J2.36", "x": 1.778, "y": 1.397 },
+        { "pinId": "J2.37", "x": 1.778, "y": 1.651 },
+        { "pinId": "J2.38", "x": 1.778, "y": 1.905 },
+        { "pinId": "J2.39", "x": 1.778, "y": 2.159 },
+        { "pinId": "J2.40", "x": 1.778, "y": 2.413 },
+        { "pinId": "J2.TP1", "x": -0.762, "y": 6.35 },
+        { "pinId": "J2.TP2", "x": -0.508, "y": 6.35 },
+        { "pinId": "J2.TP3", "x": -0.254, "y": 6.35 },
+        { "pinId": "J2.TP4", "x": 0, "y": 6.35 },
+        { "pinId": "J2.TP5", "x": 0.254, "y": 6.35 },
+        { "pinId": "J2.TP6", "x": 0.508, "y": 6.35 },
+        { "pinId": "J2.D1", "x": -0.254, "y": -6.35 },
+        { "pinId": "J2.D2", "x": 0, "y": -6.35 },
+        { "pinId": "J2.D3", "x": 0.254, "y": -6.35 }
+      ]
+    },
+    {
+      "chipId": "USB1",
+      "center": {
+        "x": -8.5,
+        "y": 2.3
+      },
+      "width": 1.5,
+      "height": 3.6,
+      "pins": [
+        { "pinId": "USB1.1", "x": -7.75, "y": 3.86 },
+        { "pinId": "USB1.2", "x": -7.75, "y": 3.6 },
+        { "pinId": "USB1.3", "x": -7.75, "y": 3.34 },
+        { "pinId": "USB1.4", "x": -7.75, "y": 3.08 },
+        { "pinId": "USB1.5", "x": -7.75, "y": 2.82 },
+        { "pinId": "USB1.6", "x": -7.75, "y": 2.56 },
+        { "pinId": "USB1.7", "x": -7.75, "y": 2.3 },
+        { "pinId": "USB1.8", "x": -7.75, "y": 2.04 },
+        { "pinId": "USB1.9", "x": -7.75, "y": 1.78 },
+        { "pinId": "USB1.10", "x": -7.75, "y": 1.52 },
+        { "pinId": "USB1.11", "x": -7.75, "y": 1.26 },
+        { "pinId": "USB1.12", "x": -7.75, "y": 1 },
+        { "pinId": "USB1.13", "x": -7.75, "y": 0.74 }
+      ]
+    },
+    {
+      "chipId": "R1",
+      "center": {
+        "x": -5.4,
+        "y": 1.2
+      },
+      "width": 0.5,
+      "height": 1,
+      "pins": [
+        { "pinId": "R1.1", "x": -5.4, "y": 1.75 },
+        { "pinId": "R1.2", "x": -5.4, "y": 0.65 }
+      ]
+    },
+    {
+      "chipId": "R2",
+      "center": {
+        "x": -4,
+        "y": 1.2
+      },
+      "width": 0.5,
+      "height": 1,
+      "pins": [
+        { "pinId": "R2.1", "x": -4, "y": 1.75 },
+        { "pinId": "R2.2", "x": -4, "y": 0.65 }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": ["USB1.4", "R1.1"],
+      "netId": "USB1.CC1 to R1.1"
+    },
+    {
+      "pinIds": ["USB1.10", "R2.1"],
+      "netId": "USB1.CC2 to R2.1"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "GNDPWR",
+      "pinIds": [
+        "USB1.1",
+        "USB1.12",
+        "USB1.13",
+        "R1.2",
+        "R2.2",
+        "J2.TP1"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.66
+    },
+    {
+      "netId": "V5",
+      "pinIds": ["USB1.2", "USB1.11", "J2.40"],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.3
+    },
+    {
+      "netId": "D-",
+      "pinIds": ["USB1.5", "USB1.7"],
+      "netLabelWidth": 0.3
+    },
+    {
+      "netId": "D+",
+      "pinIds": ["USB1.6", "USB1.8"],
+      "netLabelWidth": 0.3
+    },
+    { "netId": "SDA", "pinIds": ["J2.1"], "netLabelWidth": 0.36 },
+    { "netId": "SCL", "pinIds": ["J2.2"], "netLabelWidth": 0.36 },
+    { "netId": "UP", "pinIds": ["J2.4"], "netLabelWidth": 0.3 },
+    { "netId": "DOWN", "pinIds": ["J2.5"], "netLabelWidth": 0.48 },
+    { "netId": "RIGHT", "pinIds": ["J2.6"], "netLabelWidth": 0.54 },
+    { "netId": "LEFT", "pinIds": ["J2.7"], "netLabelWidth": 0.48 },
+    { "netId": "B1", "pinIds": ["J2.9"], "netLabelWidth": 0.3 },
+    { "netId": "B2", "pinIds": ["J2.10"], "netLabelWidth": 0.3 },
+    { "netId": "R2", "pinIds": ["J2.11"], "netLabelWidth": 0.3 },
+    { "netId": "L2", "pinIds": ["J2.12"], "netLabelWidth": 0.3 },
+    { "netId": "B3", "pinIds": ["J2.14"], "netLabelWidth": 0.3 },
+    { "netId": "B4", "pinIds": ["J2.15"], "netLabelWidth": 0.3 },
+    { "netId": "R1", "pinIds": ["J2.16"], "netLabelWidth": 0.3 },
+    { "netId": "L1", "pinIds": ["J2.17"], "netLabelWidth": 0.3 },
+    { "netId": "TURBO", "pinIds": ["J2.19"], "netLabelWidth": 0.6 },
+    {
+      "netId": "LED-TURBO",
+      "pinIds": ["J2.20"],
+      "netLabelWidth": 0.9
+    },
+    { "netId": "S1", "pinIds": ["J2.21"], "netLabelWidth": 0.3 },
+    { "netId": "S2", "pinIds": ["J2.22"], "netLabelWidth": 0.3 },
+    { "netId": "L3", "pinIds": ["J2.24"], "netLabelWidth": 0.3 },
+    { "netId": "R3", "pinIds": ["J2.25"], "netLabelWidth": 0.3 },
+    { "netId": "A1", "pinIds": ["J2.26"], "netLabelWidth": 0.3 },
+    { "netId": "A2", "pinIds": ["J2.27"], "netLabelWidth": 0.3 },
+    { "netId": "R5", "pinIds": ["J2.31"], "netLabelWidth": 0.3 },
+    { "netId": "L5", "pinIds": ["J2.32"], "netLabelWidth": 0.3 },
+    {
+      "netId": "LED-RGB",
+      "pinIds": ["J2.34"],
+      "netLabelWidth": 0.66
+    },
+    {
+      "netId": "GND",
+      "pinIds": [
+        "J2.3",
+        "J2.8",
+        "J2.13",
+        "J2.18",
+        "J2.23",
+        "J2.28",
+        "J2.33",
+        "J2.38",
+        "J2.D2"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "SDA": ["x-"],
+    "SCL": ["x-"],
+    "UP": ["x-"],
+    "DOWN": ["x-"],
+    "RIGHT": ["x-"],
+    "LEFT": ["x-"],
+    "B1": ["x-"],
+    "B2": ["x-"],
+    "R2": ["x-"],
+    "L2": ["x-"],
+    "B3": ["x-"],
+    "B4": ["x-"],
+    "R1": ["x-"],
+    "L1": ["x-"],
+    "TURBO": ["x-"],
+    "LED-TURBO": ["x-"],
+    "S1": ["x+"],
+    "S2": ["x+"],
+    "L3": ["x+"],
+    "R3": ["x+"],
+    "A1": ["x+"],
+    "A2": ["x+"],
+    "R5": ["x+"],
+    "L5": ["x+"],
+    "LED-RGB": ["x+"],
+    "GNDPWR": ["y-"],
+    "V5": ["y+"],
+    "D-": ["x+"],
+    "D+": ["x+"],
+    "GND": ["y-"]
+  },
+  "maxMspPairDistance": 8
+}
