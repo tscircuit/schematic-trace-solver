@@ -16,6 +16,7 @@ import {
   isVertical,
   segmentOverlapsRectBoundary,
 } from "./collisions"
+import { generateEndpointCollisionDetours } from "./generateEndpointCollisionDetours"
 import {
   type Axis,
   aabbFromPoints,
@@ -356,6 +357,35 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     // Never move the first or last segments - move adjacent segment instead
     const isFirstSegment = segIndex === 0
     const isLastSegment = segIndex === path.length - 2
+
+    if (path.length === 3 && (isFirstSegment || isLastSegment)) {
+      const detours = generateEndpointCollisionDetours({
+        path,
+        collidingSegmentIndex: segIndex,
+        obstacle: rect,
+      })
+        .filter((detour) => {
+          const key = pathKey(detour)
+          if (this.visited.has(key)) return false
+          this.visited.add(key)
+          return true
+        })
+        .sort(
+          (a, b) =>
+            this.pathLength(a) - this.pathLength(b) ||
+            this.getPinBandPenalty(a) - this.getPinBandPenalty(b),
+        )
+
+      for (const detour of detours) {
+        const nextCollisionRects = new Set(collisionRects)
+        nextCollisionRects.add(rect)
+        this.queue.push({
+          path: detour,
+          collisionRects: nextCollisionRects,
+        })
+      }
+      return
+    }
 
     if (isFirstSegment) {
       // If first segment collides, move the second segment instead
