@@ -1,0 +1,94 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": { "x": 1.9975000000000005, "y": -1 },
+      "width": 0.845,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "R1.1",
+          "x": 1.9000000000000004,
+          "y": -0.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "R1.2",
+          "x": 1.9000000000000004,
+          "y": -1.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": { "x": 2.2250000000000005, "y": 0.73 },
+      "width": 1.1600000000000004,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "C1.1",
+          "x": 1.9700000000000002,
+          "y": 1.1099999999999999,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C1.2",
+          "x": 1.9700000000000002,
+          "y": 0.3500000000000001,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": { "x": 0, "y": 0 },
+      "width": 1.8000000000000007,
+      "height": 3.3,
+      "pins": [
+        {
+          "pinId": "HOST.pin1",
+          "x": 0.9000000000000004,
+          "y": 1.25
+        },
+        {
+          "pinId": "HOST.pin2",
+          "x": 0.9000000000000004,
+          "y": 0.8499999999999999
+        },
+        {
+          "pinId": "HOST.pin3",
+          "x": 0.9000000000000004,
+          "y": 0.44999999999999996
+        },
+        {
+          "pinId": "HOST.pin4",
+          "x": 0.9000000000000004,
+          "y": -1.3000000000000003
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": ["HOST.pin1", "C1.1"],
+      "netId": ".HOST > .pin1 to C1.pin1"
+    },
+    {
+      "pinIds": ["HOST.pin2", "R1.1"],
+      "netId": ".HOST > .pin2 to R1.pin1"
+    },
+    {
+      "pinIds": ["HOST.pin3", "C1.2"],
+      "netId": ".HOST > .pin3 to C1.pin2"
+    },
+    {
+      "pinIds": ["HOST.pin4", "R1.2"],
+      "netId": ".HOST > .pin4 to R1.pin2"
+    }
+  ],
+  "netConnections": [],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {},
+  "maxMspPairDistance": 2.4
+}
