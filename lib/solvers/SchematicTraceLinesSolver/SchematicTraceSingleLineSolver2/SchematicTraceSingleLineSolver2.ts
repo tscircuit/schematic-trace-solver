@@ -370,6 +370,18 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         !isEndpointChipObstacle)
 
     if (canGenerateEndpointDetour && (isFirstSegment || isLastSegment)) {
+      // A three-point detour replaces an L elbow, so the shortest valid route
+      // remains the best choice. A four-point detour preserves the far side of
+      // a U elbow; prefer the candidate that keeps its new internal rails out
+      // of the pin band, then use length to choose between equivalent routes.
+      const compareDetours =
+        path.length === 4
+          ? (a: Point[], b: Point[]) =>
+              this.getPinBandPenalty(a) - this.getPinBandPenalty(b) ||
+              this.pathLength(a) - this.pathLength(b)
+          : (a: Point[], b: Point[]) =>
+              this.pathLength(a) - this.pathLength(b) ||
+              this.getPinBandPenalty(a) - this.getPinBandPenalty(b)
       const detours = generateEndpointCollisionDetours({
         path,
         collidingSegmentIndex: segIndex,
@@ -381,11 +393,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
           this.visited.add(key)
           return true
         })
-        .sort(
-          (a, b) =>
-            this.pathLength(a) - this.pathLength(b) ||
-            this.getPinBandPenalty(a) - this.getPinBandPenalty(b),
-        )
+        .sort(compareDetours)
 
       for (const detour of detours) {
         const nextCollisionRects = new Set(collisionRects)
