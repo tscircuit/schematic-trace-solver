@@ -15,7 +15,6 @@ import type { ConnectivityMap } from "connectivity-map"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 
 const NEAREST_NEIGHBOR_COUNT = 3
-const MIN_PINS_FOR_LARGE_NAMED_NET = 5
 const MAX_NAMED_NET_TRACE_DISTANCE = 7.5
 
 const distance = (p1: InputPin, p2: InputPin) => {
@@ -109,7 +108,6 @@ export class LongDistancePairSolver extends BaseSolver {
               ) &&
               namedNetPinSets.some(
                 (pinIds) =>
-                  pinIds.size >= MIN_PINS_FOR_LARGE_NAMED_NET &&
                   pinIds.has(sourcePin.pinId) &&
                   pinIds.has(targetPin.pinId),
               ) &&
