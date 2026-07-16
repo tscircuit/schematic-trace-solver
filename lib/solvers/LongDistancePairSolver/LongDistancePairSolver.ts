@@ -15,10 +15,14 @@ import type { ConnectivityMap } from "connectivity-map"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 
 const NEAREST_NEIGHBOR_COUNT = 3
+const MIN_PINS_FOR_LARGE_NAMED_NET = 5
+const MAX_NAMED_NET_TRACE_DISTANCE = 7.5
 
 const distance = (p1: InputPin, p2: InputPin) => {
   return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
 }
+
+const getPinPairKey = (p1: PinId, p2: PinId) => [p1, p2].sort().join("::")
 
 export class LongDistancePairSolver extends BaseSolver {
   public solvedLongDistanceTraces: SolvedTracePath[] = []
@@ -72,6 +76,15 @@ export class LongDistancePairSolver extends BaseSolver {
       [InputPin & { chipId: string }, InputPin & { chipId: string }]
     > = []
     const addedPairKeys = new Set<string>()
+    const maxMspPairDistance = inputProblem.maxMspPairDistance ?? 1
+    const directConnectionPairKeys = new Set(
+      inputProblem.directConnections.map((dc) =>
+        getPinPairKey(dc.pinIds[0], dc.pinIds[1]),
+      ),
+    )
+    const namedNetPinSets = inputProblem.netConnections.map(
+      (net) => new Set(net.pinIds),
+    )
 
     for (const netId of Object.keys(netConnMap.netMap)) {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
@@ -90,6 +103,20 @@ export class LongDistancePairSolver extends BaseSolver {
           .flatMap((otherPinId) => {
             const targetPin = pinMap.get(otherPinId)
             if (!targetPin) return [] // Gracefully handle missing pins
+            const shouldUseNetLabels =
+              !directConnectionPairKeys.has(
+                getPinPairKey(sourcePin.pinId, targetPin.pinId),
+              ) &&
+              namedNetPinSets.some(
+                (pinIds) =>
+                  pinIds.size >= MIN_PINS_FOR_LARGE_NAMED_NET &&
+                  pinIds.has(sourcePin.pinId) &&
+                  pinIds.has(targetPin.pinId),
+              ) &&
+              Math.abs(sourcePin.x - targetPin.x) +
+                Math.abs(sourcePin.y - targetPin.y) >
+                Math.max(maxMspPairDistance, MAX_NAMED_NET_TRACE_DISTANCE)
+            if (shouldUseNetLabels) return []
             return [
               {
                 pin: targetPin,
