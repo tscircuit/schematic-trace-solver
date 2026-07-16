@@ -3,7 +3,7 @@ import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipeline
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro47-endpoint-obstacle-detour.input.json"
 
-test("repro47: endpoint obstacle detours fall back to net labels", () => {
+test("repro47: endpoint obstacle detours route around nearby components", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
 
   solver.solve()
@@ -14,6 +14,6 @@ test("repro47: endpoint obstacle detours fall back to net labels", () => {
         (pair) => pair.mspPairId,
       )
       .sort(),
-  ).toEqual(["J1.1-R1.1", "J1.3-R1.2"])
+  ).toEqual([])
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

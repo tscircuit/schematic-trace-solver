@@ -357,8 +357,19 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     // Never move the first or last segments - move adjacent segment instead
     const isFirstSegment = segIndex === 0
     const isLastSegment = segIndex === path.length - 2
+    const isEndpointChipObstacle =
+      rect.kind === "chip" &&
+      this.pins.some((pin) => pin.chipId === rect.chipId)
+    // U-shaped detours are local repairs for fixed MSP pairs obstructed by an
+    // intermediate obstacle. Endpoint-chip and optional long-distance routing
+    // require multi-trace or net-level selection instead.
+    const canGenerateEndpointDetour =
+      path.length === 3 ||
+      (path.length === 4 &&
+        this.connectionPair !== undefined &&
+        !isEndpointChipObstacle)
 
-    if (path.length === 3 && (isFirstSegment || isLastSegment)) {
+    if (canGenerateEndpointDetour && (isFirstSegment || isLastSegment)) {
       const detours = generateEndpointCollisionDetours({
         path,
         collidingSegmentIndex: segIndex,
