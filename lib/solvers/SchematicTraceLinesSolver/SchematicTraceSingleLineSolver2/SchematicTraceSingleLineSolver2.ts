@@ -413,6 +413,11 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     // Note: PA and PB are already defined above
     const candidates: number[] = []
+    // Fixed MSP pairs may leave the endpoint bounds to complete a required
+    // route. Optional long-distance candidates retain their bounded search.
+    const candidateMidOptions = {
+      allowOpenSideCandidates: this.connectionPair !== undefined,
+    }
 
     if (collisionRects.size === 0) {
       // First collision on this search branch: use mid(PA, C) and mid(PB, C)
@@ -425,7 +430,13 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       candidates.push(...uniqueCandidates)
     } else {
       // Subsequent collisions: mid between C and nearest rect/bounds from the set
-      const mids = candidateMidsFromSet(axis, rect, collisionRects, this.aabb)
+      const mids = candidateMidsFromSet(
+        axis,
+        rect,
+        collisionRects,
+        this.aabb,
+        candidateMidOptions,
+      )
       candidates.push(...mids)
     }
 
@@ -496,6 +507,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
             rect,
             collisionRects,
             this.aabb,
+            candidateMidOptions,
           ),
         )
       }
