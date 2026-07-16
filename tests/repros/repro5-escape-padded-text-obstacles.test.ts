@@ -3,7 +3,7 @@ import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipeline
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro5-escape-padded-text-obstacles.input.json"
 
-test("repro5: route cannot escape padded text obstacles", () => {
+test("repro5: route escapes past padded text obstacles", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
 
   solver.solve()
@@ -12,6 +12,6 @@ test("repro5: route cannot escape padded text obstacles", () => {
     solver.schematicTraceLinesSolver!.failedConnectionPairs.map(
       (pair) => pair.mspPairId,
     ),
-  ).toEqual(["LED1.2-U1.20"])
+  ).toEqual([])
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
