@@ -105,6 +105,7 @@ export class LongDistancePairSolver extends BaseSolver {
             const orthogonalDistance =
               Math.abs(sourcePin.x - targetPin.x) +
               Math.abs(sourcePin.y - targetPin.y)
+            // Use net labels instead of routing long connections across the schematic.
             const shouldUseNetLabels =
               isNamedNet &&
               !isDirectConnection &&
