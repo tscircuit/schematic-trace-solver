@@ -8,5 +8,8 @@ test("bug-report-20260717T042845Z", () => {
 
   solver.solve()
 
+  expect(
+    solver.netLabelNetLabelCollisionSolver!.getOutput().netLabelPlacements,
+  ).toHaveLength(0)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

@@ -187,6 +187,18 @@ export class NetLabelPlacementSolver extends BaseSolver {
             component.has(t.pins[0].pinId) && component.has(t.pins[1].pinId),
         )
 
+        const isNetConnection = this.inputProblem.netConnections.some((net) =>
+          net.pinIds.some((pinId) => component.has(pinId)),
+        )
+        // A label is unnecessary when multiple traces already route the whole net connection.
+        if (
+          isNetConnection &&
+          compTraces.length > 1 &&
+          component.size === pinsInNet.length
+        ) {
+          continue
+        }
+
         if (compTraces.length > 0) {
           // Choose a representative trace (longest by L1 length)
           const lengthOf = (path: SolvedTracePath) => {
