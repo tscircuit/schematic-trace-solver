@@ -1,3 +1,4 @@
+import { distance } from "@tscircuit/math-utils"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type {
@@ -15,10 +16,7 @@ import type { ConnectivityMap } from "connectivity-map"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 
 const NEAREST_NEIGHBOR_COUNT = 3
-
-const distance = (p1: InputPin, p2: InputPin) => {
-  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
-}
+const MAX_NAMED_NET_TRACE_DISTANCE = 7.5
 
 export class LongDistancePairSolver extends BaseSolver {
   public solvedLongDistanceTraces: SolvedTracePath[] = []
@@ -72,6 +70,10 @@ export class LongDistancePairSolver extends BaseSolver {
       [InputPin & { chipId: string }, InputPin & { chipId: string }]
     > = []
     const addedPairKeys = new Set<string>()
+    const maxNamedNetTraceDistance = Math.max(
+      inputProblem.maxMspPairDistance ?? 1,
+      MAX_NAMED_NET_TRACE_DISTANCE,
+    )
 
     for (const netId of Object.keys(netConnMap.netMap)) {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
@@ -90,6 +92,25 @@ export class LongDistancePairSolver extends BaseSolver {
           .flatMap((otherPinId) => {
             const targetPin = pinMap.get(otherPinId)
             if (!targetPin) return [] // Gracefully handle missing pins
+            const isDirectConnection = inputProblem.directConnections.some(
+              ({ pinIds }) =>
+                pinIds.includes(sourcePin.pinId) &&
+                pinIds.includes(targetPin.pinId),
+            )
+            const isNamedNet = inputProblem.netConnections.some(
+              ({ pinIds }) =>
+                pinIds.includes(sourcePin.pinId) &&
+                pinIds.includes(targetPin.pinId),
+            )
+            const orthogonalDistance =
+              Math.abs(sourcePin.x - targetPin.x) +
+              Math.abs(sourcePin.y - targetPin.y)
+            // Use net labels instead of routing long connections across the schematic.
+            const shouldUseNetLabels =
+              isNamedNet &&
+              !isDirectConnection &&
+              orthogonalDistance > maxNamedNetTraceDistance
+            if (shouldUseNetLabels) return []
             return [
               {
                 pin: targetPin,
