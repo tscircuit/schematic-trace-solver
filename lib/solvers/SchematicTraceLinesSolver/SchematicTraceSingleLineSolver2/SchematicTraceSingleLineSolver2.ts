@@ -28,7 +28,7 @@ import { getObstacleRects, type ObstacleRect } from "./rect"
 
 type PathKey = string
 
-const calculateElbowWithOvershoot = ({
+const calculateElbowForPins = ({
   pin1,
   pin2,
   overshoot,
@@ -112,14 +112,14 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     const [pin1, pin2] = this.pins
     const directShortPath = calculateDirectShortPath(pin1, pin2)
-    const defaultElbow = calculateElbowWithOvershoot({
+    const defaultElbow = calculateElbowForPins({
       pin1,
       pin2,
       overshoot: 0.2,
     })
     const routingDistance =
       Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
-    const adaptiveElbow = calculateElbowWithOvershoot({
+    const adaptiveElbow = calculateElbowForPins({
       pin1,
       pin2,
       overshoot: Math.min(0.2, Math.max(0.02, routingDistance / 4)),
