@@ -9,6 +9,16 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
+import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
+import {
+  rectIntersectsAnyTextBox,
+  boundsOverlap,
+  getTextBoxBounds,
+} from "lib/utils/textBoxBounds"
+import {
+  getRectBounds,
+} from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 
 type Side = "left" | "right"
 
@@ -16,6 +26,13 @@ type SideLabel = {
   labelIndex: number
   chipId: string
   side: Side
+}
+
+type AlignmentProposal = {
+  labelIndex: number
+  originalLabel: NetLabelPlacement
+  movedLabel: NetLabelPlacement
+  connectorTrace: SolvedTracePath
 }
 
 const EPS = 1e-6
@@ -153,6 +170,7 @@ export class SideChildNetLabelAlignmentSolver extends BaseSolver {
             ),
           )
 
+    const proposals: AlignmentProposal[] = []
     for (const { labelIndex } of group) {
       const label = this.outputNetLabelPlacements[labelIndex]!
       if (Math.abs(label.anchorPoint.x - columnX) <= EPS) continue
@@ -165,9 +183,12 @@ export class SideChildNetLabelAlignmentSolver extends BaseSolver {
           x: label.center.x + columnX - label.anchorPoint.x,
         },
       }
-      this.outputNetLabelPlacements[labelIndex] = movedLabel
-      this.outputTraces.push({
-        mspPairId: `side-child-net-label-${group[0]!.chipId}-${side}-${labelIndex}`,
+      proposals.push({
+        labelIndex,
+        originalLabel: label,
+        movedLabel,
+        connectorTrace: {
+          mspPairId: `side-child-net-label-${group[0]!.chipId}-${side}-${labelIndex}`,
         dcConnNetId: label.dcConnNetId ?? label.globalConnNetId,
         globalConnNetId: label.globalConnNetId,
         userNetId: label.netId,
@@ -175,7 +196,156 @@ export class SideChildNetLabelAlignmentSolver extends BaseSolver {
         tracePath: [label.anchorPoint, movedLabel.anchorPoint],
         mspConnectionPairIds: [],
         pinIds: label.pinIds,
+        },
       })
     }
+
+    if (proposals.length === 0 || this.hasCollision(proposals)) return
+
+    for (const proposal of proposals) {
+      this.outputNetLabelPlacements[proposal.labelIndex] = proposal.movedLabel
+      this.outputTraces.push(proposal.connectorTrace)
+    }
+  }
+
+  private hasCollision(proposals: AlignmentProposal[]) {
+    const proposedLabels = this.outputNetLabelPlacements.map(
+      (label, index) =>
+        proposals.find((proposal) => proposal.labelIndex === index)?.movedLabel ??
+        label,
+    )
+
+    for (const proposal of proposals) {
+      const labelBounds = getRectBounds(
+        proposal.movedLabel.center,
+        proposal.movedLabel.width,
+        proposal.movedLabel.height,
+      )
+
+      if (
+        this.inputProblem.chips.some((chip) =>
+          boundsOverlap(labelBounds, getInputChipBounds(chip)),
+        ) || rectIntersectsAnyTextBox(labelBounds, this.inputProblem)
+      ) {
+        return true
+      }
+
+      if (
+        this.outputTraces.some(
+          (trace) =>
+            trace.globalConnNetId !== proposal.movedLabel.globalConnNetId &&
+            trace.tracePath.some((point, index) =>
+            index > 0
+              ? segmentIntersectsRect(
+                  trace.tracePath[index - 1]!,
+                  point,
+                  labelBounds,
+              )
+              : false,
+          ),
+        )
+      ) {
+        return true
+      }
+
+      if (
+        proposedLabels.some(
+          (label, index) =>
+            index !== proposal.labelIndex &&
+            boundsOverlap(
+              labelBounds,
+              getRectBounds(label.center, label.width, label.height),
+            ),
+        )
+      ) {
+        return true
+      }
+
+      if (this.connectorCollides(proposal, proposedLabels, proposals)) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  private connectorCollides(
+    proposal: AlignmentProposal,
+    labels: NetLabelPlacement[],
+    proposals: AlignmentProposal[],
+  ) {
+    const [start, end] = proposal.connectorTrace.tracePath
+
+    if (
+      this.inputProblem.chips.some((chip) =>
+        segmentIntersectsRect(start!, end!, getInputChipBounds(chip)),
+      ) ||
+      (this.inputProblem.textBoxes ?? []).some((textBox) =>
+        segmentIntersectsRect(start!, end!, getTextBoxBounds(textBox)),
+      )
+    ) {
+      return true
+    }
+
+    if (
+      labels.some(
+        (label, index) =>
+          index !== proposal.labelIndex &&
+          segmentIntersectsRect(
+            start!,
+            end!,
+            getRectBounds(label.center, label.width, label.height),
+          ),
+      )
+    ) {
+      return true
+    }
+
+    return [...this.outputTraces, ...proposals.map((p) => p.connectorTrace)].some(
+      (trace) =>
+        trace !== proposal.connectorTrace &&
+        trace.globalConnNetId !== proposal.connectorTrace.globalConnNetId &&
+        this.segmentsIntersect(start!, end!, trace.tracePath),
+    )
+  }
+
+  private segmentsIntersect(
+    start: { x: number; y: number },
+    end: { x: number; y: number },
+    path: { x: number; y: number }[],
+  ) {
+    for (let index = 1; index < path.length; index++) {
+      const otherStart = path[index - 1]!
+      const otherEnd = path[index]!
+      const horizontal = Math.abs(start.y - end.y) <= EPS
+      const otherHorizontal = Math.abs(otherStart.y - otherEnd.y) <= EPS
+
+      if (horizontal === otherHorizontal) {
+        if (horizontal && Math.abs(start.y - otherStart.y) > EPS) continue
+        if (!horizontal && Math.abs(start.x - otherStart.x) > EPS) continue
+        const overlap = horizontal
+          ? Math.min(Math.max(start.x, end.x), Math.max(otherStart.x, otherEnd.x)) -
+            Math.max(Math.min(start.x, end.x), Math.min(otherStart.x, otherEnd.x))
+          : Math.min(Math.max(start.y, end.y), Math.max(otherStart.y, otherEnd.y)) -
+            Math.max(Math.min(start.y, end.y), Math.min(otherStart.y, otherEnd.y))
+        if (overlap > EPS) return true
+        continue
+      }
+
+      const horizontalStart = horizontal ? start : otherStart
+      const horizontalEnd = horizontal ? end : otherEnd
+      const verticalStart = horizontal ? otherStart : start
+      const verticalEnd = horizontal ? otherEnd : end
+      if (
+        verticalStart.x >= Math.min(horizontalStart.x, horizontalEnd.x) - EPS &&
+        verticalStart.x <= Math.max(horizontalStart.x, horizontalEnd.x) + EPS &&
+        horizontalStart.y >= Math.min(verticalStart.y, verticalEnd.y) - EPS &&
+        horizontalStart.y <= Math.max(verticalStart.y, verticalEnd.y) + EPS
+      ) {
+        return true
+      }
+    }
+
+    return false
   }
 }
