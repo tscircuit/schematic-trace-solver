@@ -28,6 +28,29 @@ import { getObstacleRects, type ObstacleRect } from "./rect"
 
 type PathKey = string
 
+const calculateElbowWithOvershoot = ({
+  pin1,
+  pin2,
+  overshoot,
+}: {
+  pin1: MspConnectionPair["pins"][number]
+  pin2: MspConnectionPair["pins"][number]
+  overshoot: number
+}) =>
+  calculateElbow(
+    {
+      x: pin1.x,
+      y: pin1.y,
+      facingDirection: pin1._facingDirection!,
+    },
+    {
+      x: pin2.x,
+      y: pin2.y,
+      facingDirection: pin2._facingDirection!,
+    },
+    { overshoot },
+  )
+
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
   connectionPair?: MspConnectionPair
@@ -89,23 +112,30 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     const [pin1, pin2] = this.pins
     const directShortPath = calculateDirectShortPath(pin1, pin2)
+    const defaultElbow = calculateElbowWithOvershoot({
+      pin1,
+      pin2,
+      overshoot: 0.2,
+    })
+    const routingDistance =
+      Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
+    const adaptiveElbow = calculateElbowWithOvershoot({
+      pin1,
+      pin2,
+      overshoot: Math.min(0.2, Math.max(0.02, routingDistance / 4)),
+    })
+    const shouldUseAdaptiveElbow =
+      findFirstCollision(defaultElbow, this.obstacles) !== null &&
+      findFirstCollision(adaptiveElbow, this.obstacles) === null
 
     // Build initial elbow path
-    this.baseElbow =
-      directShortPath ??
-      calculateElbow(
-        {
-          x: pin1.x,
-          y: pin1.y,
-          facingDirection: pin1._facingDirection!,
-        },
-        {
-          x: pin2.x,
-          y: pin2.y,
-          facingDirection: pin2._facingDirection!,
-        },
-        { overshoot: 0.2 },
-      )
+    this.baseElbow = defaultElbow
+    if (shouldUseAdaptiveElbow) {
+      this.baseElbow = adaptiveElbow
+    }
+    if (directShortPath) {
+      this.baseElbow = directShortPath
+    }
     this.solvedTracePath = directShortPath
 
     // Bounds defined by PA and PB
