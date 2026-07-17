@@ -27,6 +27,7 @@ import { RailNetLabelCornerPlacementSolver } from "../RailNetLabelCornerPlacemen
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
+import { SideChildNetLabelAlignmentSolver } from "../SideChildNetLabelAlignmentSolver/SideChildNetLabelAlignmentSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -83,6 +84,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   traceCleanupSolver2?: TraceCleanupSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
+  sideChildNetLabelAlignmentSolver?: SideChildNetLabelAlignmentSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -357,6 +359,18 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           netLabelPlacements:
             instance.netLabelTraceCollisionSolver!.getOutput()
               .netLabelPlacements,
+        },
+      ],
+    ),
+    definePipelineStep(
+      "sideChildNetLabelAlignmentSolver",
+      SideChildNetLabelAlignmentSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          traces: instance.netLabelTraceCollisionSolver!.getOutput().traces,
+          netLabelPlacements:
+            instance.netLabelNetLabelCollisionSolver!.outputNetLabelPlacements,
         },
       ],
     ),

@@ -1,0 +1,122 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": { "x": 0, "y": 0 },
+      "width": 2.8,
+      "height": 1.8,
+      "pins": [
+        { "pinId": "U1.1", "x": -1.4, "y": -0.30000000000000004 },
+        { "pinId": "U1.2", "x": -1.4, "y": 0.30000000000000004 },
+        { "pinId": "U1.3", "x": -1.4, "y": 0.10000000000000003 },
+        { "pinId": "U1.4", "x": -1.4, "y": -0.09999999999999998 },
+        { "pinId": "U1.5", "x": 1.4, "y": -0.30000000000000004 },
+        { "pinId": "U1.6", "x": 1.4, "y": -0.10000000000000003 },
+        { "pinId": "U1.7", "x": 1.4, "y": 0.09999999999999998 },
+        { "pinId": "U1.8", "x": 1.4, "y": 0.30000000000000004 }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": { "x": -2.8449999999999998, "y": 0.9 },
+      "width": 1.2100000000000004,
+      "height": 0.5999999999999999,
+      "pins": [
+        { "pinId": "R1.1", "x": -3, "y": 1.2, "_facingDirection": "y+" },
+        { "pinId": "R1.2", "x": -3, "y": 0.6000000000000001, "_facingDirection": "y-" }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": { "x": -1.9450000000000003, "y": 0.9 },
+      "width": 1.21,
+      "height": 0.5999999999999999,
+      "pins": [
+        { "pinId": "R2.1", "x": -2.1, "y": 1.2, "_facingDirection": "y+" },
+        { "pinId": "R2.2", "x": -2.1, "y": 0.6000000000000001, "_facingDirection": "y-" }
+      ]
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": { "x": 1.605, "y": 0.9 },
+      "width": 1.21,
+      "height": 0.5999999999999999,
+      "pins": [
+        { "pinId": "R3.1", "x": 1.45, "y": 1.2, "_facingDirection": "y+" },
+        { "pinId": "R3.2", "x": 1.45, "y": 0.6000000000000001, "_facingDirection": "y-" }
+      ]
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": { "x": 2.2, "y": 1.8 },
+      "width": 0.3041464999999999,
+      "height": 0.8999999999999999,
+      "pins": [
+        { "pinId": "JP1.1", "x": 2.19742595, "y": 1.35, "_facingDirection": "y-" },
+        { "pinId": "JP1.2", "x": 2.2025740500000004, "y": 2.25, "_facingDirection": "y+" }
+      ]
+    },
+    {
+      "chipId": "schematic_component_5",
+      "center": { "x": 3.1050000000000004, "y": 0.9 },
+      "width": 1.2100000000000004,
+      "height": 0.5999999999999999,
+      "pins": [
+        { "pinId": "R4.1", "x": 2.95, "y": 1.2, "_facingDirection": "y+" },
+        { "pinId": "R4.2", "x": 2.95, "y": 0.6000000000000001, "_facingDirection": "y-" }
+      ]
+    },
+    {
+      "chipId": "schematic_component_6",
+      "center": { "x": 3.9549999999999996, "y": 0.9 },
+      "width": 1.21,
+      "height": 0.5999999999999999,
+      "pins": [
+        { "pinId": "R5.1", "x": 3.8, "y": 1.2, "_facingDirection": "y+" },
+        { "pinId": "R5.2", "x": 3.8, "y": 0.6000000000000001, "_facingDirection": "y-" }
+      ]
+    },
+    {
+      "chipId": "schematic_component_7",
+      "center": { "x": 1.5825, "y": -1.25 },
+      "width": 1.165,
+      "height": 0.7599999999999998,
+      "pins": [
+        { "pinId": "C1.1", "x": 1.45, "y": -0.8700000000000001, "_facingDirection": "y+" },
+        { "pinId": "C1.2", "x": 1.45, "y": -1.63, "_facingDirection": "y-" }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    { "netId": "GND", "pinIds": ["U1.1", "C1.2"], "netLabelWidth": 0.42, "netLabelHeight": 0.48 },
+    { "netId": "VREF1", "pinIds": ["U1.2", "R1.1", "R2.1"], "netLabelWidth": 0.42, "netLabelHeight": 0.72 },
+    { "netId": "SCL1", "pinIds": ["U1.3", "R1.2"], "netLabelWidth": 0.6 },
+    { "netId": "SDA1", "pinIds": ["U1.4", "R2.2"], "netLabelWidth": 0.6 },
+    { "netId": "SDA2", "pinIds": ["U1.5", "R5.2"], "netLabelWidth": 0.6 },
+    { "netId": "SCL2", "pinIds": ["U1.6", "R4.2"], "netLabelWidth": 0.6 },
+    { "netId": "VREF2", "pinIds": ["U1.7", "R3.1", "JP1.1", "R4.1", "R5.1"], "netLabelWidth": 0.42, "netLabelHeight": 0.72 },
+    { "netId": "EN", "pinIds": ["U1.8", "R3.2", "JP1.2", "C1.1"], "netLabelWidth": 0.36 }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": { "x": -0.5800000000000001, "y": 1.0150000000000001 },
+      "width": 0.96,
+      "height": 0.2500000000000001,
+      "text": "PCA9306"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": ["y-"],
+    "VREF1": ["y+"],
+    "VREF2": ["y+"],
+    "SCL1": ["x-", "x+"],
+    "SDA1": ["x-", "x+"],
+    "SCL2": ["x-", "x+"],
+    "SDA2": ["x-", "x+"],
+    "EN": ["x-", "x+"]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
