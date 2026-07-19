@@ -37,6 +37,7 @@ const DEFAULT_OPERATIONS: readonly TraceCleanupOperation[] = [
   "untangling_traces",
   "minimizing_turns",
   "balancing_l_shapes",
+  "aligning_same_net_rails",
 ]
 
 /**
