@@ -1,4 +1,7 @@
-<svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`repro152: distant net connections terminate at net labels 1`] = `
+"<svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
   <rect width="100%" height="100%" fill="white" />
   <g>
     <circle data-type="point" data-label="U1.1
@@ -92,7 +95,7 @@ globalConnNetId: connectivity_net1" data-x="5" data-y="0.591" x="516.59574468085
         y: (y - ty) / sy // Flip y back since we used negative scale
       }
 
-      coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+      coords.textContent = \`(\${realPoint.x.toFixed(2)}, \${realPoint.y.toFixed(2)})\`;
       coords.setAttribute('x', (x + 5).toString());
       coords.setAttribute('y', (y - 5).toString());
     });
@@ -101,4 +104,5 @@ globalConnNetId: connectivity_net1" data-x="5" data-y="0.591" x="516.59574468085
     });
     ]]>
   </script>
-</svg>
+</svg>"
+`;

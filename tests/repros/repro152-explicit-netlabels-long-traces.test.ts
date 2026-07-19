@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
-import "tests/fixtures/matcher"
+import { getLastStepSvg } from "tests/fixtures/getLastStepSvg"
 
 const inputProblem: InputProblem = {
   chips: [
@@ -65,7 +65,7 @@ test("repro152: distant net connections terminate at net labels", () => {
   ])
   expect(solver.netLabelPlacementSolver?.failedGroups).toHaveLength(0)
   expect(solver.longDistancePairSolver?.getOutput().newTraces).toHaveLength(0)
-  expect(solver).toMatchSolverSnapshot(import.meta.path)
+  expect(getLastStepSvg(solver.visualize())).toMatchSnapshot()
 })
 
 test("unlabeled endpoints retain clear long-distance traces", () => {
