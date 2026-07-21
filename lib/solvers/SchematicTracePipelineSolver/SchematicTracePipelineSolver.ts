@@ -12,7 +12,10 @@ import {
   type SolvedTracePath,
 } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
-import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import {
+  NetLabelPlacementSolver,
+  type NetLabelPlacement,
+} from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { colorAvailableNetOrientationLabels } from "./colorAvailableNetOrientationLabels"
 import { visualizeInputProblem } from "./visualizeInputProblem"
 import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
@@ -485,6 +488,51 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     }
     colorAvailableNetOrientationLabels(finalGraphics, this.inputProblem)
     return finalGraphics
+  }
+
+  /**
+   * Returns the final output of the pipeline after solving.
+   *
+   * The output contains the fully-routed traces (after label-collision
+   * rerouting) and the final net-label placements (after label–label
+   * collision resolution).
+   *
+   * The method walks backwards through the pipeline stages so that it
+   * works even if intermediate stages were skipped or haven't been reached
+   * yet (in which case earlier stages supply the data).
+   */
+  getOutput(): {
+    traces: SolvedTracePath[]
+    netLabelPlacements: NetLabelPlacement[]
+  } {
+    // Traces: the last solver that modifies traces is NetLabelTraceCollisionSolver.
+    // Fall back through earlier stages if later ones haven't run.
+    const traces: SolvedTracePath[] =
+      this.netLabelTraceCollisionSolver?.getOutput().traces ??
+      this.availableNetOrientationSolver?.traces ??
+      this.example28Solver?.outputTraces ??
+      this.traceCleanupSolver?.getOutput().traces ??
+      this.traceLabelOverlapAvoidanceSolver?.getOutput().traces ??
+      (this.traceOverlapShiftSolver?.correctedTraceMap
+        ? Object.values(this.traceOverlapShiftSolver.correctedTraceMap)
+        : undefined) ??
+      this.longDistancePairSolver?.getOutput().allTracesMerged ??
+      this.schematicTraceLinesSolver?.solvedTracePaths ??
+      []
+
+    // Net label placements: the last solver that modifies placements is
+    // NetLabelNetLabelCollisionSolver.
+    const netLabelPlacements: NetLabelPlacement[] =
+      this.netLabelNetLabelCollisionSolver?.getOutput().netLabelPlacements ??
+      this.netLabelTraceCollisionSolver?.getOutput().netLabelPlacements ??
+      this.traceAnchoredNetLabelOverlapSolver?.outputNetLabelPlacements ??
+      this.vccNetLabelCornerPlacementSolver?.outputNetLabelPlacements ??
+      this.availableNetOrientationSolver?.outputNetLabelPlacements ??
+      this.example28Solver?.outputNetLabelPlacements ??
+      this.netLabelPlacementSolver?.netLabelPlacements ??
+      []
+
+    return { traces, netLabelPlacements }
   }
 
   /**
