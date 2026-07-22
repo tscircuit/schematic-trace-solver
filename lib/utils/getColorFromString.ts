@@ -6,4 +6,3 @@ export const getColorFromString = (string: string, alpha = 1) => {
   const hue = Math.abs(hash) % 360
   return `hsl(${hue}, 100%, 50%, ${alpha})`
 }
-

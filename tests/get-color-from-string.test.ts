@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { getColorFromString } from "../lib/utils/getColorFromString"
+import { getColorFromString } from "lib/utils/getColorFromString"
 
 describe("getColorFromString", () => {
   test("returns valid HSL for standard strings", () => {
