@@ -5,8 +5,8 @@ import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/Schemati
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 
 /**
- * Minimizes the turns of a target trace while considering other traces and labels as obstacles.
- * This function first identifies the target trace and separates it from other traces, which are then treated as obstacles.
+ * Minimizes the turns of a target trace while considering different-net traces and labels as obstacles.
+ * This function first identifies the target trace and separates traces from other nets, which are then treated as obstacles.
  * It also filters out labels that belong to the target trace's net, so they don't act as obstacles.
  * The function then combines static obstacles (from the input problem) with the other traces and filtered labels to create a comprehensive set of obstacles.
  * Finally, it uses a turn minimization algorithm to find a new path for the target trace that avoids these combined obstacles.
@@ -33,8 +33,12 @@ export const minimizeTurnsWithFilteredLabels = ({
     throw new Error(`Target trace ${targetMspConnectionPairId} not found`)
   }
 
+  // Same-net traces are valid connection targets: letting the candidate path
+  // coincide with them removes unnecessary detours and forms clean junctions.
   const obstacleTraces = traces.filter(
-    (t) => t.mspPairId !== targetMspConnectionPairId,
+    (t) =>
+      t.mspPairId !== targetMspConnectionPairId &&
+      t.globalConnNetId !== targetTrace.globalConnNetId,
   )
 
   const TRACE_WIDTH = 0.01
