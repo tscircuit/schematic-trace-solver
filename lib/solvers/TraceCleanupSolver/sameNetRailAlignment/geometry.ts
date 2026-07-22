@@ -48,7 +48,7 @@ interface Interval {
   max: number
 }
 
-const getMergedIntervalLength = (intervals: Interval[]) => {
+const getMergedIntervalMetrics = (intervals: Interval[]) => {
   const groups: Interval[][] = []
   for (const interval of intervals) {
     const group = groups.find((items) =>
@@ -58,28 +58,35 @@ const getMergedIntervalLength = (intervals: Interval[]) => {
     else groups.push([interval])
   }
 
-  return groups.reduce((total, group) => {
-    const sorted = [...group].sort((a, b) => a.min - b.min)
-    let groupLength = 0
-    let currentMin = sorted[0]!.min
-    let currentMax = sorted[0]!.max
+  return groups.reduce(
+    (total, group) => {
+      const sorted = [...group].sort((a, b) => a.min - b.min)
+      let groupLength = 0
+      let segmentCount = 1
+      let currentMin = sorted[0]!.min
+      let currentMax = sorted[0]!.max
 
-    for (const interval of sorted.slice(1)) {
-      if (interval.min <= currentMax + RAIL_ALIGNMENT_EPSILON) {
-        currentMax = Math.max(currentMax, interval.max)
-      } else {
-        groupLength += currentMax - currentMin
-        currentMin = interval.min
-        currentMax = interval.max
+      for (const interval of sorted.slice(1)) {
+        if (interval.min <= currentMax + RAIL_ALIGNMENT_EPSILON) {
+          currentMax = Math.max(currentMax, interval.max)
+        } else {
+          groupLength += currentMax - currentMin
+          segmentCount++
+          currentMin = interval.min
+          currentMax = interval.max
+        }
       }
-    }
 
-    return total + groupLength + currentMax - currentMin
-  }, 0)
+      return {
+        length: total.length + groupLength + currentMax - currentMin,
+        segmentCount: total.segmentCount + segmentCount,
+      }
+    },
+    { length: 0, segmentCount: 0 },
+  )
 }
 
-/** Returns rendered length after overlapping collinear runs are merged. */
-export const getVisibleTraceLength = (traces: SolvedTracePath[]) => {
+const getVisibleTraceMetrics = (traces: SolvedTracePath[]) => {
   const horizontal: Interval[] = []
   const vertical: Interval[] = []
 
@@ -104,5 +111,18 @@ export const getVisibleTraceLength = (traces: SolvedTracePath[]) => {
     }
   }
 
-  return getMergedIntervalLength(horizontal) + getMergedIntervalLength(vertical)
+  const horizontalMetrics = getMergedIntervalMetrics(horizontal)
+  const verticalMetrics = getMergedIntervalMetrics(vertical)
+  return {
+    length: horizontalMetrics.length + verticalMetrics.length,
+    segmentCount: horizontalMetrics.segmentCount + verticalMetrics.segmentCount,
+  }
 }
+
+/** Returns rendered length after overlapping collinear runs are merged. */
+export const getVisibleTraceLength = (traces: SolvedTracePath[]) =>
+  getVisibleTraceMetrics(traces).length
+
+/** Returns the number of distinct collinear runs visible on the schematic. */
+export const getVisibleTraceSegmentCount = (traces: SolvedTracePath[]) =>
+  getVisibleTraceMetrics(traces).segmentCount

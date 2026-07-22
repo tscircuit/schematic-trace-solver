@@ -4,12 +4,17 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { countTurns } from "./countTurns"
+import {
+  getVisibleTraceLength,
+  getVisibleTraceSegmentCount,
+  RAIL_ALIGNMENT_EPSILON,
+} from "./sameNetRailAlignment/geometry"
 
 /**
  * Minimizes turns with a strict pass that treats every other trace as an
  * obstacle and a relaxed pass that permits joining endpoint-sharing same-net
- * branches. The relaxed route wins only when it removes more turns, preserving
- * useful same-net alignment constraints for equivalent routes.
+ * branches. Equivalent-turn routes are compared by their rendered same-net
+ * complexity so aligned rails win without arbitrarily shifting local routes.
  */
 export const minimizeTurnsWithFilteredLabels = ({
   targetMspConnectionPairId,
@@ -102,11 +107,39 @@ export const minimizeTurnsWithFilteredLabels = ({
     originalPath: originalPath,
   })
 
-  // Same-net branches are safe to join, but they still provide useful visual
-  // alignment constraints. Only relax them when doing so actually removes a
-  // turn; otherwise keep the strict route to avoid arbitrarily shifting rails.
-  const newPath =
-    countTurns(relaxedPath) < countTurns(strictPath) ? relaxedPath : strictPath
+  const sameNetTraces = otherTraces.filter(
+    (trace) => trace.globalConnNetId === targetTrace.globalConnNetId,
+  )
+  const getSameNetReadability = (tracePath: SolvedTracePath["tracePath"]) => {
+    const tracesWithCandidate = [
+      ...sameNetTraces,
+      { ...targetTrace, tracePath },
+    ]
+    return {
+      segmentCount: getVisibleTraceSegmentCount(tracesWithCandidate),
+      visibleLength: getVisibleTraceLength(tracesWithCandidate),
+    }
+  }
+
+  const strictTurns = countTurns(strictPath)
+  const relaxedTurns = countTurns(relaxedPath)
+  let newPath = strictPath
+
+  if (relaxedTurns < strictTurns) {
+    newPath = relaxedPath
+  } else if (relaxedTurns === strictTurns) {
+    const strictReadability = getSameNetReadability(strictPath)
+    const relaxedReadability = getSameNetReadability(relaxedPath)
+
+    if (
+      relaxedReadability.segmentCount < strictReadability.segmentCount ||
+      (relaxedReadability.segmentCount === strictReadability.segmentCount &&
+        relaxedReadability.visibleLength <
+          strictReadability.visibleLength - RAIL_ALIGNMENT_EPSILON)
+    ) {
+      newPath = relaxedPath
+    }
+  }
 
   return {
     ...targetTrace,
