@@ -38,4 +38,6 @@ bun.lock
 .vercel
 .aider*
 
+*.diff.png*.snap
 *.diff.png
+
