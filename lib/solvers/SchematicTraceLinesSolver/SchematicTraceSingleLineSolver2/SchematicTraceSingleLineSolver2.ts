@@ -18,6 +18,7 @@ import {
   segmentOverlapsRectBoundary,
 } from "./collisions"
 import { generateEndpointCollisionDetours } from "./generateEndpointCollisionDetours"
+import { generateInternalSegmentCollisionDetours } from "./generateInternalSegmentCollisionDetours"
 import {
   type Axis,
   aabbFromPoints,
@@ -510,18 +511,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       pinBandPenalty: number
     }> = []
 
-    const addShiftedCandidate = (
-      candidateSegIndex: number,
-      candidateAxis: Axis,
-      coord: number,
-    ) => {
-      const newPath = shiftSegmentOrth(
-        path,
-        candidateSegIndex,
-        candidateAxis,
-        coord,
-      )
-      if (!newPath) return
+    const addPathCandidate = (newPath: Point[]) => {
       const key = pathKey(newPath)
       if (this.visited.has(key)) return
       this.visited.add(key)
@@ -535,11 +525,42 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       })
     }
 
+    const addShiftedCandidate = (
+      candidateSegIndex: number,
+      candidateAxis: Axis,
+      coord: number,
+    ) => {
+      const newPath = shiftSegmentOrth(
+        path,
+        candidateSegIndex,
+        candidateAxis,
+        coord,
+      )
+      if (newPath) addPathCandidate(newPath)
+    }
+
+    const lastSegIndex = path.length - 2
+    if (
+      this.connectionPair === undefined &&
+      rect.kind === "text_box" &&
+      this.endpointTextObstacles.has(rect) &&
+      !collisionRects.has(rect) &&
+      originalSegIndex > 0 &&
+      originalSegIndex < lastSegIndex
+    ) {
+      for (const detour of generateInternalSegmentCollisionDetours({
+        path,
+        collidingSegmentIndex: originalSegIndex,
+        obstacle: rect,
+      })) {
+        addPathCandidate(detour)
+      }
+    }
+
     for (const coord of candidates) {
       addShiftedCandidate(segIndex, axis, coord)
     }
 
-    const lastSegIndex = path.length - 2
     const adjacentSegmentIndexes =
       originalSegIndex === 1
         ? [2]

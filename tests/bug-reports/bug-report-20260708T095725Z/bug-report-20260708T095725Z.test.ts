@@ -10,16 +10,15 @@ test("bug-report-20260708T095725Z", () => {
 
   solver.solve()
 
-  const manufacturerPartNumberTextBox = inputProblem.textBoxes.find(
-    (textBox) => textBox.text === "TPS923655DMTR",
-  )
-  expect(manufacturerPartNumberTextBox).toBeDefined()
+  const finalTraces = solver.netLabelTraceCollisionSolver!.getOutput().traces
+  expect(finalTraces.map((trace) => trace.mspPairId)).toContain("U1.14-RTEMP.1")
 
-  const textBounds = getTextBoxBounds(manufacturerPartNumberTextBox!)
-  const crossingTraceIds = solver
-    .netLabelTraceCollisionSolver!.getOutput()
-    .traces.filter((trace) =>
-      isPathCollidingWithObstacles(trace.tracePath, [textBounds]),
+  const componentTextBounds = inputProblem.textBoxes.map((textBox) =>
+    getTextBoxBounds(textBox),
+  )
+  const crossingTraceIds = finalTraces
+    .filter((trace) =>
+      isPathCollidingWithObstacles(trace.tracePath, componentTextBounds),
     )
     .map((trace) => trace.mspPairId)
 

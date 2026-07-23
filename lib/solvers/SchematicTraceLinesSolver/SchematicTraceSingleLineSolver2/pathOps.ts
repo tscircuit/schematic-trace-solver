@@ -5,6 +5,16 @@ const EPS = 1e-9
 
 export type Axis = "x" | "y"
 
+export const hasOnlyNonzeroOrthogonalSegments = (path: Point[]) =>
+  path.every((point, index) => {
+    const nextPoint = path[index + 1]
+    if (!nextPoint) return true
+    if (!isHorizontal(point, nextPoint) && !isVertical(point, nextPoint)) {
+      return false
+    }
+    return Math.abs(point.x - nextPoint.x) + Math.abs(point.y - nextPoint.y) > 0
+  })
+
 export const shiftSegmentOrth = (
   pts: Point[],
   segIndex: number,
