@@ -21,6 +21,10 @@ export type TextBoxObstacleRect = RectBounds & {
 
 export type ObstacleRect = ChipObstacleRect | TextBoxObstacleRect
 
+export const isTextBoxObstacle = (
+  obstacle: ObstacleRect,
+): obstacle is TextBoxObstacleRect => obstacle.kind === "text_box"
+
 export const chipToRect = (chip: InputChip): ChipObstacleRect => {
   const b = getInputChipBounds(chip)
   return { kind: "chip", chipId: chip.chipId, ...b }
