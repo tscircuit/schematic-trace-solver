@@ -15,6 +15,13 @@ export type TracePathScore = {
   labelIntersections: number
   labelHugDistance: number
   traceIntersections: number
+  /**
+   * Total length the path runs along a chip boundary. A soft quality penalty
+   * (traces hugging a chip edge look bad) that is only preferred against once
+   * the more important factors above are equal, so a boundary-hugging route is
+   * still chosen over one that actually overlaps a label or another trace.
+   */
+  chipBoundaryOverlap: number
   pathLength: number
 }
 

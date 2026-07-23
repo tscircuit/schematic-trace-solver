@@ -1,0 +1,103 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -4,
+        "y": 0
+      },
+      "width": 1.9000000000000004,
+      "height": 0.8,
+      "pins": [
+        {
+          "pinId": "schematic_component_0.1",
+          "x": -2.65,
+          "y": 0.2,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_component_0.2",
+          "x": -2.65,
+          "y": 0,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_component_0.3",
+          "x": -2.65,
+          "y": -0.2,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 4,
+        "y": 0
+      },
+      "width": 1.6999999999999997,
+      "height": 0.8,
+      "pins": [
+        {
+          "pinId": "schematic_component_1.1",
+          "x": 2.75,
+          "y": 0.2,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_component_1.2",
+          "x": 2.75,
+          "y": 0,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_component_1.3",
+          "x": 2.75,
+          "y": -0.2,
+          "_facingDirection": "x-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": [
+        "schematic_component_0.2",
+        "schematic_component_1.3"
+      ],
+      "netId": ".power > .VOUT_3V3 to .load > .3V3"
+    },
+    {
+      "pinIds": [
+        "schematic_component_0.3",
+        "schematic_component_1.2"
+      ],
+      "netId": ".power > .SEC_GND to .load > .GND"
+    }
+  ],
+  "netConnections": [],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -4.65,
+        "y": 0.53
+      },
+      "width": 0.5999999999999996,
+      "height": 0.17999999999999994,
+      "text": "power"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 3.3899999999999997,
+        "y": 0.53
+      },
+      "width": 0.48,
+      "height": 0.17999999999999994,
+      "text": "load"
+    }
+  ],
+  "availableNetLabelOrientations": {},
+  "maxMspPairDistance": 2.4
+}

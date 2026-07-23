@@ -3,13 +3,18 @@ import { minimizeTurns } from "./turnMinimization"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { countTurns } from "./countTurns"
+import {
+  getVisibleTraceLength,
+  getVisibleTraceSegmentCount,
+  RAIL_ALIGNMENT_EPSILON,
+} from "./sameNetRailAlignment/geometry"
 
 /**
- * Minimizes the turns of a target trace while considering other traces and labels as obstacles.
- * This function first identifies the target trace and separates it from other traces, which are then treated as obstacles.
- * It also filters out labels that belong to the target trace's net, so they don't act as obstacles.
- * The function then combines static obstacles (from the input problem) with the other traces and filtered labels to create a comprehensive set of obstacles.
- * Finally, it uses a turn minimization algorithm to find a new path for the target trace that avoids these combined obstacles.
+ * Minimizes turns with a strict pass that treats every other trace as an
+ * obstacle and a relaxed pass that permits joining endpoint-sharing same-net
+ * branches. Equivalent-turn routes are compared by their rendered same-net
+ * complexity so aligned rails win without arbitrarily shifting local routes.
  */
 export const minimizeTurnsWithFilteredLabels = ({
   targetMspConnectionPairId,
@@ -33,23 +38,31 @@ export const minimizeTurnsWithFilteredLabels = ({
     throw new Error(`Target trace ${targetMspConnectionPairId} not found`)
   }
 
-  const obstacleTraces = traces.filter(
-    (t) => t.mspPairId !== targetMspConnectionPairId,
+  const targetPinIds = new Set(targetTrace.pinIds)
+  const otherTraces = traces.filter(
+    (trace) => trace.mspPairId !== targetMspConnectionPairId,
   )
+  const relaxedObstacleTraces = otherTraces.filter((trace) => {
+    const sharesEndpoint = trace.pinIds.some((pinId) => targetPinIds.has(pinId))
+    return (
+      trace.globalConnNetId !== targetTrace.globalConnNetId || !sharesEndpoint
+    )
+  })
 
   const TRACE_WIDTH = 0.01
-  const traceObstacles = obstacleTraces.flatMap((trace, i) =>
-    trace.tracePath.slice(0, -1).map((p1, pi) => {
-      const p2 = trace.tracePath[pi + 1]!
-      return {
-        chipId: `trace-obstacle-${i}-${pi}`,
-        minX: Math.min(p1.x, p2.x) - TRACE_WIDTH / 2,
-        minY: Math.min(p1.y, p2.y) - TRACE_WIDTH / 2,
-        maxX: Math.max(p1.x, p2.x) + TRACE_WIDTH / 2,
-        maxY: Math.max(p1.y, p2.y) + TRACE_WIDTH / 2,
-      }
-    }),
-  )
+  const getTraceObstacles = (obstacleTraces: SolvedTracePath[]) =>
+    obstacleTraces.flatMap((trace, i) =>
+      trace.tracePath.slice(0, -1).map((p1, pi) => {
+        const p2 = trace.tracePath[pi + 1]!
+        return {
+          chipId: `trace-obstacle-${i}-${pi}`,
+          minX: Math.min(p1.x, p2.x) - TRACE_WIDTH / 2,
+          minY: Math.min(p1.y, p2.y) - TRACE_WIDTH / 2,
+          maxX: Math.max(p1.x, p2.x) + TRACE_WIDTH / 2,
+          maxY: Math.max(p1.y, p2.y) + TRACE_WIDTH / 2,
+        }
+      }),
+    )
 
   const staticObstaclesRaw = getObstacleRects(inputProblem)
   const PADDING = 0.01
@@ -60,8 +73,6 @@ export const minimizeTurnsWithFilteredLabels = ({
     maxX: obs.maxX + PADDING,
     maxY: obs.maxY + PADDING,
   }))
-
-  const combinedObstacles = [...staticObstacles, ...traceObstacles]
 
   const originalPath = targetTrace.tracePath
   const filteredLabels = allLabelPlacements.filter((label) => {
@@ -79,12 +90,56 @@ export const minimizeTurnsWithFilteredLabels = ({
     maxY: nl.center.y + nl.height / 2 + paddingBuffer,
   }))
 
-  const newPath = minimizeTurns({
+  const strictPath = minimizeTurns({
     path: originalPath,
-    obstacles: combinedObstacles,
+    obstacles: [...staticObstacles, ...getTraceObstacles(otherTraces)],
     labelBounds,
     originalPath: originalPath,
   })
+
+  const relaxedPath = minimizeTurns({
+    path: originalPath,
+    obstacles: [
+      ...staticObstacles,
+      ...getTraceObstacles(relaxedObstacleTraces),
+    ],
+    labelBounds,
+    originalPath: originalPath,
+  })
+
+  const sameNetTraces = otherTraces.filter(
+    (trace) => trace.globalConnNetId === targetTrace.globalConnNetId,
+  )
+  const getSameNetReadability = (tracePath: SolvedTracePath["tracePath"]) => {
+    const tracesWithCandidate = [
+      ...sameNetTraces,
+      { ...targetTrace, tracePath },
+    ]
+    return {
+      segmentCount: getVisibleTraceSegmentCount(tracesWithCandidate),
+      visibleLength: getVisibleTraceLength(tracesWithCandidate),
+    }
+  }
+
+  const strictTurns = countTurns(strictPath)
+  const relaxedTurns = countTurns(relaxedPath)
+  let newPath = strictPath
+
+  if (relaxedTurns < strictTurns) {
+    newPath = relaxedPath
+  } else if (relaxedTurns === strictTurns) {
+    const strictReadability = getSameNetReadability(strictPath)
+    const relaxedReadability = getSameNetReadability(relaxedPath)
+
+    if (
+      relaxedReadability.segmentCount < strictReadability.segmentCount ||
+      (relaxedReadability.segmentCount === strictReadability.segmentCount &&
+        relaxedReadability.visibleLength <
+          strictReadability.visibleLength - RAIL_ALIGNMENT_EPSILON)
+    ) {
+      newPath = relaxedPath
+    }
+  }
 
   return {
     ...targetTrace,

@@ -1,4 +1,4 @@
-import {describe,it,expect} from "vitest";
+import {describe,it,expect} from "buntest"
 
 describe("TraceCleanupSolver",()=>{
   it("runs a basic test",()=>{

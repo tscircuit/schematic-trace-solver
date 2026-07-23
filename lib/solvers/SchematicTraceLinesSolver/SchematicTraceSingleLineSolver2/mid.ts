@@ -1,7 +1,8 @@
 import type { Point } from "@tscircuit/math-utils"
-import type { ChipWithBounds } from "./rect"
+import type { ObstacleRect } from "./rect"
 
 const EPS = 1e-9
+const OBSTACLE_CLEARANCE = 0.2
 
 export type Axis = "x" | "y"
 
@@ -15,7 +16,7 @@ export const aabbFromPoints = (a: Point, b: Point) => ({
 export const midBetweenPointAndRect = (
   axis: Axis,
   p: Point,
-  r: ChipWithBounds,
+  r: ObstacleRect,
   eps = EPS,
 ): number[] => {
   if (axis === "x") {
@@ -26,7 +27,7 @@ export const midBetweenPointAndRect = (
       return [(p.x + r.maxX) / 2]
     }
     // Point is within rect bounds on this axis - generate candidates on both sides
-    return [r.minX - 0.2, r.maxX + 0.2]
+    return [r.minX - OBSTACLE_CLEARANCE, r.maxX + OBSTACLE_CLEARANCE]
   } else {
     if (p.y < r.minY - eps) {
       return [(p.y + r.minY) / 2]
@@ -35,21 +36,19 @@ export const midBetweenPointAndRect = (
       return [(p.y + r.maxY) / 2]
     }
     // Point is within rect bounds on this axis - generate candidates on both sides
-    return [r.minY - 0.2, r.maxY + 0.2]
+    return [r.minY - OBSTACLE_CLEARANCE, r.maxY + OBSTACLE_CLEARANCE]
   }
 }
 
 export const candidateMidsFromSet = (
   axis: Axis,
-  colliding: ChipWithBounds,
-  rectsById: Map<string, ChipWithBounds>,
-  collisionRectIds: Set<string>,
+  colliding: ObstacleRect,
+  collisionRects: Set<ObstacleRect>,
   aabb: { minX: number; maxX: number; minY: number; maxY: number },
-  eps = EPS,
+  opts: { allowOpenSideCandidates?: boolean; eps?: number } = {},
 ): number[] => {
-  const setRects = [...collisionRectIds]
-    .map((id) => rectsById.get(id))
-    .filter((r): r is ChipWithBounds => !!r)
+  const { allowOpenSideCandidates = false, eps = EPS } = opts
+  const setRects = [...collisionRects]
 
   if (axis === "x") {
     const leftBoundaries = [aabb.minX, ...setRects.map((r) => r.maxX)].filter(
@@ -67,9 +66,13 @@ export const candidateMidsFromSet = (
     const out: number[] = []
     if (leftNeighbor !== undefined) {
       out.push((leftNeighbor + colliding.minX) / 2)
+    } else if (allowOpenSideCandidates) {
+      out.push(colliding.minX - OBSTACLE_CLEARANCE)
     }
     if (rightNeighbor !== undefined) {
       out.push((colliding.maxX + rightNeighbor) / 2)
+    } else if (allowOpenSideCandidates) {
+      out.push(colliding.maxX + OBSTACLE_CLEARANCE)
     }
     return out
   } else {
@@ -88,9 +91,13 @@ export const candidateMidsFromSet = (
     const out: number[] = []
     if (bottomNeighbor !== undefined) {
       out.push((bottomNeighbor + colliding.minY) / 2)
+    } else if (allowOpenSideCandidates) {
+      out.push(colliding.minY - OBSTACLE_CLEARANCE)
     }
     if (topNeighbor !== undefined) {
       out.push((colliding.maxY + topNeighbor) / 2)
+    } else if (allowOpenSideCandidates) {
+      out.push(colliding.maxY + OBSTACLE_CLEARANCE)
     }
     return out
   }

@@ -1,25 +1,18 @@
 {
- fix-snapshots-clean
-  "name": "schematic-trace-solver",
-  "version": "1.0.0",
-
   "name": "@tscircuit/schematic-trace-solver",
   "main": "dist/index.js",
-  "version": "0.0.73",
+  "version": "0.0.106",
   "type": "module",
- main
   "scripts": {
     "test": "vitest",
     "type-check": "tsc --noEmit",
+    "start": "cosmos",
+    "debug:pipeline": "bun scripts/debug-pipeline-stages.ts",
+    "build": "tsup-node lib/index.ts --format esm --dts",
     "format": "biome format --write .",
     "format:check": "biome format ."
   },
   "devDependencies": {
- fix-snapshots-clean
-    "@biomejs/biome": "latest",
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
-
     "@biomejs/biome": "^2.2.2",
     "@react-hook/resize-observer": "^2.0.2",
     "@tscircuit/math-utils": "^0.0.19",
@@ -28,17 +21,52 @@
     "calculate-elbow": "^0.0.12",
     "connectivity-map": "^1.0.0",
     "flatbush": "^4.5.0",
-    "graphics-debug": "^0.0.62",
+    "graphics-debug": "^0.0.96",
     "react": "^19.1.1",
     "react-cosmos": "^7.0.0",
     "react-cosmos-plugin-vite": "^7.0.0",
     "react-dom": "^19.1.1",
     "tsup": "^8.5.0",
+    "typescript": "^5.0.0",
     "vite": "^7.1.3",
     "vitest": "^1.6.0"
   },
   "peerDependencies": {
     "typescript": "^5"
- main
   }
 }
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    
+    
+  
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  
+  
+

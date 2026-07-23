@@ -1,5 +1,5 @@
 import type { Point } from "@tscircuit/math-utils"
-import type { ChipWithBounds } from "./rect"
+import type { RectBounds } from "./rect"
 
 const EPS = 1e-9
 
@@ -8,10 +8,10 @@ export const isVertical = (a: Point, b: Point, eps = EPS) =>
 export const isHorizontal = (a: Point, b: Point, eps = EPS) =>
   Math.abs(a.y - b.y) < eps
 
-export const segmentIntersectsRect = (
+export const segmentIntersectsRect = <TRect extends RectBounds>(
   a: Point,
   b: Point,
-  r: ChipWithBounds,
+  r: TRect,
   eps = EPS,
 ): boolean => {
   const vert = isVertical(a, b, eps)
@@ -35,19 +35,50 @@ export const segmentIntersectsRect = (
   }
 }
 
-export const findFirstCollision = (
+export const segmentOverlapsRectBoundary = <TRect extends RectBounds>(
+  a: Point,
+  b: Point,
+  r: TRect,
+  eps = EPS,
+): boolean => {
+  if (isVertical(a, b, eps)) {
+    const onVerticalBoundary =
+      Math.abs(a.x - r.minX) <= eps || Math.abs(a.x - r.maxX) <= eps
+    if (!onVerticalBoundary) return false
+
+    const overlap =
+      Math.min(Math.max(a.y, b.y), r.maxY) -
+      Math.max(Math.min(a.y, b.y), r.minY)
+    return overlap > eps
+  }
+
+  if (isHorizontal(a, b, eps)) {
+    const onHorizontalBoundary =
+      Math.abs(a.y - r.minY) <= eps || Math.abs(a.y - r.maxY) <= eps
+    if (!onHorizontalBoundary) return false
+
+    const overlap =
+      Math.min(Math.max(a.x, b.x), r.maxX) -
+      Math.max(Math.min(a.x, b.x), r.minX)
+    return overlap > eps
+  }
+
+  return false
+}
+
+export const findFirstCollision = <TRect extends RectBounds>(
   pts: Point[],
-  rects: ChipWithBounds[],
+  rects: TRect[],
   opts: {
-    excludeRectIdsForSegment?: (segIndex: number) => Set<string>
+    excludeRectsForSegment?: (segIndex: number) => Set<TRect>
   } = {},
-): { segIndex: number; rect: ChipWithBounds } | null => {
+): { segIndex: number; rect: TRect } | null => {
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i]!
     const b = pts[i + 1]!
-    const excluded = opts.excludeRectIdsForSegment?.(i) ?? new Set<string>()
+    const excluded = opts.excludeRectsForSegment?.(i) ?? new Set<TRect>()
     for (const r of rects) {
-      if (excluded.has(r.chipId)) continue
+      if (excluded.has(r)) continue
       if (segmentIntersectsRect(a, b, r)) {
         return { segIndex: i, rect: r }
       }
@@ -61,7 +92,7 @@ export const findFirstCollision = (
  */
 export const isPathCollidingWithObstacles = (
   path: Point[],
-  obstacles: ChipWithBounds[],
+  obstacles: RectBounds[],
 ): boolean => {
   for (let i = 0; i < path.length - 1; i++) {
     for (const obstacle of obstacles) {

@@ -20,6 +20,7 @@ import type {
   TraceAnchoredNetLabelOverlapSolverParams,
 } from "./types"
 import { visualizeTraceAnchoredNetLabelOverlapSolver } from "./visualize"
+import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 type ActiveOverlapSearch = {
   overlap: LabelOverlap
@@ -227,6 +228,8 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
   ): CandidateStatus {
     const bounds = getLabelBounds(candidate)
     if (this.intersectsAnyChip(bounds)) return "chip-collision"
+    if (rectIntersectsAnyTextBox(bounds, this.inputProblem))
+      return "text-collision"
     if (traceCrossesBoundsInterior(bounds, this.traces))
       return "trace-collision"
     if (this.intersectsAnyOtherLabel(bounds, labelIndex)) {

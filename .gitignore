@@ -4,6 +4,7 @@ node_modules
 # output
 out
 dist
+tmp/schematic-trace-debug/
 *.tgz
 
 # code coverage
@@ -38,3 +39,5 @@ bun.lock
 .aider*
 
 *.diff.png*.snap
+*.diff.png
+

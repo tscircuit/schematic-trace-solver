@@ -30,10 +30,16 @@ export type CandidateLabel = {
 export type CandidateStatus =
   | "valid"
   | "chip-collision"
+  | "text-collision"
   | "trace-collision"
+  | "trace-clearance-violation"
   | "netlabel-collision"
 
-export type CandidatePhase = "rotate" | "shift" | "lateral-shift"
+export type CandidatePhase =
+  | "rotate"
+  | "trace-anchor"
+  | "shift"
+  | "lateral-shift"
 
 export type EvaluatedCandidate = CandidateLabel & {
   status: CandidateStatus

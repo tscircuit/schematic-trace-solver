@@ -1,0 +1,24 @@
+name: JSON Bug Report
+description: Attach a schematic trace solver input JSON file for a generated snapshot regression test.
+title: "JSON Bug Report: "
+labels: ["json-bug-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Attach a `.json` file containing a `SchematicTracePipelineSolver` input problem. The automation will validate the file, generate a snapshot-only regression test, and open a pull request.
+  - type: textarea
+    id: json-file
+    attributes:
+      label: Solver input JSON attachment
+      description: Drag and drop exactly one `.json` file into this field.
+      placeholder: Attach the JSON file here.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Add any context that helps explain the solver behavior.
+    validations:
+      required: false

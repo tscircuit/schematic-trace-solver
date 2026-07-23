@@ -13,6 +13,25 @@ export const correctPinsInsideChips = (problem: InputProblem) => {
 
       if (!isInside) continue
 
+      // When the pin already knows which way it faces (e.g. the consumer set it
+      // from the schematic symbol), snap it to the edge along that direction and
+      // keep the facing. A pin can end up inside the box when the box was
+      // expanded to include the component's reference-designator text; snapping
+      // to the nearest edge would move it to the wrong side (e.g. a horizontal
+      // resistor whose wide ref text makes the bottom edge the closest one).
+      if (pin._facingDirection) {
+        if (pin._facingDirection === "x-") {
+          pin.x = bounds.minX
+        } else if (pin._facingDirection === "x+") {
+          pin.x = bounds.maxX
+        } else if (pin._facingDirection === "y-") {
+          pin.y = bounds.minY
+        } else {
+          pin.y = bounds.maxY
+        }
+        continue
+      }
+
       const distLeft = pin.x - bounds.minX
       const distRight = bounds.maxX - pin.x
       const distBottom = pin.y - bounds.minY

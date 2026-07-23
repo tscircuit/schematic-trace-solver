@@ -1,51 +1,84 @@
-import type { GraphicsObject } from "graphics-debug"
-import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type {
-  ChipId,
-  InputChip,
-  InputProblem,
-  PinId,
-} from "lib/types/InputProblem"
 import type { Point } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
+import type { GraphicsObject } from "graphics-debug"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import { getDimsForOrientation } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type { InputChip, InputProblem } from "lib/types/InputProblem"
+import type { FacingDirection } from "lib/utils/dir"
+import type { RectPadding } from "lib/utils/textBoxBounds"
 import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
-import { getObstacleRects, type ChipWithBounds } from "./rect"
-import { findFirstCollision, isHorizontal, isVertical } from "./collisions"
+import { calculateDirectShortPath } from "./calculateDirectShortPath"
 import {
+  findFirstCollision,
+  isHorizontal,
+  isVertical,
+  segmentOverlapsRectBoundary,
+} from "./collisions"
+import { generateEndpointCollisionDetours } from "./generateEndpointCollisionDetours"
+import {
+  type Axis,
   aabbFromPoints,
   candidateMidsFromSet,
   midBetweenPointAndRect,
-  type Axis,
 } from "./mid"
 import { pathKey, shiftSegmentOrth } from "./pathOps"
+import { getObstacleRects, type ObstacleRect } from "./rect"
 
 type PathKey = string
 
+const calculateElbowForPins = ({
+  pin1,
+  pin2,
+  overshoot,
+}: {
+  pin1: MspConnectionPair["pins"][number]
+  pin2: MspConnectionPair["pins"][number]
+  overshoot: number
+}) =>
+  calculateElbow(
+    {
+      x: pin1.x,
+      y: pin1.y,
+      facingDirection: pin1._facingDirection!,
+    },
+    {
+      x: pin2.x,
+      y: pin2.y,
+      facingDirection: pin2._facingDirection!,
+    },
+    { overshoot },
+  )
+
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
+  connectionPair?: MspConnectionPair
   inputProblem: InputProblem
   chipMap: Record<string, InputChip>
 
-  obstacles: ChipWithBounds[]
-  rectById: Map<string, ChipWithBounds>
+  obstacles: ObstacleRect[]
+  textObstacles: Set<ObstacleRect>
+  endpointTextObstacles: Set<ObstacleRect>
   aabb: { minX: number; maxX: number; minY: number; maxY: number }
 
   baseElbow: Point[]
 
   solvedTracePath: Point[] | null = null
 
-  private queue: Array<{ path: Point[]; collisionChipIds: Set<ChipId> }> = []
+  private queue: Array<{ path: Point[]; collisionRects: Set<ObstacleRect> }> =
+    []
   private visited: Set<PathKey> = new Set()
 
   constructor(params: {
     pins: MspConnectionPair["pins"]
+    connectionPair?: MspConnectionPair
     inputProblem: InputProblem
     chipMap: Record<string, InputChip>
   }) {
     super()
     this.pins = params.pins
+    this.connectionPair = params.connectionPair
     this.inputProblem = params.inputProblem
     this.chipMap = params.chipMap
 
@@ -57,25 +90,53 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       }
     }
 
-    // Build obstacle rects from chips
-    this.obstacles = getObstacleRects(this.inputProblem)
-    this.rectById = new Map(this.obstacles.map((r) => [r.chipId, r]))
+    // Build obstacle rects from chips and schematic text boxes. Text boxes are
+    // padded by the label footprint for this net so labels have clearance too.
+    this.obstacles = getObstacleRects(this.inputProblem, {
+      textBoxPadding: this.getTextBoxPaddingForConnectionPair(),
+    })
+    this.textObstacles = new Set(
+      this.obstacles.filter((r) => r.kind === "text_box"),
+    )
+    const endpointChipIds = new Set(this.pins.map((pin) => pin.chipId))
+    this.endpointTextObstacles = new Set(
+      endpointChipIds.size > 1
+        ? this.obstacles.filter(
+            (r) =>
+              r.kind === "text_box" &&
+              r.textBox.chipId !== undefined &&
+              endpointChipIds.has(r.textBox.chipId),
+          )
+        : [],
+    )
+
+    const [pin1, pin2] = this.pins
+    const directShortPath = calculateDirectShortPath(pin1, pin2)
+    const defaultElbow = calculateElbowForPins({
+      pin1,
+      pin2,
+      overshoot: 0.2,
+    })
+    const routingDistance =
+      Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
+    const adaptiveElbow = calculateElbowForPins({
+      pin1,
+      pin2,
+      overshoot: Math.min(0.2, Math.max(0.02, routingDistance / 4)),
+    })
+    const shouldUseAdaptiveElbow =
+      findFirstCollision(defaultElbow, this.obstacles) !== null &&
+      findFirstCollision(adaptiveElbow, this.obstacles) === null
 
     // Build initial elbow path
-    const [pin1, pin2] = this.pins
-    this.baseElbow = calculateElbow(
-      {
-        x: pin1.x,
-        y: pin1.y,
-        facingDirection: pin1._facingDirection!,
-      },
-      {
-        x: pin2.x,
-        y: pin2.y,
-        facingDirection: pin2._facingDirection!,
-      },
-      { overshoot: 0.2 },
-    )
+    this.baseElbow = defaultElbow
+    if (shouldUseAdaptiveElbow) {
+      this.baseElbow = adaptiveElbow
+    }
+    if (directShortPath) {
+      this.baseElbow = directShortPath
+    }
+    this.solvedTracePath = directShortPath
 
     // Bounds defined by PA and PB
     this.aabb = aabbFromPoints(
@@ -84,7 +145,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     )
 
     // Seed search
-    this.queue.push({ path: this.baseElbow, collisionChipIds: new Set() })
+    this.queue.push({ path: this.baseElbow, collisionRects: new Set() })
     this.visited.add(pathKey(this.baseElbow))
   }
 
@@ -94,8 +155,90 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     return {
       chipMap: this.chipMap,
       pins: this.pins,
+      connectionPair: this.connectionPair,
       inputProblem: this.inputProblem,
     }
+  }
+
+  private getTextBoxPaddingForConnectionPair(): RectPadding {
+    if (!this.inputProblem.textBoxes?.length) return {}
+
+    const netId = this.connectionPair?.userNetId
+    if (!netId) return {}
+
+    const orientations =
+      this.inputProblem.availableNetLabelOrientations[netId] ??
+      (["x+", "x-", "y+", "y-"] as FacingDirection[])
+    const netLabelWidth = this.getNetLabelWidthForConnectionPair(netId)
+    const netLabelHeight = this.getNetLabelHeightForConnectionPair(netId)
+    const padding: Required<RectPadding> = {
+      minX: 0,
+      minY: 0,
+      maxX: 0,
+      maxY: 0,
+    }
+
+    for (const orientation of orientations) {
+      const { width, height } = getDimsForOrientation({
+        orientation,
+        netLabelWidth,
+        netLabelHeight,
+      })
+
+      if (orientation === "y+" || orientation === "y-") {
+        padding.minX = Math.max(padding.minX, width / 2)
+        padding.maxX = Math.max(padding.maxX, width / 2)
+        if (orientation === "y+") {
+          padding.minY = Math.max(padding.minY, height)
+        } else {
+          padding.maxY = Math.max(padding.maxY, height)
+        }
+      } else {
+        padding.minY = Math.max(padding.minY, height / 2)
+        padding.maxY = Math.max(padding.maxY, height / 2)
+        if (orientation === "x+") {
+          padding.minX = Math.max(padding.minX, width)
+        } else {
+          padding.maxX = Math.max(padding.maxX, width)
+        }
+      }
+    }
+
+    return padding
+  }
+
+  private getNetLabelWidthForConnectionPair(netId: string) {
+    const ncWidth = this.inputProblem.netConnections.find(
+      (nc) => nc.netId === netId,
+    )?.netLabelWidth
+    if (ncWidth !== undefined) return ncWidth
+
+    const dcWidthByNetId = this.inputProblem.directConnections.find(
+      (dc) => dc.netId === netId,
+    )?.netLabelWidth
+    if (dcWidthByNetId !== undefined) return dcWidthByNetId
+
+    const pinIds = this.pins.map((p) => p.pinId)
+    const dcWidthByPinId = this.inputProblem.directConnections.find((dc) =>
+      dc.pinIds.some((pid) => pinIds.includes(pid)),
+    )?.netLabelWidth
+    if (dcWidthByPinId !== undefined) return dcWidthByPinId
+
+    return this.inputProblem.netConnections.find((nc) =>
+      nc.pinIds.some((pid) => pinIds.includes(pid)),
+    )?.netLabelWidth
+  }
+
+  private getNetLabelHeightForConnectionPair(netId: string) {
+    const ncHeight = this.inputProblem.netConnections.find(
+      (nc) => nc.netId === netId,
+    )?.netLabelHeight
+    if (ncHeight !== undefined) return ncHeight
+
+    const pinIds = this.pins.map((p) => p.pinId)
+    return this.inputProblem.netConnections.find((nc) =>
+      nc.pinIds.some((pid) => pinIds.includes(pid)),
+    )?.netLabelHeight
   }
 
   private axisOfSegment(a: Point, b: Point): Axis | null {
@@ -114,6 +257,34 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     return sum
   }
 
+  private getPinBandPenalty(path: Point[]): number {
+    let penalty = 0
+    for (let i = 1; i < path.length - 2; i++) {
+      const a = path[i]!
+      const b = path[i + 1]!
+      if (isHorizontal(a, b) && a.y > this.aabb.minY && a.y < this.aabb.maxY) {
+        penalty += 10
+      } else if (
+        isVertical(a, b) &&
+        a.x > this.aabb.minX &&
+        a.x < this.aabb.maxX
+      ) {
+        penalty += 10
+      }
+    }
+    return penalty
+  }
+
+  private isSegmentOutsidePinBand(a: Point, b: Point): boolean {
+    if (isHorizontal(a, b)) {
+      return a.y <= this.aabb.minY || a.y >= this.aabb.maxY
+    }
+    if (isVertical(a, b)) {
+      return a.x <= this.aabb.minX || a.x >= this.aabb.maxX
+    }
+    return false
+  }
+
   override _step() {
     if (this.solvedTracePath) {
       this.solved = true
@@ -127,10 +298,71 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       return
     }
 
-    const { path, collisionChipIds } = state
+    const { path, collisionRects } = state
 
     const [PA, PB] = this.pins
-    const collision = findFirstCollision(path, this.obstacles)
+    const collision = findFirstCollision(path, this.obstacles, {
+      excludeRectsForSegment: (segIndex) => {
+        const lastSegIndex = path.length - 2
+        const excludedRects = new Set<ObstacleRect>()
+
+        if (segIndex === 0 || segIndex === lastSegIndex) {
+          for (const textObstacle of this.textObstacles) {
+            excludedRects.add(textObstacle)
+          }
+        }
+
+        const segmentStart = path[segIndex]!
+        const segmentEnd = path[segIndex + 1]!
+        const endpointEpsilon = 1e-9
+        const segmentTouchesPin = (pin: MspConnectionPair["pins"][number]) =>
+          [segmentStart, segmentEnd].some(
+            (point) =>
+              Math.abs(point.x - pin.x) <= endpointEpsilon &&
+              Math.abs(point.y - pin.y) <= endpointEpsilon,
+          )
+
+        for (const pin of this.pins) {
+          if (!segmentTouchesPin(pin)) continue
+          const endpointChipObstacle = this.obstacles.find(
+            (obstacle) =>
+              obstacle.kind === "chip" && obstacle.chipId === pin.chipId,
+          )
+          if (
+            endpointChipObstacle &&
+            segmentOverlapsRectBoundary(
+              segmentStart,
+              segmentEnd,
+              endpointChipObstacle,
+            )
+          ) {
+            excludedRects.add(endpointChipObstacle)
+          }
+        }
+
+        const adjacentEndpointSegIndex =
+          segIndex === 1
+            ? 2
+            : segIndex === lastSegIndex - 1
+              ? lastSegIndex - 2
+              : null
+        if (
+          adjacentEndpointSegIndex !== null &&
+          adjacentEndpointSegIndex >= 0 &&
+          adjacentEndpointSegIndex < lastSegIndex &&
+          this.isSegmentOutsidePinBand(
+            path[adjacentEndpointSegIndex]!,
+            path[adjacentEndpointSegIndex + 1]!,
+          )
+        ) {
+          for (const textObstacle of this.endpointTextObstacles) {
+            excludedRects.add(textObstacle)
+          }
+        }
+
+        return excludedRects
+      },
+    })
 
     if (!collision) {
       // Sanity check: ensure path still connects PA -> PB
@@ -149,11 +381,60 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       return
     }
 
+    const originalSegIndex = collision.segIndex
     let { segIndex, rect } = collision
 
     // Never move the first or last segments - move adjacent segment instead
     const isFirstSegment = segIndex === 0
     const isLastSegment = segIndex === path.length - 2
+    const isEndpointChipObstacle =
+      rect.kind === "chip" &&
+      this.pins.some((pin) => pin.chipId === rect.chipId)
+    // U-shaped detours are local repairs for fixed MSP pairs obstructed by an
+    // intermediate obstacle. Endpoint-chip and optional long-distance routing
+    // require multi-trace or net-level selection instead.
+    const canGenerateEndpointDetour =
+      path.length === 3 ||
+      (path.length === 4 &&
+        this.connectionPair !== undefined &&
+        !isEndpointChipObstacle)
+
+    if (canGenerateEndpointDetour && (isFirstSegment || isLastSegment)) {
+      // A three-point detour replaces an L elbow, so the shortest valid route
+      // remains the best choice. A four-point detour preserves the far side of
+      // a U elbow; prefer the candidate that keeps its new internal rails out
+      // of the pin band, then use length to choose between equivalent routes.
+      const compareDetours =
+        path.length === 4
+          ? (a: Point[], b: Point[]) =>
+              this.getPinBandPenalty(a) - this.getPinBandPenalty(b) ||
+              this.pathLength(a) - this.pathLength(b)
+          : (a: Point[], b: Point[]) =>
+              this.pathLength(a) - this.pathLength(b) ||
+              this.getPinBandPenalty(a) - this.getPinBandPenalty(b)
+      const detours = generateEndpointCollisionDetours({
+        path,
+        collidingSegmentIndex: segIndex,
+        obstacle: rect,
+      })
+        .filter((detour) => {
+          const key = pathKey(detour)
+          if (this.visited.has(key)) return false
+          this.visited.add(key)
+          return true
+        })
+        .sort(compareDetours)
+
+      for (const detour of detours) {
+        const nextCollisionRects = new Set(collisionRects)
+        nextCollisionRects.add(rect)
+        this.queue.push({
+          path: detour,
+          collisionRects: nextCollisionRects,
+        })
+      }
+      return
+    }
 
     if (isFirstSegment) {
       // If first segment collides, move the second segment instead
@@ -181,8 +462,13 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     // Note: PA and PB are already defined above
     const candidates: number[] = []
+    // Fixed MSP pairs may leave the endpoint bounds to complete a required
+    // route. Optional long-distance candidates retain their bounded search.
+    const candidateMidOptions = {
+      allowOpenSideCandidates: this.connectionPair !== undefined,
+    }
 
-    if (collisionChipIds.size === 0) {
+    if (collisionRects.size === 0) {
       // First collision on this search branch: use mid(PA, C) and mid(PB, C)
       const m1 = midBetweenPointAndRect(axis, { x: PA.x, y: PA.y }, rect)
       const m2 = midBetweenPointAndRect(axis, { x: PB.x, y: PB.y }, rect)
@@ -196,35 +482,95 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       const mids = candidateMidsFromSet(
         axis,
         rect,
-        this.rectById,
-        collisionChipIds,
+        collisionRects,
         this.aabb,
+        candidateMidOptions,
       )
       candidates.push(...mids)
     }
 
-    // Generate new shifted paths, order by total path length (shorter first)
+    // Generate new shifted paths. Order by path length first, then prefer paths
+    // that stay out of the pin band. The pin-band preference is a tiebreaker
+    // only: it must never make the solver pick a longer route (a flat additive
+    // penalty would, discarding a shorter valid route in favor of a detour).
     const newStates: Array<{
       path: Point[]
-      collisionRectIds: Set<string>
-      len: number
+      collisionRects: Set<ObstacleRect>
+      length: number
+      pinBandPenalty: number
     }> = []
 
-    for (const coord of candidates) {
-      const newPath = shiftSegmentOrth(path, segIndex, axis, coord)
-      if (!newPath) continue
+    const addShiftedCandidate = (
+      candidateSegIndex: number,
+      candidateAxis: Axis,
+      coord: number,
+    ) => {
+      const newPath = shiftSegmentOrth(
+        path,
+        candidateSegIndex,
+        candidateAxis,
+        coord,
+      )
+      if (!newPath) return
       const key = pathKey(newPath)
-      if (this.visited.has(key)) continue
+      if (this.visited.has(key)) return
       this.visited.add(key)
-      const nextSet = new Set(collisionChipIds)
-      nextSet.add(rect.chipId)
-      const len = this.pathLength(newPath)
-      newStates.push({ path: newPath, collisionRectIds: nextSet, len })
+      const nextSet = new Set(collisionRects)
+      nextSet.add(rect)
+      newStates.push({
+        path: newPath,
+        collisionRects: nextSet,
+        length: this.pathLength(newPath),
+        pinBandPenalty: this.getPinBandPenalty(newPath),
+      })
     }
 
-    newStates.sort((a, b) => a.len - b.len)
+    for (const coord of candidates) {
+      addShiftedCandidate(segIndex, axis, coord)
+    }
+
+    const lastSegIndex = path.length - 2
+    const adjacentSegmentIndexes =
+      originalSegIndex === 1
+        ? [2]
+        : originalSegIndex === lastSegIndex - 1
+          ? [lastSegIndex - 2]
+          : []
+
+    for (const adjacentSegIndex of adjacentSegmentIndexes) {
+      if (adjacentSegIndex < 0 || adjacentSegIndex >= lastSegIndex) continue
+      const adjacentAxis = this.axisOfSegment(
+        path[adjacentSegIndex]!,
+        path[adjacentSegIndex + 1]!,
+      )
+      if (!adjacentAxis || adjacentAxis === axis) continue
+
+      const adjacentCandidates = [
+        ...midBetweenPointAndRect(adjacentAxis, { x: PA.x, y: PA.y }, rect),
+        ...midBetweenPointAndRect(adjacentAxis, { x: PB.x, y: PB.y }, rect),
+      ]
+      if (collisionRects.size > 0) {
+        adjacentCandidates.push(
+          ...candidateMidsFromSet(
+            adjacentAxis,
+            rect,
+            collisionRects,
+            this.aabb,
+            candidateMidOptions,
+          ),
+        )
+      }
+
+      for (const coord of [...new Set(adjacentCandidates)]) {
+        addShiftedCandidate(adjacentSegIndex, adjacentAxis, coord)
+      }
+    }
+
+    newStates.sort(
+      (a, b) => a.length - b.length || a.pinBandPenalty - b.pinBandPenalty,
+    )
     for (const st of newStates) {
-      this.queue.push({ path: st.path, collisionChipIds: st.collisionRectIds })
+      this.queue.push({ path: st.path, collisionRects: st.collisionRects })
     }
   }
 
@@ -254,7 +600,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     })
 
     // Draw all the new candidates
-    for (const { path, collisionChipIds: collisionRectIds } of this.queue) {
+    for (const { path } of this.queue) {
       g.lines!.push({ points: path, strokeColor: "teal", strokeDash: "2 2" })
     }
 
