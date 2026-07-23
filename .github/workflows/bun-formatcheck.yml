@@ -17,8 +17,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 20
-
+          node-version: 22
       - name: Install Bun
         uses: oven-sh/setup-bun@v1
 
@@ -26,8 +25,7 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Run vitest
-        run: bun x vitest run
-
+        run: npx vitest run
       - name: Run format check
         run: bun run format:check
 
