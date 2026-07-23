@@ -1,0 +1,432 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 10,
+        "y": 14
+      },
+      "width": 2.1999999999999993,
+      "height": 3.3999999999999986,
+      "pins": [
+        {
+          "pinId": "U_MCU.1",
+          "x": 8.9,
+          "y": 15.5
+        },
+        {
+          "pinId": "U_MCU.2",
+          "x": 8.9,
+          "y": 15.3
+        },
+        {
+          "pinId": "U_MCU.3",
+          "x": 8.9,
+          "y": 15.1
+        },
+        {
+          "pinId": "U_MCU.4",
+          "x": 8.9,
+          "y": 14.9
+        },
+        {
+          "pinId": "U_MCU.5",
+          "x": 8.9,
+          "y": 14.7
+        },
+        {
+          "pinId": "U_MCU.6",
+          "x": 8.9,
+          "y": 14.5
+        },
+        {
+          "pinId": "U_MCU.7",
+          "x": 8.9,
+          "y": 14.3
+        },
+        {
+          "pinId": "U_MCU.8",
+          "x": 8.9,
+          "y": 14.1
+        },
+        {
+          "pinId": "U_MCU.9",
+          "x": 8.9,
+          "y": 13.9
+        },
+        {
+          "pinId": "U_MCU.10",
+          "x": 8.9,
+          "y": 13.700000000000001
+        },
+        {
+          "pinId": "U_MCU.11",
+          "x": 8.9,
+          "y": 13.5
+        },
+        {
+          "pinId": "U_MCU.12",
+          "x": 8.9,
+          "y": 13.3
+        },
+        {
+          "pinId": "U_MCU.13",
+          "x": 8.9,
+          "y": 13.1
+        },
+        {
+          "pinId": "U_MCU.14",
+          "x": 8.9,
+          "y": 12.9
+        },
+        {
+          "pinId": "U_MCU.15",
+          "x": 8.9,
+          "y": 12.7
+        },
+        {
+          "pinId": "U_MCU.16",
+          "x": 8.9,
+          "y": 12.5
+        },
+        {
+          "pinId": "U_MCU.17",
+          "x": 11.1,
+          "y": 12.5
+        },
+        {
+          "pinId": "U_MCU.18",
+          "x": 11.1,
+          "y": 12.7
+        },
+        {
+          "pinId": "U_MCU.19",
+          "x": 11.1,
+          "y": 12.9
+        },
+        {
+          "pinId": "U_MCU.20",
+          "x": 11.1,
+          "y": 13.1
+        },
+        {
+          "pinId": "U_MCU.21",
+          "x": 11.1,
+          "y": 13.3
+        },
+        {
+          "pinId": "U_MCU.22",
+          "x": 11.1,
+          "y": 13.5
+        },
+        {
+          "pinId": "U_MCU.23",
+          "x": 11.1,
+          "y": 13.7
+        },
+        {
+          "pinId": "U_MCU.24",
+          "x": 11.1,
+          "y": 13.9
+        },
+        {
+          "pinId": "U_MCU.25",
+          "x": 11.1,
+          "y": 14.1
+        },
+        {
+          "pinId": "U_MCU.26",
+          "x": 11.1,
+          "y": 14.299999999999999
+        },
+        {
+          "pinId": "U_MCU.27",
+          "x": 11.1,
+          "y": 14.5
+        },
+        {
+          "pinId": "U_MCU.28",
+          "x": 11.1,
+          "y": 14.7
+        },
+        {
+          "pinId": "U_MCU.29",
+          "x": 11.1,
+          "y": 14.9
+        },
+        {
+          "pinId": "U_MCU.30",
+          "x": 11.1,
+          "y": 15.1
+        },
+        {
+          "pinId": "U_MCU.31",
+          "x": 11.1,
+          "y": 15.3
+        },
+        {
+          "pinId": "U_MCU.32",
+          "x": 11.1,
+          "y": 15.5
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 14,
+        "y": 14
+      },
+      "width": 1.1000000000000014,
+      "height": 1.2399999999999984,
+      "pins": [
+        {
+          "pinId": "C_AREF.1",
+          "x": 13.45,
+          "y": 14
+        },
+        {
+          "pinId": "C_AREF.2",
+          "x": 14.55,
+          "y": 14
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": 14,
+        "y": 10
+      },
+      "width": 1.7199999999999989,
+      "height": 0.7789106999999973,
+      "pins": [
+        {
+          "pinId": "R_FAULT_PULLUP.1",
+          "x": 13.14,
+          "y": 10
+        },
+        {
+          "pinId": "R_FAULT_PULLUP.2",
+          "x": 14.86,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": 14,
+        "y": 16
+      },
+      "width": 1.1000000000000014,
+      "height": 1.2400000000000002,
+      "pins": [
+        {
+          "pinId": "C_MCU_DEC.1",
+          "x": 13.45,
+          "y": 16
+        },
+        {
+          "pinId": "C_MCU_DEC.2",
+          "x": 14.55,
+          "y": 16
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": [
+        "C_MCU_DEC.1",
+        "U_MCU.6"
+      ],
+      "netId": "C_MCU_DEC.pin1 to U_MCU.VCC1",
+      "netLabelWidth": 2.71
+    },
+    {
+      "pinIds": [
+        "C_MCU_DEC.2",
+        "U_MCU.3"
+      ],
+      "netId": "C_MCU_DEC.pin2 to U_MCU.GND3",
+      "netLabelWidth": 2.71
+    },
+    {
+      "pinIds": [
+        "C_AREF.1",
+        "U_MCU.20"
+      ],
+      "netId": "C_AREF.pin1 to U_MCU.AREF",
+      "netLabelWidth": 2.43
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "pinIds": [
+        "U_MCU.3",
+        "U_MCU.5",
+        "U_MCU.21",
+        "C_AREF.2",
+        "C_MCU_DEC.2"
+      ],
+      "netLabelWidth": 0.48,
+      "netLabelHeight": 0.42
+    },
+    {
+      "netId": "VCC_3V3",
+      "pinIds": [
+        "U_MCU.4",
+        "U_MCU.6",
+        "U_MCU.18",
+        "R_FAULT_PULLUP.1",
+        "C_MCU_DEC.1"
+      ],
+      "netLabelWidth": 0.96,
+      "netLabelHeight": 0.42
+    },
+    {
+      "netId": "X_IN1",
+      "pinIds": [
+        "U_MCU.9"
+      ],
+      "netLabelWidth": 0.72
+    },
+    {
+      "netId": "X_IN2",
+      "pinIds": [
+        "U_MCU.10"
+      ],
+      "netLabelWidth": 0.72
+    },
+    {
+      "netId": "Y_IN1",
+      "pinIds": [
+        "U_MCU.11"
+      ],
+      "netLabelWidth": 0.72
+    },
+    {
+      "netId": "Y_IN2",
+      "pinIds": [
+        "U_MCU.12"
+      ],
+      "netLabelWidth": 0.72
+    },
+    {
+      "netId": "JOY_X",
+      "pinIds": [
+        "U_MCU.23"
+      ],
+      "netLabelWidth": 0.72
+    },
+    {
+      "netId": "JOY_Y",
+      "pinIds": [
+        "U_MCU.24"
+      ],
+      "netLabelWidth": 0.72
+    },
+    {
+      "netId": "X_SPEED_WIPER",
+      "pinIds": [
+        "U_MCU.25"
+      ],
+      "netLabelWidth": 1.68
+    },
+    {
+      "netId": "Y_SPEED_WIPER",
+      "pinIds": [
+        "U_MCU.26"
+      ],
+      "netLabelWidth": 1.68
+    },
+    {
+      "netId": "JOY_SW",
+      "pinIds": [
+        "U_MCU.27"
+      ],
+      "netLabelWidth": 0.84
+    },
+    {
+      "netId": "FAULT",
+      "pinIds": [
+        "U_MCU.32",
+        "R_FAULT_PULLUP.2"
+      ],
+      "netLabelWidth": 0.72
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 10.080000000000002,
+        "y": 12.17
+      },
+      "width": 1.5600000000000005,
+      "height": 0.17999999999999972,
+      "text": "ATMEGA328P_AU"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 9.600000000000001,
+        "y": 15.83
+      },
+      "width": 0.5999999999999996,
+      "height": 0.17999999999999972,
+      "text": "U_MCU"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "VCC_3V3": [
+      "y+"
+    ],
+    "JOY_X": [
+      "x-",
+      "x+"
+    ],
+    "JOY_Y": [
+      "x-",
+      "x+"
+    ],
+    "X_SPEED_WIPER": [
+      "x-",
+      "x+"
+    ],
+    "Y_SPEED_WIPER": [
+      "x-",
+      "x+"
+    ],
+    "JOY_SW": [
+      "x-",
+      "x+"
+    ],
+    "X_IN1": [
+      "x-",
+      "x+"
+    ],
+    "X_IN2": [
+      "x-",
+      "x+"
+    ],
+    "Y_IN1": [
+      "x-",
+      "x+"
+    ],
+    "Y_IN2": [
+      "x-",
+      "x+"
+    ],
+    "FAULT": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4
+}

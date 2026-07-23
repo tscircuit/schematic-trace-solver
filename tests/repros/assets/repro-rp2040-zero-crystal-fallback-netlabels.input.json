@@ -1,0 +1,121 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 1.105,
+        "y": 0.67
+      },
+      "width": 0.9699999999999998,
+      "height": 0.6,
+      "pins": [
+        {
+          "pinId": "R8.1",
+          "x": 1.07,
+          "y": 0.97
+        },
+        {
+          "pinId": "R8.2",
+          "x": 1.07,
+          "y": 0.37000000000000005
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 1.1725,
+        "y": -0.66
+      },
+      "width": 1.045,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "C17.1",
+          "x": 1.1,
+          "y": -0.28,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C17.2",
+          "x": 1.1,
+          "y": -1.04,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -1.07,
+        "y": 0.47
+      },
+      "width": 2.0000000000000004,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "X1.1",
+          "x": -2.0700000000000003,
+          "y": 0.57
+        },
+        {
+          "pinId": "X1.2",
+          "x": -2.0700000000000003,
+          "y": 0.37
+        },
+        {
+          "pinId": "X1.3",
+          "x": -0.06999999999999984,
+          "y": 0.37
+        },
+        {
+          "pinId": "X1.4",
+          "x": -0.06999999999999984,
+          "y": 0.57
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": [
+        "X1.3",
+        "C17.1"
+      ],
+      "netId": ".X1 > .XTAL2 to C17.pin1"
+    },
+    {
+      "pinIds": [
+        "X1.3",
+        "R8.2"
+      ],
+      "netId": ".X1 > .XTAL2 to R8.pin2"
+    }
+  ],
+  "netConnections": [],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -1.0100000000000002,
+        "y": 0.039999999999999925
+      },
+      "width": 1.3199999999999998,
+      "height": 0.18,
+      "text": "ABM8_272_T3"
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -1.5500000000000003,
+        "y": 0.885
+      },
+      "width": 0.3600000000000001,
+      "height": 0.25,
+      "text": "X1"
+    }
+  ],
+  "availableNetLabelOrientations": {},
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}

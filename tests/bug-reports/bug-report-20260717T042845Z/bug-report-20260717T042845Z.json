@@ -1,0 +1,113 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 1.2000000000000002,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "F1.1",
+          "x": -0.6000000000000001,
+          "y": 0.1
+        },
+        {
+          "pinId": "F1.2",
+          "x": -0.6000000000000001,
+          "y": -0.1
+        },
+        {
+          "pinId": "F1.4",
+          "x": 0.6000000000000001,
+          "y": 0.1
+        },
+        {
+          "pinId": "F1.3",
+          "x": 0.6000000000000001,
+          "y": -0.1
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 0,
+        "y": 2.32
+      },
+      "width": 1.3199999999999998,
+      "height": 0.8399999999999999,
+      "pins": [
+        {
+          "pinId": "F2.1",
+          "x": -0.6599999999999999,
+          "y": 2.36,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "F2.2",
+          "x": 0.6599999999999999,
+          "y": 2.36,
+          "_facingDirection": "x+"
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "VIN",
+      "pinIds": [
+        "F1.1",
+        "F1.2",
+        "F2.1"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48
+    },
+    {
+      "netId": "VOUT",
+      "pinIds": [
+        "F1.4",
+        "F1.3",
+        "F2.2"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0.4,
+        "y": -0.43000000000000005
+      },
+      "width": 1.2,
+      "height": 0.17999999999999994,
+      "text": "5x20-BLX-A"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0.3400000000000001,
+        "y": 0.41500000000000004
+      },
+      "width": 1.2000000000000002,
+      "height": 0.25,
+      "text": "FUSEX20MM"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "VIN": [
+      "y+"
+    ],
+    "VOUT": [
+      "y+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}

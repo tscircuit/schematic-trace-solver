@@ -6,20 +6,22 @@ import type { ConnectivityMap } from "connectivity-map"
 import {
   TraceOverlapIssueSolver,
   type OverlappingTraceSegmentLocator,
+  type TraceInteractionKind,
 } from "./TraceOverlapIssueSolver/TraceOverlapIssueSolver"
 import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 
 type ConnNetId = string
 
 /**
- * This solver finds traces that overlap (coincident and parallel) and aren't
- * connected via the globalConnMap, then shifts them to avoid the overlap in
- * such a way that minimizes the resulting intersections
+ * This solver finds traces that overlap or meet collinearly and aren't
+ * connected via the globalConnMap, then shifts them apart in the direction
+ * that minimizes the resulting intersections.
  *
  * All traces are orthogonal, so for traces to be considered overlapping, they
- * need to each have a segment where both are horizontal or both are vertical
- * AND the segments must be within 1e-6 of each other in X (if vertical) or
- * Y (if horizontal)
+ * need to each have a segment where both are horizontal or both are vertical,
+ * the segments must be on the same axis, and their ranges must overlap. A
+ * point contact is also handled when both segments are internal rails, where
+ * it can be separated without moving an anchored terminal segment.
  *
  * Each iteration, we find overlapping traces that aren't part of the same net.
  * This is the same as finding two "trace net islands" that have an overlap.
@@ -89,6 +91,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
   findNextOverlapIssue(): {
     overlappingTraceSegments: Array<OverlappingTraceSegmentLocator>
+    interactionKind: TraceInteractionKind
   } | null {
     // Detect the next set of overlapping segments between two different net islands.
     const EPS = 2e-3
@@ -111,23 +114,89 @@ export class TraceOverlapShiftSolver extends BaseSolver {
           solvedTracePathIndex: number
           traceSegmentIndex: number
         }> = []
+        const pointContacts: Array<{
+          pathAIndex: number
+          segmentAIndex: number
+          pathBIndex: number
+          segmentBIndex: number
+          combinedLength: number
+        }> = []
 
         // Track to avoid duplicates
         const seenA = new Set<string>()
         const seenB = new Set<string>()
 
-        const overlaps1D = (
+        const getRangeOverlap1D = (
           a1: number,
           a2: number,
           b1: number,
           b2: number,
-        ): boolean => {
+        ) => {
           const minA = Math.min(a1, a2)
           const maxA = Math.max(a1, a2)
           const minB = Math.min(b1, b2)
           const maxB = Math.max(b1, b2)
-          const overlap = Math.min(maxA, maxB) - Math.max(minA, minB)
-          return overlap > EPS
+          return Math.min(maxA, maxB) - Math.max(minA, minB)
+        }
+
+        const recordCollinearInteraction = ({
+          pathAIndex,
+          segmentAIndex,
+          pathBIndex,
+          segmentBIndex,
+          rangeOverlap,
+        }: {
+          pathAIndex: number
+          segmentAIndex: number
+          pathBIndex: number
+          segmentBIndex: number
+          rangeOverlap: number
+        }) => {
+          if (rangeOverlap > EPS) {
+            const keyA = `${pathAIndex}:${segmentAIndex}`
+            const keyB = `${pathBIndex}:${segmentBIndex}`
+            if (!seenA.has(keyA)) {
+              overlapsA.push({
+                solvedTracePathIndex: pathAIndex,
+                traceSegmentIndex: segmentAIndex,
+              })
+              seenA.add(keyA)
+            }
+            if (!seenB.has(keyB)) {
+              overlapsB.push({
+                solvedTracePathIndex: pathBIndex,
+                traceSegmentIndex: segmentBIndex,
+              })
+              seenB.add(keyB)
+            }
+            return
+          }
+          if (rangeOverlap < -EPS) return
+
+          const pathA = pathsA[pathAIndex]!.tracePath
+          const pathB = pathsB[pathBIndex]!.tracePath
+          const segmentAStart = pathA[segmentAIndex]!
+          const segmentAEnd = pathA[segmentAIndex + 1]!
+          const segmentBStart = pathB[segmentBIndex]!
+          const segmentBEnd = pathB[segmentBIndex + 1]!
+          const hasTerminalSegment =
+            segmentAIndex === 0 ||
+            segmentAIndex === pathA.length - 2 ||
+            segmentBIndex === 0 ||
+            segmentBIndex === pathB.length - 2
+          if (hasTerminalSegment) return
+
+          pointContacts.push({
+            pathAIndex,
+            segmentAIndex,
+            pathBIndex,
+            segmentBIndex,
+            combinedLength:
+              Math.abs(segmentAStart.x - segmentAEnd.x) +
+              Math.abs(segmentAStart.y - segmentAEnd.y) +
+              Math.abs(segmentBStart.x - segmentBEnd.x) +
+              Math.abs(segmentBStart.y - segmentBEnd.y),
+          })
         }
 
         for (let pa = 0; pa < pathsA.length; pa++) {
@@ -150,48 +219,26 @@ export class TraceOverlapShiftSolver extends BaseSolver {
                 const bHorz = Math.abs(b1.y - b2.y) < EPS
                 if (!bVert && !bHorz) continue
 
-                // Only consider colinear, parallel orientation overlaps
+                // Only consider collinear, parallel interactions.
                 if (aVert && bVert) {
                   if (Math.abs(a1.x - b1.x) < EPS) {
-                    if (overlaps1D(a1.y, a2.y, b1.y, b2.y)) {
-                      const keyA = `${pa}:${sa}`
-                      const keyB = `${pb}:${sb}`
-                      if (!seenA.has(keyA)) {
-                        overlapsA.push({
-                          solvedTracePathIndex: pa,
-                          traceSegmentIndex: sa,
-                        })
-                        seenA.add(keyA)
-                      }
-                      if (!seenB.has(keyB)) {
-                        overlapsB.push({
-                          solvedTracePathIndex: pb,
-                          traceSegmentIndex: sb,
-                        })
-                        seenB.add(keyB)
-                      }
-                    }
+                    recordCollinearInteraction({
+                      pathAIndex: pa,
+                      segmentAIndex: sa,
+                      pathBIndex: pb,
+                      segmentBIndex: sb,
+                      rangeOverlap: getRangeOverlap1D(a1.y, a2.y, b1.y, b2.y),
+                    })
                   }
                 } else if (aHorz && bHorz) {
                   if (Math.abs(a1.y - b1.y) < EPS) {
-                    if (overlaps1D(a1.x, a2.x, b1.x, b2.x)) {
-                      const keyA = `${pa}:${sa}`
-                      const keyB = `${pb}:${sb}`
-                      if (!seenA.has(keyA)) {
-                        overlapsA.push({
-                          solvedTracePathIndex: pa,
-                          traceSegmentIndex: sa,
-                        })
-                        seenA.add(keyA)
-                      }
-                      if (!seenB.has(keyB)) {
-                        overlapsB.push({
-                          solvedTracePathIndex: pb,
-                          traceSegmentIndex: sb,
-                        })
-                        seenB.add(keyB)
-                      }
-                    }
+                    recordCollinearInteraction({
+                      pathAIndex: pa,
+                      segmentAIndex: sa,
+                      pathBIndex: pb,
+                      segmentBIndex: sb,
+                      rangeOverlap: getRangeOverlap1D(a1.x, a2.x, b1.x, b2.x),
+                    })
                   }
                 }
               }
@@ -201,9 +248,41 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
         if (overlapsA.length > 0 && overlapsB.length > 0) {
           return {
+            interactionKind: "overlap",
             overlappingTraceSegments: [
               { connNetId: netA, pathsWithOverlap: overlapsA },
               { connNetId: netB, pathsWithOverlap: overlapsB },
+            ],
+          }
+        }
+
+        // An elbow can touch on both axes. Separating the longest internal
+        // rail changes one coordinate and avoids moving both sides of it.
+        const bestPointContact = pointContacts.sort(
+          (a, b) => b.combinedLength - a.combinedLength,
+        )[0]
+        if (bestPointContact) {
+          return {
+            interactionKind: "point_contact",
+            overlappingTraceSegments: [
+              {
+                connNetId: netA,
+                pathsWithOverlap: [
+                  {
+                    solvedTracePathIndex: bestPointContact.pathAIndex,
+                    traceSegmentIndex: bestPointContact.segmentAIndex,
+                  },
+                ],
+              },
+              {
+                connNetId: netB,
+                pathsWithOverlap: [
+                  {
+                    solvedTracePathIndex: bestPointContact.pathBIndex,
+                    traceSegmentIndex: bestPointContact.segmentBIndex,
+                  },
+                ],
+              },
             ],
           }
         }
@@ -306,10 +385,11 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       return
     }
 
-    const { overlappingTraceSegments } = overlapIssue
+    const { interactionKind, overlappingTraceSegments } = overlapIssue
 
     this.activeSubSolver = new TraceOverlapIssueSolver({
       inputProblem: this.inputProblem,
+      interactionKind,
       overlappingTraceSegments,
       traceNetIslands: this.traceNetIslands,
     })

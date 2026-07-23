@@ -1,0 +1,155 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 11.095,
+        "y": 8.7
+      },
+      "width": 1.0899999999999999,
+      "height": 0.6000000000000014,
+      "pins": [
+        {
+          "pinId": "R3.1",
+          "x": 11,
+          "y": 8.399999999999999,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "R3.2",
+          "x": 11,
+          "y": 9,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "boot"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 9.4,
+        "y": 6.8
+      },
+      "width": 0.6000000000000014,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "R2.1",
+          "x": 9.1,
+          "y": 6.8,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R2.2",
+          "x": 9.700000000000001,
+          "y": 6.8,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "boot"
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": 9.4,
+        "y": 5.4
+      },
+      "width": 0.9400000000000013,
+      "height": 0.7189106999999986,
+      "pins": [
+        {
+          "pinId": "SW3.1",
+          "x": 8.93,
+          "y": 5.3500000000000005,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "SW3.2",
+          "x": 9.870000000000001,
+          "y": 5.3500000000000005,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "boot"
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": 12.5,
+        "y": 5.4
+      },
+      "width": 0.9400000000000013,
+      "height": 0.7189106999999986,
+      "pins": [
+        {
+          "pinId": "SW2.1",
+          "x": 12.03,
+          "y": 5.3500000000000005,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "SW2.2",
+          "x": 12.97,
+          "y": 5.3500000000000005,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "boot"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "V3V3",
+      "pinIds": [
+        "R3.1",
+        "R2.1"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6
+    },
+    {
+      "netId": "RESET",
+      "pinIds": [
+        "R3.2",
+        "SW2.1"
+      ],
+      "netLabelWidth": 0.72
+    },
+    {
+      "netId": "USBOOT",
+      "pinIds": [
+        "R2.2",
+        "SW3.1"
+      ],
+      "netLabelWidth": 0.84
+    },
+    {
+      "netId": "GND",
+      "pinIds": [
+        "SW3.2",
+        "SW2.2"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "V3V3": [
+      "y+"
+    ],
+    "RESET": [
+      "x-",
+      "x+"
+    ],
+    "USBOOT": [
+      "x-",
+      "x+"
+    ],
+    "GND": [
+      "y-"
+    ]
+  },
+  "maxMspPairDistance": 2.4
+}

@@ -23,7 +23,7 @@ import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolve
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
 import { Example28Solver } from "../Example28Solver/Example28Solver"
 import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
-import { VccNetLabelCornerPlacementSolver } from "../VccNetLabelCornerPlacementSolver/VccNetLabelCornerPlacementSolver"
+import { RailNetLabelCornerPlacementSolver } from "../RailNetLabelCornerPlacementSolver/RailNetLabelCornerPlacementSolver"
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
@@ -61,9 +61,8 @@ function definePipelineStep<
   }
 }
 
-export interface SchematicTracePipelineSolverParams {
-  inputProblem: InputProblem
-  allowLongDistanceTraces?: boolean
+interface Options {
+  hideRatsNet?: boolean
 }
 
 export class SchematicTracePipelineSolver extends BaseSolver {
@@ -78,9 +77,11 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   traceCleanupSolver?: TraceCleanupSolver
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
-  vccNetLabelCornerPlacementSolver?: VccNetLabelCornerPlacementSolver
+  railNetLabelCornerPlacementSolver?: RailNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
+  preAlignmentNetLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
+  traceCleanupSolver2?: TraceCleanupSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
 
   startTimeOfPhase: Record<string, number>
@@ -89,6 +90,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   firstIterationOfPhase: Record<string, number>
 
   inputProblem: InputProblem
+  hideRatsNet: boolean
 
   pipelineDef = [
     definePipelineStep(
@@ -264,8 +266,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ],
     ),
     definePipelineStep(
-      "vccNetLabelCornerPlacementSolver",
-      VccNetLabelCornerPlacementSolver,
+      "railNetLabelCornerPlacementSolver",
+      RailNetLabelCornerPlacementSolver,
       (instance) => {
         return [
           {
@@ -285,12 +287,13 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           inputProblem: instance.inputProblem,
           traces: instance.availableNetOrientationSolver!.traces,
           netLabelPlacements:
-            instance.vccNetLabelCornerPlacementSolver!.outputNetLabelPlacements,
+            instance.railNetLabelCornerPlacementSolver!
+              .outputNetLabelPlacements,
         },
       ],
     ),
     definePipelineStep(
-      "netLabelTraceCollisionSolver",
+      "preAlignmentNetLabelTraceCollisionSolver",
       NetLabelTraceCollisionSolver,
       (instance) => [
         {
@@ -301,6 +304,48 @@ export class SchematicTracePipelineSolver extends BaseSolver {
               .outputNetLabelPlacements,
         },
       ],
+    ),
+    definePipelineStep(
+      "traceCleanupSolver2",
+      TraceCleanupSolver,
+      (instance) => {
+        const collisionOutput =
+          instance.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
+        const labelMergingOutput =
+          instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput()
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            allTraces: collisionOutput.traces,
+            allLabelPlacements: collisionOutput.netLabelPlacements,
+            mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
+            paddingBuffer: 0.1,
+            operations: ["aligning_same_net_rails"],
+            eligibleTraceIds: new Set(
+              instance
+                .traceCleanupSolver!.getOutput()
+                .traces.map((trace) => trace.mspPairId),
+            ),
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
+      "netLabelTraceCollisionSolver",
+      NetLabelTraceCollisionSolver,
+      (instance) => {
+        const previousCollisionOutput =
+          instance.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces: instance.traceCleanupSolver2!.getOutput().traces,
+            netLabelPlacements: previousCollisionOutput.netLabelPlacements,
+          },
+        ]
+      },
     ),
     definePipelineStep(
       "netLabelNetLabelCollisionSolver",
@@ -317,8 +362,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     ),
   ]
 
-  constructor(inputProblem: InputProblem) {
+  constructor(inputProblem: InputProblem, opts?: Options) {
     super()
+    this.hideRatsNet = opts?.hideRatsNet ?? false
     this.inputProblem = this.cloneAndCorrectInputProblem(inputProblem)
     this.MAX_ITERATIONS = 1e6
     this.startTimeOfPhase = {}
@@ -329,8 +375,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
 
   override getConstructorParams(): ConstructorParameters<
     typeof SchematicTracePipelineSolver
-  >[0] {
-    return this.inputProblem
+  > {
+    return [this.inputProblem, { hideRatsNet: this.hideRatsNet }]
   }
 
   currentPipelineStepIndex = 0
@@ -339,6 +385,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     const cloned: InputProblem = structuredClone({
       ...original,
       _chipObstacleSpatialIndex: undefined,
+      _hideRatsNet: this.hideRatsNet,
     })
 
     // First, expand chips so existing pin coordinates sit on or within their edges without shrinking.
@@ -398,7 +445,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       return this.activeSubSolver.visualize()
 
     const visualizations = [
-      visualizeInputProblem(this.inputProblem),
+      visualizeInputProblem(this.inputProblem, {
+        hideRatsNet: this.hideRatsNet,
+      }),
       ...(this.pipelineDef
         .map((p) => (this as any)[p.solverName]?.visualize())
         .filter(Boolean)

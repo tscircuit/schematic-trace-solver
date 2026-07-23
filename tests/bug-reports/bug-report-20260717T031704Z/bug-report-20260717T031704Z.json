@@ -1,0 +1,77 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -3,
+        "y": -2.5
+      },
+      "width": 1.4500000000000002,
+      "height": 0.40000000000000036,
+      "pins": [
+        {
+          "pinId": "J3.1",
+          "x": -2.275,
+          "y": -2.5
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -3,
+        "y": -3.5
+      },
+      "width": 1.4500000000000002,
+      "height": 0.40000000000000036,
+      "pins": [
+        {
+          "pinId": "J4.1",
+          "x": -2.275,
+          "y": -3.5
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "pinIds": [
+        "J3.1",
+        "J4.1"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -3.205,
+        "y": -2.1849999999999996
+      },
+      "width": 0.3600000000000003,
+      "height": 0.24999999999999956,
+      "text": "J3"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -3.205,
+        "y": -3.1849999999999996
+      },
+      "width": 0.3600000000000003,
+      "height": 0.24999999999999956,
+      "text": "J4"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}

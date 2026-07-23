@@ -9,7 +9,7 @@ import type { EvaluatedCornerCandidate } from "./types"
 const CANDIDATE_SELECTED_COLOR = "blue"
 const CANDIDATE_REJECTED_COLOR = "red"
 
-export const visualizeVccNetLabelCornerPlacementSolver = (state: {
+export const visualizeRailNetLabelCornerPlacementSolver = (state: {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   outputNetLabelPlacements: NetLabelPlacement[]
