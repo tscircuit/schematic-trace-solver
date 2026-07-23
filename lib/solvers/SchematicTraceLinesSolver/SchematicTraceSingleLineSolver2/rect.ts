@@ -1,5 +1,5 @@
-import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
+import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import { getTextBoxBounds, type RectPadding } from "lib/utils/textBoxBounds"
 
 export type RectBounds = {

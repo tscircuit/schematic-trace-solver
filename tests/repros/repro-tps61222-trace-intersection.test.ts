@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
-import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import { getTextBoxBounds } from "lib/utils/textBoxBounds"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-tps61222-trace-intersection.input.json"
