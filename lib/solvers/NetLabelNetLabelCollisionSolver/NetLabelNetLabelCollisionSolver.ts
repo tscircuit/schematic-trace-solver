@@ -26,6 +26,11 @@ type CandidateStatus =
 const ANCHOR_TRACE_CLEARANCE = 1e-4
 const SEGMENT_PARALLEL_EPS = 1e-6
 const CANDIDATE_STEP = 0.1
+const FALLBACK_MIN_IMPROVEMENT = 1e-6
+// A wire running through a label's text is far worse visually than two
+// labels partially overlapping, so crossings dominate the penalty: length
+// crossed × 10 always outweighs any plausible label-label overlap area.
+const TRACE_CROSSING_PENALTY = 10
 
 const OUTWARD_DIR: Record<FacingDirection, { x: number; y: number }> = {
   "x+": { x: 1, y: 0 },
@@ -74,6 +79,57 @@ function boundsOverlap(
   )
 }
 
+function boundsOverlapArea(
+  a: { minX: number; minY: number; maxX: number; maxY: number },
+  b: { minX: number; minY: number; maxX: number; maxY: number },
+): number {
+  const w = Math.min(a.maxX, b.maxX) - Math.max(a.minX, b.minX)
+  const h = Math.min(a.maxY, b.maxY) - Math.max(a.minY, b.minY)
+  if (w <= 0 || h <= 0) return 0
+  return w * h
+}
+
+function segmentLengthInsideBounds(
+  p1: { x: number; y: number },
+  p2: { x: number; y: number },
+  bounds: { minX: number; minY: number; maxX: number; maxY: number },
+): number {
+  const isVert = Math.abs(p1.x - p2.x) < SEGMENT_PARALLEL_EPS
+  const isHorz = Math.abs(p1.y - p2.y) < SEGMENT_PARALLEL_EPS
+  if (isVert) {
+    if (p1.x < bounds.minX || p1.x > bounds.maxX) return 0
+    const segMinY = Math.min(p1.y, p2.y)
+    const segMaxY = Math.max(p1.y, p2.y)
+    return Math.max(
+      0,
+      Math.min(segMaxY, bounds.maxY) - Math.max(segMinY, bounds.minY),
+    )
+  }
+  if (isHorz) {
+    if (p1.y < bounds.minY || p1.y > bounds.maxY) return 0
+    const segMinX = Math.min(p1.x, p2.x)
+    const segMaxX = Math.max(p1.x, p2.x)
+    return Math.max(
+      0,
+      Math.min(segMaxX, bounds.maxX) - Math.max(segMinX, bounds.minX),
+    )
+  }
+  return 0
+}
+
+function isPointOnSegment(
+  pt: { x: number; y: number },
+  p1: { x: number; y: number },
+  p2: { x: number; y: number },
+  eps = 1e-6,
+): boolean {
+  const cross = (p2.x - p1.x) * (pt.y - p1.y) - (p2.y - p1.y) * (pt.x - p1.x)
+  if (Math.abs(cross) > eps) return false
+  const dot = (pt.x - p1.x) * (p2.x - p1.x) + (pt.y - p1.y) * (p2.y - p1.y)
+  const lenSq = (p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2
+  return dot >= -eps && dot <= lenSq + eps
+}
+
 function sampleAnchorsAlongSegment(
   a: { x: number; y: number },
   b: { x: number; y: number },
@@ -114,6 +170,12 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   private labelsToTry: NetLabelPlacement[] = []
   private candidateQueue: Candidate[] = []
   private candidateIndex = 0
+  private currentLabelPenalty = Infinity
+  private fallbackBest: {
+    label: NetLabelPlacement
+    candidate: Candidate
+    improvement: number
+  } | null = null
 
   constructor(params: NetLabelNetLabelCollisionSolverParams) {
     super()
@@ -292,11 +354,87 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     return "ok"
   }
 
+  /**
+   * Total "badness" of placing `label` at `bounds`/`anchor`: overlap area with
+   * other labels plus weighted lengths of trace segments crossed. Only the
+   * candidate's host segment (the one the anchor sits on, which the label
+   * extends perpendicularly away from) is free — any other segment lying
+   * inside the bounds reads as a label sitting on a wire, own net or not.
+   * Chip/text collisions are disqualifying (Infinity).
+   */
+  private computePlacementPenalty(
+    label: NetLabelPlacement,
+    bounds: { minX: number; minY: number; maxX: number; maxY: number },
+    anchor: { x: number; y: number },
+    host?: { pairId: MspConnectionPairId; segIndex: number },
+  ): number {
+    if (this.chipIndex.getChipsInBounds(bounds).length > 0) return Infinity
+    if (rectIntersectsAnyTextBox(bounds, this.inputProblem)) return Infinity
+
+    let penalty = 0
+    for (const obstacle of this.outputNetLabelPlacements) {
+      if (obstacle === label) continue
+      if (obstacle.globalConnNetId === label.globalConnNetId) continue
+      penalty += boundsOverlapArea(bounds, this.labelBounds(obstacle))
+    }
+    for (const solved of this.traces) {
+      const isOwnNet = solved.globalConnNetId === label.globalConnNetId
+      const pts = solved.tracePath
+      for (let i = 0; i < pts.length - 1; i++) {
+        if (host) {
+          if (solved.mspPairId === host.pairId && i === host.segIndex) continue
+        } else if (isOwnNet && isPointOnSegment(anchor, pts[i]!, pts[i + 1]!)) {
+          continue
+        }
+        const crossedLength = segmentLengthInsideBounds(
+          pts[i]!,
+          pts[i + 1]!,
+          bounds,
+        )
+        penalty += crossedLength * TRACE_CROSSING_PENALTY
+      }
+    }
+    return penalty
+  }
+
   private beginSearchForLabel(label: NetLabelPlacement) {
     this.currentLabelToMove = label
     this.candidateQueue = this.buildCandidatesForLabel(label)
     this.candidateIndex = 0
     this.candidateResults = []
+    this.currentLabelPenalty = this.computePlacementPenalty(
+      label,
+      this.labelBounds(label),
+      label.anchorPoint,
+    )
+  }
+
+  /**
+   * No candidate resolved the collision outright. Instead of leaving the worst
+   * overlap in place, apply the best strictly-improving candidate seen while
+   * searching (if any), then mark the pair handled so it is never reprocessed.
+   * Requiring strict improvement makes the total penalty monotonically
+   * decrease, so fallback moves cannot cycle.
+   */
+  private applyFallbackBestOrSkip() {
+    this.skippedCollisionKeys.add(
+      this.collisionKey(this.currentCollision![0], this.currentCollision![1]),
+    )
+    if (this.fallbackBest) {
+      const { label, candidate } = this.fallbackBest
+      const idx = this.outputNetLabelPlacements.indexOf(label)
+      if (idx !== -1) {
+        this.outputNetLabelPlacements[idx] = {
+          ...label,
+          orientation: candidate.orientation,
+          anchorPoint: candidate.anchor,
+          width: candidate.width,
+          height: candidate.height,
+          center: candidate.center,
+        }
+      }
+    }
+    this.clearActiveSearch()
   }
 
   private clearActiveSearch() {
@@ -306,6 +444,8 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     this.candidateQueue = []
     this.candidateIndex = 0
     this.candidateResults = []
+    this.currentLabelPenalty = Infinity
+    this.fallbackBest = null
   }
 
   override _step() {
@@ -325,10 +465,7 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
       if (this.labelsToTry.length > 0) {
         this.beginSearchForLabel(this.labelsToTry.shift()!)
       } else {
-        this.skippedCollisionKeys.add(
-          this.collisionKey(this.currentCollision[0], this.currentCollision[1]),
-        )
-        this.clearActiveSearch()
+        this.applyFallbackBestOrSkip()
       }
       return
     }
@@ -355,6 +492,32 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     )
     candidate.status = status
     this.candidateResults.push({ ...candidate })
+
+    if (status !== "ok") {
+      const penalty = this.computePlacementPenalty(
+        this.currentLabelToMove!,
+        candidate.bounds,
+        candidate.anchor,
+        candidate.hostPairId !== undefined &&
+          candidate.hostSegIndex !== undefined
+          ? {
+              pairId: candidate.hostPairId,
+              segIndex: candidate.hostSegIndex,
+            }
+          : undefined,
+      )
+      const improvement = this.currentLabelPenalty - penalty
+      if (
+        improvement > FALLBACK_MIN_IMPROVEMENT &&
+        (!this.fallbackBest || improvement > this.fallbackBest.improvement)
+      ) {
+        this.fallbackBest = {
+          label: this.currentLabelToMove!,
+          candidate: { ...candidate },
+          improvement,
+        }
+      }
+    }
 
     if (status === "ok") {
       const idx = this.outputNetLabelPlacements.indexOf(
