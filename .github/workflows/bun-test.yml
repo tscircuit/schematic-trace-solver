@@ -30,7 +30,7 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Run tests
-        run: bun x vitest run
+        run: npx vitest run
 
       - name: Upload test diff artifacts
         if: always()
