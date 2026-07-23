@@ -44,6 +44,12 @@ test("repro47: endpoint obstacle detours route around nearby components", () => 
       traceById.get("R2.1-R3.2")!.tracePath,
     ),
   ).toBe(0)
+  expect(
+    countPathIntersections(
+      traceById.get("R2.1-R3.2")!.tracePath,
+      traceById.get("R2.2-R3.1")!.tracePath,
+    ),
+  ).toBe(0)
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
