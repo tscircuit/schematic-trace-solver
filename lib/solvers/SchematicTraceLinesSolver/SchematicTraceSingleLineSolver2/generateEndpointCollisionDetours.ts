@@ -28,7 +28,9 @@ export const generateEndpointCollisionDetours = ({
   collidingSegmentIndex: number
   obstacle: ObstacleRect
 }): Point[][] => {
-  if (path.length !== 3) return []
+  // Endpoint detours expand the initial L- and U-shaped elbow candidates.
+  // Longer paths have already been expanded and are handled by segment shifts.
+  if (path.length < 3 || path.length > 4) return []
 
   const lastSegmentIndex = path.length - 2
   if (
@@ -58,7 +60,7 @@ export const generateEndpointCollisionDetours = ({
   const detours: Point[][] = []
   for (const escapeCoordinate of [...new Set(escapeCoordinates)]) {
     for (const detourCoordinate of [...new Set(detourCoordinates)]) {
-      const orderedDetour =
+      const orderedDetourPrefix =
         firstSegmentAxis === "y"
           ? [
               start!,
@@ -75,6 +77,7 @@ export const generateEndpointCollisionDetours = ({
               end!,
             ]
 
+      const orderedDetour = [...orderedDetourPrefix, ...orderedPath.slice(3)]
       const detour = shouldReverse ? orderedDetour.reverse() : orderedDetour
       if (hasOnlyNonzeroOrthogonalSegments(detour)) detours.push(detour)
     }

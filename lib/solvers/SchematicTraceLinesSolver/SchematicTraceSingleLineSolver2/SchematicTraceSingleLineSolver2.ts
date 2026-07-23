@@ -28,6 +28,29 @@ import { getObstacleRects, type ObstacleRect } from "./rect"
 
 type PathKey = string
 
+const calculateElbowForPins = ({
+  pin1,
+  pin2,
+  overshoot,
+}: {
+  pin1: MspConnectionPair["pins"][number]
+  pin2: MspConnectionPair["pins"][number]
+  overshoot: number
+}) =>
+  calculateElbow(
+    {
+      x: pin1.x,
+      y: pin1.y,
+      facingDirection: pin1._facingDirection!,
+    },
+    {
+      x: pin2.x,
+      y: pin2.y,
+      facingDirection: pin2._facingDirection!,
+    },
+    { overshoot },
+  )
+
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
   connectionPair?: MspConnectionPair
@@ -89,23 +112,30 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     const [pin1, pin2] = this.pins
     const directShortPath = calculateDirectShortPath(pin1, pin2)
+    const defaultElbow = calculateElbowForPins({
+      pin1,
+      pin2,
+      overshoot: 0.2,
+    })
+    const routingDistance =
+      Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
+    const adaptiveElbow = calculateElbowForPins({
+      pin1,
+      pin2,
+      overshoot: Math.min(0.2, Math.max(0.02, routingDistance / 4)),
+    })
+    const shouldUseAdaptiveElbow =
+      findFirstCollision(defaultElbow, this.obstacles) !== null &&
+      findFirstCollision(adaptiveElbow, this.obstacles) === null
 
     // Build initial elbow path
-    this.baseElbow =
-      directShortPath ??
-      calculateElbow(
-        {
-          x: pin1.x,
-          y: pin1.y,
-          facingDirection: pin1._facingDirection!,
-        },
-        {
-          x: pin2.x,
-          y: pin2.y,
-          facingDirection: pin2._facingDirection!,
-        },
-        { overshoot: 0.2 },
-      )
+    this.baseElbow = defaultElbow
+    if (shouldUseAdaptiveElbow) {
+      this.baseElbow = adaptiveElbow
+    }
+    if (directShortPath) {
+      this.baseElbow = directShortPath
+    }
     this.solvedTracePath = directShortPath
 
     // Bounds defined by PA and PB
@@ -357,8 +387,31 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     // Never move the first or last segments - move adjacent segment instead
     const isFirstSegment = segIndex === 0
     const isLastSegment = segIndex === path.length - 2
+    const isEndpointChipObstacle =
+      rect.kind === "chip" &&
+      this.pins.some((pin) => pin.chipId === rect.chipId)
+    // U-shaped detours are local repairs for fixed MSP pairs obstructed by an
+    // intermediate obstacle. Endpoint-chip and optional long-distance routing
+    // require multi-trace or net-level selection instead.
+    const canGenerateEndpointDetour =
+      path.length === 3 ||
+      (path.length === 4 &&
+        this.connectionPair !== undefined &&
+        !isEndpointChipObstacle)
 
-    if (path.length === 3 && (isFirstSegment || isLastSegment)) {
+    if (canGenerateEndpointDetour && (isFirstSegment || isLastSegment)) {
+      // A three-point detour replaces an L elbow, so the shortest valid route
+      // remains the best choice. A four-point detour preserves the far side of
+      // a U elbow; prefer the candidate that keeps its new internal rails out
+      // of the pin band, then use length to choose between equivalent routes.
+      const compareDetours =
+        path.length === 4
+          ? (a: Point[], b: Point[]) =>
+              this.getPinBandPenalty(a) - this.getPinBandPenalty(b) ||
+              this.pathLength(a) - this.pathLength(b)
+          : (a: Point[], b: Point[]) =>
+              this.pathLength(a) - this.pathLength(b) ||
+              this.getPinBandPenalty(a) - this.getPinBandPenalty(b)
       const detours = generateEndpointCollisionDetours({
         path,
         collidingSegmentIndex: segIndex,
@@ -370,11 +423,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
           this.visited.add(key)
           return true
         })
-        .sort(
-          (a, b) =>
-            this.pathLength(a) - this.pathLength(b) ||
-            this.getPinBandPenalty(a) - this.getPinBandPenalty(b),
-        )
+        .sort(compareDetours)
 
       for (const detour of detours) {
         const nextCollisionRects = new Set(collisionRects)
@@ -413,6 +462,11 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     // Note: PA and PB are already defined above
     const candidates: number[] = []
+    // Fixed MSP pairs may leave the endpoint bounds to complete a required
+    // route. Optional long-distance candidates retain their bounded search.
+    const candidateMidOptions = {
+      allowOpenSideCandidates: this.connectionPair !== undefined,
+    }
 
     if (collisionRects.size === 0) {
       // First collision on this search branch: use mid(PA, C) and mid(PB, C)
@@ -425,7 +479,13 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       candidates.push(...uniqueCandidates)
     } else {
       // Subsequent collisions: mid between C and nearest rect/bounds from the set
-      const mids = candidateMidsFromSet(axis, rect, collisionRects, this.aabb)
+      const mids = candidateMidsFromSet(
+        axis,
+        rect,
+        collisionRects,
+        this.aabb,
+        candidateMidOptions,
+      )
       candidates.push(...mids)
     }
 
@@ -496,6 +556,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
             rect,
             collisionRects,
             this.aabb,
+            candidateMidOptions,
           ),
         )
       }

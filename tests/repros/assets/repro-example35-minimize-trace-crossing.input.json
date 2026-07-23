@@ -1,0 +1,1561 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -5,
+        "y": 0
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999999,
+      "pins": [
+        {
+          "pinId": "R2.1",
+          "x": -5.3,
+          "y": 0,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R2.2",
+          "x": -4.7,
+          "y": 0,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -2.8674999999999997,
+        "y": -1
+      },
+      "width": 1.1650000000000005,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "C4.1",
+          "x": -3,
+          "y": -0.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C4.2",
+          "x": -3,
+          "y": -1.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -5,
+        "y": -2
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6800000000000002,
+      "pins": [
+        {
+          "pinId": "R3.1",
+          "x": -5.3,
+          "y": -2,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R3.2",
+          "x": -4.7,
+          "y": -2,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": -3.8674999999999997,
+        "y": -3
+      },
+      "width": 1.1650000000000005,
+      "height": 0.7600000000000007,
+      "pins": [
+        {
+          "pinId": "C5.1",
+          "x": -4,
+          "y": -2.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C5.2",
+          "x": -4,
+          "y": -3.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": -5,
+        "y": -4
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6800000000000002,
+      "pins": [
+        {
+          "pinId": "R4.1",
+          "x": -5.3,
+          "y": -4,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R4.2",
+          "x": -4.7,
+          "y": -4,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_5",
+      "center": {
+        "x": -2.8674999999999997,
+        "y": -5
+      },
+      "width": 1.1650000000000005,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "C6.1",
+          "x": -3,
+          "y": -4.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C6.2",
+          "x": -3,
+          "y": -5.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_6",
+      "center": {
+        "x": -5,
+        "y": -6
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "R7.1",
+          "x": -5.3,
+          "y": -6,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R7.2",
+          "x": -4.7,
+          "y": -6,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_7",
+      "center": {
+        "x": -3.8674999999999997,
+        "y": -7
+      },
+      "width": 1.1650000000000005,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "C7.1",
+          "x": -4,
+          "y": -6.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C7.2",
+          "x": -4,
+          "y": -7.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_8",
+      "center": {
+        "x": -5,
+        "y": -8
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "R8.1",
+          "x": -5.3,
+          "y": -8,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R8.2",
+          "x": -4.7,
+          "y": -8,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_9",
+      "center": {
+        "x": -2.8674999999999997,
+        "y": -9
+      },
+      "width": 1.1650000000000005,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "C8.1",
+          "x": -3,
+          "y": -8.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C8.2",
+          "x": -3,
+          "y": -9.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_10",
+      "center": {
+        "x": -5,
+        "y": -10
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "R11.1",
+          "x": -5.3,
+          "y": -10,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R11.2",
+          "x": -4.7,
+          "y": -10,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_11",
+      "center": {
+        "x": -3.8674999999999997,
+        "y": -11
+      },
+      "width": 1.1650000000000005,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "C9.1",
+          "x": -4,
+          "y": -10.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C9.2",
+          "x": -4,
+          "y": -11.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_12",
+      "center": {
+        "x": -5,
+        "y": -12
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "R12.1",
+          "x": -5.3,
+          "y": -12,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R12.2",
+          "x": -4.7,
+          "y": -12,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_13",
+      "center": {
+        "x": -2.8674999999999997,
+        "y": -13
+      },
+      "width": 1.1650000000000005,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "C10.1",
+          "x": -3,
+          "y": -12.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C10.2",
+          "x": -3,
+          "y": -13.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_14",
+      "center": {
+        "x": -5,
+        "y": -14
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "R13.1",
+          "x": -5.3,
+          "y": -14,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R13.2",
+          "x": -4.7,
+          "y": -14,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_15",
+      "center": {
+        "x": -3.8674999999999997,
+        "y": -15
+      },
+      "width": 1.1650000000000005,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "C11.1",
+          "x": -4,
+          "y": -14.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C11.2",
+          "x": -4,
+          "y": -15.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_16",
+      "center": {
+        "x": -5,
+        "y": -16
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "R14.1",
+          "x": -5.3,
+          "y": -16,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R14.2",
+          "x": -4.7,
+          "y": -16,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_17",
+      "center": {
+        "x": -2.8674999999999997,
+        "y": -17
+      },
+      "width": 1.1650000000000005,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "C14.1",
+          "x": -3,
+          "y": -16.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C14.2",
+          "x": -3,
+          "y": -17.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_18",
+      "center": {
+        "x": -5,
+        "y": -18
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "R16.1",
+          "x": -5.3,
+          "y": -18,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R16.2",
+          "x": -4.7,
+          "y": -18,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_19",
+      "center": {
+        "x": -3.8674999999999997,
+        "y": -19
+      },
+      "width": 1.1650000000000005,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "C16.1",
+          "x": -4,
+          "y": -18.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C16.2",
+          "x": -4,
+          "y": -19.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_20",
+      "center": {
+        "x": -5,
+        "y": -20
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "R17.1",
+          "x": -5.3,
+          "y": -20,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R17.2",
+          "x": -4.7,
+          "y": -20,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_21",
+      "center": {
+        "x": -2.8674999999999997,
+        "y": -21
+      },
+      "width": 1.1650000000000005,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "C17.1",
+          "x": -3,
+          "y": -20.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C17.2",
+          "x": -3,
+          "y": -21.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_22",
+      "center": {
+        "x": -5,
+        "y": -22
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "R18.1",
+          "x": -5.3,
+          "y": -22,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R18.2",
+          "x": -4.7,
+          "y": -22,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_23",
+      "center": {
+        "x": -3.8674999999999997,
+        "y": -23
+      },
+      "width": 1.1650000000000005,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "C18.1",
+          "x": -4,
+          "y": -22.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C18.2",
+          "x": -4,
+          "y": -23.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_24",
+      "center": {
+        "x": -5,
+        "y": -24
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "R19.1",
+          "x": -5.3,
+          "y": -24,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R19.2",
+          "x": -4.7,
+          "y": -24,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_25",
+      "center": {
+        "x": -2.8674999999999997,
+        "y": -25
+      },
+      "width": 1.1650000000000005,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "C19.1",
+          "x": -3,
+          "y": -24.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C19.2",
+          "x": -3,
+          "y": -25.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_26",
+      "center": {
+        "x": -5,
+        "y": -26
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "R21.1",
+          "x": -5.3,
+          "y": -26,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R21.2",
+          "x": -4.7,
+          "y": -26,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_27",
+      "center": {
+        "x": -3.8674999999999997,
+        "y": -27
+      },
+      "width": 1.1650000000000005,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "C21.1",
+          "x": -4,
+          "y": -26.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C21.2",
+          "x": -4,
+          "y": -27.3,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_28",
+      "center": {
+        "x": -5,
+        "y": -28
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "R22.1",
+          "x": -5.3,
+          "y": -28,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R22.2",
+          "x": -4.7,
+          "y": -28,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_29",
+      "center": {
+        "x": 5,
+        "y": 0
+      },
+      "width": 2,
+      "height": 6.200000000000003,
+      "pins": [
+        {
+          "pinId": "U1.1",
+          "x": 3.6,
+          "y": 1.7000000000000013,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.2",
+          "x": 3.6,
+          "y": 1.5000000000000013,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.3",
+          "x": 3.6,
+          "y": 1.3000000000000014,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.4",
+          "x": 3.6,
+          "y": 1.1000000000000014,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.5",
+          "x": 3.6,
+          "y": 0.9000000000000015,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.6",
+          "x": 3.6,
+          "y": 0.7000000000000015,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.7",
+          "x": 3.6,
+          "y": 0.5000000000000013,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.8",
+          "x": 3.6,
+          "y": 0.30000000000000115,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.9",
+          "x": 3.6,
+          "y": 0.10000000000000098,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.10",
+          "x": 3.6,
+          "y": -0.0999999999999992,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.11",
+          "x": 3.6,
+          "y": -0.2999999999999994,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.12",
+          "x": 3.6,
+          "y": -0.49999999999999956,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.13",
+          "x": 3.6,
+          "y": -0.6999999999999997,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.14",
+          "x": 3.6,
+          "y": -0.8999999999999999,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.15",
+          "x": 3.6,
+          "y": -1.0999999999999996,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.16",
+          "x": 3.6,
+          "y": -1.2999999999999998,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.17",
+          "x": 6.4,
+          "y": -2.600000000000001,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.18",
+          "x": 3.6,
+          "y": -1.7000000000000002,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.19",
+          "x": 3.6,
+          "y": -1.9000000000000004,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.20",
+          "x": 3.6,
+          "y": -2.1000000000000005,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.21",
+          "x": 3.6,
+          "y": -2.3000000000000007,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.22",
+          "x": 3.6,
+          "y": -2.500000000000001,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.23",
+          "x": 3.6,
+          "y": -2.700000000000001,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.24",
+          "x": 3.6,
+          "y": -2.9000000000000012,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.25",
+          "x": 6.4,
+          "y": -2.200000000000001,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.26",
+          "x": 6.4,
+          "y": -2.000000000000001,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.27",
+          "x": 6.4,
+          "y": -1.800000000000001,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.28",
+          "x": 6.4,
+          "y": -1.400000000000001,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.29",
+          "x": 6.4,
+          "y": -1.000000000000001,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.30",
+          "x": 6.4,
+          "y": -0.6000000000000012,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.31",
+          "x": 6.4,
+          "y": -0.20000000000000107,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.32",
+          "x": 6.4,
+          "y": -8.881784197001252e-16,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.33",
+          "x": 6.4,
+          "y": 0.1999999999999993,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.34",
+          "x": 6.4,
+          "y": 0.39999999999999947,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.35",
+          "x": 6.4,
+          "y": 0.5999999999999996,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.36",
+          "x": 6.4,
+          "y": 0.7999999999999998,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.37",
+          "x": 6.4,
+          "y": 1,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.38",
+          "x": 6.4,
+          "y": 1.2000000000000002,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.39",
+          "x": 6.4,
+          "y": 1.4,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.40",
+          "x": 6.4,
+          "y": 1.6,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.41",
+          "x": 6.4,
+          "y": 1.8000000000000003,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.42",
+          "x": 6.4,
+          "y": 2.0000000000000004,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.43",
+          "x": 6.4,
+          "y": 2.2000000000000006,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.45",
+          "x": 6.4,
+          "y": 2.600000000000001,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U1.46",
+          "x": 3.6,
+          "y": 2.700000000000001,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.47",
+          "x": 3.6,
+          "y": 2.300000000000001,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.48",
+          "x": 3.6,
+          "y": 1.9000000000000012,
+          "_facingDirection": "x-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_30",
+      "center": {
+        "x": -9,
+        "y": -4
+      },
+      "width": 0.3999999999999986,
+      "height": 1.4000000000000004,
+      "pins": [
+        {
+          "pinId": "J1.1",
+          "x": -8.4,
+          "y": -3.5,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J1.2",
+          "x": -8.4,
+          "y": -3.7,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J1.3",
+          "x": -8.4,
+          "y": -3.9,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J1.4",
+          "x": -8.4,
+          "y": -4.1,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J1.5",
+          "x": -8.4,
+          "y": -4.3,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J1.6",
+          "x": -8.4,
+          "y": -4.5,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_31",
+      "center": {
+        "x": -9,
+        "y": -10
+      },
+      "width": 0.3999999999999986,
+      "height": 1.1999999999999993,
+      "pins": [
+        {
+          "pinId": "J3.1",
+          "x": -8.4,
+          "y": -9.6,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J3.2",
+          "x": -8.4,
+          "y": -9.8,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J3.3",
+          "x": -8.4,
+          "y": -10,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J3.4",
+          "x": -8.4,
+          "y": -10.2,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J3.5",
+          "x": -8.4,
+          "y": -10.4,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_32",
+      "center": {
+        "x": -9,
+        "y": -16
+      },
+      "width": 0.3999999999999986,
+      "height": 1.3999999999999986,
+      "pins": [
+        {
+          "pinId": "J4.1",
+          "x": -8.4,
+          "y": -15.5,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J4.2",
+          "x": -8.4,
+          "y": -15.7,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J4.3",
+          "x": -8.4,
+          "y": -15.9,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J4.4",
+          "x": -8.4,
+          "y": -16.1,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J4.5",
+          "x": -8.4,
+          "y": -16.3,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J4.6",
+          "x": -8.4,
+          "y": -16.5,
+          "_facingDirection": "x+"
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": [
+        "R2.1",
+        "J1.1"
+      ],
+      "netId": ".R2 > .pin1 to J1.pin1"
+    },
+    {
+      "pinIds": [
+        "R2.2",
+        "C4.1"
+      ],
+      "netId": ".R2 > .pin2 to C4.pin1"
+    },
+    {
+      "pinIds": [
+        "C4.1",
+        "U1.48"
+      ],
+      "netId": ".C4 > .pin1 to U1.VC16"
+    },
+    {
+      "pinIds": [
+        "C4.2",
+        "C5.1"
+      ],
+      "netId": ".C4 > .pin2 to C5.pin1"
+    },
+    {
+      "pinIds": [
+        "R3.1",
+        "J1.2"
+      ],
+      "netId": ".R3 > .pin1 to J1.pin2"
+    },
+    {
+      "pinIds": [
+        "R3.2",
+        "C5.1"
+      ],
+      "netId": ".R3 > .pin2 to C5.pin1"
+    },
+    {
+      "pinIds": [
+        "C5.1",
+        "U1.1"
+      ],
+      "netId": ".C5 > .pin1 to U1.VC15"
+    },
+    {
+      "pinIds": [
+        "C5.2",
+        "C6.1"
+      ],
+      "netId": ".C5 > .pin2 to C6.pin1"
+    },
+    {
+      "pinIds": [
+        "R4.1",
+        "J1.3"
+      ],
+      "netId": ".R4 > .pin1 to J1.pin3"
+    },
+    {
+      "pinIds": [
+        "R4.2",
+        "C6.1"
+      ],
+      "netId": ".R4 > .pin2 to C6.pin1"
+    },
+    {
+      "pinIds": [
+        "C6.1",
+        "U1.2"
+      ],
+      "netId": ".C6 > .pin1 to U1.VC14"
+    },
+    {
+      "pinIds": [
+        "C6.2",
+        "C7.1"
+      ],
+      "netId": ".C6 > .pin2 to C7.pin1"
+    },
+    {
+      "pinIds": [
+        "R7.1",
+        "J1.4"
+      ],
+      "netId": ".R7 > .pin1 to J1.pin4"
+    },
+    {
+      "pinIds": [
+        "R7.2",
+        "C7.1"
+      ],
+      "netId": ".R7 > .pin2 to C7.pin1"
+    },
+    {
+      "pinIds": [
+        "C7.1",
+        "U1.3"
+      ],
+      "netId": ".C7 > .pin1 to U1.VC13"
+    },
+    {
+      "pinIds": [
+        "C7.2",
+        "C8.1"
+      ],
+      "netId": ".C7 > .pin2 to C8.pin1"
+    },
+    {
+      "pinIds": [
+        "R8.1",
+        "J1.5"
+      ],
+      "netId": ".R8 > .pin1 to J1.pin5"
+    },
+    {
+      "pinIds": [
+        "R8.2",
+        "C8.1"
+      ],
+      "netId": ".R8 > .pin2 to C8.pin1"
+    },
+    {
+      "pinIds": [
+        "C8.1",
+        "U1.4"
+      ],
+      "netId": ".C8 > .pin1 to U1.VC12"
+    },
+    {
+      "pinIds": [
+        "C8.2",
+        "C9.1"
+      ],
+      "netId": ".C8 > .pin2 to C9.pin1"
+    },
+    {
+      "pinIds": [
+        "R11.1",
+        "J1.6"
+      ],
+      "netId": ".R11 > .pin1 to J1.pin6"
+    },
+    {
+      "pinIds": [
+        "R11.2",
+        "C9.1"
+      ],
+      "netId": ".R11 > .pin2 to C9.pin1"
+    },
+    {
+      "pinIds": [
+        "C9.1",
+        "U1.6"
+      ],
+      "netId": ".C9 > .pin1 to U1.VC10"
+    },
+    {
+      "pinIds": [
+        "C9.2",
+        "C10.1"
+      ],
+      "netId": ".C9 > .pin2 to C10.pin1"
+    },
+    {
+      "pinIds": [
+        "R12.1",
+        "J3.1"
+      ],
+      "netId": ".R12 > .pin1 to J3.pin1"
+    },
+    {
+      "pinIds": [
+        "R12.2",
+        "C10.1"
+      ],
+      "netId": ".R12 > .pin2 to C10.pin1"
+    },
+    {
+      "pinIds": [
+        "C10.1",
+        "U1.7"
+      ],
+      "netId": ".C10 > .pin1 to U1.VC9"
+    },
+    {
+      "pinIds": [
+        "C10.2",
+        "C11.1"
+      ],
+      "netId": ".C10 > .pin2 to C11.pin1"
+    },
+    {
+      "pinIds": [
+        "R13.1",
+        "J3.2"
+      ],
+      "netId": ".R13 > .pin1 to J3.pin2"
+    },
+    {
+      "pinIds": [
+        "R13.2",
+        "C11.1"
+      ],
+      "netId": ".R13 > .pin2 to C11.pin1"
+    },
+    {
+      "pinIds": [
+        "C11.1",
+        "U1.8"
+      ],
+      "netId": ".C11 > .pin1 to U1.VC8"
+    },
+    {
+      "pinIds": [
+        "C11.2",
+        "C14.1"
+      ],
+      "netId": ".C11 > .pin2 to C14.pin1"
+    },
+    {
+      "pinIds": [
+        "R14.1",
+        "J3.3"
+      ],
+      "netId": ".R14 > .pin1 to J3.pin3"
+    },
+    {
+      "pinIds": [
+        "R14.2",
+        "C14.1"
+      ],
+      "netId": ".R14 > .pin2 to C14.pin1"
+    },
+    {
+      "pinIds": [
+        "C14.1",
+        "U1.10"
+      ],
+      "netId": ".C14 > .pin1 to U1.VC6"
+    },
+    {
+      "pinIds": [
+        "C14.2",
+        "C16.1"
+      ],
+      "netId": ".C14 > .pin2 to C16.pin1"
+    },
+    {
+      "pinIds": [
+        "R16.1",
+        "J3.4"
+      ],
+      "netId": ".R16 > .pin1 to J3.pin4"
+    },
+    {
+      "pinIds": [
+        "R16.2",
+        "C16.1"
+      ],
+      "netId": ".R16 > .pin2 to C16.pin1"
+    },
+    {
+      "pinIds": [
+        "C16.1",
+        "U1.11"
+      ],
+      "netId": ".C16 > .pin1 to U1.VC5"
+    },
+    {
+      "pinIds": [
+        "C16.2",
+        "C17.1"
+      ],
+      "netId": ".C16 > .pin2 to C17.pin1"
+    },
+    {
+      "pinIds": [
+        "R17.1",
+        "J3.5"
+      ],
+      "netId": ".R17 > .pin1 to J3.pin5"
+    },
+    {
+      "pinIds": [
+        "R17.2",
+        "C17.1"
+      ],
+      "netId": ".R17 > .pin2 to C17.pin1"
+    },
+    {
+      "pinIds": [
+        "C17.1",
+        "U1.12"
+      ],
+      "netId": ".C17 > .pin1 to U1.VC4"
+    },
+    {
+      "pinIds": [
+        "C17.2",
+        "C18.1"
+      ],
+      "netId": ".C17 > .pin2 to C18.pin1"
+    },
+    {
+      "pinIds": [
+        "R18.1",
+        "J4.1"
+      ],
+      "netId": ".R18 > .pin1 to J4.pin1"
+    },
+    {
+      "pinIds": [
+        "R18.2",
+        "C18.1"
+      ],
+      "netId": ".R18 > .pin2 to C18.pin1"
+    },
+    {
+      "pinIds": [
+        "C18.1",
+        "U1.13"
+      ],
+      "netId": ".C18 > .pin1 to U1.VC3"
+    },
+    {
+      "pinIds": [
+        "C18.2",
+        "C19.1"
+      ],
+      "netId": ".C18 > .pin2 to C19.pin1"
+    },
+    {
+      "pinIds": [
+        "R19.1",
+        "J4.2"
+      ],
+      "netId": ".R19 > .pin1 to J4.pin2"
+    },
+    {
+      "pinIds": [
+        "R19.2",
+        "C19.1"
+      ],
+      "netId": ".R19 > .pin2 to C19.pin1"
+    },
+    {
+      "pinIds": [
+        "C19.1",
+        "U1.14"
+      ],
+      "netId": ".C19 > .pin1 to U1.VC2"
+    },
+    {
+      "pinIds": [
+        "C19.2",
+        "C21.1"
+      ],
+      "netId": ".C19 > .pin2 to C21.pin1"
+    },
+    {
+      "pinIds": [
+        "R21.1",
+        "J4.3"
+      ],
+      "netId": ".R21 > .pin1 to J4.pin3"
+    },
+    {
+      "pinIds": [
+        "R21.2",
+        "C21.1"
+      ],
+      "netId": ".R21 > .pin2 to C21.pin1"
+    },
+    {
+      "pinIds": [
+        "C21.1",
+        "U1.15"
+      ],
+      "netId": ".C21 > .pin1 to U1.VC1"
+    },
+    {
+      "pinIds": [
+        "R22.1",
+        "J4.4"
+      ],
+      "netId": ".R22 > .pin1 to J4.pin4"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "pinIds": [
+        "U1.17"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_29",
+      "center": {
+        "x": 4.66,
+        "y": -3.2300000000000013
+      },
+      "width": 1.3200000000000003,
+      "height": 0.17999999999999972,
+      "text": "BQ76952PFBR"
+    },
+    {
+      "chipId": "schematic_component_29",
+      "center": {
+        "x": 4.12,
+        "y": 3.2150000000000016
+      },
+      "width": 0.3599999999999999,
+      "height": 0.24999999999999956,
+      "text": "U1"
+    },
+    {
+      "chipId": "schematic_component_30",
+      "center": {
+        "x": -9.079999999999998,
+        "y": -3.1849999999999996
+      },
+      "width": 0.3600000000000012,
+      "height": 0.24999999999999956,
+      "text": "J1"
+    },
+    {
+      "chipId": "schematic_component_31",
+      "center": {
+        "x": -9.079999999999998,
+        "y": -9.285
+      },
+      "width": 0.3600000000000012,
+      "height": 0.25,
+      "text": "J3"
+    },
+    {
+      "chipId": "schematic_component_32",
+      "center": {
+        "x": -9.079999999999998,
+        "y": -15.185
+      },
+      "width": 0.3600000000000012,
+      "height": 0.25,
+      "text": "J4"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ]
+  },
+  "maxMspPairDistance": 10
+}

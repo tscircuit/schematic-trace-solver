@@ -11,6 +11,7 @@ import {
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
+import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 import { EPS, LABEL_SEARCH_STEP, WICK_CLEARANCE } from "./constants"
 import {
   getConnectorTracePath,
@@ -22,8 +23,8 @@ import {
   rectsOverlap,
   simplifyOrthogonalPath,
   traceCrossesBoundsInterior,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyBounds,
+  tracePathIntersectsBounds,
 } from "./geometry"
 import { getPinMap, getTracePins, toNetLabelPlacementPatch } from "./traces"
 import type {
@@ -36,7 +37,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -182,6 +182,34 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   private findCorrectedCandidate(label: NetLabelPlacement, labelIndex: number) {
     const orientations = this.getAvailableOrientations(label)
+    const requiredOrientation = orientations[0]!
+    const isTwoPinNet = this.inputProblem.netConnections.some(
+      (connection) =>
+        connection.netId === label.netId && connection.pinIds.length === 2,
+    )
+    if (
+      isTwoPinNet &&
+      orientations.length === 1 &&
+      isYOrientation(requiredOrientation) &&
+      this.hasTraceContinuingInOrientation(label, requiredOrientation)
+    ) {
+      // Keep two-pin vertical net labels aligned with the existing trace.
+      const alignedCandidate = this.findValidCandidateInShiftColumn({
+        label,
+        labelIndex,
+        orientation: requiredOrientation,
+        direction: dir(requiredOrientation),
+        baseAnchor: this.getWickOffsetAnchor(
+          label.anchorPoint,
+          requiredOrientation,
+        ),
+        maxSearchDistance: this.maxSearchDistance,
+        outwardDistance: 0,
+        stopOnTraceCollision: false,
+      })
+      if (alignedCandidate) return alignedCandidate
+    }
+
     const rotatedCandidate = this.findValidRotatedCandidate(
       label,
       labelIndex,
@@ -208,6 +236,31 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       orientations[0]!,
       labelIndex,
     )
+  }
+
+  private hasTraceContinuingInOrientation(
+    label: NetLabelPlacement,
+    orientation: "y+" | "y-",
+  ) {
+    const direction = dir(orientation)
+    return Object.values(this.traceMap).some((trace) => {
+      if (trace.globalConnNetId !== label.globalConnNetId) return false
+      const path = trace.tracePath
+      return path.some((point, pointIndex) => {
+        if (
+          Math.abs(point.x - label.anchorPoint.x) > EPS ||
+          Math.abs(point.y - label.anchorPoint.y) > EPS
+        ) {
+          return false
+        }
+        return [path[pointIndex - 1], path[pointIndex + 1]].some(
+          (neighbor) =>
+            neighbor &&
+            Math.abs(neighbor.x - point.x) <= EPS &&
+            (neighbor.y - point.y) * direction.y > EPS,
+        )
+      })
+    })
   }
 
   private findValidRotatedCandidate(
@@ -401,6 +454,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     maxSearchDistance: number
     outwardDistance: number
     phase?: CandidatePhase
+    stopOnTraceCollision?: boolean
   }) {
     const {
       label,
@@ -411,6 +465,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       maxSearchDistance,
       outwardDistance,
       phase = "shift",
+      stopOnTraceCollision = true,
     } = params
 
     for (
@@ -437,7 +492,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         result.selected = true
         return result
       }
-      if (result.status === "trace-collision") break
+      if (stopOnTraceCollision && result.status === "trace-collision") break
     }
 
     return null
