@@ -25,7 +25,7 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Run tests
-        run: npm run test
+        run: bun test 
 
       - name: Upload test diff artifacts
         if: always()
