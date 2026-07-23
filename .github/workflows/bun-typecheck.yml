@@ -1,26 +1,41 @@
 # Created using @tscircuit/plop (npm install -g @tscircuit/plop)
-name: Type Check
+name: vitest
 
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
+    branches:
+      - main
+  push:
+    branches:
+      - main
 
 jobs:
-  type-check:
+  test:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: setup node
+      - name: Setup node
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
+
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Run type check
-        run: npm run type-check
+      - name: Run tests
+        run: bun test
+
+      - name: Upload test diff artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-diff-images
+          path: **/*.diff.png
+          if-no-files-found: ignore
