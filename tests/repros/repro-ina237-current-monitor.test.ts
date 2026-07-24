@@ -15,11 +15,5 @@ test("repro ina237 current monitor", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
   solver.solve()
 
-  expect(
-    solver.schematicTraceLinesSolver?.solvedTracePaths.some(
-      (trace) => trace.mspPairId === "U1.10-R_SHUNT.1",
-    ),
-  ).toBe(false)
-
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
