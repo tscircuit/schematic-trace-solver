@@ -7,6 +7,8 @@ import { getComponentSideRailSegments } from "./getComponentSideRailSegments"
 import { nearlyEqual, rangesTouchOrOverlap } from "./geometry"
 import type { RailSegment } from "./types"
 
+const SHARED_PIN_RAIL_JOIN_DISTANCE = 0.05
+
 const getCorridor = (a: RailSegment, b: RailSegment): [Point, Point] => {
   const overlapMin = Math.max(a.minAlong, b.minAlong)
   const overlapMax = Math.min(a.maxAlong, b.maxAlong)
@@ -60,6 +62,10 @@ const canJoinRailGroup = (
   obstacles: ObstacleRect[],
 ) => {
   const sharePin = tracesSharePin(current, candidate, traceMap)
+  const areNearbySharedPinRails =
+    sharePin &&
+    Math.abs(current.coordinate - candidate.coordinate) <=
+      SHARED_PIN_RAIL_JOIN_DISTANCE
   const areOnSameComponentSide =
     candidate.componentId === start.componentId &&
     candidate.componentFacingDirection === start.componentFacingDirection
@@ -67,7 +73,7 @@ const canJoinRailGroup = (
   return (
     candidate.globalConnNetId === start.globalConnNetId &&
     candidate.orientation === start.orientation &&
-    (sharePin ||
+    (areNearbySharedPinRails ||
       (areOnSameComponentSide &&
         rangesTouchOrOverlap(current, candidate))) &&
     corridorIsClear(current, candidate, obstacles)
