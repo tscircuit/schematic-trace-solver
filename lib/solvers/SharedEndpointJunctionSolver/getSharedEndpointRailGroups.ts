@@ -9,6 +9,7 @@ import type { RailSegment } from "lib/solvers/TraceCleanupSolver/sameNetRailAlig
 import type { InputProblem } from "lib/types/InputProblem"
 
 const SHARED_PIN_RAIL_JOIN_DISTANCE = 0.05
+const MIN_EXPANDED_DETOUR_PATH_POINTS = 6
 
 const getPinKey = (pin: SolvedTracePath["pins"][number]) =>
   `${pin.chipId}::${pin.pinId}`
@@ -98,8 +99,10 @@ const canFormSharedEndpointJunction = (
     return false
   }
 
-  const traceAIsExpandedDetour = traceA.tracePath.length >= 6
-  const traceBIsExpandedDetour = traceB.tracePath.length >= 6
+  const traceAIsExpandedDetour =
+    traceA.tracePath.length >= MIN_EXPANDED_DETOUR_PATH_POINTS
+  const traceBIsExpandedDetour =
+    traceB.tracePath.length >= MIN_EXPANDED_DETOUR_PATH_POINTS
   if (traceAIsExpandedDetour === traceBIsExpandedDetour) return false
   if (connectSameComponentPair(traceA, traceB)) return false
 
