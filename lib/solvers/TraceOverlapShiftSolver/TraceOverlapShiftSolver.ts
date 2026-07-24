@@ -350,12 +350,20 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
   override _step() {
     if (this.activeSubSolver?.solved) {
+      let tracesChanged = false
       for (const [mspPairId, newTrace] of Object.entries(
         this.activeSubSolver.correctedTraceMap,
       )) {
+        if (this.correctedTraceMap[mspPairId] !== newTrace) {
+          tracesChanged = true
+        }
         this.correctedTraceMap[mspPairId] = newTrace
       }
       this.activeSubSolver = null
+      if (!tracesChanged) {
+        this.solved = true
+        return
+      }
       this.traceNetIslands = this.computeTraceNetIslands()
     }
 

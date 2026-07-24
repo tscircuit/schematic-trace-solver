@@ -101,11 +101,17 @@ export class TraceOverlapIssueSolver extends BaseSolver {
         (group) => group.pathsWithOverlap.length > 1,
       )
 
-    // A compound overlap moves multiple rails as one correction. Preserve the
-    // established deterministic separation because a single candidate score
-    // cannot attribute downstream intersections to one participating rail.
     if (isCompoundOverlap) {
-      this.correctedTraceMap = this.applyOffsets(establishedOffsets)
+      const establishedTraceMap = this.applyOffsets(establishedOffsets)
+      const baselineIntersectionCount = this.countDifferentNetIntersections(
+        this.correctedTraceMap,
+      )
+      const shiftedIntersectionCount =
+        this.countDifferentNetIntersections(establishedTraceMap)
+
+      if (shiftedIntersectionCount < baselineIntersectionCount) {
+        this.correctedTraceMap = establishedTraceMap
+      }
       this.solved = true
       return
     }
