@@ -16,6 +16,7 @@ import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInp
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 
 export type MspConnectionPairId = string
+export const DEFAULT_MAX_MSP_PAIR_DISTANCE = 1
 
 const getPinPairKey = (pinIds: [PinId, PinId]) => [...pinIds].sort().join("::")
 
@@ -45,7 +46,8 @@ export class MspConnectionPairSolver extends BaseSolver {
     super()
 
     this.inputProblem = inputProblem
-    this.maxMspPairDistance = inputProblem.maxMspPairDistance ?? 1
+    this.maxMspPairDistance =
+      inputProblem.maxMspPairDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
 
     const { directConnMap, netConnMap } =
       getConnectivityMapsFromInputProblem(inputProblem)

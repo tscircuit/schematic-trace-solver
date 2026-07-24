@@ -1,8 +1,11 @@
 import type { Point } from "@tscircuit/math-utils"
-import { doSegmentsIntersect } from "@tscircuit/math-utils"
+import { distance, doSegmentsIntersect } from "@tscircuit/math-utils"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
-import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import {
+  DEFAULT_MAX_MSP_PAIR_DISTANCE,
+  type MspConnectionPair,
+} from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import {
   findFirstCollision,
@@ -186,10 +189,12 @@ const getJunctionCandidates = ({
   connectionPair,
   sameNetTraces,
   obstacles,
+  maxConnectionDistance,
 }: {
   connectionPair: MspConnectionPair
   sameNetTraces: SolvedTracePath[]
   obstacles: ObstacleRect[]
+  maxConnectionDistance: number
 }): Point[][] => {
   const outerBounds = getOuterBounds(obstacles)
   const horizontalChannels = [
@@ -213,6 +218,9 @@ const getJunctionCandidates = ({
       facingDirection: pin._facingDirection!,
     })
     for (const junctionPoint of junctionPoints) {
+      if (distance(pin, junctionPoint) > maxConnectionDistance) {
+        continue
+      }
       candidates.push(
         removeConsecutiveDuplicatePoints([
           pin,
@@ -411,6 +419,7 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
   private inputProblem: InputProblem
   private alreadySolvedTraces: SolvedTracePath[]
   private queuedConnectionPairs: MspConnectionPair[]
+  private maxConnectionDistance: number
   private groundGlobalConnNetId?: string
   public solvedUnroutedTraces: SolvedTracePath[] = []
 
@@ -425,6 +434,8 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
     this.inputProblem = params.inputProblem
     this.alreadySolvedTraces = params.alreadySolvedTraces
     this.queuedConnectionPairs = [...params.failedConnectionPairs]
+    this.maxConnectionDistance =
+      this.inputProblem.maxMspPairDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
     const { netConnMap } = getConnectivityMapsFromInputProblem(
       this.inputProblem,
     )
@@ -445,6 +456,12 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
     if (connectionPair.globalConnNetId === this.groundGlobalConnNetId) {
       return
     }
+    if (
+      distance(connectionPair.pins[0], connectionPair.pins[1]) >
+      this.maxConnectionDistance
+    ) {
+      return
+    }
 
     const obstacles = getObstacleRects(this.inputProblem)
     const existingTraces = [
@@ -458,6 +475,7 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
       connectionPair,
       sameNetTraces,
       obstacles,
+      maxConnectionDistance: this.maxConnectionDistance,
     })
     const perimeterCandidates = getPerimeterCandidates({
       connectionPair,
