@@ -52,6 +52,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   currentCandidateResults: EvaluatedCandidate[] = []
 
   private traceMap: Record<string, SolvedTracePath>
+  private allowConnectorTraceCrossings = false
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private maxSearchDistance: number
   private pinMap: Record<string, InputPin & { chipId: string }>
@@ -123,7 +124,17 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     this.setCurrentLabel(labelIndex)
     this.currentCandidateResults = []
 
-    const candidate = this.findCorrectedCandidate(label, labelIndex)
+    // Prefer candidates whose connector trace doesn't cross other nets'
+    // traces; if none exist, retry allowing crossings so the orientation
+    // constraint is still satisfied.
+    this.allowConnectorTraceCrossings = false
+    let candidate = this.findCorrectedCandidate(label, labelIndex)
+    if (!candidate) {
+      this.allowConnectorTraceCrossings = true
+      this.currentCandidateResults = []
+      candidate = this.findCorrectedCandidate(label, labelIndex)
+      this.allowConnectorTraceCrossings = false
+    }
     if (!candidate) return
 
     this.applyCandidate(label, candidate, labelIndex)
@@ -763,6 +774,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       }
     }
 
+    if (
+      !this.allowConnectorTraceCrossings &&
+      this.connectorTraceCrossesOtherNetTrace(connectorTrace, label)
+    ) {
+      return "trace-collision"
+    }
+
     for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
       if (i === labelIndex) continue
       const otherLabel = this.outputNetLabelPlacements[i]!
@@ -777,6 +795,45 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return "valid"
+  }
+
+  /**
+   * A generated connector trace must not cross an existing trace from a
+   * different net — a perpendicular crossing reads as a false junction
+   * on the schematic.
+   */
+  private connectorTraceCrossesOtherNetTrace(
+    connectorTrace: Array<{ x: number; y: number }>,
+    label: NetLabelPlacement,
+  ): boolean {
+    for (const trace of Object.values(this.traceMap)) {
+      if (trace.globalConnNetId === label.globalConnNetId) continue
+      for (let i = 0; i < connectorTrace.length - 1; i++) {
+        const a1 = connectorTrace[i]!
+        const a2 = connectorTrace[i + 1]!
+        const aIsHorizontal = Math.abs(a1.y - a2.y) < EPS
+        for (let j = 0; j < trace.tracePath.length - 1; j++) {
+          const b1 = trace.tracePath[j]!
+          const b2 = trace.tracePath[j + 1]!
+          const bIsHorizontal = Math.abs(b1.y - b2.y) < EPS
+          if (aIsHorizontal === bIsHorizontal) continue
+          const [h1, h2, v1, v2] = aIsHorizontal
+            ? [a1, a2, b1, b2]
+            : [b1, b2, a1, a2]
+          const horizontalY = h1.y
+          const verticalX = v1.x
+          if (
+            verticalX > Math.min(h1.x, h2.x) + EPS &&
+            verticalX < Math.max(h1.x, h2.x) - EPS &&
+            horizontalY > Math.min(v1.y, v2.y) + EPS &&
+            horizontalY < Math.max(v1.y, v2.y) - EPS
+          ) {
+            return true
+          }
+        }
+      }
+    }
+    return false
   }
 
   private isAcceptableTraceAnchorChipCollision(
