@@ -35,6 +35,9 @@ import {
 
 type PathKey = string
 
+const NEAR_MAX_PAIR_DISTANCE_RATIO = 0.9
+const LONG_NET_PAIR_DISTANCE_RATIO = 0.7
+
 const calculateElbowForPins = ({
   pin1,
   pin2,
@@ -411,14 +414,14 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     )
     const isNearMaximumPairDistance =
       maxPairDistance !== undefined &&
-      pinDistance > maxPairDistance * 0.9 &&
+      pinDistance > maxPairDistance * NEAR_MAX_PAIR_DISTANCE_RATIO &&
       isMostlyHorizontal
     const isMultiPinNetConnection =
       netConnection !== undefined && netConnection.pinIds.length > 2
     const isLongHorizontalNetConnection =
       netConnection !== undefined &&
       maxPairDistance !== undefined &&
-      pinDistance > maxPairDistance * 0.7 &&
+      pinDistance > maxPairDistance * LONG_NET_PAIR_DISTANCE_RATIO &&
       isMostlyHorizontal
     const canGenerateEndpointDetour =
       path.length === 3 ||
