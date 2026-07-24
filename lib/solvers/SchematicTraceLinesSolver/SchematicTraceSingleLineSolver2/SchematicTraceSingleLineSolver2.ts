@@ -66,6 +66,11 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
   connectionPair?: MspConnectionPair
   otherConnectionPairs: MspConnectionPair[]
+  existingTracePaths: Array<{
+    globalConnNetId: string
+    tracePath: Point[]
+    pins: Array<{ chipId: string }>
+  }>
   inputProblem: InputProblem
   chipMap: Record<string, InputChip>
 
@@ -86,6 +91,11 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     pins: MspConnectionPair["pins"]
     connectionPair?: MspConnectionPair
     otherConnectionPairs?: MspConnectionPair[]
+    existingTracePaths?: Array<{
+      globalConnNetId: string
+      tracePath: Point[]
+      pins: Array<{ chipId: string }>
+    }>
     inputProblem: InputProblem
     chipMap: Record<string, InputChip>
   }) {
@@ -93,6 +103,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     this.pins = params.pins
     this.connectionPair = params.connectionPair
     this.otherConnectionPairs = params.otherConnectionPairs ?? []
+    this.existingTracePaths = params.existingTracePaths ?? []
     this.inputProblem = params.inputProblem
     this.chipMap = params.chipMap
 
@@ -170,8 +181,75 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       pins: this.pins,
       connectionPair: this.connectionPair,
       otherConnectionPairs: this.otherConnectionPairs,
+      existingTracePaths: this.existingTracePaths,
       inputProblem: this.inputProblem,
     }
+  }
+
+  private countExistingDifferentNetTraceProximity(path: Point[]): number {
+    if (!this.connectionPair) return 0
+    const endpointChipIds = [
+      ...new Set(this.pins.map((pin) => pin.chipId)),
+    ].sort()
+
+    const segmentDistance = (
+      aStart: Point,
+      aEnd: Point,
+      bStart: Point,
+      bEnd: Point,
+    ) => {
+      const aBounds = aabbFromPoints(aStart, aEnd)
+      const bBounds = aabbFromPoints(bStart, bEnd)
+      const dx = Math.max(
+        0,
+        aBounds.minX - bBounds.maxX,
+        bBounds.minX - aBounds.maxX,
+      )
+      const dy = Math.max(
+        0,
+        aBounds.minY - bBounds.maxY,
+        bBounds.minY - aBounds.maxY,
+      )
+      return Math.hypot(dx, dy)
+    }
+
+    let nearbySegments = 0
+    for (const trace of this.existingTracePaths) {
+      if (trace.globalConnNetId === this.connectionPair.globalConnNetId)
+        continue
+      const traceEndpointChipIds = [
+        ...new Set(trace.pins.map((pin) => pin.chipId)),
+      ].sort()
+      if (
+        endpointChipIds.length !== traceEndpointChipIds.length ||
+        endpointChipIds.some(
+          (chipId, index) => chipId !== traceEndpointChipIds[index],
+        )
+      ) {
+        continue
+      }
+
+      for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
+        for (
+          let traceIndex = 0;
+          traceIndex < trace.tracePath.length - 1;
+          traceIndex++
+        ) {
+          if (
+            segmentDistance(
+              path[pathIndex]!,
+              path[pathIndex + 1]!,
+              trace.tracePath[traceIndex]!,
+              trace.tracePath[traceIndex + 1]!,
+            ) < 0.15
+          ) {
+            nearbySegments++
+          }
+        }
+      }
+    }
+
+    return nearbySegments
   }
 
   private countDifferentNetGuideCrossings(path: Point[]): number {
@@ -500,9 +578,17 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     // intermediate or endpoint obstacle. Endpoint chip collisions need the
     // same expansion when both pins face the same direction and the four-point
     // elbow approaches one of the components from behind.
+    const pinDistance = Math.hypot(PA.x - PB.x, PA.y - PB.y)
+    const maxPairDistance = this.inputProblem.maxMspPairDistance
+    const isNearMaximumPairDistance =
+      maxPairDistance !== undefined &&
+      pinDistance > maxPairDistance * 0.9 &&
+      Math.abs(PA.x - PB.x) > Math.abs(PA.y - PB.y)
     const canGenerateEndpointDetour =
       path.length === 3 ||
-      (path.length === 4 && this.connectionPair !== undefined)
+      (path.length === 4 &&
+        this.connectionPair !== undefined &&
+        !isNearMaximumPairDistance)
 
     if (canGenerateEndpointDetour && (isFirstSegment || isLastSegment)) {
       // A three-point detour replaces an L elbow, so the shortest valid route
@@ -515,6 +601,8 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
           ? (a: Point[], b: Point[]) =>
               this.countDifferentNetGuideCrossings(a) -
                 this.countDifferentNetGuideCrossings(b) ||
+              this.countExistingDifferentNetTraceProximity(a) -
+                this.countExistingDifferentNetTraceProximity(b) ||
               this.countProspectivePortLabelOverlaps(a) -
                 this.countProspectivePortLabelOverlaps(b) ||
               this.getPinBandPenalty(a) - this.getPinBandPenalty(b) ||
@@ -522,6 +610,8 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
           : (a: Point[], b: Point[]) =>
               this.countDifferentNetGuideCrossings(a) -
                 this.countDifferentNetGuideCrossings(b) ||
+              this.countExistingDifferentNetTraceProximity(a) -
+                this.countExistingDifferentNetTraceProximity(b) ||
               this.countProspectivePortLabelOverlaps(a) -
                 this.countProspectivePortLabelOverlaps(b) ||
               this.pathLength(a) - this.pathLength(b) ||
