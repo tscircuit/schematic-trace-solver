@@ -7,8 +7,6 @@ import { getComponentSideRailSegments } from "./getComponentSideRailSegments"
 import { nearlyEqual, rangesTouchOrOverlap } from "./geometry"
 import type { RailSegment } from "./types"
 
-const SHARED_PIN_RAIL_JOIN_DISTANCE = 0.05
-
 const getCorridor = (a: RailSegment, b: RailSegment): [Point, Point] => {
   const overlapMin = Math.max(a.minAlong, b.minAlong)
   const overlapMax = Math.min(a.maxAlong, b.maxAlong)
@@ -37,21 +35,67 @@ const corridorIsClear = (
   )
 }
 
-const tracesSharePin = (
+const getPinKey = (pin: SolvedTracePath["pins"][number]) =>
+  `${pin.chipId}::${pin.pinId}`
+
+const getTerminalSegmentAtPin = (
+  trace: SolvedTracePath,
+  pinKey: string,
+): [Point, Point] | null => {
+  const pinIndex = trace.pins.findIndex((pin) => getPinKey(pin) === pinKey)
+  if (pinIndex === 0) return [trace.tracePath[0]!, trace.tracePath[1]!]
+  if (pinIndex === trace.pins.length - 1) {
+    return [
+      trace.tracePath[trace.tracePath.length - 2]!,
+      trace.tracePath[trace.tracePath.length - 1]!,
+    ]
+  }
+  return null
+}
+
+const sharedPinTerminalSegmentsOverlap = (
   a: RailSegment,
   b: RailSegment,
   traceMap: Map<string, SolvedTracePath>,
 ) => {
   if (a.traceId === b.traceId) return true
 
-  const aPinKeys = new Set(
-    traceMap
-      .get(a.traceId)!
-      .pins.map((pin) => `${pin.chipId}::${pin.pinId}`),
-  )
-  return traceMap
-    .get(b.traceId)!
-    .pins.some((pin) => aPinKeys.has(`${pin.chipId}::${pin.pinId}`))
+  const traceA = traceMap.get(a.traceId)!
+  const traceB = traceMap.get(b.traceId)!
+  // Shared-pin junction alignment repairs the duplicated terminal run created
+  // by expanded endpoint detours. Preserve established shorter branch layouts,
+  // whose shared terminal is intentional and may feed several aligned rails.
+  if (traceA.tracePath.length < 6 && traceB.tracePath.length < 6) return false
+
+  const traceBPinKeys = new Set(traceB.pins.map(getPinKey))
+  const sharedPinKey = traceA.pins
+    .map(getPinKey)
+    .find((pinKey) => traceBPinKeys.has(pinKey))
+  if (!sharedPinKey) return false
+
+  const segmentA = getTerminalSegmentAtPin(traceA, sharedPinKey)
+  const segmentB = getTerminalSegmentAtPin(traceB, sharedPinKey)
+  if (!segmentA || !segmentB) return false
+
+  const [aStart, aEnd] = segmentA
+  const [bStart, bEnd] = segmentB
+  const bothHorizontal =
+    nearlyEqual(aStart.y, aEnd.y) &&
+    nearlyEqual(bStart.y, bEnd.y) &&
+    nearlyEqual(aStart.y, bStart.y)
+  const bothVertical =
+    nearlyEqual(aStart.x, aEnd.x) &&
+    nearlyEqual(bStart.x, bEnd.x) &&
+    nearlyEqual(aStart.x, bStart.x)
+  if (!bothHorizontal && !bothVertical) return false
+
+  const overlapLength = bothHorizontal
+    ? Math.min(Math.max(aStart.x, aEnd.x), Math.max(bStart.x, bEnd.x)) -
+      Math.max(Math.min(aStart.x, aEnd.x), Math.min(bStart.x, bEnd.x))
+    : Math.min(Math.max(aStart.y, aEnd.y), Math.max(bStart.y, bEnd.y)) -
+      Math.max(Math.min(aStart.y, aEnd.y), Math.min(bStart.y, bEnd.y))
+
+  return overlapLength > 0
 }
 
 const canJoinRailGroup = (
@@ -60,12 +104,13 @@ const canJoinRailGroup = (
   candidate: RailSegment,
   traceMap: Map<string, SolvedTracePath>,
   obstacles: ObstacleRect[],
+  mode: "component_side" | "shared_pin_junction",
 ) => {
-  const sharePin = tracesSharePin(current, candidate, traceMap)
-  const areNearbySharedPinRails =
-    sharePin &&
-    Math.abs(current.coordinate - candidate.coordinate) <=
-      SHARED_PIN_RAIL_JOIN_DISTANCE
+  const haveOverlappingSharedPinTerminals = sharedPinTerminalSegmentsOverlap(
+    current,
+    candidate,
+    traceMap,
+  )
   const areOnSameComponentSide =
     candidate.componentId === start.componentId &&
     candidate.componentFacingDirection === start.componentFacingDirection
@@ -73,9 +118,10 @@ const canJoinRailGroup = (
   return (
     candidate.globalConnNetId === start.globalConnNetId &&
     candidate.orientation === start.orientation &&
-    (areNearbySharedPinRails ||
-      (areOnSameComponentSide &&
-        rangesTouchOrOverlap(current, candidate))) &&
+    (mode === "shared_pin_junction"
+      ? haveOverlappingSharedPinTerminals
+      : areOnSameComponentSide &&
+        rangesTouchOrOverlap(current, candidate)) &&
     corridorIsClear(current, candidate, obstacles)
   )
 }
@@ -91,43 +137,62 @@ export const getRailGroups = (
     .filter((trace) => eligibleTraceIds.has(trace.mspPairId))
     .flatMap((trace) => getComponentSideRailSegments(trace, chipMap))
   const traceMap = new Map(traces.map((trace) => [trace.mspPairId, trace]))
-  const visited = new Set<number>()
-  const groups: RailSegment[][] = []
 
-  for (let startIndex = 0; startIndex < segments.length; startIndex++) {
-    if (visited.has(startIndex)) continue
+  const collectGroups = (
+    mode: "component_side" | "shared_pin_junction",
+  ): RailSegment[][] => {
+    const visited = new Set<number>()
+    const groups: RailSegment[][] = []
 
-    const start = segments[startIndex]!
-    const queue = [startIndex]
-    const group: RailSegment[] = []
-    visited.add(startIndex)
+    for (let startIndex = 0; startIndex < segments.length; startIndex++) {
+      if (visited.has(startIndex)) continue
 
-    for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
-      const current = segments[queue[queueIndex]!]!
-      group.push(current)
+      const start = segments[startIndex]!
+      const queue = [startIndex]
+      const group: RailSegment[] = []
+      visited.add(startIndex)
 
-      for (
-        let candidateIndex = 0;
-        candidateIndex < segments.length;
-        candidateIndex++
-      ) {
-        if (visited.has(candidateIndex)) continue
-        const candidate = segments[candidateIndex]!
-        if (!canJoinRailGroup(start, current, candidate, traceMap, obstacles)) {
-          continue
+      for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
+        const current = segments[queue[queueIndex]!]!
+        group.push(current)
+
+        for (
+          let candidateIndex = 0;
+          candidateIndex < segments.length;
+          candidateIndex++
+        ) {
+          if (visited.has(candidateIndex)) continue
+          const candidate = segments[candidateIndex]!
+          if (
+            !canJoinRailGroup(
+              start,
+              current,
+              candidate,
+              traceMap,
+              obstacles,
+              mode,
+            )
+          ) {
+            continue
+          }
+
+          visited.add(candidateIndex)
+          queue.push(candidateIndex)
         }
-
-        visited.add(candidateIndex)
-        queue.push(candidateIndex)
       }
+
+      const traceCount = new Set(group.map((segment) => segment.traceId)).size
+      const hasDifferentCoordinates = group.some(
+        (segment) => !nearlyEqual(segment.coordinate, group[0]!.coordinate),
+      )
+      if (traceCount >= 2 && hasDifferentCoordinates) groups.push(group)
     }
 
-    const traceCount = new Set(group.map((segment) => segment.traceId)).size
-    const hasDifferentCoordinates = group.some(
-      (segment) => !nearlyEqual(segment.coordinate, group[0]!.coordinate),
-    )
-    if (traceCount >= 2 && hasDifferentCoordinates) groups.push(group)
+    return groups
   }
 
-  return groups
+  return [
+    ...collectGroups("component_side"),
+    ...collectGroups("shared_pin_junction"),
+  ]
 }
