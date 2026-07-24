@@ -404,28 +404,22 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     // elbow approaches one of the components from behind.
     const pinDistance = Math.hypot(PA.x - PB.x, PA.y - PB.y)
     const maxPairDistance = this.inputProblem.maxMspPairDistance
+    const isMostlyHorizontal = Math.abs(PA.x - PB.x) > Math.abs(PA.y - PB.y)
+    const userNetId = this.connectionPair?.userNetId
+    const netConnection = this.inputProblem.netConnections.find(
+      (candidate) => userNetId !== undefined && candidate.netId === userNetId,
+    )
     const isNearMaximumPairDistance =
       maxPairDistance !== undefined &&
       pinDistance > maxPairDistance * 0.9 &&
-      Math.abs(PA.x - PB.x) > Math.abs(PA.y - PB.y)
-    const isNetConnection =
-      this.connectionPair?.userNetId !== undefined &&
-      this.inputProblem.netConnections.some(
-        (netConnection) =>
-          netConnection.netId === this.connectionPair!.userNetId,
-      )
+      isMostlyHorizontal
     const isMultiPinNetConnection =
-      this.connectionPair?.userNetId !== undefined &&
-      this.inputProblem.netConnections.some(
-        (netConnection) =>
-          netConnection.netId === this.connectionPair!.userNetId &&
-          netConnection.pinIds.length > 2,
-      )
+      netConnection !== undefined && netConnection.pinIds.length > 2
     const isLongHorizontalNetConnection =
-      isNetConnection &&
+      netConnection !== undefined &&
       maxPairDistance !== undefined &&
       pinDistance > maxPairDistance * 0.7 &&
-      Math.abs(PA.x - PB.x) > Math.abs(PA.y - PB.y)
+      isMostlyHorizontal
     const canGenerateEndpointDetour =
       path.length === 3 ||
       (path.length === 4 &&
