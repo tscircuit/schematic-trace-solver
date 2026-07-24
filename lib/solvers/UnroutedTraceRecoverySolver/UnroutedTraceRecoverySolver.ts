@@ -18,6 +18,14 @@ import type { FacingDirection } from "lib/utils/dir"
 
 const ROUTE_CLEARANCE = 0.2
 const COORDINATE_TOLERANCE = 1e-9
+const GROUND_NET_NAME = "GND"
+
+const isGroundConnectionPair = (connectionPair: MspConnectionPair): boolean => {
+  if (!connectionPair.userNetId) {
+    return false
+  }
+  return connectionPair.userNetId.toUpperCase().includes(GROUND_NET_NAME)
+}
 
 const pointsAreEqual = (firstPoint: Point, secondPoint: Point): boolean => {
   return (
@@ -432,6 +440,9 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
     const connectionPair = this.queuedConnectionPairs.shift()
     if (!connectionPair) {
       this.solved = true
+      return
+    }
+    if (isGroundConnectionPair(connectionPair)) {
       return
     }
 
