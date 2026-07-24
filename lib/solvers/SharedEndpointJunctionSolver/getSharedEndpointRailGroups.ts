@@ -49,11 +49,16 @@ const terminalSegmentsOverlapAtSharedPin = (
     nearlyEqual(aStart.x, bStart.x)
   if (!bothHorizontal && !bothVertical) return false
 
-  const overlapLength = bothHorizontal
-    ? Math.min(Math.max(aStart.x, aEnd.x), Math.max(bStart.x, bEnd.x)) -
+  let overlapLength: number
+  if (bothHorizontal) {
+    overlapLength =
+      Math.min(Math.max(aStart.x, aEnd.x), Math.max(bStart.x, bEnd.x)) -
       Math.max(Math.min(aStart.x, aEnd.x), Math.min(bStart.x, bEnd.x))
-    : Math.min(Math.max(aStart.y, aEnd.y), Math.max(bStart.y, bEnd.y)) -
+  } else {
+    overlapLength =
+      Math.min(Math.max(aStart.y, aEnd.y), Math.max(bStart.y, bEnd.y)) -
       Math.max(Math.min(aStart.y, aEnd.y), Math.min(bStart.y, bEnd.y))
+  }
 
   return overlapLength > 0
 }
