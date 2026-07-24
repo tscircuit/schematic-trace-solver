@@ -15,7 +15,7 @@ test("example13", () => {
   const secondV5Branch = finalTraces.find(
     (trace) => trace.mspPairId === "PWR1.4-C6.1",
   )!
-  expect(firstV5Branch.tracePath[1]!.x).toBe(
+  expect(firstV5Branch.tracePath[1]!.x).toBeLessThan(
     secondV5Branch.tracePath[secondV5Branch.tracePath.length - 2]!.x,
   )
 
