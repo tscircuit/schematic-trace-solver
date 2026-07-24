@@ -322,11 +322,20 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
             paddingBuffer: 0.1,
             operations: ["aligning_same_net_rails"],
-            eligibleTraceIds: new Set(
-              instance
+            eligibleTraceIds: new Set([
+              ...instance
                 .traceCleanupSolver!.getOutput()
                 .traces.map((trace) => trace.mspPairId),
-            ),
+              // Generated net-label connector traces don't exist yet at the
+              // first cleanup pass, but they should still be pulled onto
+              // nearby same-net rails instead of running parallel to them
+              // (#34)
+              ...collisionOutput.traces
+                .filter((trace) =>
+                  trace.mspPairId.startsWith("available-net-orientation"),
+                )
+                .map((trace) => trace.mspPairId),
+            ]),
           },
         ]
       },
