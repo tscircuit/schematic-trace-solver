@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test"
 import { countPathIntersections } from "lib/solvers/Example28Solver/geometry"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { segmentOverlapsRectBoundary } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { chipToRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import inputProblem from "./bug-report-20260724T175257Z.json"
 import "tests/fixtures/matcher"
 
@@ -38,6 +40,19 @@ test("routes a failed connection only when it does not cross existing traces", (
   ).toBeLessThan(c1Bottom)
 
   for (const recoveredTrace of recoveredTraces) {
+    for (
+      let pointIndex = 0;
+      pointIndex < recoveredTrace.tracePath.length - 1;
+      pointIndex++
+    ) {
+      const startPoint = recoveredTrace.tracePath[pointIndex]!
+      const endPoint = recoveredTrace.tracePath[pointIndex + 1]!
+      for (const chip of solver.inputProblem.chips) {
+        expect(
+          segmentOverlapsRectBoundary(startPoint, endPoint, chipToRect(chip)),
+        ).toBe(false)
+      }
+    }
     for (const existingTrace of alreadySolvedTraces) {
       if (recoveredTrace.globalConnNetId === existingTrace.globalConnNetId) {
         expect(

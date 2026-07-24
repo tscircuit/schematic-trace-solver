@@ -11,6 +11,7 @@ import {
   findFirstCollision,
   isHorizontal,
   isVertical,
+  segmentOverlapsRectBoundary,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import {
   getObstacleRects,
@@ -272,10 +273,12 @@ const pathCollidesWithObstacles = ({
   path,
   obstacles,
   connectionPair,
+  rejectComponentBoundaryTravel,
 }: {
   path: Point[]
   obstacles: ObstacleRect[]
   connectionPair: MspConnectionPair
+  rejectComponentBoundaryTravel: boolean
 }): boolean => {
   const firstPathPoint = path[0]!
   const lastPathPoint = path.at(-1)!
@@ -285,6 +288,8 @@ const pathCollidesWithObstacles = ({
   const lastPathPin = connectionPair.pins.find((pin) =>
     pointsAreEqual(pin, lastPathPoint),
   )
+  const pathConnectsPairPins =
+    firstPathPin !== undefined && lastPathPin !== undefined
   const firstChipObstacle = obstacles.find(
     (obstacle) =>
       obstacle.kind === "chip" && obstacle.chipId === firstPathPin?.chipId,
@@ -293,19 +298,61 @@ const pathCollidesWithObstacles = ({
     (obstacle) =>
       obstacle.kind === "chip" && obstacle.chipId === lastPathPin?.chipId,
   )
+  if (
+    rejectComponentBoundaryTravel &&
+    firstChipObstacle &&
+    segmentOverlapsRectBoundary(path[0]!, path[1]!, firstChipObstacle)
+  ) {
+    return true
+  }
+  if (
+    rejectComponentBoundaryTravel &&
+    secondChipObstacle &&
+    segmentOverlapsRectBoundary(
+      path[path.length - 2]!,
+      path[path.length - 1]!,
+      secondChipObstacle,
+    )
+  ) {
+    return true
+  }
   const collision = findFirstCollision(path, obstacles, {
     excludeRectsForSegment: (segmentIndex) => {
       const excludedObstacles = new Set<ObstacleRect>()
       if (segmentIndex === 0 && firstChipObstacle) {
         excludedObstacles.add(firstChipObstacle)
       }
-      if (segmentIndex === path.length - 2 && secondChipObstacle) {
+      if (
+        pathConnectsPairPins &&
+        segmentIndex === path.length - 2 &&
+        secondChipObstacle
+      ) {
         excludedObstacles.add(secondChipObstacle)
       }
       return excludedObstacles
     },
   })
   return collision !== null
+}
+
+const hasParallelFailedConnection = ({
+  connectionPair,
+  failedConnectionPairs,
+}: {
+  connectionPair: MspConnectionPair
+  failedConnectionPairs: MspConnectionPair[]
+}): boolean => {
+  const connectionChipIds = new Set(
+    connectionPair.pins.map((pin) => pin.chipId),
+  )
+  return failedConnectionPairs.some((otherConnectionPair) => {
+    if (otherConnectionPair.mspPairId === connectionPair.mspPairId) {
+      return false
+    }
+    return otherConnectionPair.pins.every((pin) =>
+      connectionChipIds.has(pin.chipId),
+    )
+  })
 }
 
 const segmentsOverlapBeyondEndpoint = ({
@@ -418,6 +465,7 @@ const pathCrossesExistingTraces = ({
 export class UnroutedTraceRecoverySolver extends BaseSolver {
   private inputProblem: InputProblem
   private alreadySolvedTraces: SolvedTracePath[]
+  private failedConnectionPairs: MspConnectionPair[]
   private queuedConnectionPairs: MspConnectionPair[]
   private maxConnectionDistance: number
   private groundGlobalConnNetId?: string
@@ -433,6 +481,7 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
     super()
     this.inputProblem = params.inputProblem
     this.alreadySolvedTraces = params.alreadySolvedTraces
+    this.failedConnectionPairs = params.failedConnectionPairs
     this.queuedConnectionPairs = [...params.failedConnectionPairs]
     this.maxConnectionDistance =
       this.inputProblem.maxMspPairDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
@@ -482,6 +531,10 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
       obstacles,
     })
     const candidates = [...junctionCandidates, ...perimeterCandidates]
+    const rejectComponentBoundaryTravel = hasParallelFailedConnection({
+      connectionPair,
+      failedConnectionPairs: this.failedConnectionPairs,
+    })
 
     for (const tracePath of candidates) {
       if (
@@ -489,6 +542,7 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
           path: tracePath,
           obstacles,
           connectionPair,
+          rejectComponentBoundaryTravel,
         })
       ) {
         continue
