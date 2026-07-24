@@ -61,11 +61,6 @@ const calculateElbowForPins = ({
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
   connectionPair?: MspConnectionPair
-  existingTracePaths: Array<{
-    globalConnNetId: string
-    tracePath: Point[]
-    pins: Array<{ chipId: string; pinId: string }>
-  }>
   inputProblem: InputProblem
   chipMap: Record<string, InputChip>
 
@@ -85,18 +80,12 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   constructor(params: {
     pins: MspConnectionPair["pins"]
     connectionPair?: MspConnectionPair
-    existingTracePaths?: Array<{
-      globalConnNetId: string
-      tracePath: Point[]
-      pins: Array<{ chipId: string; pinId: string }>
-    }>
     inputProblem: InputProblem
     chipMap: Record<string, InputChip>
   }) {
     super()
     this.pins = params.pins
     this.connectionPair = params.connectionPair
-    this.existingTracePaths = params.existingTracePaths ?? []
     this.inputProblem = params.inputProblem
     this.chipMap = params.chipMap
 
@@ -173,7 +162,6 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       chipMap: this.chipMap,
       pins: this.pins,
       connectionPair: this.connectionPair,
-      existingTracePaths: this.existingTracePaths,
       inputProblem: this.inputProblem,
     }
   }
@@ -431,19 +419,12 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       maxPairDistance !== undefined &&
       pinDistance > maxPairDistance * 0.7 &&
       Math.abs(PA.x - PB.x) > Math.abs(PA.y - PB.y)
-    const currentPinIds = new Set(this.pins.map((pin) => pin.pinId))
-    const hasExistingSameNetBranchAtEndpoint = this.existingTracePaths.some(
-      (trace) =>
-        trace.globalConnNetId === this.connectionPair?.globalConnNetId &&
-        trace.pins.some((pin) => currentPinIds.has(pin.pinId)),
-    )
     const canGenerateEndpointDetour =
       path.length === 3 ||
       (path.length === 4 &&
         this.connectionPair !== undefined &&
         !isNearMaximumPairDistance &&
-        !isLongHorizontalNetConnection &&
-        !(isNetConnection && hasExistingSameNetBranchAtEndpoint))
+        !isLongHorizontalNetConnection)
 
     if (canGenerateEndpointDetour && (isFirstSegment || isLastSegment)) {
       // A three-point detour replaces an L elbow, so the shortest valid route
