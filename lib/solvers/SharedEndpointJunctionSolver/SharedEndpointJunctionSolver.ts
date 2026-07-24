@@ -16,12 +16,10 @@ interface SharedEndpointJunctionSolverInput {
 }
 
 export class SharedEndpointJunctionSolver extends BaseSolver {
-  private readonly input: SharedEndpointJunctionSolverInput
   private outputTraces: SolvedTracePath[]
 
-  constructor(input: SharedEndpointJunctionSolverInput) {
+  constructor(private readonly input: SharedEndpointJunctionSolverInput) {
     super()
-    this.input = input
     this.outputTraces = input.traces
     this.MAX_ITERATIONS = Math.max(
       1,
@@ -32,24 +30,30 @@ export class SharedEndpointJunctionSolver extends BaseSolver {
     )
   }
 
+  override getConstructorParams(): SharedEndpointJunctionSolverInput {
+    return this.input
+  }
+
   override _step() {
-    const obstacles = getObstacleRects(this.input.inputProblem)
-    const groups = getSharedEndpointRailGroups(
-      this.outputTraces,
-      this.input.eligibleTraceIds,
-      this.input.inputProblem,
-    )
+    const { inputProblem, eligibleTraceIds, netLabelPlacements } = this.input
+    const obstacles = getObstacleRects(inputProblem)
+    const groups = getSharedEndpointRailGroups({
+      traces: this.outputTraces,
+      eligibleTraceIds,
+      inputProblem,
+    })
 
     for (const group of groups) {
       const candidate = evaluateRailGroup({
         group,
         traces: this.outputTraces,
-        netLabelPlacements: this.input.netLabelPlacements,
+        netLabelPlacements,
         obstacles,
-        eligibleTraceIds: this.input.eligibleTraceIds,
+        eligibleTraceIds,
       })
       if (!candidate) continue
 
+      // Apply one junction at a time, then rebuild candidates from its new geometry.
       this.outputTraces = candidate.traces
       this.stats.junctionCount = (this.stats.junctionCount ?? 0) + 1
       return
@@ -67,15 +71,13 @@ export class SharedEndpointJunctionSolver extends BaseSolver {
       chipAlpha: 0.1,
       connectionAlpha: 0.1,
     })
-    graphics.lines = [
-      ...(graphics.lines ?? []),
-      ...this.outputTraces.map(
-        (trace): Line => ({
-          points: trace.tracePath,
-          strokeColor: "blue",
-        }),
-      ),
-    ]
+    const traceLines = this.outputTraces.map(
+      (trace): Line => ({
+        points: trace.tracePath,
+        strokeColor: "blue",
+      }),
+    )
+    graphics.lines = [...(graphics.lines ?? []), ...traceLines]
     return graphics
   }
 }
