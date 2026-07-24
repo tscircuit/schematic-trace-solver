@@ -7,8 +7,6 @@ import { getComponentSideRailSegments } from "./getComponentSideRailSegments"
 import { nearlyEqual, rangesTouchOrOverlap } from "./geometry"
 import type { RailSegment } from "./types"
 
-const SHARED_PIN_RAIL_JOIN_DISTANCE = 0.05
-
 const getCorridor = (a: RailSegment, b: RailSegment): [Point, Point] => {
   const overlapMin = Math.max(a.minAlong, b.minAlong)
   const overlapMax = Math.min(a.maxAlong, b.maxAlong)
@@ -40,17 +38,6 @@ const corridorIsClear = (
 const getPinKey = (pin: SolvedTracePath["pins"][number]) =>
   `${pin.chipId}::${pin.pinId}`
 
-const tracesSharePin = (
-  a: RailSegment,
-  b: RailSegment,
-  traceMap: Map<string, SolvedTracePath>,
-) => {
-  const aPinKeys = new Set(traceMap.get(a.traceId)!.pins.map(getPinKey))
-  return traceMap
-    .get(b.traceId)!
-    .pins.some((pin) => aPinKeys.has(getPinKey(pin)))
-}
-
 const getTerminalSegmentAtPin = (
   trace: SolvedTracePath,
   pinKey: string,
@@ -75,23 +62,10 @@ const sharedPinTerminalSegmentsOverlap = (
 
   const traceA = traceMap.get(a.traceId)!
   const traceB = traceMap.get(b.traceId)!
-  // Shared-pin junction alignment repairs the transition between one expanded
-  // endpoint detour and one normal neighboring branch. Two normal branches
-  // already have an intentional layout, while moving one of two expanded
-  // detours can pull its outer rail back toward an endpoint component.
-  const traceAIsExpandedDetour = traceA.tracePath.length >= 6
-  const traceBIsExpandedDetour = traceB.tracePath.length >= 6
-  if (traceAIsExpandedDetour === traceBIsExpandedDetour) return false
-  const traceAChipIds = [
-    ...new Set(traceA.pins.map((pin) => pin.chipId)),
-  ].sort()
-  const traceBChipIds = [
-    ...new Set(traceB.pins.map((pin) => pin.chipId)),
-  ].sort()
-  const connectSameComponentPair =
-    traceAChipIds.length === traceBChipIds.length &&
-    traceAChipIds.every((chipId, index) => chipId === traceBChipIds[index])
-  if (connectSameComponentPair) return false
+  // Shared-pin junction alignment repairs the duplicated terminal run created
+  // by expanded endpoint detours. Preserve established shorter branch layouts,
+  // whose shared terminal is intentional and may feed several aligned rails.
+  if (traceA.tracePath.length < 6 && traceB.tracePath.length < 6) return false
 
   const traceBPinKeys = new Set(traceB.pins.map(getPinKey))
   const sharedPinKey = traceA.pins
@@ -130,12 +104,13 @@ const canJoinRailGroup = (
   candidate: RailSegment,
   traceMap: Map<string, SolvedTracePath>,
   obstacles: ObstacleRect[],
+  mode: "component_side" | "shared_pin_junction",
 ) => {
-  const haveOverlappingSharedPinTerminals =
-    (tracesSharePin(current, candidate, traceMap) &&
-      Math.abs(current.coordinate - candidate.coordinate) <=
-        SHARED_PIN_RAIL_JOIN_DISTANCE) ||
-    sharedPinTerminalSegmentsOverlap(current, candidate, traceMap)
+  const haveOverlappingSharedPinTerminals = sharedPinTerminalSegmentsOverlap(
+    current,
+    candidate,
+    traceMap,
+  )
   const areOnSameComponentSide =
     candidate.componentId === start.componentId &&
     candidate.componentFacingDirection === start.componentFacingDirection
@@ -143,8 +118,9 @@ const canJoinRailGroup = (
   return (
     candidate.globalConnNetId === start.globalConnNetId &&
     candidate.orientation === start.orientation &&
-    (haveOverlappingSharedPinTerminals ||
-      (areOnSameComponentSide && rangesTouchOrOverlap(current, candidate))) &&
+    (mode === "shared_pin_junction"
+      ? haveOverlappingSharedPinTerminals
+      : areOnSameComponentSide && rangesTouchOrOverlap(current, candidate)) &&
     corridorIsClear(current, candidate, obstacles)
   )
 }
@@ -160,36 +136,40 @@ export const getRailGroups = (
     .filter((trace) => eligibleTraceIds.has(trace.mspPairId))
     .flatMap((trace) => getComponentSideRailSegments(trace, chipMap))
   const traceMap = new Map(traces.map((trace) => [trace.mspPairId, trace]))
-  const collectGroups = (): RailSegment[][] => {
-    const segmentsForMode = segments
+  const collectGroups = (
+    mode: "component_side" | "shared_pin_junction",
+  ): RailSegment[][] => {
     const visited = new Set<number>()
     const groups: RailSegment[][] = []
 
-    for (
-      let startIndex = 0;
-      startIndex < segmentsForMode.length;
-      startIndex++
-    ) {
+    for (let startIndex = 0; startIndex < segments.length; startIndex++) {
       if (visited.has(startIndex)) continue
 
-      const start = segmentsForMode[startIndex]!
+      const start = segments[startIndex]!
       const queue = [startIndex]
       const group: RailSegment[] = []
       visited.add(startIndex)
 
       for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
-        const current = segmentsForMode[queue[queueIndex]!]!
+        const current = segments[queue[queueIndex]!]!
         group.push(current)
 
         for (
           let candidateIndex = 0;
-          candidateIndex < segmentsForMode.length;
+          candidateIndex < segments.length;
           candidateIndex++
         ) {
           if (visited.has(candidateIndex)) continue
-          const candidate = segmentsForMode[candidateIndex]!
+          const candidate = segments[candidateIndex]!
           if (
-            !canJoinRailGroup(start, current, candidate, traceMap, obstacles)
+            !canJoinRailGroup(
+              start,
+              current,
+              candidate,
+              traceMap,
+              obstacles,
+              mode,
+            )
           ) {
             continue
           }
@@ -209,5 +189,8 @@ export const getRailGroups = (
     return groups
   }
 
-  return collectGroups()
+  return [
+    ...collectGroups("component_side"),
+    ...collectGroups("shared_pin_junction"),
+  ]
 }

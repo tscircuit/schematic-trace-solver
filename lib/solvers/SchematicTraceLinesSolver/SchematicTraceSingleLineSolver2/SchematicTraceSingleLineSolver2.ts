@@ -3,7 +3,11 @@ import { calculateElbow } from "calculate-elbow"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import { getDimsForOrientation } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import {
+  getCenterFromAnchor,
+  getDimsForOrientation,
+  getRectBounds,
+} from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
@@ -62,6 +66,11 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
   connectionPair?: MspConnectionPair
   otherConnectionPairs: MspConnectionPair[]
+  existingTracePaths: Array<{
+    globalConnNetId: string
+    tracePath: Point[]
+    pins: Array<{ chipId: string }>
+  }>
   inputProblem: InputProblem
   chipMap: Record<string, InputChip>
 
@@ -82,6 +91,11 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     pins: MspConnectionPair["pins"]
     connectionPair?: MspConnectionPair
     otherConnectionPairs?: MspConnectionPair[]
+    existingTracePaths?: Array<{
+      globalConnNetId: string
+      tracePath: Point[]
+      pins: Array<{ chipId: string }>
+    }>
     inputProblem: InputProblem
     chipMap: Record<string, InputChip>
   }) {
@@ -89,6 +103,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     this.pins = params.pins
     this.connectionPair = params.connectionPair
     this.otherConnectionPairs = params.otherConnectionPairs ?? []
+    this.existingTracePaths = params.existingTracePaths ?? []
     this.inputProblem = params.inputProblem
     this.chipMap = params.chipMap
 
@@ -166,8 +181,75 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       pins: this.pins,
       connectionPair: this.connectionPair,
       otherConnectionPairs: this.otherConnectionPairs,
+      existingTracePaths: this.existingTracePaths,
       inputProblem: this.inputProblem,
     }
+  }
+
+  private countExistingDifferentNetTraceProximity(path: Point[]): number {
+    if (!this.connectionPair) return 0
+    const endpointChipIds = [
+      ...new Set(this.pins.map((pin) => pin.chipId)),
+    ].sort()
+
+    const segmentDistance = (
+      aStart: Point,
+      aEnd: Point,
+      bStart: Point,
+      bEnd: Point,
+    ) => {
+      const aBounds = aabbFromPoints(aStart, aEnd)
+      const bBounds = aabbFromPoints(bStart, bEnd)
+      const dx = Math.max(
+        0,
+        aBounds.minX - bBounds.maxX,
+        bBounds.minX - aBounds.maxX,
+      )
+      const dy = Math.max(
+        0,
+        aBounds.minY - bBounds.maxY,
+        bBounds.minY - aBounds.maxY,
+      )
+      return Math.hypot(dx, dy)
+    }
+
+    let nearbySegments = 0
+    for (const trace of this.existingTracePaths) {
+      if (trace.globalConnNetId === this.connectionPair.globalConnNetId)
+        continue
+      const traceEndpointChipIds = [
+        ...new Set(trace.pins.map((pin) => pin.chipId)),
+      ].sort()
+      if (
+        endpointChipIds.length !== traceEndpointChipIds.length ||
+        endpointChipIds.some(
+          (chipId, index) => chipId !== traceEndpointChipIds[index],
+        )
+      ) {
+        continue
+      }
+
+      for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
+        for (
+          let traceIndex = 0;
+          traceIndex < trace.tracePath.length - 1;
+          traceIndex++
+        ) {
+          if (
+            segmentDistance(
+              path[pathIndex]!,
+              path[pathIndex + 1]!,
+              trace.tracePath[traceIndex]!,
+              trace.tracePath[traceIndex + 1]!,
+            ) < 0.15
+          ) {
+            nearbySegments++
+          }
+        }
+      }
+    }
+
+    return nearbySegments
   }
 
   private countDifferentNetGuideCrossings(path: Point[]): number {
@@ -195,6 +277,69 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     }
 
     return crossings
+  }
+
+  private countProspectivePortLabelOverlaps(path: Point[]): number {
+    const pinsInPrimaryPairs = new Set(
+      [this.connectionPair, ...this.otherConnectionPairs]
+        .filter((pair): pair is MspConnectionPair => pair !== undefined)
+        .flatMap((pair) => pair.pins.map((pin) => pin.pinId)),
+    )
+    const pinMap = new Map(
+      this.inputProblem.chips.flatMap((chip) =>
+        chip.pins.map((pin) => [pin.pinId, pin] as const),
+      ),
+    )
+
+    let overlaps = 0
+    for (const netConnection of this.inputProblem.netConnections) {
+      if (netConnection.netId === this.connectionPair?.userNetId) continue
+
+      const orientations =
+        this.inputProblem.availableNetLabelOrientations[netConnection.netId] ??
+        (["x+", "x-", "y+", "y-"] as FacingDirection[])
+
+      for (const pinId of netConnection.pinIds) {
+        if (pinsInPrimaryPairs.has(pinId)) continue
+        const pin = pinMap.get(pinId)
+        if (!pin) continue
+
+        const leastOverlapsForAnOrientation = Math.min(
+          ...orientations.map((orientation) => {
+            const { width, height } = getDimsForOrientation({
+              orientation,
+              netLabelWidth: netConnection.netLabelWidth,
+              netLabelHeight: netConnection.netLabelHeight,
+            })
+            const labelBounds = getRectBounds(
+              getCenterFromAnchor(pin, orientation, width, height),
+              width,
+              height,
+            )
+            const clearance = 0.1
+            const bounds = {
+              minX: labelBounds.minX - clearance,
+              minY: labelBounds.minY - clearance,
+              maxX: labelBounds.maxX + clearance,
+              maxY: labelBounds.maxY + clearance,
+            }
+            return path
+              .slice(0, -1)
+              .reduce(
+                (count, point, index) =>
+                  count +
+                  Number(
+                    segmentIntersectsRect(point, path[index + 1]!, bounds),
+                  ),
+                0,
+              )
+          }),
+        )
+        overlaps += leastOverlapsForAnOrientation
+      }
+    }
+
+    return overlaps
   }
 
   private getTextBoxPaddingForConnectionPair(): RectPadding {
@@ -456,11 +601,19 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
           ? (a: Point[], b: Point[]) =>
               this.countDifferentNetGuideCrossings(a) -
                 this.countDifferentNetGuideCrossings(b) ||
+              this.countExistingDifferentNetTraceProximity(a) -
+                this.countExistingDifferentNetTraceProximity(b) ||
+              this.countProspectivePortLabelOverlaps(a) -
+                this.countProspectivePortLabelOverlaps(b) ||
               this.getPinBandPenalty(a) - this.getPinBandPenalty(b) ||
               this.pathLength(a) - this.pathLength(b)
           : (a: Point[], b: Point[]) =>
               this.countDifferentNetGuideCrossings(a) -
                 this.countDifferentNetGuideCrossings(b) ||
+              this.countExistingDifferentNetTraceProximity(a) -
+                this.countExistingDifferentNetTraceProximity(b) ||
+              this.countProspectivePortLabelOverlaps(a) -
+                this.countProspectivePortLabelOverlaps(b) ||
               this.pathLength(a) - this.pathLength(b) ||
               this.getPinBandPenalty(a) - this.getPinBandPenalty(b)
       const detours = generateEndpointCollisionDetours({
