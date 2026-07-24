@@ -42,8 +42,14 @@ const tracesSharePin = (
 ) => {
   if (a.traceId === b.traceId) return true
 
-  const aPinIds = new Set(traceMap.get(a.traceId)!.pins.map((pin) => pin.pinId))
-  return traceMap.get(b.traceId)!.pins.some((pin) => aPinIds.has(pin.pinId))
+  const aPinKeys = new Set(
+    traceMap
+      .get(a.traceId)!
+      .pins.map((pin) => `${pin.chipId}::${pin.pinId}`),
+  )
+  return traceMap
+    .get(b.traceId)!
+    .pins.some((pin) => aPinKeys.has(`${pin.chipId}::${pin.pinId}`))
 }
 
 const canJoinRailGroup = (
@@ -52,14 +58,21 @@ const canJoinRailGroup = (
   candidate: RailSegment,
   traceMap: Map<string, SolvedTracePath>,
   obstacles: ObstacleRect[],
-) =>
-  candidate.globalConnNetId === start.globalConnNetId &&
-  candidate.orientation === start.orientation &&
-  candidate.componentId === start.componentId &&
-  candidate.componentFacingDirection === start.componentFacingDirection &&
-  (rangesTouchOrOverlap(current, candidate) ||
-    tracesSharePin(current, candidate, traceMap)) &&
-  corridorIsClear(current, candidate, obstacles)
+) => {
+  const sharePin = tracesSharePin(current, candidate, traceMap)
+  const areOnSameComponentSide =
+    candidate.componentId === start.componentId &&
+    candidate.componentFacingDirection === start.componentFacingDirection
+
+  return (
+    candidate.globalConnNetId === start.globalConnNetId &&
+    candidate.orientation === start.orientation &&
+    (sharePin ||
+      (areOnSameComponentSide &&
+        rangesTouchOrOverlap(current, candidate))) &&
+    corridorIsClear(current, candidate, obstacles)
+  )
+}
 
 export const getRailGroups = (
   traces: SolvedTracePath[],
