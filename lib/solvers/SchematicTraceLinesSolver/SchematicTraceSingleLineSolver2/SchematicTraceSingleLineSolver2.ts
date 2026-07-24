@@ -1,4 +1,4 @@
-import { doSegmentsIntersect, type Point } from "@tscircuit/math-utils"
+import type { Point } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
@@ -211,45 +211,6 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     }
 
     return padding
-  }
-
-  private countDifferentTwoPinNetGuideCrossings(path: Point[]): number {
-    const pinMap = new Map(
-      this.inputProblem.chips.flatMap((chip) =>
-        chip.pins.map((pin) => [pin.pinId, pin] as const),
-      ),
-    )
-    const currentPinIds = new Set(this.pins.map((pin) => pin.pinId))
-    let crossings = 0
-
-    for (const netConnection of this.inputProblem.netConnections) {
-      if (
-        netConnection.pinIds.length !== 2 ||
-        netConnection.netId === this.connectionPair?.userNetId ||
-        netConnection.pinIds.some((pinId) => currentPinIds.has(pinId))
-      ) {
-        continue
-      }
-
-      const guideStart = pinMap.get(netConnection.pinIds[0]!)
-      const guideEnd = pinMap.get(netConnection.pinIds[1]!)
-      if (!guideStart || !guideEnd) continue
-
-      for (let index = 0; index < path.length - 1; index++) {
-        if (
-          doSegmentsIntersect(
-            path[index]!,
-            path[index + 1]!,
-            guideStart,
-            guideEnd,
-          )
-        ) {
-          crossings++
-        }
-      }
-    }
-
-    return crossings
   }
 
   private getNetLabelWidthForConnectionPair(netId: string) {
@@ -481,13 +442,9 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       const compareDetours =
         path.length === 4
           ? (a: Point[], b: Point[]) =>
-              this.countDifferentTwoPinNetGuideCrossings(a) -
-                this.countDifferentTwoPinNetGuideCrossings(b) ||
               this.getPinBandPenalty(a) - this.getPinBandPenalty(b) ||
               this.pathLength(a) - this.pathLength(b)
           : (a: Point[], b: Point[]) =>
-              this.countDifferentTwoPinNetGuideCrossings(a) -
-                this.countDifferentTwoPinNetGuideCrossings(b) ||
               this.pathLength(a) - this.pathLength(b) ||
               this.getPinBandPenalty(a) - this.getPinBandPenalty(b)
       const detours = generateEndpointCollisionDetours({
