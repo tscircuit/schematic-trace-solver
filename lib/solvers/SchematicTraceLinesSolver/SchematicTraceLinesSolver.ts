@@ -111,7 +111,6 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       pins,
       connectionPair,
-      otherConnectionPairs: this.queuedConnectionPairs,
       existingTracePaths: this.solvedTracePaths,
       chipMap: this.chipMap,
     })
