@@ -1,0 +1,117 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 1.1,
+      "height": 0.54,
+      "pins": [
+        {
+          "pinId": "Y1.1",
+          "x": -0.55,
+          "y": 0,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "Y1.2",
+          "x": 0.55,
+          "y": 0,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -0.41500000000000004,
+        "y": -1.52
+      },
+      "width": 0.9199999999999999,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "C19.1",
+          "x": -0.55,
+          "y": -1.1400000000000001,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C19.2",
+          "x": -0.55,
+          "y": -1.9,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": 0.685,
+        "y": -1.52
+      },
+      "width": 0.9199999999999999,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "C20.1",
+          "x": 0.55,
+          "y": -1.1400000000000001,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C20.2",
+          "x": 0.55,
+          "y": -1.9,
+          "_facingDirection": "y-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "XIN",
+      "pinIds": [
+        "Y1.1",
+        "C19.1"
+      ],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "XOUT",
+      "pinIds": [
+        "Y1.2",
+        "C20.1"
+      ],
+      "netLabelWidth": 0.6
+    },
+    {
+      "netId": "GND",
+      "pinIds": [
+        "C19.2",
+        "C20.2"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "XIN": [
+      "x-",
+      "x+"
+    ],
+    "XOUT": [
+      "x-",
+      "x+"
+    ],
+    "GND": [
+      "y-"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
