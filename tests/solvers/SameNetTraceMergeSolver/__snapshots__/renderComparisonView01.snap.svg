@@ -1,0 +1,87 @@
+<svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="white" />
+  <g>
+    <circle data-type="point" data-label="" data-x="3.6" data-y="0" cx="321.27764565264715" cy="600" r="3" fill="black" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="" data-x="3.6" data-y="5" cx="321.27764565264715" cy="320.0585777426074" r="3" fill="black" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="" data-x="3.5256" data-y="4" cx="317.11211728945716" cy="376.04686219408586" r="3" fill="black" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="" data-x="3.5256" data-y="10" cx="317.11211728945716" cy="40.11715548521477" r="3" fill="black" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="" data-x="3.6093" data-y="0" cx="321.79833669804594" cy="600" r="3" fill="black" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="" data-x="3.6093" data-y="10" cx="321.79833669804594" cy="40.11715548521477" r="3" fill="black" />
+  </g>
+  <g>
+    <polyline data-points="3.6,0 3.6,5" data-type="line" data-label="" points="321.27764565264715,600 321.27764565264715,320.0585777426074" fill="none" stroke="blue" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="3.5256,4 3.5256,10" data-type="line" data-label="" points="317.11211728945716,376.04686219408586 317.11211728945716,40.11715548521477" fill="none" stroke="blue" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="3.6093,0 3.6093,10" data-type="line" data-label="" points="321.79833669804594,600 321.79833669804594,40.11715548521477" fill="none" stroke="blue" stroke-width="1" />
+  </g><text data-type="text" data-label="Before (jogged traces)" data-x="3.5628" data-y="10.0020925" x="319.1948814710522" y="40" fill="black" font-size="0.11715548521471929" font-family="sans-serif" text-anchor="middle" dominant-baseline="text-after-edge">Before (jogged traces)</text><text data-type="text" data-label="After (SameNetTraceMergeSolver)" data-x="3.6093" data-y="10.0020925" x="321.79833669804594" y="40" fill="black" font-size="0.11715548521471929" font-family="sans-serif" text-anchor="middle" dominant-baseline="text-after-edge">After (SameNetTraceMergeSolver)</text>
+  <g id="crosshair" style="display: none">
+    <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
+    <line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5" /><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text>
+  </g>
+  <script>
+    <![CDATA[
+    document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const crosshair = svg.getElementById('crosshair');
+      const h = svg.getElementById('crosshair-h');
+      const v = svg.getElementById('crosshair-v');
+      const coords = svg.getElementById('coordinates');
+
+      crosshair.style.display = 'block';
+      h.setAttribute('x1', '0');
+      h.setAttribute('x2', '640');
+      h.setAttribute('y1', y);
+      h.setAttribute('y2', y);
+      v.setAttribute('x1', x);
+      v.setAttribute('x2', x);
+      v.setAttribute('y1', '0');
+      v.setAttribute('y2', '640');
+
+      // Calculate real coordinates using inverse transformation
+      const matrix = {
+        "a": 55.98828445147853,
+        "c": 0,
+        "e": 119.71982162732448,
+        "b": 0,
+        "d": -55.98828445147853,
+        "f": 600
+      };
+      // Manually invert and apply the affine transform
+      // Since we only use translate and scale, we can directly compute:
+      // x' = (x - tx) / sx
+      // y' = (y - ty) / sy
+      const sx = matrix.a;
+      const sy = matrix.d;
+      const tx = matrix.e;
+      const ty = matrix.f;
+      const realPoint = {
+        x: (x - tx) / sx,
+        y: (y - ty) / sy // Flip y back since we used negative scale
+      }
+
+      coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+      coords.setAttribute('x', (x + 5).toString());
+      coords.setAttribute('y', (y - 5).toString());
+    });
+    document.currentScript.parentElement.addEventListener('mouseleave', () => {
+      document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+    });
+    ]]>
+  </script>
+</svg>
