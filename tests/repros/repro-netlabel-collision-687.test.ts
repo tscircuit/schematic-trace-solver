@@ -28,13 +28,10 @@ const overlapArea = (
 // U1's right-edge pin column is fully walled in: a solid column of port
 // labels (QD0..QD3, QCLK) to the east, chips C1/C2 above and below, and
 // chip U3 closing off the corridor. The V1V1 trace (U1.1 -> U1.7) wraps
-// around the label column, and its net label has NO strictly collision-free
-// candidate anywhere along the trace. NetLabelNetLabelCollisionSolver gives
-// up and leaves the V1V1 label stacked directly on top of the QD3 and QCLK
-// port labels — the same pile-up as the original board.
-//
-// This test asserts the CURRENT (buggy) behavior so the bug is pinned by CI.
-// A fix should flip the two non-zero overlap assertions to .toBe(0).
+// around the label column. Previously NetLabelNetLabelCollisionSolver gave
+// up and left the V1V1 label stacked directly on top of the QD3 and QCLK
+// port labels. Port-only labels can now slide their anchor outward from the
+// pin (see #655), which gives V1V1 a collision-free escape.
 test("repro #687: V1V1 net label left stacked on QD3/QCLK port labels", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
   solver.solve()
@@ -49,11 +46,10 @@ test("repro #687: V1V1 net label left stacked on QD3/QCLK port labels", () => {
   expect(qd3).toBeDefined()
   expect(qclk).toBeDefined()
 
-  // BUG: the V1V1 label still overlaps both port labels after the collision
-  // solver has run (total stacked overlap ≈ 0.16)
-  expect(overlapArea(boundsOf(v1v1), boundsOf(qd3))).toBeGreaterThan(0)
-  expect(overlapArea(boundsOf(v1v1), boundsOf(qclk))).toBeGreaterThan(0)
+  // FIXED: the V1V1 label no longer overlaps the QD3/QCLK port labels
+  expect(overlapArea(boundsOf(v1v1), boundsOf(qd3))).toBe(0)
+  expect(overlapArea(boundsOf(v1v1), boundsOf(qclk))).toBe(0)
 
-  // visual snapshot: the V1V1 label sits on the QD3/QCLK pile-up
+  // visual snapshot: the V1V1 label escapes the QD3/QCLK pile-up
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
