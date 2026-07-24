@@ -1,4 +1,4 @@
-import type { Point } from "@tscircuit/math-utils"
+import { doSegmentsIntersect, type Point } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
@@ -61,6 +61,7 @@ const calculateElbowForPins = ({
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
   connectionPair?: MspConnectionPair
+  otherConnectionPairs: MspConnectionPair[]
   inputProblem: InputProblem
   chipMap: Record<string, InputChip>
 
@@ -80,12 +81,14 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   constructor(params: {
     pins: MspConnectionPair["pins"]
     connectionPair?: MspConnectionPair
+    otherConnectionPairs?: MspConnectionPair[]
     inputProblem: InputProblem
     chipMap: Record<string, InputChip>
   }) {
     super()
     this.pins = params.pins
     this.connectionPair = params.connectionPair
+    this.otherConnectionPairs = params.otherConnectionPairs ?? []
     this.inputProblem = params.inputProblem
     this.chipMap = params.chipMap
 
@@ -162,8 +165,43 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       chipMap: this.chipMap,
       pins: this.pins,
       connectionPair: this.connectionPair,
+      otherConnectionPairs: this.otherConnectionPairs,
       inputProblem: this.inputProblem,
     }
+  }
+
+  private countDifferentNetGuideCrossings(path: Point[]): number {
+    if (!this.connectionPair) return 0
+
+    const differentNetPairs = this.otherConnectionPairs.filter(
+      (otherPair) =>
+        otherPair.mspPairId !== this.connectionPair!.mspPairId &&
+        otherPair.globalConnNetId !== this.connectionPair!.globalConnNetId,
+    )
+    // A single pending guide is a useful signal. In dense routing problems,
+    // several straight ratsnest guides cross each other and should not steer
+    // local detours as though they were already-routed traces.
+    if (differentNetPairs.length !== 1) return 0
+
+    let crossings = 0
+    for (const otherPair of differentNetPairs) {
+      const guideStart = otherPair.pins[0]
+      const guideEnd = otherPair.pins[1]
+      for (let i = 0; i < path.length - 1; i++) {
+        if (
+          doSegmentsIntersect(
+            path[i]!,
+            path[i + 1]!,
+            guideStart,
+            guideEnd,
+          )
+        ) {
+          crossings++
+        }
+      }
+    }
+
+    return crossings
   }
 
   private getTextBoxPaddingForConnectionPair(): RectPadding {
@@ -408,15 +446,20 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     if (canGenerateEndpointDetour && (isFirstSegment || isLastSegment)) {
       // A three-point detour replaces an L elbow, so the shortest valid route
-      // remains the best choice. A four-point detour preserves the far side of
-      // a U elbow; prefer the candidate that keeps its new internal rails out
-      // of the pin band, then use length to choose between equivalent routes.
+      // remains the best choice after avoiding future different-net guide
+      // crossings. A four-point detour preserves the far side of a U elbow;
+      // prefer the candidate that keeps its new internal rails out of the pin
+      // band, then use length to choose between equivalent routes.
       const compareDetours =
         path.length === 4
           ? (a: Point[], b: Point[]) =>
+              this.countDifferentNetGuideCrossings(a) -
+                this.countDifferentNetGuideCrossings(b) ||
               this.getPinBandPenalty(a) - this.getPinBandPenalty(b) ||
               this.pathLength(a) - this.pathLength(b)
           : (a: Point[], b: Point[]) =>
+              this.countDifferentNetGuideCrossings(a) -
+                this.countDifferentNetGuideCrossings(b) ||
               this.pathLength(a) - this.pathLength(b) ||
               this.getPinBandPenalty(a) - this.getPinBandPenalty(b)
       const detours = generateEndpointCollisionDetours({
