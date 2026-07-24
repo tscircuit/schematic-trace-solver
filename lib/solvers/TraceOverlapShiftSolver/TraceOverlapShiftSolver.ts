@@ -46,6 +46,19 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
   cleanupPhase: "diagonals" | "done" | null = null
 
+  /**
+   * Whether the same-net merge pass (snapping close parallel segments of the
+   * same net onto a shared X/Y) has finished. This runs before the
+   * different-net shifting so any overlap it introduces is still resolved.
+   */
+  sameNetMergeDone = false
+
+  /**
+   * Maximum perpendicular distance between two parallel same-net segments for
+   * them to be considered "close together" and merged onto a shared line.
+   */
+  SAME_NET_MERGE_DISTANCE = 0.15
+
   constructor(params: {
     inputProblem: InputProblem
     inputTracePaths: Array<SolvedTracePath>
@@ -292,6 +305,142 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     return null
   }
 
+  /**
+   * Finds two close-together parallel segments that belong to the same net but
+   * different traces and snaps one of them onto the other so they share the
+   * same X (vertical) or Y (horizontal). Returns true if a merge was applied.
+   */
+  private findAndMergeNextSameNetCloseTraces(): boolean {
+    const EPS = 2e-3
+    const MIN_OVERLAP = 2e-3
+
+    const overlaps1D = (
+      a1: number,
+      a2: number,
+      b1: number,
+      b2: number,
+    ): boolean => {
+      const overlap =
+        Math.min(Math.max(a1, a2), Math.max(b1, b2)) -
+        Math.max(Math.min(a1, a2), Math.min(b1, b2))
+      return overlap > MIN_OVERLAP
+    }
+
+    for (const netId of Object.keys(this.traceNetIslands)) {
+      const paths = this.traceNetIslands[netId] || []
+      if (paths.length < 2) continue
+
+      for (let pa = 0; pa < paths.length; pa++) {
+        const ptsA = paths[pa]!.tracePath
+        for (let sa = 0; sa < ptsA.length - 1; sa++) {
+          const a1 = ptsA[sa]!
+          const a2 = ptsA[sa + 1]!
+          const aVert = Math.abs(a1.x - a2.x) < EPS
+          const aHorz = Math.abs(a1.y - a2.y) < EPS
+          if (!aVert && !aHorz) continue
+
+          // Only compare against later paths so the earlier trace acts as the
+          // stable anchor we snap onto.
+          for (let pb = pa + 1; pb < paths.length; pb++) {
+            const pathB = paths[pb]!
+            const ptsB = pathB.tracePath
+            for (let sb = 0; sb < ptsB.length - 1; sb++) {
+              // Only move internal segments: shifting these keeps the polyline
+              // orthogonal and snaps exactly onto the anchor, whereas moving a
+              // terminal segment would detach it from its pin.
+              if (sb === 0 || sb === ptsB.length - 2) continue
+              const b1 = ptsB[sb]!
+              const b2 = ptsB[sb + 1]!
+              const bVert = Math.abs(b1.x - b2.x) < EPS
+              const bHorz = Math.abs(b1.y - b2.y) < EPS
+
+              if (aVert && bVert) {
+                const dx = Math.abs(a1.x - b1.x)
+                if (
+                  dx > EPS &&
+                  dx <= this.SAME_NET_MERGE_DISTANCE &&
+                  overlaps1D(a1.y, a2.y, b1.y, b2.y)
+                ) {
+                  this.mergeCloseSameNetSegment({
+                    path: pathB,
+                    segmentIndex: sb,
+                    axis: "x",
+                    target: a1.x,
+                  })
+                  return true
+                }
+              } else if (aHorz && bHorz) {
+                const dy = Math.abs(a1.y - b1.y)
+                if (
+                  dy > EPS &&
+                  dy <= this.SAME_NET_MERGE_DISTANCE &&
+                  overlaps1D(a1.x, a2.x, b1.x, b2.x)
+                ) {
+                  this.mergeCloseSameNetSegment({
+                    path: pathB,
+                    segmentIndex: sb,
+                    axis: "y",
+                    target: a1.y,
+                  })
+                  return true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return false
+  }
+
+  private mergeCloseSameNetSegment({
+    path,
+    segmentIndex,
+    axis,
+    target,
+  }: {
+    path: SolvedTracePath
+    segmentIndex: number
+    axis: "x" | "y"
+    target: number
+  }): void {
+    const EPS = 1e-6
+    const pts = path.tracePath.map((p) => ({ ...p }))
+
+    // Internal segment: shift both shared endpoints; the perpendicular
+    // neighbour segments simply grow/shrink so the polyline stays orthogonal.
+    const start = pts[segmentIndex]!
+    const end = pts[segmentIndex + 1]!
+    if (axis === "x") {
+      const offset = target - start.x
+      start.x += offset
+      end.x += offset
+    } else {
+      const offset = target - start.y
+      start.y += offset
+      end.y += offset
+    }
+
+    // Remove consecutive duplicate points that might appear after the shift.
+    const cleaned: typeof pts = []
+    for (const p of pts) {
+      const prev = cleaned[cleaned.length - 1]
+      if (
+        !prev ||
+        Math.abs(prev.x - p.x) > EPS ||
+        Math.abs(prev.y - p.y) > EPS
+      ) {
+        cleaned.push(p)
+      }
+    }
+
+    this.correctedTraceMap[path.mspPairId] = {
+      ...path,
+      tracePath: cleaned,
+    }
+  }
+
   private findNextDiagonalSegment() {
     const EPS = 2e-3
     for (const mspPairId in this.correctedTraceMap) {
@@ -361,6 +510,18 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
+      return
+    }
+
+    // First, merge close-together parallel segments of the same net so they
+    // share a single X/Y line. Done before different-net shifting so any new
+    // overlap is still resolved below.
+    if (!this.sameNetMergeDone) {
+      if (this.findAndMergeNextSameNetCloseTraces()) {
+        this.traceNetIslands = this.computeTraceNetIslands()
+        return
+      }
+      this.sameNetMergeDone = true
       return
     }
 
