@@ -1,7 +1,10 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getComponentSideRailSegments } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/getComponentSideRailSegments"
-import { nearlyEqual } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
+import {
+  nearlyEqual,
+  rangesTouchOrOverlap,
+} from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import type { RailSegment } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/types"
 import type { InputProblem } from "lib/types/InputProblem"
 
@@ -84,7 +87,8 @@ const canFormSharedEndpointJunction = (
 ) => {
   if (
     segmentA.globalConnNetId !== segmentB.globalConnNetId ||
-    segmentA.orientation !== segmentB.orientation
+    segmentA.orientation !== segmentB.orientation ||
+    !rangesTouchOrOverlap(segmentA, segmentB)
   ) {
     return false
   }
