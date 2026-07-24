@@ -1,0 +1,31 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`repro152: distant net connections terminate at net labels 1`] = `
+{
+  "netLabels": [
+    {
+      "anchorPoint": {
+        "x": 5,
+        "y": -0.38,
+      },
+      "netId": "GND",
+      "orientation": "y-",
+      "pinIds": [
+        "C1.2",
+      ],
+    },
+    {
+      "anchorPoint": {
+        "x": 5,
+        "y": 0.38,
+      },
+      "netId": "V3_3",
+      "orientation": "y+",
+      "pinIds": [
+        "C1.1",
+      ],
+    },
+  ],
+  "traces": [],
+}
+`;

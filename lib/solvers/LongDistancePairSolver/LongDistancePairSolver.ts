@@ -33,6 +33,7 @@ export class LongDistancePairSolver extends BaseSolver {
   private inputProblem: InputProblem
   private netConnMap: ConnectivityMap
   private newlyConnectedPinIds = new Set<PinId>()
+  private preExistingNetLabelPinIds: Set<PinId>
   private allSolvedTraces: SolvedTracePath[] = []
 
   constructor(
@@ -49,6 +50,9 @@ export class LongDistancePairSolver extends BaseSolver {
 
     this.inputProblem = inputProblem
     this.allSolvedTraces = [...alreadySolvedTraces]
+    this.preExistingNetLabelPinIds = new Set(
+      inputProblem.preExistingNetLabelPinIds ?? [],
+    )
 
     // 1. Create initial maps and sets for efficient lookup
     const primaryConnectedPinIds = new Set<PinId>()
@@ -180,6 +184,8 @@ export class LongDistancePairSolver extends BaseSolver {
       const [p1, p2] = nextPair
 
       if (
+        this.preExistingNetLabelPinIds.has(p1.pinId) ||
+        this.preExistingNetLabelPinIds.has(p2.pinId) ||
         this.newlyConnectedPinIds.has(p1.pinId) ||
         this.newlyConnectedPinIds.has(p2.pinId)
       ) {

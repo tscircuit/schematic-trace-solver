@@ -66,6 +66,7 @@ export interface NetLabelPlacement {
 export class NetLabelPlacementSolver extends BaseSolver {
   inputProblem: InputProblem
   inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
+  preExistingNetLabelPinIds: Set<PinId>
 
   overlappingSameNetTraceGroups: Array<OverlappingSameNetTraceGroup>
 
@@ -85,6 +86,9 @@ export class NetLabelPlacementSolver extends BaseSolver {
     super()
     this.inputProblem = params.inputProblem
     this.inputTraceMap = params.inputTraceMap
+    this.preExistingNetLabelPinIds = new Set(
+      params.inputProblem.preExistingNetLabelPinIds ?? [],
+    )
 
     this.overlappingSameNetTraceGroups =
       this.computeOverlappingSameNetTraceGroups()
@@ -188,6 +192,16 @@ export class NetLabelPlacementSolver extends BaseSolver {
         )
 
         if (compTraces.length > 0) {
+          // A routed island connected to a user-placed label is already
+          // represented by that label and does not need an automatic one.
+          if (
+            Array.from(component).some((pinId) =>
+              this.preExistingNetLabelPinIds.has(pinId),
+            )
+          ) {
+            continue
+          }
+
           // Choose a representative trace (longest by L1 length)
           const lengthOf = (path: SolvedTracePath) => {
             let sum = 0
@@ -236,6 +250,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
         } else {
           // No traces in this component: place label at each pin that has a user net id
           for (const p of component) {
+            if (this.preExistingNetLabelPinIds.has(p)) continue
             const userNetId = userNetIdByPinId[p]
             if (!userNetId) continue
             groups.push({
