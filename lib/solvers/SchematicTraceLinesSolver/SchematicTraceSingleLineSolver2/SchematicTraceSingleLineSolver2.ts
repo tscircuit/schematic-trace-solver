@@ -414,6 +414,13 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         (netConnection) =>
           netConnection.netId === this.connectionPair!.userNetId,
       )
+    const isMultiPinNetConnection =
+      this.connectionPair?.userNetId !== undefined &&
+      this.inputProblem.netConnections.some(
+        (netConnection) =>
+          netConnection.netId === this.connectionPair!.userNetId &&
+          netConnection.pinIds.length > 2,
+      )
     const isLongHorizontalNetConnection =
       isNetConnection &&
       maxPairDistance !== undefined &&
@@ -424,7 +431,8 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       (path.length === 4 &&
         this.connectionPair !== undefined &&
         !isNearMaximumPairDistance &&
-        !isLongHorizontalNetConnection)
+        !isLongHorizontalNetConnection &&
+        !isMultiPinNetConnection)
 
     if (canGenerateEndpointDetour && (isFirstSegment || isLastSegment)) {
       // A three-point detour replaces an L elbow, so the shortest valid route
