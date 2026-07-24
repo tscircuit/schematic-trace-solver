@@ -18,9 +18,7 @@ test("repro147 netlabel overlaps trace", () => {
     (chip) => chip.chipId === "schematic_component_0",
   )!
   const b1Top = b1.center.y + b1.height / 2
-  expect(
-    trace.tracePath.some((point) => point.y > b1Top),
-  ).toBe(true)
+  expect(trace.tracePath.some((point) => point.y > b1Top)).toBe(true)
   const pendingTrace = solver.mspConnectionPairSolver!.mspConnectionPairs.find(
     (candidate) => candidate.mspPairId === "B1.2-C3.2",
   )!

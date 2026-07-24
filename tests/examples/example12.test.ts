@@ -15,9 +15,7 @@ test("example12", () => {
   const resistorBranch = finalTraces.find(
     (trace) => trace.mspPairId === "R1.2-J1.3",
   )!
-  expect(capacitorBranch.tracePath[1]!.x).toBe(
-    resistorBranch.tracePath[1]!.x,
-  )
+  expect(capacitorBranch.tracePath[1]!.x).toBe(resistorBranch.tracePath[1]!.x)
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

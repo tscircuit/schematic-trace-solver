@@ -3,7 +3,9 @@ import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipeline
 import inputProblem from "./bug-report-20260724T175257Z.json"
 import "tests/fixtures/matcher"
 
-const getInternalVerticalRailX = (tracePath: Array<{ x: number; y: number }>) => {
+const getInternalVerticalRailX = (
+  tracePath: Array<{ x: number; y: number }>,
+) => {
   for (let i = 1; i < tracePath.length - 2; i++) {
     if (Math.abs(tracePath[i]!.x - tracePath[i + 1]!.x) < 1e-9) {
       return tracePath[i]!.x
