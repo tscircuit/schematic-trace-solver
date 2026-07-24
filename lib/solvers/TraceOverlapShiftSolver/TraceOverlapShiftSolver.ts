@@ -361,14 +361,23 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       }
       this.activeSubSolver = null
       if (!tracesChanged) {
-        this.solved = true
-        return
+        this.cleanupPhase = "diagonals"
+      } else {
+        this.traceNetIslands = this.computeTraceNetIslands()
       }
-      this.traceNetIslands = this.computeTraceNetIslands()
     }
 
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
+      return
+    }
+
+    if (this.cleanupPhase === "diagonals") {
+      const fixedDiagonal = this.findAndFixNextDiagonalSegment()
+      if (!fixedDiagonal) {
+        this.cleanupPhase = "done"
+        this.solved = true
+      }
       return
     }
 
