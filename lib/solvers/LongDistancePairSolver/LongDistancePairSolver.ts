@@ -1,23 +1,23 @@
+import type { ConnectivityMap } from "connectivity-map"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type {
-  InputProblem,
-  InputPin,
-  PinId,
   InputChip,
+  InputPin,
+  InputProblem,
+  PinId,
 } from "lib/types/InputProblem"
-import { BaseSolver } from "../BaseSolver/BaseSolver"
-import { SchematicTraceSingleLineSolver2 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
 import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { ConnectivityMap } from "connectivity-map"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { BaseSolver } from "../BaseSolver/BaseSolver"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { SchematicTraceSingleLineSolver2 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 
 const NEAREST_NEIGHBOR_COUNT = 3
 
 const distance = (p1: InputPin, p2: InputPin) => {
-  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
+  return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
 }
 
 export class LongDistancePairSolver extends BaseSolver {
@@ -73,9 +73,25 @@ export class LongDistancePairSolver extends BaseSolver {
     > = []
     const addedPairKeys = new Set<string>()
 
+    // Nets with declared net-label orientations (power/ground rails and named
+    // buses like V3_3, GND, SDA) are rendered with a net label at each pin
+    // when the net has many pins. For those nets a distant pair should stay
+    // label-connected — otherwise a long bus trace snakes across the
+    // schematic duplicating the labels (#670). Two-pin labeled nets keep
+    // their long traces: a single trace is cleaner than a floating label
+    // pair (see rotated-components-rail-label).
+    const labeledNetIds = new Set(
+      Object.keys(inputProblem.availableNetLabelOrientations ?? {}),
+    )
+    const maxLabeledNetPairDistance = inputProblem.maxMspPairDistance ?? 1
+
     for (const netId of Object.keys(netConnMap.netMap)) {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
+
+      const netPinCount = allPinIdsInNet.filter((id) => pinMap.has(id)).length
+      const netIsLabeled =
+        netPinCount > 2 && allPinIdsInNet.some((id) => labeledNetIds.has(id))
 
       const unconnectedPinIds = allPinIdsInNet.filter(
         (pinId) => !primaryConnectedPinIds.has(pinId),
@@ -97,6 +113,10 @@ export class LongDistancePairSolver extends BaseSolver {
               },
             ]
           })
+          .filter(
+            (neighbor) =>
+              !netIsLabeled || neighbor.distance <= maxLabeledNetPairDistance,
+          )
           .sort((a, b) => a.distance - b.distance)
           .slice(0, NEAREST_NEIGHBOR_COUNT)
 
