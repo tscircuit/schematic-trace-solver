@@ -68,6 +68,13 @@ export class TraceCleanupSolver extends BaseSolver {
     this.traceIdQueue = Array.from(
       solverInput.allTraces.map((e) => e.mspPairId),
     )
+
+    if (this.outputTraces.length === 0) {
+      // No traces to clean up; solve immediately with an empty result.
+      // This also avoids building a chip obstacle spatial index for an
+      // empty chip set inside the untangle sub-solver.
+      this.solved = true
+    }
   }
 
   override _step() {

@@ -123,6 +123,11 @@ export class LongDistancePairSolver extends BaseSolver {
       }
     }
     this.queuedCandidatePairs = candidatePairs
+
+    if (this.queuedCandidatePairs.length === 0) {
+      // No candidate pairs to route; solve immediately with an empty result.
+      this.solved = true
+    }
   }
 
   override getConstructorParams() {

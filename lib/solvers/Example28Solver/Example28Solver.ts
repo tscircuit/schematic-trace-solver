@@ -67,6 +67,11 @@ export class Example28Solver extends BaseSolver {
     this.pinMap = getPinMap(params.inputProblem)
     this.initializeQueuedOverlaps()
     this.currentOverlap = this.queuedOverlaps[0] ?? null
+
+    if (this.traces.length === 0) {
+      // No traces to reroute; solve immediately with an empty result.
+      this.solved = true
+    }
   }
 
   override getConstructorParams(): ConstructorParameters<
