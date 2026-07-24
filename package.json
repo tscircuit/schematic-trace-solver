@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/schematic-trace-solver",
   "main": "dist/index.js",
-  "version": "0.0.106",
+  "version": "0.0.108",
   "type": "module",
   "scripts": {
     "test": "vitest",

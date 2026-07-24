@@ -1,0 +1,212 @@
+{
+  "chips": [
+    {
+      "chipId": "U1",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 1,
+      "height": 2,
+      "pins": [
+        {
+          "pinId": "U1.1",
+          "x": 0.5,
+          "y": 0.6
+        },
+        {
+          "pinId": "U1.2",
+          "x": 0.5,
+          "y": 0.4
+        },
+        {
+          "pinId": "U1.3",
+          "x": 0.5,
+          "y": 0.2
+        },
+        {
+          "pinId": "U1.4",
+          "x": 0.5,
+          "y": 0
+        },
+        {
+          "pinId": "U1.5",
+          "x": 0.5,
+          "y": -0.2
+        },
+        {
+          "pinId": "U1.6",
+          "x": 0.5,
+          "y": -0.4
+        },
+        {
+          "pinId": "U1.7",
+          "x": 0.5,
+          "y": -0.6
+        }
+      ]
+    },
+    {
+      "chipId": "U2",
+      "center": {
+        "x": 6,
+        "y": 0
+      },
+      "width": 1,
+      "height": 2,
+      "pins": [
+        {
+          "pinId": "U2.1",
+          "x": 5.5,
+          "y": 0.4
+        },
+        {
+          "pinId": "U2.2",
+          "x": 5.5,
+          "y": 0.2
+        },
+        {
+          "pinId": "U2.3",
+          "x": 5.5,
+          "y": 0
+        },
+        {
+          "pinId": "U2.4",
+          "x": 5.5,
+          "y": -0.2
+        },
+        {
+          "pinId": "U2.5",
+          "x": 5.5,
+          "y": -0.4
+        }
+      ]
+    },
+    {
+      "chipId": "U3",
+      "center": {
+        "x": 1.8,
+        "y": 0
+      },
+      "width": 0.5,
+      "height": 3,
+      "pins": [
+        {
+          "pinId": "U3.1",
+          "x": 1.8,
+          "y": 1.5
+        }
+      ]
+    },
+    {
+      "chipId": "C1",
+      "center": {
+        "x": 0.8,
+        "y": 1.2
+      },
+      "width": 1.4,
+      "height": 0.9,
+      "pins": [
+        {
+          "pinId": "C1.1",
+          "x": 0.8,
+          "y": 0.75
+        }
+      ]
+    },
+    {
+      "chipId": "C2",
+      "center": {
+        "x": 0.8,
+        "y": -1.2
+      },
+      "width": 1.4,
+      "height": 0.9,
+      "pins": [
+        {
+          "pinId": "C2.1",
+          "x": 0.8,
+          "y": -0.75
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "QD0",
+      "pinIds": [
+        "U1.2",
+        "U2.1"
+      ],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "QD1",
+      "pinIds": [
+        "U1.3",
+        "U2.2"
+      ],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "QD2",
+      "pinIds": [
+        "U1.4",
+        "U2.3"
+      ],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "QD3",
+      "pinIds": [
+        "U1.5",
+        "U2.4"
+      ],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "QCLK",
+      "pinIds": [
+        "U1.6",
+        "U2.5"
+      ],
+      "netLabelWidth": 0.6
+    },
+    {
+      "netId": "V1V1",
+      "pinIds": [
+        "U1.1",
+        "U1.7"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "QD0": [
+      "x-",
+      "x+"
+    ],
+    "QD1": [
+      "x-",
+      "x+"
+    ],
+    "QD2": [
+      "x-",
+      "x+"
+    ],
+    "QD3": [
+      "x-",
+      "x+"
+    ],
+    "QCLK": [
+      "x-",
+      "x+"
+    ],
+    "V1V1": [
+      "y+"
+    ]
+  },
+  "maxMspPairDistance": 2.4
+}
