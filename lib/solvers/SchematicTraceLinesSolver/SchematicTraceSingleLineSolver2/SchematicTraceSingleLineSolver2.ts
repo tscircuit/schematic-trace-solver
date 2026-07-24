@@ -69,7 +69,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   existingTracePaths: Array<{
     globalConnNetId: string
     tracePath: Point[]
-    pins: Array<{ chipId: string }>
+    pins: Array<{ chipId: string; pinId: string }>
   }>
   inputProblem: InputProblem
   chipMap: Record<string, InputChip>
@@ -94,7 +94,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     existingTracePaths?: Array<{
       globalConnNetId: string
       tracePath: Point[]
-      pins: Array<{ chipId: string }>
+      pins: Array<{ chipId: string; pinId: string }>
     }>
     inputProblem: InputProblem
     chipMap: Record<string, InputChip>
@@ -584,11 +584,30 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       maxPairDistance !== undefined &&
       pinDistance > maxPairDistance * 0.9 &&
       Math.abs(PA.x - PB.x) > Math.abs(PA.y - PB.y)
+    const isNetConnection =
+      this.connectionPair?.userNetId !== undefined &&
+      this.inputProblem.netConnections.some(
+        (netConnection) =>
+          netConnection.netId === this.connectionPair!.userNetId,
+      )
+    const isLongHorizontalNetConnection =
+      isNetConnection &&
+      maxPairDistance !== undefined &&
+      pinDistance > maxPairDistance * 0.7 &&
+      Math.abs(PA.x - PB.x) > Math.abs(PA.y - PB.y)
+    const currentPinIds = new Set(this.pins.map((pin) => pin.pinId))
+    const hasExistingSameNetBranchAtEndpoint = this.existingTracePaths.some(
+      (trace) =>
+        trace.globalConnNetId === this.connectionPair?.globalConnNetId &&
+        trace.pins.some((pin) => currentPinIds.has(pin.pinId)),
+    )
     const canGenerateEndpointDetour =
       path.length === 3 ||
       (path.length === 4 &&
         this.connectionPair !== undefined &&
-        !isNearMaximumPairDistance)
+        !isNearMaximumPairDistance &&
+        !isLongHorizontalNetConnection &&
+        !(isNetConnection && hasExistingSameNetBranchAtEndpoint))
 
     if (canGenerateEndpointDetour && (isFirstSegment || isLastSegment)) {
       // A three-point detour replaces an L elbow, so the shortest valid route
