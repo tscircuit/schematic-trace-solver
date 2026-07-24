@@ -1,19 +1,20 @@
 import type { GraphicsObject } from "graphics-debug"
+import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { InputProblem } from "lib/types/InputProblem"
-import type { FacingDirection } from "lib/utils/dir"
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { rectIntersectsAnyTrace } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import {
-  getDimsForOrientation,
   getCenterFromAnchor,
+  getDimsForOrientation,
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import { rectIntersectsAnyTrace } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
-import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type { InputProblem } from "lib/types/InputProblem"
+import type { FacingDirection } from "lib/utils/dir"
 import { getColorFromString } from "lib/utils/getColorFromString"
+import { getOrientationConstraint } from "lib/utils/getOrientationConstraint"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 type CandidateStatus =
@@ -26,6 +27,21 @@ type CandidateStatus =
 const ANCHOR_TRACE_CLEARANCE = 1e-4
 const SEGMENT_PARALLEL_EPS = 1e-6
 const CANDIDATE_STEP = 0.1
+/**
+ * Max number of steps a port-only label anchor is allowed to slide outward
+ * from its pin when escaping a chip body (see #655). Port-only labels are
+ * anchored directly on a pin — when that pin is covered by another chip's
+ * body every orientation collides, so we progressively nudge the anchor
+ * outward until the label escapes the chip.
+ */
+const MAX_PORT_ONLY_ESCAPE_STEPS = 30
+/**
+ * Fraction of a net label's area that must be covered by a chip body before
+ * the label is considered "inside" the chip and relocated (see #655). Small
+ * incidental overlaps are tolerated — they're handled by other solvers and
+ * relocating them can violate orientation preferences.
+ */
+const CHIP_COLLISION_MIN_OVERLAP_FRACTION = 0.5
 
 const OUTWARD_DIR: Record<FacingDirection, { x: number; y: number }> = {
   "x+": { x: 1, y: 0 },
@@ -104,12 +120,14 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   outputNetLabelPlacements: NetLabelPlacement[]
 
   currentCollision: [NetLabelPlacement, NetLabelPlacement] | null = null
+  currentChipCollisionLabel: NetLabelPlacement | null = null
   currentLabelToMove: NetLabelPlacement | null = null
   candidateResults: Candidate[] = []
 
   private chipIndex: ChipObstacleSpatialIndex
   private traceMap: Record<MspConnectionPairId, SolvedTracePath>
   private skippedCollisionKeys = new Set<string>()
+  private skippedChipCollisionNetIds = new Set<string>()
 
   private labelsToTry: NetLabelPlacement[] = []
   private candidateQueue: Candidate[] = []
@@ -168,6 +186,33 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     return null
   }
 
+  private findNextChipCollidingLabel(): NetLabelPlacement | null {
+    for (const label of this.outputNetLabelPlacements) {
+      if (this.skippedChipCollisionNetIds.has(label.globalConnNetId)) continue
+      const bounds = this.labelBounds(label)
+      const labelArea = label.width * label.height
+      if (labelArea <= 0) continue
+      const chips = this.chipIndex.getChipsInBounds(bounds)
+      for (const chip of chips) {
+        const chipBounds = getRectBounds(chip.center, chip.width, chip.height)
+        const overlapX =
+          Math.min(bounds.maxX, chipBounds.maxX) -
+          Math.max(bounds.minX, chipBounds.minX)
+        const overlapY =
+          Math.min(bounds.maxY, chipBounds.maxY) -
+          Math.max(bounds.minY, chipBounds.minY)
+        if (overlapX <= 0 || overlapY <= 0) continue
+        if (
+          overlapX * overlapY >=
+          labelArea * CHIP_COLLISION_MIN_OVERLAP_FRACTION
+        ) {
+          return label
+        }
+      }
+    }
+    return null
+  }
+
   private netLabelWidthOf(label: NetLabelPlacement): number | undefined {
     if (label.orientation === "x+" || label.orientation === "x-")
       return label.width
@@ -219,12 +264,34 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
 
     if (isPortOnly) {
       const allOrientations: FacingDirection[] = ["x+", "x-", "y+", "y-"]
-      const orderedOrientations = [
+      const orientationConstraint = getOrientationConstraint(
+        this.inputProblem,
+        label,
+      )
+      const allowedOrientations =
+        orientationConstraint && orientationConstraint.length > 0
+          ? allOrientations.filter((o) => orientationConstraint.includes(o))
+          : allOrientations
+      const orderedOrientations = allowedOrientations.includes(
         label.orientation,
-        ...allOrientations.filter((o) => o !== label.orientation),
-      ]
-      for (const orientation of orderedOrientations) {
-        candidates.push(buildCandidate(orientation, label.anchorPoint))
+      )
+        ? [
+            label.orientation,
+            ...allowedOrientations.filter((o) => o !== label.orientation),
+          ]
+        : allowedOrientations
+      // Try anchors progressively farther from the pin: when the pin is
+      // covered by a chip body every candidate at distance 0 collides, so
+      // sliding the anchor outward lets the label escape the chip (#655).
+      for (let step = 0; step <= MAX_PORT_ONLY_ESCAPE_STEPS; step++) {
+        for (const orientation of orderedOrientations) {
+          const outward = OUTWARD_DIR[orientation]
+          const anchor = {
+            x: label.anchorPoint.x + outward.x * step * CANDIDATE_STEP,
+            y: label.anchorPoint.y + outward.y * step * CANDIDATE_STEP,
+          }
+          candidates.push(buildCandidate(orientation, anchor))
+        }
       }
     } else {
       for (const mspPairId of label.mspConnectionPairIds) {
@@ -301,6 +368,7 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
 
   private clearActiveSearch() {
     this.currentCollision = null
+    this.currentChipCollisionLabel = null
     this.currentLabelToMove = null
     this.labelsToTry = []
     this.candidateQueue = []
@@ -309,24 +377,37 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   }
 
   override _step() {
-    if (!this.currentCollision) {
+    if (!this.currentCollision && !this.currentChipCollisionLabel) {
       const pair = this.findNextCollidingPair()
-      if (!pair) {
+      if (pair) {
+        this.currentCollision = pair
+        this.labelsToTry = [pair[1], pair[0]]
+        this.beginSearchForLabel(this.labelsToTry.shift()!)
+        return
+      }
+      // No label-label collisions left, relocate labels that sit inside
+      // chip bodies (they would render behind the component)
+      const chipCollidingLabel = this.findNextChipCollidingLabel()
+      if (!chipCollidingLabel) {
         this.solved = true
         return
       }
-      this.currentCollision = pair
-      this.labelsToTry = [pair[1], pair[0]]
-      this.beginSearchForLabel(this.labelsToTry.shift()!)
+      this.currentChipCollisionLabel = chipCollidingLabel
+      this.beginSearchForLabel(chipCollidingLabel)
       return
     }
 
     if (this.candidateIndex >= this.candidateQueue.length) {
       if (this.labelsToTry.length > 0) {
         this.beginSearchForLabel(this.labelsToTry.shift()!)
-      } else {
+      } else if (this.currentCollision) {
         this.skippedCollisionKeys.add(
           this.collisionKey(this.currentCollision[0], this.currentCollision[1]),
+        )
+        this.clearActiveSearch()
+      } else {
+        this.skippedChipCollisionNetIds.add(
+          this.currentChipCollisionLabel!.globalConnNetId,
         )
         this.clearActiveSearch()
       }
@@ -334,19 +415,26 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     }
 
     const candidate = this.candidateQueue[this.candidateIndex++]!
-    const [labelA, labelB] = this.currentCollision
-    let fixedLabel: NetLabelPlacement
-    if (this.currentLabelToMove === labelB) {
-      fixedLabel = labelA
+    let obstacleLabels: NetLabelPlacement[]
+    if (this.currentCollision) {
+      const [labelA, labelB] = this.currentCollision
+      let fixedLabel: NetLabelPlacement
+      if (this.currentLabelToMove === labelB) {
+        fixedLabel = labelA
+      } else {
+        fixedLabel = labelB
+      }
+      obstacleLabels = [
+        ...this.outputNetLabelPlacements.filter(
+          (l) => l !== labelA && l !== labelB,
+        ),
+        fixedLabel,
+      ]
     } else {
-      fixedLabel = labelB
+      obstacleLabels = this.outputNetLabelPlacements.filter(
+        (l) => l !== this.currentLabelToMove,
+      )
     }
-    const obstacleLabels = [
-      ...this.outputNetLabelPlacements.filter(
-        (l) => l !== labelA && l !== labelB,
-      ),
-      fixedLabel,
-    ]
 
     const status = this.checkCandidate(
       candidate,
@@ -389,9 +477,10 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
 
     for (const label of this.outputNetLabelPlacements) {
       const isInActiveCollision =
-        this.currentCollision != null &&
-        (label === this.currentCollision[0] ||
-          label === this.currentCollision[1])
+        (this.currentCollision != null &&
+          (label === this.currentCollision[0] ||
+            label === this.currentCollision[1])) ||
+        label === this.currentChipCollisionLabel
 
       let labelFill: string
       let labelStroke: string
