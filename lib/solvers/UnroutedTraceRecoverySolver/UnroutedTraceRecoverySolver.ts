@@ -1,6 +1,7 @@
 import type { Point } from "@tscircuit/math-utils"
 import { doSegmentsIntersect } from "@tscircuit/math-utils"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import {
@@ -18,14 +19,7 @@ import type { FacingDirection } from "lib/utils/dir"
 
 const ROUTE_CLEARANCE = 0.2
 const COORDINATE_TOLERANCE = 1e-9
-const GROUND_NET_NAME = "GND"
-
-const isGroundConnectionPair = (connectionPair: MspConnectionPair): boolean => {
-  if (!connectionPair.userNetId) {
-    return false
-  }
-  return connectionPair.userNetId.toUpperCase().includes(GROUND_NET_NAME)
-}
+const GROUND_NET_ID = "GND"
 
 const pointsAreEqual = (firstPoint: Point, secondPoint: Point): boolean => {
   return (
@@ -417,6 +411,7 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
   private inputProblem: InputProblem
   private alreadySolvedTraces: SolvedTracePath[]
   private queuedConnectionPairs: MspConnectionPair[]
+  private groundGlobalConnNetId?: string
   public solvedUnroutedTraces: SolvedTracePath[] = []
 
   constructor(
@@ -430,6 +425,11 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
     this.inputProblem = params.inputProblem
     this.alreadySolvedTraces = params.alreadySolvedTraces
     this.queuedConnectionPairs = [...params.failedConnectionPairs]
+    const { netConnMap } = getConnectivityMapsFromInputProblem(
+      this.inputProblem,
+    )
+    this.groundGlobalConnNetId =
+      netConnMap.getNetConnectedToId(GROUND_NET_ID) ?? undefined
   }
 
   override getConstructorParams() {
@@ -442,7 +442,7 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
       this.solved = true
       return
     }
-    if (isGroundConnectionPair(connectionPair)) {
+    if (connectionPair.globalConnNetId === this.groundGlobalConnNetId) {
       return
     }
 
