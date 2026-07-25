@@ -8,7 +8,12 @@ test("repro126 trace overlaps R2 box", () => {
   solver.solve()
 
   expect(
+    solver.mspConnectionPairSolver!.mspConnectionPairs.some(
+      (pair) => pair.userNetId === "GND",
+    ),
+  ).toBe(false)
+  expect(
     solver.traceOverlapShiftSolver!.correctedTraceMap["U1.3-R2.2"],
-  ).toBeDefined()
+  ).toBeUndefined()
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

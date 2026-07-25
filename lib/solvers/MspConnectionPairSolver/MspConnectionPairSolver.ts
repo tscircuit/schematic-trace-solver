@@ -105,6 +105,16 @@ export class MspConnectionPairSolver extends BaseSolver {
     const allIds = this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[]
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
+    // Ground connections should always be represented by GND net labels,
+    // never by routed pin-to-pin traces.
+    if (
+      directlyConnectedPins.some(
+        (pinId) => this.userNetIdByPinId[pinId] === "GND",
+      )
+    ) {
+      return
+    }
+
     if (directlyConnectedPins.length <= 1) {
       return
     }
