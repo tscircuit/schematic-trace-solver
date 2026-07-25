@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import "tests/fixtures/matcher"
-import inputProblem from "../bug-reports/bug-report-20260717-connector-crossing-674/input.json"
+import inputProblem from "../bug-reports/bug-report-20260717T022934Z/bug-report-20260717T022934Z.json"
 
 const countDifferentNetCrossings = (
   traces: Array<{
