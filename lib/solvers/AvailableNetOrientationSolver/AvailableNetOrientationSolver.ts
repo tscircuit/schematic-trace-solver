@@ -21,6 +21,7 @@ import {
   isYOrientation,
   rangesOverlap,
   rectsOverlap,
+  segmentsOverlapCollinearly,
   simplifyOrthogonalPath,
   traceCrossesBoundsInterior,
   tracePathCrossesAnyBounds,
@@ -825,6 +826,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       return "trace-collision"
     }
 
+    // Crossing is not the only way a connector can be misread. A connector
+    // laid *along* another net's trace renders as a single wire carrying two
+    // nets, which is at least as misleading as a crossing.
+    if (this.connectorOverlapsOtherNetTrace(connectorTrace, label)) {
+      return "trace-collision"
+    }
+
     return "valid"
   }
 
@@ -844,6 +852,39 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return tracePathCrossesAnyTrace(connectorTrace, otherNetTraces)
+  }
+
+  /**
+   * True when the candidate's connector runs collinearly along a trace on a
+   * different net, sharing more than a single point with it.
+   *
+   * Touching at one point is a crossing (handled above) or a junction; sharing
+   * a length means the two nets are drawn as one wire.
+   */
+  private connectorOverlapsOtherNetTrace(
+    connectorTrace: Point[],
+    label: NetLabelPlacement,
+  ) {
+    for (const trace of Object.values(this.traceMap)) {
+      if (trace.globalConnNetId === label.globalConnNetId) continue
+
+      for (let i = 0; i < connectorTrace.length - 1; i++) {
+        for (let k = 0; k < trace.tracePath.length - 1; k++) {
+          if (
+            segmentsOverlapCollinearly(
+              connectorTrace[i]!,
+              connectorTrace[i + 1]!,
+              trace.tracePath[k]!,
+              trace.tracePath[k + 1]!,
+            )
+          ) {
+            return true
+          }
+        }
+      }
+    }
+
+    return false
   }
 
   private isAcceptableTraceAnchorChipCollision(
