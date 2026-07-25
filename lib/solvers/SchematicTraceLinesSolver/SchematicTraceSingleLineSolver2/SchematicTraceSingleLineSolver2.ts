@@ -58,6 +58,25 @@ const calculateElbowForPins = ({
     { overshoot },
   )
 
+const pinsFaceEachOther = ({
+  pin1,
+  pin2,
+}: {
+  pin1: MspConnectionPair["pins"][number]
+  pin2: MspConnectionPair["pins"][number]
+}) => {
+  const xDistance = pin2.x - pin1.x
+  const yDistance = pin2.y - pin1.y
+  if (Math.abs(xDistance) >= Math.abs(yDistance)) {
+    return xDistance > 0
+      ? pin1._facingDirection === "x+" && pin2._facingDirection === "x-"
+      : pin1._facingDirection === "x-" && pin2._facingDirection === "x+"
+  }
+  return yDistance > 0
+    ? pin1._facingDirection === "y+" && pin2._facingDirection === "y-"
+    : pin1._facingDirection === "y-" && pin2._facingDirection === "y+"
+}
+
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
   connectionPair?: MspConnectionPair
@@ -130,9 +149,16 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       pin2,
       overshoot: Math.min(0.2, Math.max(0.02, routingDistance / 4)),
     })
+    const adaptiveElbowIsShorter =
+      this.pathLength(adaptiveElbow) < this.pathLength(defaultElbow)
+    const defaultElbowBacktracks =
+      this.pathLength(defaultElbow) > routingDistance + 1e-9
     const shouldUseAdaptiveElbow =
-      findFirstCollision(defaultElbow, this.obstacles) !== null &&
-      findFirstCollision(adaptiveElbow, this.obstacles) === null
+      findFirstCollision(adaptiveElbow, this.obstacles) === null &&
+      ((pinsFaceEachOther({ pin1, pin2 }) &&
+        defaultElbowBacktracks &&
+        adaptiveElbowIsShorter) ||
+        findFirstCollision(defaultElbow, this.obstacles) !== null)
 
     // Build initial elbow path
     this.baseElbow = defaultElbow
