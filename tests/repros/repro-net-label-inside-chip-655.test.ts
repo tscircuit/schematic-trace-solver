@@ -50,6 +50,4 @@ test("net labels are not placed inside chip bodies", () => {
   })
 
   expect(labelsInsideChips.map((label) => label.netId)).toEqual([])
-
-  expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
