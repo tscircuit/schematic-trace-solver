@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import "tests/fixtures/matcher"
-import inputProblem from "../bug-reports/bug-report-20260716-long-trace-670/input.json"
+import inputProblem from "../bug-reports/bug-report-20260716T144856Z/bug-report-20260716T144856Z.json"
 
 // https://github.com/tscircuit/schematic-trace-solver/issues/670
 // Rail nets with declared net-label orientations (V3_3 y+, GND y-) must be
