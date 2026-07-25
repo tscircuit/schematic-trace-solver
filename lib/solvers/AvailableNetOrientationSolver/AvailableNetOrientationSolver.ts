@@ -12,7 +12,12 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
-import { EPS, LABEL_SEARCH_STEP, WICK_CLEARANCE } from "./constants"
+import {
+  CONNECTOR_DETOUR_OFFSETS,
+  EPS,
+  LABEL_SEARCH_STEP,
+  WICK_CLEARANCE,
+} from "./constants"
 import {
   getConnectorTracePath,
   getMaxSearchDistance,
@@ -240,45 +245,87 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       // endpoints, so mirror those instead.
       const source = trace.tracePath[0]!
       const target = trace.tracePath[trace.tracePath.length - 1]!
-      const mirrored = simplifyOrthogonalPath(
-        isYOrientation(candidate.orientation)
-          ? [source, { x: source.x, y: target.y }, target]
-          : [source, { x: target.x, y: source.y }, target],
+      const replacement = this.getAlternateConnectorRoutes(
+        source,
+        target,
+        candidate.orientation,
+      ).find(
+        (route) =>
+          route.length >= 2 &&
+          !this.tracePathCrossesOtherNetTraces(route, trace) &&
+          !this.routeHitsChip(route) &&
+          !this.routeHitsOtherLabel(route, labelIndex),
       )
-      if (mirrored.length < 2) continue
-      if (this.tracePathCrossesOtherNetTraces(mirrored, trace)) continue
 
-      let hitsChip = false
-      for (const chip of this.chipObstacleSpatialIndex.chips) {
-        if (tracePathCrossesAnyBounds(mirrored, chip.bounds)) {
-          hitsChip = true
-          break
-        }
-      }
-      if (hitsChip) continue
-
-      let hitsLabel = false
-      for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
-        if (i === labelIndex) continue
-        const otherLabel = this.outputNetLabelPlacements[i]!
-        if (
-          tracePathIntersectsBounds(
-            mirrored,
-            getRectBounds(
-              otherLabel.center,
-              otherLabel.width,
-              otherLabel.height,
-            ),
-          )
-        ) {
-          hitsLabel = true
-          break
-        }
-      }
-      if (hitsLabel) continue
-
-      trace.tracePath = mirrored
+      if (replacement) trace.tracePath = replacement
     }
+  }
+
+  /**
+   * Alternate orthogonal routes between the same two endpoints, cheapest
+   * first.
+   *
+   * 1. The mirrored L — turn on the other axis. Same length as the original,
+   *    so it is always preferred when it clears the crossing.
+   * 2. U-shaped detours — step away from the source, run across, then come
+   *    back. These are needed when the blocking trace sits between the two
+   *    endpoints on both axes, so no L-shape can avoid it. Offsets are tried
+   *    smallest first, in both directions, so the connector deviates as
+   *    little as possible.
+   */
+  private getAlternateConnectorRoutes(
+    source: Point,
+    target: Point,
+    orientation: FacingDirection,
+  ): Point[][] {
+    const routes: Point[][] = [
+      isYOrientation(orientation)
+        ? [source, { x: source.x, y: target.y }, target]
+        : [source, { x: target.x, y: source.y }, target],
+    ]
+
+    for (const offset of CONNECTOR_DETOUR_OFFSETS) {
+      for (const sign of [1, -1]) {
+        const delta = offset * sign
+        routes.push([
+          source,
+          { x: source.x, y: source.y + delta },
+          { x: target.x, y: source.y + delta },
+          target,
+        ])
+        routes.push([
+          source,
+          { x: source.x + delta, y: source.y },
+          { x: source.x + delta, y: target.y },
+          target,
+        ])
+      }
+    }
+
+    return routes.map(simplifyOrthogonalPath)
+  }
+
+  private routeHitsChip(route: Point[]) {
+    for (const chip of this.chipObstacleSpatialIndex.chips) {
+      if (tracePathCrossesAnyBounds(route, chip.bounds)) return true
+    }
+    return false
+  }
+
+  private routeHitsOtherLabel(route: Point[], labelIndex: number) {
+    for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
+      if (i === labelIndex) continue
+      const otherLabel = this.outputNetLabelPlacements[i]!
+      if (
+        tracePathIntersectsBounds(
+          route,
+          getRectBounds(otherLabel.center, otherLabel.width, otherLabel.height),
+        )
+      ) {
+        return true
+      }
+    }
+    return false
   }
 
   /**

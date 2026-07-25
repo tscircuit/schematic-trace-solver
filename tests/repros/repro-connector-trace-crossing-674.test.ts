@@ -52,13 +52,12 @@ const countDifferentNetCrossings = (
 // crossing-free candidate exists, and a post-pass re-routes connectors whose
 // collision only became visible once every connector existed (labels are
 // processed one at a time, so an early connector cannot see a later one).
-// That takes this board from 3 crossings to 2.
 //
-// The last 2 are pinned by the test.failing below. Both are walled in: their
-// pins are blocked by another net's trace along the shift axis, and the
-// mirrored L-route crosses something too, so clearing them needs the
-// connector routed *around* the blocking trace rather than re-cornered.
-test.failing("net-label connector traces do not cross other nets' traces", () => {
+// The post-pass tries the mirrored L first, then U-shaped detours of
+// increasing offset. The detours matter here: for the last two crossings on
+// this board the blocking trace sits between the endpoints on both axes, so
+// no L-shape of any corner can avoid it — the connector has to step around.
+test("net-label connector traces do not cross other nets' traces", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
   solver.solve()
 
