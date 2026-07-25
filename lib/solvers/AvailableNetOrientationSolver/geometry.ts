@@ -140,6 +140,22 @@ export const tracePathCrossesAnyTrace = (
   return false
 }
 
+/**
+ * Whether two orthogonal paths strictly cross (a T-junction or shared
+ * endpoint does not count).
+ */
+export const pathsStrictlyCross = (a: Point[], b: Point[]) => {
+  for (let i = 0; i < a.length - 1; i++) {
+    for (let j = 0; j < b.length - 1; j++) {
+      if (segmentsStrictlyCross(a[i]!, a[i + 1]!, b[j]!, b[j + 1]!)) {
+        return true
+      }
+    }
+  }
+
+  return false
+}
+
 const segmentsStrictlyCross = (a1: Point, a2: Point, b1: Point, b2: Point) => {
   if (sameX(a1, a2) && sameY(b1, b2)) {
     return (

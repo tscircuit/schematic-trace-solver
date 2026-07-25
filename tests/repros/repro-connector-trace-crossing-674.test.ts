@@ -49,10 +49,15 @@ const countDifferentNetCrossings = (
 // JP1.1-SJ3.1 trace), each rendering as a false junction.
 //
 // Candidates whose connector crosses another net are now rejected when a
-// crossing-free candidate exists. The remaining crossings on this board are
-// pinned by the test.failing below: their pins are walled in by another
-// net's trace on the shift axis, so avoiding them requires routing the
-// connector around the blocking trace rather than shifting the anchor.
+// crossing-free candidate exists, and a post-pass re-routes connectors whose
+// collision only became visible once every connector existed (labels are
+// processed one at a time, so an early connector cannot see a later one).
+// That takes this board from 3 crossings to 2.
+//
+// The last 2 are pinned by the test.failing below. Both are walled in: their
+// pins are blocked by another net's trace along the shift axis, and the
+// mirrored L-route crosses something too, so clearing them needs the
+// connector routed *around* the blocking trace rather than re-cornered.
 test.failing("net-label connector traces do not cross other nets' traces", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
   solver.solve()
