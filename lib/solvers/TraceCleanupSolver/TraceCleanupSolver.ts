@@ -1,18 +1,20 @@
-import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject, Line } from "graphics-debug"
-import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
-import { balanceZShapes } from "./balanceZShapes"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type { InputProblem } from "lib/types/InputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { alignSameNetRails } from "./alignSameNetRails"
+import { balanceZShapes } from "./balanceZShapes"
+import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
+import { straightenNearOrthogonalSegments } from "./straightenNearOrthogonalSegments"
 
 export type TraceCleanupOperation =
   | "untangling_traces"
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "aligning_same_net_rails"
+  | "straightening_near_orthogonal_segments"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -27,8 +29,8 @@ export interface TraceCleanupSolverInput {
   eligibleTraceIds?: ReadonlySet<string>
 }
 
-import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -37,6 +39,7 @@ const DEFAULT_OPERATIONS: readonly TraceCleanupOperation[] = [
   "untangling_traces",
   "minimizing_turns",
   "balancing_l_shapes",
+  "straightening_near_orthogonal_segments",
 ]
 
 /**
@@ -105,6 +108,9 @@ export class TraceCleanupSolver extends BaseSolver {
         break
       case "aligning_same_net_rails":
         this._runAlignSameNetRailsStep()
+        break
+      case "straightening_near_orthogonal_segments":
+        this._runStraightenNearOrthogonalSegmentsStep()
         break
     }
   }
@@ -185,6 +191,14 @@ export class TraceCleanupSolver extends BaseSolver {
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.stats.alignedRailGroupCount = alignment.alignedRailGroupCount
     this.stats.alignedTraceCount = alignment.alignedTraceCount
+    this._advancePipeline()
+  }
+
+  private _runStraightenNearOrthogonalSegmentsStep() {
+    const straightened = straightenNearOrthogonalSegments(this.outputTraces)
+    this.outputTraces = straightened.traces
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.stats.straightenedSegmentCount = straightened.straightenedSegmentCount
     this._advancePipeline()
   }
 
