@@ -640,14 +640,35 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     orientation: FacingDirection,
     baseAnchor: Point,
   ) {
+    const availableOrientations = this.getAvailableOrientations(label)
+    const isSingleVerticalOrientation =
+      availableOrientations.length === 1 &&
+      isYOrientation(availableOrientations[0]!)
+
+    // A vertical rail between components may need to branch laterally and then
+    // search past either connected component before it can use its required
+    // orientation. Keep other labels scoped to their first connected component
+    // so an orientation correction does not move a signal label across the
+    // entire connection.
     const labelChipIds = new Set(
       label.pinIds
         .map((pinId) => this.pinMap[pinId]?.chipId)
         .filter((chipId): chipId is string => Boolean(chipId)),
     )
-    const labelChips = this.chipObstacleSpatialIndex.chips.filter((chip) =>
+    const connectedChips = this.chipObstacleSpatialIndex.chips.filter((chip) =>
       labelChipIds.has(chip.chipId),
     )
+    const firstConnectedChipId = label.pinIds
+      .map((pinId) => this.pinMap[pinId]?.chipId)
+      .find(Boolean)
+    const firstConnectedChip = connectedChips.find(
+      (chip) => chip.chipId === firstConnectedChipId,
+    )
+    const labelChips = isSingleVerticalOrientation
+      ? connectedChips
+      : firstConnectedChip
+        ? [firstConnectedChip]
+        : []
 
     if (labelChips.length > 0) {
       if (orientation === "y-") {
