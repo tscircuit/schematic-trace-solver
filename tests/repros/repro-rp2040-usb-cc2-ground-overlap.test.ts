@@ -68,7 +68,7 @@ const pathsHavePositiveLengthCollinearOverlap = (
   return false
 }
 
-test("reproduces RP2040 USB-C CC2 label connector overlapping GND", () => {
+test("avoids RP2040 USB-C CC2 label connector overlapping GND", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
 
   solver.solve()
@@ -91,8 +91,5 @@ test("reproduces RP2040 USB-C CC2 label connector overlapping GND", () => {
     )
     .map((trace) => trace.mspPairId)
 
-  expect(overlappingDifferentNetTraceIds).toEqual([
-    "schematic_port_92-schematic_port_90",
-    "schematic_port_94-schematic_port_92",
-  ])
+  expect(overlappingDifferentNetTraceIds).toEqual([])
 })
