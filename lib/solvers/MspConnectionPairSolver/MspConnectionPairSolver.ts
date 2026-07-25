@@ -105,15 +105,9 @@ export class MspConnectionPairSolver extends BaseSolver {
     const allIds = this.globalConnMap.getIdsConnectedToNet(dcNetId) as string[]
     const directlyConnectedPins = allIds.filter((id) => !!this.pinMap[id])
 
-    // Ground connections should always be represented by GND net labels,
-    // never by routed pin-to-pin traces.
-    if (
-      directlyConnectedPins.some(
-        (pinId) => this.userNetIdByPinId[pinId] === "GND",
-      )
-    ) {
-      return
-    }
+    const isGroundNet = directlyConnectedPins.some(
+      (pinId) => this.userNetIdByPinId[pinId] === "GND",
+    )
 
     if (directlyConnectedPins.length <= 1) {
       return
@@ -123,6 +117,9 @@ export class MspConnectionPairSolver extends BaseSolver {
       const [pin1, pin2] = directlyConnectedPins
       const p1 = this.pinMap[pin1!]!
       const p2 = this.pinMap[pin2!]!
+      if (isGroundNet && p1.chipId !== p2.chipId) {
+        return
+      }
       const pinPairKey = getPinPairKey([pin1!, pin2!])
       // Explicit source traces are classified by straight-line distance when
       // their input is created; named nets retain the orthogonal route metric.
@@ -179,6 +176,9 @@ export class MspConnectionPairSolver extends BaseSolver {
       {
         maxDistance: this.maxMspPairDistance,
         forbidEdge: (a, b) =>
+          (isGroundNet &&
+            (a as InputPin & { chipId: string }).chipId !==
+              (b as InputPin & { chipId: string }).chipId) ||
           arePinsInDifferentSchematicSections(
             this.inputProblem,
             a as InputPin & { chipId: string },

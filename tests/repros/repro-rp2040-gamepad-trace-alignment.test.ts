@@ -11,10 +11,16 @@ test("reproduces RP2040 gamepad trace routing", () => {
   solver.solve()
 
   expect(
+    solver.mspConnectionPairSolver!.mspConnectionPairs
+      .filter((pair) => pair.userNetId === "GND")
+      .every((pair) => pair.pins[0].chipId === pair.pins[1].chipId),
+  ).toBe(true)
+  expect(
     solver.mspConnectionPairSolver!.mspConnectionPairs.some(
-      (pair) => pair.userNetId === "GND",
+      (pair) =>
+        pair.userNetId === "GND" && pair.pins[0].chipId === pair.pins[1].chipId,
     ),
-  ).toBe(false)
+  ).toBe(true)
   expect(
     solver.netLabelNetLabelCollisionSolver!.getOutput().netLabelPlacements.some(
       (label) => label.netId === "GND",
