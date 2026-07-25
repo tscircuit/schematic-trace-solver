@@ -1,0 +1,162 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": { "x": 0, "y": 3.05 },
+      "width": 0.53,
+      "height": 1.1,
+      "pins": [
+        {
+          "pinId": "C1.1",
+          "x": -3.469446951953614e-17,
+          "y": 3.5999999999999996
+        },
+        {
+          "pinId": "C1.2",
+          "x": 3.469446951953614e-17,
+          "y": 2.5
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": { "x": -1, "y": 3.05 },
+      "width": 0.5700000000000001,
+      "height": 0.99,
+      "pins": [
+        { "pinId": "C2.2", "x": -1, "y": 2.5549999999999997 },
+        { "pinId": "C2.1", "x": -1, "y": 3.545 }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": { "x": 1.2, "y": 3.05 },
+      "width": 0.53,
+      "height": 1.1,
+      "pins": [
+        { "pinId": "C4.1", "x": 1.2, "y": 3.5999999999999996 },
+        { "pinId": "C4.2", "x": 1.2, "y": 2.5 }
+      ]
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": { "x": 0, "y": 0 },
+      "width": 1.2000000000000002,
+      "height": 1,
+      "pins": [
+        { "pinId": "U1.1", "x": -1, "y": 0.30000000000000004 },
+        { "pinId": "U1.2", "x": -1, "y": 0.10000000000000003 },
+        { "pinId": "U1.3", "x": -1, "y": -0.09999999999999998 },
+        { "pinId": "U1.4", "x": -1, "y": -0.30000000000000004 },
+        { "pinId": "U1.5", "x": 1, "y": -0.30000000000000004 },
+        { "pinId": "U1.6", "x": 1, "y": -0.10000000000000003 },
+        { "pinId": "U1.7", "x": 1, "y": 0.09999999999999998 },
+        { "pinId": "U1.8", "x": 1, "y": 0.30000000000000004 }
+      ]
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": { "x": 2, "y": 1.3 },
+      "width": 0.3194553499999995,
+      "height": 1.1,
+      "pins": [
+        { "pinId": "R1.1", "x": 2, "y": 1.85 },
+        { "pinId": "R1.2", "x": 2, "y": 0.75 }
+      ]
+    },
+    {
+      "chipId": "schematic_component_5",
+      "center": { "x": 2.8, "y": 1.3 },
+      "width": 0.3194553499999995,
+      "height": 1.1,
+      "pins": [
+        { "pinId": "R2.1", "x": 2.8, "y": 1.85 },
+        { "pinId": "R2.2", "x": 2.8, "y": 0.75 }
+      ]
+    },
+    {
+      "chipId": "schematic_component_6",
+      "center": { "x": -2.8, "y": -0.7 },
+      "width": 0.53,
+      "height": 1.1,
+      "pins": [
+        { "pinId": "C3.1", "x": -2.8, "y": -0.1499999999999999 },
+        { "pinId": "C3.2", "x": -2.8, "y": -1.25 }
+      ]
+    },
+    {
+      "chipId": "schematic_component_7",
+      "center": { "x": -5.1, "y": 1 },
+      "width": 0.6,
+      "height": 1.4,
+      "pins": [
+        { "pinId": "JP4.1", "x": -5.8, "y": 1.5 },
+        { "pinId": "JP4.2", "x": -5.8, "y": 1.3 },
+        { "pinId": "JP4.3", "x": -5.8, "y": 1.1 },
+        { "pinId": "JP4.4", "x": -5.8, "y": 0.8999999999999999 },
+        { "pinId": "JP4.5", "x": -5.8, "y": 0.7 },
+        { "pinId": "JP4.6", "x": -5.8, "y": 0.5 }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": ["C2.2", "C1.2"],
+      "netId": ".C2 > .pin2 to .C1 > .pin2"
+    },
+    {
+      "pinIds": ["C3.1", "U1.2"],
+      "netId": ".C3 > .pin1 to .U1 > .pin2"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "VCC",
+      "pinIds": [
+        "C1.1",
+        "C2.1",
+        "C4.1",
+        "U1.1",
+        "U1.4",
+        "R1.1",
+        "R2.1",
+        "JP4.5"
+      ],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "GND",
+      "pinIds": ["C1.2", "C2.2", "C4.2", "U1.3", "C3.2", "JP4.6"],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "INT2",
+      "pinIds": ["U1.5", "JP4.1"],
+      "netLabelWidth": 0.6
+    },
+    {
+      "netId": "INT1",
+      "pinIds": ["U1.6", "JP4.2"],
+      "netLabelWidth": 0.6
+    },
+    {
+      "netId": "SDA",
+      "pinIds": ["U1.7", "R2.2", "JP4.3"],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "SCL",
+      "pinIds": ["U1.8", "R1.2", "JP4.4"],
+      "netLabelWidth": 0.48
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "VCC": ["y+"],
+    "GND": ["y-"],
+    "INT1": ["x-", "x+"],
+    "INT2": ["x-", "x+"],
+    "SCL": ["x-", "x+"],
+    "SDA": ["x-", "x+"]
+  },
+  "maxMspPairDistance": 2.4
+}
