@@ -6,6 +6,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { SingleOverlapSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/SingleOverlapSolver/SingleOverlapSolver"
 import {
+  NET_LABEL_HORIZONTAL_WIDTH,
   getCenterFromAnchor,
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
@@ -14,6 +15,57 @@ import { getColorFromString } from "lib/utils/getColorFromString"
 import type { InputProblem } from "lib/types/InputProblem"
 
 const ON_PATH_EPS = 1e-6
+const FALLBACK_DIRECT_CONNECTION_LABEL_WIDTH = 0.96
+
+/**
+ * Core can add fallback port labels such as "U1_pin4" for an unnamed direct
+ * connection after routing. Inputs with opaque schematic-port ids can omit the
+ * rendered label width, so NetLabelPlacementSolver uses its compact placeholder
+ * width. Reserve enough space for the common fallback label without changing
+ * the placement returned to the caller.
+ */
+function getCollisionLabel(
+  label: NetLabelPlacement,
+  inputProblem: InputProblem,
+): NetLabelPlacement {
+  const directConnection = inputProblem.directConnections.find(
+    (connection) => connection.netId === label.netId,
+  )
+  const horizontalWidth =
+    label.orientation === "x+" || label.orientation === "x-"
+      ? label.width
+      : label.height
+  if (
+    !directConnection ||
+    directConnection.netLabelWidth !== undefined ||
+    !directConnection.pinIds.every((pinId) =>
+      pinId.startsWith("schematic_port_"),
+    ) ||
+    horizontalWidth !== NET_LABEL_HORIZONTAL_WIDTH
+  ) {
+    return label
+  }
+
+  const width =
+    label.orientation === "x+" || label.orientation === "x-"
+      ? FALLBACK_DIRECT_CONNECTION_LABEL_WIDTH
+      : label.width
+  const height =
+    label.orientation === "y+" || label.orientation === "y-"
+      ? FALLBACK_DIRECT_CONNECTION_LABEL_WIDTH
+      : label.height
+  return {
+    ...label,
+    width,
+    height,
+    center: getCenterFromAnchor(
+      label.anchorPoint,
+      label.orientation,
+      width,
+      height,
+    ),
+  }
+}
 
 function getClosestPointOnSegment(params: {
   point: Point
@@ -234,9 +286,12 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
       return
     }
 
+    const collisionLabels = this.outputNetLabelPlacements.map((label) =>
+      getCollisionLabel(label, this.inputProblem),
+    )
     const overlaps = detectTraceLabelOverlaps(
       this.outputTraces,
-      this.outputNetLabelPlacements,
+      collisionLabels,
     )
 
     const actionable = overlaps.filter((o) => {
@@ -261,7 +316,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
     // one collision doesn't immediately create another with an adjacent label.
     const mergedLabel = buildMergedObstacleLabel(
       next.label,
-      this.outputNetLabelPlacements.filter(
+      collisionLabels.filter(
         (l) => l.globalConnNetId !== traceToFix.globalConnNetId,
       ),
     )
