@@ -8,6 +8,7 @@ import type {
   PinId,
 } from "lib/types/InputProblem"
 import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
+import { createLabeledRailNetHelpers } from "lib/utils/labeledRailNets"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 import { BaseSolver } from "../BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
@@ -73,25 +74,14 @@ export class LongDistancePairSolver extends BaseSolver {
     > = []
     const addedPairKeys = new Set<string>()
 
-    // Nets with declared net-label orientations (power/ground rails and named
-    // buses like V3_3, GND, SDA) are rendered with a net label at each pin
-    // when the net has many pins. For those nets a distant pair should stay
-    // label-connected — otherwise a long bus trace snakes across the
-    // schematic duplicating the labels (#670). Two-pin labeled nets keep
-    // their long traces: a single trace is cleaner than a floating label
-    // pair (see rotated-components-rail-label).
-    const labeledNetIds = new Set(
-      Object.keys(inputProblem.availableNetLabelOrientations ?? {}),
-    )
-    const maxLabeledNetPairDistance = inputProblem.maxMspPairDistance ?? 1
+    // Distant pairs on labeled rails stay label-connected; wiring them
+    // duplicates the net labels with a long bus trace (#670).
+    const { isLabeledRailNet, exceedsDirectWiringDistance } =
+      createLabeledRailNetHelpers(inputProblem)
 
     for (const netId of Object.keys(netConnMap.netMap)) {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
-
-      const netPinCount = allPinIdsInNet.filter((id) => pinMap.has(id)).length
-      const netIsLabeled =
-        netPinCount > 2 && allPinIdsInNet.some((id) => labeledNetIds.has(id))
 
       const unconnectedPinIds = allPinIdsInNet.filter(
         (pinId) => !primaryConnectedPinIds.has(pinId),
@@ -115,7 +105,8 @@ export class LongDistancePairSolver extends BaseSolver {
           })
           .filter(
             (neighbor) =>
-              !netIsLabeled || neighbor.distance <= maxLabeledNetPairDistance,
+              !isLabeledRailNet(unconnectedPinId) ||
+              !exceedsDirectWiringDistance(neighbor.distance),
           )
           .sort((a, b) => a.distance - b.distance)
           .slice(0, NEAREST_NEIGHBOR_COUNT)
