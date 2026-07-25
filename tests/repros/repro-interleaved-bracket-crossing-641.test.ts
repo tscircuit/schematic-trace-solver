@@ -75,4 +75,6 @@ test("repro #641: interleaved GND/VCC brackets cross on the same chip edge", () 
     "U_MCU.18-R_FAULT_PULLUP.1 x available-net-orientation-4-FAULT",
     "U_MCU.5-U_MCU.3 x U_MCU.6-U_MCU.4",
   ])
+
+  expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
