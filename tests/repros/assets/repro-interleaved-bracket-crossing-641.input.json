@@ -1,0 +1,54 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 10,
+        "y": 14
+      },
+      "width": 2.1999999999999993,
+      "height": 3.3999999999999986,
+      "pins": [
+        {
+          "pinId": "U_MCU.3",
+          "x": 8.9,
+          "y": 15.1
+        },
+        {
+          "pinId": "U_MCU.4",
+          "x": 8.9,
+          "y": 14.9
+        },
+        {
+          "pinId": "U_MCU.5",
+          "x": 8.9,
+          "y": 14.7
+        },
+        {
+          "pinId": "U_MCU.6",
+          "x": 8.9,
+          "y": 14.5
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "pinIds": [
+        "U_MCU.3",
+        "U_MCU.5"
+      ]
+    },
+    {
+      "netId": "VCC_3V3",
+      "pinIds": [
+        "U_MCU.4",
+        "U_MCU.6"
+      ]
+    }
+  ],
+  "availableNetLabelOrientations": {},
+  "maxMspPairDistance": 2.4
+}

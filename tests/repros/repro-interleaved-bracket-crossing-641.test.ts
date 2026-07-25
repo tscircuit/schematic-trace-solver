@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import inputProblem from "./assets/repro-interleaved-bracket-crossing-641.input.json"
 import "tests/fixtures/matcher"
-import inputProblem from "../bug-reports/bug-report-20260708T055430Z/bug-report-20260708T055430Z.json"
 
 const findDifferentNetCrossings = (
   traces: Array<{
@@ -43,36 +43,30 @@ const findDifferentNetCrossings = (
   return [...crossings].sort()
 }
 
-// Reproduction for https://github.com/tscircuit/schematic-trace-solver/issues/641
+// Reproduction for #641, minimized from bug-report-20260708T055430Z.
 //
-// U_MCU's left edge interleaves GND and VCC_3V3 pins (3=GND, 4=VCC, 5=GND,
-// 6=VCC). MspConnectionPairSolver pairs same-net neighbors, producing two
-// bracket traces that each *enclose* a pin of the other net:
+// U_MCU's left edge interleaves the two rails: pin 3 = GND, 4 = VCC_3V3,
+// 5 = GND, 6 = VCC_3V3, evenly spaced 0.2 apart. MspConnectionPairSolver
+// pairs same-net neighbours, so it wires 3->5 and 4->6. Each of those
+// brackets steps out from the chip edge and spans the pin of the *other*
+// net that sits between them, so the two brackets always overlap and cross.
 //
-//   U_MCU.5-U_MCU.3  (GND)      spans y 14.7..15.1, enclosing pin 4 (y 14.9)
-//   U_MCU.6-U_MCU.4  (VCC_3V3)  spans y 14.5..14.9, enclosing pin 5 (y 14.7)
+// The minimized scene keeps only those four pins and drops the net-label
+// orientations, so the crossing below is the interleaved-bracket defect on
+// its own rather than any label-driven routing.
 //
-// Two interleaved brackets on the same edge always cross — the GND/VCC rails
-// short visually. (Same family as the atmega328p interleaved-pin repro, where
-// the label for the boxed-in bracket is silently dropped.) There is also a
-// false junction where U_MCU.18-R_FAULT_PULLUP.1 crosses the FAULT net-label
-// connector (tracked separately in #674).
-//
-// This test pins the CURRENT (buggy) behavior so the bug is tracked by CI.
-// A fix should remove the bracket-bracket crossing, e.g. by rendering
-// interleaved same-edge rail pins with per-pin net labels instead of
-// bracket traces.
+// A fix should render interleaved same-edge rail pins in a way that cannot
+// cross — for example a net label per pin instead of a bracket trace.
 test("repro #641: interleaved GND/VCC brackets cross on the same chip edge", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
   solver.solve()
 
   const traces = solver.netLabelTraceCollisionSolver!.getOutput().traces
-  const crossings = findDifferentNetCrossings(traces)
 
-  // BUG: the interleaved GND/VCC brackets cross (plus the #674-family
-  // connector crossing)
-  expect(crossings).toEqual([
-    "U_MCU.18-R_FAULT_PULLUP.1 x available-net-orientation-4-FAULT",
-    "U_MCU.5-U_MCU.3 x U_MCU.6-U_MCU.4",
+  // BUG: the two brackets cross. A fix should make this an empty array.
+  expect(findDifferentNetCrossings(traces)).toEqual([
+    "U_MCU.3-U_MCU.5 x U_MCU.4-U_MCU.6",
   ])
+
+  expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

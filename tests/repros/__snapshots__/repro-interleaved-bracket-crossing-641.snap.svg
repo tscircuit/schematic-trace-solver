@@ -1,0 +1,52 @@
+<svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="white"/><g><polyline data-points="8.9,15.1 8.9,14.7" data-type="line" data-label="" points="184.1176470588232,138.82352941176487 184.1176470588232,204.70588235294144" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1px" stroke-dasharray="4 2"/></g><g><polyline data-points="8.9,14.9 8.9,14.5" data-type="line" data-label="" points="184.1176470588232,171.7647058823527 184.1176470588232,237.64705882352928" fill="none" stroke="hsl(23, 100%, 50%, 0.8)" stroke-width="1px" stroke-dasharray="4 2"/></g><g><polyline data-points="8.9,15.1 8.600000000000001,15.1 8.600000000000001,14.7 8.9,14.7" data-type="line" data-label="" points="184.1176470588232,138.82352941176487 134.70588235294122,138.82352941176487 134.70588235294122,204.70588235294144 184.1176470588232,204.70588235294144" fill="none" stroke="purple" stroke-width="1px"/></g><g><polyline data-points="8.9,14.9 8.8,14.9 8.8,14.5 8.9,14.5" data-type="line" data-label="" points="184.1176470588232,171.7647058823527 167.64705882352928,171.7647058823527 167.64705882352928,237.64705882352928 184.1176470588232,237.64705882352928" fill="none" stroke="purple" stroke-width="1px"/></g><g><rect data-type="rect" data-label="schematic_component_0" data-x="10" data-y="14" x="184.1176470588232" y="40" width="362.3529411764707" height="560" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.006071428571428569"/></g><g><rect data-type="rect" data-label="netId: GND
+globalConnNetId: connectivity_net0" data-x="8.75" data-y="15.325" x="142.94117647058795" y="64.70588235294144" width="32.94117647058806" height="74.11764705882342" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.006071428571428569"/></g><g><rect data-type="rect" data-label="netId: VCC_3V3
+globalConnNetId: connectivity_net1" data-x="8.575000000000001" data-y="14.5" x="93.52941176470586" y="221.17647058823536" width="74.11764705882342" height="32.941176470587834" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.006071428571428569"/></g><g><circle data-type="point" data-label="U_MCU.3
+x-" data-x="8.9" data-y="15.1" cx="184.1176470588232" cy="138.82352941176487" r="3" fill="hsl(146, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="U_MCU.4
+x-" data-x="8.9" data-y="14.9" cx="184.1176470588232" cy="171.7647058823527" r="3" fill="hsl(147, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="U_MCU.5
+x-" data-x="8.9" data-y="14.7" cx="184.1176470588232" cy="204.70588235294144" r="3" fill="hsl(148, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="U_MCU.6
+x-" data-x="8.9" data-y="14.5" cx="184.1176470588232" cy="237.64705882352928" r="3" fill="hsl(149, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="anchorPoint
+orientation: y+" data-x="8.75" data-y="15.1" cx="159.41176470588198" cy="138.82352941176487" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
+orientation: x-" data-x="8.8" data-y="14.5" cx="167.64705882352928" cy="237.64705882352928" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g id="crosshair" style="display: none"><line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5"/><line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5"/><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+                const svg = e.currentTarget;
+                const rect = svg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const crosshair = svg.getElementById('crosshair');
+                const h = svg.getElementById('crosshair-h');
+                const v = svg.getElementById('crosshair-v');
+                const coords = svg.getElementById('coordinates');
+                
+                crosshair.style.display = 'block';
+                h.setAttribute('x1', '0');
+                h.setAttribute('x2', '640');
+                h.setAttribute('y1', y);
+                h.setAttribute('y2', y);
+                v.setAttribute('x1', x);
+                v.setAttribute('x2', x);
+                v.setAttribute('y1', '0');
+                v.setAttribute('y2', '640');
+
+                // Calculate real coordinates using inverse transformation
+                const matrix = {"a":164.70588235294125,"c":0,"e":-1281.7647058823538,"b":0,"d":-164.70588235294125,"f":2625.8823529411775};
+                // Manually invert and apply the affine transform
+                // Since we only use translate and scale, we can directly compute:
+                // x' = (x - tx) / sx
+                // y' = (y - ty) / sy
+                const sx = matrix.a;
+                const sy = matrix.d;
+                const tx = matrix.e; 
+                const ty = matrix.f;
+                const realPoint = {
+                  x: (x - tx) / sx,
+                  y: (y - ty) / sy // Flip y back since we used negative scale
+                }
+                
+                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+                coords.setAttribute('x', (x + 5).toString());
+                coords.setAttribute('y', (y - 5).toString());
+              });
+              document.currentScript.parentElement.addEventListener('mouseleave', () => {
+                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+              });
+            ]]></script></svg>
