@@ -640,22 +640,40 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     orientation: FacingDirection,
     baseAnchor: Point,
   ) {
-    const chipId = label.pinIds
-      .map((pid) => this.pinMap[pid]?.chipId)
-      .find(Boolean)
-    const chip = chipId
-      ? this.chipObstacleSpatialIndex.chips.find((c) => c.chipId === chipId)
-      : null
+    const labelChipIds = new Set(
+      label.pinIds
+        .map((pinId) => this.pinMap[pinId]?.chipId)
+        .filter((chipId): chipId is string => Boolean(chipId)),
+    )
+    const labelChips = this.chipObstacleSpatialIndex.chips.filter((chip) =>
+      labelChipIds.has(chip.chipId),
+    )
 
-    if (chip) {
-      if (orientation === "y-")
-        return Math.max(0, baseAnchor.y - chip.bounds.minY)
-      if (orientation === "y+")
-        return Math.max(0, chip.bounds.maxY - baseAnchor.y)
-      if (orientation === "x-")
-        return Math.max(0, baseAnchor.x - chip.bounds.minX)
-      if (orientation === "x+")
-        return Math.max(0, chip.bounds.maxX - baseAnchor.x)
+    if (labelChips.length > 0) {
+      if (orientation === "y-") {
+        return Math.max(
+          0,
+          ...labelChips.map((chip) => baseAnchor.y - chip.bounds.minY),
+        )
+      }
+      if (orientation === "y+") {
+        return Math.max(
+          0,
+          ...labelChips.map((chip) => chip.bounds.maxY - baseAnchor.y),
+        )
+      }
+      if (orientation === "x-") {
+        return Math.max(
+          0,
+          ...labelChips.map((chip) => baseAnchor.x - chip.bounds.minX),
+        )
+      }
+      if (orientation === "x+") {
+        return Math.max(
+          0,
+          ...labelChips.map((chip) => chip.bounds.maxX - baseAnchor.x),
+        )
+      }
     }
 
     return this.getSearchDistanceLimit(label, orientation)
