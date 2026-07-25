@@ -51,3 +51,28 @@ test("net labels are not placed inside chip bodies", () => {
 
   expect(labelsInsideChips.map((label) => label.netId)).toEqual([])
 })
+
+// https://github.com/tscircuit/schematic-trace-solver/issues/636
+// #636 reports the same board as #655. Besides burying labels in chip bodies,
+// the bad placement also left two labels on an orientation the input never
+// allowed — collateral damage of the same defect rather than a separate bug,
+// so it is pinned here alongside the placement assertion.
+test("net labels honor availableNetLabelOrientations", () => {
+  const solver = new SchematicTracePipelineSolver(inputProblem as any)
+  solver.solve()
+
+  const labels =
+    solver.netLabelNetLabelCollisionSolver!.getOutput().netLabelPlacements
+  const availableOrientations =
+    solver.inputProblem.availableNetLabelOrientations ?? {}
+
+  const violations = labels
+    .filter((label) => {
+      if (!label.netId) return false
+      const allowed = availableOrientations[label.netId]
+      return Boolean(allowed?.length) && !allowed!.includes(label.orientation)
+    })
+    .map((label) => `${label.netId}:${label.orientation}`)
+
+  expect(violations).toEqual([])
+})
