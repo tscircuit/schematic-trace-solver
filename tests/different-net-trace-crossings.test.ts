@@ -15,16 +15,16 @@ import { getTraceCrossings } from "tests/fixtures/traceCrossings"
  * If a change legitimately improves a board, lower the number in the same PR.
  */
 const EXPECTED_CROSSINGS: Record<string, number> = {
-  "bug-report-20260706T213649Z": 11,
-  "bug-report-20260706T220324Z": 6,
-  "bug-report-20260721T221026Z": 5,
-  "bug-report-20260716T144856Z": 4,
-  "bug-report-20260717T022934Z": 3,
-  "bug-report-20260707T134549Z": 3,
-  "bug-report-20260708T055430Z": 2,
-  // Was 2 before #727 (TraceOverlapShiftSolver); that PR fixed the RP2040
-  // USB-C overlap and moved this board from 2 to 3. Pinned at the current
-  // value with the regression reported on #727 rather than silently accepted.
+  "bug-report-20260706T213649Z": 4,
+  "bug-report-20260706T220324Z": 4,
+  "bug-report-20260721T221026Z": 2,
+  "bug-report-20260716T144856Z": 0,
+  "bug-report-20260717T022934Z": 0,
+  "bug-report-20260707T134549Z": 2,
+  "bug-report-20260708T055430Z": 1,
+  // 3, not 2: #727 (TraceOverlapShiftSolver) moved this board from 2 to 3
+  // while fixing the RP2040 USB-C overlap. This PR's connector check does not
+  // reach that crossing — reported on #727.
   "bug-report-20260707T092615Z": 3,
   "bug-report-20260707T230831Z": 2,
   "bug-report-20260707T140410Z": 1,
