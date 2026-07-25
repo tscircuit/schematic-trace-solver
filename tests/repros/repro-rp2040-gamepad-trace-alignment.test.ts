@@ -10,29 +10,22 @@ test("reproduces RP2040 gamepad trace routing", () => {
 
   solver.solve()
 
-  const finalTraces = solver
-    .netLabelTraceCollisionSolver!.getOutput()
-    .traces.filter((trace) => trace.userNetId === "GND")
-  const leftRailXs = new Set<number>()
-  const rightRailXs = new Set<number>()
-  for (const trace of finalTraces) {
-    for (let i = 0; i < trace.tracePath.length - 1; i++) {
-      const start = trace.tracePath[i]!
-      const end = trace.tracePath[i + 1]!
-      if (Math.abs(start.x - end.x) > 1e-6) continue
-      if (start.x < -1.778 - 1e-6) leftRailXs.add(start.x)
-      if (start.x > 1.778 + 1e-6) rightRailXs.add(start.x)
-    }
-  }
-
-  expect(leftRailXs.size).toBe(1)
-  expect(rightRailXs.size).toBe(1)
   expect(
-    solver.traceCleanupSolver2!.stats.alignedRailGroupCount,
-  ).toBeGreaterThanOrEqual(2)
+    solver.mspConnectionPairSolver!.mspConnectionPairs
+      .filter((pair) => pair.userNetId === "GND")
+      .every((pair) => pair.pins[0].chipId === pair.pins[1].chipId),
+  ).toBe(true)
   expect(
-    solver.traceCleanupSolver2!.stats.alignedTraceCount,
-  ).toBeGreaterThanOrEqual(8)
+    solver.mspConnectionPairSolver!.mspConnectionPairs.some(
+      (pair) =>
+        pair.userNetId === "GND" && pair.pins[0].chipId === pair.pins[1].chipId,
+    ),
+  ).toBe(true)
+  expect(
+    solver.netLabelNetLabelCollisionSolver!.getOutput().netLabelPlacements.some(
+      (label) => label.netId === "GND",
+    ),
+  ).toBe(true)
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

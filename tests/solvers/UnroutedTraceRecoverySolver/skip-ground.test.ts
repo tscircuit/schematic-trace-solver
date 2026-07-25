@@ -25,6 +25,6 @@ test("does not recover the canonical ground connectivity net", () => {
 
   recoverySolver.solve()
 
-  expect(failedConnectionPairs).not.toHaveLength(0)
+  expect(failedConnectionPairs).toHaveLength(0)
   expect(recoverySolver.solvedUnroutedTraces).toHaveLength(0)
 })

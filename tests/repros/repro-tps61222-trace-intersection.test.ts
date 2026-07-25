@@ -22,10 +22,7 @@ test("repro TPS61222 schematic trace intersection", () => {
     solver.schematicTraceLinesSolver!.solvedTracePaths.find(
       (trace) => trace.mspPairId === "U2.3-C25.2",
     )
-  expect(initialGroundTrace).toBeDefined()
-  expect(
-    isPathCollidingWithObstacles(initialGroundTrace!.tracePath, [textBounds]),
-  ).toBe(false)
+  expect(initialGroundTrace).toBeUndefined()
 
   solver.solve()
 

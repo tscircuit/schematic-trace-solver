@@ -52,6 +52,11 @@ test("repro142 manufacturer text overlaps GND net label", () => {
   expect(solver.netLabelTraceCollisionSolver!.getOutput().traces).toHaveLength(
     1,
   )
+  expect(
+    solver.mspConnectionPairSolver!.mspConnectionPairs.some(
+      (pair) => pair.userNetId === "GND",
+    ),
+  ).toBe(true)
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
