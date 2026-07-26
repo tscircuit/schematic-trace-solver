@@ -54,6 +54,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   currentCandidateResults: EvaluatedCandidate[] = []
 
   private traceMap: Record<string, SolvedTracePath>
+  /**
+   * Relaxes the collinear-overlap rejection for a second pass, so a label that
+   * has no overlap-free orientation still gets a connector rather than none.
+   */
+  private allowCollinearConnectorOverlap = false
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private maxSearchDistance: number
   private pinMap: Record<string, InputPin & { chipId: string }>
@@ -125,7 +130,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     this.setCurrentLabel(labelIndex)
     this.currentCandidateResults = []
 
-    const candidate = this.findCorrectedCandidate(label, labelIndex)
+    // Prefer an orientation whose connector does not run along another net.
+    // If every candidate is rejected for that reason, take the best one
+    // anyway: dropping the connector entirely leaves the label unattached,
+    // which is worse than an overlap the cleanup passes can still shift.
+    this.allowCollinearConnectorOverlap = false
+    let candidate = this.findCorrectedCandidate(label, labelIndex)
+    if (!candidate) {
+      this.allowCollinearConnectorOverlap = true
+      this.currentCandidateResults = []
+      candidate = this.findCorrectedCandidate(label, labelIndex)
+      this.allowCollinearConnectorOverlap = false
+    }
     if (!candidate) return
 
     this.applyCandidate(label, candidate, labelIndex)
@@ -829,7 +845,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     // Crossing is not the only way a connector can be misread. A connector
     // laid *along* another net's trace renders as a single wire carrying two
     // nets, which is at least as misleading as a crossing.
-    if (this.connectorOverlapsOtherNetTrace(connectorTrace, label)) {
+    if (
+      !this.allowCollinearConnectorOverlap &&
+      this.connectorOverlapsOtherNetTrace(connectorTrace, label)
+    ) {
       return "trace-collision"
     }
 
