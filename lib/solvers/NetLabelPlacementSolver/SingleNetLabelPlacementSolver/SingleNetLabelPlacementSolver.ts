@@ -19,6 +19,7 @@ import { chooseHostTraceForGroup } from "./host"
 import { anchorsForSegment } from "./anchors"
 import { solveNetLabelPlacementForPortOnlyPin } from "./solvePortOnlyPin"
 import { visualizeSingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver_visualize"
+import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 export {
   NET_LABEL_HORIZONTAL_WIDTH,
@@ -58,8 +59,9 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
 
   chipObstacleSpatialIndex: ChipObstacleSpatialIndex
 
-  // Optional override for the width of the net label (per netId)
+  // Optional override for the width/height of the net label (per netId)
   netLabelWidth?: number
+  netLabelHeight?: number
 
   netLabelPlacement: NetLabelPlacement | null = null
   testedCandidates: Array<{
@@ -69,7 +71,12 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     bounds: { minX: number; minY: number; maxX: number; maxY: number }
     anchor: { x: number; y: number }
     orientation: FacingDirection
-    status: "ok" | "chip-collision" | "trace-collision" | "parallel-to-segment"
+    status:
+      | "ok"
+      | "chip-collision"
+      | "trace-collision"
+      | "text-collision"
+      | "parallel-to-segment"
     hostSegIndex: number
   }> = []
 
@@ -79,6 +86,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     overlappingSameNetTraceGroup: OverlappingSameNetTraceGroup
     availableOrientations: FacingDirection[]
     netLabelWidth?: number
+    netLabelHeight?: number
   }) {
     super()
     this.inputProblem = params.inputProblem
@@ -86,6 +94,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     this.overlappingSameNetTraceGroup = params.overlappingSameNetTraceGroup
     this.availableOrientations = params.availableOrientations
     this.netLabelWidth = params.netLabelWidth
+    this.netLabelHeight = params.netLabelHeight
 
     this.chipObstacleSpatialIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
@@ -101,6 +110,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       overlappingSameNetTraceGroup: this.overlappingSameNetTraceGroup,
       availableOrientations: this.availableOrientations,
       netLabelWidth: this.netLabelWidth,
+      netLabelHeight: this.netLabelHeight,
     }
   }
 
@@ -119,6 +129,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         overlappingSameNetTraceGroup: this.overlappingSameNetTraceGroup,
         availableOrientations: this.availableOrientations,
         netLabelWidth: this.netLabelWidth,
+        netLabelHeight: this.netLabelHeight,
       })
       this.testedCandidates.push(...res.testedCandidates)
       if (res.placement) {
@@ -230,6 +241,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
             const { width, height } = getDimsForOrientation({
               orientation,
               netLabelWidth: this.netLabelWidth,
+              netLabelHeight: this.netLabelHeight,
             })
             const center = getCenterFromAnchor(
               anchor,
@@ -265,6 +277,20 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
                 anchor,
                 orientation,
                 status: "chip-collision",
+                hostSegIndex: si,
+              })
+              continue
+            }
+
+            if (rectIntersectsAnyTextBox(bounds, this.inputProblem)) {
+              this.testedCandidates.push({
+                center: testCenter,
+                width,
+                height,
+                bounds,
+                anchor,
+                orientation,
+                status: "text-collision",
                 hostSegIndex: si,
               })
               continue

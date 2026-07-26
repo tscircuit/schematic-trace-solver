@@ -30,6 +30,7 @@ export type TraceLocation = {
 export type CandidateStatus =
   | "valid"
   | "chip-collision"
+  | "text-collision"
   | "trace-collision"
   | "netlabel-collision"
 

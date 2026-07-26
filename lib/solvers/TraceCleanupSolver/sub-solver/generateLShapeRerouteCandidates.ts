@@ -1,6 +1,8 @@
-import type { Point } from "@tscircuit/math-utils"
+import type { Bounds, Point } from "@tscircuit/math-utils"
 import type { LShape } from "./findAllLShapedTurns"
 import type { Rectangle } from "./generateRectangleCandidates"
+import type { SolvedTracePath } from "../../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { simplifyPath } from "../simplifyPath"
 
 const EPS = 1e-6
 
@@ -104,4 +106,65 @@ export const generateLShapeRerouteCandidates = ({
   }
 
   return [[i1_padded, c2, i2_padded]]
+}
+
+export interface PerpendicularTraceDetourInput {
+  trace: SolvedTracePath
+  segmentIndex: number
+  obstacleStart: Point
+  obstacleEnd: Point
+  chipBounds: Bounds[]
+  clearance: number
+}
+
+export interface TraceDetourCandidate {
+  traceId: string
+  path: Point[]
+}
+
+export const generatePerpendicularTraceDetours = ({
+  trace,
+  segmentIndex,
+  obstacleStart,
+  obstacleEnd,
+  chipBounds,
+  clearance,
+}: PerpendicularTraceDetourInput): TraceDetourCandidate[] => {
+  const buildDetours = (path: Point[], index: number) => {
+    const start = path[index]!
+    const end = path[index + 1]!
+    const movingAxis: "x" | "y" = Math.abs(start.x - end.x) < EPS ? "y" : "x"
+    const detourAxis = movingAxis === "x" ? "y" : "x"
+    const gate =
+      obstacleStart[movingAxis] +
+      Math.sign(start[movingAxis] - obstacleStart[movingAxis]) * clearance
+    const obstacleRange = [obstacleStart[detourAxis], obstacleEnd[detourAxis]]
+    const lowBound = detourAxis === "x" ? "minX" : "minY"
+    const highBound = detourAxis === "x" ? "maxX" : "maxY"
+    const detourCoordinates = [
+      Math.min(...obstacleRange) - clearance,
+      Math.max(...obstacleRange) + clearance,
+      ...chipBounds.flatMap((bounds) => [
+        bounds[lowBound] - clearance,
+        bounds[highBound] + clearance,
+      ]),
+    ]
+
+    return [...new Set(detourCoordinates)].map((detour) =>
+      simplifyPath([
+        ...path.slice(0, index + 1),
+        { ...start, [movingAxis]: gate },
+        { ...start, [movingAxis]: gate, [detourAxis]: detour },
+        { ...end, [detourAxis]: detour },
+        ...path.slice(index + 2),
+      ]),
+    )
+  }
+
+  const reversedPath = [...trace.tracePath].reverse()
+  const reversedIndex = trace.tracePath.length - 2 - segmentIndex
+  return [
+    ...buildDetours(trace.tracePath, segmentIndex),
+    ...buildDetours(reversedPath, reversedIndex).map((path) => path.reverse()),
+  ].map((path) => ({ traceId: trace.mspPairId, path }))
 }

@@ -6,23 +6,28 @@ export const NET_LABEL_HORIZONTAL_HEIGHT = 0.2
 export function getDimsForOrientation(params: {
   orientation: FacingDirection
   netLabelWidth?: number
+  netLabelHeight?: number
 }) {
-  const { orientation, netLabelWidth } = params
+  const { orientation, netLabelWidth, netLabelHeight } = params
   const horizWidth =
     typeof netLabelWidth === "number"
       ? netLabelWidth
       : NET_LABEL_HORIZONTAL_WIDTH
+  const horizHeight =
+    typeof netLabelHeight === "number"
+      ? netLabelHeight
+      : NET_LABEL_HORIZONTAL_HEIGHT
 
   if (orientation === "y+" || orientation === "y-") {
     return {
-      // Rotated, so width/height swap
-      width: NET_LABEL_HORIZONTAL_HEIGHT,
+      // Rotated: horizontal length = netLabelHeight, vertical length = netLabelWidth
+      width: horizHeight,
       height: horizWidth,
     }
   }
   return {
     width: horizWidth,
-    height: NET_LABEL_HORIZONTAL_HEIGHT,
+    height: horizHeight,
   }
 }
 

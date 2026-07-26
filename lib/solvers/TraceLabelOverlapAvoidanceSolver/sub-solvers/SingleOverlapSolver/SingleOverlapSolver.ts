@@ -9,6 +9,8 @@ import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/Schemati
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
+import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath
@@ -16,10 +18,10 @@ interface SingleOverlapSolverInput {
   problem: InputProblem
   paddingBuffer: number
   detourCount: number
+  tracesToAvoidOverlapping?: SolvedTracePath[]
 }
 
 const MAX_TRIES = 5
-
 /**
  * This solver attempts to find a valid rerouting for a single trace that is
  * overlapping with a net label. It tries various candidate paths until it
@@ -32,6 +34,7 @@ export class SingleOverlapSolver extends BaseSolver {
   problem: InputProblem
   obstacles: ReturnType<typeof getObstacleRects>
   label: NetLabelPlacement
+  tracesToAvoidOverlapping: SolvedTracePath[]
   _tried: number = 0
 
   constructor(solverInput: SingleOverlapSolverInput) {
@@ -39,6 +42,9 @@ export class SingleOverlapSolver extends BaseSolver {
     this.initialTrace = solverInput.trace
     this.problem = solverInput.problem
     this.label = solverInput.label
+    this.tracesToAvoidOverlapping = (
+      solverInput.tracesToAvoidOverlapping ?? []
+    ).filter((t) => t.globalConnNetId !== solverInput.trace.globalConnNetId)
 
     // Calculate an effective padding for this specific run based on the detourCount.
     const effectivePadding =
@@ -77,7 +83,20 @@ export class SingleOverlapSolver extends BaseSolver {
     const nextCandidatePath = this.queuedCandidatePaths.shift()!
     const simplifiedPath = simplifyPath(nextCandidatePath)
 
-    if (!isPathCollidingWithObstacles(simplifiedPath, this.obstacles)) {
+    // A candidate is only valid if it actually clears the label it is meant to
+    // avoid. Without this check a "detour" that still grazes the label (e.g. one
+    // built around the wrong segment) would be accepted as solved.
+    const stillOverlapsLabel =
+      detectTraceLabelOverlap({
+        traces: [{ ...this.initialTrace, tracePath: simplifiedPath }],
+        netLabels: [this.label],
+      }).length > 0
+
+    if (
+      !stillOverlapsLabel &&
+      !isPathCollidingWithObstacles(simplifiedPath, this.obstacles) &&
+      !doesPathCoincideWithTraces(simplifiedPath, this.tracesToAvoidOverlapping)
+    ) {
       this.solvedTracePath = simplifiedPath
       this.solved = true
     }

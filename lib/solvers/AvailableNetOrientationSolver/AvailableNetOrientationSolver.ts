@@ -11,6 +11,7 @@ import {
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
+import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 import { EPS, LABEL_SEARCH_STEP, WICK_CLEARANCE } from "./constants"
 import {
   getConnectorTracePath,
@@ -20,9 +21,10 @@ import {
   isYOrientation,
   rangesOverlap,
   rectsOverlap,
+  simplifyOrthogonalPath,
   traceCrossesBoundsInterior,
   tracePathCrossesAnyBounds,
-  tracePathCrossesAnyTrace,
+  tracePathIntersectsBounds,
 } from "./geometry"
 import { getPinMap, getTracePins, toNetLabelPlacementPatch } from "./traces"
 import type {
@@ -35,6 +37,8 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
+
+const LABEL_TRACE_CLEARANCE = 0.1
 
 export class AvailableNetOrientationSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -127,7 +131,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   private applyCandidate(
     label: NetLabelPlacement,
-    candidate: CandidateLabel,
+    candidate: EvaluatedCandidate,
     labelIndex: number,
   ) {
     this.outputNetLabelPlacements[labelIndex] = {
@@ -139,14 +143,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   private addConnectorTrace(
     label: NetLabelPlacement,
-    candidate: CandidateLabel,
+    candidate: EvaluatedCandidate,
     labelIndex: number,
   ) {
-    const tracePath = getConnectorTracePath(
-      label.anchorPoint,
-      candidate.anchorPoint,
-      candidate.orientation,
-    )
+    if (candidate.phase === "trace-anchor") return
+
+    const tracePath = this.getCandidateConnectorTrace(label, candidate)
     if (tracePath.length < 2) return
 
     const mspPairId = `available-net-orientation-${labelIndex}-${label.netId ?? label.globalConnNetId}`
@@ -180,16 +182,85 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   private findCorrectedCandidate(label: NetLabelPlacement, labelIndex: number) {
     const orientations = this.getAvailableOrientations(label)
+    const requiredOrientation = orientations[0]!
+    const isTwoPinNet = this.inputProblem.netConnections.some(
+      (connection) =>
+        connection.netId === label.netId && connection.pinIds.length === 2,
+    )
+    if (
+      isTwoPinNet &&
+      orientations.length === 1 &&
+      isYOrientation(requiredOrientation) &&
+      this.hasTraceContinuingInOrientation(label, requiredOrientation)
+    ) {
+      // Keep two-pin vertical net labels aligned with the existing trace.
+      const alignedCandidate = this.findValidCandidateInShiftColumn({
+        label,
+        labelIndex,
+        orientation: requiredOrientation,
+        direction: dir(requiredOrientation),
+        baseAnchor: this.getWickOffsetAnchor(
+          label.anchorPoint,
+          requiredOrientation,
+        ),
+        maxSearchDistance: this.maxSearchDistance,
+        outwardDistance: 0,
+        stopOnTraceCollision: false,
+      })
+      if (alignedCandidate) return alignedCandidate
+    }
+
     const rotatedCandidate = this.findValidRotatedCandidate(
       label,
       labelIndex,
       orientations,
     )
+    if (rotatedCandidate) return rotatedCandidate
 
-    return (
-      rotatedCandidate ??
-      this.findValidShiftedCandidate(label, orientations[0]!, labelIndex)
+    const traceAnchorCandidate = this.findValidTraceAnchorCandidate(
+      label,
+      orientations[0]!,
+      labelIndex,
     )
+    if (traceAnchorCandidate) return traceAnchorCandidate
+
+    const shiftedCandidate = this.findValidShiftedCandidate(
+      label,
+      orientations[0]!,
+      labelIndex,
+    )
+    if (shiftedCandidate) return shiftedCandidate
+
+    return this.findValidLateralShiftedCandidate(
+      label,
+      orientations[0]!,
+      labelIndex,
+    )
+  }
+
+  private hasTraceContinuingInOrientation(
+    label: NetLabelPlacement,
+    orientation: "y+" | "y-",
+  ) {
+    const direction = dir(orientation)
+    return Object.values(this.traceMap).some((trace) => {
+      if (trace.globalConnNetId !== label.globalConnNetId) return false
+      const path = trace.tracePath
+      return path.some((point, pointIndex) => {
+        if (
+          Math.abs(point.x - label.anchorPoint.x) > EPS ||
+          Math.abs(point.y - label.anchorPoint.y) > EPS
+        ) {
+          return false
+        }
+        return [path[pointIndex - 1], path[pointIndex + 1]].some(
+          (neighbor) =>
+            neighbor &&
+            Math.abs(neighbor.x - point.x) <= EPS &&
+            (neighbor.y - point.y) * direction.y > EPS,
+        )
+      })
+    })
   }
 
   private findValidRotatedCandidate(
@@ -217,6 +288,57 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return null
+  }
+
+  private findValidTraceAnchorCandidate(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+    labelIndex: number,
+  ) {
+    const direction = dir(orientation)
+    const candidatePoints = this.getTraceAnchorCandidatePoints(label).sort(
+      (a, b) => {
+        const aAlongDirection = a.x * direction.x + a.y * direction.y
+        const bAlongDirection = b.x * direction.x + b.y * direction.y
+        return bAlongDirection - aAlongDirection
+      },
+    )
+
+    for (const anchorPoint of candidatePoints) {
+      const candidate = this.createCandidate(label, anchorPoint, orientation)
+      const result = this.evaluateCandidate(
+        candidate,
+        label,
+        labelIndex,
+        "trace-anchor",
+      )
+      this.currentCandidateResults.push(result)
+
+      if (result.status === "valid") {
+        result.selected = true
+        return result
+      }
+    }
+
+    return null
+  }
+
+  private getTraceAnchorCandidatePoints(label: NetLabelPlacement) {
+    const seen = new Set<string>()
+    const points: Point[] = []
+
+    for (const traceId of label.mspConnectionPairIds ?? []) {
+      const trace = this.traceMap[traceId]
+      if (!trace) continue
+      for (const point of trace.tracePath) {
+        const key = `${point.x.toFixed(9)},${point.y.toFixed(9)}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        points.push(point)
+      }
+    }
+
+    return points
   }
 
   private getAvailableOrientations(label: NetLabelPlacement) {
@@ -266,6 +388,63 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return null
   }
 
+  /**
+   * When all candidates fail for the current (unshifted) position, try
+   * shifting the label anchor laterally — x for y-orientations, y for
+   * x-orientations — and re-attempting the required orientation.
+   *
+   * Offsets are tried in alternating sign order:
+   *   -1·step, +1·step, -2·step, +2·step, …
+   * so the nearest escape routes are tested first.
+   */
+  private findValidLateralShiftedCandidate(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+    labelIndex: number,
+  ): EvaluatedCandidate | null {
+    const direction = dir(orientation)
+    const initialBaseAnchor = this.getSearchStartAnchor(label, orientation)
+
+    // Lateral axis: perpendicular to the orientation direction
+    const lateralDir: Point = {
+      x: isYOrientation(orientation) ? 1 : 0,
+      y: isXOrientation(orientation) ? 1 : 0,
+    }
+
+    const maxSteps = Math.ceil(this.maxSearchDistance / LABEL_SEARCH_STEP)
+
+    for (let step = 1; step <= maxSteps; step++) {
+      for (const sign of [-1, 1]) {
+        const lateralOffset = sign * step * LABEL_SEARCH_STEP
+        const baseAnchor = {
+          x: initialBaseAnchor.x + lateralDir.x * lateralOffset,
+          y: initialBaseAnchor.y + lateralDir.y * lateralOffset,
+        }
+
+        const maxSearchDistance = this.getLateralColumnMaxDistance(
+          label,
+          orientation,
+          baseAnchor,
+        )
+
+        const candidate = this.findValidCandidateInShiftColumn({
+          label,
+          labelIndex,
+          orientation,
+          direction,
+          baseAnchor,
+          maxSearchDistance,
+          outwardDistance: lateralOffset,
+          phase: "lateral-shift",
+        })
+
+        if (candidate) return candidate
+      }
+    }
+
+    return null
+  }
+
   private findValidCandidateInShiftColumn(params: {
     label: NetLabelPlacement
     labelIndex: number
@@ -274,6 +453,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     baseAnchor: Point
     maxSearchDistance: number
     outwardDistance: number
+    phase?: CandidatePhase
+    stopOnTraceCollision?: boolean
   }) {
     const {
       label,
@@ -283,6 +464,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       baseAnchor,
       maxSearchDistance,
       outwardDistance,
+      phase = "shift",
+      stopOnTraceCollision = true,
     } = params
 
     for (
@@ -299,7 +482,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         candidate,
         label,
         labelIndex,
-        "shift",
+        phase,
         distance,
         outwardDistance,
       )
@@ -309,7 +492,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         result.selected = true
         return result
       }
-      if (result.status === "trace-collision") break
+      if (stopOnTraceCollision && result.status === "trace-collision") break
     }
 
     return null
@@ -329,8 +512,43 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       distance,
       outwardDistance,
       selected: false,
-      status: this.getCandidateStatus(candidate, label, labelIndex),
+      status: this.getCandidateStatus({
+        candidate,
+        label,
+        labelIndex,
+        phase,
+      }),
     }
+  }
+
+  private getCandidateConnectorTrace(
+    label: NetLabelPlacement,
+    candidate: Pick<
+      EvaluatedCandidate,
+      "anchorPoint" | "orientation" | "phase"
+    >,
+  ) {
+    if (candidate.phase === "lateral-shift") {
+      const orientDir = dir(candidate.orientation)
+      const kickedSource = {
+        x: label.anchorPoint.x - orientDir.x * LABEL_SEARCH_STEP,
+        y: label.anchorPoint.y - orientDir.y * LABEL_SEARCH_STEP,
+      }
+      return simplifyOrthogonalPath([
+        label.anchorPoint,
+        ...getConnectorTracePath(
+          kickedSource,
+          candidate.anchorPoint,
+          candidate.orientation,
+        ),
+      ])
+    }
+
+    return getConnectorTracePath(
+      label.anchorPoint,
+      candidate.anchorPoint,
+      candidate.orientation,
+    )
   }
 
   private getSearchStartAnchor(
@@ -341,6 +559,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const { width, height } = getDimsForOrientation({
       orientation,
       netLabelWidth: this.getNetLabelWidth(label),
+      netLabelHeight: this.getNetLabelHeight(label),
     })
 
     return this.getSideOffsetAnchor({
@@ -372,28 +591,31 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }) {
     const { anchorPoint, labelAnchorPoint, orientation, width, height } = params
     const chipSide = this.getChipSideForPoint(labelAnchorPoint)
+    const sideClearance = this.getContainingChipSide(labelAnchorPoint)
+      ? WICK_CLEARANCE
+      : LABEL_SEARCH_STEP
     if (isYOrientation(orientation) && chipSide === "left") {
       return {
-        x: anchorPoint.x - width / 2 - WICK_CLEARANCE,
+        x: anchorPoint.x - width / 2 - sideClearance,
         y: anchorPoint.y,
       }
     }
     if (isYOrientation(orientation) && chipSide === "right") {
       return {
-        x: anchorPoint.x + width / 2 + WICK_CLEARANCE,
+        x: anchorPoint.x + width / 2 + sideClearance,
         y: anchorPoint.y,
       }
     }
     if (isXOrientation(orientation) && chipSide === "bottom") {
       return {
         x: anchorPoint.x,
-        y: anchorPoint.y - height / 2 - WICK_CLEARANCE,
+        y: anchorPoint.y - height / 2 - sideClearance,
       }
     }
     if (isXOrientation(orientation) && chipSide === "top") {
       return {
         x: anchorPoint.x,
-        y: anchorPoint.y + height / 2 + WICK_CLEARANCE,
+        y: anchorPoint.y + height / 2 + sideClearance,
       }
     }
     return anchorPoint
@@ -406,10 +628,76 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const { width, height } = getDimsForOrientation({
       orientation,
       netLabelWidth: this.getNetLabelWidth(label),
+      netLabelHeight: this.getNetLabelHeight(label),
     })
     const labelLength =
       orientation === "y+" || orientation === "y-" ? height : width
     return Math.min(this.maxSearchDistance, labelLength * 2)
+  }
+
+  private getLateralColumnMaxDistance(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+    baseAnchor: Point,
+  ) {
+    const availableOrientations = this.getAvailableOrientations(label)
+    const isSingleVerticalOrientation =
+      availableOrientations.length === 1 &&
+      isYOrientation(availableOrientations[0]!)
+
+    // A vertical rail between components may need to branch laterally and then
+    // search past either connected component before it can use its required
+    // orientation. Keep other labels scoped to their first connected component
+    // so an orientation correction does not move a signal label across the
+    // entire connection.
+    const labelChipIds = new Set(
+      label.pinIds
+        .map((pinId) => this.pinMap[pinId]?.chipId)
+        .filter((chipId): chipId is string => Boolean(chipId)),
+    )
+    const connectedChips = this.chipObstacleSpatialIndex.chips.filter((chip) =>
+      labelChipIds.has(chip.chipId),
+    )
+    const firstConnectedChipId = label.pinIds
+      .map((pinId) => this.pinMap[pinId]?.chipId)
+      .find(Boolean)
+    const firstConnectedChip = connectedChips.find(
+      (chip) => chip.chipId === firstConnectedChipId,
+    )
+    const labelChips = isSingleVerticalOrientation
+      ? connectedChips
+      : firstConnectedChip
+        ? [firstConnectedChip]
+        : []
+
+    if (labelChips.length > 0) {
+      if (orientation === "y-") {
+        return Math.max(
+          0,
+          ...labelChips.map((chip) => baseAnchor.y - chip.bounds.minY),
+        )
+      }
+      if (orientation === "y+") {
+        return Math.max(
+          0,
+          ...labelChips.map((chip) => chip.bounds.maxY - baseAnchor.y),
+        )
+      }
+      if (orientation === "x-") {
+        return Math.max(
+          0,
+          ...labelChips.map((chip) => baseAnchor.x - chip.bounds.minX),
+        )
+      }
+      if (orientation === "x+") {
+        return Math.max(
+          0,
+          ...labelChips.map((chip) => chip.bounds.maxX - baseAnchor.x),
+        )
+      }
+    }
+
+    return this.getSearchDistanceLimit(label, orientation)
   }
 
   private createCandidate(
@@ -420,6 +708,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const { width, height } = getDimsForOrientation({
       orientation,
       netLabelWidth: this.getNetLabelWidth(label),
+      netLabelHeight: this.getNetLabelHeight(label),
     })
     return {
       orientation,
@@ -453,32 +742,71 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )?.netLabelWidth
   }
 
-  private getCandidateStatus(
-    candidate: CandidateLabel,
-    label: NetLabelPlacement,
-    labelIndex: number,
-  ) {
-    const boundsStatus = this.getBoundsStatus(
-      getRectBounds(candidate.center, candidate.width, candidate.height),
+  private getNetLabelHeight(label: NetLabelPlacement) {
+    if (label.netId) {
+      const ncHeight = this.inputProblem.netConnections.find(
+        (connection) => connection.netId === label.netId,
+      )?.netLabelHeight
+      if (ncHeight !== undefined) return ncHeight
+    }
+
+    return this.inputProblem.netConnections.find((nc) =>
+      nc.pinIds.some((pid) => label.pinIds.includes(pid)),
+    )?.netLabelHeight
+  }
+
+  private getCandidateStatus(params: {
+    candidate: CandidateLabel
+    label: NetLabelPlacement
+    labelIndex: number
+    phase: CandidatePhase
+  }) {
+    const { candidate, label, labelIndex, phase } = params
+    const bounds = getRectBounds(
+      candidate.center,
+      candidate.width,
+      candidate.height,
+    )
+    const boundsStatus = this.getBoundsStatus({
+      bounds,
       labelIndex,
-    )
-    if (boundsStatus !== "valid") return boundsStatus
+      label,
+    })
+    if (boundsStatus !== "valid") {
+      if (
+        phase !== "trace-anchor" ||
+        boundsStatus !== "chip-collision" ||
+        !this.isAcceptableTraceAnchorChipCollision(candidate, label, bounds)
+      ) {
+        return boundsStatus
+      }
 
-    const connectorTrace = getConnectorTracePath(
-      label.anchorPoint,
-      candidate.anchorPoint,
-      candidate.orientation,
-    )
+      const nonChipBoundsStatus = this.getBoundsStatus({
+        bounds,
+        labelIndex,
+        label,
+        ignoreChipCollisions: true,
+      })
+      if (nonChipBoundsStatus !== "valid") return nonChipBoundsStatus
+    }
 
-    if (tracePathCrossesAnyTrace(connectorTrace, this.traceMap)) {
-      return "trace-collision"
+    const connectorTrace = this.getCandidateConnectorTrace(label, {
+      anchorPoint: candidate.anchorPoint,
+      orientation: candidate.orientation,
+      phase,
+    })
+
+    for (const chip of this.chipObstacleSpatialIndex.chips) {
+      if (tracePathCrossesAnyBounds(connectorTrace, chip.bounds)) {
+        return "chip-collision"
+      }
     }
 
     for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
       if (i === labelIndex) continue
       const otherLabel = this.outputNetLabelPlacements[i]!
       if (
-        tracePathCrossesAnyBounds(
+        tracePathIntersectsBounds(
           connectorTrace,
           getRectBounds(otherLabel.center, otherLabel.width, otherLabel.height),
         )
@@ -490,20 +818,113 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return "valid"
   }
 
-  private getBoundsStatus(bounds: Bounds, labelIndex: number): CandidateStatus {
-    if (this.chipObstacleSpatialIndex.getChipsInBounds(bounds).length > 0) {
-      return "chip-collision"
+  private isAcceptableTraceAnchorChipCollision(
+    candidate: CandidateLabel,
+    label: NetLabelPlacement,
+    bounds: Bounds,
+  ) {
+    const collidingChips =
+      this.chipObstacleSpatialIndex.getChipsInBounds(bounds)
+    if (collidingChips.length === 0) return false
+
+    const labelChipIds = new Set(
+      label.pinIds
+        .map((pinId) => this.pinMap[pinId]?.chipId)
+        .filter((chipId): chipId is string => Boolean(chipId)),
+    )
+
+    return collidingChips.every((chip) => {
+      if (!labelChipIds.has(chip.chipId)) return false
+
+      const { anchorPoint, orientation } = candidate
+      const chipBounds = chip.bounds
+      if (isYOrientation(orientation)) {
+        return (
+          anchorPoint.x < chipBounds.minX - EPS ||
+          anchorPoint.x > chipBounds.maxX + EPS
+        )
+      }
+      return (
+        anchorPoint.y < chipBounds.minY - EPS ||
+        anchorPoint.y > chipBounds.maxY + EPS
+      )
+    })
+  }
+
+  private getBoundsStatus(candidateBoundsCheck: {
+    bounds: Bounds
+    labelIndex: number
+    label: NetLabelPlacement
+    ignoreChipCollisions?: boolean
+  }): CandidateStatus {
+    const { bounds, labelIndex, label, ignoreChipCollisions } =
+      candidateBoundsCheck
+
+    if (!ignoreChipCollisions) {
+      if (this.chipObstacleSpatialIndex.getChipsInBounds(bounds).length > 0) {
+        return "chip-collision"
+      }
+      if (this.sharesChipBoundary(bounds)) {
+        return "chip-collision"
+      }
     }
-    if (this.sharesChipBoundary(bounds)) {
-      return "chip-collision"
+    if (rectIntersectsAnyTextBox(bounds, this.inputProblem)) {
+      return "text-collision"
     }
     if (traceCrossesBoundsInterior(bounds, this.traceMap)) {
       return "trace-collision"
+    }
+    if (this.isTraceTooCloseToLabel(bounds, label)) {
+      return "trace-clearance-violation"
     }
     if (this.intersectsAnyOtherNetLabel(bounds, labelIndex)) {
       return "netlabel-collision"
     }
     return "valid"
+  }
+
+  private isTraceTooCloseToLabel(bounds: Bounds, label: NetLabelPlacement) {
+    if (!this.shouldCheckTraceClearanceForLabel(label)) return false
+
+    const clearanceBounds = this.getLabelTraceClearanceBounds(bounds)
+    for (const trace of Object.values(this.traceMap)) {
+      if (trace.globalConnNetId === label.globalConnNetId) continue
+      if (tracePathIntersectsBounds(trace.tracePath, clearanceBounds)) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  private getLabelTraceClearanceBounds(bounds: Bounds): Bounds {
+    return {
+      minX: bounds.minX - LABEL_TRACE_CLEARANCE,
+      minY: bounds.minY - LABEL_TRACE_CLEARANCE,
+      maxX: bounds.maxX + LABEL_TRACE_CLEARANCE,
+      maxY: bounds.maxY + LABEL_TRACE_CLEARANCE,
+    }
+  }
+
+  private shouldCheckTraceClearanceForLabel(label: NetLabelPlacement) {
+    if (!this.isPortOnlyLabel(label)) return false
+    if (!this.hasRoutedLabelOnSameNet(label)) return false
+
+    const orientations = this.getAvailableOrientations(label)
+    return orientations.length === 1
+  }
+
+  private hasRoutedLabelOnSameNet(label: NetLabelPlacement) {
+    for (const otherLabel of this.outputNetLabelPlacements) {
+      if (otherLabel.globalConnNetId !== label.globalConnNetId) continue
+      if (otherLabel.mspConnectionPairIds.length > 0) return true
+    }
+
+    return false
+  }
+
+  private isPortOnlyLabel(label: NetLabelPlacement) {
+    return label.mspConnectionPairIds.length === 0
   }
 
   private intersectsAnyOtherNetLabel(bounds: Bounds, labelIndex: number) {
