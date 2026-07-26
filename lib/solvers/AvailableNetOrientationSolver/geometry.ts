@@ -1,8 +1,8 @@
 import type { Point } from "@tscircuit/math-utils"
+import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
-import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import { EPS, TRACE_BOUNDARY_TOLERANCE } from "./constants"
 import type { Bounds, ChipSide } from "./types"
 
@@ -216,4 +216,45 @@ export const getMaxSearchDistance = (inputProblem: InputProblem) => {
     1,
   )
   return maxChipWidth * 3
+}
+
+/**
+ * True when two orthogonal segments lie on the same line and share more than a
+ * single point.
+ *
+ * A shared point is a crossing or a junction; a shared *length* means the two
+ * segments are drawn on top of each other, so two nets render as one wire.
+ */
+export const segmentsOverlapCollinearly = (
+  a1: Point,
+  a2: Point,
+  b1: Point,
+  b2: Point,
+) => {
+  const overlapLength = (aLo: number, aHi: number, bLo: number, bHi: number) =>
+    Math.min(aHi, bHi) - Math.max(aLo, bLo)
+
+  if (sameY(a1, a2) && sameY(b1, b2) && sameY(a1, b1)) {
+    return (
+      overlapLength(
+        Math.min(a1.x, a2.x),
+        Math.max(a1.x, a2.x),
+        Math.min(b1.x, b2.x),
+        Math.max(b1.x, b2.x),
+      ) > EPS
+    )
+  }
+
+  if (sameX(a1, a2) && sameX(b1, b2) && sameX(a1, b1)) {
+    return (
+      overlapLength(
+        Math.min(a1.y, a2.y),
+        Math.max(a1.y, a2.y),
+        Math.min(b1.y, b2.y),
+        Math.max(b1.y, b2.y),
+      ) > EPS
+    )
+  }
+
+  return false
 }

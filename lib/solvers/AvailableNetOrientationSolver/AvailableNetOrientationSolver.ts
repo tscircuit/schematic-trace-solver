@@ -21,9 +21,11 @@ import {
   isYOrientation,
   rangesOverlap,
   rectsOverlap,
+  segmentsOverlapCollinearly,
   simplifyOrthogonalPath,
   traceCrossesBoundsInterior,
   tracePathCrossesAnyBounds,
+  tracePathCrossesAnyTrace,
   tracePathIntersectsBounds,
 } from "./geometry"
 import { getPinMap, getTracePins, toNetLabelPlacementPatch } from "./traces"
@@ -52,6 +54,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   currentCandidateResults: EvaluatedCandidate[] = []
 
   private traceMap: Record<string, SolvedTracePath>
+  /**
+   * Relaxes the collinear-overlap rejection for a second pass, so a label that
+   * has no overlap-free orientation still gets a connector rather than none.
+   */
+  private allowCollinearConnectorOverlap = false
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private maxSearchDistance: number
   private pinMap: Record<string, InputPin & { chipId: string }>
@@ -123,7 +130,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     this.setCurrentLabel(labelIndex)
     this.currentCandidateResults = []
 
-    const candidate = this.findCorrectedCandidate(label, labelIndex)
+    // Prefer an orientation whose connector does not run along another net.
+    // If every candidate is rejected for that reason, take the best one
+    // anyway: dropping the connector entirely leaves the label unattached,
+    // which is worse than an overlap the cleanup passes can still shift.
+    this.allowCollinearConnectorOverlap = false
+    let candidate = this.findCorrectedCandidate(label, labelIndex)
+    if (!candidate) {
+      this.allowCollinearConnectorOverlap = true
+      this.currentCandidateResults = []
+      candidate = this.findCorrectedCandidate(label, labelIndex)
+      this.allowCollinearConnectorOverlap = false
+    }
     if (!candidate) return
 
     this.applyCandidate(label, candidate, labelIndex)
@@ -815,7 +833,77 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       }
     }
 
+    // The connector is checked against chips and other labels above, but not
+    // against existing traces — so a candidate could be accepted while its
+    // connector cut straight across another net, which reads as a short in the
+    // rendered schematic. Reject those and let the search try the next
+    // candidate.
+    if (this.connectorCrossesOtherNetTrace(connectorTrace, label)) {
+      return "trace-collision"
+    }
+
+    // Crossing is not the only way a connector can be misread. A connector
+    // laid *along* another net's trace renders as a single wire carrying two
+    // nets, which is at least as misleading as a crossing.
+    if (
+      !this.allowCollinearConnectorOverlap &&
+      this.connectorOverlapsOtherNetTrace(connectorTrace, label)
+    ) {
+      return "trace-collision"
+    }
+
     return "valid"
+  }
+
+  /**
+   * True when the candidate's connector properly crosses a trace on a
+   * different net. Same-net traces are excluded: a connector legitimately
+   * meets the trace it is attaching to.
+   */
+  private connectorCrossesOtherNetTrace(
+    connectorTrace: Point[],
+    label: NetLabelPlacement,
+  ) {
+    const otherNetTraces: Record<string, SolvedTracePath> = {}
+    for (const [id, trace] of Object.entries(this.traceMap)) {
+      if (trace.globalConnNetId === label.globalConnNetId) continue
+      otherNetTraces[id] = trace
+    }
+
+    return tracePathCrossesAnyTrace(connectorTrace, otherNetTraces)
+  }
+
+  /**
+   * True when the candidate's connector runs collinearly along a trace on a
+   * different net, sharing more than a single point with it.
+   *
+   * Touching at one point is a crossing (handled above) or a junction; sharing
+   * a length means the two nets are drawn as one wire.
+   */
+  private connectorOverlapsOtherNetTrace(
+    connectorTrace: Point[],
+    label: NetLabelPlacement,
+  ) {
+    for (const trace of Object.values(this.traceMap)) {
+      if (trace.globalConnNetId === label.globalConnNetId) continue
+
+      for (let i = 0; i < connectorTrace.length - 1; i++) {
+        for (let k = 0; k < trace.tracePath.length - 1; k++) {
+          if (
+            segmentsOverlapCollinearly(
+              connectorTrace[i]!,
+              connectorTrace[i + 1]!,
+              trace.tracePath[k]!,
+              trace.tracePath[k + 1]!,
+            )
+          ) {
+            return true
+          }
+        }
+      }
+    }
+
+    return false
   }
 
   private isAcceptableTraceAnchorChipCollision(
