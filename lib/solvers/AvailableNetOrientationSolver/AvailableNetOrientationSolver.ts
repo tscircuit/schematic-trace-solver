@@ -24,6 +24,7 @@ import {
   simplifyOrthogonalPath,
   traceCrossesBoundsInterior,
   tracePathCrossesAnyBounds,
+  tracePathCrossesAnyTrace,
   tracePathIntersectsBounds,
 } from "./geometry"
 import { getPinMap, getTracePins, toNetLabelPlacementPatch } from "./traces"
@@ -815,7 +816,34 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       }
     }
 
+    // The connector is checked against chips and other labels above, but not
+    // against existing traces — so a candidate could be accepted while its
+    // connector cut straight across another net, which reads as a short in the
+    // rendered schematic. Reject those and let the search try the next
+    // candidate.
+    if (this.connectorCrossesOtherNetTrace(connectorTrace, label)) {
+      return "trace-collision"
+    }
+
     return "valid"
+  }
+
+  /**
+   * True when the candidate's connector properly crosses a trace on a
+   * different net. Same-net traces are excluded: a connector legitimately
+   * meets the trace it is attaching to.
+   */
+  private connectorCrossesOtherNetTrace(
+    connectorTrace: Point[],
+    label: NetLabelPlacement,
+  ) {
+    const otherNetTraces: Record<string, SolvedTracePath> = {}
+    for (const [id, trace] of Object.entries(this.traceMap)) {
+      if (trace.globalConnNetId === label.globalConnNetId) continue
+      otherNetTraces[id] = trace
+    }
+
+    return tracePathCrossesAnyTrace(connectorTrace, otherNetTraces)
   }
 
   private isAcceptableTraceAnchorChipCollision(
