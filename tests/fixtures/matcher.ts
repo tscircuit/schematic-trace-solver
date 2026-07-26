@@ -1,5 +1,5 @@
 import { getSvgFromGraphicsObject, type GraphicsObject } from "graphics-debug"
-import { expect, type MatcherResult } from "bun:test"
+import { expect, type } from "vitest"
 import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { colorAvailableNetOrientationLabels } from "lib/solvers/SchematicTracePipelineSolver/colorAvailableNetOrientationLabels"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -75,7 +75,7 @@ expect.extend({
   toMatchSolverSnapshot: toMatchSolverSnapshot as any,
 })
 
-declare module "bun:test" {
+declare module "vitest" {
   interface Matchers<T = unknown> {
     toMatchSolverSnapshot(
       testPath: string,

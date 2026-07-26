@@ -1,5 +1,5 @@
 import type { InputProblem } from "lib/types/InputProblem"
-import { test, expect } from "bun:test"
+import { test, expect } from "vitest"
 import { SchematicTracePipelineSolver } from "lib/index"
 
 const inputProblem: InputProblem = {

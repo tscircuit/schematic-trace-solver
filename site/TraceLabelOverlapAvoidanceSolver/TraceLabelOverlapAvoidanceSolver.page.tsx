@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+
 import { GenericSolverDebugger } from "site/components/GenericSolverDebugger"
 import { TraceLabelOverlapAvoidanceSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -142,5 +142,5 @@ export default () => {
     [],
   )
 
-  return <GenericSolverDebugger solver={solver} />
+  return 
 }
