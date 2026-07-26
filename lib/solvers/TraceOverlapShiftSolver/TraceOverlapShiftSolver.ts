@@ -34,6 +34,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
   inputProblem: InputProblem
   inputTracePaths: Array<SolvedTracePath>
   globalConnMap: ConnectivityMap
+  traceIdsToShift?: Set<MspConnectionPairId>
 
   declare activeSubSolver: TraceOverlapIssueSolver | null
 
@@ -50,11 +51,13 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     inputProblem: InputProblem
     inputTracePaths: Array<SolvedTracePath>
     globalConnMap: ConnectivityMap
+    traceIdsToShift?: Set<MspConnectionPairId>
   }) {
     super()
     this.inputProblem = params.inputProblem
     this.inputTracePaths = params.inputTracePaths
     this.globalConnMap = params.globalConnMap
+    this.traceIdsToShift = params.traceIdsToShift
 
     for (const tracePath of this.inputTracePaths) {
       const { mspPairId } = tracePath
@@ -71,6 +74,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       inputTracePaths: this.inputTracePaths,
       globalConnMap: this.globalConnMap,
+      traceIdsToShift: this.traceIdsToShift,
     }
   }
 
@@ -211,6 +215,13 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
             for (let pb = 0; pb < pathsB.length; pb++) {
               const pathB = pathsB[pb]!
+              if (
+                this.traceIdsToShift &&
+                !this.traceIdsToShift.has(pathA.mspPairId) &&
+                !this.traceIdsToShift.has(pathB.mspPairId)
+              ) {
+                continue
+              }
               const ptsB = pathB.tracePath
               for (let sb = 0; sb < ptsB.length - 1; sb++) {
                 const b1 = ptsB[sb]!
@@ -392,6 +403,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       interactionKind,
       overlappingTraceSegments,
       traceNetIslands: this.traceNetIslands,
+      traceIdsToShift: this.traceIdsToShift,
     })
   }
 

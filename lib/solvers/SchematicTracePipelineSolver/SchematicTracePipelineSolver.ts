@@ -79,6 +79,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   traceCleanupSolver?: TraceCleanupSolver
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
+  postLabelTraceOverlapShiftSolver?: TraceOverlapShiftSolver
   railNetLabelCornerPlacementSolver?: RailNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   preAlignmentNetLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
@@ -281,13 +282,33 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ],
     ),
     definePipelineStep(
+      "postLabelTraceOverlapShiftSolver",
+      TraceOverlapShiftSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          inputTracePaths: instance.availableNetOrientationSolver!.traces,
+          globalConnMap: instance.mspConnectionPairSolver!.globalConnMap,
+          traceIdsToShift: new Set(
+            instance
+              .availableNetOrientationSolver!.traces.filter((trace) =>
+                trace.mspPairId.startsWith("available-net-orientation-"),
+              )
+              .map((trace) => trace.mspPairId),
+          ),
+        },
+      ],
+    ),
+    definePipelineStep(
       "railNetLabelCornerPlacementSolver",
       RailNetLabelCornerPlacementSolver,
       (instance) => {
         return [
           {
             inputProblem: instance.inputProblem,
-            traces: instance.availableNetOrientationSolver!.traces,
+            traces: Object.values(
+              instance.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
+            ),
             netLabelPlacements:
               instance.availableNetOrientationSolver!.outputNetLabelPlacements,
           },
@@ -300,7 +321,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => [
         {
           inputProblem: instance.inputProblem,
-          traces: instance.availableNetOrientationSolver!.traces,
+          traces: Object.values(
+            instance.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
+          ),
           netLabelPlacements:
             instance.railNetLabelCornerPlacementSolver!
               .outputNetLabelPlacements,
@@ -313,7 +336,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => [
         {
           inputProblem: instance.inputProblem,
-          traces: instance.availableNetOrientationSolver!.traces,
+          traces: Object.values(
+            instance.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
+          ),
           netLabelPlacements:
             instance.traceAnchoredNetLabelOverlapSolver!
               .outputNetLabelPlacements,
