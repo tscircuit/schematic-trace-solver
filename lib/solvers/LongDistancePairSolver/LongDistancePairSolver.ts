@@ -1,23 +1,24 @@
+import type { ConnectivityMap } from "connectivity-map"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type {
-  InputProblem,
-  InputPin,
-  PinId,
   InputChip,
+  InputPin,
+  InputProblem,
+  PinId,
 } from "lib/types/InputProblem"
-import { BaseSolver } from "../BaseSolver/BaseSolver"
-import { SchematicTraceSingleLineSolver2 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
 import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { ConnectivityMap } from "connectivity-map"
+import { createLabeledRailNetHelpers } from "lib/utils/labeledRailNets"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { BaseSolver } from "../BaseSolver/BaseSolver"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { SchematicTraceSingleLineSolver2 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 
 const NEAREST_NEIGHBOR_COUNT = 3
 
 const distance = (p1: InputPin, p2: InputPin) => {
-  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
+  return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
 }
 
 export class LongDistancePairSolver extends BaseSolver {
@@ -73,6 +74,11 @@ export class LongDistancePairSolver extends BaseSolver {
     > = []
     const addedPairKeys = new Set<string>()
 
+    // Distant pairs on labeled rails stay label-connected; wiring them
+    // duplicates the net labels with a long bus trace (#670).
+    const { isLabeledRailNet, exceedsDirectWiringDistance } =
+      createLabeledRailNetHelpers(inputProblem)
+
     for (const netId of Object.keys(netConnMap.netMap)) {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
@@ -97,6 +103,11 @@ export class LongDistancePairSolver extends BaseSolver {
               },
             ]
           })
+          .filter(
+            (neighbor) =>
+              !isLabeledRailNet(unconnectedPinId) ||
+              !exceedsDirectWiringDistance(neighbor.distance),
+          )
           .sort((a, b) => a.distance - b.distance)
           .slice(0, NEAREST_NEIGHBOR_COUNT)
 

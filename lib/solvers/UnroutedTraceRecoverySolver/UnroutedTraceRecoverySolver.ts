@@ -20,6 +20,7 @@ import {
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem, PinId } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
+import { createLabeledRailNetHelpers } from "lib/utils/labeledRailNets"
 
 const ROUTE_CLEARANCE = 0.2
 const COORDINATE_TOLERANCE = 1e-9
@@ -469,6 +470,7 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
   private queuedConnectionPairs: MspConnectionPair[]
   private maxConnectionDistance: number
   private groundGlobalConnNetId?: string
+  private labeledRailNets: ReturnType<typeof createLabeledRailNetHelpers>
   public solvedUnroutedTraces: SolvedTracePath[] = []
 
   constructor(
@@ -490,6 +492,7 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
     )
     this.groundGlobalConnNetId =
       netConnMap.getNetConnectedToId(GROUND_NET_ID) ?? undefined
+    this.labeledRailNets = createLabeledRailNetHelpers(this.inputProblem)
   }
 
   override getConstructorParams() {
@@ -536,7 +539,25 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
       failedConnectionPairs: this.failedConnectionPairs,
     })
 
+    // Pins on a labeled rail already carry a net label each. A recovery route
+    // that has to detour far around obstacles duplicates those labels with a
+    // long bus trace, which is exactly what #670 asks us to avoid. The pins can
+    // sit within `maxConnectionDistance` of each other and still only be
+    // reachable by a much longer path, so the routed length — not the
+    // straight-line pin distance — decides this.
+    const isLabeledRailPair = this.labeledRailNets.isLabeledRailNet(
+      connectionPair.pins[0].pinId,
+    )
+
     for (const tracePath of candidates) {
+      if (
+        isLabeledRailPair &&
+        this.labeledRailNets.exceedsDirectWiringDistance(
+          getPathLength(tracePath),
+        )
+      ) {
+        continue
+      }
       if (
         pathCollidesWithObstacles({
           path: tracePath,
