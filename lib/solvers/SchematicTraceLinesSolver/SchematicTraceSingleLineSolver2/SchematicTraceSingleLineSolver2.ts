@@ -7,16 +7,18 @@ import { getDimsForOrientation } from "lib/solvers/NetLabelPlacementSolver/Singl
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
-import type { RectPadding } from "lib/utils/textBoxBounds"
+import { getTextBoxBounds, type RectPadding } from "lib/utils/textBoxBounds"
 import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
 import { calculateDirectShortPath } from "./calculateDirectShortPath"
 import {
   findFirstCollision,
   isHorizontal,
   isVertical,
+  segmentIntersectsRect,
   segmentOverlapsRectBoundary,
 } from "./collisions"
 import { generateEndpointCollisionDetours } from "./generateEndpointCollisionDetours"
+import { generateInternalSegmentCollisionDetours } from "./generateInternalSegmentCollisionDetours"
 import {
   type Axis,
   aabbFromPoints,
@@ -24,7 +26,12 @@ import {
   midBetweenPointAndRect,
 } from "./mid"
 import { pathKey, shiftSegmentOrth } from "./pathOps"
-import { getObstacleRects, type ObstacleRect } from "./rect"
+import {
+  getObstacleRects,
+  isTextBoxObstacle,
+  type ObstacleRect,
+  type TextBoxObstacleRect,
+} from "./rect"
 
 type PathKey = string
 
@@ -51,6 +58,25 @@ const calculateElbowForPins = ({
     { overshoot },
   )
 
+const pinsFaceEachOther = ({
+  pin1,
+  pin2,
+}: {
+  pin1: MspConnectionPair["pins"][number]
+  pin2: MspConnectionPair["pins"][number]
+}) => {
+  const xDistance = pin2.x - pin1.x
+  const yDistance = pin2.y - pin1.y
+  if (Math.abs(xDistance) >= Math.abs(yDistance)) {
+    return xDistance > 0
+      ? pin1._facingDirection === "x+" && pin2._facingDirection === "x-"
+      : pin1._facingDirection === "x-" && pin2._facingDirection === "x+"
+  }
+  return yDistance > 0
+    ? pin1._facingDirection === "y+" && pin2._facingDirection === "y-"
+    : pin1._facingDirection === "y-" && pin2._facingDirection === "y+"
+}
+
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
   connectionPair?: MspConnectionPair
@@ -58,8 +84,8 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   chipMap: Record<string, InputChip>
 
   obstacles: ObstacleRect[]
-  textObstacles: Set<ObstacleRect>
-  endpointTextObstacles: Set<ObstacleRect>
+  textObstacles: Set<TextBoxObstacleRect>
+  endpointTextObstacles: Set<TextBoxObstacleRect>
   aabb: { minX: number; maxX: number; minY: number; maxY: number }
 
   baseElbow: Point[]
@@ -95,18 +121,17 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     this.obstacles = getObstacleRects(this.inputProblem, {
       textBoxPadding: this.getTextBoxPaddingForConnectionPair(),
     })
-    this.textObstacles = new Set(
-      this.obstacles.filter((r) => r.kind === "text_box"),
-    )
+    this.textObstacles = new Set(this.obstacles.filter(isTextBoxObstacle))
     const endpointChipIds = new Set(this.pins.map((pin) => pin.chipId))
     this.endpointTextObstacles = new Set(
       endpointChipIds.size > 1
-        ? this.obstacles.filter(
-            (r) =>
-              r.kind === "text_box" &&
-              r.textBox.chipId !== undefined &&
-              endpointChipIds.has(r.textBox.chipId),
-          )
+        ? this.obstacles
+            .filter(isTextBoxObstacle)
+            .filter(
+              (obstacle) =>
+                obstacle.textBox.chipId !== undefined &&
+                endpointChipIds.has(obstacle.textBox.chipId),
+            )
         : [],
     )
 
@@ -124,9 +149,16 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       pin2,
       overshoot: Math.min(0.2, Math.max(0.02, routingDistance / 4)),
     })
+    const adaptiveElbowIsShorter =
+      this.pathLength(adaptiveElbow) < this.pathLength(defaultElbow)
+    const defaultElbowBacktracks =
+      this.pathLength(defaultElbow) > routingDistance + 1e-9
     const shouldUseAdaptiveElbow =
-      findFirstCollision(defaultElbow, this.obstacles) !== null &&
-      findFirstCollision(adaptiveElbow, this.obstacles) === null
+      findFirstCollision(adaptiveElbow, this.obstacles) === null &&
+      ((pinsFaceEachOther({ pin1, pin2 }) &&
+        defaultElbowBacktracks &&
+        adaptiveElbowIsShorter) ||
+        findFirstCollision(defaultElbow, this.obstacles) !== null)
 
     // Build initial elbow path
     this.baseElbow = defaultElbow
@@ -356,7 +388,12 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
           )
         ) {
           for (const textObstacle of this.endpointTextObstacles) {
-            excludedRects.add(textObstacle)
+            // Outside-pin-band routing may cross label padding around endpoint
+            // text, but the actual text bounds remain a hard obstacle.
+            const textBounds = getTextBoxBounds(textObstacle.textBox)
+            if (!segmentIntersectsRect(segmentStart, segmentEnd, textBounds)) {
+              excludedRects.add(textObstacle)
+            }
           }
         }
 
@@ -500,18 +537,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       pinBandPenalty: number
     }> = []
 
-    const addShiftedCandidate = (
-      candidateSegIndex: number,
-      candidateAxis: Axis,
-      coord: number,
-    ) => {
-      const newPath = shiftSegmentOrth(
-        path,
-        candidateSegIndex,
-        candidateAxis,
-        coord,
-      )
-      if (!newPath) return
+    const addPathCandidate = (newPath: Point[]) => {
       const key = pathKey(newPath)
       if (this.visited.has(key)) return
       this.visited.add(key)
@@ -525,11 +551,42 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       })
     }
 
+    const addShiftedCandidate = (
+      candidateSegIndex: number,
+      candidateAxis: Axis,
+      coord: number,
+    ) => {
+      const newPath = shiftSegmentOrth(
+        path,
+        candidateSegIndex,
+        candidateAxis,
+        coord,
+      )
+      if (newPath) addPathCandidate(newPath)
+    }
+
+    const lastSegIndex = path.length - 2
+    if (
+      this.connectionPair === undefined &&
+      rect.kind === "text_box" &&
+      this.endpointTextObstacles.has(rect) &&
+      !collisionRects.has(rect) &&
+      originalSegIndex > 0 &&
+      originalSegIndex < lastSegIndex
+    ) {
+      for (const detour of generateInternalSegmentCollisionDetours({
+        path,
+        collidingSegmentIndex: originalSegIndex,
+        obstacle: rect,
+      })) {
+        addPathCandidate(detour)
+      }
+    }
+
     for (const coord of candidates) {
       addShiftedCandidate(segIndex, axis, coord)
     }
 
-    const lastSegIndex = path.length - 2
     const adjacentSegmentIndexes =
       originalSegIndex === 1
         ? [2]

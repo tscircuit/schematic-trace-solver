@@ -1,0 +1,164 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_16",
+      "center": {
+        "x": -13.9425,
+        "y": -18.14
+      },
+      "width": 5.199999999999999,
+      "height": 2,
+      "pins": [
+        {
+          "pinId": "schematic_port_83",
+          "x": -11.342500000000001,
+          "y": -17.29
+        },
+        {
+          "pinId": "schematic_port_84",
+          "x": -11.342500000000001,
+          "y": -17.490000000000002
+        },
+        {
+          "pinId": "schematic_port_85",
+          "x": -11.342500000000001,
+          "y": -17.69
+        },
+        {
+          "pinId": "schematic_port_86",
+          "x": -11.342500000000001,
+          "y": -18.04
+        },
+        {
+          "pinId": "schematic_port_87",
+          "x": -11.342500000000001,
+          "y": -18.240000000000002
+        },
+        {
+          "pinId": "schematic_port_88",
+          "x": -11.342500000000001,
+          "y": -18.59
+        },
+        {
+          "pinId": "schematic_port_89",
+          "x": -11.342500000000001,
+          "y": -18.79
+        },
+        {
+          "pinId": "schematic_port_90",
+          "x": -11.342500000000001,
+          "y": -18.990000000000002
+        }
+      ],
+      "sectionId": "usb"
+    },
+    {
+      "chipId": "schematic_component_17",
+      "center": {
+        "x": -9.580000000000002,
+        "y": -18.515
+      },
+      "width": 1.084999999999999,
+      "height": 0.6000000000000014,
+      "pins": [
+        {
+          "pinId": "schematic_port_91",
+          "x": -9.797500000000001,
+          "y": -18.215,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_92",
+          "x": -9.797500000000001,
+          "y": -18.815,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "usb"
+    },
+    {
+      "chipId": "schematic_component_18",
+      "center": {
+        "x": -9.580000000000002,
+        "y": -20.325000000000003
+      },
+      "width": 1.084999999999999,
+      "height": 0.6000000000000014,
+      "pins": [
+        {
+          "pinId": "schematic_port_93",
+          "x": -9.797500000000001,
+          "y": -20.025000000000002,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_94",
+          "x": -9.797500000000001,
+          "y": -20.625000000000004,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "usb"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_90",
+        "schematic_port_92",
+        "schematic_port_94"
+      ]
+    },
+    {
+      "netId": "D_MINUS",
+      "netLabelWidth": 0.96,
+      "pinIds": ["schematic_port_85"]
+    },
+    {
+      "netId": "D_PLUS",
+      "netLabelWidth": 0.84,
+      "pinIds": ["schematic_port_84"]
+    },
+    {
+      "netId": "VBUS",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": ["schematic_port_83"]
+    },
+    {
+      "netId": "CC1",
+      "netLabelWidth": 0.48,
+      "pinIds": ["schematic_port_86", "schematic_port_91"]
+    },
+    {
+      "netId": "CC2",
+      "netLabelWidth": 0.48,
+      "pinIds": ["schematic_port_87", "schematic_port_93"]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_16",
+      "center": {
+        "x": -16.0225,
+        "y": -17.025000000000002
+      },
+      "width": 0.35999999999999943,
+      "height": 0.25,
+      "text": "U3"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "D_MINUS": ["x-", "x+"],
+    "D_PLUS": ["x-", "x+"],
+    "GND": ["y-"],
+    "VBUS": ["y+"],
+    "CC1": ["x-", "x+"],
+    "CC2": ["x-", "x+"]
+  },
+  "maxMspPairDistance": 2.4
+}
