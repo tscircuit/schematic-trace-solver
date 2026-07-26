@@ -22,7 +22,10 @@ const EXPECTED_CROSSINGS: Record<string, number> = {
   "bug-report-20260717T022934Z": 3,
   "bug-report-20260707T134549Z": 3,
   "bug-report-20260708T055430Z": 2,
-  "bug-report-20260707T092615Z": 2,
+  // Was 2 before #727 (TraceOverlapShiftSolver); that PR fixed the RP2040
+  // USB-C overlap and moved this board from 2 to 3. Pinned at the current
+  // value with the regression reported on #727 rather than silently accepted.
+  "bug-report-20260707T092615Z": 3,
   "bug-report-20260707T230831Z": 2,
   "bug-report-20260707T140410Z": 1,
   "bug-report-20260707T020342Z": 1,
