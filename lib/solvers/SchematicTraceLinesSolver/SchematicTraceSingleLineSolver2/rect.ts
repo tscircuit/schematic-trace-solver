@@ -1,5 +1,5 @@
-import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
+import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import { getTextBoxBounds, type RectPadding } from "lib/utils/textBoxBounds"
 
 export type RectBounds = {
@@ -20,6 +20,10 @@ export type TextBoxObstacleRect = RectBounds & {
 }
 
 export type ObstacleRect = ChipObstacleRect | TextBoxObstacleRect
+
+export const isTextBoxObstacle = (
+  obstacle: ObstacleRect,
+): obstacle is TextBoxObstacleRect => obstacle.kind === "text_box"
 
 export const chipToRect = (chip: InputChip): ChipObstacleRect => {
   const b = getInputChipBounds(chip)

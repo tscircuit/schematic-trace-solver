@@ -1,5 +1,11 @@
+<<<<<<< HEAD
 import { expect, test } from "vitest"
+=======
+import { expect, test } from "bun:test"
+import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+>>>>>>> 50d2ffba62842ee4bf775cb34d22589cfc9fcfe9
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { getTextBoxBounds } from "lib/utils/textBoxBounds"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-tps61222-trace-intersection.input.json"
 
@@ -8,7 +14,32 @@ import inputProblem from "./assets/repro-tps61222-trace-intersection.input.json"
 test("repro TPS61222 schematic trace intersection", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
 
+  const manufacturerPartNumberTextBox = inputProblem.textBoxes.find(
+    (textBox) => textBox.text === "TPS61222DCKT",
+  )
+  expect(manufacturerPartNumberTextBox).toBeDefined()
+
+  const textBounds = getTextBoxBounds(manufacturerPartNumberTextBox!)
+  solver.solveUntilPhase("longDistancePairSolver")
+
+  const initialGroundTrace =
+    solver.schematicTraceLinesSolver!.solvedTracePaths.find(
+      (trace) => trace.mspPairId === "U2.3-C25.2",
+    )
+  expect(initialGroundTrace).toBeDefined()
+  expect(
+    isPathCollidingWithObstacles(initialGroundTrace!.tracePath, [textBounds]),
+  ).toBe(false)
+
   solver.solve()
 
+  const crossingTraceIds = solver
+    .netLabelTraceCollisionSolver!.getOutput()
+    .traces.filter((trace) =>
+      isPathCollidingWithObstacles(trace.tracePath, [textBounds]),
+    )
+    .map((trace) => trace.mspPairId)
+
+  expect(crossingTraceIds).toEqual([])
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

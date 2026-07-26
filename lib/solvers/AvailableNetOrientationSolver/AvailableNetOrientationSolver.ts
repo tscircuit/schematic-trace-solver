@@ -640,22 +640,61 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     orientation: FacingDirection,
     baseAnchor: Point,
   ) {
-    const chipId = label.pinIds
-      .map((pid) => this.pinMap[pid]?.chipId)
-      .find(Boolean)
-    const chip = chipId
-      ? this.chipObstacleSpatialIndex.chips.find((c) => c.chipId === chipId)
-      : null
+    const availableOrientations = this.getAvailableOrientations(label)
+    const isSingleVerticalOrientation =
+      availableOrientations.length === 1 &&
+      isYOrientation(availableOrientations[0]!)
 
-    if (chip) {
-      if (orientation === "y-")
-        return Math.max(0, baseAnchor.y - chip.bounds.minY)
-      if (orientation === "y+")
-        return Math.max(0, chip.bounds.maxY - baseAnchor.y)
-      if (orientation === "x-")
-        return Math.max(0, baseAnchor.x - chip.bounds.minX)
-      if (orientation === "x+")
-        return Math.max(0, chip.bounds.maxX - baseAnchor.x)
+    // A vertical rail between components may need to branch laterally and then
+    // search past either connected component before it can use its required
+    // orientation. Keep other labels scoped to their first connected component
+    // so an orientation correction does not move a signal label across the
+    // entire connection.
+    const labelChipIds = new Set(
+      label.pinIds
+        .map((pinId) => this.pinMap[pinId]?.chipId)
+        .filter((chipId): chipId is string => Boolean(chipId)),
+    )
+    const connectedChips = this.chipObstacleSpatialIndex.chips.filter((chip) =>
+      labelChipIds.has(chip.chipId),
+    )
+    const firstConnectedChipId = label.pinIds
+      .map((pinId) => this.pinMap[pinId]?.chipId)
+      .find(Boolean)
+    const firstConnectedChip = connectedChips.find(
+      (chip) => chip.chipId === firstConnectedChipId,
+    )
+    const labelChips = isSingleVerticalOrientation
+      ? connectedChips
+      : firstConnectedChip
+        ? [firstConnectedChip]
+        : []
+
+    if (labelChips.length > 0) {
+      if (orientation === "y-") {
+        return Math.max(
+          0,
+          ...labelChips.map((chip) => baseAnchor.y - chip.bounds.minY),
+        )
+      }
+      if (orientation === "y+") {
+        return Math.max(
+          0,
+          ...labelChips.map((chip) => chip.bounds.maxY - baseAnchor.y),
+        )
+      }
+      if (orientation === "x-") {
+        return Math.max(
+          0,
+          ...labelChips.map((chip) => baseAnchor.x - chip.bounds.minX),
+        )
+      }
+      if (orientation === "x+") {
+        return Math.max(
+          0,
+          ...labelChips.map((chip) => chip.bounds.maxX - baseAnchor.x),
+        )
+      }
     }
 
     return this.getSearchDistanceLimit(label, orientation)
