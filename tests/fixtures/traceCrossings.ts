@@ -98,3 +98,97 @@ export const getTraceCrossings = (traces: SolvedTracePath[]) => {
 
   return crossings
 }
+
+/**
+ * Counts places where segments of *different* nets run along each other and
+ * share more than a single point — a collinear overlap.
+ *
+ * This is the companion measurement to {@link getTraceCrossings}, and the two
+ * are needed together. A solver can always drive the crossing count down by
+ * letting two nets lie on top of one another instead, which reads as one line
+ * and hides a connection the schematic is supposed to show. Counting only
+ * crossings would score that as an improvement.
+ */
+export const getTraceOverlaps = (traces: SolvedTracePath[]) => {
+  const segments: Segment[] = []
+
+  for (const trace of traces) {
+    for (let i = 0; i < trace.tracePath.length - 1; i++) {
+      segments.push({
+        a: trace.tracePath[i]!,
+        b: trace.tracePath[i + 1]!,
+        traceId: trace.mspPairId,
+        netId: trace.globalConnNetId,
+        segmentIndex: i,
+      })
+    }
+  }
+
+  const overlaps: Array<{
+    aTraceId: string
+    aNetId: string
+    aSegmentIndex: number
+    bTraceId: string
+    bNetId: string
+    bSegmentIndex: number
+    axis: "horizontal" | "vertical"
+    length: number
+  }> = []
+
+  for (let i = 0; i < segments.length; i++) {
+    for (let k = i + 1; k < segments.length; k++) {
+      const s1 = segments[i]!
+      const s2 = segments[k]!
+      if (s1.netId === s2.netId) continue
+
+      let axis: "horizontal" | "vertical" | null = null
+      let length = 0
+
+      if (
+        isHorizontal(s1.a, s1.b) &&
+        isHorizontal(s2.a, s2.b) &&
+        Math.abs(s1.a.y - s2.a.y) < EPS
+      ) {
+        const low = Math.max(Math.min(s1.a.x, s1.b.x), Math.min(s2.a.x, s2.b.x))
+        const high = Math.min(
+          Math.max(s1.a.x, s1.b.x),
+          Math.max(s2.a.x, s2.b.x),
+        )
+        // A shared endpoint is a touch, not an overlap.
+        if (high - low > EPS) {
+          axis = "horizontal"
+          length = high - low
+        }
+      } else if (
+        isVertical(s1.a, s1.b) &&
+        isVertical(s2.a, s2.b) &&
+        Math.abs(s1.a.x - s2.a.x) < EPS
+      ) {
+        const low = Math.max(Math.min(s1.a.y, s1.b.y), Math.min(s2.a.y, s2.b.y))
+        const high = Math.min(
+          Math.max(s1.a.y, s1.b.y),
+          Math.max(s2.a.y, s2.b.y),
+        )
+        if (high - low > EPS) {
+          axis = "vertical"
+          length = high - low
+        }
+      }
+
+      if (!axis) continue
+
+      overlaps.push({
+        aTraceId: s1.traceId,
+        aNetId: s1.netId,
+        aSegmentIndex: s1.segmentIndex,
+        bTraceId: s2.traceId,
+        bNetId: s2.netId,
+        bSegmentIndex: s2.segmentIndex,
+        axis,
+        length,
+      })
+    }
+  }
+
+  return overlaps
+}
