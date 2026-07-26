@@ -1,6 +1,6 @@
 import { MergedNetLabelObstacleSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
-import { expect } from "bun:test"
-import { test } from "bun:test"
+import { expect } from "vitest"
+import { test } from "vitest"
 import {
   getSvgFromGraphicsObject,
   stackGraphicsHorizontally,

@@ -39,6 +39,13 @@ export const evaluateRailGroup = ({
   eligibleTraceIds,
 }: EvaluateRailGroupInput): AlignmentCandidate | null => {
   const groupTraceIds = new Set(group.map((segment) => segment.traceId))
+    const getId = (s: any) => s?.traceId ?? s?.trace?.traceId ?? s?.id ?? ""
+  const isGenerated = (id: any) =>
+    typeof id === "string" && id.startsWith("available-net-orientation-")
+  const ids = group.map(getId)
+  const hasGenerated = ids.some(isGenerated)
+  const hasReal = ids.some((id: any) => id && !isGenerated(id))
+  if (hasGenerated && hasReal) return null
   const originalGroupTraces = traces.filter((trace) =>
     groupTraceIds.has(trace.mspPairId),
   )
