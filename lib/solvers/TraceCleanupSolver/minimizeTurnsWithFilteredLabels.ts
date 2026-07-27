@@ -43,10 +43,10 @@ export const minimizeTurnsWithFilteredLabels = ({
     (trace) => trace.mspPairId !== targetMspConnectionPairId,
   )
   const relaxedObstacleTraces = otherTraces.filter((trace) => {
-    const sharesEndpoint = trace.pinIds.some((pinId) =>
-      targetPinIds.has(pinId),
+    const sharesEndpoint = trace.pinIds.some((pinId) => targetPinIds.has(pinId))
+    return (
+      trace.globalConnNetId !== targetTrace.globalConnNetId || !sharesEndpoint
     )
-    return trace.globalConnNetId !== targetTrace.globalConnNetId || !sharesEndpoint
   })
 
   const TRACE_WIDTH = 0.01
@@ -75,7 +75,8 @@ export const minimizeTurnsWithFilteredLabels = ({
     maxY: obs.maxY + PADDING,
   }))
 
-  const originalPath = (targetTrace as any).tracePath ?? (targetTrace as any).path
+  const originalPath =
+    (targetTrace as any).tracePath ?? (targetTrace as any).path
   const filteredLabels = allLabelPlacements.filter((label) => {
     const originalNetIds = mergedLabelNetIdMap[label.globalConnNetId]
     if (originalNetIds) {
@@ -100,7 +101,10 @@ export const minimizeTurnsWithFilteredLabels = ({
 
   const relaxedPath = minimizeTurns({
     path: originalPath,
-    obstacles: [...staticObstacles, ...getTraceObstacles(relaxedObstacleTraces)],
+    obstacles: [
+      ...staticObstacles,
+      ...getTraceObstacles(relaxedObstacleTraces),
+    ],
     labelBounds,
     originalPath: originalPath,
   })
