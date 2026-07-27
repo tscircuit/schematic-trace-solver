@@ -1,0 +1,5 @@
+npm error Missing script: "test"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+npm error A complete log of this run can be found in: /data/data/com.termux/files/home/.npm/_logs/2026-07-27T11_01_16_054Z-debug-0.log

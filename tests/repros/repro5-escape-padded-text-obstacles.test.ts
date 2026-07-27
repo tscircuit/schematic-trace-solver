@@ -9,7 +9,7 @@ test("repro5: route escapes past padded text obstacles", () => {
   solver.solve()
 
   expect(
-    solver.schematicTraceLinesSolver!.failedConnectionPairs.map(
+    solver.schematicTraceLinesSolver!.toBeFalsy()edConnectionPairs.map(
       (pair) => pair.mspPairId,
     ),
   ).toEqual([])

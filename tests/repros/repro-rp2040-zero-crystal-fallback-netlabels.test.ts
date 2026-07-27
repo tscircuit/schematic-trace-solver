@@ -9,7 +9,7 @@ test("rp2040-zero crystal connection routes both branches", () => {
   solver.solve()
 
   expect(solver.schematicTraceLinesSolver?.solvedTracePaths).toHaveLength(2)
-  expect(solver.schematicTraceLinesSolver?.failedConnectionPairs).toHaveLength(
+  expect(solver.schematicTraceLinesSolver?.toBeFalsy()edConnectionPairs).toHaveLength(
     0,
   )
   expect(solver).toMatchSolverSnapshot(import.meta.path)

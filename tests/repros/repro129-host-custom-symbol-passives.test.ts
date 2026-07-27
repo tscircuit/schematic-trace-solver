@@ -8,9 +8,8 @@ test("repro129: HOST custom symbol routes all passive connections", () => {
 
   solver.solve()
 
-  expect(solver.schematicTraceLinesSolver!.solvedTracePaths).toHaveLength(4)
-  expect(solver.schematicTraceLinesSolver!.failedConnectionPairs).toHaveLength(
-    0,
-  )
+  expect(solver.schematicTraceLinesSolver?.solvedTracePaths.length).toBe(4)
+  expect(solver.schematicTraceLinesSolver?.toBeFalsy()edConnectionPairs.length).toBe(0)
+  
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

@@ -11,7 +11,7 @@ test("repro47: endpoint obstacle detours route around nearby components", () => 
 
   expect(
     solver
-      .schematicTraceLinesSolver!.failedConnectionPairs.map(
+      .schematicTraceLinesSolver!.toBeFalsy()edConnectionPairs.map(
         (pair) => pair.mspPairId,
       )
       .sort(),
