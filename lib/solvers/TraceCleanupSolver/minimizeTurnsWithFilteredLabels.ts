@@ -141,8 +141,8 @@ export const minimizeTurnsWithFilteredLabels = ({
     }
   }
 
-  return {
+   return {
     ...targetTrace,
     tracePath: newPath,
-  } 
-      }
+  })
+} 
