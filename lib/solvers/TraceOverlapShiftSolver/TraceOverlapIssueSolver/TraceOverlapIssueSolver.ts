@@ -26,6 +26,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
   overlappingTraceSegments: OverlappingTraceSegmentLocator[]
   interactionKind: TraceInteractionKind
   traceNetIslands: Record<ConnNetId, Array<SolvedTracePath>>
+  traceIdsToShift?: Set<MspConnectionPairId>
   obstacleRects: ReturnType<typeof getObstacleRects>
 
   SHIFT_DISTANCE = 0.1
@@ -37,11 +38,13 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     overlappingTraceSegments: OverlappingTraceSegmentLocator[]
     interactionKind: TraceInteractionKind
     traceNetIslands: Record<ConnNetId, Array<SolvedTracePath>>
+    traceIdsToShift?: Set<MspConnectionPairId>
   }) {
     super()
     this.overlappingTraceSegments = params.overlappingTraceSegments
     this.interactionKind = params.interactionKind
     this.traceNetIslands = params.traceNetIslands
+    this.traceIdsToShift = params.traceIdsToShift
     this.obstacleRects = getObstacleRects(params.inputProblem)
 
     // Only add the relevant traces to the correctedTraceMap
@@ -76,7 +79,14 @@ export class TraceOverlapIssueSolver extends BaseSolver {
       })
 
     const groupShouldStayInPlace = this.overlappingTraceSegments.map(
-      containsStraightPinToPinTrace,
+      (group) => {
+        if (!this.traceIdsToShift) return containsStraightPinToPinTrace(group)
+        return group.pathsWithOverlap.every(({ solvedTracePathIndex }) => {
+          const path =
+            this.traceNetIslands[group.connNetId][solvedTracePathIndex]!
+          return !this.traceIdsToShift!.has(path.mspPairId)
+        })
+      },
     )
     const someGroupCanShift = groupShouldStayInPlace.some(
       (shouldStay) => !shouldStay,

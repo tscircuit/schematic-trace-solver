@@ -6,8 +6,14 @@ import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatia
 
 import { findAllLShapedTurns, type LShape } from "./findAllLShapedTurns"
 import { getTraceObstacles } from "./getTraceObstacles"
-import { findIntersectionsWithObstacles } from "./findIntersectionsWithObstacles"
-import { generateLShapeRerouteCandidates } from "./generateLShapeRerouteCandidates"
+import {
+  findIntersectionsWithObstacles,
+  findPerpendicularPathCrossings,
+} from "./findIntersectionsWithObstacles"
+import {
+  generateLShapeRerouteCandidates,
+  generatePerpendicularTraceDetours,
+} from "./generateLShapeRerouteCandidates"
 import { isPathColliding, type CollisionInfo } from "./isPathColliding"
 import {
   generateRectangleCandidates,
@@ -24,6 +30,19 @@ import { visualizeTightRectangle } from "../visualizeTightRectangle"
 import { visualizeCandidates } from "./visualizeCandidates"
 import { mergeGraphicsObjects } from "../mergeGraphicsObjects"
 import { visualizeCollision } from "./visualizeCollision"
+import {
+  getPathLength,
+  isPathCollidingWithChipInterior,
+} from "../../Example28Solver/geometry"
+import { getObstacleRects } from "../../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+
+interface TraceCrossing {
+  trace: SolvedTracePath
+  segmentIndex: number
+  otherTrace: SolvedTracePath
+  otherSegmentIndex: number
+  isInitialBundleCrossing: boolean
+}
 
 /**
  * Defines the input structure for the UntangleTraceSubsolver.
@@ -60,6 +79,9 @@ export class UntangleTraceSubsolver extends BaseSolver {
   private input: UntangleTraceSubsolverInput
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private lShapesToProcess: LShape[] = []
+  private ignoredCrossings = new Set<string>()
+  private reroutedTraceIds = new Set<string>()
+  private processingCrossings = true
   private visualizationMode: VisualizationMode = "l_shapes"
 
   private currentLShape: LShape | null = null
@@ -95,18 +117,26 @@ export class UntangleTraceSubsolver extends BaseSolver {
       this.input.inputProblem._chipObstacleSpatialIndex =
         this.chipObstacleSpatialIndex
     }
-
-    for (const trace of this.input.allTraces) {
-      const lShapes = findAllLShapedTurns(trace.tracePath)
-      this.lShapesToProcess.push(
-        ...lShapes.map((l) => ({ ...l, traceId: trace.mspPairId as string })),
-      )
-    }
   }
 
   override _step(): void {
     if (this.isInitialStep) {
       this.isInitialStep = false
+      return
+    }
+
+    if (this.processingCrossings) {
+      // The L-shape pass below only reacts when both arms intersect obstacles.
+      // Resolve strict crossings on merged-label bundles before entering it.
+      const crossing = this._findCrossing()
+      if (crossing) {
+        if (!this._resolveCrossing(crossing)) {
+          this.ignoredCrossings.add(this._crossingKey(crossing))
+        }
+        return
+      }
+      this.processingCrossings = false
+      this._initializeLShapes()
       return
     }
 
@@ -134,6 +164,145 @@ export class UntangleTraceSubsolver extends BaseSolver {
         this._handleCandidateEvaluationStep()
         break
     }
+  }
+
+  private _initializeLShapes() {
+    for (const trace of this.input.allTraces) {
+      this.lShapesToProcess.push(
+        ...findAllLShapedTurns(trace.tracePath).map((lShape) => ({
+          ...lShape,
+          traceId: trace.mspPairId,
+        })),
+      )
+    }
+  }
+
+  private _crossingKey(crossing: TraceCrossing) {
+    return `${crossing.trace.mspPairId}:${crossing.segmentIndex}:${crossing.otherTrace.mspPairId}:${crossing.otherSegmentIndex}`
+  }
+
+  private _isTraceBundle(first: SolvedTracePath, second: SolvedTracePath) {
+    const componentPair = (trace: SolvedTracePath) =>
+      trace.pins
+        .map((pin) => pin.chipId)
+        .sort()
+        .join(":")
+    if (componentPair(first) !== componentPair(second)) return false
+
+    return Object.values(this.input.mergedLabelNetIdMap).some(
+      (netIds) =>
+        netIds.has(first.globalConnNetId) && netIds.has(second.globalConnNetId),
+    )
+  }
+
+  private _findCrossing(): TraceCrossing | null {
+    const traces = this.input.allTraces
+    for (let firstIndex = 0; firstIndex < traces.length; firstIndex++) {
+      const trace = traces[firstIndex]!
+      for (
+        let secondIndex = firstIndex + 1;
+        secondIndex < traces.length;
+        secondIndex++
+      ) {
+        const otherTrace = traces[secondIndex]!
+        if (trace.globalConnNetId === otherTrace.globalConnNetId) continue
+        const isInitialBundleCrossing = this._isTraceBundle(trace, otherTrace)
+        if (
+          !isInitialBundleCrossing &&
+          !this.reroutedTraceIds.has(trace.mspPairId) &&
+          !this.reroutedTraceIds.has(otherTrace.mspPairId)
+        ) {
+          continue
+        }
+
+        const crossings = findPerpendicularPathCrossings(
+          trace.tracePath,
+          otherTrace.tracePath,
+        )
+        for (const { pathSegmentIndex, otherPathSegmentIndex } of crossings) {
+          const crossing = {
+            trace,
+            segmentIndex: pathSegmentIndex,
+            otherTrace,
+            otherSegmentIndex: otherPathSegmentIndex,
+            isInitialBundleCrossing,
+          }
+          if (!this.ignoredCrossings.has(this._crossingKey(crossing))) {
+            return crossing
+          }
+        }
+      }
+    }
+    return null
+  }
+
+  private _resolveCrossing(crossing: TraceCrossing) {
+    const chipBounds = this.chipObstacleSpatialIndex.chips.map(
+      (chip) => chip.bounds,
+    )
+    const candidates = [
+      ...generatePerpendicularTraceDetours({
+        trace: crossing.trace,
+        segmentIndex: crossing.segmentIndex,
+        obstacleStart:
+          crossing.otherTrace.tracePath[crossing.otherSegmentIndex]!,
+        obstacleEnd:
+          crossing.otherTrace.tracePath[crossing.otherSegmentIndex + 1]!,
+        chipBounds,
+        clearance: this.input.paddingBuffer,
+      }),
+      ...generatePerpendicularTraceDetours({
+        trace: crossing.otherTrace,
+        segmentIndex: crossing.otherSegmentIndex,
+        obstacleStart: crossing.trace.tracePath[crossing.segmentIndex]!,
+        obstacleEnd: crossing.trace.tracePath[crossing.segmentIndex + 1]!,
+        chipBounds,
+        clearance: this.input.paddingBuffer,
+      }),
+    ]
+    const chipObstacles = getObstacleRects(this.input.inputProblem).filter(
+      (obstacle) => obstacle.kind === "chip",
+    )
+    // Prefer a globally clear route. If the initial bundle detour transfers
+    // the crossing, continue rip-up/reroute from that moved trace until clear.
+    const validCandidates = candidates
+      .map((candidate) => ({
+        ...candidate,
+        collision: isPathColliding(
+          candidate.path,
+          this.input.allTraces,
+          candidate.traceId,
+        ),
+      }))
+      .filter(
+        (candidate) =>
+          !isPathCollidingWithChipInterior(candidate.path, chipObstacles) &&
+          !isPathColliding(
+            candidate.path,
+            [crossing.trace, crossing.otherTrace],
+            candidate.traceId,
+          ).isColliding &&
+          (crossing.isInitialBundleCrossing ||
+            !candidate.collision.isColliding),
+      )
+      .sort(
+        (first, second) =>
+          Number(first.collision.isColliding) -
+            Number(second.collision.isColliding) ||
+          getPathLength(first.path) - getPathLength(second.path),
+      )
+    const bestCandidate = validCandidates[0]
+    if (!bestCandidate) return false
+
+    const traceIndex = this.input.allTraces.findIndex(
+      (trace) => trace.mspPairId === bestCandidate.traceId,
+    )
+    this.input.allTraces[traceIndex] = {
+      ...this.input.allTraces[traceIndex]!,
+      tracePath: bestCandidate.path,
+    }
+    this.reroutedTraceIds.add(bestCandidate.traceId)
+    return true
   }
 
   private _resetAfterLShapProcessing() {

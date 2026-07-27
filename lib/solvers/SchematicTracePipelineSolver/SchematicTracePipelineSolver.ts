@@ -27,6 +27,7 @@ import { RailNetLabelCornerPlacementSolver } from "../RailNetLabelCornerPlacemen
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
+import { UnroutedTraceRecoverySolver } from "../UnroutedTraceRecoverySolver/UnroutedTraceRecoverySolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -70,6 +71,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   // guidelinesSolver?: GuidelinesSolver
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   longDistancePairSolver?: LongDistancePairSolver
+  unroutedTraceRecoverySolver?: UnroutedTraceRecoverySolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
   labelMergingSolver?: MergedNetLabelObstacleSolver
@@ -77,6 +79,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   traceCleanupSolver?: TraceCleanupSolver
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
+  postLabelTraceOverlapShiftSolver?: TraceOverlapShiftSolver
   railNetLabelCornerPlacementSolver?: RailNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   preAlignmentNetLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
@@ -144,13 +147,26 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
+      "unroutedTraceRecoverySolver",
+      UnroutedTraceRecoverySolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          failedConnectionPairs:
+            instance.schematicTraceLinesSolver!.failedConnectionPairs,
+          alreadySolvedTraces:
+            instance.longDistancePairSolver!.getOutput().allTracesMerged,
+        },
+      ],
+    ),
+    definePipelineStep(
       "traceOverlapShiftSolver",
       TraceOverlapShiftSolver,
       () => [
         {
           inputProblem: this.inputProblem,
           inputTracePaths:
-            this.longDistancePairSolver?.getOutput().allTracesMerged!,
+            this.unroutedTraceRecoverySolver?.getOutput().allTracesMerged!,
           globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
         },
       ],
@@ -167,7 +183,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           inputTraceMap:
             this.traceOverlapShiftSolver?.correctedTraceMap ??
             Object.fromEntries(
-              this.longDistancePairSolver!.getOutput().allTracesMerged.map(
+              this.unroutedTraceRecoverySolver!.getOutput().allTracesMerged.map(
                 (p) => [p.mspPairId, p],
               ),
             ),
@@ -187,7 +203,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           instance.traceOverlapShiftSolver?.correctedTraceMap ??
           Object.fromEntries(
             instance
-              .longDistancePairSolver!.getOutput()
+              .unroutedTraceRecoverySolver!.getOutput()
               .allTracesMerged.map((p) => [p.mspPairId, p]),
           )
         const traces = Object.values(traceMap)
@@ -266,13 +282,33 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ],
     ),
     definePipelineStep(
+      "postLabelTraceOverlapShiftSolver",
+      TraceOverlapShiftSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          inputTracePaths: instance.availableNetOrientationSolver!.traces,
+          globalConnMap: instance.mspConnectionPairSolver!.globalConnMap,
+          traceIdsToShift: new Set(
+            instance
+              .availableNetOrientationSolver!.traces.filter((trace) =>
+                trace.mspPairId.startsWith("available-net-orientation-"),
+              )
+              .map((trace) => trace.mspPairId),
+          ),
+        },
+      ],
+    ),
+    definePipelineStep(
       "railNetLabelCornerPlacementSolver",
       RailNetLabelCornerPlacementSolver,
       (instance) => {
         return [
           {
             inputProblem: instance.inputProblem,
-            traces: instance.availableNetOrientationSolver!.traces,
+            traces: Object.values(
+              instance.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
+            ),
             netLabelPlacements:
               instance.availableNetOrientationSolver!.outputNetLabelPlacements,
           },
@@ -285,7 +321,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => [
         {
           inputProblem: instance.inputProblem,
-          traces: instance.availableNetOrientationSolver!.traces,
+          traces: Object.values(
+            instance.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
+          ),
           netLabelPlacements:
             instance.railNetLabelCornerPlacementSolver!
               .outputNetLabelPlacements,
@@ -298,7 +336,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => [
         {
           inputProblem: instance.inputProblem,
-          traces: instance.availableNetOrientationSolver!.traces,
+          traces: Object.values(
+            instance.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
+          ),
           netLabelPlacements:
             instance.traceAnchoredNetLabelOverlapSolver!
               .outputNetLabelPlacements,

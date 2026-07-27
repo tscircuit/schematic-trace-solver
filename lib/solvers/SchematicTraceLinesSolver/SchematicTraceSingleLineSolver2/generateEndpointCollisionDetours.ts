@@ -1,6 +1,7 @@
 import type { Point } from "@tscircuit/math-utils"
 import { isHorizontal, isVertical } from "./collisions"
 import { type Axis, midBetweenPointAndRect } from "./mid"
+import { hasOnlyNonzeroOrthogonalSegments } from "./pathOps"
 import type { ObstacleRect } from "./rect"
 
 const getSegmentAxis = (start: Point, end: Point): Axis | null => {
@@ -8,16 +9,6 @@ const getSegmentAxis = (start: Point, end: Point): Axis | null => {
   if (isHorizontal(start, end)) return "y"
   return null
 }
-
-const hasOnlyNonzeroOrthogonalSegments = (path: Point[]) =>
-  path.every((point, index) => {
-    const nextPoint = path[index + 1]
-    if (!nextPoint) return true
-    if (!isHorizontal(point, nextPoint) && !isVertical(point, nextPoint)) {
-      return false
-    }
-    return Math.abs(point.x - nextPoint.x) + Math.abs(point.y - nextPoint.y) > 0
-  })
 
 export const generateEndpointCollisionDetours = ({
   path,
