@@ -46,8 +46,8 @@ export const minimizeTurnsWithFilteredLabels = ({
     const sharesEndpoint = trace.pinIds.some((pinId) => targetPinIds.has(pinId))
     return (
       trace.globalConnNetId !== targetTrace.globalConnNetId || !sharesEndpoint
-    )
-  })
+      )
+  }
 
   const TRACE_WIDTH = 0.01
   const getTraceObstacles = (obstacleTraces: SolvedTracePath[]) =>
@@ -145,4 +145,4 @@ export const minimizeTurnsWithFilteredLabels = ({
     ...targetTrace,
     tracePath: newPath,
   }
-} 
+})
