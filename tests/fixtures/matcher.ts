@@ -1,5 +1,5 @@
 import { getSvgFromGraphicsObject, type GraphicsObject } from "graphics-debug"
-import { expect, type MatcherResult } from "bun:test"
+import { expect, type } from "vitest"
 import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { colorAvailableNetOrientationLabels } from "lib/solvers/SchematicTracePipelineSolver/colorAvailableNetOrientationLabels"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -29,19 +29,19 @@ async function toMatchSolverSnapshot(
 
   if (lastStep !== 0) {
     graphicsObject.points = graphicsObject.points?.filter(
-      (p) => p.step === lastStep,
+      (p) => p?.step === lastStep,
     )
     graphicsObject.lines = graphicsObject.lines?.filter(
-      (l) => l.step === lastStep,
+      (l) => l?.step === lastStep,
     )
     graphicsObject.rects = graphicsObject.rects?.filter(
-      (r) => r.step === lastStep,
+      (r) => r?.step === lastStep,
     )
     graphicsObject.circles = graphicsObject.circles?.filter(
-      (c) => c.step === lastStep,
+      (c) => c?.step === lastStep,
     )
     graphicsObject.texts = graphicsObject.texts?.filter(
-      (t) => t.step === lastStep,
+      (t) => t?.step === lastStep,
     )
   }
 
@@ -75,7 +75,7 @@ expect.extend({
   toMatchSolverSnapshot: toMatchSolverSnapshot as any,
 })
 
-declare module "bun:test" {
+declare module "vitest" {
   interface Matchers<T = unknown> {
     toMatchSolverSnapshot(
       testPath: string,

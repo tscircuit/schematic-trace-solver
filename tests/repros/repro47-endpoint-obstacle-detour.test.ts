@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test"
+import { expect, test } from "vitest"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import { countPathIntersections } from "lib/solvers/Example28Solver/geometry"
 import "tests/fixtures/matcher"
@@ -11,7 +11,7 @@ test("repro47: endpoint obstacle detours route around nearby components", () => 
 
   expect(
     solver
-      .schematicTraceLinesSolver!.failedConnectionPairs.map(
+      .schematicTraceLinesSolver!.toBeFalsy()edConnectionPairs.map(
         (pair) => pair.mspPairId,
       )
       .sort(),

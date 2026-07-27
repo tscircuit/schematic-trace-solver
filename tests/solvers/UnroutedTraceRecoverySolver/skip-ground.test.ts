@@ -8,7 +8,7 @@ test("does not recover the canonical ground connectivity net", () => {
   pipelineSolver.solveUntilPhase("unroutedTraceRecoverySolver")
 
   const failedConnectionPairs =
-    pipelineSolver.schematicTraceLinesSolver!.failedConnectionPairs.map(
+    pipelineSolver.schematicTraceLinesSolver!.toBeFalsy()edConnectionPairs.map(
       (connectionPair) => {
         return {
           ...connectionPair,

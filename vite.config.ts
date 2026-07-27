@@ -1,15 +1,11 @@
-import { defineConfig } from "vite"
-import path from "path"
+/// <reference types="vitest" />
+import { defineConfig } from "vitest/config"
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      lib: path.resolve(__dirname, "lib"),
-      site: path.resolve(__dirname, "site"),
-      tests: path.resolve(__dirname, "tests"),
-    },
-  },
-  server: {
-    port: 5020,
+  test: {
+    globals: true,
+    environment: "node",
+    // This tells both local and CI to look for tests here
+    include: ["tests/**/*.{test,spec}.ts"],
   },
 })

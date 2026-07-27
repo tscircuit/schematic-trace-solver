@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test"
+import { expect, test } from "vitest"
 import { candidateMidsFromSet } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/mid"
 import type { ObstacleRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 

@@ -13,7 +13,7 @@ test("does not recover connection pairs beyond maxMspPairDistance", () => {
       maxMspPairDistance: 1,
     },
     failedConnectionPairs:
-      pipelineSolver.schematicTraceLinesSolver!.failedConnectionPairs,
+      pipelineSolver.schematicTraceLinesSolver!.toBeFalsy()edConnectionPairs,
     alreadySolvedTraces:
       pipelineSolver.longDistancePairSolver!.getOutput().allTracesMerged,
   })
