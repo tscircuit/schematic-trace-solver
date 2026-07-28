@@ -1,5 +1,8 @@
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
-import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import type {
+  MspConnectionPair,
+  MspConnectionPairId,
+} from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type {
   InputProblem,
   InputPin,
@@ -13,21 +16,22 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { distance } from "@tscircuit/math-utils"
+import { shouldPreserveLabeledPeripheralTrace } from "./shouldPreserveLabeledPeripheralTrace"
 
 const NEAREST_NEIGHBOR_COUNT = 3
 
-const distance = (p1: InputPin, p2: InputPin) => {
-  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
+type PinWithChipId = InputPin & { chipId: string }
+
+type LongDistanceCandidatePair = {
+  mspPairId: MspConnectionPairId
+  pins: [PinWithChipId, PinWithChipId]
 }
 
 export class LongDistancePairSolver extends BaseSolver {
   public solvedLongDistanceTraces: SolvedTracePath[] = []
-  private queuedCandidatePairs: Array<
-    [InputPin & { chipId: string }, InputPin & { chipId: string }]
-  > = []
-  private currentCandidatePair:
-    | [InputPin & { chipId: string }, InputPin & { chipId: string }]
-    | null = null
+  private queuedCandidatePairs: LongDistanceCandidatePair[] = []
+  private currentCandidatePair: LongDistanceCandidatePair | null = null
   private subSolver: SchematicTraceSingleLineSolver2 | null = null
   private chipMap: Record<string, InputChip> = {}
   private inputProblem: InputProblem
@@ -68,9 +72,7 @@ export class LongDistancePairSolver extends BaseSolver {
     }
 
     // 2. Generate candidate pairs using N-Nearest-Neighbors approach
-    const candidatePairs: Array<
-      [InputPin & { chipId: string }, InputPin & { chipId: string }]
-    > = []
+    const candidatePairs: LongDistanceCandidatePair[] = []
     const addedPairKeys = new Set<string>()
 
     for (const netId of Object.keys(netConnMap.netMap)) {
@@ -101,22 +103,22 @@ export class LongDistancePairSolver extends BaseSolver {
           .slice(0, NEAREST_NEIGHBOR_COUNT)
 
         for (const neighbor of neighbors) {
-          const pair: [
-            InputPin & { chipId: string },
-            InputPin & { chipId: string },
-          ] = [sourcePin, neighbor.pin]
+          const pins: [PinWithChipId, PinWithChipId] = [sourcePin, neighbor.pin]
           if (
-            arePinsInDifferentSchematicSections(inputProblem, pair[0], pair[1])
+            arePinsInDifferentSchematicSections(inputProblem, pins[0], pins[1])
           ) {
             continue
           }
-          const pairKey = pair
+          const pairKey = pins
             .map((p) => p.pinId)
             .sort()
             .join("--")
 
           if (!addedPairKeys.has(pairKey)) {
-            candidatePairs.push(pair)
+            candidatePairs.push({
+              mspPairId: pins.map((pin) => pin.pinId).join("-"),
+              pins,
+            })
             addedPairKeys.add(pairKey)
           }
         }
@@ -134,49 +136,20 @@ export class LongDistancePairSolver extends BaseSolver {
     if (this.subSolver?.solved) {
       const newTracePath = this.subSolver.solvedTracePath
       if (newTracePath && this.currentCandidatePair) {
-        const [p1, p2] = this.currentCandidatePair
+        const [p1, p2] = this.currentCandidatePair.pins
         const globalConnNetId = this.netConnMap.getNetConnectedToId(p1.pinId)!
-        const mspPairId = `${p1.pinId}-${p2.pinId}`
+        const { mspPairId } = this.currentCandidatePair
         const routeCrossesExistingTrace = doesTraceOverlapWithExistingTraces(
           newTracePath,
           this.allSolvedTraces,
         )
-        const multiPinChip =
-          this.chipMap[p1.chipId]!.pins.length > 1
-            ? this.chipMap[p1.chipId]
-            : this.chipMap[p2.chipId]
-        const labeledSinglePinConnectionsFromChip =
-          this.inputProblem.directConnections.filter((connection) => {
-            if (connection.netLabelWidth === undefined) return false
-            const connectionPins = connection.pinIds.flatMap((pinId) => {
-              for (const chip of this.inputProblem.chips) {
-                const pin = chip.pins.find(
-                  (candidate) => candidate.pinId === pinId,
-                )
-                if (pin) return [{ pin, chip }]
-              }
-              return []
-            })
-            return (
-              connectionPins.some(
-                ({ chip }) => chip.chipId === multiPinChip?.chipId,
-              ) && connectionPins.some(({ chip }) => chip.pins.length === 1)
-            )
-          }).length
-        const isLabeledSinglePinPeripheral =
-          this.inputProblem.directConnections.some(
-            (connection) =>
-              connection.netLabelWidth !== undefined &&
-              connection.pinIds.includes(p1.pinId) &&
-              connection.pinIds.includes(p2.pinId),
-          ) &&
-          labeledSinglePinConnectionsFromChip >= 5 &&
-          (this.chipMap[p1.chipId]?.pins.length === 1 ||
-            this.chipMap[p2.chipId]?.pins.length === 1) &&
-          ((p1._facingDirection === "x-" && p2._facingDirection === "x+") ||
-            (p1._facingDirection === "x+" && p2._facingDirection === "x-"))
+        const shouldPreserveTrace = shouldPreserveLabeledPeripheralTrace({
+          inputProblem: this.inputProblem,
+          chipMap: this.chipMap,
+          pins: this.currentCandidatePair.pins,
+        })
 
-        if (!routeCrossesExistingTrace || isLabeledSinglePinPeripheral) {
+        if (!routeCrossesExistingTrace || shouldPreserveTrace) {
           const newSolvedTrace: SolvedTracePath = {
             mspPairId,
             dcConnNetId: globalConnNetId,
@@ -212,7 +185,7 @@ export class LongDistancePairSolver extends BaseSolver {
     // 3. Find the next valid candidate pair and start a new sub-solver
     while (this.queuedCandidatePairs.length > 0) {
       const nextPair = this.queuedCandidatePairs.shift()!
-      const [p1, p2] = nextPair
+      const [p1, p2] = nextPair.pins
 
       if (
         this.newlyConnectedPinIds.has(p1.pinId) ||
@@ -224,7 +197,7 @@ export class LongDistancePairSolver extends BaseSolver {
       this.currentCandidatePair = nextPair
       this.subSolver = new SchematicTraceSingleLineSolver2({
         inputProblem: this.params.inputProblem,
-        pins: this.currentCandidatePair,
+        pins: this.currentCandidatePair.pins,
         chipMap: this.chipMap,
       })
       return
@@ -250,7 +223,8 @@ export class LongDistancePairSolver extends BaseSolver {
     }
 
     // Draw queued candidate pairs
-    for (const [p1, p2] of this.queuedCandidatePairs) {
+    for (const { pins } of this.queuedCandidatePairs) {
+      const [p1, p2] = pins
       graphics.lines!.push({
         points: [p1, p2],
         strokeColor: "gray",
