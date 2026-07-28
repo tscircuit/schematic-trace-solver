@@ -3,7 +3,7 @@ import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSing
 
 type PinWithChipId = InputPin & { chipId: string }
 
-export const shouldIgnoreMaxDistance = ({
+export const isLabeledPeripheralConnection = ({
   inputProblem,
   chipMap,
   pins,
