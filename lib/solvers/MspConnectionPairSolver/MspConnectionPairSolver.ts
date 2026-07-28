@@ -14,6 +14,7 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCenterLines"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
+import { shouldRouteLabeledSinglePinConnection } from "./shouldRouteLabeledSinglePinConnection"
 
 export type MspConnectionPairId = string
 export const DEFAULT_MAX_MSP_PAIR_DISTANCE = 1
@@ -116,10 +117,19 @@ export class MspConnectionPairSolver extends BaseSolver {
       const pinPairKey = getPinPairKey([pin1!, pin2!])
       // Explicit source traces are classified by straight-line distance when
       // their input is created; named nets retain the orthogonal route metric.
-      const pairDistance = this.directConnectionPinPairKeys.has(pinPairKey)
-        ? distance(p1, p2)
-        : Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)
-      if (pairDistance > this.maxMspPairDistance) {
+      let pairDistance = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)
+      if (this.directConnectionPinPairKeys.has(pinPairKey)) {
+        pairDistance = distance(p1, p2)
+      }
+      const shouldRouteDespiteDistance = shouldRouteLabeledSinglePinConnection({
+        inputProblem: this.inputProblem,
+        chipMap: this.chipMap,
+        pins: [p1, p2],
+      })
+      if (
+        pairDistance > this.maxMspPairDistance &&
+        !shouldRouteDespiteDistance
+      ) {
         // Too far apart; skip creating an MSP pair for this net
         return
       }

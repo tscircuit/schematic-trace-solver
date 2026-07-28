@@ -1,8 +1,9 @@
 import type { InputChip, InputPin, InputProblem } from "lib/types/InputProblem"
+import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 
 type PinWithChipId = InputPin & { chipId: string }
 
-export const shouldPreserveLabeledPeripheralTrace = ({
+export const shouldRouteLabeledSinglePinConnection = ({
   inputProblem,
   chipMap,
   pins,
@@ -27,10 +28,17 @@ export const shouldPreserveLabeledPeripheralTrace = ({
     firstChip.pins.length === 1 || secondChip.pins.length === 1
   if (!hasSinglePinPeripheral) return false
 
-  const pinsFaceEachOtherHorizontally =
-    (firstPin._facingDirection === "x-" &&
-      secondPin._facingDirection === "x+") ||
-    (firstPin._facingDirection === "x+" && secondPin._facingDirection === "x-")
+  let firstFacingDirection = firstPin._facingDirection
+  if (!firstFacingDirection) {
+    firstFacingDirection = getPinDirection(firstPin, firstChip)
+  }
+  let secondFacingDirection = secondPin._facingDirection
+  if (!secondFacingDirection) {
+    secondFacingDirection = getPinDirection(secondPin, secondChip)
+  }
 
-  return pinsFaceEachOtherHorizontally
+  return (
+    (firstFacingDirection === "x-" && secondFacingDirection === "x+") ||
+    (firstFacingDirection === "x+" && secondFacingDirection === "x-")
+  )
 }
