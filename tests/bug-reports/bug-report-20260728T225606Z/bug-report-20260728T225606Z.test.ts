@@ -15,6 +15,12 @@ test("bug-report-20260728T225606Z", () => {
   expect(
     routedPinPairs.some(
       (pinIds) =>
+        pinIds.has("schematic_port_3") && pinIds.has("schematic_port_56"),
+    ),
+  ).toBe(true)
+  expect(
+    routedPinPairs.some(
+      (pinIds) =>
         pinIds.has("schematic_port_4") && pinIds.has("schematic_port_57"),
     ),
   ).toBe(true)

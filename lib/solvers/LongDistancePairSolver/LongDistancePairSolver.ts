@@ -13,6 +13,7 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { isLabeledPeripheralConnection } from "../MspConnectionPairSolver/isLabeledPeripheralConnection"
 
 const NEAREST_NEIGHBOR_COUNT = 3
 
@@ -28,6 +29,8 @@ export class LongDistancePairSolver extends BaseSolver {
   private currentCandidatePair:
     | [InputPin & { chipId: string }, InputPin & { chipId: string }]
     | null = null
+  private queuedFailedConnectionPairs: MspConnectionPair[] = []
+  private currentFailedConnectionPair: MspConnectionPair | null = null
   private subSolver: SchematicTraceSingleLineSolver2 | null = null
   private chipMap: Record<string, InputChip> = {}
   private inputProblem: InputProblem
@@ -40,6 +43,7 @@ export class LongDistancePairSolver extends BaseSolver {
       inputProblem: InputProblem
       alreadySolvedTraces: SolvedTracePath[]
       primaryMspConnectionPairs: MspConnectionPair[]
+      failedConnectionPairs: MspConnectionPair[]
     },
   ) {
     super()
@@ -66,6 +70,14 @@ export class LongDistancePairSolver extends BaseSolver {
         pinMap.set(pin.pinId, { ...pin, chipId: chip.chipId })
       }
     }
+    this.queuedFailedConnectionPairs = this.params.failedConnectionPairs.filter(
+      (connectionPair) =>
+        isLabeledPeripheralConnection({
+          inputProblem: this.inputProblem,
+          chipMap: this.chipMap,
+          pins: connectionPair.pins,
+        }),
+    )
 
     // 2. Generate candidate pairs using N-Nearest-Neighbors approach
     const candidatePairs: Array<
@@ -129,9 +141,34 @@ export class LongDistancePairSolver extends BaseSolver {
     return this.params
   }
 
+  private acceptFailedConnectionPair(tracePath: SolvedTracePath["tracePath"]) {
+    const connectionPair = this.currentFailedConnectionPair
+    if (!connectionPair) return
+
+    const solvedTrace: SolvedTracePath = {
+      ...connectionPair,
+      tracePath,
+      mspConnectionPairIds: [connectionPair.mspPairId],
+      pinIds: connectionPair.pins.map((pin) => pin.pinId),
+    }
+    this.solvedLongDistanceTraces.push(solvedTrace)
+    this.allSolvedTraces.push(solvedTrace)
+    for (const pin of connectionPair.pins) {
+      this.newlyConnectedPinIds.add(pin.pinId)
+    }
+  }
+
   override _step() {
     // 1. Check if a sub-solver has finished and process its result
-    if (this.subSolver?.solved) {
+    if (this.subSolver?.solved && this.currentFailedConnectionPair) {
+      const tracePath = this.subSolver.solvedTracePath
+      if (tracePath) {
+        this.acceptFailedConnectionPair(tracePath)
+      }
+      this.subSolver = null
+      this.currentCandidatePair = null
+      this.currentFailedConnectionPair = null
+    } else if (this.subSolver?.solved) {
       const newTracePath = this.subSolver.solvedTracePath
       if (newTracePath && this.currentCandidatePair) {
         const isTraceClear = !doesTraceOverlapWithExistingTraces(
@@ -166,11 +203,24 @@ export class LongDistancePairSolver extends BaseSolver {
     } else if (this.subSolver?.failed) {
       this.subSolver = null
       this.currentCandidatePair = null
+      this.currentFailedConnectionPair = null
     }
 
     // 2. If a sub-solver is already running, let it continue
     if (this.subSolver) {
       this.subSolver.step()
+      return
+    }
+
+    const failedConnectionPair = this.queuedFailedConnectionPairs.shift()
+    if (failedConnectionPair) {
+      this.currentFailedConnectionPair = failedConnectionPair
+      this.currentCandidatePair = failedConnectionPair.pins
+      this.subSolver = new SchematicTraceSingleLineSolver2({
+        inputProblem: this.params.inputProblem,
+        pins: failedConnectionPair.pins,
+        chipMap: this.chipMap,
+      })
       return
     }
 

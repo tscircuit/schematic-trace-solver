@@ -140,6 +140,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             instance.mspConnectionPairSolver!.mspConnectionPairs,
           alreadySolvedTraces:
             instance.schematicTraceLinesSolver!.solvedTracePaths,
+          failedConnectionPairs:
+            instance.schematicTraceLinesSolver!.failedConnectionPairs,
         },
       ],
       {
