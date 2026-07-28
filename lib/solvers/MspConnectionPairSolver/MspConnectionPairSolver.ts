@@ -121,6 +121,8 @@ export class MspConnectionPairSolver extends BaseSolver {
       if (this.directConnectionPinPairKeys.has(pinPairKey)) {
         pairDistance = distance(p1, p2)
       }
+      // Labeled one-pin peripherals need a real trace even when they are far
+      // apart; skipping the MSP pair would leave only the fallback path.
       const isLabeledPeripheral = isLabeledPeripheralConnection({
         inputProblem: this.inputProblem,
         chipMap: this.chipMap,

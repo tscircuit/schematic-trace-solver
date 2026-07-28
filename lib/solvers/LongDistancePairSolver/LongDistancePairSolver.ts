@@ -70,6 +70,8 @@ export class LongDistancePairSolver extends BaseSolver {
         pinMap.set(pin.pinId, { ...pin, chipId: chip.chipId })
       }
     }
+    // Retry failed MSP pairs with their existing identity before creating
+    // new nearest-neighbor candidates.
     this.queuedFailedConnectionPairs = this.params.failedConnectionPairs.filter(
       (connectionPair) =>
         isLabeledPeripheralConnection({
@@ -145,6 +147,8 @@ export class LongDistancePairSolver extends BaseSolver {
     const connectionPair = this.currentFailedConnectionPair
     if (!connectionPair) return
 
+    // Reuse the original pair so downstream solvers retain its connectivity
+    // IDs, user net ID, pins, and MSP pair ID.
     const solvedTrace: SolvedTracePath = {
       ...connectionPair,
       tracePath,
