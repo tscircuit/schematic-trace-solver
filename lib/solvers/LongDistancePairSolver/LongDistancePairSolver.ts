@@ -134,16 +134,49 @@ export class LongDistancePairSolver extends BaseSolver {
     if (this.subSolver?.solved) {
       const newTracePath = this.subSolver.solvedTracePath
       if (newTracePath && this.currentCandidatePair) {
-        const isTraceClear = !doesTraceOverlapWithExistingTraces(
+        const [p1, p2] = this.currentCandidatePair
+        const globalConnNetId = this.netConnMap.getNetConnectedToId(p1.pinId)!
+        const mspPairId = `${p1.pinId}-${p2.pinId}`
+        const routeCrossesExistingTrace = doesTraceOverlapWithExistingTraces(
           newTracePath,
           this.allSolvedTraces,
         )
+        const multiPinChip =
+          this.chipMap[p1.chipId]!.pins.length > 1
+            ? this.chipMap[p1.chipId]
+            : this.chipMap[p2.chipId]
+        const labeledSinglePinConnectionsFromChip =
+          this.inputProblem.directConnections.filter((connection) => {
+            if (connection.netLabelWidth === undefined) return false
+            const connectionPins = connection.pinIds.flatMap((pinId) => {
+              for (const chip of this.inputProblem.chips) {
+                const pin = chip.pins.find(
+                  (candidate) => candidate.pinId === pinId,
+                )
+                if (pin) return [{ pin, chip }]
+              }
+              return []
+            })
+            return (
+              connectionPins.some(
+                ({ chip }) => chip.chipId === multiPinChip?.chipId,
+              ) && connectionPins.some(({ chip }) => chip.pins.length === 1)
+            )
+          }).length
+        const isLabeledSinglePinPeripheral =
+          this.inputProblem.directConnections.some(
+            (connection) =>
+              connection.netLabelWidth !== undefined &&
+              connection.pinIds.includes(p1.pinId) &&
+              connection.pinIds.includes(p2.pinId),
+          ) &&
+          labeledSinglePinConnectionsFromChip >= 5 &&
+          (this.chipMap[p1.chipId]?.pins.length === 1 ||
+            this.chipMap[p2.chipId]?.pins.length === 1) &&
+          ((p1._facingDirection === "x-" && p2._facingDirection === "x+") ||
+            (p1._facingDirection === "x+" && p2._facingDirection === "x-"))
 
-        if (isTraceClear) {
-          const [p1, p2] = this.currentCandidatePair
-          const globalConnNetId = this.netConnMap.getNetConnectedToId(p1.pinId)!
-          const mspPairId = `${p1.pinId}-${p2.pinId}`
-
+        if (!routeCrossesExistingTrace || isLabeledSinglePinPeripheral) {
           const newSolvedTrace: SolvedTracePath = {
             mspPairId,
             dcConnNetId: globalConnNetId,
@@ -154,6 +187,8 @@ export class LongDistancePairSolver extends BaseSolver {
             pinIds: [p1.pinId, p2.pinId],
           }
 
+          // Labeled one-pin peripherals must retain their trace so later
+          // pipeline stages can reroute it instead of losing connectivity.
           this.solvedLongDistanceTraces.push(newSolvedTrace)
           this.allSolvedTraces.push(newSolvedTrace)
 
