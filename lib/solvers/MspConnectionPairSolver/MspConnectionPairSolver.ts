@@ -14,7 +14,7 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCenterLines"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
-import { shouldRouteLabeledSinglePinConnection } from "./shouldRouteLabeledSinglePinConnection"
+import { shouldIgnoreMaxDistance } from "./shouldIgnoreMaxDistance"
 
 export type MspConnectionPairId = string
 export const DEFAULT_MAX_MSP_PAIR_DISTANCE = 1
@@ -121,14 +121,14 @@ export class MspConnectionPairSolver extends BaseSolver {
       if (this.directConnectionPinPairKeys.has(pinPairKey)) {
         pairDistance = distance(p1, p2)
       }
-      const shouldRouteDespiteDistance = shouldRouteLabeledSinglePinConnection({
+      const shouldIgnoreDistanceLimit = shouldIgnoreMaxDistance({
         inputProblem: this.inputProblem,
         chipMap: this.chipMap,
         pins: [p1, p2],
       })
       if (
         pairDistance > this.maxMspPairDistance &&
-        !shouldRouteDespiteDistance
+        !shouldIgnoreDistanceLimit
       ) {
         // Too far apart; skip creating an MSP pair for this net
         return
