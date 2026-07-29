@@ -1,3 +1,4 @@
+import { boundsDistance, type Bounds } from "@tscircuit/math-utils"
 import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
 import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import { getTextBoxBounds, type RectPadding } from "lib/utils/textBoxBounds"
@@ -7,19 +8,14 @@ import { getTextBoxBounds, type RectPadding } from "lib/utils/textBoxBounds"
 // occupy that channel.
 const MIN_ROUTABLE_OBSTACLE_GAP = 0.05
 
-export type RectBounds = {
-  minX: number
-  minY: number
-  maxX: number
-  maxY: number
-}
+export type { Bounds as RectBounds } from "@tscircuit/math-utils"
 
-export type ChipObstacleRect = RectBounds & {
+export type ChipObstacleRect = Bounds & {
   kind: "chip"
   chipId: string
 }
 
-export type TextBoxObstacleRect = RectBounds & {
+export type TextBoxObstacleRect = Bounds & {
   kind: "text_box"
   textBox: NonNullable<InputProblem["textBoxes"]>[number]
 }
@@ -35,49 +31,6 @@ export const chipToRect = (chip: InputChip): ChipObstacleRect => {
   return { kind: "chip", chipId: chip.chipId, ...b }
 }
 
-const rangesOverlap = (
-  minA: number,
-  maxA: number,
-  minB: number,
-  maxB: number,
-) => Math.min(maxA, maxB) > Math.max(minA, minB)
-
-const closeNarrowGapToAttachedChip = (
-  textBounds: RectBounds,
-  chipBounds: RectBounds,
-): RectBounds => {
-  const bounds = { ...textBounds }
-
-  if (
-    rangesOverlap(bounds.minX, bounds.maxX, chipBounds.minX, chipBounds.maxX)
-  ) {
-    const gapBelowChip = chipBounds.minY - bounds.maxY
-    const gapAboveChip = bounds.minY - chipBounds.maxY
-    if (gapBelowChip > 0 && gapBelowChip < MIN_ROUTABLE_OBSTACLE_GAP) {
-      bounds.maxY = chipBounds.minY
-    } else if (gapAboveChip > 0 && gapAboveChip < MIN_ROUTABLE_OBSTACLE_GAP) {
-      bounds.minY = chipBounds.maxY
-    }
-  }
-
-  if (
-    rangesOverlap(bounds.minY, bounds.maxY, chipBounds.minY, chipBounds.maxY)
-  ) {
-    const gapLeftOfChip = chipBounds.minX - bounds.maxX
-    const gapRightOfChip = bounds.minX - chipBounds.maxX
-    if (gapLeftOfChip > 0 && gapLeftOfChip < MIN_ROUTABLE_OBSTACLE_GAP) {
-      bounds.maxX = chipBounds.minX
-    } else if (
-      gapRightOfChip > 0 &&
-      gapRightOfChip < MIN_ROUTABLE_OBSTACLE_GAP
-    ) {
-      bounds.minX = chipBounds.maxX
-    }
-  }
-
-  return bounds
-}
-
 export const getObstacleRects = (
   problem: InputProblem,
   opts: { textBoxPadding?: RectPadding } = {},
@@ -88,9 +41,18 @@ export const getObstacleRects = (
     const attachedChipBounds = chipRects.find(
       (chip) => chip.chipId === textBox.chipId,
     )
-    const b = attachedChipBounds
-      ? closeNarrowGapToAttachedChip(textBounds, attachedChipBounds)
-      : textBounds
+    const gap = attachedChipBounds
+      ? boundsDistance(textBounds, attachedChipBounds)
+      : Number.POSITIVE_INFINITY
+    const b =
+      attachedChipBounds && gap > 0 && gap < MIN_ROUTABLE_OBSTACLE_GAP
+        ? {
+            minX: Math.min(textBounds.minX, attachedChipBounds.maxX),
+            maxX: Math.max(textBounds.maxX, attachedChipBounds.minX),
+            minY: Math.min(textBounds.minY, attachedChipBounds.maxY),
+            maxY: Math.max(textBounds.maxY, attachedChipBounds.minY),
+          }
+        : textBounds
     return {
       kind: "text_box" as const,
       textBox,
