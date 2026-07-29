@@ -123,16 +123,16 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     })
     this.textObstacles = new Set(this.obstacles.filter(isTextBoxObstacle))
     const endpointChipIds = new Set(this.pins.map((pin) => pin.chipId))
+    // Same-chip routes also need these obstacles so they can escape around
+    // attached text after a narrow chip-to-text channel is closed.
     this.endpointTextObstacles = new Set(
-      endpointChipIds.size > 1
-        ? this.obstacles
-            .filter(isTextBoxObstacle)
-            .filter(
-              (obstacle) =>
-                obstacle.textBox.chipId !== undefined &&
-                endpointChipIds.has(obstacle.textBox.chipId),
-            )
-        : [],
+      this.obstacles
+        .filter(isTextBoxObstacle)
+        .filter(
+          (obstacle) =>
+            obstacle.textBox.chipId !== undefined &&
+            endpointChipIds.has(obstacle.textBox.chipId),
+        ),
     )
 
     const [pin1, pin2] = this.pins
