@@ -34,7 +34,6 @@ import {
 } from "./rect"
 
 type PathKey = string
-const MIN_TEXT_BOX_ROUTING_CLEARANCE = 0.05
 
 const calculateElbowForPins = ({
   pin1,
@@ -124,18 +123,16 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     })
     this.textObstacles = new Set(this.obstacles.filter(isTextBoxObstacle))
     const endpointChipIds = new Set(this.pins.map((pin) => pin.chipId))
-    const shouldRouteAroundEndpointText =
-      endpointChipIds.size > 1 || this.isExplicitSameChipDirectConnection()
+    // Same-chip routes also need these obstacles so they can escape around
+    // attached text after a narrow chip-to-text channel is closed.
     this.endpointTextObstacles = new Set(
-      shouldRouteAroundEndpointText
-        ? this.obstacles
-            .filter(isTextBoxObstacle)
-            .filter(
-              (obstacle) =>
-                obstacle.textBox.chipId !== undefined &&
-                endpointChipIds.has(obstacle.textBox.chipId),
-            )
-        : [],
+      this.obstacles
+        .filter(isTextBoxObstacle)
+        .filter(
+          (obstacle) =>
+            obstacle.textBox.chipId !== undefined &&
+            endpointChipIds.has(obstacle.textBox.chipId),
+        ),
     )
 
     const [pin1, pin2] = this.pins
@@ -199,19 +196,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     if (!this.inputProblem.textBoxes?.length) return {}
 
     const netId = this.connectionPair?.userNetId
-    if (!netId) {
-      if (!this.isExplicitSameChipDirectConnection()) return {}
-
-      // A long explicit connection may be reconstructed without an MSP
-      // connectionPair. Keep it out of the narrow visual gap between a chip
-      // body and that chip's attached text.
-      return {
-        minX: MIN_TEXT_BOX_ROUTING_CLEARANCE,
-        minY: MIN_TEXT_BOX_ROUTING_CLEARANCE,
-        maxX: MIN_TEXT_BOX_ROUTING_CLEARANCE,
-        maxY: MIN_TEXT_BOX_ROUTING_CLEARANCE,
-      }
-    }
+    if (!netId) return {}
 
     const orientations =
       this.inputProblem.availableNetLabelOrientations[netId] ??
@@ -252,23 +237,6 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     }
 
     return padding
-  }
-
-  private isExplicitSameChipDirectConnection(): boolean {
-    const endpointChipId = this.pins[0]?.chipId
-    if (
-      endpointChipId === undefined ||
-      !this.pins.every((pin) => pin.chipId === endpointChipId)
-    ) {
-      return false
-    }
-
-    const endpointPinIds = new Set(this.pins.map((pin) => pin.pinId))
-    return this.inputProblem.directConnections.some(
-      (connection) =>
-        connection.pinIds.length === endpointPinIds.size &&
-        connection.pinIds.every((pinId) => endpointPinIds.has(pinId)),
-    )
   }
 
   private getNetLabelWidthForConnectionPair(netId: string) {
