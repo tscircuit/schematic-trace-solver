@@ -1,0 +1,276 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0.08000000000000007,
+        "y": -0.29500000000000004
+      },
+      "width": 2.4000000000000004,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "x": 1.2800000000000002,
+          "y": -0.5950000000000001
+        },
+        {
+          "pinId": "schematic_port_1",
+          "x": -1.12,
+          "y": -0.5950000000000001
+        },
+        {
+          "pinId": "schematic_port_2",
+          "x": 1.2800000000000002,
+          "y": -0.19500000000000006
+        },
+        {
+          "pinId": "schematic_port_3",
+          "x": -1.12,
+          "y": 0.0050000000000000044
+        },
+        {
+          "pinId": "schematic_port_4",
+          "x": -1.12,
+          "y": -0.195
+        },
+        {
+          "pinId": "schematic_port_5",
+          "x": -1.12,
+          "y": -0.395
+        },
+        {
+          "pinId": "schematic_port_6",
+          "x": 1.2800000000000002,
+          "y": -0.3950000000000001
+        },
+        {
+          "pinId": "schematic_port_7",
+          "x": 1.2800000000000002,
+          "y": 0.0050000000000000044
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 2.3675,
+        "y": 0.8949999999999999
+      },
+      "width": 0.845,
+      "height": 0.5999999999999999,
+      "pins": [
+        {
+          "pinId": "schematic_port_8",
+          "x": 2.27,
+          "y": 1.1949999999999998,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_9",
+          "x": 2.27,
+          "y": 0.595,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": 2.2800000000000002,
+        "y": -0.39500000000000013
+      },
+      "width": 0.6000000000000001,
+      "height": 0.6799999999999999,
+      "pins": [
+        {
+          "pinId": "schematic_port_10",
+          "x": 1.9800000000000002,
+          "y": -0.39500000000000013
+        },
+        {
+          "pinId": "schematic_port_11",
+          "x": 2.58,
+          "y": -0.39500000000000013
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": -1.0099999999999996,
+        "y": -2.6999999999999993
+      },
+      "width": 0.9199999999999999,
+      "height": 0.7600000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_12",
+          "x": -1.1449999999999996,
+          "y": -2.319999999999999,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_13",
+          "x": -1.1449999999999996,
+          "y": -3.0799999999999996,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": -2.0549999999999997,
+        "y": -0.4950000000000002
+      },
+      "width": 0.9200000000000004,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "schematic_port_14",
+          "x": -2.19,
+          "y": -0.11500000000000021,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_15",
+          "x": -2.19,
+          "y": -0.8750000000000002,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_5",
+      "center": {
+        "x": 1.58,
+        "y": -3.1949999999999994
+      },
+      "width": 2.2,
+      "height": 0.7999999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_16",
+          "x": 0.48,
+          "y": -2.994999999999999
+        },
+        {
+          "pinId": "schematic_port_17",
+          "x": 0.48,
+          "y": -3.1949999999999994
+        },
+        {
+          "pinId": "schematic_port_18",
+          "x": 0.48,
+          "y": -3.3949999999999996
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "U1.CTRL to C2.pin1",
+      "pinIds": [
+        "schematic_port_4",
+        "schematic_port_14"
+      ]
+    },
+    {
+      "netId": "R1.pin2 to U1.DISCH",
+      "pinIds": [
+        "schematic_port_9",
+        "schematic_port_6"
+      ]
+    },
+    {
+      "netId": "U1.DISCH to R2.pin1",
+      "pinIds": [
+        "schematic_port_6",
+        "schematic_port_10"
+      ]
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_0",
+        "schematic_port_13",
+        "schematic_port_15",
+        "schematic_port_18"
+      ]
+    },
+    {
+      "netId": "NODE",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_1",
+        "schematic_port_5",
+        "schematic_port_11",
+        "schematic_port_12"
+      ]
+    },
+    {
+      "netId": "OUT",
+      "netLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_2",
+        "schematic_port_17"
+      ]
+    },
+    {
+      "netId": "VCC",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_3",
+        "schematic_port_7",
+        "schematic_port_8",
+        "schematic_port_16"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -0.6,
+        "y": 0.31999999999999995
+      },
+      "width": 0.36000000000000004,
+      "height": 0.24999999999999994,
+      "text": "U1"
+    },
+    {
+      "chipId": "schematic_component_5",
+      "center": {
+        "x": 1,
+        "y": -2.6799999999999997
+      },
+      "width": 0.3600000000000001,
+      "height": 0.24999999999999956,
+      "text": "J1"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "VCC": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ],
+    "OUT": [
+      "x-",
+      "x+"
+    ],
+    "NODE": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
