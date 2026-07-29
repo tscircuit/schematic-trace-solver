@@ -1,3 +1,5 @@
 export * from "./solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 export * from "./types/InputProblem"
 export { SchematicTraceSingleLineSolver2 } from "./solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
+export type { SolvedTracePath } from "./solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+export type { NetLabelPlacement } from "./solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
