@@ -90,8 +90,13 @@ test("TYPE_C_16PIN_2MD routes pin 4 to pin 5 on the same chip", () => {
 
   solver.solve()
 
-  expect(solver.netLabelTraceCollisionSolver!.getOutput().traces).toHaveLength(
-    1,
-  )
+  const traces = solver.netLabelTraceCollisionSolver!.getOutput().traces
+  const mpnTextBox = inputProblem.textBoxes![0]!
+  const mpnBottom = mpnTextBox.center.y - mpnTextBox.height / 2
+
+  expect(traces).toHaveLength(1)
+  expect(
+    Math.min(...traces[0]!.tracePath.map((point) => point.y)),
+  ).toBeLessThan(mpnBottom)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
