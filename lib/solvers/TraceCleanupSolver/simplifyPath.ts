@@ -4,11 +4,27 @@ import {
   isVertical,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
-export const simplifyPath = (path: Point[]): Point[] => {
+const EPS = 1e-9
+
+const removeDuplicateConsecutivePoints = (path: Point[]): Point[] => {
+  if (path.length <= 1) return path
+  const result: Point[] = [path[0]]
+  for (let i = 1; i < path.length; i++) {
+    const prev = result[result.length - 1]
+    const cur = path[i]
+    if (Math.abs(prev.x - cur.x) < EPS && Math.abs(prev.y - cur.y) < EPS) {
+      continue
+    }
+    result.push(cur)
+  }
+  return result
+}
+
+const collapseCollinearPoints = (path: Point[]): Point[] => {
   if (path.length < 3) return path
-  const newPath: Point[] = [path[0]]
+  const result: Point[] = [path[0]]
   for (let i = 1; i < path.length - 1; i++) {
-    const p1 = newPath[newPath.length - 1]
+    const p1 = result[result.length - 1]
     const p2 = path[i]
     const p3 = path[i + 1]
     if (
@@ -17,25 +33,17 @@ export const simplifyPath = (path: Point[]): Point[] => {
     ) {
       continue
     }
-    newPath.push(p2)
+    result.push(p2)
   }
-  newPath.push(path[path.length - 1])
+  result.push(path[path.length - 1])
+  return result
+}
 
-  if (newPath.length < 3) return newPath
-  const finalPath: Point[] = [newPath[0]]
-  for (let i = 1; i < newPath.length - 1; i++) {
-    const p1 = finalPath[finalPath.length - 1]
-    const p2 = newPath[i]
-    const p3 = newPath[i + 1]
-    if (
-      (isVertical(p1, p2) && isVertical(p2, p3)) ||
-      (isHorizontal(p1, p2) && isHorizontal(p2, p3))
-    ) {
-      continue
-    }
-    finalPath.push(p2)
-  }
-  finalPath.push(newPath[newPath.length - 1])
-
-  return finalPath
+export const simplifyPath = (path: Point[]): Point[] => {
+  let current = removeDuplicateConsecutivePoints(path)
+  current = collapseCollinearPoints(current)
+  current = removeDuplicateConsecutivePoints(current)
+  current = collapseCollinearPoints(current)
+  current = removeDuplicateConsecutivePoints(current)
+  return current
 }
