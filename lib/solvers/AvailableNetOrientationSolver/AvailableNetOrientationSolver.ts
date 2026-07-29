@@ -385,6 +385,25 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       if (candidate) return candidate
     }
 
+    if (this.shouldCheckTraceClearanceForLabel(label)) {
+      const pinSideAnchor = this.getWickOffsetAnchor(
+        label.anchorPoint,
+        orientation,
+      )
+      pinSideAnchor.x += outwardDirection.x * WICK_CLEARANCE
+      pinSideAnchor.y += outwardDirection.y * WICK_CLEARANCE
+
+      return this.findValidCandidateInShiftColumn({
+        label,
+        labelIndex,
+        orientation,
+        direction,
+        baseAnchor: pinSideAnchor,
+        maxSearchDistance,
+        outwardDistance: WICK_CLEARANCE,
+      })
+    }
+
     return null
   }
 
