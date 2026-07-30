@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { pathIntersectsAnyNetLabel } from "lib/solvers/SameNetJunctionAlignmentSolver/pathIntersectsAnyNetLabel"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import inputProblem from "./bug-report-20260730T061837Z.json"
 import "tests/fixtures/matcher"
@@ -17,9 +18,16 @@ test("bug-report-20260730T061837Z", () => {
   )!
 
   expect(vddBranch.tracePath).toContainEqual({
-    x: -2.5700000000000003,
-    y: 0.6999999999999998,
+    x: -2.905,
+    y: 0.57,
   })
+  expect(
+    pathIntersectsAnyNetLabel({
+      path: vddBranch.tracePath,
+      netLabelPlacements:
+        solver.sameNetJunctionAlignmentSolver!.getOutput().netLabelPlacements,
+    }),
+  ).toBe(false)
   expect(vbusBranch.tracePath[1]!.y).toBeCloseTo(0.9)
   expect(vbusBranch.tracePath[2]!.y).toBeCloseTo(0.9)
   expect(solver).toMatchSolverSnapshot(import.meta.path)

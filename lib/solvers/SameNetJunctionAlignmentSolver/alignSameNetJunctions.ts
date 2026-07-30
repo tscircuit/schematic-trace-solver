@@ -3,7 +3,6 @@ import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetL
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
-import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import {
   getVisibleTraceLength,
@@ -13,6 +12,7 @@ import {
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
+import { pathIntersectsAnyNetLabel } from "./pathIntersectsAnyNetLabel"
 
 interface AlignSameNetJunctionsInput {
   inputProblem: InputProblem
@@ -156,12 +156,10 @@ const candidateIsClear = ({
     return false
   }
 
-  return (
-    detectTraceLabelOverlap({
-      traces: [candidateTrace],
-      netLabels: netLabelPlacements,
-    }).length === 0
-  )
+  return !pathIntersectsAnyNetLabel({
+    path: candidateTrace.tracePath,
+    netLabelPlacements,
+  })
 }
 
 export const alignSameNetJunctions = ({
