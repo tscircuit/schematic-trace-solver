@@ -144,11 +144,7 @@ const candidateIsClear = ({
   inputProblem: InputProblem
   netLabelPlacements: NetLabelPlacement[]
 }) => {
-  const endpointChipIds = new Set(candidateTrace.pins.map((pin) => pin.chipId))
-  const obstacles = getObstacleRects(inputProblem).filter((obstacle) => {
-    if (obstacle.kind !== "chip") return true
-    return !endpointChipIds.has(obstacle.chipId)
-  })
+  const obstacles = getObstacleRects(inputProblem)
   if (isPathCollidingWithObstacles(candidateTrace.tracePath, obstacles)) {
     return false
   }
