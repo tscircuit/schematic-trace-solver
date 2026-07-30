@@ -8,5 +8,11 @@ test("bug-report-20260728T144234Z", () => {
 
   solver.solve()
 
+  const leftmostV3v3Trace =
+    solver.sameNetJunctionAlignmentSolver!.outputTraces.find(
+      (trace) => trace.mspPairId === "schematic_port_34-schematic_port_33",
+    )!
+  expect(leftmostV3v3Trace.tracePath[1]!.y).toBeCloseTo(-2.365)
+  expect(leftmostV3v3Trace.tracePath[2]!.y).toBeCloseTo(-2.365)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
