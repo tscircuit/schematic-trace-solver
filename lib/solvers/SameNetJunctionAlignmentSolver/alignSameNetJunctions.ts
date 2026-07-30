@@ -12,7 +12,7 @@ import {
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
-import { moveIntersectedSameNetLabelsToBranchEnd } from "./moveIntersectedSameNetLabelsToBranchEnd"
+import { pathIntersectsAnyNetLabel } from "./pathIntersectsAnyNetLabel"
 
 interface AlignSameNetJunctionsInput {
   inputProblem: InputProblem
@@ -137,10 +137,12 @@ const candidateIsClear = ({
   candidateTrace,
   traces,
   inputProblem,
+  netLabelPlacements,
 }: {
   candidateTrace: SolvedTracePath
   traces: SolvedTracePath[]
   inputProblem: InputProblem
+  netLabelPlacements: NetLabelPlacement[]
 }) => {
   const obstacles = getObstacleRects(inputProblem)
   if (isPathCollidingWithObstacles(candidateTrace.tracePath, obstacles)) {
@@ -154,7 +156,10 @@ const candidateIsClear = ({
     return false
   }
 
-  return true
+  return !pathIntersectsAnyNetLabel({
+    path: candidateTrace.tracePath,
+    netLabelPlacements,
+  })
 }
 
 export const alignSameNetJunctions = ({
@@ -163,7 +168,6 @@ export const alignSameNetJunctions = ({
   netLabelPlacements,
 }: AlignSameNetJunctionsInput) => {
   let outputTraces = [...traces]
-  let outputNetLabelPlacements = [...netLabelPlacements]
   const alignedBranchTraceIds = new Set<string>()
   let alignedJunctionCount = 0
 
@@ -180,16 +184,6 @@ export const alignSameNetJunctions = ({
       const candidatePath = getAlignedBranchPath({ donorTrace, branchTrace })
       if (!candidatePath) continue
       const candidateTrace = { ...branchTrace, tracePath: candidatePath }
-      const sharedPin = getSharedPin({ donorTrace, branchTrace })
-      if (!sharedPin) continue
-      const branchEndPin = getOtherPin({ trace: branchTrace, sharedPin })
-      if (!branchEndPin) continue
-      const movedNetLabelPlacements = moveIntersectedSameNetLabelsToBranchEnd({
-        candidateTrace,
-        branchEndPin,
-        netLabelPlacements: outputNetLabelPlacements,
-      })
-      if (!movedNetLabelPlacements) continue
       const originalPair = [donorTrace, branchTrace]
       const candidatePair = [donorTrace, candidateTrace]
       const removesVisibleSegment =
@@ -210,6 +204,7 @@ export const alignSameNetJunctions = ({
           candidateTrace,
           traces: outputTraces,
           inputProblem,
+          netLabelPlacements,
         })
       ) {
         continue
@@ -219,15 +214,10 @@ export const alignSameNetJunctions = ({
         if (trace.mspPairId === branchTrace.mspPairId) return candidateTrace
         return trace
       })
-      outputNetLabelPlacements = movedNetLabelPlacements
       alignedBranchTraceIds.add(branchTrace.mspPairId)
       alignedJunctionCount++
     }
   }
 
-  return {
-    traces: outputTraces,
-    netLabelPlacements: outputNetLabelPlacements,
-    alignedJunctionCount,
-  }
+  return { traces: outputTraces, alignedJunctionCount }
 }

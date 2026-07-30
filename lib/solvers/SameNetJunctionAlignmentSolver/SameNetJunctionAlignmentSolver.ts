@@ -17,19 +17,16 @@ interface SameNetJunctionAlignmentSolverInput {
 export class SameNetJunctionAlignmentSolver extends BaseSolver {
   private input: SameNetJunctionAlignmentSolverInput
   outputTraces: SolvedTracePath[]
-  outputNetLabelPlacements: NetLabelPlacement[]
 
   constructor(input: SameNetJunctionAlignmentSolverInput) {
     super()
     this.input = input
     this.outputTraces = input.traces
-    this.outputNetLabelPlacements = input.netLabelPlacements
   }
 
   override _step() {
     const result = alignSameNetJunctions(this.input)
     this.outputTraces = result.traces
-    this.outputNetLabelPlacements = result.netLabelPlacements
     this.stats.alignedJunctionCount = result.alignedJunctionCount
     this.solved = true
   }
@@ -37,7 +34,7 @@ export class SameNetJunctionAlignmentSolver extends BaseSolver {
   getOutput() {
     return {
       traces: this.outputTraces,
-      netLabelPlacements: this.outputNetLabelPlacements,
+      netLabelPlacements: this.input.netLabelPlacements,
     }
   }
 
@@ -52,7 +49,7 @@ export class SameNetJunctionAlignmentSolver extends BaseSolver {
         strokeColor: "purple",
       })
     }
-    for (const label of this.outputNetLabelPlacements) {
+    for (const label of this.input.netLabelPlacements) {
       const labelRect: Rect & { strokeColor: string } = {
         center: label.center,
         width: label.width,
