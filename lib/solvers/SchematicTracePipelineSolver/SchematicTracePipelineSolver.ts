@@ -28,6 +28,7 @@ import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOver
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
 import { UnroutedTraceRecoverySolver } from "../UnroutedTraceRecoverySolver/UnroutedTraceRecoverySolver"
+import { SameNetJunctionAlignmentSolver } from "../SameNetJunctionAlignmentSolver/SameNetJunctionAlignmentSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -86,6 +87,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   traceCleanupSolver2?: TraceCleanupSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
+  sameNetJunctionAlignmentSolver?: SameNetJunctionAlignmentSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -401,6 +403,19 @@ export class SchematicTracePipelineSolver extends BaseSolver {
               .netLabelPlacements,
         },
       ],
+      {
+        onSolved: (instance) => {
+          const collisionSolver = instance.netLabelNetLabelCollisionSolver!
+          const junctionSolver = new SameNetJunctionAlignmentSolver({
+            inputProblem: instance.inputProblem,
+            traces: collisionSolver.traces,
+            netLabelPlacements: collisionSolver.getOutput().netLabelPlacements,
+          })
+          junctionSolver.solve()
+          collisionSolver.traces = junctionSolver.getOutput().traces
+          instance.sameNetJunctionAlignmentSolver = junctionSolver
+        },
+      },
     ),
   ]
 
