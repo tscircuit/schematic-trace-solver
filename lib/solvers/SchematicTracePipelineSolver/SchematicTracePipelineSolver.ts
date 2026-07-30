@@ -403,18 +403,20 @@ export class SchematicTracePipelineSolver extends BaseSolver {
               .netLabelPlacements,
         },
       ],
-      {
-        onSolved: (instance) => {
-          const collisionSolver = instance.netLabelNetLabelCollisionSolver!
-          const junctionSolver = new SameNetJunctionAlignmentSolver({
+    ),
+    definePipelineStep(
+      "sameNetJunctionAlignmentSolver",
+      SameNetJunctionAlignmentSolver,
+      (instance) => {
+        const collisionOutput =
+          instance.netLabelNetLabelCollisionSolver!.getOutput()
+        return [
+          {
             inputProblem: instance.inputProblem,
-            traces: collisionSolver.traces,
-            netLabelPlacements: collisionSolver.getOutput().netLabelPlacements,
-          })
-          junctionSolver.solve()
-          collisionSolver.traces = junctionSolver.getOutput().traces
-          instance.sameNetJunctionAlignmentSolver = junctionSolver
-        },
+            traces: instance.netLabelNetLabelCollisionSolver!.traces,
+            netLabelPlacements: collisionOutput.netLabelPlacements,
+          },
+        ]
       },
     ),
   ]
