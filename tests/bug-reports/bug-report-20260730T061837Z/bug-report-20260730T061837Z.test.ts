@@ -16,10 +16,19 @@ test("bug-report-20260730T061837Z", () => {
   const vbusBranch = traces.find(
     (trace) => trace.mspPairId === "schematic_port_31-schematic_port_29",
   )!
+  const vddLabel = solver
+    .sameNetJunctionAlignmentSolver!.getOutput()
+    .netLabelPlacements.find(
+      (label) => label.globalConnNetId === vddBranch.globalConnNetId,
+    )!
 
   expect(vddBranch.tracePath).toContainEqual({
-    x: -2.905,
-    y: 0.57,
+    x: -2.5700000000000003,
+    y: 0.6999999999999998,
+  })
+  expect(vddLabel.anchorPoint).toEqual({
+    x: vddBranch.pins[1]!.x,
+    y: vddBranch.pins[1]!.y,
   })
   expect(
     pathIntersectsAnyNetLabel({

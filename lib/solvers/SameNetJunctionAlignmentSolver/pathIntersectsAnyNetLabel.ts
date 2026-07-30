@@ -3,20 +3,32 @@ import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetL
 import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 
-export const pathIntersectsAnyNetLabel = ({
+const LABEL_INTERIOR_INSET = 1e-6
+
+export const getNetLabelsIntersectingPath = ({
   path,
   netLabelPlacements,
 }: {
   path: Point[]
   netLabelPlacements: NetLabelPlacement[]
 }) => {
-  for (const label of netLabelPlacements) {
-    const labelBounds = getRectBounds(label.center, label.width, label.height)
-    for (let index = 0; index < path.length - 1; index++) {
-      if (segmentIntersectsRect(path[index], path[index + 1], labelBounds)) {
-        return true
-      }
+  return netLabelPlacements.filter((label) => {
+    const bounds = getRectBounds(label.center, label.width, label.height)
+    const labelBounds = {
+      minX: bounds.minX + LABEL_INTERIOR_INSET,
+      minY: bounds.minY + LABEL_INTERIOR_INSET,
+      maxX: bounds.maxX - LABEL_INTERIOR_INSET,
+      maxY: bounds.maxY - LABEL_INTERIOR_INSET,
     }
-  }
-  return false
+    return path
+      .slice(0, -1)
+      .some((point, pathIndex) =>
+        segmentIntersectsRect(point, path[pathIndex + 1], labelBounds),
+      )
+  })
 }
+
+export const pathIntersectsAnyNetLabel = (params: {
+  path: Point[]
+  netLabelPlacements: NetLabelPlacement[]
+}) => getNetLabelsIntersectingPath(params).length > 0
