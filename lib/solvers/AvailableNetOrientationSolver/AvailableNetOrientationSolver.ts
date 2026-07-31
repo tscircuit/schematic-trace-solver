@@ -110,6 +110,52 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       }
     }
 
+    const blockedStandaloneLabelIndex = indices.find((index) => {
+      const label = this.outputNetLabelPlacements[index]!
+      const orientations = this.getAvailableOrientations(label)
+      return (
+        this.isPortOnlyLabel(label) &&
+        this.isStandaloneSinglePinNetLabel(label) &&
+        orientations.length === 1 &&
+        isYOrientation(orientations[0]!) &&
+        this.labelIntersectsDifferentNetTrace(label)
+      )
+    })
+    if (blockedStandaloneLabelIndex === undefined) return indices
+
+    const blockedLabel =
+      this.outputNetLabelPlacements[blockedStandaloneLabelIndex]!
+    const requiredOrientation = this.getAvailableOrientations(blockedLabel)[0]!
+    const chipSide = this.getChipSideForPoint(blockedLabel.anchorPoint)
+    const affectedSlots: number[] = []
+    const labelsToOrder: number[] = []
+
+    for (let slot = 0; slot < indices.length; slot++) {
+      const index = indices[slot]!
+      const label = this.outputNetLabelPlacements[index]!
+      const orientations = this.getAvailableOrientations(label)
+      if (
+        this.getChipSideForPoint(label.anchorPoint) === chipSide &&
+        orientations.length === 1 &&
+        orientations[0] === requiredOrientation
+      ) {
+        affectedSlots.push(slot)
+        labelsToOrder.push(index)
+      }
+    }
+
+    // Place vertical labels on the same chip side from the outward end inward.
+    // The standalone label is corrected first, then a lower neighbor yields
+    // space during its own placement, keeping the standalone connector direct.
+    labelsToOrder.sort((a, b) => {
+      const aY = this.outputNetLabelPlacements[a]!.anchorPoint.y
+      const bY = this.outputNetLabelPlacements[b]!.anchorPoint.y
+      return requiredOrientation === "y+" ? bY - aY : aY - bY
+    })
+    for (let i = 0; i < affectedSlots.length; i++) {
+      indices[affectedSlots[i]!] = labelsToOrder[i]!
+    }
+
     return indices
   }
 
@@ -548,6 +594,35 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       label.anchorPoint,
       candidate.anchorPoint,
       candidate.orientation,
+    )
+  }
+
+  private isStandaloneSinglePinNetLabel(label: NetLabelPlacement) {
+    return this.inputProblem.netConnections.some(
+      (connection) =>
+        connection.netId === label.netId &&
+        connection.pinIds.length === 1 &&
+        connection.pinIds[0] === label.pinIds[0],
+    )
+  }
+
+  private labelIntersectsDifferentNetTrace(label: NetLabelPlacement) {
+    const { width, height } = getDimsForOrientation({
+      orientation: label.orientation,
+      netLabelWidth: this.getNetLabelWidth(label),
+      netLabelHeight: this.getNetLabelHeight(label),
+    })
+    const center = getCenterFromAnchor(
+      label.anchorPoint,
+      label.orientation,
+      width,
+      height,
+    )
+    const bounds = getRectBounds(center, width, height)
+    return Object.values(this.traceMap).some(
+      (trace) =>
+        trace.globalConnNetId !== label.globalConnNetId &&
+        tracePathIntersectsBounds(trace.tracePath, bounds),
     )
   }
 
