@@ -110,6 +110,52 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       }
     }
 
+    const blockedStandaloneLabelIndex = indices.find((index) => {
+      const label = this.outputNetLabelPlacements[index]!
+      const orientations = this.getAvailableOrientations(label)
+      return (
+        this.isPortOnlyLabel(label) &&
+        this.isStandaloneSinglePinNetLabel(label) &&
+        orientations.length === 1 &&
+        isYOrientation(orientations[0]!) &&
+        this.labelIntersectsDifferentNetTrace(label)
+      )
+    })
+    if (blockedStandaloneLabelIndex === undefined) return indices
+
+    const blockedLabel =
+      this.outputNetLabelPlacements[blockedStandaloneLabelIndex]!
+    const requiredOrientation = this.getAvailableOrientations(blockedLabel)[0]!
+    const chipSide = this.getChipSideForPoint(blockedLabel.anchorPoint)
+    const affectedSlots: number[] = []
+    const labelsToOrder: number[] = []
+
+    for (let slot = 0; slot < indices.length; slot++) {
+      const index = indices[slot]!
+      const label = this.outputNetLabelPlacements[index]!
+      const orientations = this.getAvailableOrientations(label)
+      if (
+        this.getChipSideForPoint(label.anchorPoint) === chipSide &&
+        orientations.length === 1 &&
+        orientations[0] === requiredOrientation
+      ) {
+        affectedSlots.push(slot)
+        labelsToOrder.push(index)
+      }
+    }
+
+    // Place vertical labels on the same chip side from the outward end inward.
+    // The standalone label is corrected first, then a lower neighbor yields
+    // space during its own placement, keeping the standalone connector direct.
+    labelsToOrder.sort((a, b) => {
+      const aY = this.outputNetLabelPlacements[a]!.anchorPoint.y
+      const bY = this.outputNetLabelPlacements[b]!.anchorPoint.y
+      return requiredOrientation === "y+" ? bY - aY : aY - bY
+    })
+    for (let i = 0; i < affectedSlots.length; i++) {
+      indices[affectedSlots[i]!] = labelsToOrder[i]!
+    }
+
     return indices
   }
 
@@ -528,14 +574,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       "anchorPoint" | "orientation" | "phase"
     >,
   ) {
-    let directPath: Point[]
     if (candidate.phase === "lateral-shift") {
       const orientDir = dir(candidate.orientation)
       const kickedSource = {
         x: label.anchorPoint.x - orientDir.x * LABEL_SEARCH_STEP,
         y: label.anchorPoint.y - orientDir.y * LABEL_SEARCH_STEP,
       }
-      directPath = simplifyOrthogonalPath([
+      return simplifyOrthogonalPath([
         label.anchorPoint,
         ...getConnectorTracePath(
           kickedSource,
@@ -543,53 +588,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           candidate.orientation,
         ),
       ])
-    } else {
-      directPath = getConnectorTracePath(
-        label.anchorPoint,
-        candidate.anchorPoint,
-        candidate.orientation,
-      )
     }
 
-    // A standalone one-pin label can overlap a nearby trace while its direct
-    // orientation-correction connector is blocked by another label. In that
-    // case, try approaching the corrected label from its facing side without
-    // changing the established behavior for isolated members of larger nets.
-    if (
-      !this.isPortOnlyLabel(label) ||
-      !this.isStandaloneSinglePinNetLabel(label) ||
-      candidate.phase === "trace-anchor" ||
-      !this.labelIntersectsDifferentNetTrace(label) ||
-      !this.connectorIntersectsPlacementObstacle(directPath, label)
-    ) {
-      return directPath
-    }
-
-    const orientDir = dir(candidate.orientation)
-    const approachPoint = {
-      x: candidate.anchorPoint.x - orientDir.x * LABEL_SEARCH_STEP,
-      y: candidate.anchorPoint.y - orientDir.y * LABEL_SEARCH_STEP,
-    }
-    const source = label.anchorPoint
-    const doglegPath = simplifyOrthogonalPath(
-      isYOrientation(candidate.orientation)
-        ? [
-            source,
-            { x: source.x, y: approachPoint.y },
-            approachPoint,
-            candidate.anchorPoint,
-          ]
-        : [
-            source,
-            { x: approachPoint.x, y: source.y },
-            approachPoint,
-            candidate.anchorPoint,
-          ],
+    return getConnectorTracePath(
+      label.anchorPoint,
+      candidate.anchorPoint,
+      candidate.orientation,
     )
-
-    return this.connectorIntersectsPlacementObstacle(doglegPath, label)
-      ? directPath
-      : doglegPath
   }
 
   private isStandaloneSinglePinNetLabel(label: NetLabelPlacement) {
@@ -618,28 +623,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       (trace) =>
         trace.globalConnNetId !== label.globalConnNetId &&
         tracePathIntersectsBounds(trace.tracePath, bounds),
-    )
-  }
-
-  private connectorIntersectsPlacementObstacle(
-    connectorPath: Point[],
-    currentLabel: NetLabelPlacement,
-  ) {
-    if (
-      this.chipObstacleSpatialIndex.chips.some((chip) =>
-        tracePathCrossesAnyBounds(connectorPath, chip.bounds),
-      )
-    ) {
-      return true
-    }
-
-    return this.outputNetLabelPlacements.some(
-      (label) =>
-        label !== currentLabel &&
-        tracePathIntersectsBounds(
-          connectorPath,
-          getRectBounds(label.center, label.width, label.height),
-        ),
     )
   }
 

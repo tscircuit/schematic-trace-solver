@@ -29,8 +29,15 @@ test("bug-report-20260731T052229Z", () => {
       ),
     )
     .map((trace) => trace.mspPairId)
+  const vdddConnector = output.traces.find(
+    (trace) =>
+      trace.userNetId === "VDDD" &&
+      trace.mspPairId.startsWith("available-net-orientation-"),
+  )!
 
   expect(vdddLabel.orientation).toBe("y+")
   expect(intersectingDifferentNetTraceIds).toEqual([])
+  expect(vdddConnector.tracePath).toHaveLength(3)
+  expect(vdddConnector.tracePath[0]!.y).toBe(vdddConnector.tracePath[1]!.y)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
