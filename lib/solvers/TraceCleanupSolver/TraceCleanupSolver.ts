@@ -116,7 +116,7 @@ export class TraceCleanupSolver extends BaseSolver {
     if (this.pipelineStep) this.activeTraceId = null
   }
 
-  private _runUntangleTracesStep() {
+      private _runUntangleTracesStep() {
     this.activeSubSolver = new UntangleTraceSubsolver({
       ...this.input,
       allTraces: Array.from(this.tracesMap.values()),
@@ -142,13 +142,25 @@ export class TraceCleanupSolver extends BaseSolver {
   }
 
   private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
-    const targetMspConnectionPairId = this.traceIdQueue.shift()!
-    this.activeTraceId = targetMspConnectionPairId
-    const originalTrace = this.tracesMap.get(targetMspConnectionPairId)!
+  const targetMspConnectionPairId = this.traceIdQueue.shift()!!
+  this.activeTraceId = targetMspConnectionPairId
+  const originalTrace = this.tracesMap.get(targetMspConnectionPairId)!
 
-    if (is4PointRectangle(originalTrace.tracePath)) {
+  // FIX: skip same-chip loops
+  const parts = originalTrace.mspPairId.split("_")
+  if (parts.length === 2) {
+    const chipA = parts[0].split(".")[0]
+    const chipB = parts[1].split(".")[0]
+    if (chipA === chipB) {
+      this.activeTraceId = null
       return
     }
+  }
+
+  if (is4PointRectangle(originalTrace.tracePath)) {
+    this.activeTraceId = null
+    return
+  }
 
     const allTraces = Array.from(this.tracesMap.values())
 
