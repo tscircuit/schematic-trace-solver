@@ -1,5 +1,5 @@
-import { expect } from "bun:test"
-import { test } from "bun:test"
+import { expect } from "vitest"
+import { test } from "vitest"
 import { SingleOverlapSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/SingleOverlapSolver/SingleOverlapSolver"
 import inputData from "../../../assets/SingleOverlapSolver.test.input.json"
 
