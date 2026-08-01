@@ -1,6 +1,6 @@
 import { MergedNetLabelObstacleSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
-import { expect } from "bun:test"
-import { test } from "bun:test"
+import { expect } from "vitest"
+import { test } from "vitest"
 import inputData from "../../../assets/MergedNetLabelObstacles.test.input.json"
 
 test("LabelMergingSolver snapshot", () => {

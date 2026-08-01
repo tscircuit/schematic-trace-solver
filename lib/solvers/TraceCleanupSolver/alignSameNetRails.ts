@@ -23,13 +23,21 @@ export const alignSameNetRails = ({
   alignedRailGroupCount: number
   alignedTraceCount: number
 } => {
-  let outputTraces = [...traces]
+    let outputTraces = [...traces]
   const obstacles = getObstacleRects(inputProblem)
   const alignedTraceIds = new Set<string>()
   let alignedRailGroupCount = 0
-  const maximumPasses = Math.max(
-    1,
-    traces.reduce((sum, trace) => sum + trace.tracePath.length, 0),
+
+  const initialGroups = getRailGroups(
+    outputTraces,
+    eligibleTraceIds,
+    inputProblem,
+    obstacles,
+  )
+
+  const maximumPasses = Math.min(
+    20,
+    Math.max(Math.ceil(initialGroups.length / 2), 1),
   )
 
   for (let pass = 0; pass < maximumPasses; pass++) {

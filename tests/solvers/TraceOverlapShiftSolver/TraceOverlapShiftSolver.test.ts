@@ -1,5 +1,5 @@
 import type { Point } from "@tscircuit/math-utils"
-import { expect, test } from "bun:test"
+import { expect, test } from "vitest"
 import { countPathIntersections } from "lib/solvers/Example28Solver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { TraceOverlapShiftSolver } from "lib/solvers/TraceOverlapShiftSolver/TraceOverlapShiftSolver"

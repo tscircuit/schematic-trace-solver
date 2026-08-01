@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test"
+import { expect, test } from "vitest"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro5-escape-padded-text-obstacles.input.json"
