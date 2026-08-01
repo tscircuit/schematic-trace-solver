@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/schematic-trace-solver",
   "main": "dist/index.js",
-  "version": "0.0.113",
+  "version": "0.0.117",
   "type": "module",
   "scripts": {
     "test": "vitest run",
@@ -16,7 +16,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.2.2",
     "@react-hook/resize-observer": "^2.0.2",
-    "@tscircuit/math-utils": "^0.0.19",
+    "@tscircuit/math-utils": "^0.0.36",
     "@types/bun": "^1.2.21",
     "bun-match-svg": "^0.0.13",
     "calculate-elbow": "^0.0.12",

@@ -28,6 +28,7 @@ import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOver
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
 import { UnroutedTraceRecoverySolver } from "../UnroutedTraceRecoverySolver/UnroutedTraceRecoverySolver"
+import { SameNetJunctionAlignmentSolver } from "../SameNetJunctionAlignmentSolver/SameNetJunctionAlignmentSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -86,6 +87,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   traceCleanupSolver2?: TraceCleanupSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
+  sameNetJunctionAlignmentSolver?: SameNetJunctionAlignmentSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -140,6 +142,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             instance.mspConnectionPairSolver!.mspConnectionPairs,
           alreadySolvedTraces:
             instance.schematicTraceLinesSolver!.solvedTracePaths,
+          failedConnectionPairs:
+            instance.schematicTraceLinesSolver!.failedConnectionPairs,
         },
       ],
       {
@@ -399,6 +403,21 @@ export class SchematicTracePipelineSolver extends BaseSolver {
               .netLabelPlacements,
         },
       ],
+    ),
+    definePipelineStep(
+      "sameNetJunctionAlignmentSolver",
+      SameNetJunctionAlignmentSolver,
+      (instance) => {
+        const collisionOutput =
+          instance.netLabelNetLabelCollisionSolver!.getOutput()
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces: instance.netLabelNetLabelCollisionSolver!.traces,
+            netLabelPlacements: collisionOutput.netLabelPlacements,
+          },
+        ]
+      },
     ),
   ]
 
