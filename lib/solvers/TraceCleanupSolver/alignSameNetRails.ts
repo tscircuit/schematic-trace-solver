@@ -5,6 +5,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { evaluateRailGroup } from "./sameNetRailAlignment/evaluateRailGroup"
 import { getRailGroups } from "./sameNetRailAlignment/getRailGroups"
 import type { AlignmentCandidate } from "./sameNetRailAlignment/types"
+import { simplifyTraces } from "./sameNetRailAlignment/simplifyTracePath"
 
 interface AlignSameNetRailsInput {
   inputProblem: InputProblem
@@ -65,6 +66,11 @@ export const alignSameNetRails = ({
     alignedRailGroupCount++
     for (const traceId of applied.changedTraceIds) alignedTraceIds.add(traceId)
   }
+
+  // Post-process: simplify trace paths by removing redundant collinear vertices.
+  // This is conservative and safe — it does not change endpoints or connectivity,
+  // only removes unnecessary intermediate points that are collinear.
+  outputTraces = simplifyTraces(outputTraces)
 
   return {
     traces: outputTraces,
