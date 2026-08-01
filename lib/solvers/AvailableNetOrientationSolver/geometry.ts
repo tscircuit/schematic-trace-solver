@@ -30,7 +30,8 @@ export const traceCrossesBoundsInterior = (
   traceMap: Record<string, SolvedTracePath>,
 ) => {
   for (const trace of Object.values(traceMap)) {
-    const points = trace.tracePath
+    const points = trace?.tracePath
+    if (!Array.isArray(points) || points.length < 2) continue
     for (let i = 0; i < points.length - 1; i++) {
       if (segmentCrossesBoundsInterior(points[i]!, points[i + 1]!, bounds)) {
         return true
@@ -120,7 +121,8 @@ export const tracePathCrossesAnyTrace = (
   traceMap: Record<string, SolvedTracePath>,
 ) => {
   for (const trace of Object.values(traceMap)) {
-    const points = trace.tracePath
+    const points = trace?.tracePath
+    if (!Array.isArray(points) || points.length < 2) continue
     for (let i = 0; i < tracePath.length - 1; i++) {
       for (let j = 0; j < points.length - 1; j++) {
         if (

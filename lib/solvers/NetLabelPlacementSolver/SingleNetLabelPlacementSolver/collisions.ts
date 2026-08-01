@@ -41,6 +41,14 @@ export function rectIntersectsAnyTrace(
     }
   | { hasIntersection: false } {
   for (const [pairId, solved] of Object.entries(inputTraceMap)) {
+    if (!solved || !Array.isArray(solved.tracePath)) {
+      console.error(
+        "rectIntersectsAnyTrace got invalid tracePath for",
+        pairId,
+        solved,
+      )
+      continue
+    }
     const pts = solved.tracePath
     for (let i = 0; i < pts.length - 1; i++) {
       if (pairId === hostPathId && i === hostSegIndex) continue

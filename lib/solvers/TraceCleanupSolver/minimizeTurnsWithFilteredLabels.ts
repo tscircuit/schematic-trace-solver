@@ -107,6 +107,17 @@ export const minimizeTurnsWithFilteredLabels = ({
     originalPath: originalPath,
   })
 
+  if (!Array.isArray(strictPath) || strictPath.length < 2) {
+    return targetTrace
+  }
+
+  if (!Array.isArray(relaxedPath) || relaxedPath.length < 2) {
+    return {
+      ...targetTrace,
+      tracePath: strictPath,
+    }
+  }
+
   const sameNetTraces = otherTraces.filter(
     (trace) => trace.globalConnNetId === targetTrace.globalConnNetId,
   )
