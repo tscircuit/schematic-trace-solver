@@ -7,14 +7,6 @@ import { hasCollisionsWithLabels } from "./hasCollisionsWithLabels"
 import { recognizeStairStepPattern } from "./recognizeStairStepPattern"
 import { isSegmentAnEndpointSegment } from "./isSegmentAnEndpointSegment"
 
-/**
- * Minimizes the number of turns in a given path while avoiding collisions with obstacles and labels.
- * This function employs an iterative approach, attempting to simplify the path in several ways:
- * 1. **Stair-step pattern recognition**: It first looks for and attempts to simplify stair-step patterns by connecting the start and end points of the pattern with a simpler path, if no collisions are introduced.
- * 2. **Point removal and reconnection**: If no stair-step optimization is possible, it tries to remove intermediate points and reconnect the remaining segments with a simpler path, prioritizing solutions that reduce turns or path length.
- * 3. **Collinear segment merging**: Finally, it attempts to merge collinear segments to further simplify the path.
- * The process continues until no further improvements can be made without introducing collisions.
- */
 export const minimizeTurns = ({
   path,
   obstacles,
@@ -37,7 +29,6 @@ export const minimizeTurns = ({
   while (improved) {
     improved = false
 
-    // First try to identify and replace stair-step patterns
     for (let startIdx = 0; startIdx < optimizedPath.length - 3; startIdx++) {
       const stairEndIdx = recognizeStairStepPattern(optimizedPath, startIdx)
 
@@ -88,7 +79,6 @@ export const minimizeTurns = ({
       }
     }
 
-    // If no stair-step optimization worked, try regular point removal
     if (!improved) {
       for (let startIdx = 0; startIdx < optimizedPath.length - 2; startIdx++) {
         const maxRemove = Math.min(
@@ -201,3 +191,4 @@ export const minimizeTurns = ({
   const finalSimplifiedPath = simplifyPath(optimizedPath)
   return finalSimplifiedPath
 }
+

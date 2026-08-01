@@ -1,11 +1,5 @@
 import type { Point } from "graphics-debug"
 
-/**
- * Recognizes a "stair-step" pattern within a given path of points starting from a specified index.
- * A stair-step pattern is characterized by alternating horizontal and vertical segments.
- * The function checks for a sequence of at least three segments where the orientation (horizontal/vertical) alternates.
- * It returns the end index of the recognized stair-step pattern if found, otherwise -1.
- */
 export const recognizeStairStepPattern = (
   pathToCheck: Point[],
   startIdx: number,

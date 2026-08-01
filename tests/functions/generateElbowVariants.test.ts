@@ -1,5 +1,5 @@
 import { generateElbowVariants } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/generateElbowVariants"
-import { test, expect } from "bun:test"
+import { test, expect } from "vitest"
 import type { Guideline } from "lib/solvers/GuidelinesSolver/GuidelinesSolver"
 import type { Point } from "@tscircuit/math-utils"
 

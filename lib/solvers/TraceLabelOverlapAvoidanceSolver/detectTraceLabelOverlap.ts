@@ -29,6 +29,8 @@ export const detectTraceLabelOverlap = ({
   const overlaps: TraceLabelOverlap[] = []
 
   for (const trace of traces) {
+    if (!trace?.tracePath || !Array.isArray(trace.tracePath)) continue
+
     for (const label of netLabels) {
       const labelBounds = getRectBounds(label.center, label.width, label.height)
 

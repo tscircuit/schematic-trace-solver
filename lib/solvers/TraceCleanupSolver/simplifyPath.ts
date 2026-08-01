@@ -39,3 +39,4 @@ export const simplifyPath = (path: Point[]): Point[] => {
 
   return finalPath
 }
+

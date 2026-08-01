@@ -3,7 +3,7 @@ import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/Sch
 
 export const hasCollisionsWithLabels = (
   pathSegments: Point[],
-  labels: any[],
+  labels: Array<{ minX: number; minY: number; maxX: number; maxY: number }>,
 ): boolean => {
   for (let i = 0; i < pathSegments.length - 1; i++) {
     const p1 = pathSegments[i]

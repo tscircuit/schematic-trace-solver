@@ -16,3 +16,4 @@ export const countTurns = (points: Point[]): number => {
   }
   return turns
 }
+

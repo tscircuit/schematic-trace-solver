@@ -1,4 +1,4 @@
-import type { Point } from "graphics-debug"
+import type { Point } from "@tscircuit/math-utils"
 import type { InputProblem } from "lib/types/InputProblem"
 import { simplifyPath } from "./simplifyPath"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
@@ -31,10 +31,6 @@ export const balanceZShapes = ({
 
   const TOLERANCE = 1e-5
 
-  // Axis-aligned segment classification must tolerate floating-point drift:
-  // coordinates that are "the same" can differ by a rounding epsilon (e.g. a
-  // vertical leg whose endpoints are 1.85 vs 1.8500000000000003). Strict `===`
-  // would misclassify such a Z-shape and "balance" it into diagonal segments.
   const coordsEqual = (a: number, b: number) => Math.abs(a - b) < TOLERANCE
 
   const obstacleTraces = traces.filter(
@@ -68,7 +64,7 @@ export const balanceZShapes = ({
   const segmentIntersectsAnyRect = (
     p1: Point,
     p2: Point,
-    rects: any[],
+    rects: Array<{ minX: number; minY: number; maxX: number; maxY: number }>,
   ): boolean => {
     for (const rect of rects) {
       if (segmentIntersectsRect(p1, p2, rect)) {
@@ -218,3 +214,4 @@ export const balanceZShapes = ({
     tracePath: finalSimplifiedPath,
   }
 }
+

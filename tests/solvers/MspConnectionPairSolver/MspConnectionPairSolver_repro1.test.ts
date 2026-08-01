@@ -1,5 +1,5 @@
 import inputParams from "site/MspConnectionPairSolver/MspConnectionPairSolver01_params.json"
-import { test, expect } from "bun:test"
+import { test, expect } from "vitest"
 import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 
