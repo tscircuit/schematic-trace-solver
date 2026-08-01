@@ -189,6 +189,15 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
     this.netLabelPlacements = params.netLabelPlacements
     this.outputTraces = [...params.traces]
     this.outputNetLabelPlacements = [...params.netLabelPlacements]
+
+    if (
+      this.outputTraces.length === 0 ||
+      this.outputNetLabelPlacements.length === 0
+    ) {
+      // Trace/label collisions require both traces and labels; solve
+      // immediately with an empty result.
+      this.solved = true
+    }
   }
 
   override getConstructorParams(): ConstructorParameters<

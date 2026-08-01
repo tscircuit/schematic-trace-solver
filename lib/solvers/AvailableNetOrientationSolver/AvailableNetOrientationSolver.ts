@@ -52,8 +52,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   currentCandidateResults: EvaluatedCandidate[] = []
 
   private traceMap: Record<string, SolvedTracePath>
-  private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
-  private maxSearchDistance: number
+  private chipObstacleSpatialIndex!: ChipObstacleSpatialIndex
+  private maxSearchDistance!: number
   private pinMap: Record<string, InputPin & { chipId: string }>
 
   constructor(params: AvailableNetOrientationSolverParams) {
@@ -66,6 +66,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.traces.map((trace) => [trace.mspPairId, trace]),
     )
     this.pinMap = getPinMap(params.inputProblem)
+
+    if (this.outputNetLabelPlacements.length === 0) {
+      // No labels to reorient; solve immediately with an empty result.
+      // This also avoids building a chip obstacle spatial index for an
+      // empty chip set (Flatbush cannot be constructed with zero items).
+      this.solved = true
+      return
+    }
+
     this.chipObstacleSpatialIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
       new ChipObstacleSpatialIndex(params.inputProblem.chips)

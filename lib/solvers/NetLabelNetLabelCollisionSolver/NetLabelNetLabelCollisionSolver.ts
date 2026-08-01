@@ -107,7 +107,7 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   currentLabelToMove: NetLabelPlacement | null = null
   candidateResults: Candidate[] = []
 
-  private chipIndex: ChipObstacleSpatialIndex
+  private chipIndex!: ChipObstacleSpatialIndex
   private traceMap: Record<MspConnectionPairId, SolvedTracePath>
   private skippedCollisionKeys = new Set<string>()
 
@@ -121,12 +121,21 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     this.traces = params.traces
     this.netLabelPlacements = params.netLabelPlacements
     this.outputNetLabelPlacements = [...params.netLabelPlacements]
-    this.chipIndex =
-      params.inputProblem._chipObstacleSpatialIndex ??
-      new ChipObstacleSpatialIndex(params.inputProblem.chips)
     this.traceMap = Object.fromEntries(
       params.traces.map((t) => [t.mspPairId, t]),
     ) as Record<MspConnectionPairId, SolvedTracePath>
+
+    if (this.outputNetLabelPlacements.length === 0) {
+      // No labels to collide; solve immediately with an empty result.
+      // This also avoids building a chip obstacle spatial index for an
+      // empty chip set (Flatbush cannot be constructed with zero items).
+      this.solved = true
+      return
+    }
+
+    this.chipIndex =
+      params.inputProblem._chipObstacleSpatialIndex ??
+      new ChipObstacleSpatialIndex(params.inputProblem.chips)
   }
 
   override getConstructorParams(): ConstructorParameters<

@@ -92,6 +92,11 @@ export class NetLabelPlacementSolver extends BaseSolver {
     this.queuedOverlappingSameNetTraceGroups = [
       ...this.overlappingSameNetTraceGroups,
     ]
+
+    if (this.queuedOverlappingSameNetTraceGroups.length === 0) {
+      // No connection nets to label; solve immediately with an empty result.
+      this.solved = true
+    }
   }
 
   computeOverlappingSameNetTraceGroups(): Array<OverlappingSameNetTraceGroup> {

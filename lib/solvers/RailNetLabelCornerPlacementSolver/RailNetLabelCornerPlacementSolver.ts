@@ -51,6 +51,14 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       params.traces.map((trace) => [trace.mspPairId, trace]),
     )
     this.queuedLabelIndices = this.getProcessableLabelIndices()
+
+    if (this.queuedLabelIndices.length === 0) {
+      // No labels need corner placement; solve immediately, leaving the
+      // input labels unchanged.
+      this.solved = true
+      return
+    }
+
     this.prepareNextLabel()
   }
 
