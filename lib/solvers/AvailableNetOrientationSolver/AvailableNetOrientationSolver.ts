@@ -51,9 +51,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   currentLabel: NetLabelPlacement | null = null
   currentCandidateResults: EvaluatedCandidate[] = []
 
-  private blockedStandaloneLabelIndex: number | null = null
-  /** Anchor x copied from the established same-width label column. */
-  private blockedStandaloneLabelTargetAnchorX: number | null = null
+  blockedStandaloneLabelIndex: number | null = null
+  blockedStandaloneLabelTargetAnchorX: number | null = null
   private traceMap: Record<string, SolvedTracePath>
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private maxSearchDistance: number
