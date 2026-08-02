@@ -54,8 +54,20 @@ test("places the RP2040 V3V3 label by the top pin", () => {
     .netLabelPlacements.find(
       (label) => label.netId === "V3V3" && label.pinIds.includes("U1.1"),
     )
+  const u1 = solver.inputProblem.chips.find((chip) => chip.chipId === "U1")!
+  const chipLeft = u1.center.x - u1.width / 2
+  const labelRight = v3v3Label!.center.x + v3v3Label!.width / 2
+  const labelConnector = solver.availableNetOrientationSolver!.traces.find(
+    (trace) => trace.mspPairId.startsWith("available-net-orientation-"),
+  )!
+  const [connectorSource, connectorTarget] = labelConnector.tracePath
 
   expect(v3v3Label?.orientation).toBe("y+")
   expect(v3v3Label?.anchorPoint.y).toBeCloseTo(2.8)
+  expect(labelRight).toBeLessThan(chipLeft)
+  expect(labelConnector.tracePath).toHaveLength(2)
+  expect(connectorSource!.y).toBeCloseTo(connectorTarget!.y)
+  expect(connectorTarget!.x).toBeLessThan(connectorSource!.x)
+  expect(connectorSource!.x - connectorTarget!.x).toBeLessThan(0.5)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

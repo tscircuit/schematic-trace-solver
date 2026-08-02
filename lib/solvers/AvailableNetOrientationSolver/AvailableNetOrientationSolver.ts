@@ -287,8 +287,9 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     ) {
       // A distance-split multi-pin rail can fall back to a left-facing label
       // near the lower MSP endpoint. Prefer the furthest valid upward trace
-      // anchor instead of rotating at that endpoint.
-      const traceAnchorCandidate = this.findValidTraceAnchorCandidate(
+      // anchor, shifted outward enough to clear the chip, instead of rotating
+      // at that endpoint.
+      const traceAnchorCandidate = this.findValidOutwardTraceAnchorCandidate(
         label,
         requiredOrientation,
         labelIndex,
@@ -403,6 +404,61 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       if (result.status === "valid") {
         result.selected = true
         return result
+      }
+    }
+
+    return null
+  }
+
+  private findValidOutwardTraceAnchorCandidate(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+    labelIndex: number,
+  ) {
+    const direction = dir(orientation)
+    const candidatePoints = this.getTraceAnchorCandidatePoints(label).sort(
+      (a, b) => {
+        const aAlongDirection = a.x * direction.x + a.y * direction.y
+        const bAlongDirection = b.x * direction.x + b.y * direction.y
+        return bAlongDirection - aAlongDirection
+      },
+    )
+
+    for (const connectorSource of candidatePoints) {
+      const outwardDirection = this.getPerpendicularOutwardDirection(
+        connectorSource,
+        orientation,
+      )
+      if (outwardDirection.x === 0 && outwardDirection.y === 0) continue
+
+      for (
+        let distance = LABEL_SEARCH_STEP;
+        distance <= this.maxSearchDistance + EPS;
+        distance += LABEL_SEARCH_STEP
+      ) {
+        const anchorPoint = {
+          x: connectorSource.x + outwardDirection.x * distance,
+          y: connectorSource.y + outwardDirection.y * distance,
+        }
+        const candidate = this.createCandidate(
+          label,
+          anchorPoint,
+          orientation,
+          connectorSource,
+        )
+        const result = this.evaluateCandidate(
+          candidate,
+          label,
+          labelIndex,
+          "outward-trace-anchor",
+          distance,
+        )
+        this.currentCandidateResults.push(result)
+
+        if (result.status === "valid") {
+          result.selected = true
+          return result
+        }
       }
     }
 
@@ -611,7 +667,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     label: NetLabelPlacement,
     candidate: Pick<
       EvaluatedCandidate,
-      "anchorPoint" | "orientation" | "phase"
+      "anchorPoint" | "connectorSource" | "orientation" | "phase"
     >,
   ) {
     if (candidate.phase === "lateral-shift") {
@@ -631,7 +687,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return getConnectorTracePath(
-      label.anchorPoint,
+      candidate.connectorSource ?? label.anchorPoint,
       candidate.anchorPoint,
       candidate.orientation,
     )
@@ -829,6 +885,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     label: NetLabelPlacement,
     anchorPoint: Point,
     orientation: FacingDirection,
+    connectorSource?: Point,
   ): CandidateLabel {
     const { width, height } = getDimsForOrientation({
       orientation,
@@ -838,6 +895,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return {
       orientation,
       anchorPoint,
+      connectorSource,
       width,
       height,
       center: getCenterFromAnchor(anchorPoint, orientation, width, height),
