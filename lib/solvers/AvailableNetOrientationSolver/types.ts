@@ -22,6 +22,7 @@ export type ChipSide = "left" | "right" | "top" | "bottom"
 export type CandidateLabel = {
   orientation: FacingDirection
   anchorPoint: Point
+  connectorSource?: Point
   center: Point
   width: number
   height: number
@@ -38,6 +39,7 @@ export type CandidateStatus =
 export type CandidatePhase =
   | "rotate"
   | "trace-anchor"
+  | "outward-trace-anchor"
   | "shift"
   | "lateral-shift"
 
