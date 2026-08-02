@@ -44,7 +44,7 @@ const inputProblem: InputProblem = {
   maxMspPairDistance: 2.4,
 }
 
-test("reproduces RP2040 V3V3 label placed by pin 10 instead of pin 1", () => {
+test("places the RP2040 V3V3 label by the top pin", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
 
   solver.solve()
@@ -56,7 +56,6 @@ test("reproduces RP2040 V3V3 label placed by pin 10 instead of pin 1", () => {
     )
 
   expect(v3v3Label?.orientation).toBe("y+")
-  // This reproduces the bug: the label is by pin 10 (y=1), not pin 1 (y=2.8).
-  expect(v3v3Label?.anchorPoint.y).toBeCloseTo(1)
+  expect(v3v3Label?.anchorPoint.y).toBeCloseTo(2.8)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

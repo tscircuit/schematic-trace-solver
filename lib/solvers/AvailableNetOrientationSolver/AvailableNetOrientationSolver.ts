@@ -250,10 +250,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private findCorrectedCandidate(label: NetLabelPlacement, labelIndex: number) {
     const orientations = this.getAvailableOrientations(label)
     const requiredOrientation = orientations[0]!
-    const isTwoPinNet = this.inputProblem.netConnections.some(
-      (connection) =>
-        connection.netId === label.netId && connection.pinIds.length === 2,
+    const netConnection = this.inputProblem.netConnections.find(
+      (connection) => connection.netId === label.netId,
     )
+    const isTwoPinNet = netConnection?.pinIds.length === 2
     if (
       isTwoPinNet &&
       orientations.length === 1 &&
@@ -275,6 +275,25 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         stopOnTraceCollision: false,
       })
       if (alignedCandidate) return alignedCandidate
+    }
+
+    if (
+      (netConnection?.pinIds.length ?? 0) > 2 &&
+      orientations.length === 1 &&
+      requiredOrientation === "y+" &&
+      label.orientation === "x-" &&
+      this.hasPortOnlyLabelOnSameNet(label) &&
+      this.hasTraceContinuingInOrientation(label, requiredOrientation)
+    ) {
+      // A distance-split multi-pin rail can fall back to a left-facing label
+      // near the lower MSP endpoint. Prefer the furthest valid upward trace
+      // anchor instead of rotating at that endpoint.
+      const traceAnchorCandidate = this.findValidTraceAnchorCandidate(
+        label,
+        requiredOrientation,
+        labelIndex,
+      )
+      if (traceAnchorCandidate) return traceAnchorCandidate
     }
 
     const rotatedCandidate = this.findValidRotatedCandidate(
@@ -1027,6 +1046,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return false
+  }
+
+  private hasPortOnlyLabelOnSameNet(label: NetLabelPlacement) {
+    return this.outputNetLabelPlacements.some(
+      (otherLabel) =>
+        otherLabel !== label &&
+        otherLabel.globalConnNetId === label.globalConnNetId &&
+        this.isPortOnlyLabel(otherLabel),
+    )
   }
 
   private isPortOnlyLabel(label: NetLabelPlacement) {
