@@ -51,6 +51,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   currentLabel: NetLabelPlacement | null = null
   currentCandidateResults: EvaluatedCandidate[] = []
 
+  blockedStandaloneLabelIndex: number | null = null
+  blockedStandaloneLabelTargetAnchorX: number | null = null
   private traceMap: Record<string, SolvedTracePath>
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private maxSearchDistance: number
@@ -122,6 +124,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       )
     })
     if (blockedStandaloneLabelIndex === undefined) return indices
+    this.blockedStandaloneLabelIndex = blockedStandaloneLabelIndex
+    this.blockedStandaloneLabelTargetAnchorX = null
 
     const blockedLabel =
       this.outputNetLabelPlacements[blockedStandaloneLabelIndex]!
@@ -152,6 +156,23 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       const bY = this.outputNetLabelPlacements[b]!.anchorPoint.y
       return requiredOrientation === "y+" ? bY - aY : aY - bY
     })
+    const blockedLabelWidth = this.getNetLabelWidth(blockedLabel)
+    let columnLabelIndex: number | undefined
+    if (blockedLabelWidth !== undefined) {
+      columnLabelIndex = labelsToOrder.find((index) => {
+        if (index === blockedStandaloneLabelIndex) return false
+        const label = this.outputNetLabelPlacements[index]!
+        return this.getNetLabelWidth(label) === blockedLabelWidth
+      })
+    }
+    if (columnLabelIndex !== undefined) {
+      const columnLabel = this.outputNetLabelPlacements[columnLabelIndex]!
+      // Reuse the established same-width column instead of a nearby search step.
+      this.blockedStandaloneLabelTargetAnchorX = this.getSearchStartAnchor(
+        columnLabel,
+        requiredOrientation,
+      ).x
+    }
     for (let i = 0; i < affectedSlots.length; i++) {
       indices[affectedSlots[i]!] = labelsToOrder[i]!
     }
@@ -637,13 +658,23 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       netLabelHeight: this.getNetLabelHeight(label),
     })
 
-    return this.getSideOffsetAnchor({
+    const searchStartAnchor = this.getSideOffsetAnchor({
       anchorPoint,
       labelAnchorPoint: label.anchorPoint,
       orientation,
       width,
       height,
     })
+    if (
+      this.blockedStandaloneLabelIndex !== null &&
+      label ===
+        this.outputNetLabelPlacements[this.blockedStandaloneLabelIndex] &&
+      isYOrientation(orientation) &&
+      this.blockedStandaloneLabelTargetAnchorX !== null
+    ) {
+      searchStartAnchor.x = this.blockedStandaloneLabelTargetAnchorX
+    }
+    return searchStartAnchor
   }
 
   private getWickOffsetAnchor(
@@ -1007,6 +1038,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       if (i === labelIndex) continue
       const label = this.outputNetLabelPlacements[i]!
       const otherBounds = getRectBounds(label.center, label.width, label.height)
+      if (
+        i === this.blockedStandaloneLabelIndex &&
+        isYOrientation(label.orientation)
+      ) {
+        // Keep later labels one search step away from the blocked label.
+        otherBounds.minX -= LABEL_SEARCH_STEP
+        otherBounds.maxX += LABEL_SEARCH_STEP
+      }
       if (rectsOverlap(bounds, otherBounds)) return true
     }
     return false
