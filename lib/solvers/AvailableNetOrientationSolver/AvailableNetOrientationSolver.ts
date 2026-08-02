@@ -9,7 +9,11 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { InputPin, InputProblem } from "lib/types/InputProblem"
+import type {
+  InputNetConnection,
+  InputPin,
+  InputProblem,
+} from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 import { EPS, LABEL_SEARCH_STEP, WICK_CLEARANCE } from "./constants"
@@ -254,6 +258,31 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       (connection) => connection.netId === label.netId,
     )
     const isTwoPinNet = netConnection?.pinIds.length === 2
+    const isDistanceSplitUpwardRail =
+      (netConnection?.pinIds.length ?? 0) > 2 &&
+      requiredOrientation === "y+" &&
+      this.hasPortOnlyLabelOnSameNet(label)
+    const isPairedSameSidePowerRail =
+      isYOrientation(requiredOrientation) &&
+      this.hasOppositeVerticalRailOnSameChipSide(label, requiredOrientation)
+    if (
+      orientations.length === 1 &&
+      isYOrientation(requiredOrientation) &&
+      this.isOutwardHorizontalFallback(label) &&
+      this.hasTraceContinuingInOrientation(label, requiredOrientation) &&
+      (isDistanceSplitUpwardRail || isPairedSameSidePowerRail)
+    ) {
+      // Keep the established outward column, but attach at the furthest trace
+      // point in the required vertical direction. This places y+ labels above
+      // a rail and y- labels below it while using a short horizontal connector.
+      const traceAnchorCandidate = this.findValidOutwardTraceAnchorCandidate(
+        label,
+        requiredOrientation,
+        labelIndex,
+      )
+      if (traceAnchorCandidate) return traceAnchorCandidate
+    }
+
     if (
       isTwoPinNet &&
       orientations.length === 1 &&
@@ -275,26 +304,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         stopOnTraceCollision: false,
       })
       if (alignedCandidate) return alignedCandidate
-    }
-
-    if (
-      (netConnection?.pinIds.length ?? 0) > 2 &&
-      orientations.length === 1 &&
-      requiredOrientation === "y+" &&
-      this.isOutwardHorizontalFallback(label) &&
-      this.hasPortOnlyLabelOnSameNet(label) &&
-      this.hasTraceContinuingInOrientation(label, requiredOrientation)
-    ) {
-      // A distance-split multi-pin rail can fall back to a side-facing label
-      // near the lower MSP endpoint. Prefer the furthest valid upward trace
-      // anchor, shifted outward enough to clear the chip, instead of rotating
-      // at that endpoint.
-      const traceAnchorCandidate = this.findValidOutwardTraceAnchorCandidate(
-        label,
-        requiredOrientation,
-        labelIndex,
-      )
-      if (traceAnchorCandidate) return traceAnchorCandidate
     }
 
     const rotatedCandidate = this.findValidRotatedCandidate(
@@ -425,6 +434,31 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
 
     for (const connectorSource of candidatePoints) {
+      const preservedColumnAnchor = this.getSearchStartAnchor(
+        label,
+        orientation,
+      )
+      const preservedColumnCandidate = this.createCandidate(
+        label,
+        {
+          x: preservedColumnAnchor.x,
+          y: connectorSource.y,
+        },
+        orientation,
+        connectorSource,
+      )
+      const preservedColumnResult = this.evaluateCandidate(
+        preservedColumnCandidate,
+        label,
+        labelIndex,
+        "outward-trace-anchor",
+      )
+      this.currentCandidateResults.push(preservedColumnResult)
+      if (preservedColumnResult.status === "valid") {
+        preservedColumnResult.selected = true
+        return preservedColumnResult
+      }
+
       const outwardDirection = this.getPerpendicularOutwardDirection(
         connectorSource,
         orientation,
@@ -1106,6 +1140,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return false
   }
 
+  private isOutwardHorizontalFallback(label: NetLabelPlacement) {
+    const chipSide = this.getChipSideForPoint(label.anchorPoint)
+    return (
+      (chipSide === "left" && label.orientation === "x-") ||
+      (chipSide === "right" && label.orientation === "x+")
+    )
+  }
+
   private hasPortOnlyLabelOnSameNet(label: NetLabelPlacement) {
     return this.outputNetLabelPlacements.some(
       (otherLabel) =>
@@ -1115,12 +1157,70 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
   }
 
-  private isOutwardHorizontalFallback(label: NetLabelPlacement) {
-    const chipSide = this.getChipSideForPoint(label.anchorPoint)
-    return (
-      (chipSide === "left" && label.orientation === "x-") ||
-      (chipSide === "right" && label.orientation === "x+")
+  private hasOppositeVerticalRailOnSameChipSide(
+    label: NetLabelPlacement,
+    orientation: "y+" | "y-",
+  ) {
+    const currentConnection = this.inputProblem.netConnections.find(
+      (connection) => connection.netId === label.netId,
     )
+    if (!currentConnection) return false
+
+    const currentSide =
+      this.getSingleChipSideForNetConnection(currentConnection)
+    if (!currentSide) return false
+
+    const oppositeOrientation = orientation === "y+" ? "y-" : "y+"
+    return this.inputProblem.netConnections.some((connection) => {
+      if (connection === currentConnection || connection.pinIds.length < 2) {
+        return false
+      }
+      const availableOrientations =
+        this.inputProblem.availableNetLabelOrientations[connection.netId] ?? []
+      if (
+        availableOrientations.length !== 1 ||
+        availableOrientations[0] !== oppositeOrientation
+      ) {
+        return false
+      }
+
+      const connectionSide = this.getSingleChipSideForNetConnection(connection)
+      return (
+        connectionSide?.chipId === currentSide.chipId &&
+        connectionSide.side === currentSide.side
+      )
+    })
+  }
+
+  private getSingleChipSideForNetConnection(
+    connection: InputNetConnection,
+  ): { chipId: string; side: "left" | "right" } | null {
+    if (connection.pinIds.length < 2) return null
+
+    const pins = connection.pinIds.map((pinId) => this.pinMap[pinId])
+    if (pins.some((pin) => !pin)) return null
+    const chipIds = new Set(pins.map((pin) => pin!.chipId))
+    if (chipIds.size !== 1) return null
+
+    const chipId = pins[0]!.chipId
+    const chip = this.chipObstacleSpatialIndex.chips.find(
+      (candidate) => candidate.chipId === chipId,
+    )
+    if (!chip) return null
+
+    const sides = new Set(
+      pins.map((pin) => {
+        if (Math.abs(pin!.x - chip.bounds.minX) <= EPS) return "left"
+        if (Math.abs(pin!.x - chip.bounds.maxX) <= EPS) return "right"
+        return null
+      }),
+    )
+    if (sides.size !== 1 || sides.has(null)) return null
+
+    return {
+      chipId,
+      side: [...sides][0] as "left" | "right",
+    }
   }
 
   private isPortOnlyLabel(label: NetLabelPlacement) {
