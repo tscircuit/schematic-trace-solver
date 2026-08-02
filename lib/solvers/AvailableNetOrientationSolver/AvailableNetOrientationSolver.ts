@@ -258,9 +258,9 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       (connection) => connection.netId === label.netId,
     )
     const isTwoPinNet = netConnection?.pinIds.length === 2
-    const isDistanceSplitUpwardRail =
+    const isDistanceSplitVerticalRail =
       (netConnection?.pinIds.length ?? 0) > 2 &&
-      requiredOrientation === "y+" &&
+      isYOrientation(requiredOrientation) &&
       this.hasPortOnlyLabelOnSameNet(label)
     const isPairedSameSidePowerRail =
       isYOrientation(requiredOrientation) &&
@@ -270,7 +270,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       isYOrientation(requiredOrientation) &&
       this.isOutwardHorizontalFallback(label) &&
       this.hasTraceContinuingInOrientation(label, requiredOrientation) &&
-      (isDistanceSplitUpwardRail || isPairedSameSidePowerRail)
+      (isDistanceSplitVerticalRail || isPairedSameSidePowerRail)
     ) {
       // Keep the established outward column, but attach at the furthest trace
       // point in the required vertical direction. This places y+ labels above
