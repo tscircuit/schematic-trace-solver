@@ -40,6 +40,12 @@ import { visualizeAvailableNetOrientationSolver } from "./visualize"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
+type BlockedStandaloneLabelAlignment = {
+  labelIndex: number
+  /** Anchor x copied from the established same-width label column. */
+  targetAnchorX: number | null
+}
+
 export class AvailableNetOrientationSolver extends BaseSolver {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
@@ -51,10 +57,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   currentLabel: NetLabelPlacement | null = null
   currentCandidateResults: EvaluatedCandidate[] = []
 
-  private blockedStandaloneLabelAlignment: {
-    labelIndex: number
-    columnX: number | null
-  } | null = null
+  private blockedStandaloneLabelAlignment: BlockedStandaloneLabelAlignment | null =
+    null
   private traceMap: Record<string, SolvedTracePath>
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private maxSearchDistance: number
@@ -128,7 +132,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     if (blockedStandaloneLabelIndex === undefined) return indices
     this.blockedStandaloneLabelAlignment = {
       labelIndex: blockedStandaloneLabelIndex,
-      columnX: null,
+      targetAnchorX: null,
     }
 
     const blockedLabel =
@@ -172,10 +176,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     if (columnLabelIndex !== undefined) {
       const columnLabel = this.outputNetLabelPlacements[columnLabelIndex]!
       // Reuse the established same-width column instead of a nearby search step.
-      this.blockedStandaloneLabelAlignment.columnX = this.getSearchStartAnchor(
-        columnLabel,
-        requiredOrientation,
-      ).x
+      this.blockedStandaloneLabelAlignment.targetAnchorX =
+        this.getSearchStartAnchor(columnLabel, requiredOrientation).x
     }
     for (let i = 0; i < affectedSlots.length; i++) {
       indices[affectedSlots[i]!] = labelsToOrder[i]!
@@ -675,9 +677,9 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       label ===
         this.outputNetLabelPlacements[blockedLabelAlignment.labelIndex] &&
       isYOrientation(orientation) &&
-      blockedLabelAlignment.columnX !== null
+      blockedLabelAlignment.targetAnchorX !== null
     ) {
-      searchStartAnchor.x = blockedLabelAlignment.columnX
+      searchStartAnchor.x = blockedLabelAlignment.targetAnchorX
     }
     return searchStartAnchor
   }
