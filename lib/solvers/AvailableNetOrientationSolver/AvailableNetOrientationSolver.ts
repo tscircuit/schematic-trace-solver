@@ -281,11 +281,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       (netConnection?.pinIds.length ?? 0) > 2 &&
       orientations.length === 1 &&
       requiredOrientation === "y+" &&
-      label.orientation === "x-" &&
+      this.isOutwardHorizontalFallback(label) &&
       this.hasPortOnlyLabelOnSameNet(label) &&
       this.hasTraceContinuingInOrientation(label, requiredOrientation)
     ) {
-      // A distance-split multi-pin rail can fall back to a left-facing label
+      // A distance-split multi-pin rail can fall back to a side-facing label
       // near the lower MSP endpoint. Prefer the furthest valid upward trace
       // anchor, shifted outward enough to clear the chip, instead of rotating
       // at that endpoint.
@@ -1112,6 +1112,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         otherLabel !== label &&
         otherLabel.globalConnNetId === label.globalConnNetId &&
         this.isPortOnlyLabel(otherLabel),
+    )
+  }
+
+  private isOutwardHorizontalFallback(label: NetLabelPlacement) {
+    const chipSide = this.getChipSideForPoint(label.anchorPoint)
+    return (
+      (chipSide === "left" && label.orientation === "x-") ||
+      (chipSide === "right" && label.orientation === "x+")
     )
   }
 
