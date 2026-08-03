@@ -54,7 +54,7 @@ const tracesHaveTouchingParallelSegments = (
   return false
 }
 
-test("BQ25895 CE and GND traces touch along parallel segments", () => {
+test("BQ25895 CE and GND traces keep parallel stroke clearance", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
   solver.solve()
 
@@ -69,6 +69,6 @@ test("BQ25895 CE and GND traces touch along parallel segments", () => {
     ),
   )
 
-  expect(hasTouchingCeAndGroundSegments).toBe(true)
+  expect(hasTouchingCeAndGroundSegments).toBe(false)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

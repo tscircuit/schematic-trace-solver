@@ -3,7 +3,10 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import type { ObstacleRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
-import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
+import {
+  doesPathCoincideWithTraces,
+  doesPathOverlapTraceStrokes,
+} from "lib/utils/doesPathCoincideWithTraces"
 import { getDistinctCoordinates, pointsEqual } from "./geometry"
 import { moveRailSegments } from "./moveRailSegments"
 import { preservesLabelAnchors } from "./preservesLabelAnchors"
@@ -79,7 +82,7 @@ export const evaluateRailGroup = ({
           traces: [candidate],
           netLabels: netLabelPlacements,
         }).length === 0 &&
-        !doesPathCoincideWithTraces(candidate.tracePath, otherNetTraces) &&
+        !doesPathOverlapTraceStrokes(candidate.tracePath, otherNetTraces) &&
         !doesPathCoincideWithTraces(
           candidate.tracePath,
           immutableSameNetTraces.filter(
