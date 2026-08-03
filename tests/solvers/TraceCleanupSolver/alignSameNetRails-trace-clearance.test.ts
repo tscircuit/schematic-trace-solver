@@ -1,11 +1,12 @@
 import { expect, test } from "bun:test"
+import { SCHEMATIC_TRACE_STROKE_WIDTH } from "lib/utils/doesPathCoincideWithTraces"
 import {
   align,
   createTrace,
   getVerticalRailTraces,
 } from "./fixtures/alignSameNetRails"
 
-test("does not align same-net rails against a different-net trace stroke", () => {
+test("aligns same-net rails at a safe coordinate beside different-net traces", () => {
   const rails = getVerticalRailTraces()
   const foreignLowerTrace = createTrace(
     "foreign-lower",
@@ -37,6 +38,22 @@ test("does not align same-net rails against a different-net trace stroke", () =>
     eligibleTraceIds: new Set(rails.map((trace) => trace.mspPairId)),
   })
 
-  expect(result.alignedRailGroupCount).toBe(0)
-  expect(result.traces).toEqual(traces)
+  expect(result.alignedRailGroupCount).toBe(1)
+
+  const alignedUpper = result.traces.find(
+    (trace) => trace.mspPairId === "upper",
+  )!
+  const alignedLower = result.traces.find(
+    (trace) => trace.mspPairId === "lower",
+  )!
+  const upperRailX = alignedUpper.tracePath[1]!.x
+  const lowerRailX = alignedLower.tracePath[1]!.x
+
+  expect(upperRailX).toBe(lowerRailX)
+  expect(
+    Math.abs(upperRailX - foreignLowerTrace.tracePath[0]!.x),
+  ).toBeGreaterThan(SCHEMATIC_TRACE_STROKE_WIDTH)
+  expect(
+    Math.abs(upperRailX - foreignUpperTrace.tracePath[0]!.x),
+  ).toBeGreaterThan(SCHEMATIC_TRACE_STROKE_WIDTH)
 })

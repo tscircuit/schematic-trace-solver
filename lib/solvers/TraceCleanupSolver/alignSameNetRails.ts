@@ -11,6 +11,7 @@ interface AlignSameNetRailsInput {
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   eligibleTraceIds: ReadonlySet<string>
+  paddingBuffer: number
 }
 
 export const alignSameNetRails = ({
@@ -18,6 +19,7 @@ export const alignSameNetRails = ({
   traces,
   netLabelPlacements,
   eligibleTraceIds,
+  paddingBuffer,
 }: AlignSameNetRailsInput): {
   traces: SolvedTracePath[]
   alignedRailGroupCount: number
@@ -48,6 +50,7 @@ export const alignSameNetRails = ({
         netLabelPlacements,
         obstacles,
         eligibleTraceIds,
+        paddingBuffer,
       })
       if (applied) break
     }

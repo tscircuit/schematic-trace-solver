@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { SCHEMATIC_TRACE_STROKE_WIDTH } from "lib/utils/doesPathCoincideWithTraces"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-bq25895-cross-net-trace-overlap.input.json"
 
-const TRACE_STROKE_WIDTH = 0.02
 const EPSILON = 1e-6
 
 const tracesHaveTouchingParallelSegments = (
@@ -43,7 +43,7 @@ const tracesHaveTouchingParallelSegments = (
         )
 
       if (
-        xSeparation <= TRACE_STROKE_WIDTH + EPSILON &&
+        xSeparation <= SCHEMATIC_TRACE_STROKE_WIDTH + EPSILON &&
         verticalOverlap > EPSILON
       ) {
         return true

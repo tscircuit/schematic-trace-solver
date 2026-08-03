@@ -7,7 +7,8 @@ import {
   doesPathCoincideWithTraces,
   doesPathOverlapTraceStrokes,
 } from "lib/utils/doesPathCoincideWithTraces"
-import { getDistinctCoordinates, pointsEqual } from "./geometry"
+import { pointsEqual } from "./geometry"
+import { getRailAlignmentCandidateCoordinates } from "./getRailAlignmentCandidateCoordinates"
 import { moveRailSegments } from "./moveRailSegments"
 import { preservesLabelAnchors } from "./preservesLabelAnchors"
 import {
@@ -23,6 +24,7 @@ interface EvaluateRailGroupInput {
   netLabelPlacements: NetLabelPlacement[]
   obstacles: ObstacleRect[]
   eligibleTraceIds: ReadonlySet<string>
+  paddingBuffer: number
 }
 
 const tracePathChanged = (
@@ -40,18 +42,21 @@ export const evaluateRailGroup = ({
   netLabelPlacements,
   obstacles,
   eligibleTraceIds,
+  paddingBuffer,
 }: EvaluateRailGroupInput): AlignmentCandidate | null => {
   const groupTraceIds = new Set(group.map((segment) => segment.traceId))
   const originalGroupTraces = traces.filter((trace) =>
     groupTraceIds.has(trace.mspPairId),
   )
   const baseline = getTraceGeometryMetrics(originalGroupTraces, traces)
-  const coordinates = getDistinctCoordinates(
-    group.map((segment) => segment.coordinate),
-  )
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
   )
+  const coordinates = getRailAlignmentCandidateCoordinates({
+    group,
+    otherNetTraces,
+    paddingBuffer,
+  })
   const immutableSameNetTraces = traces.filter(
     (trace) =>
       trace.globalConnNetId === group[0]!.globalConnNetId &&
