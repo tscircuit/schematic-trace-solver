@@ -77,7 +77,6 @@ export const align = (
     inputProblem?: InputProblem
     netLabelPlacements?: NetLabelPlacement[]
     eligibleTraceIds?: ReadonlySet<string>
-    paddingBuffer?: number
   } = {},
 ) =>
   alignSameNetRails({
@@ -87,5 +86,4 @@ export const align = (
     eligibleTraceIds:
       options.eligibleTraceIds ??
       new Set(traces.map((trace) => trace.mspPairId)),
-    paddingBuffer: options.paddingBuffer ?? 0.1,
   })

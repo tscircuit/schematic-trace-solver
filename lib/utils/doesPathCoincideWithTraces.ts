@@ -6,6 +6,8 @@ const GEOMETRY_EPS = 1e-6
 
 // Schematic traces are rendered 0.02 schematic units wide.
 export const SCHEMATIC_TRACE_STROKE_WIDTH = 0.02
+export const SCHEMATIC_TRACE_MIN_CENTERLINE_CLEARANCE =
+  SCHEMATIC_TRACE_STROKE_WIDTH + GEOMETRY_EPS
 
 /**
  * Returns true when an orthogonal path shares a positive-length segment with
@@ -69,7 +71,7 @@ export const doesPathOverlapTraceStrokes = (
   path: Point[],
   traces: SolvedTracePath[],
 ): boolean => {
-  const traceStrokeRadius = (SCHEMATIC_TRACE_STROKE_WIDTH + GEOMETRY_EPS) / 2
+  const traceStrokeRadius = SCHEMATIC_TRACE_MIN_CENTERLINE_CLEARANCE / 2
   const getStrokeBounds = (start: Point, end: Point, isVertical: boolean) =>
     isVertical
       ? {

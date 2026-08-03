@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test"
-import { SCHEMATIC_TRACE_STROKE_WIDTH } from "lib/utils/doesPathCoincideWithTraces"
+import {
+  SCHEMATIC_TRACE_MIN_CENTERLINE_CLEARANCE,
+  SCHEMATIC_TRACE_STROKE_WIDTH,
+} from "lib/utils/doesPathCoincideWithTraces"
+import { RAIL_ALIGNMENT_EPSILON } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import {
   align,
   createTrace,
@@ -56,4 +60,13 @@ test("aligns same-net rails at a safe coordinate beside different-net traces", (
   expect(
     Math.abs(upperRailX - foreignUpperTrace.tracePath[0]!.x),
   ).toBeGreaterThan(SCHEMATIC_TRACE_STROKE_WIDTH)
+  expect(
+    Math.min(
+      Math.abs(upperRailX - foreignLowerTrace.tracePath[0]!.x),
+      Math.abs(upperRailX - foreignUpperTrace.tracePath[0]!.x),
+    ),
+  ).toBeCloseTo(
+    SCHEMATIC_TRACE_MIN_CENTERLINE_CLEARANCE + RAIL_ALIGNMENT_EPSILON,
+    6,
+  )
 })

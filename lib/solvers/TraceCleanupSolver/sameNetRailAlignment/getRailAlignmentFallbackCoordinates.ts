@@ -1,6 +1,6 @@
 import { boundsIntersection, type Bounds } from "@tscircuit/math-utils"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { SCHEMATIC_TRACE_STROKE_WIDTH } from "lib/utils/doesPathCoincideWithTraces"
+import { SCHEMATIC_TRACE_MIN_CENTERLINE_CLEARANCE } from "lib/utils/doesPathCoincideWithTraces"
 import {
   getDistinctCoordinates,
   getRailOrientation,
@@ -31,24 +31,26 @@ const hasPositiveAlongOverlap = (
   return overlapLength > RAIL_ALIGNMENT_EPSILON
 }
 
-export const getRailAlignmentCandidateCoordinates = ({
+/**
+ * Derives alternatives only for original alignment coordinates whose rendered
+ * stroke touches a parallel segment from another net.
+ */
+export const getRailAlignmentFallbackCoordinates = ({
   group,
+  originalCoordinates,
   otherNetTraces,
-  paddingBuffer,
 }: {
   group: RailSegment[]
+  originalCoordinates: number[]
   otherNetTraces: SolvedTracePath[]
-  paddingBuffer: number
 }) => {
   const orientation = group[0]!.orientation
   const groupAlongBounds = group.map((segment) =>
     getAlongBounds(orientation, segment.minAlong, segment.maxAlong),
   )
-  const centerlineClearance = Math.max(
-    paddingBuffer,
-    SCHEMATIC_TRACE_STROKE_WIDTH + RAIL_ALIGNMENT_EPSILON,
-  )
-  const coordinates = group.map((segment) => segment.coordinate)
+  const fallbackClearance =
+    SCHEMATIC_TRACE_MIN_CENTERLINE_CLEARANCE + RAIL_ALIGNMENT_EPSILON
+  const coordinates: number[] = []
 
   for (const trace of otherNetTraces) {
     for (let index = 0; index < trace.tracePath.length - 1; index++) {
@@ -74,9 +76,16 @@ export const getRailAlignmentCandidateCoordinates = ({
       }
 
       const coordinate = orientation === "vertical" ? start.x : start.y
+      const touchesOriginalCandidate = originalCoordinates.some(
+        (originalCoordinate) =>
+          Math.abs(originalCoordinate - coordinate) <=
+          SCHEMATIC_TRACE_MIN_CENTERLINE_CLEARANCE,
+      )
+      if (!touchesOriginalCandidate) continue
+
       coordinates.push(
-        coordinate - centerlineClearance,
-        coordinate + centerlineClearance,
+        coordinate - fallbackClearance,
+        coordinate + fallbackClearance,
       )
     }
   }

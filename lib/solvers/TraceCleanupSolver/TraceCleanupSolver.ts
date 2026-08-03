@@ -180,7 +180,6 @@ export class TraceCleanupSolver extends BaseSolver {
       eligibleTraceIds:
         this.input.eligibleTraceIds ??
         new Set(this.outputTraces.map((trace) => trace.mspPairId)),
-      paddingBuffer: this.input.paddingBuffer,
     })
     this.outputTraces = alignment.traces
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
