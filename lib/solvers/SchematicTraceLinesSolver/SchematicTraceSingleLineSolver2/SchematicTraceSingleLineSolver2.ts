@@ -1,5 +1,4 @@
 import type { Point } from "@tscircuit/math-utils"
-import { calculateElbow } from "calculate-elbow"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
@@ -9,7 +8,6 @@ import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
 import { getTextBoxBounds, type RectPadding } from "lib/utils/textBoxBounds"
 import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
-import { calculateDirectShortPath } from "./calculateDirectShortPath"
 import {
   findFirstCollision,
   isHorizontal,
@@ -19,6 +17,7 @@ import {
 } from "./collisions"
 import { generateEndpointCollisionDetours } from "./generateEndpointCollisionDetours"
 import { generateInternalSegmentCollisionDetours } from "./generateInternalSegmentCollisionDetours"
+import { getInitialTracePath } from "./getInitialTracePath"
 import {
   type Axis,
   aabbFromPoints,
@@ -34,48 +33,6 @@ import {
 } from "./rect"
 
 type PathKey = string
-
-const calculateElbowForPins = ({
-  pin1,
-  pin2,
-  overshoot,
-}: {
-  pin1: MspConnectionPair["pins"][number]
-  pin2: MspConnectionPair["pins"][number]
-  overshoot: number
-}) =>
-  calculateElbow(
-    {
-      x: pin1.x,
-      y: pin1.y,
-      facingDirection: pin1._facingDirection!,
-    },
-    {
-      x: pin2.x,
-      y: pin2.y,
-      facingDirection: pin2._facingDirection!,
-    },
-    { overshoot },
-  )
-
-const pinsFaceEachOther = ({
-  pin1,
-  pin2,
-}: {
-  pin1: MspConnectionPair["pins"][number]
-  pin2: MspConnectionPair["pins"][number]
-}) => {
-  const xDistance = pin2.x - pin1.x
-  const yDistance = pin2.y - pin1.y
-  if (Math.abs(xDistance) >= Math.abs(yDistance)) {
-    return xDistance > 0
-      ? pin1._facingDirection === "x+" && pin2._facingDirection === "x-"
-      : pin1._facingDirection === "x-" && pin2._facingDirection === "x+"
-  }
-  return yDistance > 0
-    ? pin1._facingDirection === "y+" && pin2._facingDirection === "y-"
-    : pin1._facingDirection === "y-" && pin2._facingDirection === "y+"
-}
 
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
@@ -136,39 +93,15 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     )
 
     const [pin1, pin2] = this.pins
-    const directShortPath = calculateDirectShortPath(pin1, pin2)
-    const defaultElbow = calculateElbowForPins({
+    const initialTracePath = getInitialTracePath({
       pin1,
       pin2,
-      overshoot: 0.2,
+      obstacles: this.obstacles,
     })
-    const routingDistance =
-      Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
-    const adaptiveElbow = calculateElbowForPins({
-      pin1,
-      pin2,
-      overshoot: Math.min(0.2, Math.max(0.02, routingDistance / 4)),
-    })
-    const adaptiveElbowIsShorter =
-      this.pathLength(adaptiveElbow) < this.pathLength(defaultElbow)
-    const defaultElbowBacktracks =
-      this.pathLength(defaultElbow) > routingDistance + 1e-9
-    const shouldUseAdaptiveElbow =
-      findFirstCollision(adaptiveElbow, this.obstacles) === null &&
-      ((pinsFaceEachOther({ pin1, pin2 }) &&
-        defaultElbowBacktracks &&
-        adaptiveElbowIsShorter) ||
-        findFirstCollision(defaultElbow, this.obstacles) !== null)
-
-    // Build initial elbow path
-    this.baseElbow = defaultElbow
-    if (shouldUseAdaptiveElbow) {
-      this.baseElbow = adaptiveElbow
-    }
-    if (directShortPath) {
-      this.baseElbow = directShortPath
-    }
-    this.solvedTracePath = directShortPath
+    this.baseElbow = initialTracePath.path
+    this.solvedTracePath = initialTracePath.isDirectShortPath
+      ? initialTracePath.path
+      : null
 
     // Bounds defined by PA and PB
     this.aabb = aabbFromPoints(

@@ -11,6 +11,7 @@ import type {
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import { doesNearAlignedPairRequireEndpointDetour } from "./doesNearAlignedPairRequireEndpointDetour"
 import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCenterLines"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
@@ -42,6 +43,7 @@ export class MspConnectionPairSolver extends BaseSolver {
   pinMap: Record<string, InputPin & { chipId: string }>
   userNetIdByPinId: Record<string, string | undefined>
   directConnectionPinPairKeys: Set<string>
+  private endpointBlockedPairKeys = new Map<string, boolean>()
 
   constructor({ inputProblem }: { inputProblem: InputProblem }) {
     super()
@@ -167,7 +169,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       return
     }
 
-    // There are more than 3 pins, so we need to run MSP to find the best pairs
+    // There are more than 2 pins, so we need to run MSP to find the best pairs
 
     const pinIdMap = new Map(Object.entries(this.pinMap)) as Map<
       PinId,
@@ -177,19 +179,21 @@ export class MspConnectionPairSolver extends BaseSolver {
       directlyConnectedPins.map((p) => this.pinMap[p]!).filter(Boolean),
       {
         maxDistance: this.maxMspPairDistance,
-        forbidEdge: (a, b) =>
-          arePinsInDifferentSchematicSections(
-            this.inputProblem,
-            a as InputPin & { chipId: string },
-            b as InputPin & { chipId: string },
-          ) ||
-          doesPairCrossRestrictedCenterLines({
-            inputProblem: this.inputProblem,
-            chipMap: this.chipMap,
-            pinIdMap,
-            p1: a as InputPin & { chipId: string },
-            p2: b as InputPin & { chipId: string },
-          }),
+        forbidEdge: (a, b) => {
+          const p1 = a as InputPin & { chipId: string }
+          const p2 = b as InputPin & { chipId: string }
+          return (
+            arePinsInDifferentSchematicSections(this.inputProblem, p1, p2) ||
+            doesPairCrossRestrictedCenterLines({
+              inputProblem: this.inputProblem,
+              chipMap: this.chipMap,
+              pinIdMap,
+              p1,
+              p2,
+            }) ||
+            this.isEndpointBlockedPair(p1, p2)
+          )
+        },
       },
     )
 
@@ -213,6 +217,9 @@ export class MspConnectionPairSolver extends BaseSolver {
       ) {
         continue
       }
+      if (this.isEndpointBlockedPair(p1Obj, p2Obj)) {
+        continue
+      }
 
       const globalConnNetId = this.globalConnMap.getNetConnectedToId(pin1!)!
       const userNetId =
@@ -225,6 +232,27 @@ export class MspConnectionPairSolver extends BaseSolver {
         pins: [p1Obj, p2Obj],
       })
     }
+  }
+
+  private isEndpointBlockedPair(
+    p1: InputPin & { chipId: string },
+    p2: InputPin & { chipId: string },
+  ) {
+    const pairKey = getPinPairKey([p1.pinId, p2.pinId])
+    // Only replace an explicitly requested pair with labels. Inferred MST
+    // edges may still be useful to the unrouted-trace recovery stage.
+    if (!this.directConnectionPinPairKeys.has(pairKey)) return false
+
+    const cached = this.endpointBlockedPairKeys.get(pairKey)
+    if (cached !== undefined) return cached
+
+    const isBlocked = doesNearAlignedPairRequireEndpointDetour({
+      p1,
+      p2,
+      chipMap: this.chipMap,
+    })
+    this.endpointBlockedPairKeys.set(pairKey, isBlocked)
+    return isBlocked
   }
 
   override visualize(): GraphicsObject {

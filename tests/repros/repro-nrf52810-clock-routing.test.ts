@@ -11,14 +11,21 @@ test("repro nRF52810 HF and LF crystal trace/net-label routing", () => {
 
   solver.solve()
 
-  expect(solver.mspConnectionPairSolver?.mspConnectionPairs).toHaveLength(11)
+  const mspPairIds = solver.mspConnectionPairSolver?.mspConnectionPairs.map(
+    (pair) => pair.mspPairId,
+  )
+  expect(mspPairIds).toHaveLength(9)
+  expect(mspPairIds).not.toContain(
+    "schematic_port_39-schematic_port_43", // U1.XC2 -> X1.XTAL2
+  )
+  expect(mspPairIds).not.toContain(
+    "schematic_port_45-schematic_port_47", // U1.XL2 -> X2.OSC2
+  )
   expect(
     solver.schematicTraceLinesSolver?.failedConnectionPairs.map(
       (pair) => pair.mspPairId,
     ),
   ).toEqual([
-    "schematic_port_39-schematic_port_43", // U1.XC2 -> X1.XTAL2
-    "schematic_port_45-schematic_port_47", // U1.XL2 -> X2.OSC2
     "schematic_port_41-schematic_port_40", // X1.GND2 -> X1.GND1
   ])
   expect(
