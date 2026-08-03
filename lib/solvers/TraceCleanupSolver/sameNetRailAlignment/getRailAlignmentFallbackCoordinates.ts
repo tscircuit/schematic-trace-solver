@@ -1,6 +1,9 @@
 import { boundsIntersection, type Bounds } from "@tscircuit/math-utils"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { SCHEMATIC_TRACE_MIN_CENTERLINE_CLEARANCE } from "lib/utils/doesPathCoincideWithTraces"
+import {
+  SCHEMATIC_TRACE_MIN_CENTERLINE_CLEARANCE,
+  SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE,
+} from "lib/utils/doesPathCoincideWithTraces"
 import {
   getDistinctCoordinates,
   getRailOrientation,
@@ -48,8 +51,7 @@ export const getRailAlignmentFallbackCoordinates = ({
   const groupAlongBounds = group.map((segment) =>
     getAlongBounds(orientation, segment.minAlong, segment.maxAlong),
   )
-  const fallbackClearance =
-    SCHEMATIC_TRACE_MIN_CENTERLINE_CLEARANCE + RAIL_ALIGNMENT_EPSILON
+  const fallbackClearance = SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE
   const coordinates: number[] = []
 
   for (const trace of otherNetTraces) {

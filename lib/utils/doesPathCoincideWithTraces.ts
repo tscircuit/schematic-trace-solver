@@ -8,6 +8,11 @@ const GEOMETRY_EPS = 1e-6
 export const SCHEMATIC_TRACE_STROKE_WIDTH = 0.02
 export const SCHEMATIC_TRACE_MIN_CENTERLINE_CLEARANCE =
   SCHEMATIC_TRACE_STROKE_WIDTH + GEOMETRY_EPS
+// Rail-alignment fallbacks need a visible gap, not only non-overlapping trace
+// bodies. Three stroke widths of centerline separation leave two stroke widths
+// of whitespace between the rendered traces.
+export const SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE =
+  SCHEMATIC_TRACE_STROKE_WIDTH * 3
 
 /**
  * Returns true when an orthogonal path shares a positive-length segment with
