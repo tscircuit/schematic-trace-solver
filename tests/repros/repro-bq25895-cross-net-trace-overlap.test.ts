@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE } from "lib/utils/doesPathCoincideWithTraces"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-bq25895-cross-net-trace-overlap.input.json"
 
-const TRACE_STROKE_WIDTH = 0.02
 const EPSILON = 1e-6
 
-const tracesHaveTouchingParallelSegments = (
+const tracesHaveInsufficientParallelClearance = (
   firstTrace: SolvedTracePath,
   secondTrace: SolvedTracePath,
 ) => {
@@ -43,7 +43,8 @@ const tracesHaveTouchingParallelSegments = (
         )
 
       if (
-        xSeparation <= TRACE_STROKE_WIDTH + EPSILON &&
+        xSeparation + EPSILON <
+          SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE &&
         verticalOverlap > EPSILON
       ) {
         return true
@@ -54,7 +55,7 @@ const tracesHaveTouchingParallelSegments = (
   return false
 }
 
-test("BQ25895 CE and GND traces touch along parallel segments", () => {
+test("BQ25895 CE and GND traces keep visible parallel clearance", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
   solver.solve()
 
@@ -63,12 +64,12 @@ test("BQ25895 CE and GND traces touch along parallel segments", () => {
     (trace) => trace.userNetId === "J3.pin6 to U1.CE",
   )
   const groundTraces = traces.filter((trace) => trace.userNetId === "GND")
-  const hasTouchingCeAndGroundSegments = ceTraces.some((ceTrace) =>
+  const hasInsufficientCeAndGroundClearance = ceTraces.some((ceTrace) =>
     groundTraces.some((groundTrace) =>
-      tracesHaveTouchingParallelSegments(ceTrace, groundTrace),
+      tracesHaveInsufficientParallelClearance(ceTrace, groundTrace),
     ),
   )
 
-  expect(hasTouchingCeAndGroundSegments).toBe(true)
+  expect(hasInsufficientCeAndGroundClearance).toBe(false)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
