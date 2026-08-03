@@ -31,5 +31,9 @@ test("repro nRF52810 HF and LF crystal trace/net-label routing", () => {
   expect(
     solver.sameNetJunctionAlignmentSolver?.getOutput().netLabelPlacements,
   ).toHaveLength(10)
+  expect(solver.mspConnectionPairSolver!).toMatchSolverSnapshot(
+    import.meta.path,
+    "repro-nrf52810-clock-routing-msp-pairs",
+  )
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
