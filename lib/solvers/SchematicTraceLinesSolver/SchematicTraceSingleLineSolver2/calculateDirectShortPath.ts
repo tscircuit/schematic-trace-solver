@@ -7,6 +7,12 @@ const MAX_SHORT_TRACE_DISTANCE = 0.15
 const SHORT_TRACE_OVERSHOOT = MAX_SHORT_TRACE_DISTANCE / 7.5
 const FALLBACK_ELBOW_MAX_OVERSHOOT = 0.2
 
+const getAdaptiveOvershoot = (routingDistance: number) =>
+  Math.min(
+    FALLBACK_ELBOW_MAX_OVERSHOOT,
+    Math.max(SHORT_TRACE_OVERSHOOT, routingDistance / 4),
+  )
+
 export function segmentDirection(
   from: Point,
   to: Point,
@@ -37,6 +43,78 @@ export function pathMatchesPinDirections({
     firstDirection === pin1._facingDirection &&
     lastDirection === pin2._facingDirection
   )
+}
+
+const moveInDirection = (
+  point: Point,
+  direction: FacingDirection,
+  distance: number,
+): Point => {
+  switch (direction) {
+    case "x+":
+      return { x: point.x + distance, y: point.y }
+    case "x-":
+      return { x: point.x - distance, y: point.y }
+    case "y+":
+      return { x: point.x, y: point.y + distance }
+    case "y-":
+      return { x: point.x, y: point.y - distance }
+  }
+}
+
+/**
+ * Routes aligned pins with perpendicular facing directions consistently.
+ *
+ * The generic elbow calculation can put the internal jog anywhere between
+ * aligned endpoints. Keeping the long rail on the side-facing pin's escape
+ * coordinate and the short jog beside the axis-facing destination produces a
+ * much clearer route, especially for crystal load capacitors.
+ */
+export function calculateAlignedOrthogonalRoute(
+  pin1: MspConnectionPair["pins"][number],
+  pin2: MspConnectionPair["pins"][number],
+): Point[] | null {
+  const sharesX = pin1.x === pin2.x
+  const sharesY = pin1.y === pin2.y
+  if (sharesX === sharesY) return null
+
+  const pin1Axis = pin1._facingDirection?.[0]
+  const pin2Axis = pin2._facingDirection?.[0]
+  if (!pin1Axis || !pin2Axis || pin1Axis === pin2Axis) return null
+
+  const directAxis = sharesX ? "y" : "x"
+  const perpendicularPin = pin1Axis === directAxis ? pin2 : pin1
+  const axisFacingPin = perpendicularPin === pin1 ? pin2 : pin1
+  if (
+    perpendicularPin._facingDirection![0] === directAxis ||
+    axisFacingPin._facingDirection![0] !== directAxis
+  ) {
+    return null
+  }
+
+  const routingDistance = Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
+  const overshoot = getAdaptiveOvershoot(routingDistance)
+  const start = { x: perpendicularPin.x, y: perpendicularPin.y }
+  const end = { x: axisFacingPin.x, y: axisFacingPin.y }
+  const escape = moveInDirection(
+    start,
+    perpendicularPin._facingDirection!,
+    overshoot,
+  )
+  const approach = moveInDirection(
+    end,
+    axisFacingPin._facingDirection!,
+    overshoot,
+  )
+  const railEnd = sharesX
+    ? { x: escape.x, y: approach.y }
+    : { x: approach.x, y: escape.y }
+  const path = [start, escape, railEnd, approach, end]
+  const orderedPath = perpendicularPin === pin1 ? path : [...path].reverse()
+
+  return pathMatchesPinDirections({ path: orderedPath, pin1, pin2 })
+    ? orderedPath
+    : null
 }
 
 /**
@@ -152,10 +230,7 @@ export function calculateDirectShortPath(
       facingDirection: pin2._facingDirection!,
     },
     {
-      overshoot: Math.min(
-        FALLBACK_ELBOW_MAX_OVERSHOOT,
-        Math.max(SHORT_TRACE_OVERSHOOT, routingDistance / 4),
-      ),
+      overshoot: getAdaptiveOvershoot(routingDistance),
     },
   )
 }

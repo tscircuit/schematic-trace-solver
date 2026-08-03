@@ -25,5 +25,18 @@ test("repro crystal with load capacitors routes XIN, XOUT, GND nets", () => {
   expect(solver.schematicTraceLinesSolver?.failedConnectionPairs).toHaveLength(
     0,
   )
+  const crystalLoadTraces =
+    solver.sameNetJunctionAlignmentSolver!.outputTraces.filter((trace) =>
+      ["XIN", "XOUT"].includes(trace.userNetId ?? ""),
+    )
+  expect(crystalLoadTraces).toHaveLength(2)
+  for (const trace of crystalLoadTraces) {
+    const capacitorPin = trace.pins.find((pin) => pin.pinId.startsWith("C"))!
+    const approachPoint =
+      trace.pins[1].pinId === capacitorPin.pinId
+        ? trace.tracePath.at(-2)!
+        : trace.tracePath[1]!
+    expect(approachPoint.y).toBeCloseTo(capacitorPin.y + 0.2)
+  }
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

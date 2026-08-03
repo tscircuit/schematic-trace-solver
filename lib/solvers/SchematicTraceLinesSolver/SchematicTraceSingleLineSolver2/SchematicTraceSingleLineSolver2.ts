@@ -9,7 +9,10 @@ import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
 import { getTextBoxBounds, type RectPadding } from "lib/utils/textBoxBounds"
 import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
-import { calculateDirectShortPath } from "./calculateDirectShortPath"
+import {
+  calculateAlignedOrthogonalRoute,
+  calculateDirectShortPath,
+} from "./calculateDirectShortPath"
 import {
   findFirstCollision,
   isHorizontal,
@@ -77,6 +80,36 @@ const pinsFaceEachOther = ({
     : pin1._facingDirection === "y-" && pin2._facingDirection === "y+"
 }
 
+const isCompactPeripheralNamedNet = ({
+  pins,
+  inputProblem,
+  chipMap,
+}: {
+  pins: MspConnectionPair["pins"]
+  inputProblem: InputProblem
+  chipMap: Record<string, InputChip>
+}) => {
+  const [pin1, pin2] = pins
+  const sharesX = pin1.x === pin2.x
+  const sharesY = pin1.y === pin2.y
+  if (sharesX === sharesY) return false
+
+  const directAxis = sharesX ? "y" : "x"
+  const perpendicularPin =
+    pin1._facingDirection?.[0] === directAxis ? pin2 : pin1
+  const peripheralPinCount = chipMap[perpendicularPin.chipId]?.pins.length
+  const isCompactPeripheral =
+    peripheralPinCount === 2 || peripheralPinCount === 4
+  const sharesNamedNet = inputProblem.netConnections.some((connection) =>
+    pins.every((pin) => connection.pinIds.includes(pin.pinId)),
+  )
+  const isExplicitDirectConnection = inputProblem.directConnections.some(
+    (connection) => pins.every((pin) => connection.pinIds.includes(pin.pinId)),
+  )
+
+  return isCompactPeripheral && sharesNamedNet && !isExplicitDirectConnection
+}
+
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
   connectionPair?: MspConnectionPair
@@ -137,6 +170,13 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     const [pin1, pin2] = this.pins
     const directShortPath = calculateDirectShortPath(pin1, pin2)
+    const alignedOrthogonalRoute = isCompactPeripheralNamedNet({
+      pins: this.pins,
+      inputProblem: this.inputProblem,
+      chipMap: this.chipMap,
+    })
+      ? calculateAlignedOrthogonalRoute(pin1, pin2)
+      : null
     const defaultElbow = calculateElbowForPins({
       pin1,
       pin2,
@@ -164,6 +204,9 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     this.baseElbow = defaultElbow
     if (shouldUseAdaptiveElbow) {
       this.baseElbow = adaptiveElbow
+    }
+    if (alignedOrthogonalRoute) {
+      this.baseElbow = alignedOrthogonalRoute
     }
     if (directShortPath) {
       this.baseElbow = directShortPath

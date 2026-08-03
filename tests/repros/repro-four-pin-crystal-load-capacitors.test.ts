@@ -43,10 +43,23 @@ const createFourPinCrystalInput = (): InputProblem => {
   return input
 }
 
-test("repro four-pin crystal with load capacitors", () => {
+test("four-pin crystal keeps both load-capacitor jogs beside the capacitors", () => {
   const solver = new SchematicTracePipelineSolver(createFourPinCrystalInput())
 
   solver.solve()
 
+  const crystalLoadTraces =
+    solver.sameNetJunctionAlignmentSolver!.outputTraces.filter((trace) =>
+      ["XIN", "XOUT"].includes(trace.userNetId ?? ""),
+    )
+  expect(crystalLoadTraces).toHaveLength(2)
+  for (const trace of crystalLoadTraces) {
+    const capacitorPin = trace.pins.find((pin) => pin.pinId.startsWith("C"))!
+    const approachPoint =
+      trace.pins[1].pinId === capacitorPin.pinId
+        ? trace.tracePath.at(-2)!
+        : trace.tracePath[1]!
+    expect(approachPoint.y).toBeCloseTo(capacitorPin.y + 0.2)
+  }
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
