@@ -3,6 +3,7 @@ import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetL
 import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 
+// Insetting distinguishes harmless edge contact from entering the label body.
 const NET_LABEL_INTERIOR_INSET = 1e-6
 
 export const pathIntersectsAnyNetLabel = ({

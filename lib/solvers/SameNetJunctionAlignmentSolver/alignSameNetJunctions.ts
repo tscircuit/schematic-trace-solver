@@ -28,7 +28,9 @@ interface HorizontalSegment {
   end: Point
 }
 
+// Only near-level load pins should be combined onto one horizontal rail.
 const MAX_ALIGNED_LOAD_PIN_OFFSET = 0.2
+// Limit label-boundary alignment to small corrections that cannot create spikes.
 const MAX_SAME_NET_LABEL_BOUNDARY_RAIL_OFFSET = 0.2
 
 const getSharedPin = ({
@@ -177,6 +179,7 @@ const candidateIsClear = ({
   const sameNetLabelPlacements = netLabelPlacements.filter(
     (label) => label.globalConnNetId === candidateTrace.globalConnNetId,
   )
+  // A same-net rail may follow its label edge, but never enter the label body.
   if (
     !pathIntersectsAnyNetLabel({
       path: candidateTrace.tracePath,
