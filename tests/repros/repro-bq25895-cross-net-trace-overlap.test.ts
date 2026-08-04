@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { getTraceCorners } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE } from "lib/utils/doesPathCoincideWithTraces"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-bq25895-cross-net-trace-overlap.input.json"
@@ -71,5 +72,17 @@ test("BQ25895 CE and GND traces keep visible parallel clearance", () => {
   )
 
   expect(hasInsufficientCeAndGroundClearance).toBe(false)
+
+  const output = solver.netLabelTraceCollisionSolver!.getOutput()
+  const groundLabel = output.netLabelPlacements.find(
+    (label) => label.netId === "GND",
+  )!
+  const groundLabelTrace = output.traces.find((trace) =>
+    groundLabel.mspConnectionPairIds.includes(trace.mspPairId),
+  )!
+
+  expect(getTraceCorners(groundLabelTrace.tracePath)).toContainEqual(
+    groundLabel.anchorPoint,
+  )
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

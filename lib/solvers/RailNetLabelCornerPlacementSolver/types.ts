@@ -21,11 +21,11 @@ export type TraceCornerCandidate = {
   traceId: string
   distance: number
   /**
-   * True when the corner lines up with one of the trace's pins along the
-   * label's stub axis (same x for a vertical rail label), so the label reads as
-   * a clean stub off that pin rather than floating over a mid-trace bend.
+   * True when the corner is on a vertical rail that connects directly to one
+   * of the trace's endpoint pins, rather than on an arbitrary middle bend.
    */
   pinAligned: boolean
+  reroutedTracePath?: Point[]
 }
 
 export type CornerCandidateStatus =

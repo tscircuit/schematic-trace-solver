@@ -22,6 +22,7 @@ import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePa
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
 import { Example28Solver } from "../Example28Solver/Example28Solver"
+import { moveAttachedLabelsToReroutedTrace } from "../Example28Solver/labelMovement"
 import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
 import { RailNetLabelCornerPlacementSolver } from "../RailNetLabelCornerPlacementSolver/RailNetLabelCornerPlacementSolver"
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
@@ -325,9 +326,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => [
         {
           inputProblem: instance.inputProblem,
-          traces: Object.values(
-            instance.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
-          ),
+          traces:
+            instance.railNetLabelCornerPlacementSolver!.getOutput().traces,
           netLabelPlacements:
             instance.railNetLabelCornerPlacementSolver!
               .outputNetLabelPlacements,
@@ -340,9 +340,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => [
         {
           inputProblem: instance.inputProblem,
-          traces: Object.values(
-            instance.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
-          ),
+          traces:
+            instance.railNetLabelCornerPlacementSolver!.getOutput().traces,
           netLabelPlacements:
             instance.traceAnchoredNetLabelOverlapSolver!
               .outputNetLabelPlacements,
@@ -379,14 +378,40 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       "netLabelTraceCollisionSolver",
       NetLabelTraceCollisionSolver,
       (instance) => {
-        const previousCollisionOutput =
+        const previousOutput =
           instance.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
+        const alignmentOutput = instance.traceCleanupSolver2!.getOutput()
+        const previousTraceMap = new Map(
+          previousOutput.traces.map((trace) => [trace.mspPairId, trace]),
+        )
+        let netLabelPlacements = previousOutput.netLabelPlacements
+
+        for (const trace of alignmentOutput.traces) {
+          const previousTrace = previousTraceMap.get(trace.mspPairId)
+          if (!previousTrace || previousTrace.tracePath === trace.tracePath) {
+            continue
+          }
+
+          const currentLabels = netLabelPlacements
+          const movedLabels = moveAttachedLabelsToReroutedTrace({
+            trace: previousTrace,
+            originalTracePath: previousTrace.tracePath,
+            reroutedTracePath: trace.tracePath,
+            netLabelPlacements: currentLabels,
+          })
+          netLabelPlacements = movedLabels.map((movedLabel, labelIndex) => {
+            const label = currentLabels[labelIndex]!
+            return label.orientation === "y+" || label.orientation === "y-"
+              ? movedLabel
+              : label
+          })
+        }
 
         return [
           {
             inputProblem: instance.inputProblem,
-            traces: instance.traceCleanupSolver2!.getOutput().traces,
-            netLabelPlacements: previousCollisionOutput.netLabelPlacements,
+            traces: alignmentOutput.traces,
+            netLabelPlacements,
           },
         ]
       },
