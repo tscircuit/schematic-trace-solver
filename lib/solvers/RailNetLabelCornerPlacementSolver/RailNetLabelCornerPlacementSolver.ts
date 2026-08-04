@@ -1,13 +1,19 @@
 import type { GraphicsObject } from "graphics-debug"
+import type { Point } from "@tscircuit/math-utils"
 import { traceCrossesBoundsInterior } from "lib/solvers/AvailableNetOrientationSolver/geometry"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import type { InputProblem } from "lib/types/InputProblem"
+import { doesPathOverlapTraceStrokes } from "lib/utils/doesPathCoincideWithTraces"
 import {
   EPS,
   getDistance,
@@ -95,6 +101,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
 
   getOutput() {
     return {
+      traces: this.traces,
       netLabelPlacements: this.outputNetLabelPlacements,
     }
   }
@@ -163,7 +170,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       center,
       width: label.width,
       height: label.height,
-      status: this.getCandidateStatus(bounds, labelIndex),
+      status: this.getCandidateStatus(bounds, labelIndex, candidate),
       selected: false,
     }
   }
@@ -171,11 +178,27 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   private getCandidateStatus(
     bounds: Bounds,
     labelIndex: number,
+    candidate: TraceCornerCandidate,
   ): CornerCandidateStatus {
     if (this.intersectsAnyChip(bounds)) return "chip-collision"
     if (rectIntersectsAnyTextBox(bounds, this.inputProblem))
       return "text-collision"
-    if (traceCrossesBoundsInterior(bounds, this.traceMap)) {
+    const candidateTraceMap = candidate.reroutedTracePath
+      ? {
+          ...this.traceMap,
+          [candidate.traceId]: {
+            ...this.traceMap[candidate.traceId]!,
+            tracePath: candidate.reroutedTracePath,
+          },
+        }
+      : this.traceMap
+    if (traceCrossesBoundsInterior(bounds, candidateTraceMap)) {
+      return "trace-collision"
+    }
+    if (
+      candidate.reroutedTracePath &&
+      !this.isReroutedTraceClear(candidate, labelIndex)
+    ) {
       return "trace-collision"
     }
     if (this.intersectsAnyOtherNetLabel(bounds, labelIndex)) {
@@ -190,6 +213,24 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     label: NetLabelPlacement,
     candidate: EvaluatedCornerCandidate,
   ) {
+    if (candidate.reroutedTracePath) {
+      const originalTrace = this.traceMap[candidate.traceId]!
+      const reroutedTrace = {
+        ...originalTrace,
+        tracePath: candidate.reroutedTracePath,
+      }
+      this.traces = this.traces.map((trace) =>
+        trace.mspPairId === candidate.traceId ? reroutedTrace : trace,
+      )
+      this.traceMap[candidate.traceId] = reroutedTrace
+      this.outputNetLabelPlacements = moveAttachedLabelsToReroutedTrace({
+        trace: originalTrace,
+        originalTracePath: originalTrace.tracePath,
+        reroutedTracePath: candidate.reroutedTracePath,
+        netLabelPlacements: this.outputNetLabelPlacements,
+      })
+    }
+
     this.outputNetLabelPlacements[labelIndex] = {
       ...label,
       anchorPoint: candidate.anchorPoint,
@@ -225,36 +266,197 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   }
 
   private getCornerCandidatesForLabel(label: NetLabelPlacement) {
-    const isVertical = label.orientation === "y+" || label.orientation === "y-"
-    const candidates: TraceCornerCandidate[] = []
-    const seenCornerKeys = new Set<string>()
+    const anchorAlignedCandidates: TraceCornerCandidate[] = []
+    const railAlignedCandidates: TraceCornerCandidate[] = []
+    const labelTraces = this.getTraceLinesForLabel(label)
+    const allowRailAlignedFallback =
+      this.isConfiguredRailLabel(label) &&
+      !labelTraces.some((trace) =>
+        getTraceCorners(trace.tracePath).some((corner) =>
+          this.pointsEqual(corner, label.anchorPoint),
+        ),
+      )
 
-    for (const trace of this.getTraceLinesForLabel(label)) {
+    for (const trace of labelTraces) {
       const path = trace.tracePath
       const pins = [path[0]!, path[path.length - 1]!]
       for (const anchorPoint of getTraceCorners(path)) {
-        const key = `${anchorPoint.x}:${anchorPoint.y}`
-        if (seenCornerKeys.has(key)) continue
-        seenCornerKeys.add(key)
-        const pinAligned = pins.some((pin) => {
-          if (isVertical) return Math.abs(pin.x - anchorPoint.x) < EPS
-          return Math.abs(pin.y - anchorPoint.y) < EPS
-        })
-        // Only pin-aligned corners are worth snapping a rail label to (a clean
-        // stub off a pin). Non-aligned corners are no better than where the
-        // label already is, so they aren't offered as candidates — this keeps
-        // already-well-placed labels untouched.
+        const cornerIndex = path.indexOf(anchorPoint)
+        const anchorAlignedToPin = pins.some(
+          (pin) => Math.abs(pin.x - anchorPoint.x) <= EPS,
+        )
+        const pinAligned =
+          anchorAlignedToPin ||
+          (allowRailAlignedFallback &&
+            this.isPinAlignedCorner(path, cornerIndex))
         if (!pinAligned) continue
-        candidates.push({
+
+        const candidates = anchorAlignedToPin
+          ? anchorAlignedCandidates
+          : railAlignedCandidates
+        candidates.push(
+          {
+            anchorPoint,
+            traceId: trace.mspPairId,
+            distance: getDistance(anchorPoint, label.anchorPoint),
+            pinAligned,
+          },
+          ...this.getClearanceShiftedCornerCandidates({
+            label,
+            trace,
+            cornerIndex,
+            pinAligned,
+          }),
+        )
+      }
+    }
+
+    return [
+      ...anchorAlignedCandidates.sort((a, b) => a.distance - b.distance),
+      ...railAlignedCandidates.sort((a, b) => a.distance - b.distance),
+    ]
+  }
+
+  private isConfiguredRailLabel(label: NetLabelPlacement) {
+    if (!label.netId) return false
+    return this.inputProblem.availableNetLabelOrientations[label.netId]?.some(
+      (orientation) => orientation === "y+" || orientation === "y-",
+    )
+  }
+
+  private pointsEqual(a: Point, b: Point) {
+    return Math.abs(a.x - b.x) <= EPS && Math.abs(a.y - b.y) <= EPS
+  }
+
+  private getVerticalSegmentPointIndices(path: Point[], cornerIndex: number) {
+    const corner = path[cornerIndex]!
+    const previousIsVertical =
+      Math.abs(path[cornerIndex - 1]!.x - corner.x) <= EPS
+    const nextIsVertical = Math.abs(path[cornerIndex + 1]!.x - corner.x) <= EPS
+    if (previousIsVertical === nextIsVertical) return null
+
+    const indices = previousIsVertical
+      ? [cornerIndex - 1, cornerIndex]
+      : [cornerIndex, cornerIndex + 1]
+    return indices
+  }
+
+  private isPinAlignedCorner(path: Point[], cornerIndex: number) {
+    const verticalPointIndices = this.getVerticalSegmentPointIndices(
+      path,
+      cornerIndex,
+    )
+    if (!verticalPointIndices) return false
+
+    const [startIndex, endIndex] = verticalPointIndices
+    return startIndex! <= 1 || endIndex! >= path.length - 2
+  }
+
+  private getClearanceShiftedCornerCandidates({
+    label,
+    trace,
+    cornerIndex,
+    pinAligned,
+  }: {
+    label: NetLabelPlacement
+    trace: SolvedTracePath
+    cornerIndex: number
+    pinAligned: boolean
+  }): TraceCornerCandidate[] {
+    if (label.orientation !== "y+" && label.orientation !== "y-") return []
+
+    const path = trace.tracePath
+    const corner = path[cornerIndex]!
+    const verticalPointIndices = this.getVerticalSegmentPointIndices(
+      path,
+      cornerIndex,
+    )
+    if (
+      !verticalPointIndices ||
+      verticalPointIndices.includes(0) ||
+      verticalPointIndices.includes(path.length - 1)
+    ) {
+      return []
+    }
+
+    const center = getCenterFromAnchor(
+      corner,
+      label.orientation,
+      label.width,
+      label.height,
+    )
+    const labelBounds = getRectBounds(center, label.width, label.height)
+    const collidingChipBounds = this.inputProblem.chips
+      .map((chip) => getRectBounds(chip.center, chip.width, chip.height))
+      .filter((chipBounds) => rectsOverlap(labelBounds, chipBounds))
+    const shiftedCoordinates = new Set<number>()
+    for (const chipBounds of collidingChipBounds) {
+      shiftedCoordinates.add(chipBounds.minX - label.width / 2)
+      shiftedCoordinates.add(chipBounds.maxX + label.width / 2)
+    }
+
+    return [...shiftedCoordinates].flatMap((x) => {
+      if (Math.abs(x - corner.x) <= EPS) return []
+      const reroutedTracePath = simplifyPath(
+        path.map((point, pointIndex) =>
+          verticalPointIndices.includes(pointIndex) ? { ...point, x } : point,
+        ),
+      )
+      const anchorPoint = { x, y: corner.y }
+      const remainsCorner = getTraceCorners(reroutedTracePath).some((point) =>
+        this.pointsEqual(point, anchorPoint),
+      )
+      if (!remainsCorner) return []
+
+      return [
+        {
           anchorPoint,
           traceId: trace.mspPairId,
           distance: getDistance(anchorPoint, label.anchorPoint),
           pinAligned,
-        })
-      }
+          reroutedTracePath,
+        },
+      ]
+    })
+  }
+
+  private isReroutedTraceClear(
+    candidate: TraceCornerCandidate,
+    labelIndex: number,
+  ) {
+    const reroutedTracePath = candidate.reroutedTracePath!
+    if (
+      isPathCollidingWithObstacles(
+        reroutedTracePath,
+        getObstacleRects(this.inputProblem),
+      )
+    ) {
+      return false
     }
 
-    return candidates.sort((a, b) => a.distance - b.distance)
+    const candidateTrace = this.traceMap[candidate.traceId]!
+    const otherNetTraces = this.traces.filter(
+      (trace) =>
+        trace.mspPairId !== candidate.traceId &&
+        trace.globalConnNetId !== candidateTrace.globalConnNetId,
+    )
+    if (doesPathOverlapTraceStrokes(reroutedTracePath, otherNetTraces)) {
+      return false
+    }
+
+    const reroutedTraceMap = {
+      [candidate.traceId]: {
+        ...candidateTrace,
+        tracePath: reroutedTracePath,
+      },
+    }
+    return this.outputNetLabelPlacements.every((label, index) => {
+      if (index === labelIndex) return true
+      return !traceCrossesBoundsInterior(
+        getRectBounds(label.center, label.width, label.height),
+        reroutedTraceMap,
+      )
+    })
   }
 
   private getTraceLinesForLabel(label: NetLabelPlacement) {

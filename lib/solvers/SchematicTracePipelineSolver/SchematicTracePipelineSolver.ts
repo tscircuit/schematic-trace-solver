@@ -326,9 +326,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => [
         {
           inputProblem: instance.inputProblem,
-          traces: Object.values(
-            instance.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
-          ),
+          traces:
+            instance.railNetLabelCornerPlacementSolver!.getOutput().traces,
           netLabelPlacements:
             instance.railNetLabelCornerPlacementSolver!
               .outputNetLabelPlacements,
@@ -341,9 +340,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => [
         {
           inputProblem: instance.inputProblem,
-          traces: Object.values(
-            instance.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
-          ),
+          traces:
+            instance.railNetLabelCornerPlacementSolver!.getOutput().traces,
           netLabelPlacements:
             instance.traceAnchoredNetLabelOverlapSolver!
               .outputNetLabelPlacements,
