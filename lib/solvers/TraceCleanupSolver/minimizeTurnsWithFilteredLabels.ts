@@ -9,6 +9,7 @@ import {
   getVisibleTraceSegmentCount,
   RAIL_ALIGNMENT_EPSILON,
 } from "./sameNetRailAlignment/geometry"
+import { shortenExcessiveLabelPaddingDetour } from "./shortenExcessiveLabelPaddingDetour"
 
 /**
  * Minimizes turns with a strict pass that treats every other trace as an
@@ -31,12 +32,16 @@ export const minimizeTurnsWithFilteredLabels = ({
   mergedLabelNetIdMap: Record<string, Set<string>>
   paddingBuffer: number
 }): SolvedTracePath => {
-  const targetTrace = traces.find(
+  const originalTargetTrace = traces.find(
     (t) => t.mspPairId === targetMspConnectionPairId,
   )
-  if (!targetTrace) {
+  if (!originalTargetTrace) {
     throw new Error(`Target trace ${targetMspConnectionPairId} not found`)
   }
+  const targetTrace = shortenExcessiveLabelPaddingDetour({
+    inputProblem,
+    trace: originalTargetTrace,
+  })
 
   const targetPinIds = new Set(targetTrace.pinIds)
   const otherTraces = traces.filter(

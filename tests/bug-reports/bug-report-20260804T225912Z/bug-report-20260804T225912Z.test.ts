@@ -10,8 +10,9 @@ test("bug-report-20260804T225912Z", () => {
 
   solver.solve()
 
-  const chipToCapacitorTrace =
-    solver.schematicTraceLinesSolver?.solvedTracePaths.find(
+  const chipToCapacitorTrace = solver.traceCleanupSolver
+    ?.getOutput()
+    .traces.find(
       (trace) =>
         trace.pinIds.includes("schematic_port_4") &&
         trace.pinIds.includes("schematic_port_2"),
