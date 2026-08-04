@@ -252,7 +252,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     const pinIds = this.pins.map((p) => p.pinId)
     const dcWidthByPinId = this.inputProblem.directConnections.find((dc) =>
-      dc.pinIds.some((pid) => pinIds.includes(pid)),
+      dc.pinIds.every((pid) => pinIds.includes(pid)),
     )?.netLabelWidth
     if (dcWidthByPinId !== undefined) return dcWidthByPinId
 
