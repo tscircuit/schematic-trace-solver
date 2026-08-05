@@ -12,7 +12,10 @@ import {
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
-import { pathIntersectsAnyNetLabel } from "./pathIntersectsAnyNetLabel"
+import {
+  pathEntersAnyNetLabel,
+  pathIntersectsAnyNetLabel,
+} from "./pathIntersectsAnyNetLabel"
 
 interface AlignSameNetJunctionsInput {
   inputProblem: InputProblem
@@ -25,7 +28,10 @@ interface HorizontalSegment {
   end: Point
 }
 
+// Only near-level load pins should be combined onto one horizontal rail.
 const MAX_ALIGNED_LOAD_PIN_OFFSET = 0.2
+// Limit label-boundary alignment to small corrections that cannot create spikes.
+const MAX_SAME_NET_LABEL_BOUNDARY_RAIL_OFFSET = 0.2
 
 const getSharedPin = ({
   donorTrace,
@@ -135,11 +141,13 @@ const getAlignedBranchPath = ({
 
 const candidateIsClear = ({
   candidateTrace,
+  originalTrace,
   traces,
   inputProblem,
   netLabelPlacements,
 }: {
   candidateTrace: SolvedTracePath
+  originalTrace: SolvedTracePath
   traces: SolvedTracePath[]
   inputProblem: InputProblem
   netLabelPlacements: NetLabelPlacement[]
@@ -156,10 +164,46 @@ const candidateIsClear = ({
     return false
   }
 
-  return !pathIntersectsAnyNetLabel({
-    path: candidateTrace.tracePath,
-    netLabelPlacements,
-  })
+  const otherNetLabelPlacements = netLabelPlacements.filter(
+    (label) => label.globalConnNetId !== candidateTrace.globalConnNetId,
+  )
+  if (
+    pathIntersectsAnyNetLabel({
+      path: candidateTrace.tracePath,
+      netLabelPlacements: otherNetLabelPlacements,
+    })
+  ) {
+    return false
+  }
+
+  const sameNetLabelPlacements = netLabelPlacements.filter(
+    (label) => label.globalConnNetId === candidateTrace.globalConnNetId,
+  )
+  // A same-net rail may follow its label edge, but never enter the label body.
+  if (
+    !pathIntersectsAnyNetLabel({
+      path: candidateTrace.tracePath,
+      netLabelPlacements: sameNetLabelPlacements,
+    })
+  ) {
+    return true
+  }
+  if (
+    pathEntersAnyNetLabel({
+      path: candidateTrace.tracePath,
+      netLabelPlacements: sameNetLabelPlacements,
+    })
+  ) {
+    return false
+  }
+
+  const originalRail = getLongestHorizontalSegment(originalTrace)
+  const candidateRail = getLongestHorizontalSegment(candidateTrace)
+  if (!originalRail || !candidateRail) return false
+  return (
+    Math.abs(originalRail.start.y - candidateRail.start.y) <=
+    MAX_SAME_NET_LABEL_BOUNDARY_RAIL_OFFSET
+  )
 }
 
 export const alignSameNetJunctions = ({
@@ -202,6 +246,7 @@ export const alignSameNetJunctions = ({
       if (
         !candidateIsClear({
           candidateTrace,
+          originalTrace: branchTrace,
           traces: outputTraces,
           inputProblem,
           netLabelPlacements,
