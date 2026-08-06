@@ -48,6 +48,12 @@ export interface InputDirectConnection {
   allowInlineNetLabel?: boolean
 
   /**
+   * Extent of the inline net label along the trace. Falls back to
+   * `netLabelWidth`, then to an estimate from the netId text.
+   */
+  inlineNetLabelWidth?: number
+
+  /**
    * Height of the inline net label text. Defaults to
    * DEFAULT_INLINE_NET_LABEL_HEIGHT.
    */

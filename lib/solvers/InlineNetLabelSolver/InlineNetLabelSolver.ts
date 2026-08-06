@@ -11,7 +11,10 @@ import type {
 } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
-import { getLongestAxisAlignedSegment } from "./getLongestAxisAlignedSegment"
+import {
+  type AxisAlignedSegment,
+  getAxisAlignedSegments,
+} from "./getAxisAlignedSegments"
 
 export const DEFAULT_INLINE_NET_LABEL_HEIGHT = 0.18
 
@@ -19,6 +22,14 @@ export const DEFAULT_INLINE_NET_LABEL_HEIGHT = 0.18
  * Gap between the trace and the near edge of the inline label text.
  */
 export const INLINE_NET_LABEL_TRACE_MARGIN = 0.05
+
+/**
+ * How much of the label is allowed to hang off the end of the wire it names,
+ * as a fraction of the label's length. A short elbow stub is technically clear
+ * of every obstacle but reads as a label floating in space, so runs shorter
+ * than this are not considered.
+ */
+export const MIN_INLINE_NET_LABEL_SEGMENT_RATIO = 0.5
 
 /**
  * A net label drawn parallel to the trace it names, rather than anchored to the
@@ -142,77 +153,88 @@ export class InlineNetLabelSolver extends BaseSolver {
     if (traces.length === 0) return null
 
     const trace = traces[0]!
-    const segment = getLongestAxisAlignedSegment(trace.tracePath)
-    if (!segment) return null
+    const segments = getAxisAlignedSegments(trace.tracePath)
+    if (segments.length === 0) return null
 
     const height =
       directConnection.inlineNetLabelHeight ?? DEFAULT_INLINE_NET_LABEL_HEIGHT
     const width =
+      directConnection.inlineNetLabelWidth ??
       directConnection.netLabelWidth ??
       estimateInlineNetLabelWidth(directConnection.netId!, height)
 
-    const anchorPoint = {
-      x: (segment.start.x + segment.end.x) / 2,
-      y: (segment.start.y + segment.end.y) / 2,
-    }
-
     const offset = height / 2 + INLINE_NET_LABEL_TRACE_MARGIN
-    // "Above" the trace: +y for a horizontal trace, and -x for a vertical one
-    // (rotating the text 90deg counter-clockwise maps "above" onto the left).
-    const preferredSide: InlineNetLabelPlacement["side"] =
-      segment.axis === "x" ? "y+" : "x-"
-    const oppositeSide: InlineNetLabelPlacement["side"] =
-      segment.axis === "x" ? "y-" : "x+"
 
-    const centerForSide = (side: InlineNetLabelPlacement["side"]): Point =>
-      side === "y+"
-        ? { x: anchorPoint.x, y: anchorPoint.y + offset }
-        : side === "y-"
-          ? { x: anchorPoint.x, y: anchorPoint.y - offset }
-          : side === "x-"
-            ? { x: anchorPoint.x - offset, y: anchorPoint.y }
-            : { x: anchorPoint.x + offset, y: anchorPoint.y }
+    // Runs the label fully fits on come first, then longer-to-shorter among the
+    // runs it may overhang. Within a run, try the preferred side before the far
+    // side, and positions near the middle before ones near the ends.
+    const usableSegments = segments
+      .filter(
+        (segment) =>
+          segment.length >= width * MIN_INLINE_NET_LABEL_SEGMENT_RATIO,
+      )
+      .sort((a, b) => {
+        const aFits = a.length >= width
+        const bFits = b.length >= width
+        if (aFits !== bFits) return aFits ? -1 : 1
+        return b.length - a.length
+      })
 
-    const boundsForCenter = (center: Point): Bounds => {
-      const halfAlong = width / 2
-      const halfAcross = height / 2
-      return segment.axis === "x"
-        ? {
-            minX: center.x - halfAlong,
-            maxX: center.x + halfAlong,
-            minY: center.y - halfAcross,
-            maxY: center.y + halfAcross,
+    for (const segment of usableSegments) {
+      // "Above" the trace: +y for a horizontal trace, and -x for a vertical one
+      // (rotating the text 90deg counter-clockwise maps "above" onto the left).
+      const sides: InlineNetLabelPlacement["side"][] =
+        segment.axis === "x" ? ["y+", "y-"] : ["x-", "x+"]
+
+      for (const side of sides) {
+        for (const anchorPoint of getAnchorCandidates(segment, width)) {
+          const center =
+            side === "y+"
+              ? { x: anchorPoint.x, y: anchorPoint.y + offset }
+              : side === "y-"
+                ? { x: anchorPoint.x, y: anchorPoint.y - offset }
+                : side === "x-"
+                  ? { x: anchorPoint.x - offset, y: anchorPoint.y }
+                  : { x: anchorPoint.x + offset, y: anchorPoint.y }
+
+          const halfAlong = width / 2
+          const halfAcross = height / 2
+          const bounds: Bounds =
+            segment.axis === "x"
+              ? {
+                  minX: center.x - halfAlong,
+                  maxX: center.x + halfAlong,
+                  minY: center.y - halfAcross,
+                  maxY: center.y + halfAcross,
+                }
+              : {
+                  minX: center.x - halfAcross,
+                  maxX: center.x + halfAcross,
+                  minY: center.y - halfAlong,
+                  maxY: center.y + halfAlong,
+                }
+
+          if (this.isObstructed(bounds, trace)) continue
+
+          return {
+            globalConnNetId: trace.globalConnNetId,
+            netId: directConnection.netId,
+            mspPairId: trace.mspPairId,
+            pinIds: [...directConnection.pinIds],
+            axis: segment.axis,
+            anchorPoint,
+            center,
+            width,
+            height,
+            side,
           }
-        : {
-            minX: center.x - halfAcross,
-            maxX: center.x + halfAcross,
-            minY: center.y - halfAlong,
-            maxY: center.y + halfAlong,
-          }
-    }
-
-    let side: InlineNetLabelPlacement["side"] = preferredSide
-    let center = centerForSide(side)
-    if (this.isObstructed(boundsForCenter(center), trace)) {
-      const flippedCenter = centerForSide(oppositeSide)
-      if (!this.isObstructed(boundsForCenter(flippedCenter), trace)) {
-        side = oppositeSide
-        center = flippedCenter
+        }
       }
     }
 
-    return {
-      globalConnNetId: trace.globalConnNetId,
-      netId: directConnection.netId,
-      mspPairId: trace.mspPairId,
-      pinIds: [...directConnection.pinIds],
-      axis: segment.axis,
-      anchorPoint,
-      center,
-      width,
-      height,
-      side,
-    }
+    // No room anywhere along the trace. Leave the net to the regular anchored
+    // net label rather than drawing the name over a chip.
+    return null
   }
 
   /**
@@ -345,6 +367,44 @@ export const estimateInlineNetLabelWidth = (
 ) => {
   const fontScale = fontSize / 0.18
   return text.length * 0.12 * fontScale + 0.12 * fontScale
+}
+
+/**
+ * Points along a segment where the label's midpoint could sit, ordered from the
+ * middle of the segment outwards. Sliding the label along the wire lets it
+ * dodge a chip that only crowds one end.
+ *
+ * When the label is shorter than the segment, candidates are limited to
+ * positions that keep it fully on the wire; when it is longer, only the
+ * midpoint is offered (it will overhang either way).
+ */
+const getAnchorCandidates = (
+  segment: AxisAlignedSegment,
+  labelWidth: number,
+  step = 0.1,
+): Point[] => {
+  const along = segment.axis === "x" ? "x" : "y"
+  const start = segment.start[along]
+  const end = segment.end[along]
+  const mid = (start + end) / 2
+  const direction = Math.sign(end - start) || 1
+
+  const pointAt = (value: number): Point =>
+    segment.axis === "x"
+      ? { x: value, y: segment.start.y }
+      : { x: segment.start.x, y: segment.start.y + (value - start) }
+
+  const slack = segment.length - labelWidth
+  if (slack <= 0) return [pointAt(mid)]
+
+  const offsets: number[] = [0]
+  for (let offset = step; offset <= slack / 2 + 1e-9; offset += step) {
+    offsets.push(offset, -offset)
+  }
+  // Always consider both extremes, even when they fall between samples.
+  offsets.push(slack / 2, -slack / 2)
+
+  return offsets.map((offset) => pointAt(mid + offset * direction))
 }
 
 const doesPathIntersectBounds = (path: Point[], bounds: Bounds): boolean => {

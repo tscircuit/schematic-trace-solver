@@ -8,31 +8,34 @@ export interface AxisAlignedSegment {
 }
 
 /**
- * Returns the longest axis-aligned run of a trace path - the stretch of wire an
- * inline net label can sit alongside without crossing a corner.
+ * Splits a trace path into its axis-aligned runs - the straight stretches of
+ * wire an inline net label can sit alongside without crossing a corner -
+ * ordered longest first.
  *
- * Consecutive segments that continue in the same direction are merged first, so
- * a straight stretch that was split into several points still counts as one
- * run. A reversal (a trace doubling back on itself) starts a new run.
+ * Segments that continue in the same direction are merged, so a straight
+ * stretch split into several points counts as one run. A reversal (a trace
+ * doubling back on itself) starts a new run, and diagonal segments are dropped
+ * since they have no well-defined "parallel" direction.
  */
-export const getLongestAxisAlignedSegment = (
+export const getAxisAlignedSegments = (
   path: Point[],
   epsilon = 1e-6,
-): AxisAlignedSegment | null => {
-  let best: AxisAlignedSegment | null = null
+): AxisAlignedSegment[] => {
+  const segments: AxisAlignedSegment[] = []
 
   let runStart: Point | null = null
   let runAxis: "x" | "y" | null = null
   let runSign = 0
 
   const closeRun = (runEnd: Point) => {
-    if (!runStart || !runAxis) return
-    const length =
-      runAxis === "x"
-        ? Math.abs(runEnd.x - runStart.x)
-        : Math.abs(runEnd.y - runStart.y)
-    if (length > epsilon && (!best || length > best.length)) {
-      best = { start: runStart, end: runEnd, axis: runAxis, length }
+    if (runStart && runAxis) {
+      const length =
+        runAxis === "x"
+          ? Math.abs(runEnd.x - runStart.x)
+          : Math.abs(runEnd.y - runStart.y)
+      if (length > epsilon) {
+        segments.push({ start: runStart, end: runEnd, axis: runAxis, length })
+      }
     }
     runStart = null
     runAxis = null
@@ -45,8 +48,6 @@ export const getLongestAxisAlignedSegment = (
     const dx = b.x - a.x
     const dy = b.y - a.y
 
-    // Skip zero-length hops, and ignore diagonal segments (traces are
-    // orthogonal; a diagonal has no well-defined "parallel" direction).
     if (Math.abs(dx) <= epsilon && Math.abs(dy) <= epsilon) continue
     const axis: "x" | "y" | null =
       Math.abs(dy) <= epsilon ? "x" : Math.abs(dx) <= epsilon ? "y" : null
@@ -68,5 +69,5 @@ export const getLongestAxisAlignedSegment = (
     closeRun(path[path.length - 1]!)
   }
 
-  return best
+  return segments.sort((a, b) => b.length - a.length)
 }
