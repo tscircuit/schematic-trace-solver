@@ -61,6 +61,18 @@ const canJoinRailGroup = (
     tracesSharePin(current, candidate, traceMap)) &&
   corridorIsClear(current, candidate, obstacles)
 
+const omitLocalLoopWhenExternalRailsCanAlign = (group: RailSegment[]) => {
+  const externalSegments = group.filter(
+    (segment) => !segment.isIntraComponentConnection,
+  )
+  const externalTraceCount = new Set(
+    externalSegments.map((segment) => segment.traceId),
+  ).size
+  if (externalTraceCount < 2) return group
+
+  return externalSegments
+}
+
 export const getRailGroups = (
   traces: SolvedTracePath[],
   eligibleTraceIds: ReadonlySet<string>,
@@ -103,11 +115,14 @@ export const getRailGroups = (
       }
     }
 
-    const traceCount = new Set(group.map((segment) => segment.traceId)).size
-    const hasDifferentCoordinates = group.some(
-      (segment) => !nearlyEqual(segment.coordinate, group[0]!.coordinate),
+    const candidateGroup = omitLocalLoopWhenExternalRailsCanAlign(group)
+    const traceCount = new Set(candidateGroup.map((segment) => segment.traceId))
+      .size
+    const hasDifferentCoordinates = candidateGroup.some(
+      (segment) =>
+        !nearlyEqual(segment.coordinate, candidateGroup[0]!.coordinate),
     )
-    if (traceCount >= 2 && hasDifferentCoordinates) groups.push(group)
+    if (traceCount >= 2 && hasDifferentCoordinates) groups.push(candidateGroup)
   }
 
   return groups
