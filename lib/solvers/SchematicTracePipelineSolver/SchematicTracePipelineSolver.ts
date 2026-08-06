@@ -27,6 +27,7 @@ import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/
 import { RailNetLabelCornerPlacementSolver } from "../RailNetLabelCornerPlacementSolver/RailNetLabelCornerPlacementSolver"
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
+import { SameNetTraceSegmentMergeSolver } from "../SameNetTraceSegmentMergeSolver/SameNetTraceSegmentMergeSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
 import { UnroutedTraceRecoverySolver } from "../UnroutedTraceRecoverySolver/UnroutedTraceRecoverySolver"
 import { SameNetJunctionAlignmentSolver } from "../SameNetJunctionAlignmentSolver/SameNetJunctionAlignmentSolver"
@@ -76,6 +77,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   longDistancePairSolver?: LongDistancePairSolver
   unroutedTraceRecoverySolver?: UnroutedTraceRecoverySolver
   traceOverlapShiftSolver?: TraceOverlapShiftSolver
+  sameNetTraceSegmentMergeSolver?: SameNetTraceSegmentMergeSolver
   netLabelPlacementSolver?: NetLabelPlacementSolver
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
@@ -184,12 +186,25 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
+      "sameNetTraceSegmentMergeSolver",
+      SameNetTraceSegmentMergeSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          inputTracePaths: Object.values(
+            instance.traceOverlapShiftSolver!.correctedTraceMap,
+          ),
+        },
+      ],
+    ),
+    definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
       () => [
         {
           inputProblem: this.inputProblem,
           inputTraceMap:
+            this.sameNetTraceSegmentMergeSolver?.correctedTraceMap ??
             this.traceOverlapShiftSolver?.correctedTraceMap ??
             Object.fromEntries(
               this.unroutedTraceRecoverySolver!.getOutput().allTracesMerged.map(
@@ -209,6 +224,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       TraceLabelOverlapAvoidanceSolver,
       (instance) => {
         const traceMap =
+          instance.sameNetTraceSegmentMergeSolver?.correctedTraceMap ??
           instance.traceOverlapShiftSolver?.correctedTraceMap ??
           Object.fromEntries(
             instance
