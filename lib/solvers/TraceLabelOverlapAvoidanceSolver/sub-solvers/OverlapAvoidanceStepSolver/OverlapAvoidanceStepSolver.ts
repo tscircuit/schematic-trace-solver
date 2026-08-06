@@ -8,6 +8,7 @@ import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
 import { SingleOverlapSolver } from "../SingleOverlapSolver/SingleOverlapSolver"
 import { doesTraceStartOrEndInLabel } from "./doesTraceStartOrEndInLabel"
 import { visualizeDecomposition } from "./visualizeDecomposition"
+import type { CompletedTraceReroute } from "lib/solvers/TraceElbowTransitionSimplificationSolver/types"
 
 type Overlap = ReturnType<typeof detectTraceLabelOverlap>[0]
 
@@ -35,6 +36,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
   allTraces: SolvedTracePath[]
   tracesToAvoidOverlapping: SolvedTracePath[]
   modifiedTraces: SolvedTracePath[] = []
+  completedReroutes: CompletedTraceReroute[] = []
 
   private readonly PADDING_BUFFER = 0.1
   private detourCounts: Map<string, number> = new Map()
@@ -66,6 +68,17 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
       if (this.activeSubSolver.solved) {
         const solvedPath = this.activeSubSolver.solvedTracePath
         if (solvedPath) {
+          this.completedReroutes.push({
+            initialTrace: {
+              ...this.activeSubSolver.initialTrace,
+              tracePath: this.activeSubSolver.initialTrace.tracePath.map(
+                (point) => ({ ...point }),
+              ),
+            },
+            reroutedTracePath: solvedPath.map((point) => ({ ...point })),
+            label: this.activeSubSolver.label,
+            detourCount: this.activeSubSolver.detourCount,
+          })
           const traceIndex = this.allTraces.findIndex(
             (t) => t.mspPairId === this.activeSubSolver!.initialTrace.mspPairId,
           )
@@ -154,6 +167,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
             paddingBuffer: this.PADDING_BUFFER,
             detourCount: detourCount,
             tracesToAvoidOverlapping: this.tracesToAvoidOverlapping,
+            netLabelPlacements: this.initialNetLabelPlacements,
           })
         } else {
           const overlapId = `${traceToFix.mspPairId}-${labelToAvoid.globalConnNetId}`
@@ -197,6 +211,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
             paddingBuffer: this.PADDING_BUFFER,
             detourCount: detourCount,
             tracesToAvoidOverlapping: this.tracesToAvoidOverlapping,
+            netLabelPlacements: this.initialNetLabelPlacements,
           })
         } else {
           const overlapId = `${traceToFix.mspPairId}-${labelToAvoid.globalConnNetId}`
@@ -217,6 +232,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
         paddingBuffer: this.PADDING_BUFFER,
         detourCount: detourCount,
         tracesToAvoidOverlapping: this.tracesToAvoidOverlapping,
+        netLabelPlacements: this.initialNetLabelPlacements,
       })
     }
   }

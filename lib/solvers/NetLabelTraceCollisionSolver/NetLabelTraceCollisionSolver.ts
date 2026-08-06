@@ -12,6 +12,7 @@ import {
 import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import type { InputProblem } from "lib/types/InputProblem"
+import type { CompletedTraceReroute } from "lib/solvers/TraceElbowTransitionSimplificationSolver/types"
 
 const ON_PATH_EPS = 1e-6
 
@@ -172,6 +173,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
 
   outputTraces: SolvedTracePath[]
   outputNetLabelPlacements: NetLabelPlacement[]
+  completedReroutes: CompletedTraceReroute[] = []
 
   override activeSubSolver: SingleOverlapSolver | null = null
   private recentlyFailed = new Set<string>()
@@ -208,6 +210,17 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
       if (this.activeSubSolver.solved) {
         const solvedPath = this.activeSubSolver.solvedTracePath
         if (solvedPath) {
+          this.completedReroutes.push({
+            initialTrace: {
+              ...this.activeSubSolver.initialTrace,
+              tracePath: this.activeSubSolver.initialTrace.tracePath.map(
+                (point) => ({ ...point }),
+              ),
+            },
+            reroutedTracePath: solvedPath.map((point) => ({ ...point })),
+            label: this.activeSubSolver.label,
+            detourCount: this.activeSubSolver.detourCount,
+          })
           const idx = this.outputTraces.findIndex(
             (t) => t.mspPairId === this.activeSubSolver!.initialTrace.mspPairId,
           )
@@ -282,6 +295,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
       paddingBuffer: PADDING_BUFFER,
       detourCount,
       tracesToAvoidOverlapping: this.outputTraces,
+      netLabelPlacements: this.outputNetLabelPlacements,
     })
   }
 
@@ -319,6 +333,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
   getOutput() {
     return {
       traces: this.outputTraces,
+      completedReroutes: this.completedReroutes,
       netLabelPlacements: this.outputNetLabelPlacements,
     }
   }
