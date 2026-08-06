@@ -7,7 +7,7 @@ import type { RailSegment } from "./types"
 
 type UnassociatedRailSegment = Omit<
   RailSegment,
-  "componentId" | "componentFacingDirection" | "isIntraComponentConnection"
+  "componentId" | "componentFacingDirection"
 >
 
 const getMovableRailSegments = (
@@ -102,9 +102,6 @@ export const getComponentSideRailSegments = (
         {
           componentId: chip.chipId,
           componentFacingDirection,
-          isIntraComponentConnection: trace.pins.every(
-            (tracePin) => tracePin.chipId === chip.chipId,
-          ),
           distanceFromEndpoint:
             pinIndex === 0
               ? segment.segmentIndex

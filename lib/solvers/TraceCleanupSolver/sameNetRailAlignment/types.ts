@@ -13,7 +13,6 @@ export interface RailSegment {
   maxAlong: number
   componentId: string
   componentFacingDirection: FacingDirection
-  isIntraComponentConnection: boolean
 }
 
 export interface TraceGeometryMetrics {

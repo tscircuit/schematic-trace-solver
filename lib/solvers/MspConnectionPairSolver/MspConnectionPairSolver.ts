@@ -15,6 +15,7 @@ import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCen
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 import { isLabeledPeripheralConnection } from "./isLabeledPeripheralConnection"
+import { replaceIntraComponentMspEdges } from "./replaceIntraComponentMspEdges"
 
 export type MspConnectionPairId = string
 export const DEFAULT_MAX_MSP_PAIR_DISTANCE = 1
@@ -173,8 +174,11 @@ export class MspConnectionPairSolver extends BaseSolver {
       PinId,
       InputPin & { chipId: string }
     >
-    const msp = getOrthogonalMinimumSpanningTree(
-      directlyConnectedPins.map((p) => this.pinMap[p]!).filter(Boolean),
+    const connectedPins = directlyConnectedPins
+      .map((pinId) => this.pinMap[pinId]!)
+      .filter(Boolean)
+    const minimumSpanningTree = getOrthogonalMinimumSpanningTree(
+      connectedPins,
       {
         maxDistance: this.maxMspPairDistance,
         forbidEdge: (a, b) =>
@@ -192,6 +196,14 @@ export class MspConnectionPairSolver extends BaseSolver {
           }),
       },
     )
+    const msp = replaceIntraComponentMspEdges({
+      edges: minimumSpanningTree,
+      pins: connectedPins,
+      inputProblem: this.inputProblem,
+      chipMap: this.chipMap,
+      pinIdMap,
+      maxDistance: this.maxMspPairDistance,
+    })
 
     for (const [pin1, pin2] of msp) {
       const p1Obj = this.pinMap[pin1!]!

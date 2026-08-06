@@ -6,19 +6,25 @@ import type { InputProblem } from "lib/types/InputProblem"
 import inputProblemJson from "./assets/repro-focusbeam-v5-junctions.input.json"
 import "tests/fixtures/matcher"
 
-const LOCAL_V5_PAIR_ID = "schematic_port_10-schematic_port_12"
-const EXTERNAL_V5_PAIR_ID = "schematic_port_12-schematic_port_0"
+const LOCAL_PAIR_IDS = new Set([
+  "schematic_port_10-schematic_port_12",
+  "schematic_port_21-schematic_port_22",
+])
+const REPLACEMENT_PAIR_IDS = new Set([
+  "schematic_port_10-schematic_port_0",
+  "schematic_port_21-schematic_port_4",
+])
 const FOCUS_COMPONENT_IDS = new Set([
   "schematic_component_5",
   "schematic_component_9",
 ])
 
-const getV5TraceColor = (trace: SolvedTracePath) => {
-  if (trace.mspPairId === LOCAL_V5_PAIR_ID) return "#dc2626"
+const getFocusedTraceColor = (trace: SolvedTracePath) => {
+  if (REPLACEMENT_PAIR_IDS.has(trace.mspPairId)) return "#dc2626"
   return "#15803d"
 }
 
-const getFocusedV5Svg = ({
+const getFocusedSvg = ({
   inputProblem,
   traces,
 }: {
@@ -37,10 +43,12 @@ const getFocusedV5Svg = ({
         label: chip.chipId,
       })),
     lines: traces
-      .filter((trace) => trace.userNetId === "V5")
+      .filter((trace) =>
+        trace.pins.some((pin) => FOCUS_COMPONENT_IDS.has(pin.chipId)),
+      )
       .map((trace) => ({
         points: trace.tracePath,
-        strokeColor: getV5TraceColor(trace),
+        strokeColor: getFocusedTraceColor(trace),
         label: trace.mspPairId,
       })),
   }
@@ -48,7 +56,7 @@ const getFocusedV5Svg = ({
   return getSvgFromGraphicsObject(graphics, { backgroundColor: "white" })
 }
 
-test("keeps the FocusBeam local V5 loop separate from external rails", () => {
+test("replaces FocusBeam local leaf-to-junction loops", () => {
   const inputProblem: InputProblem = JSON.parse(
     JSON.stringify(inputProblemJson),
   )
@@ -57,17 +65,15 @@ test("keeps the FocusBeam local V5 loop separate from external rails", () => {
   solver.solve()
 
   const outputTraces = solver.sameNetJunctionAlignmentSolver!.outputTraces
-  const localV5Trace = outputTraces.find(
-    (trace) => trace.mspPairId === LOCAL_V5_PAIR_ID,
-  )!
-  const externalV5Trace = outputTraces.find(
-    (trace) => trace.mspPairId === EXTERNAL_V5_PAIR_ID,
-  )!
-
-  expect(localV5Trace.tracePath[1]!.x).toBeCloseTo(-1.2)
-  expect(externalV5Trace.tracePath[1]!.x).not.toBeCloseTo(
-    localV5Trace.tracePath[1]!.x,
+  const localTraces = outputTraces.filter((trace) =>
+    LOCAL_PAIR_IDS.has(trace.mspPairId),
   )
-  const focusedV5Svg = getFocusedV5Svg({ inputProblem, traces: outputTraces })
-  expect(focusedV5Svg).toMatchSvgSnapshot(import.meta.path)
+  const replacementTraces = outputTraces.filter((trace) =>
+    REPLACEMENT_PAIR_IDS.has(trace.mspPairId),
+  )
+
+  expect(localTraces).toHaveLength(0)
+  expect(replacementTraces).toHaveLength(2)
+  const focusedSvg = getFocusedSvg({ inputProblem, traces: outputTraces })
+  expect(focusedSvg).toMatchSvgSnapshot(import.meta.path)
 })
