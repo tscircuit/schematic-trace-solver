@@ -122,6 +122,9 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
     const solvedTraces = this.subSolvers.flatMap((s) => s.getOutput().allTraces)
     return {
       traces: [...this.cleanTraces, ...solvedTraces],
+      completedReroutes: this.subSolvers.flatMap(
+        (solver) => solver.completedReroutes,
+      ),
       netLabelPlacements:
         this.labelMergingSolver?.getOutput().netLabelPlacements ??
         this.netLabelPlacements,

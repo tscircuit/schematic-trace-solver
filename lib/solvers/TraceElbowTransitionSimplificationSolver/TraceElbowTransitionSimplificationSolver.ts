@@ -50,7 +50,14 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
     super()
     this.input = input
     this.outputTraces = [...input.traces]
-    this.traceIdQueue = input.traces.map((trace) => trace.mspPairId)
+    const reroutedTraceIds = new Set(
+      input.completedReroutes.map(
+        (completedReroute) => completedReroute.initialTrace.mspPairId,
+      ),
+    )
+    this.traceIdQueue = input.traces
+      .map((trace) => trace.mspPairId)
+      .filter((traceId) => reroutedTraceIds.has(traceId))
     this.obstacles = getObstacleRects(input.inputProblem)
   }
 

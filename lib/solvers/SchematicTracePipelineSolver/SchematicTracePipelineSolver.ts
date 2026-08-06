@@ -238,10 +238,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           {
             inputProblem: instance.inputProblem,
             traces: overlapAvoidanceOutput.traces,
-            completedReroutes:
-              instance.traceLabelOverlapAvoidanceSolver!.subSolvers.flatMap(
-                (subSolver) => subSolver.completedReroutes,
-              ),
+            completedReroutes: overlapAvoidanceOutput.completedReroutes,
             netLabelPlacements:
               instance.traceLabelOverlapAvoidanceSolver!.netLabelPlacements,
             paddingBuffer: 0.1,
@@ -383,9 +380,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           {
             inputProblem: instance.inputProblem,
             traces: collisionOutput.traces,
-            completedReroutes:
-              instance.preAlignmentNetLabelTraceCollisionSolver!
-                .completedReroutes,
+            completedReroutes: collisionOutput.completedReroutes,
             netLabelPlacements: collisionOutput.netLabelPlacements,
             paddingBuffer: 0.1,
           },
@@ -470,8 +465,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           {
             inputProblem: instance.inputProblem,
             traces: collisionOutput.traces,
-            completedReroutes:
-              instance.netLabelTraceCollisionSolver!.completedReroutes,
+            completedReroutes: collisionOutput.completedReroutes,
             netLabelPlacements: collisionOutput.netLabelPlacements,
             paddingBuffer: 0.1,
           },

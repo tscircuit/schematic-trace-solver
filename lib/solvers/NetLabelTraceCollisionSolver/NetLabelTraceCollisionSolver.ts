@@ -333,6 +333,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
   getOutput() {
     return {
       traces: this.outputTraces,
+      completedReroutes: this.completedReroutes,
       netLabelPlacements: this.outputNetLabelPlacements,
     }
   }
