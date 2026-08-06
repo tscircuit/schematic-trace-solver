@@ -26,6 +26,9 @@ interface SingleOverlapSolverInput {
 }
 
 const MAX_TRIES = 5
+// Only replace the existing four-point label notch when the simpler elbow
+// removes that complete detour. Smaller equal-length rewrites are just churn.
+const FOUR_POINT_DETOUR_POINT_COUNT = 4
 
 const getPathLength = (points: Point[]) => {
   let length = 0
@@ -102,7 +105,9 @@ export class SingleOverlapSolver extends BaseSolver {
               Math.abs(
                 getPathLength(standardCandidate) -
                   getPathLength(simplifiedCandidate),
-              ) < 1e-9 && simplifiedCandidate.length < standardCandidate.length,
+              ) < 1e-9 &&
+              standardCandidate.length - simplifiedCandidate.length >=
+                FOUR_POINT_DETOUR_POINT_COUNT,
           )
         )
       },
