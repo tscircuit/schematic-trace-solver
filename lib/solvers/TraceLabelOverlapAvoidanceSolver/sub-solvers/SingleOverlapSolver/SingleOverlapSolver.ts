@@ -14,6 +14,7 @@ import {
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
+import { preservesLabelAnchors } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/preservesLabelAnchors"
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath
@@ -26,9 +27,7 @@ interface SingleOverlapSolverInput {
 }
 
 const MAX_TRIES = 5
-// Only replace the existing four-point label notch when the simpler elbow
-// removes that complete detour. Smaller equal-length rewrites are just churn.
-const FOUR_POINT_DETOUR_POINT_COUNT = 4
+const PATH_LENGTH_EPSILON = 1e-9
 
 const getPathLength = (points: Point[]) => {
   let length = 0
@@ -94,20 +93,28 @@ export class SingleOverlapSolver extends BaseSolver {
     const simpleElbowCandidates = generatedSimpleElbowCandidates.filter(
       (candidate) => {
         const simplifiedCandidate = simplifyPath(candidate)
+        const candidateTrace = {
+          ...this.initialTrace,
+          tracePath: simplifiedCandidate,
+        }
         const candidateLabelOverlapCount = detectTraceLabelOverlap({
-          traces: [{ ...this.initialTrace, tracePath: simplifiedCandidate }],
+          traces: [candidateTrace],
           netLabels: this.netLabelPlacements,
         }).length
         return (
           candidateLabelOverlapCount < initialLabelOverlapCount &&
+          preservesLabelAnchors(
+            this.netLabelPlacements,
+            [this.initialTrace],
+            [candidateTrace],
+          ) &&
           simplifiedStandardCandidates.some(
             (standardCandidate) =>
               Math.abs(
                 getPathLength(standardCandidate) -
                   getPathLength(simplifiedCandidate),
-              ) < 1e-9 &&
-              standardCandidate.length - simplifiedCandidate.length >=
-                FOUR_POINT_DETOUR_POINT_COUNT,
+              ) < PATH_LENGTH_EPSILON &&
+              simplifiedCandidate.length < standardCandidate.length,
           )
         )
       },
@@ -129,11 +136,16 @@ export class SingleOverlapSolver extends BaseSolver {
     }
 
     this.queuedCandidatePaths = [...candidateByPath.values()].sort((a, b) => {
+      const pathLengthDifference = getPathLength(a) - getPathLength(b)
+      if (Math.abs(pathLengthDifference) >= PATH_LENGTH_EPSILON) {
+        return pathLengthDifference
+      }
+
       const overlapCountDifference =
         getLabelOverlapCount(a) - getLabelOverlapCount(b)
       if (overlapCountDifference !== 0) return overlapCountDifference
 
-      return getPathLength(a) - getPathLength(b) || a.length - b.length
+      return a.length - b.length
     })
   }
 
