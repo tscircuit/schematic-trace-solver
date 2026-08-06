@@ -7,7 +7,10 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
+import {
+  generateRerouteCandidates,
+  isSimpleFiveSegmentElbow,
+} from "../../rerouteCollidingTrace"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
@@ -19,9 +22,45 @@ interface SingleOverlapSolverInput {
   paddingBuffer: number
   detourCount: number
   tracesToAvoidOverlapping?: SolvedTracePath[]
+  netLabelPlacements: NetLabelPlacement[]
 }
 
 const MAX_TRIES = 5
+
+const getPathLength = (points: Point[]) => {
+  let length = 0
+  for (let pointIndex = 0; pointIndex < points.length - 1; pointIndex++) {
+    const point = points[pointIndex]!
+    const nextPoint = points[pointIndex + 1]!
+    length += Math.abs(nextPoint.x - point.x) + Math.abs(nextPoint.y - point.y)
+  }
+  return length
+}
+
+const isMiddleTransitionShift = (
+  initialPath: Point[],
+  candidatePath: Point[],
+) => {
+  if (
+    !isSimpleFiveSegmentElbow(initialPath) ||
+    candidatePath.length !== initialPath.length
+  ) {
+    return false
+  }
+
+  const pointsMatch = (first: Point, second: Point) =>
+    Math.abs(first.x - second.x) < 1e-9 && Math.abs(first.y - second.y) < 1e-9
+  const unchangedPointIndices = [0, 1, 4, 5]
+
+  return (
+    unchangedPointIndices.every((pointIndex) =>
+      pointsMatch(initialPath[pointIndex]!, candidatePath[pointIndex]!),
+    ) &&
+    (!pointsMatch(initialPath[2]!, candidatePath[2]!) ||
+      !pointsMatch(initialPath[3]!, candidatePath[3]!))
+  )
+}
+
 /**
  * This solver attempts to find a valid rerouting for a single trace that is
  * overlapping with a net label. It tries various candidate paths until it
@@ -35,6 +74,12 @@ export class SingleOverlapSolver extends BaseSolver {
   obstacles: ReturnType<typeof getObstacleRects>
   label: NetLabelPlacement
   tracesToAvoidOverlapping: SolvedTracePath[]
+  netLabelPlacements: NetLabelPlacement[]
+  initialSimplifiedPath: Point[]
+  initialLabelOverlapCount: number
+  initialPathLength: number
+  initialPathPointCount: number
+  hasValidCollisionReduction: boolean
   _tried: number = 0
 
   constructor(solverInput: SingleOverlapSolverInput) {
@@ -46,6 +91,35 @@ export class SingleOverlapSolver extends BaseSolver {
       solverInput.tracesToAvoidOverlapping ?? []
     ).filter((t) => t.globalConnNetId !== solverInput.trace.globalConnNetId)
 
+    // The target may be a synthetic rectangle that merges several labels.
+    // Use it for clearance, but measure improvement against rendered labels so
+    // moving a trace from one real label into another is never accepted.
+    const labelsByGeometry = new Map<string, NetLabelPlacement>()
+    const labelsUsedToMeasureImprovement = solverInput.netLabelPlacements ?? [
+      solverInput.label,
+    ]
+    for (const label of labelsUsedToMeasureImprovement) {
+      const key = [
+        label.globalConnNetId,
+        label.center.x,
+        label.center.y,
+        label.width,
+        label.height,
+      ].join(":")
+      labelsByGeometry.set(key, label)
+    }
+    this.netLabelPlacements = [...labelsByGeometry.values()]
+
+    const simplifiedInitialPath = simplifyPath(this.initialTrace.tracePath)
+    this.initialSimplifiedPath = simplifiedInitialPath
+    this.initialLabelOverlapCount = detectTraceLabelOverlap({
+      traces: [{ ...this.initialTrace, tracePath: simplifiedInitialPath }],
+      netLabels: this.netLabelPlacements,
+    }).length
+    this.initialPathLength = getPathLength(simplifiedInitialPath)
+    this.initialPathPointCount = simplifiedInitialPath.length
+    this.obstacles = getObstacleRects(this.problem)
+
     // Calculate an effective padding for this specific run based on the detourCount.
     const effectivePadding =
       solverInput.paddingBuffer +
@@ -56,20 +130,35 @@ export class SingleOverlapSolver extends BaseSolver {
       paddingBuffer: effectivePadding, // Use the calculated, larger padding
     })
 
-    const getPathLength = (pts: Point[]) => {
-      let len = 0
-      for (let i = 0; i < pts.length - 1; i++) {
-        const dx = pts[i + 1].x - pts[i].x
-        const dy = pts[i + 1].y - pts[i].y
-        len += Math.sqrt(dx * dx + dy * dy)
-      }
-      return len
+    const candidateByKey = new Map<string, Point[]>()
+    for (const candidate of candidates) {
+      const simplifiedCandidate = simplifyPath(candidate)
+      const key = simplifiedCandidate
+        .map((point) => `${point.x},${point.y}`)
+        .join(";")
+      candidateByKey.set(key, simplifiedCandidate)
     }
 
-    this.queuedCandidatePaths = candidates.sort(
-      (a, b) => getPathLength(a) - getPathLength(b),
+    this.queuedCandidatePaths = [...candidateByKey.values()].sort((a, b) => {
+      const aLabelOverlapCount = detectTraceLabelOverlap({
+        traces: [{ ...this.initialTrace, tracePath: a }],
+        netLabels: this.netLabelPlacements,
+      }).length
+      const bLabelOverlapCount = detectTraceLabelOverlap({
+        traces: [{ ...this.initialTrace, tracePath: b }],
+        netLabels: this.netLabelPlacements,
+      }).length
+
+      return (
+        aLabelOverlapCount - bLabelOverlapCount ||
+        getPathLength(a) - getPathLength(b)
+      )
+    })
+    // Record whether this pass can finish the reroute without transferring the
+    // collision to another rendered label.
+    this.hasValidCollisionReduction = this.queuedCandidatePaths.some(
+      (candidatePath) => this.isValidCollisionReduction(candidatePath),
     )
-    this.obstacles = getObstacleRects(this.problem)
   }
 
   override _step() {
@@ -92,8 +181,24 @@ export class SingleOverlapSolver extends BaseSolver {
         netLabels: [this.label],
       }).length > 0
 
+    const candidateLabelOverlapCount = detectTraceLabelOverlap({
+      traces: [{ ...this.initialTrace, tracePath: simplifiedPath }],
+      netLabels: this.netLabelPlacements,
+    }).length
+    const reducesWholeRouteLabelOverlaps =
+      candidateLabelOverlapCount < this.initialLabelOverlapCount
+    // When no complete reduction exists, an equal-cost alternate elbow can
+    // expose a local obstacle that a later pass can detour around cleanly.
+    const isEquivalentTransitionFallback =
+      !this.hasValidCollisionReduction &&
+      isMiddleTransitionShift(this.initialSimplifiedPath, simplifiedPath) &&
+      candidateLabelOverlapCount === this.initialLabelOverlapCount &&
+      simplifiedPath.length <= this.initialPathPointCount &&
+      getPathLength(simplifiedPath) <= this.initialPathLength + 1e-9
+
     if (
       !stillOverlapsLabel &&
+      (reducesWholeRouteLabelOverlaps || isEquivalentTransitionFallback) &&
       !isPathCollidingWithObstacles(simplifiedPath, this.obstacles) &&
       !doesPathCoincideWithTraces(simplifiedPath, this.tracesToAvoidOverlapping)
     ) {
@@ -101,6 +206,26 @@ export class SingleOverlapSolver extends BaseSolver {
       this.solved = true
     }
     // If the path collides, we simply do nothing and let the next step try another candidate.
+  }
+
+  private isValidCollisionReduction(candidatePath: Point[]) {
+    const trace = { ...this.initialTrace, tracePath: candidatePath }
+    const stillOverlapsTarget =
+      detectTraceLabelOverlap({
+        traces: [trace],
+        netLabels: [this.label],
+      }).length > 0
+    const realLabelOverlapCount = detectTraceLabelOverlap({
+      traces: [trace],
+      netLabels: this.netLabelPlacements,
+    }).length
+
+    return (
+      !stillOverlapsTarget &&
+      realLabelOverlapCount < this.initialLabelOverlapCount &&
+      !isPathCollidingWithObstacles(candidatePath, this.obstacles) &&
+      !doesPathCoincideWithTraces(candidatePath, this.tracesToAvoidOverlapping)
+    )
   }
 
   override visualize(): GraphicsObject {
@@ -128,7 +253,7 @@ export class SingleOverlapSolver extends BaseSolver {
     })
 
     // Draw next candidate
-    if (this.queuedCandidatePaths.length > 0) {
+    if (!this.solvedTracePath && this.queuedCandidatePaths.length > 0) {
       graphics.lines.push({
         points: this.queuedCandidatePaths[0],
         strokeColor: "orange",
