@@ -1,6 +1,9 @@
 import type { GraphicsObject } from "graphics-debug"
 import type { Point } from "@tscircuit/math-utils"
-import { traceCrossesBoundsInterior } from "lib/solvers/AvailableNetOrientationSolver/geometry"
+import {
+  segmentCrossesBoundsInterior,
+  traceCrossesBoundsInterior,
+} from "lib/solvers/AvailableNetOrientationSolver/geometry"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
@@ -31,6 +34,8 @@ import type {
 } from "./types"
 import { visualizeRailNetLabelCornerPlacementSolver } from "./visualize"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
+
+const LABEL_TRACE_CLEARANCE = 0.1
 
 export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -271,11 +276,12 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     const labelTraces = this.getTraceLinesForLabel(label)
     const allowRailAlignedFallback =
       this.isConfiguredRailLabel(label) &&
-      !labelTraces.some((trace) =>
-        getTraceCorners(trace.tracePath).some((corner) =>
-          this.pointsEqual(corner, label.anchorPoint),
-        ),
-      )
+      (this.isLabelCrossedByOtherNetTrace(label) ||
+        !labelTraces.some((trace) =>
+          getTraceCorners(trace.tracePath).some((corner) =>
+            this.pointsEqual(corner, label.anchorPoint),
+          ),
+        ))
 
     for (const trace of labelTraces) {
       const path = trace.tracePath
@@ -322,6 +328,17 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     return this.inputProblem.availableNetLabelOrientations[label.netId]?.some(
       (orientation) => orientation === "y+" || orientation === "y-",
     )
+  }
+
+  private isLabelCrossedByOtherNetTrace(label: NetLabelPlacement) {
+    const bounds = getRectBounds(label.center, label.width, label.height)
+    const otherNetTraceMap = Object.fromEntries(
+      this.traces
+        .filter((trace) => trace.globalConnNetId !== label.globalConnNetId)
+        .map((trace) => [trace.mspPairId, trace]),
+    )
+
+    return traceCrossesBoundsInterior(bounds, otherNetTraceMap)
   }
 
   private pointsEqual(a: Point, b: Point) {
@@ -393,6 +410,32 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     for (const chipBounds of collidingChipBounds) {
       shiftedCoordinates.add(chipBounds.minX - label.width / 2)
       shiftedCoordinates.add(chipBounds.maxX + label.width / 2)
+    }
+    for (const otherTrace of this.traces) {
+      if (otherTrace.globalConnNetId === label.globalConnNetId) continue
+
+      for (let i = 0; i < otherTrace.tracePath.length - 1; i++) {
+        const start = otherTrace.tracePath[i]!
+        const end = otherTrace.tracePath[i + 1]!
+        if (!segmentCrossesBoundsInterior(start, end, labelBounds)) continue
+
+        const halfLabelWidth = label.width / 2
+        if (Math.abs(start.x - end.x) <= EPS) {
+          shiftedCoordinates.add(
+            start.x - halfLabelWidth - LABEL_TRACE_CLEARANCE,
+          )
+          shiftedCoordinates.add(
+            start.x + halfLabelWidth + LABEL_TRACE_CLEARANCE,
+          )
+        } else {
+          shiftedCoordinates.add(
+            Math.min(start.x, end.x) - halfLabelWidth - LABEL_TRACE_CLEARANCE,
+          )
+          shiftedCoordinates.add(
+            Math.max(start.x, end.x) + halfLabelWidth + LABEL_TRACE_CLEARANCE,
+          )
+        }
+      }
     }
 
     return [...shiftedCoordinates].flatMap((x) => {
