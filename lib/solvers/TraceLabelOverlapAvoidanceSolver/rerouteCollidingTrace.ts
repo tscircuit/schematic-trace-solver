@@ -13,8 +13,9 @@ import {
   segmentIntersectsRect,
 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { shiftSegmentOrth } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/pathOps"
+import { detectTraceLabelOverlap } from "./detectTraceLabelOverlap"
 
-export const isSimpleFiveSegmentElbow = (path: Point[]): boolean => {
+const isSimpleFiveSegmentElbow = (path: Point[]): boolean => {
   const simplifiedPath = simplifyPath(path)
   if (simplifiedPath.length !== 6) return false
 
@@ -29,51 +30,106 @@ export const isSimpleFiveSegmentElbow = (path: Point[]): boolean => {
 }
 
 /**
- * A five-segment elbow has two equal-length choices for its middle transition.
- * Moving that transition can expose a simpler downstream detour without adding
- * bends or length to the current route.
+ * A five-segment elbow can avoid a label by shifting the colliding segment to
+ * the nearest padded edge. This keeps the existing number of bends instead of
+ * inserting a local four-point notch into the segment.
  */
-const generateSimpleElbowTransitionShiftCandidates = ({
-  initialTrace,
-  labelBounds,
-  paddedLabelBounds,
+const generateSimpleElbowSegmentShiftCandidates = ({
+  trace,
+  label,
+  paddingBuffer,
+  detourCount,
 }: {
-  initialTrace: SolvedTracePath
-  labelBounds: { minX: number; minY: number; maxX: number; maxY: number }
-  paddedLabelBounds: {
-    minX: number
-    minY: number
-    maxX: number
-    maxY: number
-  }
+  trace: SolvedTracePath
+  label: NetLabelPlacement
+  paddingBuffer: number
+  detourCount: number
 }): Point[][] => {
-  const path = initialTrace.tracePath
-  const start = path[0]
-  const end = path[path.length - 1]
-  if (!start || !end || !isSimpleFiveSegmentElbow(path)) return []
+  if (trace.globalConnNetId === label.globalConnNetId) return []
+
+  const path = simplifyPath(trace.tracePath)
+  if (!isSimpleFiveSegmentElbow(path)) return []
+
+  const labelBounds = getRectBounds(label.center, label.width, label.height)
+  const effectivePadding = paddingBuffer + detourCount * paddingBuffer
+  const paddedLabelBounds = {
+    minX: labelBounds.minX - effectivePadding,
+    maxX: labelBounds.maxX + effectivePadding,
+    minY: labelBounds.minY - effectivePadding,
+    maxY: labelBounds.maxY + effectivePadding,
+  }
 
   const candidates: Point[][] = []
-  const transitionSegmentIndex = 2
+
+  for (let segmentIndex = 1; segmentIndex < path.length - 2; segmentIndex++) {
+    const segmentStart = path[segmentIndex]!
+    const segmentEnd = path[segmentIndex + 1]!
+    if (!segmentIntersectsRect(segmentStart, segmentEnd, labelBounds)) continue
+
+    const isHorizontalSegment = isHorizontal(segmentStart, segmentEnd)
+    const isVerticalSegment = isVertical(segmentStart, segmentEnd)
+    if (!isHorizontalSegment && !isVerticalSegment) continue
+
+    const axis = isHorizontalSegment ? "y" : "x"
+    const coordinates = isHorizontalSegment
+      ? [paddedLabelBounds.minY, paddedLabelBounds.maxY]
+      : [paddedLabelBounds.minX, paddedLabelBounds.maxX]
+
+    for (const coordinate of coordinates) {
+      const shiftedPath = shiftSegmentOrth(path, segmentIndex, axis, coordinate)
+      if (shiftedPath) candidates.push(shiftedPath)
+    }
+  }
+
+  return candidates
+}
+
+const generateSimpleElbowTransitionShiftCandidates = ({
+  trace,
+  label,
+  paddingBuffer,
+  detourCount,
+}: {
+  trace: SolvedTracePath
+  label: NetLabelPlacement
+  paddingBuffer: number
+  detourCount: number
+}): Point[][] => {
+  const path = simplifyPath(trace.tracePath)
+  if (!isSimpleFiveSegmentElbow(path)) return []
+
+  const labelBounds = getRectBounds(label.center, label.width, label.height)
+  const effectivePadding = paddingBuffer + detourCount * paddingBuffer
+  const paddedLabelBounds = {
+    minX: labelBounds.minX - effectivePadding,
+    maxX: labelBounds.maxX + effectivePadding,
+    minY: labelBounds.minY - effectivePadding,
+    maxY: labelBounds.maxY + effectivePadding,
+  }
+  const start = path[0]!
+  const end = path[path.length - 1]!
+  const middleSegmentIndex = 2
+  const candidates: Point[][] = []
 
   for (let segmentIndex = 0; segmentIndex < path.length - 1; segmentIndex++) {
     const segmentStart = path[segmentIndex]!
     const segmentEnd = path[segmentIndex + 1]!
     if (!segmentIntersectsRect(segmentStart, segmentEnd, labelBounds)) continue
+    if (Math.abs(segmentIndex - middleSegmentIndex) !== 1) continue
 
-    const collidingSegmentIsHorizontal = isHorizontal(segmentStart, segmentEnd)
-    const collidingSegmentIsVertical = isVertical(segmentStart, segmentEnd)
-    if (!collidingSegmentIsHorizontal && !collidingSegmentIsVertical) continue
-    if (Math.abs(segmentIndex - transitionSegmentIndex) !== 1) continue
+    const isHorizontalSegment = isHorizontal(segmentStart, segmentEnd)
+    const isVerticalSegment = isVertical(segmentStart, segmentEnd)
+    if (!isHorizontalSegment && !isVerticalSegment) continue
 
-    const axis = collidingSegmentIsHorizontal ? "x" : "y"
-    const min = collidingSegmentIsHorizontal
+    const axis = isHorizontalSegment ? "x" : "y"
+    const min = isHorizontalSegment
       ? paddedLabelBounds.minX
       : paddedLabelBounds.minY
-    const max = collidingSegmentIsHorizontal
+    const max = isHorizontalSegment
       ? paddedLabelBounds.maxX
       : paddedLabelBounds.maxY
-    const startCoordinate = collidingSegmentIsHorizontal ? start.x : start.y
-    const endCoordinate = collidingSegmentIsHorizontal ? end.x : end.y
+    const startCoordinate = isHorizontalSegment ? start.x : start.y
+    const endCoordinate = isHorizontalSegment ? end.x : end.y
     const corridorCoordinates: number[] = []
 
     if (startCoordinate < min) {
@@ -87,19 +143,10 @@ const generateSimpleElbowTransitionShiftCandidates = ({
       corridorCoordinates.push((endCoordinate + max) / 2)
     }
 
-    const transitionStart = path[transitionSegmentIndex]!
-    const transitionEnd = path[transitionSegmentIndex + 1]!
-    if (
-      (axis === "x" && !isVertical(transitionStart, transitionEnd)) ||
-      (axis === "y" && !isHorizontal(transitionStart, transitionEnd))
-    ) {
-      continue
-    }
-
     for (const coordinate of new Set(corridorCoordinates)) {
       const shiftedPath = shiftSegmentOrth(
         path,
-        transitionSegmentIndex,
+        middleSegmentIndex,
         axis,
         coordinate,
       )
@@ -108,6 +155,45 @@ const generateSimpleElbowTransitionShiftCandidates = ({
   }
 
   return candidates
+}
+
+export const generateSimpleElbowDetourCandidates = ({
+  trace,
+  label,
+  netLabelPlacements,
+  paddingBuffer,
+  detourCount,
+}: {
+  trace: SolvedTracePath
+  label: NetLabelPlacement
+  netLabelPlacements: NetLabelPlacement[]
+  paddingBuffer: number
+  detourCount: number
+}): Point[][] => {
+  const transitionCandidates = generateSimpleElbowTransitionShiftCandidates({
+    trace,
+    label,
+    paddingBuffer,
+    detourCount,
+  })
+  const combinedCandidates = transitionCandidates.flatMap((tracePath) => {
+    const shiftedTrace = { ...trace, tracePath }
+    const shiftedOverlaps = detectTraceLabelOverlap({
+      traces: [shiftedTrace],
+      netLabels: netLabelPlacements,
+    })
+
+    return shiftedOverlaps.flatMap(({ label: shiftedLabel }) =>
+      generateSimpleElbowSegmentShiftCandidates({
+        trace: shiftedTrace,
+        label: shiftedLabel,
+        paddingBuffer,
+        detourCount,
+      }),
+    )
+  })
+
+  return combinedCandidates
 }
 
 /**
@@ -165,13 +251,6 @@ export const generateRerouteCandidates = ({
     maxY: labelBounds.maxY + effectivePadding,
   }
 
-  const transitionShiftCandidates =
-    generateSimpleElbowTransitionShiftCandidates({
-      initialTrace,
-      labelBounds,
-      paddedLabelBounds,
-    })
-
   const { firstInsideIndex, lastInsideIndex } = findTraceViolationZone({
     path: initialTrace.tracePath,
     labelBounds,
@@ -187,9 +266,5 @@ export const generateRerouteCandidates = ({
     detourCount,
   })
 
-  return [
-    ...transitionShiftCandidates,
-    ...fourPointCandidates,
-    ...snipReconnectCandidates,
-  ]
+  return [...fourPointCandidates, ...snipReconnectCandidates]
 }
