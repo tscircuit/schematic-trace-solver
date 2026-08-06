@@ -12,6 +12,7 @@ import {
 import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import type { InputProblem } from "lib/types/InputProblem"
+import { getSameNetLabelBoundaryDetour } from "./getSameNetLabelBoundaryDetour"
 
 const ON_PATH_EPS = 1e-6
 
@@ -163,6 +164,7 @@ export interface NetLabelTraceCollisionSolverParams {
 }
 
 const PADDING_BUFFER = 0.1
+const SAME_NET_LABEL_BOUNDARY_CLEARANCE = 0.05
 const MAX_DETOUR_ATTEMPTS = 3
 
 export class NetLabelTraceCollisionSolver extends BaseSolver {
@@ -232,6 +234,26 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
         this.currentOverlap = null
       }
       return
+    }
+
+    for (const trace of this.outputTraces) {
+      for (const label of this.outputNetLabelPlacements) {
+        if (!label.netId) continue
+        const configuredOrientations =
+          this.inputProblem.availableNetLabelOrientations[label.netId]
+        if (!configuredOrientations?.includes(label.orientation)) continue
+        const detour = getSameNetLabelBoundaryDetour({
+          trace,
+          label,
+          clearance: SAME_NET_LABEL_BOUNDARY_CLEARANCE,
+        })
+        if (!detour) continue
+        this.outputTraces = this.outputTraces.map((outputTrace) => {
+          if (outputTrace.mspPairId !== trace.mspPairId) return outputTrace
+          return { ...outputTrace, tracePath: detour }
+        })
+        return
+      }
     }
 
     const overlaps = detectTraceLabelOverlaps(
