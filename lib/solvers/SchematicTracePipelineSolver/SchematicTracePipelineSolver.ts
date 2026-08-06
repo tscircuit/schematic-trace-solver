@@ -30,6 +30,7 @@ import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/Ne
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
 import { UnroutedTraceRecoverySolver } from "../UnroutedTraceRecoverySolver/UnroutedTraceRecoverySolver"
 import { SameNetJunctionAlignmentSolver } from "../SameNetJunctionAlignmentSolver/SameNetJunctionAlignmentSolver"
+import { TraceElbowTransitionSimplificationSolver } from "../TraceElbowTransitionSimplificationSolver/TraceElbowTransitionSimplificationSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -88,6 +89,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   traceCleanupSolver2?: TraceCleanupSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
+  traceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
+  preAlignmentTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
+  finalTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   sameNetJunctionAlignmentSolver?: SameNetJunctionAlignmentSolver
 
   startTimeOfPhase: Record<string, number>
@@ -224,9 +228,30 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
+    definePipelineStep(
+      "traceElbowTransitionSimplificationSolver",
+      TraceElbowTransitionSimplificationSolver,
+      (instance) => {
+        const overlapAvoidanceOutput =
+          instance.traceLabelOverlapAvoidanceSolver!.getOutput()
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces: overlapAvoidanceOutput.traces,
+            completedReroutes:
+              instance.traceLabelOverlapAvoidanceSolver!.subSolvers.flatMap(
+                (subSolver) => subSolver.completedReroutes,
+              ),
+            netLabelPlacements:
+              instance.traceLabelOverlapAvoidanceSolver!.netLabelPlacements,
+            paddingBuffer: 0.1,
+          },
+        ]
+      },
+    ),
     definePipelineStep("traceCleanupSolver", TraceCleanupSolver, (instance) => {
       const prevSolverOutput =
-        instance.traceLabelOverlapAvoidanceSolver!.getOutput()
+        instance.traceElbowTransitionSimplificationSolver!.getOutput()
       const traces = prevSolverOutput.traces
 
       const labelMergingOutput =
@@ -349,11 +374,30 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ],
     ),
     definePipelineStep(
+      "preAlignmentTraceElbowTransitionSimplificationSolver",
+      TraceElbowTransitionSimplificationSolver,
+      (instance) => {
+        const collisionOutput =
+          instance.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces: collisionOutput.traces,
+            completedReroutes:
+              instance.preAlignmentNetLabelTraceCollisionSolver!
+                .completedReroutes,
+            netLabelPlacements: collisionOutput.netLabelPlacements,
+            paddingBuffer: 0.1,
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
       "traceCleanupSolver2",
       TraceCleanupSolver,
       (instance) => {
         const collisionOutput =
-          instance.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
+          instance.preAlignmentTraceElbowTransitionSimplificationSolver!.getOutput()
         const labelMergingOutput =
           instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput()
 
@@ -417,17 +461,37 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
+      "finalTraceElbowTransitionSimplificationSolver",
+      TraceElbowTransitionSimplificationSolver,
+      (instance) => {
+        const collisionOutput =
+          instance.netLabelTraceCollisionSolver!.getOutput()
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces: collisionOutput.traces,
+            completedReroutes:
+              instance.netLabelTraceCollisionSolver!.completedReroutes,
+            netLabelPlacements: collisionOutput.netLabelPlacements,
+            paddingBuffer: 0.1,
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
       "netLabelNetLabelCollisionSolver",
       NetLabelNetLabelCollisionSolver,
-      (instance) => [
-        {
-          inputProblem: instance.inputProblem,
-          traces: instance.netLabelTraceCollisionSolver!.getOutput().traces,
-          netLabelPlacements:
-            instance.netLabelTraceCollisionSolver!.getOutput()
-              .netLabelPlacements,
-        },
-      ],
+      (instance) => {
+        const simplificationOutput =
+          instance.finalTraceElbowTransitionSimplificationSolver!.getOutput()
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces: simplificationOutput.traces,
+            netLabelPlacements: simplificationOutput.netLabelPlacements,
+          },
+        ]
+      },
     ),
     definePipelineStep(
       "sameNetJunctionAlignmentSolver",
