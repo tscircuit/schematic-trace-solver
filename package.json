@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/schematic-trace-solver",
   "main": "dist/index.js",
-  "version": "0.0.125",
+  "version": "0.0.126",
   "type": "module",
   "scripts": {
     "start": "cosmos",
