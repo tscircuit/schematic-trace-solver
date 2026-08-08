@@ -4,7 +4,6 @@ import {
   tracePathsHaveInteriorIntersection,
 } from "lib/solvers/GroundTraceCrossingFilterSolver/getGroundTracesToReplaceWithLabels"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
 
 const createTrace = ({
@@ -76,13 +75,6 @@ const signalTrace = createTrace({
   ],
 })
 
-const inputProblem: InputProblem = {
-  chips: [],
-  directConnections: [],
-  netConnections: [],
-  availableNetLabelOrientations: {},
-}
-
 test("finds only interior trace crossings", () => {
   expect(
     tracePathsHaveInteriorIntersection({
@@ -101,16 +93,15 @@ test("finds only interior trace crossings", () => {
   ).toBe(false)
 })
 
-test("selects generated opposite-side GND traces for label replacement", () => {
+test("selects crossing GND traces for label replacement", () => {
   expect(
     getGroundTracesToReplaceWithLabels({
-      inputProblem,
       traces: [groundTrace, signalTrace],
     }),
   ).toEqual([groundTrace])
 })
 
-test("preserves same-side GND traces", () => {
+test("selects same-side crossing GND traces", () => {
   const sameSideGroundTrace = createTrace({
     mspPairId: "same-side-ground-pair",
     globalConnNetId: "ground-net",
@@ -123,26 +114,7 @@ test("preserves same-side GND traces", () => {
 
   expect(
     getGroundTracesToReplaceWithLabels({
-      inputProblem,
       traces: [sameSideGroundTrace, signalTrace],
     }),
-  ).toHaveLength(0)
-})
-
-test("preserves explicit direct GND connections", () => {
-  const directConnectionProblem: InputProblem = {
-    ...inputProblem,
-    directConnections: [
-      {
-        pinIds: [groundTrace.pins[0].pinId, groundTrace.pins[1].pinId],
-      },
-    ],
-  }
-
-  expect(
-    getGroundTracesToReplaceWithLabels({
-      inputProblem: directConnectionProblem,
-      traces: [groundTrace, signalTrace],
-    }),
-  ).toHaveLength(0)
+  ).toEqual([sameSideGroundTrace])
 })

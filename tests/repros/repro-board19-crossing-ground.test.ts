@@ -7,7 +7,7 @@ import inputProblem from "./assets/repro-board19-crossing-ground.input.json"
 
 const REMOVED_GROUND_TRACE_ID = "schematic_port_1-schematic_port_0"
 
-test("replaces a crossing opposite-side GND trace with net labels", () => {
+test("replaces a crossing GND trace with net labels", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
 
   solver.solve()

@@ -16,6 +16,7 @@ export class GroundTraceCrossingFilterSolver extends BaseSolver {
   inputTraces: SolvedTracePath[]
   outputTraces: SolvedTracePath[]
   removedGroundTraces: SolvedTracePath[] = []
+  groundFallbackNetIds = new Set<string>()
 
   constructor({ inputProblem, traces }: GroundTraceCrossingFilterSolverInput) {
     super()
@@ -35,11 +36,13 @@ export class GroundTraceCrossingFilterSolver extends BaseSolver {
 
   override _step() {
     this.removedGroundTraces = getGroundTracesToReplaceWithLabels({
-      inputProblem: this.inputProblem,
       traces: this.inputTraces,
     })
     const removedGroundTraceIds = new Set<MspConnectionPairId>(
       this.removedGroundTraces.map((trace) => trace.mspPairId),
+    )
+    this.groundFallbackNetIds = new Set(
+      this.removedGroundTraces.map((trace) => trace.globalConnNetId),
     )
     this.outputTraces = this.inputTraces.filter(
       (trace) => !removedGroundTraceIds.has(trace.mspPairId),
@@ -52,6 +55,7 @@ export class GroundTraceCrossingFilterSolver extends BaseSolver {
     return {
       traces: this.outputTraces,
       removedGroundTraces: this.removedGroundTraces,
+      groundFallbackNetIds: this.groundFallbackNetIds,
     }
   }
 

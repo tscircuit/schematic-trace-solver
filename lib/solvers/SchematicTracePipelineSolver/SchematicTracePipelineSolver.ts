@@ -310,6 +310,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           traces: instance.example28Solver!.outputTraces,
           netLabelPlacements:
             instance.example28Solver!.outputNetLabelPlacements,
+          groundFallbackNetIds:
+            instance.groundTraceCrossingFilterSolver!.groundFallbackNetIds,
         },
       ],
     ),

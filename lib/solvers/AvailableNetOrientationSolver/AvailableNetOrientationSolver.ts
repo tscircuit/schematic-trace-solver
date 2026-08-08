@@ -14,6 +14,7 @@ import type {
   InputPin,
   InputProblem,
 } from "lib/types/InputProblem"
+import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 import { EPS, LABEL_SEARCH_STEP, WICK_CLEARANCE } from "./constants"
@@ -43,11 +44,13 @@ import type {
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
 
 const LABEL_TRACE_CLEARANCE = 0.1
+const GROUND_NET_ID = "GND"
 
 export class AvailableNetOrientationSolver extends BaseSolver {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  groundFallbackNetIds: Set<string>
 
   outputNetLabelPlacements: NetLabelPlacement[]
   queuedLabelIndices: number[] = []
@@ -68,6 +71,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     this.traces = [...params.traces]
     this.netLabelPlacements = params.netLabelPlacements
     this.outputNetLabelPlacements = [...params.netLabelPlacements]
+    this.groundFallbackNetIds = params.groundFallbackNetIds ?? new Set()
     this.traceMap = Object.fromEntries(
       this.traces.map((trace) => [trace.mspPairId, trace]),
     )
@@ -87,6 +91,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       traces: this.traces,
       netLabelPlacements: this.netLabelPlacements,
+      groundFallbackNetIds: this.groundFallbackNetIds,
     }
   }
 
@@ -1009,9 +1014,32 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
     const connectorTrace = this.getCandidateConnectorTrace(label, {
       anchorPoint: candidate.anchorPoint,
+      connectorSource: candidate.connectorSource,
       orientation: candidate.orientation,
       phase,
     })
+    const differentNetTraces = this.traces.filter(
+      (trace) => trace.globalConnNetId !== label.globalConnNetId,
+    )
+    const labelUsesGroundFallback =
+      label.netId === GROUND_NET_ID &&
+      this.groundFallbackNetIds.has(label.globalConnNetId)
+    const connectorCrossesFallbackGroundTrace = this.traces.some(
+      (trace) =>
+        this.groundFallbackNetIds.has(trace.globalConnNetId) &&
+        trace.globalConnNetId !== label.globalConnNetId &&
+        doesTraceOverlapWithExistingTraces(connectorTrace, [trace]),
+    )
+    if (
+      (labelUsesGroundFallback &&
+        doesTraceOverlapWithExistingTraces(
+          connectorTrace,
+          differentNetTraces,
+        )) ||
+      connectorCrossesFallbackGroundTrace
+    ) {
+      return "trace-collision"
+    }
 
     for (const chip of this.chipObstacleSpatialIndex.chips) {
       if (tracePathCrossesAnyBounds(connectorTrace, chip.bounds)) {
