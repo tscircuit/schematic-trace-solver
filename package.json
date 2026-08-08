@@ -19,7 +19,7 @@
     "calculate-elbow": "^0.0.12",
     "connectivity-map": "^1.0.0",
     "flatbush": "^4.5.0",
-    "graphics-debug": "^0.0.96",
+    "graphics-debug": "^0.0.98",
     "react": "^19.1.1",
     "react-cosmos": "^7.0.0",
     "react-cosmos-plugin-vite": "^7.0.0",

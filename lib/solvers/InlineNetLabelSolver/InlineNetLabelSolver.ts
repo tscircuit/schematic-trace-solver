@@ -344,6 +344,8 @@ export class InlineNetLabelSolver extends BaseSolver {
         color: "green",
         fontSize: inlineLabel.height,
         anchorSide: "center",
+        // Vertical labels read bottom-to-top, alongside the wire they name.
+        rotation: inlineLabel.axis === "y" ? 90 : undefined,
       })
       graphics.points.push({
         x: inlineLabel.anchorPoint.x,
