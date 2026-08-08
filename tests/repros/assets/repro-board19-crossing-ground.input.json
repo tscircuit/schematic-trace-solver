@@ -1,0 +1,108 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": { "x": 0.72, "y": 0 },
+      "width": 2.52,
+      "height": 1.42,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "x": 0,
+          "y": 0.71,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_1",
+          "x": -0.02,
+          "y": -0.71,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_2",
+          "x": -0.54,
+          "y": -0.01,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_3",
+          "x": 1.98,
+          "y": -0.01,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": { "x": -0.825, "y": -1.67 },
+      "width": 1.04,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_4",
+          "x": -1.02,
+          "y": -1.29,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_5",
+          "x": -1.02,
+          "y": -2.05,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": { "x": 1.275, "y": -1.67 },
+      "width": 1.16,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_6",
+          "x": 1.02,
+          "y": -1.29,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_7",
+          "x": 1.02,
+          "y": -2.05,
+          "_facingDirection": "y-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_0",
+        "schematic_port_1",
+        "schematic_port_5",
+        "schematic_port_7"
+      ]
+    },
+    {
+      "netId": "XIN",
+      "netLabelWidth": 0.48,
+      "pinIds": ["schematic_port_2", "schematic_port_4"]
+    },
+    {
+      "netId": "XOUT",
+      "netLabelWidth": 0.6,
+      "pinIds": ["schematic_port_3", "schematic_port_6"]
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "XIN": ["x-", "x+"],
+    "GND": ["y-"],
+    "XOUT": ["x-", "x+"]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}

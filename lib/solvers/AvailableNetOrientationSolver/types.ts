@@ -8,6 +8,7 @@ export interface AvailableNetOrientationSolverParams {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  groundFallbackNetIds?: Set<string>
 }
 
 export type Bounds = {
