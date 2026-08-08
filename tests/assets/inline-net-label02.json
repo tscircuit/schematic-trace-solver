@@ -1,0 +1,112 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 0.4,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "x": -0.6000000000000001,
+          "y": 0.30000000000000004,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_1",
+          "x": -0.6000000000000001,
+          "y": 0.10000000000000003,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_2",
+          "x": -0.6000000000000001,
+          "y": -0.09999999999999998,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_3",
+          "x": -0.6000000000000001,
+          "y": -0.30000000000000004,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_4",
+          "x": 0.6000000000000001,
+          "y": -0.30000000000000004,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_5",
+          "x": 0.6000000000000001,
+          "y": -0.10000000000000003,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_6",
+          "x": 0.6000000000000001,
+          "y": 0.09999999999999998,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_7",
+          "x": 0.6000000000000001,
+          "y": 0.30000000000000004,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 3,
+        "y": 0.13249999999999998
+      },
+      "width": 1.13,
+      "height": 0.915,
+      "pins": [
+        {
+          "pinId": "schematic_port_8",
+          "x": 2.46,
+          "y": 0,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_9",
+          "x": 3.54,
+          "y": 0,
+          "_facingDirection": "x+"
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "USER_LED_ANODE",
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 1.8,
+      "pinIds": [
+        "schematic_port_4",
+        "schematic_port_8"
+      ]
+    }
+  ],
+  "netConnections": [],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -0.08000000000000002,
+        "y": 0.615
+      },
+      "width": 0.36,
+      "height": 0.25,
+      "text": "U1"
+    }
+  ],
+  "availableNetLabelOrientations": {},
+  "maxMspPairDistance": 2.4
+}

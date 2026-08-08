@@ -374,9 +374,11 @@ export const estimateInlineNetLabelWidth = (
  * middle of the segment outwards. Sliding the label along the wire lets it
  * dodge a chip that only crowds one end.
  *
- * When the label is shorter than the segment, candidates are limited to
- * positions that keep it fully on the wire; when it is longer, only the
- * midpoint is offered (it will overhang either way).
+ * When the label is shorter than the segment, candidates keep it fully on the
+ * wire; when it is longer, candidates keep the wire fully under the label (the
+ * overhang shifts between the two ends). Either way the slide range is
+ * |segmentLength - labelWidth| about the midpoint, which lets a label that
+ * doesn't quite fit dodge a chip crowding one end by overhanging the other.
  */
 const getAnchorCandidates = (
   segment: AxisAlignedSegment,
@@ -394,15 +396,15 @@ const getAnchorCandidates = (
       ? { x: value, y: segment.start.y }
       : { x: segment.start.x, y: segment.start.y + (value - start) }
 
-  const slack = segment.length - labelWidth
-  if (slack <= 0) return [pointAt(mid)]
+  const halfRange = Math.abs(segment.length - labelWidth) / 2
+  if (halfRange < 1e-9) return [pointAt(mid)]
 
   const offsets: number[] = [0]
-  for (let offset = step; offset <= slack / 2 + 1e-9; offset += step) {
+  for (let offset = step; offset <= halfRange + 1e-9; offset += step) {
     offsets.push(offset, -offset)
   }
   // Always consider both extremes, even when they fall between samples.
-  offsets.push(slack / 2, -slack / 2)
+  offsets.push(halfRange, -halfRange)
 
   return offsets.map((offset) => pointAt(mid + offset * direction))
 }
