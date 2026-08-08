@@ -24,12 +24,13 @@ export const DEFAULT_INLINE_NET_LABEL_HEIGHT = 0.18
 export const INLINE_NET_LABEL_TRACE_MARGIN = 0.05
 
 /**
- * How much of the label is allowed to hang off the end of the wire it names,
- * as a fraction of the label's length. A short elbow stub is technically clear
- * of every obstacle but reads as a label floating in space, so runs shorter
- * than this are not considered.
+ * Largest perpendicular deviation a route may have and still be labeled as one
+ * span. A route that is straight except for elbow jogs up to this size reads
+ * as a single wire, so its name may be centered over the whole route,
+ * bridging the jogs. Anything more meandering falls back to an anchored net
+ * label.
  */
-export const MIN_INLINE_NET_LABEL_SEGMENT_RATIO = 0.5
+export const INLINE_NET_LABEL_MAX_SPAN_JOG = 0.4
 
 /**
  * A net label drawn parallel to the trace it names, rather than anchored to the
@@ -165,20 +166,14 @@ export class InlineNetLabelSolver extends BaseSolver {
 
     const offset = height / 2 + INLINE_NET_LABEL_TRACE_MARGIN
 
-    // Runs the label fully fits on come first, then longer-to-shorter among the
-    // runs it may overhang. Within a run, try the preferred side before the far
-    // side, and positions near the middle before ones near the ends.
+    // First choice: a straight run the label fully fits on, longest first, so
+    // the text hugs the wire it names. Within a run, try the preferred side
+    // before the far side, and positions near the middle before the ends. The
+    // label never extends past the end of a run - a name hanging off its wire
+    // reads as floating text.
     const usableSegments = segments
-      .filter(
-        (segment) =>
-          segment.length >= width * MIN_INLINE_NET_LABEL_SEGMENT_RATIO,
-      )
-      .sort((a, b) => {
-        const aFits = a.length >= width
-        const bFits = b.length >= width
-        if (aFits !== bFits) return aFits ? -1 : 1
-        return b.length - a.length
-      })
+      .filter((segment) => segment.length >= width)
+      .sort((a, b) => b.length - a.length)
 
     for (const segment of usableSegments) {
       // "Above" the trace: +y for a horizontal trace, and -x for a vertical one
@@ -232,8 +227,135 @@ export class InlineNetLabelSolver extends BaseSolver {
       }
     }
 
+    // Second choice: no single run fits, but a route that is straight except
+    // for small jogs still reads as one wire - center the label over the
+    // route's overall span, bridging the jogs, without extending past its
+    // endpoints.
+    const spanPlacement = this.computeSpanPlacement({
+      trace,
+      directConnection,
+      width,
+      height,
+      offset,
+    })
+    if (spanPlacement) return spanPlacement
+
     // No room anywhere along the trace. Leave the net to the regular anchored
     // net label rather than drawing the name over a chip.
+    return null
+  }
+
+  /**
+   * Places the label over the whole route when the route is straight except
+   * for perpendicular jogs of at most INLINE_NET_LABEL_MAX_SPAN_JOG. The label
+   * sits clear of the route's full perpendicular extent and stays within its
+   * endpoints along the dominant axis.
+   */
+  private computeSpanPlacement({
+    trace,
+    directConnection,
+    width,
+    height,
+    offset,
+  }: {
+    trace: SolvedTracePath
+    directConnection: InputDirectConnection
+    width: number
+    height: number
+    offset: number
+  }): InlineNetLabelPlacement | null {
+    const path = trace.tracePath
+    if (path.length < 2) return null
+
+    let minX = Infinity
+    let maxX = -Infinity
+    let minY = Infinity
+    let maxY = -Infinity
+    for (const point of path) {
+      minX = Math.min(minX, point.x)
+      maxX = Math.max(maxX, point.x)
+      minY = Math.min(minY, point.y)
+      maxY = Math.max(maxY, point.y)
+    }
+
+    const extentX = maxX - minX
+    const extentY = maxY - minY
+    const axis: InlineNetLabelPlacement["axis"] = extentX >= extentY ? "x" : "y"
+    const spanLength = axis === "x" ? extentX : extentY
+    const jog = axis === "x" ? extentY : extentX
+
+    if (jog > INLINE_NET_LABEL_MAX_SPAN_JOG) return null
+    if (spanLength < width) return null
+
+    const spanStart = axis === "x" ? minX : minY
+    const spanEnd = axis === "x" ? maxX : maxY
+    const mid = (spanStart + spanEnd) / 2
+
+    // Slide candidates within the span, centered first (same scheme as the
+    // per-segment stage).
+    const halfRange = (spanLength - width) / 2
+    const offsets: number[] = [0]
+    for (let value = 0.1; value <= halfRange + 1e-9; value += 0.1) {
+      offsets.push(value, -value)
+    }
+    offsets.push(halfRange, -halfRange)
+
+    const sides: InlineNetLabelPlacement["side"][] =
+      axis === "x" ? ["y+", "y-"] : ["x-", "x+"]
+
+    for (const side of sides) {
+      for (const alongOffset of offsets) {
+        const along = mid + alongOffset
+        // The label clears the far side of every jog, not just the run it is
+        // nearest to.
+        const center: Point =
+          side === "y+"
+            ? { x: along, y: maxY + offset }
+            : side === "y-"
+              ? { x: along, y: minY - offset }
+              : side === "x-"
+                ? { x: minX - offset, y: along }
+                : { x: maxX + offset, y: along }
+
+        const halfAlong = width / 2
+        const halfAcross = height / 2
+        const bounds: Bounds =
+          axis === "x"
+            ? {
+                minX: center.x - halfAlong,
+                maxX: center.x + halfAlong,
+                minY: center.y - halfAcross,
+                maxY: center.y + halfAcross,
+              }
+            : {
+                minX: center.x - halfAcross,
+                maxX: center.x + halfAcross,
+                minY: center.y - halfAlong,
+                maxY: center.y + halfAlong,
+              }
+
+        if (this.isObstructed(bounds, trace)) continue
+
+        const anchorPoint: Point =
+          axis === "x"
+            ? { x: along, y: side === "y+" ? maxY : minY }
+            : { x: side === "x-" ? minX : maxX, y: along }
+
+        return {
+          globalConnNetId: trace.globalConnNetId,
+          netId: directConnection.netId,
+          mspPairId: trace.mspPairId,
+          pinIds: [...directConnection.pinIds],
+          axis,
+          anchorPoint,
+          center,
+          width,
+          height,
+          side,
+        }
+      }
+    }
+
     return null
   }
 
@@ -374,11 +496,8 @@ export const estimateInlineNetLabelWidth = (
 /**
  * Points along a segment where the label's midpoint could sit, ordered from the
  * middle of the segment outwards. Sliding the label along the wire lets it
- * dodge a chip that only crowds one end.
- *
- * When the label is shorter than the segment, candidates are limited to
- * positions that keep it fully on the wire; when it is longer, only the
- * midpoint is offered (it will overhang either way).
+ * dodge a chip that only crowds one end. Candidates always keep the label
+ * fully on the wire; callers only pass segments the label fits on.
  */
 const getAnchorCandidates = (
   segment: AxisAlignedSegment,
