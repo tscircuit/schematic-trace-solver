@@ -21,6 +21,7 @@ import { expandChipsToFitPins } from "./expandChipsToFitPins"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { SameNetTraceMergeSolver } from "../SameNetTraceMergeSolver/SameNetTraceMergeSolver"
 import { Example28Solver } from "../Example28Solver/Example28Solver"
 import { moveAttachedLabelsToReroutedTrace } from "../Example28Solver/labelMovement"
 import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
@@ -81,6 +82,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
+  sameNetTraceMergeSolver?: SameNetTraceMergeSolver
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
   postLabelTraceOverlapShiftSolver?: TraceOverlapShiftSolver
@@ -267,10 +269,20 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ]
     }),
     definePipelineStep(
+      "sameNetTraceMergeSolver",
+      SameNetTraceMergeSolver,
+      (instance) => [
+        {
+          traces: instance.traceCleanupSolver?.getOutput().traces ?? [],
+        },
+      ],
+    ),
+    definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
       (instance) => {
         const traces =
+          instance.sameNetTraceMergeSolver?.outputTraces ??
           instance.traceCleanupSolver?.getOutput().traces ??
           instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
 
@@ -278,7 +290,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           {
             inputProblem: instance.inputProblem,
             inputTraceMap: Object.fromEntries(
-              traces.map((trace: SolvedTracePath) => [trace.mspPairId, trace]),
+              (traces as SolvedTracePath[]).map((trace) => [
+                trace.mspPairId,
+                trace,
+              ]),
             ),
           },
         ]
