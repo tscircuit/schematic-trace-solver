@@ -76,6 +76,9 @@ export interface InputProblem {
   availableNetLabelOrientations: Record<NetId, FacingDirection[]>
   maxMspPairDistance?: number
 
+  /** Pins that already have a user-placed net label in the source schematic. */
+  preExistingNetLabelPinIds?: PinId[]
+
   _chipObstacleSpatialIndex?: ChipObstacleSpatialIndex
   _hideRatsNet?: boolean
 }
