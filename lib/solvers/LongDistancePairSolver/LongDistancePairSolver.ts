@@ -16,6 +16,7 @@ import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDiffer
 import { isLabeledPeripheralConnection } from "../MspConnectionPairSolver/isLabeledPeripheralConnection"
 
 const NEAREST_NEIGHBOR_COUNT = 3
+const GROUND_NET_ID = "GND"
 
 const distance = (p1: InputPin, p2: InputPin) => {
   return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
@@ -90,6 +91,26 @@ export class LongDistancePairSolver extends BaseSolver {
     for (const netId of Object.keys(netConnMap.netMap)) {
       const allPinIdsInNet = netConnMap.getIdsConnectedToNet(netId)
       if (allPinIdsInNet.length < 2) continue
+
+      const labeledGroundConnection = inputProblem.netConnections.find(
+        (netConnection) =>
+          netConnection.netId === GROUND_NET_ID &&
+          netConnection.pinIds.some((pinId) => allPinIdsInNet.includes(pinId)),
+      )
+      const canPlaceGroundLabels =
+        (inputProblem.availableNetLabelOrientations[GROUND_NET_ID]?.length ??
+          0) > 0
+
+      // Long-distance ground connections are clearer as local GND labels.
+      // Keep short primary routes and preserve fallback routing when the
+      // caller has not provided a valid orientation for ground labels.
+      if (
+        labeledGroundConnection &&
+        labeledGroundConnection.pinIds.length > 2 &&
+        canPlaceGroundLabels
+      ) {
+        continue
+      }
 
       const unconnectedPinIds = allPinIdsInNet.filter(
         (pinId) => !primaryConnectedPinIds.has(pinId),

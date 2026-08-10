@@ -43,14 +43,7 @@ test("bug-report-20260806T093501Z", () => {
     .traces.find(
       (trace) => trace.mspPairId === "schematic_port_25-schematic_port_42",
     )
-  expect(groundTrace?.tracePath).toEqual([
-    { x: -7.7, y: 3.299999999999999 },
-    { x: -7.7, y: 4.840999999999999 },
-    { x: -8.699999999999998, y: 4.840999999999999 },
-    { x: -8.699999999999998, y: 4.71 },
-    { x: -12, y: 4.71 },
-    { x: -12, y: 6.12 },
-  ])
+  expect(groundTrace).toBeUndefined()
 
   const finalOutput = solver.sameNetJunctionAlignmentSolver!.getOutput()
   expect(
@@ -58,9 +51,7 @@ test("bug-report-20260806T093501Z", () => {
       traces: finalOutput.traces,
       netLabels: finalOutput.netLabelPlacements,
     }).map(({ trace, label }) => `${trace.mspPairId}->${label.netId}`),
-  ).toEqual([
-    "schematic_port_25-schematic_port_42->.C_CP > .pin2 to .U_GATE > .CPL",
-  ])
+  ).toEqual([])
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
