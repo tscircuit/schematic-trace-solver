@@ -48,21 +48,15 @@ const inputProblem: InputProblem = {
   maxMspPairDistance: 0.1,
 }
 
-test("rotated component rail label stays on the existing trace", () => {
+test("rotated component rail labels replace over-distance traces", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
 
-  const traces = solver.netLabelTraceCollisionSolver!.getOutput().traces
   const labels =
     solver.netLabelNetLabelCollisionSolver!.getOutput().netLabelPlacements
-  const gndLabel = labels.find((label) => label.netId === "GND")
+  const gndLabels = labels.filter((label) => label.netId === "GND")
 
-  expect(
-    traces.some((trace) =>
-      trace.mspPairId.startsWith("available-net-orientation"),
-    ),
-  ).toBe(false)
-  expect(gndLabel?.orientation).toBe("y-")
-  expect(gndLabel?.anchorPoint.x).toBeCloseTo(10.72)
-  expect(gndLabel?.anchorPoint.y).toBeCloseTo(0)
+  expect(solver.longDistancePairSolver!.getOutput().newTraces).toHaveLength(0)
+  expect(gndLabels.map((label) => label.pinIds)).toEqual([["D1.2"], ["D2.2"]])
+  expect(gndLabels.every((label) => label.orientation === "y-")).toBe(true)
 })
