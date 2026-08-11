@@ -1,5 +1,8 @@
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
-import type { MspConnectionPair } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import {
+  DEFAULT_MAX_MSP_PAIR_DISTANCE,
+  type MspConnectionPair,
+} from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type {
   InputProblem,
   InputPin,
@@ -8,10 +11,10 @@ import type {
 } from "lib/types/InputProblem"
 import { BaseSolver } from "../BaseSolver/BaseSolver"
 import { SchematicTraceSingleLineSolver2 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
-import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"
+import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 import { isLabeledPeripheralConnection } from "../MspConnectionPairSolver/isLabeledPeripheralConnection"
 
@@ -20,6 +23,9 @@ const NEAREST_NEIGHBOR_COUNT = 3
 const distance = (p1: InputPin, p2: InputPin) => {
   return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
 }
+
+const manhattanDistance = (p1: InputPin, p2: InputPin) =>
+  Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)
 
 export class LongDistancePairSolver extends BaseSolver {
   public solvedLongDistanceTraces: SolvedTracePath[] = []
@@ -37,6 +43,7 @@ export class LongDistancePairSolver extends BaseSolver {
   private netConnMap: ConnectivityMap
   private newlyConnectedPinIds = new Set<PinId>()
   private allSolvedTraces: SolvedTracePath[] = []
+  private maxMspPairDistance: number
 
   constructor(
     private params: {
@@ -53,6 +60,8 @@ export class LongDistancePairSolver extends BaseSolver {
 
     this.inputProblem = inputProblem
     this.allSolvedTraces = [...alreadySolvedTraces]
+    this.maxMspPairDistance =
+      inputProblem.maxMspPairDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
 
     // 1. Create initial maps and sets for efficient lookup
     const primaryConnectedPinIds = new Set<PinId>()
@@ -104,6 +113,18 @@ export class LongDistancePairSolver extends BaseSolver {
           .flatMap((otherPinId) => {
             const targetPin = pinMap.get(otherPinId)
             if (!targetPin) return [] // Gracefully handle missing pins
+            const isNamedTwoPinConnection = inputProblem.netConnections.some(
+              (connection) =>
+                connection.pinIds.length === 2 &&
+                connection.pinIds.includes(sourcePin.pinId) &&
+                connection.pinIds.includes(targetPin.pinId),
+            )
+            if (
+              isNamedTwoPinConnection &&
+              manhattanDistance(sourcePin, targetPin) > this.maxMspPairDistance
+            ) {
+              return []
+            }
             return [
               {
                 pin: targetPin,
