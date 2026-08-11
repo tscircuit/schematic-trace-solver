@@ -39,6 +39,9 @@ test("bug-report-20260811T075142Z", () => {
     upwardPowerLabels[1]!.anchorPoint.y,
   )
   expect(gndLabel?.orientation).toBe("y-")
+  expect(gndLabel!.anchorPoint.y).toBe(upwardPowerLabels[1]!.center.y)
+  expect(gndLabel!.center.y).toBeGreaterThan(upwardPowerLabels[0]!.center.y)
+  expect(gndLabel!.center.y).toBeLessThan(upwardPowerLabels[2]!.center.y)
 
   for (const netId of ["V3_3", "VBUS_5V", "VBAT", "GND"]) {
     const connector = output.traces.find(

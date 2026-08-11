@@ -487,43 +487,64 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           )
 
     let highestPlacedLabelY = chip.bounds.maxY
+    let lowestUpFacingLabelY = Number.POSITIVE_INFINITY
+    let highestUpFacingLabelY = Number.NEGATIVE_INFINITY
     for (let index = 0; index < this.outputNetLabelPlacements.length; index++) {
       if (index === labelIndex) continue
       if (!this.crowdedPortOnlyLabelIndices.has(index)) continue
       if (this.queuedLabelIndices.includes(index)) continue
       const placedLabel = this.outputNetLabelPlacements[index]!
-      highestPlacedLabelY = Math.max(
-        highestPlacedLabelY,
-        getRectBounds(placedLabel.center, placedLabel.width, placedLabel.height)
-          .maxY,
+      const placedBounds = getRectBounds(
+        placedLabel.center,
+        placedLabel.width,
+        placedLabel.height,
       )
+      highestPlacedLabelY = Math.max(highestPlacedLabelY, placedBounds.maxY)
+      if (placedLabel.orientation !== "y+") continue
+      lowestUpFacingLabelY = Math.min(lowestUpFacingLabelY, placedBounds.minY)
+      highestUpFacingLabelY = Math.max(highestUpFacingLabelY, placedBounds.maxY)
     }
 
-    const anchorY =
+    const stackedAnchorY =
       highestPlacedLabelY +
       LABEL_SEARCH_STEP +
       (orientation === "y-" ? height : 0)
-    if (anchorY - label.anchorPoint.y > this.maxSearchDistance + EPS) {
-      return null
-    }
-    const candidate = this.createCandidate(
-      label,
-      { x: anchorX, y: anchorY },
-      orientation,
-    )
-    const result = this.evaluateCandidate(
-      candidate,
-      label,
-      labelIndex,
-      "lateral-shift",
-      anchorY - label.anchorPoint.y,
-      anchorX - label.anchorPoint.x,
-    )
-    this.currentCandidateResults.push(result)
-    if (result.status !== "valid") return null
+    const hasUpFacingStack =
+      Number.isFinite(lowestUpFacingLabelY) &&
+      Number.isFinite(highestUpFacingLabelY)
+    const centeredAnchorY = hasUpFacingStack
+      ? (lowestUpFacingLabelY + highestUpFacingLabelY) / 2
+      : stackedAnchorY
+    const anchorYs =
+      orientation === "y-"
+        ? [centeredAnchorY, stackedAnchorY]
+        : [stackedAnchorY]
 
-    result.selected = true
-    return result
+    for (const anchorY of anchorYs) {
+      if (anchorY - label.anchorPoint.y > this.maxSearchDistance + EPS) {
+        continue
+      }
+      const candidate = this.createCandidate(
+        label,
+        { x: anchorX, y: anchorY },
+        orientation,
+      )
+      const result = this.evaluateCandidate(
+        candidate,
+        label,
+        labelIndex,
+        "lateral-shift",
+        anchorY - label.anchorPoint.y,
+        anchorX - label.anchorPoint.x,
+      )
+      this.currentCandidateResults.push(result)
+      if (result.status !== "valid") continue
+
+      result.selected = true
+      return result
+    }
+
+    return null
   }
 
   private hasTraceContinuingInOrientation(
