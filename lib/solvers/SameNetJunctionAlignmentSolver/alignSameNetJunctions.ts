@@ -4,6 +4,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { preservesLabelAnchors } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/preservesLabelAnchors"
 import {
   getVisibleTraceLength,
   getVisibleTraceSegmentCount,
@@ -161,6 +162,14 @@ const candidateIsClear = ({
     (trace) => trace.globalConnNetId !== candidateTrace.globalConnNetId,
   )
   if (doesPathCoincideWithTraces(candidateTrace.tracePath, otherNetTraces)) {
+    return false
+  }
+
+  const candidateTraces = traces.map((trace) => {
+    if (trace.mspPairId === originalTrace.mspPairId) return candidateTrace
+    return trace
+  })
+  if (!preservesLabelAnchors(netLabelPlacements, traces, candidateTraces)) {
     return false
   }
 
