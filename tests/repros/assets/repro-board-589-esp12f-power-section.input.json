@@ -1,0 +1,537 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_9",
+      "center": {
+        "x": 10.995,
+        "y": -5.0189106999999975
+      },
+      "width": 2.1999999999999993,
+      "height": 2.4000000000000004,
+      "pins": [
+        {
+          "pinId": "schematic_port_35",
+          "x": 9.895,
+          "y": -4.0189106999999975
+        },
+        {
+          "pinId": "schematic_port_36",
+          "x": 9.895,
+          "y": -4.218910699999998
+        },
+        {
+          "pinId": "schematic_port_37",
+          "x": 9.895,
+          "y": -4.418910699999998
+        },
+        {
+          "pinId": "schematic_port_38",
+          "x": 9.895,
+          "y": -4.618910699999998
+        },
+        {
+          "pinId": "schematic_port_39",
+          "x": 9.895,
+          "y": -4.818910699999997
+        },
+        {
+          "pinId": "schematic_port_40",
+          "x": 9.895,
+          "y": -5.0189106999999975
+        },
+        {
+          "pinId": "schematic_port_41",
+          "x": 9.895,
+          "y": -5.218910699999998
+        },
+        {
+          "pinId": "schematic_port_42",
+          "x": 9.895,
+          "y": -5.418910699999998
+        },
+        {
+          "pinId": "schematic_port_43",
+          "x": 9.895,
+          "y": -5.618910699999997
+        },
+        {
+          "pinId": "schematic_port_44",
+          "x": 9.895,
+          "y": -5.818910699999997
+        },
+        {
+          "pinId": "schematic_port_45",
+          "x": 9.895,
+          "y": -6.0189106999999975
+        },
+        {
+          "pinId": "schematic_port_46",
+          "x": 12.094999999999999,
+          "y": -6.0189106999999975
+        },
+        {
+          "pinId": "schematic_port_47",
+          "x": 12.094999999999999,
+          "y": -5.818910699999997
+        },
+        {
+          "pinId": "schematic_port_48",
+          "x": 12.094999999999999,
+          "y": -5.618910699999997
+        },
+        {
+          "pinId": "schematic_port_49",
+          "x": 12.094999999999999,
+          "y": -5.418910699999997
+        },
+        {
+          "pinId": "schematic_port_50",
+          "x": 12.094999999999999,
+          "y": -5.218910699999998
+        },
+        {
+          "pinId": "schematic_port_51",
+          "x": 12.094999999999999,
+          "y": -5.0189106999999975
+        },
+        {
+          "pinId": "schematic_port_52",
+          "x": 12.094999999999999,
+          "y": -4.818910699999997
+        },
+        {
+          "pinId": "schematic_port_53",
+          "x": 12.094999999999999,
+          "y": -4.618910699999997
+        },
+        {
+          "pinId": "schematic_port_54",
+          "x": 12.094999999999999,
+          "y": -4.418910699999998
+        },
+        {
+          "pinId": "schematic_port_55",
+          "x": 12.094999999999999,
+          "y": -4.218910699999998
+        },
+        {
+          "pinId": "schematic_port_56",
+          "x": 12.094999999999999,
+          "y": -4.0189106999999975
+        }
+      ],
+      "sectionId": "esp12f_power_and_boot"
+    },
+    {
+      "chipId": "schematic_component_10",
+      "center": {
+        "x": 7.5699999999999985,
+        "y": -5.918910699999998
+      },
+      "width": 0.9200000000000008,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_57",
+          "x": 7.434999999999999,
+          "y": -5.538910699999998,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_58",
+          "x": 7.434999999999999,
+          "y": -6.298910699999998,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "esp12f_power_and_boot"
+    },
+    {
+      "chipId": "schematic_component_11",
+      "center": {
+        "x": 8.87,
+        "y": -5.918910699999998
+      },
+      "width": 1.0399999999999991,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_59",
+          "x": 8.674999999999999,
+          "y": -5.538910699999998,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_60",
+          "x": 8.674999999999999,
+          "y": -6.298910699999998,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "esp12f_power_and_boot"
+    },
+    {
+      "chipId": "schematic_component_12",
+      "center": {
+        "x": 8.5075,
+        "y": -3.708910699999998
+      },
+      "width": 0.9649999999999999,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_61",
+          "x": 8.35,
+          "y": -3.408910699999998,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_62",
+          "x": 8.35,
+          "y": -4.008910699999998,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "esp12f_power_and_boot"
+    },
+    {
+      "chipId": "schematic_component_13",
+      "center": {
+        "x": 9.26,
+        "y": -1.8989106999999983
+      },
+      "width": 0.9649999999999999,
+      "height": 0.5999999999999999,
+      "pins": [
+        {
+          "pinId": "schematic_port_63",
+          "x": 9.1025,
+          "y": -1.5989106999999985,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_64",
+          "x": 9.1025,
+          "y": -2.198910699999998,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "esp12f_power_and_boot"
+    },
+    {
+      "chipId": "schematic_component_14",
+      "center": {
+        "x": 9.7,
+        "y": -8.123910699999996
+      },
+      "width": 0.9649999999999999,
+      "height": 0.6000000000000014,
+      "pins": [
+        {
+          "pinId": "schematic_port_65",
+          "x": 9.542499999999999,
+          "y": -7.823910699999995
+        },
+        {
+          "pinId": "schematic_port_66",
+          "x": 9.542499999999999,
+          "y": -8.423910699999997
+        }
+      ],
+      "sectionId": "esp12f_power_and_boot"
+    },
+    {
+      "chipId": "schematic_component_15",
+      "center": {
+        "x": 7.8199999999999985,
+        "y": -7.328910699999997
+      },
+      "width": 0.9649999999999999,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_67",
+          "x": 7.662499999999999,
+          "y": -7.028910699999997,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_68",
+          "x": 7.662499999999999,
+          "y": -7.628910699999997,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "esp12f_power_and_boot"
+    },
+    {
+      "chipId": "schematic_component_16",
+      "center": {
+        "x": 11.58,
+        "y": -8.123910699999996
+      },
+      "width": 0.9649999999999999,
+      "height": 0.6000000000000014,
+      "pins": [
+        {
+          "pinId": "schematic_port_69",
+          "x": 11.4225,
+          "y": -7.823910699999995
+        },
+        {
+          "pinId": "schematic_port_70",
+          "x": 11.4225,
+          "y": -8.423910699999997
+        }
+      ],
+      "sectionId": "esp12f_power_and_boot"
+    },
+    {
+      "chipId": "schematic_component_17",
+      "center": {
+        "x": 11.1175,
+        "y": -1.8594553499999984
+      },
+      "width": 0.9400000000000013,
+      "height": 0.7189106999999988,
+      "pins": [
+        {
+          "pinId": "schematic_port_71",
+          "x": 10.647499999999999,
+          "y": -1.9094553499999982,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_72",
+          "x": 11.5875,
+          "y": -1.9094553499999982,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "esp12f_power_and_boot"
+    },
+    {
+      "chipId": "schematic_component_18",
+      "center": {
+        "x": 13.774999999999999,
+        "y": -7.171410699999997
+      },
+      "width": 0.9400000000000013,
+      "height": 0.7189106999999986,
+      "pins": [
+        {
+          "pinId": "schematic_port_73",
+          "x": 13.304999999999998,
+          "y": -7.221410699999997,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_74",
+          "x": 14.245,
+          "y": -7.221410699999997,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "esp12f_power_and_boot"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_43",
+        "schematic_port_58",
+        "schematic_port_60",
+        "schematic_port_70"
+      ]
+    },
+    {
+      "netId": "V3_3",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_42",
+        "schematic_port_57",
+        "schematic_port_59",
+        "schematic_port_61",
+        "schematic_port_63",
+        "schematic_port_65",
+        "schematic_port_67"
+      ]
+    },
+    {
+      "netId": "ESP_RST",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_35",
+        "schematic_port_64",
+        "schematic_port_71"
+      ]
+    },
+    {
+      "netId": "ESP_EN",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_37",
+        "schematic_port_62"
+      ]
+    },
+    {
+      "netId": "RGB_BLUE_PWM",
+      "netLabelWidth": 1.56,
+      "pinIds": [
+        "schematic_port_39"
+      ]
+    },
+    {
+      "netId": "RGB_RED_PWM",
+      "netLabelWidth": 1.44,
+      "pinIds": [
+        "schematic_port_40"
+      ]
+    },
+    {
+      "netId": "RGB_GREEN_PWM",
+      "netLabelWidth": 1.68,
+      "pinIds": [
+        "schematic_port_41"
+      ]
+    },
+    {
+      "netId": "ESP_GPIO15",
+      "netLabelWidth": 1.32,
+      "pinIds": [
+        "schematic_port_44",
+        "schematic_port_69"
+      ]
+    },
+    {
+      "netId": "ESP_GPIO2",
+      "netLabelWidth": 1.2,
+      "pinIds": [
+        "schematic_port_45",
+        "schematic_port_68"
+      ]
+    },
+    {
+      "netId": "ESP_GPIO0",
+      "netLabelWidth": 1.2,
+      "pinIds": [
+        "schematic_port_46",
+        "schematic_port_66",
+        "schematic_port_73"
+      ]
+    },
+    {
+      "netId": "I2C_SDA",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_47"
+      ]
+    },
+    {
+      "netId": "I2C_SCL",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_48"
+      ]
+    },
+    {
+      "netId": "ESP_RX",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_49"
+      ]
+    },
+    {
+      "netId": "ESP_TX",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_50"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_9",
+      "center": {
+        "x": 11.434999999999999,
+        "y": -6.348910699999998
+      },
+      "width": 2.2799999999999994,
+      "height": 0.17999999999999972,
+      "text": "ESP_12F_ESP8266MOD_"
+    },
+    {
+      "chipId": "schematic_component_9",
+      "center": {
+        "x": 10.715,
+        "y": -3.703910699999997
+      },
+      "width": 0.9600000000000009,
+      "height": 0.24999999999999956,
+      "text": "ESP-12F"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V3_3": [
+      "y+"
+    ],
+    "ESP_RST": [
+      "x-",
+      "x+"
+    ],
+    "ESP_EN": [
+      "x-",
+      "x+"
+    ],
+    "RGB_BLUE_PWM": [
+      "x-",
+      "x+"
+    ],
+    "RGB_RED_PWM": [
+      "x-",
+      "x+"
+    ],
+    "RGB_GREEN_PWM": [
+      "x-",
+      "x+"
+    ],
+    "ESP_GPIO15": [
+      "x-",
+      "x+"
+    ],
+    "ESP_GPIO2": [
+      "x-",
+      "x+"
+    ],
+    "ESP_GPIO0": [
+      "x-",
+      "x+"
+    ],
+    "I2C_SDA": [
+      "x-",
+      "x+"
+    ],
+    "I2C_SCL": [
+      "x-",
+      "x+"
+    ],
+    "ESP_RX": [
+      "x-",
+      "x+"
+    ],
+    "ESP_TX": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
