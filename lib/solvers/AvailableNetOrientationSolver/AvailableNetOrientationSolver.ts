@@ -31,6 +31,7 @@ import {
   tracePathCrossesAnyBounds,
   tracePathIntersectsBounds,
 } from "./geometry"
+import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
 import { getPinMap, getTracePins, toNetLabelPlacementPatch } from "./traces"
 import type {
   AvailableNetOrientationSolverParams,
@@ -120,7 +121,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
     this.sortCrowdedTopBankByPin(indices)
 
-    const blockedStandaloneLabelIndex = indices.find((index) => {
+    const orderedIndices = orderRoutedLabelsBeforeOverlappingPortLabels({
+      labelIndices: indices,
+      netLabelPlacements: this.outputNetLabelPlacements,
+    })
+
+    const blockedStandaloneLabelIndex = orderedIndices.find((index) => {
       const label = this.outputNetLabelPlacements[index]!
       const orientations = this.getAvailableOrientations(label)
       return (
@@ -131,7 +137,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         this.labelIntersectsDifferentNetTrace(label)
       )
     })
-    if (blockedStandaloneLabelIndex === undefined) return indices
+    if (blockedStandaloneLabelIndex === undefined) return orderedIndices
     this.blockedStandaloneLabelIndex = blockedStandaloneLabelIndex
     this.blockedStandaloneLabelTargetAnchorX = null
 
@@ -142,8 +148,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const affectedSlots: number[] = []
     const labelsToOrder: number[] = []
 
-    for (let slot = 0; slot < indices.length; slot++) {
-      const index = indices[slot]!
+    for (let slot = 0; slot < orderedIndices.length; slot++) {
+      const index = orderedIndices[slot]!
       const label = this.outputNetLabelPlacements[index]!
       const orientations = this.getAvailableOrientations(label)
       if (
@@ -182,10 +188,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       ).x
     }
     for (let i = 0; i < affectedSlots.length; i++) {
-      indices[affectedSlots[i]!] = labelsToOrder[i]!
+      orderedIndices[affectedSlots[i]!] = labelsToOrder[i]!
     }
 
-    return indices
+    return orderedIndices
   }
 
   private sortCrowdedTopBankByPin(indices: number[]) {
