@@ -10,6 +10,7 @@ import {
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
+  ChipId,
   InputNetConnection,
   InputPin,
   InputProblem,
@@ -188,7 +189,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private sortCrowdedTopBankByPin(indices: number[]) {
-    const slotsByChip = new Map<string, number[]>()
+    const slotsByChip = new Map<ChipId, number[]>()
 
     for (let slot = 0; slot < indices.length; slot++) {
       const labelIndex = indices[slot]!
@@ -234,7 +235,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private getCrowdedPortOnlyLabelIndices() {
-    const groups = new Map<string, number[]>()
+    const labelIndicesByChipAndSide = new Map<ChipId, Map<ChipSide, number[]>>()
     for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
       const label = this.outputNetLabelPlacements[i]!
       if (!this.isPortOnlyLabel(label)) continue
@@ -242,31 +243,40 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       if (this.getAvailableOrientations(label).length === 0) continue
       const pin = this.pinMap[label.pinIds[0]!]
       if (!pin) continue
-      const key = `${pin.chipId}:${this.getChipSideForPoint(label.anchorPoint)}`
-      const group = groups.get(key) ?? []
-      group.push(i)
-      groups.set(key, group)
+      const chipSide = this.getChipSideForPoint(label.anchorPoint)
+      if (!chipSide) continue
+      const labelIndicesBySide =
+        labelIndicesByChipAndSide.get(pin.chipId) ??
+        new Map<ChipSide, number[]>()
+      const labelIndices = labelIndicesBySide.get(chipSide) ?? []
+      labelIndices.push(i)
+      labelIndicesBySide.set(chipSide, labelIndices)
+      labelIndicesByChipAndSide.set(pin.chipId, labelIndicesBySide)
     }
 
     const crowdedIndices = new Set<number>()
-    for (const group of groups.values()) {
-      const hasWrongOrientation = group.some((index) => {
-        const label = this.outputNetLabelPlacements[index]!
-        return !this.getAvailableOrientations(label).includes(label.orientation)
-      })
-      const hasOverlap = group.some((index, position) => {
-        const label = this.outputNetLabelPlacements[index]!
-        const bounds = getRectBounds(label.center, label.width, label.height)
-        return group.slice(position + 1).some((otherIndex) => {
-          const other = this.outputNetLabelPlacements[otherIndex]!
-          return rectsOverlap(
-            bounds,
-            getRectBounds(other.center, other.width, other.height),
+    for (const labelIndicesBySide of labelIndicesByChipAndSide.values()) {
+      for (const labelIndices of labelIndicesBySide.values()) {
+        const hasWrongOrientation = labelIndices.some((index) => {
+          const label = this.outputNetLabelPlacements[index]!
+          return !this.getAvailableOrientations(label).includes(
+            label.orientation,
           )
         })
-      })
-      if (!hasWrongOrientation || !hasOverlap) continue
-      for (const index of group) crowdedIndices.add(index)
+        const hasOverlap = labelIndices.some((index, position) => {
+          const label = this.outputNetLabelPlacements[index]!
+          const bounds = getRectBounds(label.center, label.width, label.height)
+          return labelIndices.slice(position + 1).some((otherIndex) => {
+            const other = this.outputNetLabelPlacements[otherIndex]!
+            return rectsOverlap(
+              bounds,
+              getRectBounds(other.center, other.width, other.height),
+            )
+          })
+        })
+        if (!hasWrongOrientation || !hasOverlap) continue
+        for (const index of labelIndices) crowdedIndices.add(index)
+      }
     }
 
     return crowdedIndices
