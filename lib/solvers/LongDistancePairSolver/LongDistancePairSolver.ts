@@ -1,4 +1,5 @@
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import type { Point } from "@tscircuit/math-utils"
 import {
   DEFAULT_MAX_MSP_PAIR_DISTANCE,
   type MspConnectionPair,
@@ -20,12 +21,117 @@ import { isLabeledPeripheralConnection } from "../MspConnectionPairSolver/isLabe
 
 const NEAREST_NEIGHBOR_COUNT = 3
 
-const distance = (p1: InputPin, p2: InputPin) => {
+const distance = (p1: Point, p2: Point) => {
   return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
 }
 
 const manhattanDistance = (p1: InputPin, p2: InputPin) =>
   Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)
+
+const EPS = 1e-9
+
+const between = (value: number, first: number, second: number) =>
+  value >= Math.min(first, second) - EPS &&
+  value <= Math.max(first, second) + EPS
+
+const getAxisAlignedIntersection = (
+  firstStart: Point,
+  firstEnd: Point,
+  secondStart: Point,
+  secondEnd: Point,
+) => {
+  const firstIsHorizontal = Math.abs(firstStart.y - firstEnd.y) <= EPS
+  const firstIsVertical = Math.abs(firstStart.x - firstEnd.x) <= EPS
+  const secondIsHorizontal = Math.abs(secondStart.y - secondEnd.y) <= EPS
+  const secondIsVertical = Math.abs(secondStart.x - secondEnd.x) <= EPS
+
+  if (firstIsHorizontal && secondIsVertical) {
+    const point = { x: secondStart.x, y: firstStart.y }
+    return between(point.x, firstStart.x, firstEnd.x) &&
+      between(point.y, secondStart.y, secondEnd.y)
+      ? point
+      : null
+  }
+  if (firstIsVertical && secondIsHorizontal) {
+    const point = { x: firstStart.x, y: secondStart.y }
+    return between(point.y, firstStart.y, firstEnd.y) &&
+      between(point.x, secondStart.x, secondEnd.x)
+      ? point
+      : null
+  }
+  if (
+    firstIsHorizontal &&
+    secondIsHorizontal &&
+    Math.abs(firstStart.y - secondStart.y) <= EPS
+  ) {
+    const overlapMin = Math.max(
+      Math.min(firstStart.x, firstEnd.x),
+      Math.min(secondStart.x, secondEnd.x),
+    )
+    const overlapMax = Math.min(
+      Math.max(firstStart.x, firstEnd.x),
+      Math.max(secondStart.x, secondEnd.x),
+    )
+    if (overlapMin > overlapMax + EPS) return null
+    return {
+      x: Math.max(overlapMin, Math.min(firstStart.x, overlapMax)),
+      y: firstStart.y,
+    }
+  }
+  if (
+    firstIsVertical &&
+    secondIsVertical &&
+    Math.abs(firstStart.x - secondStart.x) <= EPS
+  ) {
+    const overlapMin = Math.max(
+      Math.min(firstStart.y, firstEnd.y),
+      Math.min(secondStart.y, secondEnd.y),
+    )
+    const overlapMax = Math.min(
+      Math.max(firstStart.y, firstEnd.y),
+      Math.max(secondStart.y, secondEnd.y),
+    )
+    if (overlapMin > overlapMax + EPS) return null
+    return {
+      x: firstStart.x,
+      y: Math.max(overlapMin, Math.min(firstStart.y, overlapMax)),
+    }
+  }
+  return null
+}
+
+const clipPathAtFirstIntersection = (
+  tracePath: SolvedTracePath["tracePath"],
+  existingTraces: SolvedTracePath[],
+) => {
+  for (let pathIndex = 0; pathIndex < tracePath.length - 1; pathIndex++) {
+    const pathStart = tracePath[pathIndex]!
+    const pathEnd = tracePath[pathIndex + 1]!
+    const intersections = existingTraces.flatMap((trace) =>
+      trace.tracePath.slice(0, -1).flatMap((traceStart, traceIndex) => {
+        const intersection = getAxisAlignedIntersection(
+          pathStart,
+          pathEnd,
+          traceStart,
+          trace.tracePath[traceIndex + 1]!,
+        )
+        return intersection ? [intersection] : []
+      }),
+    )
+    intersections.sort(
+      (first, second) =>
+        distance(pathStart, first) - distance(pathStart, second),
+    )
+    const intersection = intersections[0]
+    if (!intersection) continue
+    const clippedPath = tracePath.slice(0, pathIndex + 1)
+    if (distance(clippedPath.at(-1)!, intersection) > EPS) {
+      clippedPath.push(intersection)
+    }
+    return clippedPath
+  }
+  return null
+}
 
 export class LongDistancePairSolver extends BaseSolver {
   public solvedLongDistanceTraces: SolvedTracePath[] = []
@@ -196,14 +302,42 @@ export class LongDistancePairSolver extends BaseSolver {
     } else if (this.subSolver?.solved) {
       const newTracePath = this.subSolver.solvedTracePath
       if (newTracePath && this.currentCandidatePair) {
+        const [p1, p2] = this.currentCandidatePair
+        const globalConnNetId = this.netConnMap.getNetConnectedToId(p1.pinId)!
+        const sameNetTraces = this.allSolvedTraces.filter(
+          (trace) => trace.globalConnNetId === globalConnNetId,
+        )
+        const inputNetConnection = this.inputProblem.netConnections.find(
+          (connection) =>
+            connection.pinIds.length === 3 &&
+            connection.pinIds.includes(p1.pinId) &&
+            connection.pinIds.includes(p2.pinId),
+        )
+        const sourceChip = this.chipMap[p1.chipId]
+        const targetRailTrace = sameNetTraces.find(
+          (trace) =>
+            trace.pinIds.includes(p2.pinId) &&
+            trace.pins.every((pin) => pin.chipId === p2.chipId),
+        )
+        const canJoinThreePinNet =
+          inputNetConnection !== undefined &&
+          sourceChip?.pins.length === 2 &&
+          targetRailTrace !== undefined
+        const junctionTracePath = canJoinThreePinNet
+          ? clipPathAtFirstIntersection(newTracePath, sameNetTraces)
+          : null
+        const acceptedTracePath = junctionTracePath ?? newTracePath
+        const tracesToCheck = junctionTracePath
+          ? this.allSolvedTraces.filter(
+              (trace) => trace.globalConnNetId !== globalConnNetId,
+            )
+          : this.allSolvedTraces
         const isTraceClear = !doesTraceOverlapWithExistingTraces(
-          newTracePath,
-          this.allSolvedTraces,
+          acceptedTracePath,
+          tracesToCheck,
         )
 
         if (isTraceClear) {
-          const [p1, p2] = this.currentCandidatePair
-          const globalConnNetId = this.netConnMap.getNetConnectedToId(p1.pinId)!
           const mspPairId = `${p1.pinId}-${p2.pinId}`
 
           const newSolvedTrace: SolvedTracePath = {
@@ -211,7 +345,7 @@ export class LongDistancePairSolver extends BaseSolver {
             dcConnNetId: globalConnNetId,
             globalConnNetId,
             pins: [p1, p2],
-            tracePath: newTracePath,
+            tracePath: acceptedTracePath,
             mspConnectionPairIds: [mspPairId],
             pinIds: [p1.pinId, p2.pinId],
           }
