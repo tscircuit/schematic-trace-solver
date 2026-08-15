@@ -1,0 +1,701 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`OverlapAvoidanceStepSolver snapshot 1`] = `
+OverlapAvoidanceStepSolver {
+  "MAX_ITERATIONS": 100000,
+  "PADDING_BUFFER": 0.1,
+  "activeSubSolver": null,
+  "allTraces": [
+    {
+      "dcConnNetId": "connectivity_net0",
+      "globalConnNetId": "connectivity_net0",
+      "mspConnectionPairIds": [
+        "U1.5-C2.1",
+      ],
+      "mspPairId": "U1.5-C2.1",
+      "pinIds": [
+        "U1.5",
+        "C2.1",
+      ],
+      "pins": [
+        {
+          "_facingDirection": "x-",
+          "chipId": "schematic_component_0",
+          "pinId": "U1.5",
+          "x": -1.2000000000000002,
+          "y": 0.10000000000000003,
+        },
+        {
+          "_facingDirection": "x+",
+          "chipId": "schematic_component_4",
+          "pinId": "C2.1",
+          "x": -1.9000000000000004,
+          "y": 0.10000000000000002,
+        },
+      ],
+      "tracePath": [
+        {
+          "x": -1.2000000000000002,
+          "y": 0.10000000000000003,
+        },
+        {
+          "x": -1.9000000000000004,
+          "y": 0.10000000000000002,
+        },
+      ],
+      "userNetId": "U1.CTRL to C2.pin1",
+    },
+    {
+      "dcConnNetId": "connectivity_net1",
+      "globalConnNetId": "connectivity_net1",
+      "mspConnectionPairIds": [
+        "U1.2-C1.1",
+      ],
+      "mspPairId": "U1.2-C1.1",
+      "pinIds": [
+        "U1.2",
+        "C1.1",
+      ],
+      "pins": [
+        {
+          "_facingDirection": "x-",
+          "chipId": "schematic_component_0",
+          "pinId": "U1.2",
+          "x": -1.2000000000000002,
+          "y": -0.30000000000000004,
+        },
+        {
+          "_facingDirection": "y+",
+          "chipId": "schematic_component_3",
+          "pinId": "C1.1",
+          "x": -1.2000000000000002,
+          "y": -1.1500000000000001,
+        },
+      ],
+      "tracePath": [
+        {
+          "x": -1.2000000000000002,
+          "y": -0.30000000000000004,
+        },
+        {
+          "x": -1.4000000000000001,
+          "y": -0.30000000000000004,
+        },
+        {
+          "x": -1.4000000000000001,
+          "y": -0.7250000000000001,
+        },
+        {
+          "x": -1.2000000000000002,
+          "y": -0.7250000000000001,
+        },
+        {
+          "x": -1.2000000000000002,
+          "y": -1.1500000000000001,
+        },
+      ],
+      "userNetId": "U1.THRES to U1.TRIG",
+    },
+    {
+      "dcConnNetId": "connectivity_net1",
+      "globalConnNetId": "connectivity_net1",
+      "mspConnectionPairIds": [
+        "U1.6-U1.2",
+      ],
+      "mspPairId": "U1.6-U1.2",
+      "pinIds": [
+        "U1.6",
+        "U1.2",
+      ],
+      "pins": [
+        {
+          "_facingDirection": "x-",
+          "chipId": "schematic_component_0",
+          "pinId": "U1.6",
+          "x": -1.2000000000000002,
+          "y": -0.09999999999999998,
+        },
+        {
+          "_facingDirection": "x-",
+          "chipId": "schematic_component_0",
+          "pinId": "U1.2",
+          "x": -1.2000000000000002,
+          "y": -0.30000000000000004,
+        },
+      ],
+      "tracePath": [
+        {
+          "x": -1.2000000000000002,
+          "y": -0.09999999999999998,
+        },
+        {
+          "x": -1.4000000000000001,
+          "y": -0.09999999999999998,
+        },
+        {
+          "x": -1.4000000000000001,
+          "y": -0.30000000000000004,
+        },
+        {
+          "x": -1.2000000000000002,
+          "y": -0.30000000000000004,
+        },
+      ],
+      "userNetId": "U1.THRES to C1.pin1",
+    },
+    {
+      "dcConnNetId": "connectivity_net1",
+      "globalConnNetId": "connectivity_net1",
+      "mspConnectionPairIds": [
+        "R2.2-C1.1",
+      ],
+      "mspPairId": "R2.2-C1.1",
+      "pinIds": [
+        "R2.2",
+        "C1.1",
+      ],
+      "pins": [
+        {
+          "_facingDirection": "x-",
+          "chipId": "schematic_component_2",
+          "pinId": "R2.2",
+          "x": 0.10000000000000009,
+          "y": -1.2944553500000002,
+        },
+        {
+          "_facingDirection": "y+",
+          "chipId": "schematic_component_3",
+          "pinId": "C1.1",
+          "x": -1.2000000000000002,
+          "y": -1.1500000000000001,
+        },
+      ],
+      "tracePath": [
+        {
+          "x": 0.09999999999999987,
+          "y": -1.2944553500000002,
+        },
+        {
+          "x": -0.55,
+          "y": -1.2944553500000002,
+        },
+        {
+          "x": -0.55,
+          "y": -0.9500000000000002,
+        },
+        {
+          "x": -1.2000000000000002,
+          "y": -0.9500000000000002,
+        },
+        {
+          "x": -1.2000000000000002,
+          "y": -1.1500000000000001,
+        },
+      ],
+      "userNetId": "R2.pin2 to U1.THRES",
+    },
+    {
+      "dcConnNetId": "connectivity_net2",
+      "globalConnNetId": "connectivity_net2",
+      "mspConnectionPairIds": [
+        "U1.7-R1.2",
+      ],
+      "mspPairId": "U1.7-R1.2",
+      "pinIds": [
+        "U1.7",
+        "R1.2",
+      ],
+      "pins": [
+        {
+          "_facingDirection": "x+",
+          "chipId": "schematic_component_0",
+          "pinId": "U1.7",
+          "x": 1.2000000000000002,
+          "y": -0.10000000000000003,
+        },
+        {
+          "_facingDirection": "x-",
+          "chipId": "schematic_component_1",
+          "pinId": "R1.2",
+          "x": 1.9000000000000004,
+          "y": -0.10000000000000002,
+        },
+      ],
+      "tracePath": [
+        {
+          "x": 1.2000000000000002,
+          "y": -0.10000000000000003,
+        },
+        {
+          "x": 1.9000000000000004,
+          "y": -0.10000000000000002,
+        },
+      ],
+      "userNetId": "U1.DISCH to R2.pin1",
+    },
+    {
+      "dcConnNetId": "connectivity_net2",
+      "globalConnNetId": "connectivity_net2",
+      "mspConnectionPairIds": [
+        "R2.1-U1.7",
+      ],
+      "mspPairId": "R2.1-U1.7",
+      "pinIds": [
+        "R2.1",
+        "U1.7",
+      ],
+      "pins": [
+        {
+          "_facingDirection": "x+",
+          "chipId": "schematic_component_2",
+          "pinId": "R2.1",
+          "x": 1.2000000000000002,
+          "y": -1.2944553500000002,
+        },
+        {
+          "_facingDirection": "x+",
+          "chipId": "schematic_component_0",
+          "pinId": "U1.7",
+          "x": 1.2000000000000002,
+          "y": -0.10000000000000003,
+        },
+      ],
+      "tracePath": [
+        {
+          "x": 1.2000000000000002,
+          "y": -1.2944553500000002,
+        },
+        {
+          "x": 1.4000000000000001,
+          "y": -1.2944553500000002,
+        },
+        {
+          "x": 1.4000000000000001,
+          "y": -0.10000000000000003,
+        },
+        {
+          "x": 1.2000000000000002,
+          "y": -0.10000000000000003,
+        },
+      ],
+      "userNetId": "U1.DISCH to R2.pin1",
+    },
+    {
+      "dcConnNetId": "connectivity_net3",
+      "globalConnNetId": "connectivity_net3",
+      "mspConnectionPairIds": [
+        "U1.3-R3.1",
+      ],
+      "mspPairId": "U1.3-R3.1",
+      "pinIds": [
+        "U1.3",
+        "R3.1",
+      ],
+      "pins": [
+        {
+          "_facingDirection": "x+",
+          "chipId": "schematic_component_0",
+          "pinId": "U1.3",
+          "x": 1.2000000000000002,
+          "y": 0.09999999999999998,
+        },
+        {
+          "_facingDirection": "y-",
+          "chipId": "schematic_component_5",
+          "pinId": "R3.1",
+          "x": 1.2000000000000002,
+          "y": 1.1500000000000001,
+        },
+      ],
+      "tracePath": [
+        {
+          "x": 1.2000000000000002,
+          "y": 0.09999999999999998,
+        },
+        {
+          "x": 1.4000000000000001,
+          "y": 0.09999999999999998,
+        },
+        {
+          "x": 1.4000000000000001,
+          "y": 0.625,
+        },
+        {
+          "x": 1.2000000000000002,
+          "y": 0.625,
+        },
+        {
+          "x": 1.2000000000000002,
+          "y": 1.1500000000000001,
+        },
+      ],
+      "userNetId": "U1.OUT to R3.pin1",
+    },
+    {
+      "dcConnNetId": "connectivity_net5",
+      "globalConnNetId": "connectivity_net5",
+      "mspConnectionPairIds": [
+        "U1.8-R1.1",
+      ],
+      "mspPairId": "U1.8-R1.1",
+      "pinIds": [
+        "U1.8",
+        "R1.1",
+      ],
+      "pins": [
+        {
+          "_facingDirection": "x+",
+          "chipId": "schematic_component_0",
+          "pinId": "U1.8",
+          "x": 1.2000000000000002,
+          "y": 0.30000000000000004,
+        },
+        {
+          "_facingDirection": "x+",
+          "chipId": "schematic_component_1",
+          "pinId": "R1.1",
+          "x": 3,
+          "y": -0.10000000000000016,
+        },
+      ],
+      "tracePath": [
+        {
+          "x": 1.2000000000000002,
+          "y": 0.30000000000000004,
+        },
+        {
+          "x": 3.2,
+          "y": 0.30000000000000004,
+        },
+        {
+          "x": 3.2,
+          "y": -0.10000000000000016,
+        },
+        {
+          "x": 3,
+          "y": -0.10000000000000016,
+        },
+      ],
+      "userNetId": "VCC",
+    },
+    {
+      "dcConnNetId": "connectivity_net4",
+      "globalConnNetId": "connectivity_net4",
+      "mspConnectionPairIds": [
+        "C1.2-C2.2",
+      ],
+      "mspPairId": "C1.2-C2.2",
+      "pinIds": [
+        "C1.2",
+        "C2.2",
+      ],
+      "pins": [
+        {
+          "_facingDirection": "y-",
+          "chipId": "schematic_component_3",
+          "pinId": "C1.2",
+          "x": -1.2000000000000002,
+          "y": -2.25,
+        },
+        {
+          "_facingDirection": "x-",
+          "chipId": "schematic_component_4",
+          "pinId": "C2.2",
+          "x": -3,
+          "y": 0.10000000000000016,
+        },
+      ],
+      "tracePath": [
+        {
+          "x": -1.2000000000000002,
+          "y": -2.25,
+        },
+        {
+          "x": -1.2000000000000002,
+          "y": -2.45,
+        },
+        {
+          "x": -3.2,
+          "y": -2.45,
+        },
+        {
+          "x": -3.2,
+          "y": 0.10000000000000016,
+        },
+        {
+          "x": -3,
+          "y": 0.10000000000000016,
+        },
+      ],
+    },
+  ],
+  "currentlyProcessingOverlap": null,
+  "decomposedChildLabels": null,
+  "detourCounts": undefined,
+  "error": null,
+  "failed": false,
+  "failedSubSolvers": undefined,
+  "initialNetLabelPlacements": undefined,
+  "inputProblem": {
+    "availableNetLabelOrientations": {
+      "GND": [
+        "y-",
+      ],
+      "VCC": [
+        "y+",
+      ],
+    },
+    "chips": [
+      {
+        "center": {
+          "x": 0,
+          "y": 0,
+        },
+        "chipId": "schematic_component_0",
+        "height": 1,
+        "pins": [
+          {
+            "pinId": "U1.1",
+            "x": 1.2000000000000002,
+            "y": -0.30000000000000004,
+          },
+          {
+            "pinId": "U1.2",
+            "x": -1.2000000000000002,
+            "y": -0.30000000000000004,
+          },
+          {
+            "pinId": "U1.3",
+            "x": 1.2000000000000002,
+            "y": 0.09999999999999998,
+          },
+          {
+            "pinId": "U1.4",
+            "x": -1.2000000000000002,
+            "y": 0.30000000000000004,
+          },
+          {
+            "pinId": "U1.5",
+            "x": -1.2000000000000002,
+            "y": 0.10000000000000003,
+          },
+          {
+            "pinId": "U1.6",
+            "x": -1.2000000000000002,
+            "y": -0.09999999999999998,
+          },
+          {
+            "pinId": "U1.7",
+            "x": 1.2000000000000002,
+            "y": -0.10000000000000003,
+          },
+          {
+            "pinId": "U1.8",
+            "x": 1.2000000000000002,
+            "y": 0.30000000000000004,
+          },
+        ],
+        "width": 2.4000000000000004,
+      },
+      {
+        "center": {
+          "x": 2.45,
+          "y": -0.10000000000000009,
+        },
+        "chipId": "schematic_component_1",
+        "height": 0.388910699999999,
+        "pins": [
+          {
+            "pinId": "R1.1",
+            "x": 3,
+            "y": -0.10000000000000016,
+          },
+          {
+            "pinId": "R1.2",
+            "x": 1.9000000000000004,
+            "y": -0.10000000000000002,
+          },
+        ],
+        "width": 1.0999999999999996,
+      },
+      {
+        "center": {
+          "x": 0.6500000000000001,
+          "y": -1.2944553500000002,
+        },
+        "chipId": "schematic_component_2",
+        "height": 0.388910699999999,
+        "pins": [
+          {
+            "pinId": "R2.1",
+            "x": 1.2000000000000002,
+            "y": -1.2944553500000002,
+          },
+          {
+            "pinId": "R2.2",
+            "x": 0.10000000000000009,
+            "y": -1.2944553500000002,
+          },
+        ],
+        "width": 1.1,
+      },
+      {
+        "center": {
+          "x": -1.2000000000000002,
+          "y": -1.7000000000000002,
+        },
+        "chipId": "schematic_component_3",
+        "height": 1.1,
+        "pins": [
+          {
+            "pinId": "C1.1",
+            "x": -1.2000000000000002,
+            "y": -1.1500000000000001,
+          },
+          {
+            "pinId": "C1.2",
+            "x": -1.2000000000000002,
+            "y": -2.25,
+          },
+        ],
+        "width": 1.06,
+      },
+      {
+        "center": {
+          "x": -2.45,
+          "y": 0.10000000000000009,
+        },
+        "chipId": "schematic_component_4",
+        "height": 0.84,
+        "pins": [
+          {
+            "pinId": "C2.1",
+            "x": -1.9000000000000004,
+            "y": 0.10000000000000002,
+          },
+          {
+            "pinId": "C2.2",
+            "x": -3,
+            "y": 0.10000000000000016,
+          },
+        ],
+        "width": 1.0999999999999996,
+      },
+      {
+        "center": {
+          "x": 1.2000000000000002,
+          "y": 1.7000000000000002,
+        },
+        "chipId": "schematic_component_5",
+        "height": 1.1,
+        "pins": [
+          {
+            "pinId": "R3.1",
+            "x": 1.2000000000000002,
+            "y": 1.1500000000000001,
+          },
+          {
+            "pinId": "R3.2",
+            "x": 1.2000000000000002,
+            "y": 2.25,
+          },
+        ],
+        "width": 1.06,
+      },
+    ],
+    "directConnections": [
+      {
+        "netId": "U1.CTRL to C2.pin1",
+        "pinIds": [
+          "U1.5",
+          "C2.1",
+        ],
+      },
+      {
+        "netId": "U1.THRES to U1.TRIG",
+        "pinIds": [
+          "U1.6",
+          "U1.2",
+        ],
+      },
+      {
+        "netId": "R1.pin2 to U1.DISCH",
+        "pinIds": [
+          "R1.2",
+          "U1.7",
+        ],
+      },
+      {
+        "netId": "U1.DISCH to R2.pin1",
+        "pinIds": [
+          "U1.7",
+          "R2.1",
+        ],
+      },
+      {
+        "netId": "R2.pin2 to U1.THRES",
+        "pinIds": [
+          "R2.2",
+          "U1.6",
+        ],
+      },
+      {
+        "netId": "U1.THRES to C1.pin1",
+        "pinIds": [
+          "U1.6",
+          "C1.1",
+        ],
+      },
+      {
+        "netId": "U1.OUT to R3.pin1",
+        "pinIds": [
+          "U1.3",
+          "R3.1",
+        ],
+      },
+    ],
+    "maxMspPairDistance": 2.4,
+    "netConnections": [
+      {
+        "netId": "GND",
+        "pinIds": [
+          "U1.1",
+          "C1.2",
+          "C2.2",
+        ],
+      },
+      {
+        "netId": "VCC",
+        "pinIds": [
+          "U1.4",
+          "U1.8",
+          "R1.1",
+        ],
+      },
+    ],
+  },
+  "iterations": 1,
+  "mergedLabelNetIdMap": {
+    "merged-group-U1-x+": Set {
+      "connectivity_net4",
+      "connectivity_net3",
+    },
+    "merged-group-U1-x-": Set {
+      "connectivity_net1",
+      "connectivity_net5",
+    },
+    "merged-group-U1-y+": Set {
+      "connectivity_net5",
+      "connectivity_net0",
+    },
+  },
+  "mergedNetLabelPlacements": undefined,
+  "modifiedTraces": [],
+  "overlapQueue": [],
+  "progress": 0,
+  "recentlyFailed": Set {},
+  "solved": true,
+  "stats": {},
+  "timeToSolve": 0,
+}
+`;

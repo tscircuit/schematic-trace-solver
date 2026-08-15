@@ -1,15 +1,13 @@
-import { defineConfig } from "vite"
-import path from "path"
+/// <reference types="vitest" />
+import { defineConfig } from "vitest/config"
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      lib: path.resolve(__dirname, "lib"),
-      site: path.resolve(__dirname, "site"),
-      tests: path.resolve(__dirname, "tests"),
+  test: {
+    globals: true,
+    environment: "node",
+    include: ["tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    coverage: {
+      reporter: ["text", "json", "html"],
     },
-  },
-  server: {
-    port: 5020,
   },
 })
