@@ -56,21 +56,21 @@ export class MspConnectionPairSolver extends BaseSolver {
     this.globalConnMap = netConnMap
 
     this.pinMap = {}
-    for (const chip of inputProblem.chips) {
-      for (const pin of chip.pins) {
+    for (const chip of inputProblem.chips ?? []) {
+      for (const pin of chip.pins ?? []) {
         this.pinMap[pin.pinId] = { ...pin, chipId: chip.chipId }
       }
     }
 
     this.chipMap = {}
-    for (const chip of inputProblem.chips) {
+    for (const chip of inputProblem.chips ?? []) {
       this.chipMap[chip.chipId] = chip
     }
 
     // Build a mapping from PinId to user-provided netId (if any)
     this.userNetIdByPinId = {}
     this.directConnectionPinPairKeys = new Set()
-    for (const dc of inputProblem.directConnections) {
+    for (const dc of inputProblem.directConnections ?? []) {
       this.directConnectionPinPairKeys.add(getPinPairKey(dc.pinIds))
       if (dc.netId) {
         const [a, b] = dc.pinIds
@@ -78,8 +78,8 @@ export class MspConnectionPairSolver extends BaseSolver {
         this.userNetIdByPinId[b] = dc.netId
       }
     }
-    for (const nc of inputProblem.netConnections) {
-      for (const pid of nc.pinIds) {
+    for (const nc of inputProblem.netConnections ?? []) {
+      for (const pid of nc.pinIds ?? []) {
         this.userNetIdByPinId[pid] = nc.netId
       }
     }
