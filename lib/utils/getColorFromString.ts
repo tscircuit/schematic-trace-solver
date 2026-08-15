@@ -1,8 +1,9 @@
 export const getColorFromString = (string: string, alpha = 1) => {
-  // 32-bit integer pseudo-random hash from string to prevent overflow to Infinity
+  // pseudo random number from string
   const hash = string.split("").reduce((acc, char) => {
-    return (acc * 31 + char.charCodeAt(0)) | 0
+    const next = acc * 31 + char.charCodeAt(0)
+    return Number.isFinite(next) ? next : (acc % 360) * 31 + char.charCodeAt(0)
   }, 0)
-  const hue = Math.abs(hash) % 360
+  const hue = Number.isFinite(hash) ? Math.abs(hash) % 360 : 0
   return `hsl(${hue}, 100%, 50%, ${alpha})`
 }
