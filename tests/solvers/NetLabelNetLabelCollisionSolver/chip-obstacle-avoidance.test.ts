@@ -23,17 +23,22 @@ test("NetLabelNetLabelCollisionSolver relocates net labels placed inside chip bo
         ],
       },
     ],
-    connections: [],
+    directConnections: [],
+    netConnections: [],
+    availableNetLabelOrientations: {},
   }
 
   const traces: SolvedTracePath[] = [
     {
       mspPairId: "pair-1" as any,
       mspConnectionPairIds: ["pair-1" as any],
-      pinIds: ["U1.pin1"],
+      pinIds: ["U1.pin1", "U1.pin1"],
       dcConnNetId: "net_VCC",
       globalConnNetId: "net_VCC",
-      pins: [{ pinId: "U1.pin1", x: -1, y: 0 }],
+      pins: [
+        { pinId: "U1.pin1", x: -1, y: 0, chipId: "U1" },
+        { pinId: "U1.pin1", x: -1, y: 0, chipId: "U1" },
+      ],
       tracePath: [
         { x: -1, y: 0 },
         { x: -3, y: 0 },
