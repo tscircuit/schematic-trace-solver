@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { pathMatchesPinDirections } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/calculateDirectShortPath"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import { preservesLabelAnchors } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/preservesLabelAnchors"
@@ -29,8 +30,15 @@ interface HorizontalSegment {
   end: Point
 }
 
+interface AlignedBranchPath {
+  path: Point[]
+  usesHorizontalPinExit: boolean
+}
+
 // Only near-level load pins should be combined onto one horizontal rail.
 const MAX_ALIGNED_LOAD_PIN_OFFSET = 0.2
+const HORIZONTAL_PIN_EXIT_LENGTH = 0.2
+const MAX_HORIZONTAL_PIN_RAIL_OFFSET = 0.2
 // Limit label-boundary alignment to small corrections that cannot create spikes.
 const MAX_SAME_NET_LABEL_BOUNDARY_RAIL_OFFSET = 0.2
 
@@ -84,16 +92,22 @@ const getJunctionPoint = ({
   return segment.end
 }
 
-const railIsOnFacingSide = ({
-  railY,
+const getHorizontalPinExitPoint = ({
   pin,
 }: {
-  railY: number
   pin: InputPin
-}) => {
-  if (pin._facingDirection === "y+") return railY > pin.y
-  return false
+}): Point | null => {
+  if (pin._facingDirection === "x+") {
+    return { x: pin.x + HORIZONTAL_PIN_EXIT_LENGTH, y: pin.y }
+  }
+  if (pin._facingDirection === "x-") {
+    return { x: pin.x - HORIZONTAL_PIN_EXIT_LENGTH, y: pin.y }
+  }
+  return null
 }
+
+const railIsOnFacingSide = ({ railY, pin }: { railY: number; pin: InputPin }) =>
+  pin._facingDirection === "y+" && railY > pin.y
 
 const getAlignedBranchPath = ({
   donorTrace,
@@ -101,7 +115,7 @@ const getAlignedBranchPath = ({
 }: {
   donorTrace: SolvedTracePath
   branchTrace: SolvedTracePath
-}): Point[] | null => {
+}): AlignedBranchPath | null => {
   const sharedPin = getSharedPin({ donorTrace, branchTrace })
   if (!sharedPin) return null
   const donorOtherPin = getOtherPin({ trace: donorTrace, sharedPin })
@@ -118,26 +132,63 @@ const getAlignedBranchPath = ({
   if (branchRail && nearlyEqual(branchRail.start.y, donorRail.start.y)) {
     return null
   }
-  if (!railIsOnFacingSide({ railY: donorRail.start.y, pin: otherPin })) {
-    return null
-  }
-
   const junction = getJunctionPoint({ segment: donorRail, sharedPin })
   const extendsDonorRail =
     (donorOtherPin.x < junction.x && otherPin.x > junction.x) ||
     (donorOtherPin.x > junction.x && otherPin.x < junction.x)
   if (!extendsDonorRail) return null
 
-  const sharedToOther = simplifyPath([
+  const horizontalPinExitPoint = getHorizontalPinExitPoint({ pin: otherPin })
+  if (
+    horizontalPinExitPoint &&
+    branchRail &&
+    Math.abs(branchRail.start.y - donorRail.start.y) >
+      MAX_HORIZONTAL_PIN_RAIL_OFFSET
+  ) {
+    return null
+  }
+  if (
+    !horizontalPinExitPoint &&
+    !railIsOnFacingSide({ railY: donorRail.start.y, pin: otherPin })
+  ) {
+    return null
+  }
+  const sharedToOtherPoints = [
     { x: sharedPin.x, y: sharedPin.y },
     { x: junction.x, y: sharedPin.y },
     { x: junction.x, y: junction.y },
-    { x: otherPin.x, y: junction.y },
-    { x: otherPin.x, y: otherPin.y },
-  ])
+  ]
+  if (horizontalPinExitPoint) {
+    sharedToOtherPoints.push(
+      { x: horizontalPinExitPoint.x, y: junction.y },
+      horizontalPinExitPoint,
+      { x: otherPin.x, y: otherPin.y },
+    )
+  } else {
+    sharedToOtherPoints.push(
+      { x: otherPin.x, y: junction.y },
+      { x: otherPin.x, y: otherPin.y },
+    )
+  }
+  const sharedToOther = simplifyPath(sharedToOtherPoints)
 
-  if (branchTrace.pins[0].pinId === sharedPin.pinId) return sharedToOther
-  return [...sharedToOther].reverse()
+  let alignedBranchPath = [...sharedToOther].reverse()
+  if (branchTrace.pins[0].pinId === sharedPin.pinId) {
+    alignedBranchPath = sharedToOther
+  }
+  if (
+    !pathMatchesPinDirections({
+      path: alignedBranchPath,
+      pin1: branchTrace.pins[0],
+      pin2: branchTrace.pins[1],
+    })
+  ) {
+    return null
+  }
+  return {
+    path: alignedBranchPath,
+    usesHorizontalPinExit: horizontalPinExitPoint !== null,
+  }
 }
 
 const candidateIsClear = ({
@@ -234,9 +285,15 @@ export const alignSameNetJunctions = ({
       if (donorTrace.mspPairId === branchTrace.mspPairId) continue
       if (donorTrace.globalConnNetId !== branchTrace.globalConnNetId) continue
 
-      const candidatePath = getAlignedBranchPath({ donorTrace, branchTrace })
-      if (!candidatePath) continue
-      const candidateTrace = { ...branchTrace, tracePath: candidatePath }
+      const alignedBranchPath = getAlignedBranchPath({
+        donorTrace,
+        branchTrace,
+      })
+      if (!alignedBranchPath) continue
+      const candidateTrace = {
+        ...branchTrace,
+        tracePath: alignedBranchPath.path,
+      }
       const originalPair = [donorTrace, branchTrace]
       const candidatePair = [donorTrace, candidateTrace]
       const removesVisibleSegment =
@@ -249,7 +306,11 @@ export const alignSameNetJunctions = ({
           getVisibleTraceLength(candidatePair),
           getVisibleTraceLength(originalPair),
         )
-      if (!removesVisibleSegment && !shortensVisibleTrace) {
+      if (
+        !removesVisibleSegment &&
+        !shortensVisibleTrace &&
+        !alignedBranchPath.usesHorizontalPinExit
+      ) {
         continue
       }
       if (
