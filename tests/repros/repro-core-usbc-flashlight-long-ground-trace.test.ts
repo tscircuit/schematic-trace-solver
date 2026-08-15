@@ -6,7 +6,7 @@ import inputProblemJson from "./assets/repro-core-usbc-flashlight-long-ground-tr
 
 const inputProblem = inputProblemJson as unknown as InputProblem
 
-test("reproduces the USB-C flashlight long ground trace", () => {
+test("keeps the USB-C flashlight ground connection on local labels", () => {
   const downwardConnection = inputProblem.netConnections.find((connection) => {
     const orientations =
       inputProblem.availableNetLabelOrientations[connection.netId]
@@ -27,7 +27,7 @@ test("reproduces the USB-C flashlight long ground trace", () => {
       placement.pinIds.some((pinId) => downwardConnectionPinIds.has(pinId)),
     )
 
-  expect(longDownwardTraces).toHaveLength(1)
-  expect(downwardLabels).toHaveLength(1)
+  expect(longDownwardTraces).toHaveLength(0)
+  expect(downwardLabels).toHaveLength(2)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

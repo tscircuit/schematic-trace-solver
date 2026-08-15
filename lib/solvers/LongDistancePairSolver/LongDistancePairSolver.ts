@@ -313,6 +313,14 @@ export class LongDistancePairSolver extends BaseSolver {
             connection.pinIds.includes(p1.pinId) &&
             connection.pinIds.includes(p2.pinId),
         )
+        const availableNetLabelOrientations = inputNetConnection
+          ? this.inputProblem.availableNetLabelOrientations[
+              inputNetConnection.netId
+            ]
+          : undefined
+        const usesDownwardOnlyNetLabels =
+          availableNetLabelOrientations?.length === 1 &&
+          availableNetLabelOrientations[0] === "y-"
         const sourceChip = this.chipMap[p1.chipId]
         const targetRailTrace = sameNetTraces.find(
           (trace) =>
@@ -321,6 +329,7 @@ export class LongDistancePairSolver extends BaseSolver {
         )
         const canJoinThreePinNet =
           inputNetConnection !== undefined &&
+          !usesDownwardOnlyNetLabels &&
           sourceChip?.pins.length === 2 &&
           targetRailTrace !== undefined
         const junctionTracePath = canJoinThreePinNet
