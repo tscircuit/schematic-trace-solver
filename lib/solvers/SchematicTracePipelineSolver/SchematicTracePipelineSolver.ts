@@ -71,7 +71,9 @@ interface Options {
 }
 
 export class SchematicTracePipelineSolver extends BaseSolver {
-  static solverName = "SchematicTracePipelineSolver"
+  getSolverName(): string {
+    return "SchematicTracePipelineSolver"
+  }
 
   mspConnectionPairSolver?: MspConnectionPairSolver
   // guidelinesSolver?: GuidelinesSolver
