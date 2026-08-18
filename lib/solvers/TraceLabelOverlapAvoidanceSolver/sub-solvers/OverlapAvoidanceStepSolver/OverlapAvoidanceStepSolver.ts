@@ -43,6 +43,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
 
   public override activeSubSolver: SingleOverlapSolver | null = null
   private overlapQueue: Overlap[] = []
+  private activeOverlap: Overlap | null = null
   private recentlyFailed: Set<string> = new Set()
 
   private currentlyProcessingOverlap: Overlap | null = null
@@ -88,11 +89,13 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
           }
         }
         this.activeSubSolver = null
+        this.activeOverlap = null
         this.recentlyFailed.clear()
       } else if (this.activeSubSolver.failed) {
-        const overlapId = `${this.activeSubSolver.initialTrace.mspPairId}-${this.activeSubSolver.label.globalConnNetId}`
+        const overlapId = `${this.activeOverlap!.trace.mspPairId}-${this.activeOverlap!.label.globalConnNetId}`
         this.recentlyFailed.add(overlapId)
         this.activeSubSolver = null
+        this.activeOverlap = null
       } else {
       }
       return
@@ -160,6 +163,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
             detourCount + 1,
           )
 
+          this.activeOverlap = nextOverlap
           this.activeSubSolver = new SingleOverlapSolver({
             trace: traceToFix,
             label: actualOverlapLabel,
@@ -204,6 +208,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
             actualOverlapLabel.globalConnNetId,
             detourCount + 1,
           )
+          this.activeOverlap = nextOverlap
           this.activeSubSolver = new SingleOverlapSolver({
             trace: traceToFix,
             label: actualOverlapLabel,
@@ -225,6 +230,7 @@ export class OverlapAvoidanceStepSolver extends BaseSolver {
       const detourCount =
         this.detourCounts.get(labelToAvoid.globalConnNetId) ?? 0
       this.detourCounts.set(labelToAvoid.globalConnNetId, detourCount + 1)
+      this.activeOverlap = nextOverlap
       this.activeSubSolver = new SingleOverlapSolver({
         trace: traceToFix,
         label: labelToAvoid,
