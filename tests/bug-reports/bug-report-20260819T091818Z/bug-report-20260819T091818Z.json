@@ -1,0 +1,1825 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": -22.96,
+        "y": -8
+      },
+      "width": 2,
+      "height": 0.8000000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_20",
+          "x": -23.96,
+          "y": -7.8
+        },
+        {
+          "pinId": "schematic_port_21",
+          "x": -23.96,
+          "y": -8
+        },
+        {
+          "pinId": "schematic_port_22",
+          "x": -23.96,
+          "y": -8.2
+        },
+        {
+          "pinId": "schematic_port_23",
+          "x": -21.96,
+          "y": -8.2
+        },
+        {
+          "pinId": "schematic_port_24",
+          "x": -21.96,
+          "y": -8
+        },
+        {
+          "pinId": "schematic_port_25",
+          "x": -21.96,
+          "y": -7.8
+        }
+      ],
+      "sectionId": "USB-C and protection"
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": -15.5,
+        "y": -10
+      },
+      "width": 1.200000000000001,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "schematic_port_26",
+          "x": -16.1,
+          "y": -10,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_27",
+          "x": -14.899999999999999,
+          "y": -10,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "USB-C and protection"
+    },
+    {
+      "chipId": "schematic_component_30",
+      "center": {
+        "x": 0.98,
+        "y": 0
+      },
+      "width": 4,
+      "height": 13,
+      "pins": [
+        {
+          "pinId": "schematic_port_90",
+          "x": -1.02,
+          "y": 6.399999999999993
+        },
+        {
+          "pinId": "schematic_port_91",
+          "x": -1.02,
+          "y": 6.199999999999993
+        },
+        {
+          "pinId": "schematic_port_92",
+          "x": -1.02,
+          "y": 5.999999999999993
+        },
+        {
+          "pinId": "schematic_port_93",
+          "x": -1.02,
+          "y": 5.799999999999994
+        },
+        {
+          "pinId": "schematic_port_94",
+          "x": -1.02,
+          "y": 5.599999999999993
+        },
+        {
+          "pinId": "schematic_port_95",
+          "x": -1.02,
+          "y": 5.399999999999993
+        },
+        {
+          "pinId": "schematic_port_96",
+          "x": -1.02,
+          "y": 5.199999999999993
+        },
+        {
+          "pinId": "schematic_port_97",
+          "x": -1.02,
+          "y": 4.999999999999993
+        },
+        {
+          "pinId": "schematic_port_98",
+          "x": -1.02,
+          "y": 4.799999999999994
+        },
+        {
+          "pinId": "schematic_port_99",
+          "x": -1.02,
+          "y": 4.599999999999993
+        },
+        {
+          "pinId": "schematic_port_100",
+          "x": -1.02,
+          "y": 4.399999999999993
+        },
+        {
+          "pinId": "schematic_port_101",
+          "x": -1.02,
+          "y": 4.199999999999994
+        },
+        {
+          "pinId": "schematic_port_102",
+          "x": -1.02,
+          "y": 3.9999999999999933
+        },
+        {
+          "pinId": "schematic_port_103",
+          "x": -1.02,
+          "y": 3.799999999999993
+        },
+        {
+          "pinId": "schematic_port_104",
+          "x": -1.02,
+          "y": 3.599999999999993
+        },
+        {
+          "pinId": "schematic_port_105",
+          "x": -1.02,
+          "y": 3.399999999999993
+        },
+        {
+          "pinId": "schematic_port_106",
+          "x": -1.02,
+          "y": 3.1999999999999926
+        },
+        {
+          "pinId": "schematic_port_107",
+          "x": -1.02,
+          "y": 2.9999999999999925
+        },
+        {
+          "pinId": "schematic_port_108",
+          "x": -1.02,
+          "y": 2.7999999999999923
+        },
+        {
+          "pinId": "schematic_port_109",
+          "x": -1.02,
+          "y": 2.599999999999992
+        },
+        {
+          "pinId": "schematic_port_110",
+          "x": -1.02,
+          "y": 2.3999999999999924
+        },
+        {
+          "pinId": "schematic_port_111",
+          "x": -1.02,
+          "y": 2.199999999999992
+        },
+        {
+          "pinId": "schematic_port_112",
+          "x": -1.02,
+          "y": 1.999999999999992
+        },
+        {
+          "pinId": "schematic_port_113",
+          "x": -1.02,
+          "y": 1.7999999999999918
+        },
+        {
+          "pinId": "schematic_port_114",
+          "x": -1.02,
+          "y": 1.5999999999999917
+        },
+        {
+          "pinId": "schematic_port_115",
+          "x": -1.02,
+          "y": 1.3999999999999915
+        },
+        {
+          "pinId": "schematic_port_116",
+          "x": -1.02,
+          "y": 1.1999999999999913
+        },
+        {
+          "pinId": "schematic_port_117",
+          "x": -1.02,
+          "y": 0.9999999999999911
+        },
+        {
+          "pinId": "schematic_port_118",
+          "x": -1.02,
+          "y": 0.7999999999999909
+        },
+        {
+          "pinId": "schematic_port_119",
+          "x": -1.02,
+          "y": 0.5999999999999908
+        },
+        {
+          "pinId": "schematic_port_120",
+          "x": -1.02,
+          "y": 0.3999999999999906
+        },
+        {
+          "pinId": "schematic_port_121",
+          "x": -1.02,
+          "y": 0.1999999999999904
+        },
+        {
+          "pinId": "schematic_port_122",
+          "x": -1.02,
+          "y": -9.769962616701378E-15
+        },
+        {
+          "pinId": "schematic_port_123",
+          "x": -1.02,
+          "y": -0.20000000000000995
+        },
+        {
+          "pinId": "schematic_port_124",
+          "x": -1.02,
+          "y": -0.4000000000000101
+        },
+        {
+          "pinId": "schematic_port_125",
+          "x": -1.02,
+          "y": -0.6000000000000103
+        },
+        {
+          "pinId": "schematic_port_126",
+          "x": -1.02,
+          "y": -0.8000000000000105
+        },
+        {
+          "pinId": "schematic_port_127",
+          "x": -1.02,
+          "y": -1.0000000000000107
+        },
+        {
+          "pinId": "schematic_port_128",
+          "x": -1.02,
+          "y": -1.2000000000000108
+        },
+        {
+          "pinId": "schematic_port_129",
+          "x": -1.02,
+          "y": -1.400000000000011
+        },
+        {
+          "pinId": "schematic_port_130",
+          "x": -1.02,
+          "y": -1.6000000000000103
+        },
+        {
+          "pinId": "schematic_port_131",
+          "x": -1.02,
+          "y": -1.8000000000000096
+        },
+        {
+          "pinId": "schematic_port_132",
+          "x": -1.02,
+          "y": -2.000000000000009
+        },
+        {
+          "pinId": "schematic_port_133",
+          "x": -1.02,
+          "y": -2.200000000000008
+        },
+        {
+          "pinId": "schematic_port_134",
+          "x": -1.02,
+          "y": -2.4000000000000075
+        },
+        {
+          "pinId": "schematic_port_135",
+          "x": -1.02,
+          "y": -2.6000000000000068
+        },
+        {
+          "pinId": "schematic_port_136",
+          "x": -1.02,
+          "y": -2.800000000000006
+        },
+        {
+          "pinId": "schematic_port_137",
+          "x": -1.02,
+          "y": -3.0000000000000053
+        },
+        {
+          "pinId": "schematic_port_138",
+          "x": -1.02,
+          "y": -3.2000000000000046
+        },
+        {
+          "pinId": "schematic_port_139",
+          "x": -1.02,
+          "y": -3.400000000000004
+        },
+        {
+          "pinId": "schematic_port_140",
+          "x": -1.02,
+          "y": -3.600000000000003
+        },
+        {
+          "pinId": "schematic_port_141",
+          "x": -1.02,
+          "y": -3.8000000000000025
+        },
+        {
+          "pinId": "schematic_port_142",
+          "x": -1.02,
+          "y": -4.000000000000002
+        },
+        {
+          "pinId": "schematic_port_143",
+          "x": -1.02,
+          "y": -4.200000000000001
+        },
+        {
+          "pinId": "schematic_port_144",
+          "x": -1.02,
+          "y": -4.4
+        },
+        {
+          "pinId": "schematic_port_145",
+          "x": -1.02,
+          "y": -4.6
+        },
+        {
+          "pinId": "schematic_port_146",
+          "x": -1.02,
+          "y": -4.799999999999999
+        },
+        {
+          "pinId": "schematic_port_147",
+          "x": -1.02,
+          "y": -4.999999999999998
+        },
+        {
+          "pinId": "schematic_port_148",
+          "x": -1.02,
+          "y": -5.1999999999999975
+        },
+        {
+          "pinId": "schematic_port_149",
+          "x": -1.02,
+          "y": -5.399999999999997
+        },
+        {
+          "pinId": "schematic_port_150",
+          "x": -1.02,
+          "y": -5.599999999999996
+        },
+        {
+          "pinId": "schematic_port_151",
+          "x": -1.02,
+          "y": -5.799999999999995
+        },
+        {
+          "pinId": "schematic_port_152",
+          "x": -1.02,
+          "y": -5.999999999999995
+        },
+        {
+          "pinId": "schematic_port_153",
+          "x": -1.02,
+          "y": -6.199999999999994
+        },
+        {
+          "pinId": "schematic_port_154",
+          "x": -1.02,
+          "y": -6.399999999999993
+        },
+        {
+          "pinId": "schematic_port_155",
+          "x": 2.98,
+          "y": -6.299999999999994
+        },
+        {
+          "pinId": "schematic_port_156",
+          "x": 2.98,
+          "y": -6.099999999999993
+        },
+        {
+          "pinId": "schematic_port_157",
+          "x": 2.98,
+          "y": -5.899999999999993
+        },
+        {
+          "pinId": "schematic_port_158",
+          "x": 2.98,
+          "y": -5.699999999999994
+        },
+        {
+          "pinId": "schematic_port_159",
+          "x": 2.98,
+          "y": -5.499999999999994
+        },
+        {
+          "pinId": "schematic_port_160",
+          "x": 2.98,
+          "y": -5.299999999999994
+        },
+        {
+          "pinId": "schematic_port_161",
+          "x": 2.98,
+          "y": -5.099999999999993
+        },
+        {
+          "pinId": "schematic_port_162",
+          "x": 2.98,
+          "y": -4.899999999999993
+        },
+        {
+          "pinId": "schematic_port_163",
+          "x": 2.98,
+          "y": -4.699999999999994
+        },
+        {
+          "pinId": "schematic_port_164",
+          "x": 2.98,
+          "y": -4.499999999999994
+        },
+        {
+          "pinId": "schematic_port_165",
+          "x": 2.98,
+          "y": -4.299999999999994
+        },
+        {
+          "pinId": "schematic_port_166",
+          "x": 2.98,
+          "y": -4.099999999999994
+        },
+        {
+          "pinId": "schematic_port_167",
+          "x": 2.98,
+          "y": -3.8999999999999937
+        },
+        {
+          "pinId": "schematic_port_168",
+          "x": 2.98,
+          "y": -3.6999999999999935
+        },
+        {
+          "pinId": "schematic_port_169",
+          "x": 2.98,
+          "y": -3.4999999999999933
+        },
+        {
+          "pinId": "schematic_port_170",
+          "x": 2.98,
+          "y": -3.299999999999993
+        },
+        {
+          "pinId": "schematic_port_171",
+          "x": 2.98,
+          "y": -3.099999999999993
+        },
+        {
+          "pinId": "schematic_port_172",
+          "x": 2.98,
+          "y": -2.899999999999993
+        },
+        {
+          "pinId": "schematic_port_173",
+          "x": 2.98,
+          "y": -2.6999999999999926
+        },
+        {
+          "pinId": "schematic_port_174",
+          "x": 2.98,
+          "y": -2.4999999999999925
+        },
+        {
+          "pinId": "schematic_port_175",
+          "x": 2.98,
+          "y": -2.2999999999999927
+        },
+        {
+          "pinId": "schematic_port_176",
+          "x": 2.98,
+          "y": -2.0999999999999925
+        },
+        {
+          "pinId": "schematic_port_177",
+          "x": 2.98,
+          "y": -1.8999999999999924
+        },
+        {
+          "pinId": "schematic_port_178",
+          "x": 2.98,
+          "y": -1.6999999999999922
+        },
+        {
+          "pinId": "schematic_port_179",
+          "x": 2.98,
+          "y": -1.499999999999992
+        },
+        {
+          "pinId": "schematic_port_180",
+          "x": 2.98,
+          "y": -1.2999999999999918
+        },
+        {
+          "pinId": "schematic_port_181",
+          "x": 2.98,
+          "y": -1.0999999999999917
+        },
+        {
+          "pinId": "schematic_port_182",
+          "x": 2.98,
+          "y": -0.8999999999999915
+        },
+        {
+          "pinId": "schematic_port_183",
+          "x": 2.98,
+          "y": -0.6999999999999913
+        },
+        {
+          "pinId": "schematic_port_184",
+          "x": 2.98,
+          "y": -0.4999999999999911
+        },
+        {
+          "pinId": "schematic_port_185",
+          "x": 2.98,
+          "y": -0.29999999999999094
+        },
+        {
+          "pinId": "schematic_port_186",
+          "x": 2.98,
+          "y": -0.09999999999999076
+        },
+        {
+          "pinId": "schematic_port_187",
+          "x": 2.98,
+          "y": 0.10000000000000941
+        },
+        {
+          "pinId": "schematic_port_188",
+          "x": 2.98,
+          "y": 0.3000000000000096
+        },
+        {
+          "pinId": "schematic_port_189",
+          "x": 2.98,
+          "y": 0.5000000000000098
+        },
+        {
+          "pinId": "schematic_port_190",
+          "x": 2.98,
+          "y": 0.70000000000001
+        },
+        {
+          "pinId": "schematic_port_191",
+          "x": 2.98,
+          "y": 0.9000000000000101
+        },
+        {
+          "pinId": "schematic_port_192",
+          "x": 2.98,
+          "y": 1.1000000000000103
+        },
+        {
+          "pinId": "schematic_port_193",
+          "x": 2.98,
+          "y": 1.3000000000000105
+        },
+        {
+          "pinId": "schematic_port_194",
+          "x": 2.98,
+          "y": 1.5000000000000107
+        },
+        {
+          "pinId": "schematic_port_195",
+          "x": 2.98,
+          "y": 1.70000000000001
+        },
+        {
+          "pinId": "schematic_port_196",
+          "x": 2.98,
+          "y": 1.9000000000000092
+        },
+        {
+          "pinId": "schematic_port_197",
+          "x": 2.98,
+          "y": 2.1000000000000085
+        },
+        {
+          "pinId": "schematic_port_198",
+          "x": 2.98,
+          "y": 2.300000000000008
+        },
+        {
+          "pinId": "schematic_port_199",
+          "x": 2.98,
+          "y": 2.500000000000007
+        },
+        {
+          "pinId": "schematic_port_200",
+          "x": 2.98,
+          "y": 2.7000000000000064
+        },
+        {
+          "pinId": "schematic_port_201",
+          "x": 2.98,
+          "y": 2.9000000000000057
+        },
+        {
+          "pinId": "schematic_port_202",
+          "x": 2.98,
+          "y": 3.100000000000005
+        },
+        {
+          "pinId": "schematic_port_203",
+          "x": 2.98,
+          "y": 3.3000000000000043
+        },
+        {
+          "pinId": "schematic_port_204",
+          "x": 2.98,
+          "y": 3.5000000000000036
+        },
+        {
+          "pinId": "schematic_port_205",
+          "x": 2.98,
+          "y": 3.700000000000003
+        },
+        {
+          "pinId": "schematic_port_206",
+          "x": 2.98,
+          "y": 3.900000000000002
+        },
+        {
+          "pinId": "schematic_port_207",
+          "x": 2.98,
+          "y": 4.100000000000001
+        },
+        {
+          "pinId": "schematic_port_208",
+          "x": 2.98,
+          "y": 4.300000000000001
+        },
+        {
+          "pinId": "schematic_port_209",
+          "x": 2.98,
+          "y": 4.5
+        },
+        {
+          "pinId": "schematic_port_210",
+          "x": 2.98,
+          "y": 4.699999999999999
+        },
+        {
+          "pinId": "schematic_port_211",
+          "x": 2.98,
+          "y": 4.899999999999999
+        },
+        {
+          "pinId": "schematic_port_212",
+          "x": 2.98,
+          "y": 5.099999999999998
+        },
+        {
+          "pinId": "schematic_port_213",
+          "x": 2.98,
+          "y": 5.299999999999997
+        },
+        {
+          "pinId": "schematic_port_214",
+          "x": 2.98,
+          "y": 5.4999999999999964
+        },
+        {
+          "pinId": "schematic_port_215",
+          "x": 2.98,
+          "y": 5.699999999999996
+        },
+        {
+          "pinId": "schematic_port_216",
+          "x": 2.98,
+          "y": 5.899999999999995
+        },
+        {
+          "pinId": "schematic_port_217",
+          "x": 2.98,
+          "y": 6.099999999999994
+        },
+        {
+          "pinId": "schematic_port_218",
+          "x": 2.98,
+          "y": 6.299999999999994
+        }
+      ],
+      "sectionId": "RV1106G2 core"
+    },
+    {
+      "chipId": "schematic_component_31",
+      "center": {
+        "x": -3.547772325,
+        "y": -6.649999999999993
+      },
+      "width": 2.1844553499999995,
+      "height": 1.0999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_219",
+          "x": -4.215,
+          "y": -6.099999999999993,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_220",
+          "x": -4.215,
+          "y": -7.199999999999993,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "RV1106G2 core"
+    },
+    {
+      "chipId": "schematic_component_37",
+      "center": {
+        "x": -21.42375,
+        "y": -26.459999999999994
+      },
+      "width": 2.1000000000000014,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "schematic_port_231",
+          "x": -22.47375,
+          "y": -26.059999999999995
+        },
+        {
+          "pinId": "schematic_port_232",
+          "x": -22.47375,
+          "y": -26.259999999999994
+        },
+        {
+          "pinId": "schematic_port_233",
+          "x": -22.47375,
+          "y": -26.459999999999994
+        },
+        {
+          "pinId": "schematic_port_234",
+          "x": -22.47375,
+          "y": -26.659999999999993
+        },
+        {
+          "pinId": "schematic_port_235",
+          "x": -22.47375,
+          "y": -26.859999999999992
+        },
+        {
+          "pinId": "schematic_port_236",
+          "x": -20.373749999999998,
+          "y": -26.759999999999994
+        },
+        {
+          "pinId": "schematic_port_237",
+          "x": -20.373749999999998,
+          "y": -26.559999999999995
+        },
+        {
+          "pinId": "schematic_port_238",
+          "x": -20.373749999999998,
+          "y": -26.359999999999992
+        },
+        {
+          "pinId": "schematic_port_239",
+          "x": -20.373749999999998,
+          "y": -26.159999999999993
+        }
+      ],
+      "sectionId": "SPI NAND"
+    },
+    {
+      "chipId": "schematic_component_49",
+      "center": {
+        "x": 20,
+        "y": -3
+      },
+      "width": 2,
+      "height": 2.4000000000000004,
+      "pins": [
+        {
+          "pinId": "schematic_port_274",
+          "x": 19,
+          "y": -2
+        },
+        {
+          "pinId": "schematic_port_275",
+          "x": 19,
+          "y": -2.2
+        },
+        {
+          "pinId": "schematic_port_276",
+          "x": 19,
+          "y": -2.4000000000000004
+        },
+        {
+          "pinId": "schematic_port_277",
+          "x": 19,
+          "y": -2.6
+        },
+        {
+          "pinId": "schematic_port_278",
+          "x": 19,
+          "y": -2.8000000000000003
+        },
+        {
+          "pinId": "schematic_port_279",
+          "x": 19,
+          "y": -3
+        },
+        {
+          "pinId": "schematic_port_280",
+          "x": 19,
+          "y": -3.2
+        },
+        {
+          "pinId": "schematic_port_281",
+          "x": 19,
+          "y": -3.4
+        },
+        {
+          "pinId": "schematic_port_282",
+          "x": 19,
+          "y": -3.6
+        },
+        {
+          "pinId": "schematic_port_283",
+          "x": 19,
+          "y": -3.8
+        },
+        {
+          "pinId": "schematic_port_284",
+          "x": 19,
+          "y": -4
+        },
+        {
+          "pinId": "schematic_port_285",
+          "x": 21,
+          "y": -4
+        },
+        {
+          "pinId": "schematic_port_286",
+          "x": 21,
+          "y": -3.8
+        },
+        {
+          "pinId": "schematic_port_287",
+          "x": 21,
+          "y": -3.5999999999999996
+        },
+        {
+          "pinId": "schematic_port_288",
+          "x": 21,
+          "y": -3.4
+        },
+        {
+          "pinId": "schematic_port_289",
+          "x": 21,
+          "y": -3.1999999999999997
+        },
+        {
+          "pinId": "schematic_port_290",
+          "x": 21,
+          "y": -3
+        },
+        {
+          "pinId": "schematic_port_291",
+          "x": 21,
+          "y": -2.8
+        },
+        {
+          "pinId": "schematic_port_292",
+          "x": 21,
+          "y": -2.6
+        },
+        {
+          "pinId": "schematic_port_293",
+          "x": 21,
+          "y": -2.4
+        },
+        {
+          "pinId": "schematic_port_294",
+          "x": 21,
+          "y": -2.2
+        },
+        {
+          "pinId": "schematic_port_295",
+          "x": 21,
+          "y": -2
+        }
+      ],
+      "sectionId": "MIPI CSI camera"
+    },
+    {
+      "chipId": "schematic_component_56",
+      "center": {
+        "x": 8.2,
+        "y": -28.37
+      },
+      "width": 1.6649999999999991,
+      "height": 3.3999999999999986,
+      "pins": [
+        {
+          "pinId": "schematic_port_308",
+          "x": 9.032499999999999,
+          "y": -26.87
+        },
+        {
+          "pinId": "schematic_port_309",
+          "x": 9.032499999999999,
+          "y": -27.07
+        },
+        {
+          "pinId": "schematic_port_310",
+          "x": 9.032499999999999,
+          "y": -27.27
+        },
+        {
+          "pinId": "schematic_port_311",
+          "x": 9.032499999999999,
+          "y": -27.470000000000002
+        },
+        {
+          "pinId": "schematic_port_312",
+          "x": 9.032499999999999,
+          "y": -27.67
+        },
+        {
+          "pinId": "schematic_port_313",
+          "x": 9.032499999999999,
+          "y": -27.87
+        },
+        {
+          "pinId": "schematic_port_314",
+          "x": 9.032499999999999,
+          "y": -28.07
+        },
+        {
+          "pinId": "schematic_port_315",
+          "x": 9.032499999999999,
+          "y": -28.270000000000003
+        },
+        {
+          "pinId": "schematic_port_316",
+          "x": 9.032499999999999,
+          "y": -28.470000000000002
+        },
+        {
+          "pinId": "schematic_port_317",
+          "x": 9.032499999999999,
+          "y": -28.67
+        },
+        {
+          "pinId": "schematic_port_318",
+          "x": 9.032499999999999,
+          "y": -28.87
+        },
+        {
+          "pinId": "schematic_port_319",
+          "x": 9.032499999999999,
+          "y": -29.07
+        },
+        {
+          "pinId": "schematic_port_320",
+          "x": 9.032499999999999,
+          "y": -29.27
+        },
+        {
+          "pinId": "schematic_port_321",
+          "x": 9.032499999999999,
+          "y": -29.470000000000002
+        },
+        {
+          "pinId": "schematic_port_322",
+          "x": 9.032499999999999,
+          "y": -29.67
+        },
+        {
+          "pinId": "schematic_port_323",
+          "x": 9.032499999999999,
+          "y": -29.87
+        }
+      ],
+      "sectionId": "GPIO headers"
+    },
+    {
+      "chipId": "schematic_component_57",
+      "center": {
+        "x": 4.76,
+        "y": -26.87
+      },
+      "width": 1.5700000000000003,
+      "height": 3.3999999999999986,
+      "pins": [
+        {
+          "pinId": "schematic_port_324",
+          "x": 5.545,
+          "y": -25.37
+        },
+        {
+          "pinId": "schematic_port_325",
+          "x": 5.545,
+          "y": -25.57
+        },
+        {
+          "pinId": "schematic_port_326",
+          "x": 5.545,
+          "y": -25.77
+        },
+        {
+          "pinId": "schematic_port_327",
+          "x": 5.545,
+          "y": -25.970000000000002
+        },
+        {
+          "pinId": "schematic_port_328",
+          "x": 5.545,
+          "y": -26.17
+        },
+        {
+          "pinId": "schematic_port_329",
+          "x": 5.545,
+          "y": -26.37
+        },
+        {
+          "pinId": "schematic_port_330",
+          "x": 5.545,
+          "y": -26.57
+        },
+        {
+          "pinId": "schematic_port_331",
+          "x": 5.545,
+          "y": -26.770000000000003
+        },
+        {
+          "pinId": "schematic_port_332",
+          "x": 5.545,
+          "y": -26.970000000000002
+        },
+        {
+          "pinId": "schematic_port_333",
+          "x": 5.545,
+          "y": -27.17
+        },
+        {
+          "pinId": "schematic_port_334",
+          "x": 5.545,
+          "y": -27.37
+        },
+        {
+          "pinId": "schematic_port_335",
+          "x": 5.545,
+          "y": -27.57
+        },
+        {
+          "pinId": "schematic_port_336",
+          "x": 5.545,
+          "y": -27.77
+        },
+        {
+          "pinId": "schematic_port_337",
+          "x": 5.545,
+          "y": -27.970000000000002
+        },
+        {
+          "pinId": "schematic_port_338",
+          "x": 5.545,
+          "y": -28.17
+        },
+        {
+          "pinId": "schematic_port_339",
+          "x": 5.545,
+          "y": -28.37
+        }
+      ],
+      "sectionId": "GPIO headers"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "VBUS_DET_SOC",
+      "netLabelWidth": 2.04,
+      "pinIds": [
+        "schematic_port_27",
+        "schematic_port_114"
+      ]
+    },
+    {
+      "netId": "MIPI_D1N_MANUAL",
+      "netLabelWidth": 1.92,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.28,
+      "pinIds": [
+        "schematic_port_212",
+        "schematic_port_285"
+      ]
+    },
+    {
+      "netId": "MIPI_D1P_MANUAL",
+      "netLabelWidth": 1.92,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.28,
+      "pinIds": [
+        "schematic_port_213",
+        "schematic_port_286"
+      ]
+    },
+    {
+      "netId": "MIPI_CLKN_MANUAL",
+      "netLabelWidth": 2.04,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.36,
+      "pinIds": [
+        "schematic_port_214",
+        "schematic_port_288"
+      ]
+    },
+    {
+      "netId": "MIPI_CLKP_MANUAL",
+      "netLabelWidth": 2.04,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.36,
+      "pinIds": [
+        "schematic_port_215",
+        "schematic_port_289"
+      ]
+    },
+    {
+      "netId": "MIPI_D0N_MANUAL",
+      "netLabelWidth": 1.92,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.28,
+      "pinIds": [
+        "schematic_port_216",
+        "schematic_port_282"
+      ]
+    },
+    {
+      "netId": "MIPI_D0P_MANUAL",
+      "netLabelWidth": 1.92,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.28,
+      "pinIds": [
+        "schematic_port_217",
+        "schematic_port_283"
+      ]
+    },
+    {
+      "netId": "USB_DM_SOC_MANUAL",
+      "netLabelWidth": 2.16,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.44,
+      "pinIds": [
+        "schematic_port_25",
+        "schematic_port_115"
+      ]
+    },
+    {
+      "netId": "USB_DP_SOC_MANUAL",
+      "netLabelWidth": 2.16,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.44,
+      "pinIds": [
+        "schematic_port_23",
+        "schematic_port_116"
+      ]
+    },
+    {
+      "netId": "XIN_U1_Y1",
+      "netLabelWidth": 1.2,
+      "pinIds": [
+        "schematic_port_157",
+        "schematic_port_219"
+      ]
+    },
+    {
+      "netId": "XOUT_U1_Y1",
+      "netLabelWidth": 1.32,
+      "pinIds": [
+        "schematic_port_158",
+        "schematic_port_220"
+      ]
+    },
+    {
+      "netId": "FSPI_IO1_MANUAL",
+      "netLabelWidth": 1.92,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.28,
+      "pinIds": [
+        "schematic_port_131",
+        "schematic_port_232"
+      ]
+    },
+    {
+      "netId": "UART0_RX_MANUAL",
+      "netLabelWidth": 1.92,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.28,
+      "pinIds": [
+        "schematic_port_147",
+        "schematic_port_310"
+      ]
+    },
+    {
+      "netId": "UART0_TX_MANUAL",
+      "netLabelWidth": 1.92,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.28,
+      "pinIds": [
+        "schematic_port_148",
+        "schematic_port_311"
+      ]
+    },
+    {
+      "netId": "GPIO0_A3_MANUAL",
+      "netLabelWidth": 1.92,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.28,
+      "pinIds": [
+        "schematic_port_151",
+        "schematic_port_313"
+      ]
+    },
+    {
+      "netId": "GPIO0_A4_MANUAL",
+      "netLabelWidth": 1.92,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.28,
+      "pinIds": [
+        "schematic_port_152",
+        "schematic_port_314"
+      ]
+    },
+    {
+      "netId": "GPIO1_C6_MANUAL",
+      "netLabelWidth": 1.92,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.28,
+      "pinIds": [
+        "schematic_port_172",
+        "schematic_port_329"
+      ]
+    },
+    {
+      "netId": "GPIO1_C7_MANUAL",
+      "netLabelWidth": 1.92,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.28,
+      "pinIds": [
+        "schematic_port_173",
+        "schematic_port_330"
+      ]
+    },
+    {
+      "netId": "GPIO1_D3_MANUAL",
+      "netLabelWidth": 1.92,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.28,
+      "pinIds": [
+        "schematic_port_174",
+        "schematic_port_331"
+      ]
+    },
+    {
+      "netId": "GPIO1_D0_MANUAL",
+      "netLabelWidth": 1.92,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.28,
+      "pinIds": [
+        "schematic_port_178",
+        "schematic_port_334"
+      ]
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_21",
+        "schematic_port_126",
+        "schematic_port_218",
+        "schematic_port_234",
+        "schematic_port_239",
+        "schematic_port_275",
+        "schematic_port_279",
+        "schematic_port_281",
+        "schematic_port_284",
+        "schematic_port_287",
+        "schematic_port_290",
+        "schematic_port_291",
+        "schematic_port_293",
+        "schematic_port_308",
+        "schematic_port_323",
+        "schematic_port_339"
+      ]
+    },
+    {
+      "netId": "VCC_3V3",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.96,
+      "pinIds": [
+        "schematic_port_102",
+        "schematic_port_108",
+        "schematic_port_117",
+        "schematic_port_132",
+        "schematic_port_150",
+        "schematic_port_170",
+        "schematic_port_177",
+        "schematic_port_190",
+        "schematic_port_197",
+        "schematic_port_238",
+        "schematic_port_274",
+        "schematic_port_292",
+        "schematic_port_309",
+        "schematic_port_325"
+      ]
+    },
+    {
+      "netId": "VCC_1V8",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.96,
+      "pinIds": [
+        "schematic_port_90",
+        "schematic_port_113",
+        "schematic_port_120",
+        "schematic_port_142",
+        "schematic_port_159",
+        "schematic_port_185"
+      ]
+    },
+    {
+      "netId": "VCC_DDR_1V35",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 1.56,
+      "pinIds": [
+        "schematic_port_138",
+        "schematic_port_139",
+        "schematic_port_145"
+      ]
+    },
+    {
+      "netId": "VDD_0V9",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.96,
+      "pinIds": [
+        "schematic_port_99",
+        "schematic_port_140",
+        "schematic_port_143",
+        "schematic_port_144",
+        "schematic_port_156",
+        "schematic_port_160",
+        "schematic_port_171",
+        "schematic_port_192",
+        "schematic_port_204",
+        "schematic_port_205"
+      ]
+    },
+    {
+      "netId": "CAM_MCLK",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_91"
+      ]
+    },
+    {
+      "netId": "CAM_RST",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_92"
+      ]
+    },
+    {
+      "netId": "FSPI_IO3",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_128",
+        "schematic_port_237"
+      ]
+    },
+    {
+      "netId": "FSPI_IO0",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_130",
+        "schematic_port_235"
+      ]
+    },
+    {
+      "netId": "FSPI_IO2",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_133",
+        "schematic_port_233"
+      ]
+    },
+    {
+      "netId": "FSPI_CS",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_136",
+        "schematic_port_231"
+      ]
+    },
+    {
+      "netId": "FSPI_CLK",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_137",
+        "schematic_port_236"
+      ]
+    },
+    {
+      "netId": "GPIO0_A2",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_149",
+        "schematic_port_312"
+      ]
+    },
+    {
+      "netId": "I2C1_SCL",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_153",
+        "schematic_port_315"
+      ]
+    },
+    {
+      "netId": "I2C1_SDA",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_154",
+        "schematic_port_316"
+      ]
+    },
+    {
+      "netId": "RESET_N",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_155"
+      ]
+    },
+    {
+      "netId": "GPIO1_A1",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_162",
+        "schematic_port_318"
+      ]
+    },
+    {
+      "netId": "ETH_RXN",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_186"
+      ]
+    },
+    {
+      "netId": "ETH_RXP",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_187"
+      ]
+    },
+    {
+      "netId": "ETH_TXN",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_188"
+      ]
+    },
+    {
+      "netId": "ETH_TXP",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_189"
+      ]
+    },
+    {
+      "netId": "ETH_REXT",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_191"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": -22.900000000000002,
+        "y": -8.530000000000001
+      },
+      "width": 1.3200000000000003,
+      "height": 0.17999999999999972,
+      "text": "USBLC6_2SC6"
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": -23.26,
+        "y": -7.484999999999999
+      },
+      "width": 0.7199999999999989,
+      "height": 0.2499999999999991,
+      "text": "D_USB"
+    },
+    {
+      "chipId": "schematic_component_30",
+      "center": {
+        "x": -0.14000000000000012,
+        "y": -6.63
+      },
+      "width": 0.96,
+      "height": 0.17999999999999972,
+      "text": "RV1106G2"
+    },
+    {
+      "chipId": "schematic_component_30",
+      "center": {
+        "x": -0.5000000000000001,
+        "y": 6.615
+      },
+      "width": 0.36000000000000004,
+      "height": 0.2499999999999991,
+      "text": "U1"
+    },
+    {
+      "chipId": "schematic_component_37",
+      "center": {
+        "x": -21.353749999999998,
+        "y": -27.089999999999993
+      },
+      "width": 1.4400000000000013,
+      "height": 0.17999999999999972,
+      "text": "W25N02KVZEIR"
+    },
+    {
+      "chipId": "schematic_component_37",
+      "center": {
+        "x": -21.653749999999995,
+        "y": -25.844999999999995
+      },
+      "width": 0.9599999999999973,
+      "height": 0.25,
+      "text": "U_FLASH"
+    },
+    {
+      "chipId": "schematic_component_49",
+      "center": {
+        "x": 20.299999999999997,
+        "y": -4.33
+      },
+      "width": 1.8000000000000007,
+      "height": 0.17999999999999972,
+      "text": "AFC07-S20FCA-00"
+    },
+    {
+      "chipId": "schematic_component_49",
+      "center": {
+        "x": 19.7,
+        "y": -1.685
+      },
+      "width": 0.7199999999999989,
+      "height": 0.2500000000000002,
+      "text": "J_CAM"
+    },
+    {
+      "chipId": "schematic_component_56",
+      "center": {
+        "x": 8.1275,
+        "y": -26.555000000000003
+      },
+      "width": 0.8399999999999999,
+      "height": 0.25,
+      "text": "J_LEFT"
+    },
+    {
+      "chipId": "schematic_component_57",
+      "center": {
+        "x": 4.795,
+        "y": -25.055000000000003
+      },
+      "width": 0.9599999999999991,
+      "height": 0.25,
+      "text": "J_RIGHT"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "FSPI_IO2": [
+      "x-",
+      "x+"
+    ],
+    "ETH_REXT": [
+      "x-",
+      "x+"
+    ],
+    "GND": [
+      "y-"
+    ],
+    "VBUS_5V": [
+      "y+"
+    ],
+    "VCC_3V3": [
+      "y+"
+    ],
+    "VCC_1V8": [
+      "y+"
+    ],
+    "VCC_DDR_1V35": [
+      "y+"
+    ],
+    "VDD_0V9": [
+      "y+"
+    ],
+    "B33_SW": [
+      "x-",
+      "x+"
+    ],
+    "B33_FB": [
+      "x-",
+      "x+"
+    ],
+    "B18_SW": [
+      "x-",
+      "x+"
+    ],
+    "B18_FB": [
+      "x-",
+      "x+"
+    ],
+    "BDD_SW": [
+      "x-",
+      "x+"
+    ],
+    "BDD_FB": [
+      "x-",
+      "x+"
+    ],
+    "B09_SW": [
+      "x-",
+      "x+"
+    ],
+    "B09_FB": [
+      "x-",
+      "x+"
+    ],
+    "RESET_N": [
+      "x-",
+      "x+"
+    ],
+    "POWER_LED": [
+      "x-",
+      "x+"
+    ],
+    "FSPI_IO3": [
+      "x-",
+      "x+"
+    ],
+    "FSPI_IO0": [
+      "x-",
+      "x+"
+    ],
+    "FSPI_CS": [
+      "x-",
+      "x+"
+    ],
+    "FSPI_CLK": [
+      "x-",
+      "x+"
+    ],
+    "USB_CC1": [
+      "x-",
+      "x+"
+    ],
+    "USB_CC2": [
+      "x-",
+      "x+"
+    ],
+    "USB_DM": [
+      "x-",
+      "x+"
+    ],
+    "USB_DP": [
+      "x-",
+      "x+"
+    ],
+    "ETH_RXN": [
+      "x-",
+      "x+"
+    ],
+    "ETH_RXP": [
+      "x-",
+      "x+"
+    ],
+    "ETH_TXN": [
+      "x-",
+      "x+"
+    ],
+    "ETH_TXP": [
+      "x-",
+      "x+"
+    ],
+    "ETH_TXP_J": [
+      "x-",
+      "x+"
+    ],
+    "ETH_TXN_J": [
+      "x-",
+      "x+"
+    ],
+    "ETH_RXP_J": [
+      "x-",
+      "x+"
+    ],
+    "ETH_RXN_J": [
+      "x-",
+      "x+"
+    ],
+    "ETH_CT_TX": [
+      "x-",
+      "x+"
+    ],
+    "ETH_CT_RX": [
+      "x-",
+      "x+"
+    ],
+    "CAM_MCLK": [
+      "x-",
+      "x+"
+    ],
+    "CAM_MCLK_J": [
+      "x-",
+      "x+"
+    ],
+    "CAM_RST": [
+      "x-",
+      "x+"
+    ],
+    "CAM_RST_J": [
+      "x-",
+      "x+"
+    ],
+    "I2C1_SCL_CAM": [
+      "x-",
+      "x+"
+    ],
+    "I2C1_SDA_CAM": [
+      "x-",
+      "x+"
+    ],
+    "GPIO0_A2": [
+      "x-",
+      "x+"
+    ],
+    "I2C1_SCL": [
+      "x-",
+      "x+"
+    ],
+    "I2C1_SDA": [
+      "x-",
+      "x+"
+    ],
+    "GPIO1_A1": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
