@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { MAX_RECORDED_CANDIDATES } from "lib/solvers/AvailableNetOrientationSolver/constants"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
@@ -30,5 +31,11 @@ test("core repro161 power section trace routing", () => {
   for (const railY of horizontalRailYs) {
     expect(railY).toBeCloseTo(EXPECTED_V3V3_RAIL_Y)
   }
+  expect(
+    solver.availableNetOrientationSolver!.stats.candidateEvaluations,
+  ).toBeGreaterThan(MAX_RECORDED_CANDIDATES)
+  expect(
+    solver.availableNetOrientationSolver!.stats.maxRecordedCandidates,
+  ).toBe(MAX_RECORDED_CANDIDATES)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
