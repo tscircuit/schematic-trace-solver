@@ -15,6 +15,7 @@ import {
   type AxisAlignedSegment,
   getAxisAlignedSegments,
 } from "./getAxisAlignedSegments"
+import { normalizePortOnlyNetLabelCenter } from "./normalizePortOnlyNetLabelCenter"
 
 export const DEFAULT_INLINE_NET_LABEL_HEIGHT = 0.18
 
@@ -403,9 +404,9 @@ export class InlineNetLabelSolver extends BaseSolver {
     const superseded = this.getSupersededNetLabelKeys()
     return {
       traces: this.traces,
-      netLabelPlacements: this.inputNetLabelPlacements.filter(
-        (placement) => !superseded.has(placement.globalConnNetId),
-      ),
+      netLabelPlacements: this.inputNetLabelPlacements
+        .filter((placement) => !superseded.has(placement.globalConnNetId))
+        .map(normalizePortOnlyNetLabelCenter),
       inlineNetLabelPlacements: this.inlineNetLabelPlacements,
     }
   }
@@ -427,7 +428,12 @@ export class InlineNetLabelSolver extends BaseSolver {
       })
     }
 
-    const { netLabelPlacements } = this.getOutput()
+    // Show the collision-tested geometry; getOutput only normalizes centers at
+    // the consumer boundary after routing is complete.
+    const superseded = this.getSupersededNetLabelKeys()
+    const netLabelPlacements = this.inputNetLabelPlacements.filter(
+      (placement) => !superseded.has(placement.globalConnNetId),
+    )
     for (const label of netLabelPlacements) {
       graphics.rects.push({
         center: label.center,
