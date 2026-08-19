@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
-import { getMinimumDistanceBetweenTracePaths } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/preservesSameNetTraceJunctions"
 import type { InputProblem } from "lib/types/InputProblem"
 import inputProblem from "./bug-report-20260819T091818Z.json"
 import "tests/fixtures/matcher"
@@ -27,13 +26,8 @@ test("disconnected netlabel", () => {
       tracePathContainsPoint(trace.tracePath, targetLabel.anchorPoint),
   )!
 
-  expect(
-    getMinimumDistanceBetweenTracePaths({
-      firstPath: hostTrace.tracePath,
-      secondPath: labelConnectorTrace.tracePath,
-    }),
-  ).toBe(0)
   expect(hostTrace.tracePath[1]!.x).toBeCloseTo(expectedAlignedRailX)
   expect(targetLabel.anchorPoint.x).toBeCloseTo(expectedCloserLabelAnchorX)
+  expect(labelConnectorTrace.tracePath[0]).toEqual(hostTrace.tracePath[1])
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

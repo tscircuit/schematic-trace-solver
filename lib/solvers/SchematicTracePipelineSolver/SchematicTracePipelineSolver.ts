@@ -22,7 +22,10 @@ import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePa
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
 import { Example28Solver } from "../Example28Solver/Example28Solver"
-import { moveAttachedLabelsToReroutedTrace } from "../Example28Solver/labelMovement"
+import {
+  moveAttachedLabelsToReroutedTrace,
+  moveNetLabelConnectorsToReroutedTraces,
+} from "../Example28Solver/labelMovement"
 import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
 import { RailNetLabelCornerPlacementSolver } from "../RailNetLabelCornerPlacementSolver/RailNetLabelCornerPlacementSolver"
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
@@ -426,12 +429,17 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         const previousOutput =
           instance.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
         const alignmentOutput = instance.traceCleanupSolver2!.getOutput()
+        const connectorMovement = moveNetLabelConnectorsToReroutedTraces({
+          originalTraces: previousOutput.traces,
+          reroutedTraces: alignmentOutput.traces,
+          netLabelPlacements: previousOutput.netLabelPlacements,
+        })
         const previousTraceMap = new Map(
           previousOutput.traces.map((trace) => [trace.mspPairId, trace]),
         )
-        let netLabelPlacements = alignmentOutput.netLabelPlacements
+        let netLabelPlacements = connectorMovement.netLabelPlacements
 
-        for (const trace of alignmentOutput.traces) {
+        for (const trace of connectorMovement.traces) {
           const previousTrace = previousTraceMap.get(trace.mspPairId)
           if (!previousTrace || previousTrace.tracePath === trace.tracePath) {
             continue
@@ -455,7 +463,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         return [
           {
             inputProblem: instance.inputProblem,
-            traces: alignmentOutput.traces,
+            traces: connectorMovement.traces,
             netLabelPlacements,
           },
         ]

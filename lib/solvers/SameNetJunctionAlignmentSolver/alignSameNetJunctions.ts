@@ -169,14 +169,7 @@ const candidateIsClear = ({
     if (trace.mspPairId === originalTrace.mspPairId) return candidateTrace
     return trace
   })
-  if (
-    !preservesLabelAnchors({
-      beforeLabels: netLabelPlacements,
-      afterLabels: netLabelPlacements,
-      beforeTraces: traces,
-      afterTraces: candidateTraces,
-    })
-  ) {
+  if (!preservesLabelAnchors(netLabelPlacements, traces, candidateTraces)) {
     return false
   }
 

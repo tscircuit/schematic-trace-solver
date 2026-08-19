@@ -50,7 +50,6 @@ const DEFAULT_OPERATIONS: readonly TraceCleanupOperation[] = [
 export class TraceCleanupSolver extends BaseSolver {
   private input: TraceCleanupSolverInput
   private outputTraces: SolvedTracePath[]
-  private outputNetLabelPlacements: NetLabelPlacement[]
   private traceIdQueue: string[]
   private tracesMap: Map<string, SolvedTracePath>
   private operations: readonly TraceCleanupOperation[]
@@ -63,7 +62,6 @@ export class TraceCleanupSolver extends BaseSolver {
     super()
     this.input = solverInput
     this.outputTraces = [...solverInput.allTraces]
-    this.outputNetLabelPlacements = [...solverInput.allLabelPlacements]
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.operations = solverInput.operations ?? DEFAULT_OPERATIONS
     this.pipelineStep = this.operations[0] ?? null
@@ -184,7 +182,6 @@ export class TraceCleanupSolver extends BaseSolver {
         new Set(this.outputTraces.map((trace) => trace.mspPairId)),
     })
     this.outputTraces = alignment.traces
-    this.outputNetLabelPlacements = alignment.netLabelPlacements
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.stats.alignedRailGroupCount = alignment.alignedRailGroupCount
     this.stats.alignedTraceCount = alignment.alignedTraceCount
@@ -194,7 +191,6 @@ export class TraceCleanupSolver extends BaseSolver {
   getOutput() {
     return {
       traces: this.outputTraces,
-      netLabelPlacements: this.outputNetLabelPlacements,
     }
   }
 

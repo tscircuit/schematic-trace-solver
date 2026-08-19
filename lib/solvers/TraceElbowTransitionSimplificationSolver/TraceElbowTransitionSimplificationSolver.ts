@@ -123,12 +123,11 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
             getPathLength(simplifiedCandidate) - getPathLength(reroutedPath),
           ) < PATH_LENGTH_EPSILON &&
           simplifiedCandidate.length < reroutedPath.length &&
-          preservesLabelAnchors({
-            beforeLabels: this.input.netLabelPlacements,
-            afterLabels: this.input.netLabelPlacements,
-            beforeTraces: [completedReroute.initialTrace],
-            afterTraces: [candidateTrace],
-          })
+          preservesLabelAnchors(
+            this.input.netLabelPlacements,
+            [completedReroute.initialTrace],
+            [candidateTrace],
+          )
 
         if (isSimplerEquivalentReroute) {
           candidateByPath.set(
@@ -170,12 +169,11 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
         return (
           candidateOnlyKeepsExistingOverlaps &&
           (reducesCollisions || simplifiesGeometry) &&
-          preservesLabelAnchors({
-            beforeLabels: this.input.netLabelPlacements,
-            afterLabels: this.input.netLabelPlacements,
-            beforeTraces: [trace],
-            afterTraces: [candidateTrace],
-          }) &&
+          preservesLabelAnchors(
+            this.input.netLabelPlacements,
+            [trace],
+            [candidateTrace],
+          ) &&
           !isPathCollidingWithObstacles(candidatePath, this.obstacles) &&
           !doesPathCoincideWithTraces(candidatePath, otherNetTraces)
         )
