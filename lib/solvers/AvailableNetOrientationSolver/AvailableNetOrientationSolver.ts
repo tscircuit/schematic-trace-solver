@@ -357,7 +357,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       !candidate.distance ||
       !candidate.outwardDistance
     ) {
-      return candidate.anchorPoint
+      return undefined
     }
 
     const direction = dir(candidate.orientation)
@@ -377,7 +377,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       phase: candidate.phase,
     })
 
-    return outputStatus === "valid" ? anchorPoint : candidate.anchorPoint
+    if (outputStatus !== "valid") return undefined
+    return anchorPoint
   }
 
   private finish() {

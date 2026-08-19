@@ -21,7 +21,7 @@ const getOutputAnchorPoint = (
       trace.tracePath.at(-1) !== undefined &&
       pointsEqual(trace.tracePath.at(-1)!, placement.anchorPoint),
   )
-  return connector?.outputLabelAnchorPoint ?? placement.anchorPoint
+  return connector?.outputLabelAnchorPoint
 }
 
 export function normalizePortOnlyNetLabelPlacement(
@@ -32,6 +32,7 @@ export function normalizePortOnlyNetLabelPlacement(
   if (placement.mspConnectionPairIds.length !== 0) return placement
 
   const anchorPoint = getOutputAnchorPoint(placement, traces)
+  if (!anchorPoint) return placement
 
   return {
     ...placement,

@@ -430,8 +430,8 @@ export class InlineNetLabelSolver extends BaseSolver {
       })
     }
 
-    // Show the collision-tested geometry; getOutput only normalizes final
-    // label anchors and centers at the consumer boundary.
+    // Keep the shared pipeline visualization on collision-tested geometry.
+    // Focused output snapshots can visualize consumer-normalized placements.
     const superseded = this.getSupersededNetLabelKeys()
     const netLabelPlacements = this.inputNetLabelPlacements.filter(
       (placement) => !superseded.has(placement.globalConnNetId),
