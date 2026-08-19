@@ -11,6 +11,7 @@ import { getDistinctCoordinates, pointsEqual } from "./geometry"
 import { getRailAlignmentFallbackCoordinates } from "./getRailAlignmentFallbackCoordinates"
 import { moveRailSegments } from "./moveRailSegments"
 import { preservesLabelAnchors } from "./preservesLabelAnchors"
+import { preservesSameNetTraceJunctions } from "./preservesSameNetTraceJunctions"
 import {
   getTraceGeometryMetrics,
   isReadabilityImprovement,
@@ -95,6 +96,15 @@ export const evaluateRailGroup = ({
       if (!candidatesAreClear) continue
       if (
         !preservesLabelAnchors(netLabelPlacements, traces, allCandidateTraces)
+      ) {
+        continue
+      }
+      if (
+        !preservesSameNetTraceJunctions({
+          beforeTraces: traces,
+          afterTraces: allCandidateTraces,
+          movedTraceIds: groupTraceIds,
+        })
       ) {
         continue
       }
