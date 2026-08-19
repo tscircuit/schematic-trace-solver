@@ -1,4 +1,6 @@
 export const LABEL_SEARCH_STEP = 0.05
+// Keep failed searches from retaining an unbounded visualization history.
+export const MAX_RECORDED_CANDIDATES = 2_000
 export const WICK_CLEARANCE = 0.001
 export const EPS = 1e-9
 export const TRACE_BOUNDARY_TOLERANCE = WICK_CLEARANCE + EPS
