@@ -277,8 +277,14 @@ export const alignSameNetJunctions = ({
   const alignedBranchTraceIds = new Set<string>()
   let alignedJunctionCount = 0
 
-  // Reuse each aligned branch as the rail for the next load in the chain.
-  for (const donorTraceId of traces.map((trace) => trace.mspPairId)) {
+  // Reuse each aligned branch as the rail for the next load in the chain. An
+  // aligned branch may already have had its donor turn, so queue it again when
+  // its geometry changes.
+  const donorTraceIds = traces.map((trace) => trace.mspPairId)
+  const pendingDonorTraceIds = new Set(donorTraceIds)
+  for (let donorIndex = 0; donorIndex < donorTraceIds.length; donorIndex++) {
+    const donorTraceId = donorTraceIds[donorIndex]!
+    pendingDonorTraceIds.delete(donorTraceId)
     const donorTrace = outputTraces.find(
       (trace) => trace.mspPairId === donorTraceId,
     )!
@@ -335,6 +341,10 @@ export const alignSameNetJunctions = ({
       outputNetLabelPlacements = candidateNetLabelPlacements
       alignedBranchTraceIds.add(branchTrace.mspPairId)
       alignedJunctionCount++
+      if (!pendingDonorTraceIds.has(branchTrace.mspPairId)) {
+        donorTraceIds.push(branchTrace.mspPairId)
+        pendingDonorTraceIds.add(branchTrace.mspPairId)
+      }
     }
   }
 
