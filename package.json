@@ -7,7 +7,6 @@
     "start": "cosmos",
     "debug:pipeline": "bun scripts/debug-pipeline-stages.ts",
     "build": "tsup-node lib/index.ts --format esm --dts",
-    "prepare": "bun run build",
     "format": "biome format --write .",
     "format:check": "biome format ."
   },
