@@ -326,8 +326,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     if (tracePath.length < 2) return
 
     const mspPairId = `available-net-orientation-${labelIndex}-${label.netId ?? label.globalConnNetId}`
+    const outputLabelAnchorPoint = this.getOutputLabelAnchorPoint(
+      label,
+      candidate,
+      labelIndex,
+    )
     const connectorTrace: SolvedTracePath = {
       mspPairId,
+      outputLabelAnchorPoint,
       dcConnNetId: label.dcConnNetId ?? label.globalConnNetId,
       globalConnNetId: label.globalConnNetId,
       userNetId: label.netId,
@@ -339,6 +345,39 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
     this.traces.push(connectorTrace)
     this.traceMap[mspPairId] = connectorTrace
+  }
+
+  private getOutputLabelAnchorPoint(
+    label: NetLabelPlacement,
+    candidate: EvaluatedCandidate,
+    labelIndex: number,
+  ) {
+    if (
+      candidate.phase !== "shift" ||
+      !candidate.distance ||
+      !candidate.outwardDistance
+    ) {
+      return candidate.anchorPoint
+    }
+
+    const direction = dir(candidate.orientation)
+    const anchorPoint = {
+      x: candidate.anchorPoint.x - direction.x * candidate.distance,
+      y: candidate.anchorPoint.y - direction.y * candidate.distance,
+    }
+    const outputCandidate = this.createCandidate(
+      label,
+      anchorPoint,
+      candidate.orientation,
+    )
+    const outputStatus = this.getCandidateStatus({
+      candidate: outputCandidate,
+      label,
+      labelIndex,
+      phase: candidate.phase,
+    })
+
+    return outputStatus === "valid" ? anchorPoint : candidate.anchorPoint
   }
 
   private finish() {

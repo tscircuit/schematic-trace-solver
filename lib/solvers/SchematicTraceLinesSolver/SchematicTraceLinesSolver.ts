@@ -16,6 +16,7 @@ export interface SolvedTracePath extends MspConnectionPair {
   tracePath: Point[]
   mspConnectionPairIds: MspConnectionPairId[]
   pinIds: PinId[]
+  outputLabelAnchorPoint?: Point
 }
 
 export class SchematicTraceLinesSolver extends BaseSolver {
