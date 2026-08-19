@@ -3,8 +3,9 @@ import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetL
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
-import { preservesLabelAnchors } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/preservesLabelAnchors"
 import {
   getVisibleTraceLength,
   getVisibleTraceSegmentCount,
@@ -95,6 +96,52 @@ const railIsOnFacingSide = ({
   return false
 }
 
+const getAttachedLabelIndexes = (
+  trace: SolvedTracePath,
+  netLabelPlacements: NetLabelPlacement[],
+) =>
+  netLabelPlacements.flatMap((label, index) => {
+    const labelOwnsTrace =
+      label.mspConnectionPairIds.includes(trace.mspPairId) ||
+      (label.mspConnectionPairIds.length === 0 &&
+        label.globalConnNetId === trace.globalConnNetId)
+    return labelOwnsTrace &&
+      tracePathContainsPoint(trace.tracePath, label.anchorPoint)
+      ? [index]
+      : []
+  })
+
+const moveAttachedLabels = ({
+  trace,
+  reroutedTracePath,
+  netLabelPlacements,
+  attachedLabelIndexes,
+}: {
+  trace: SolvedTracePath
+  reroutedTracePath: Point[]
+  netLabelPlacements: NetLabelPlacement[]
+  attachedLabelIndexes: number[]
+}) => {
+  const attachedLabels = attachedLabelIndexes.map(
+    (index) => netLabelPlacements[index]!,
+  )
+  const movedAttachedLabels = moveAttachedLabelsToReroutedTrace({
+    trace,
+    originalTracePath: trace.tracePath,
+    reroutedTracePath,
+    netLabelPlacements: attachedLabels,
+  })
+  const movedLabelByIndex = new Map(
+    attachedLabelIndexes.map((labelIndex, index) => [
+      labelIndex,
+      movedAttachedLabels[index]!,
+    ]),
+  )
+  return netLabelPlacements.map(
+    (label, index) => movedLabelByIndex.get(index) ?? label,
+  )
+}
+
 const getAlignedBranchPath = ({
   donorTrace,
   branchTrace,
@@ -145,13 +192,15 @@ const candidateIsClear = ({
   originalTrace,
   traces,
   inputProblem,
-  netLabelPlacements,
+  candidateNetLabelPlacements,
+  attachedLabelIndexes,
 }: {
   candidateTrace: SolvedTracePath
   originalTrace: SolvedTracePath
   traces: SolvedTracePath[]
   inputProblem: InputProblem
-  netLabelPlacements: NetLabelPlacement[]
+  candidateNetLabelPlacements: NetLabelPlacement[]
+  attachedLabelIndexes: number[]
 }) => {
   const obstacles = getObstacleRects(inputProblem)
   if (isPathCollidingWithObstacles(candidateTrace.tracePath, obstacles)) {
@@ -165,15 +214,18 @@ const candidateIsClear = ({
     return false
   }
 
-  const candidateTraces = traces.map((trace) => {
-    if (trace.mspPairId === originalTrace.mspPairId) return candidateTrace
-    return trace
-  })
-  if (!preservesLabelAnchors(netLabelPlacements, traces, candidateTraces)) {
+  if (
+    !attachedLabelIndexes.every((index) =>
+      tracePathContainsPoint(
+        candidateTrace.tracePath,
+        candidateNetLabelPlacements[index]!.anchorPoint,
+      ),
+    )
+  ) {
     return false
   }
 
-  const otherNetLabelPlacements = netLabelPlacements.filter(
+  const otherNetLabelPlacements = candidateNetLabelPlacements.filter(
     (label) => label.globalConnNetId !== candidateTrace.globalConnNetId,
   )
   if (
@@ -185,7 +237,7 @@ const candidateIsClear = ({
     return false
   }
 
-  const sameNetLabelPlacements = netLabelPlacements.filter(
+  const sameNetLabelPlacements = candidateNetLabelPlacements.filter(
     (label) => label.globalConnNetId === candidateTrace.globalConnNetId,
   )
   // A same-net rail may follow its label edge, but never enter the label body.
@@ -221,6 +273,7 @@ export const alignSameNetJunctions = ({
   netLabelPlacements,
 }: AlignSameNetJunctionsInput) => {
   let outputTraces = [...traces]
+  let outputNetLabelPlacements = [...netLabelPlacements]
   const alignedBranchTraceIds = new Set<string>()
   let alignedJunctionCount = 0
 
@@ -252,13 +305,24 @@ export const alignSameNetJunctions = ({
       if (!removesVisibleSegment && !shortensVisibleTrace) {
         continue
       }
+      const attachedLabelIndexes = getAttachedLabelIndexes(
+        branchTrace,
+        outputNetLabelPlacements,
+      )
+      const candidateNetLabelPlacements = moveAttachedLabels({
+        trace: branchTrace,
+        reroutedTracePath: candidatePath,
+        netLabelPlacements: outputNetLabelPlacements,
+        attachedLabelIndexes,
+      })
       if (
         !candidateIsClear({
           candidateTrace,
           originalTrace: branchTrace,
           traces: outputTraces,
           inputProblem,
-          netLabelPlacements,
+          candidateNetLabelPlacements,
+          attachedLabelIndexes,
         })
       ) {
         continue
@@ -268,10 +332,15 @@ export const alignSameNetJunctions = ({
         if (trace.mspPairId === branchTrace.mspPairId) return candidateTrace
         return trace
       })
+      outputNetLabelPlacements = candidateNetLabelPlacements
       alignedBranchTraceIds.add(branchTrace.mspPairId)
       alignedJunctionCount++
     }
   }
 
-  return { traces: outputTraces, alignedJunctionCount }
+  return {
+    traces: outputTraces,
+    netLabelPlacements: outputNetLabelPlacements,
+    alignedJunctionCount,
+  }
 }
