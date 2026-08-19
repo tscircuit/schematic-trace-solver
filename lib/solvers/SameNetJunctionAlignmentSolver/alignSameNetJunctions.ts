@@ -12,7 +12,7 @@ import {
   isHorizontal,
   nearlyEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
-import type { InputPin, InputProblem } from "lib/types/InputProblem"
+import type { InputPin, InputProblem, SectionId } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 import {
   pathEntersAnyNetLabel,
@@ -276,6 +276,7 @@ export const alignSameNetJunctions = ({
   let outputTraces = [...traces]
   let outputNetLabelPlacements = [...netLabelPlacements]
   const alignedBranchTraceIds = new Set<string>()
+  const alignedSectionIds = new Set<SectionId>()
   let alignedJunctionCount = 0
 
   // Reuse each aligned branch as the rail for the next load in the chain. An
@@ -341,6 +342,13 @@ export const alignSameNetJunctions = ({
       })
       outputNetLabelPlacements = candidateNetLabelPlacements
       alignedBranchTraceIds.add(branchTrace.mspPairId)
+      const sharedPin = getSharedPin({ donorTrace, branchTrace })!
+      const sharedPinChip = inputProblem.chips.find(
+        (chip) => chip.chipId === sharedPin.chipId,
+      )
+      if (sharedPinChip?.sectionId) {
+        alignedSectionIds.add(sharedPinChip.sectionId)
+      }
       alignedJunctionCount++
       if (!pendingDonorTraceIds.has(branchTrace.mspPairId)) {
         donorTraceIds.push(branchTrace.mspPairId)
@@ -349,7 +357,12 @@ export const alignSameNetJunctions = ({
     }
   }
 
-  const trimmedOverlaps = trimSameNetOverlappingTraceTails(outputTraces)
+  const trimmedOverlaps = trimSameNetOverlappingTraceTails({
+    traces: outputTraces,
+    inputProblem,
+    alignedSectionIds,
+    alignedBranchTraceIds,
+  })
 
   return {
     traces: trimmedOverlaps.traces,

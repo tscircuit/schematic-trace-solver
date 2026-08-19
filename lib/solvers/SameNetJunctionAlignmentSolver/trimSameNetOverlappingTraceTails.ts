@@ -5,12 +5,14 @@ import {
   nearlyEqual,
   pointsEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
-import type { InputPin } from "lib/types/InputProblem"
+import type { InputPin, InputProblem, SectionId } from "lib/types/InputProblem"
 
 interface PathFromSharedPin {
   points: Point[]
   sharedPinIsPathStart: boolean
 }
+
+const MAX_SHARED_PIN_TAIL_LENGTH = 0.2
 
 const getSharedPin = ({
   firstTrace,
@@ -164,8 +166,24 @@ const getPathAfterCommonTail = ({
   return null
 }
 
-export const trimSameNetOverlappingTraceTails = (traces: SolvedTracePath[]) => {
+export const trimSameNetOverlappingTraceTails = ({
+  traces,
+  inputProblem,
+  alignedSectionIds,
+  alignedBranchTraceIds,
+}: {
+  traces: SolvedTracePath[]
+  inputProblem: InputProblem
+  alignedSectionIds: Set<SectionId>
+  alignedBranchTraceIds: Set<string>
+}) => {
   const outputTraces = traces.map((trace) => ({ ...trace }))
+  // This cleanup is proven for one newly aligned branch and its connected
+  // trace chain. Preserve established multi-alignment layouts unchanged.
+  if (alignedBranchTraceIds.size !== 1) {
+    return { traces: outputTraces, trimmedSameNetOverlapCount: 0 }
+  }
+  const junctionTraceIds = new Set(alignedBranchTraceIds)
   let trimmedSameNetOverlapCount = 0
 
   for (let firstIndex = 0; firstIndex < outputTraces.length; firstIndex++) {
@@ -177,9 +195,24 @@ export const trimSameNetOverlappingTraceTails = (traces: SolvedTracePath[]) => {
       const firstTrace = outputTraces[firstIndex]!
       const secondTrace = outputTraces[secondIndex]!
       if (firstTrace.globalConnNetId !== secondTrace.globalConnNetId) continue
+      if (
+        !junctionTraceIds.has(firstTrace.mspPairId) &&
+        !junctionTraceIds.has(secondTrace.mspPairId)
+      ) {
+        continue
+      }
 
       const sharedPin = getSharedPin({ firstTrace, secondTrace })
       if (!sharedPin) continue
+      const sharedPinChip = inputProblem.chips.find(
+        (chip) => chip.chipId === sharedPin.chipId,
+      )
+      if (
+        !sharedPinChip?.sectionId ||
+        !alignedSectionIds.has(sharedPinChip.sectionId)
+      ) {
+        continue
+      }
       const firstPathFromSharedPin = getPathFromSharedPin({
         trace: firstTrace,
         sharedPin,
@@ -195,6 +228,16 @@ export const trimSameNetOverlappingTraceTails = (traces: SolvedTracePath[]) => {
         secondPath: secondPathFromSharedPin.points,
       })
       if (!commonTailEnd) continue
+      const commonTailLength = getSegmentLength({
+        start: sharedPin,
+        end: commonTailEnd,
+      })
+      if (
+        commonTailLength > MAX_SHARED_PIN_TAIL_LENGTH &&
+        !nearlyEqual(commonTailLength, MAX_SHARED_PIN_TAIL_LENGTH)
+      ) {
+        continue
+      }
 
       const trimmedSecondPath = getPathAfterCommonTail({
         pathFromSharedPin: secondPathFromSharedPin,
@@ -207,6 +250,8 @@ export const trimSameNetOverlappingTraceTails = (traces: SolvedTracePath[]) => {
           ...secondTrace,
           tracePath: trimmedSecondPath,
         }
+        junctionTraceIds.add(firstTrace.mspPairId)
+        junctionTraceIds.add(secondTrace.mspPairId)
         trimmedSameNetOverlapCount++
         continue
       }
@@ -220,6 +265,8 @@ export const trimSameNetOverlappingTraceTails = (traces: SolvedTracePath[]) => {
         ...firstTrace,
         tracePath: trimmedFirstPath,
       }
+      junctionTraceIds.add(firstTrace.mspPairId)
+      junctionTraceIds.add(secondTrace.mspPairId)
       trimmedSameNetOverlapCount++
     }
   }
