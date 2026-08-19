@@ -1,5 +1,7 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import {
   nearlyEqual,
@@ -13,6 +15,7 @@ interface PathFromSharedPin {
 }
 
 const MAX_SHARED_PIN_TAIL_LENGTH = 0.2
+const MAX_PARALLEL_RETURN_OFFSET = 0.05
 
 const getSharedPin = ({
   firstTrace,
@@ -172,6 +175,129 @@ const getPathAfterCommonTail = ({
   return null
 }
 
+const collapseNearParallelReturnToTrunk = ({
+  branchPath,
+  trunkPath,
+  inputProblem,
+}: {
+  branchPath: Point[]
+  trunkPath: Point[]
+  inputProblem: InputProblem
+}): { path: Point[]; collapsed: boolean } => {
+  let pathFromTrunk = branchPath
+  let pathWasReversed = false
+  let trunkSegment: { start: Point; end: Point } | null = null
+
+  for (let index = 0; index < trunkPath.length - 1; index++) {
+    const start = trunkPath[index]!
+    const end = trunkPath[index + 1]!
+    if (pointIsOnSegment({ point: pathFromTrunk[0]!, start, end })) {
+      trunkSegment = { start, end }
+      break
+    }
+  }
+  if (!trunkSegment) {
+    pathFromTrunk = [...branchPath].reverse()
+    pathWasReversed = true
+    for (let index = 0; index < trunkPath.length - 1; index++) {
+      const start = trunkPath[index]!
+      const end = trunkPath[index + 1]!
+      if (pointIsOnSegment({ point: pathFromTrunk[0]!, start, end })) {
+        trunkSegment = { start, end }
+        break
+      }
+    }
+  }
+  if (!trunkSegment || pathFromTrunk.length < 5) {
+    return { path: branchPath, collapsed: false }
+  }
+
+  const junction = pathFromTrunk[0]!
+  const outwardEnd = pathFromTrunk[1]!
+  const offsetEnd = pathFromTrunk[2]!
+  const returnEnd = pathFromTrunk[3]!
+  const trunkDirection = getUnitDirection(trunkSegment)
+  const outwardDirection = getUnitDirection({
+    start: junction,
+    end: outwardEnd,
+  })
+  const offsetDirection = getUnitDirection({
+    start: outwardEnd,
+    end: offsetEnd,
+  })
+  const returnDirection = getUnitDirection({
+    start: offsetEnd,
+    end: returnEnd,
+  })
+  if (
+    !trunkDirection ||
+    !outwardDirection ||
+    !offsetDirection ||
+    !returnDirection
+  ) {
+    return { path: branchPath, collapsed: false }
+  }
+  const outwardIsParallelToTrunk =
+    Math.abs(
+      outwardDirection.x * trunkDirection.x +
+        outwardDirection.y * trunkDirection.y,
+    ) === 1
+  const returnReversesOutward =
+    returnDirection.x === -outwardDirection.x &&
+    returnDirection.y === -outwardDirection.y
+  const offsetIsPerpendicular =
+    offsetDirection.x * trunkDirection.x +
+      offsetDirection.y * trunkDirection.y ===
+    0
+  const offsetLength = getSegmentLength({
+    start: outwardEnd,
+    end: offsetEnd,
+  })
+  if (
+    !outwardIsParallelToTrunk ||
+    !returnReversesOutward ||
+    !offsetIsPerpendicular ||
+    offsetLength > MAX_PARALLEL_RETURN_OFFSET
+  ) {
+    return { path: branchPath, collapsed: false }
+  }
+
+  for (let rejoinIndex = 4; rejoinIndex < pathFromTrunk.length; rejoinIndex++) {
+    const rejoinPoint = pathFromTrunk[rejoinIndex]!
+    let snappedOutwardEnd = { x: outwardEnd.x, y: junction.y }
+    if (trunkDirection.y !== 0) {
+      snappedOutwardEnd = { x: junction.x, y: outwardEnd.y }
+    }
+    const shortcutDirection = getUnitDirection({
+      start: snappedOutwardEnd,
+      end: rejoinPoint,
+    })
+    if (!shortcutDirection) continue
+    const shortcutIsPerpendicular =
+      shortcutDirection.x * trunkDirection.x +
+        shortcutDirection.y * trunkDirection.y ===
+      0
+    if (!shortcutIsPerpendicular) continue
+
+    const collapsedPath = simplifyPath([
+      junction,
+      snappedOutwardEnd,
+      ...pathFromTrunk.slice(rejoinIndex),
+    ])
+    if (
+      isPathCollidingWithObstacles(
+        collapsedPath,
+        getObstacleRects(inputProblem),
+      )
+    ) {
+      continue
+    }
+    if (pathWasReversed) collapsedPath.reverse()
+    return { path: collapsedPath, collapsed: true }
+  }
+  return { path: branchPath, collapsed: false }
+}
+
 export const trimSameNetOverlappingTraceTails = ({
   traces,
   inputProblem,
@@ -193,6 +319,7 @@ export const trimSameNetOverlappingTraceTails = ({
     return { traces: outputTraces, trimmedSameNetOverlapCount: 0 }
   }
   let trimmedSameNetOverlapCount = 0
+  let collapsedSameNetHairpinCount = 0
 
   for (let firstIndex = 0; firstIndex < outputTraces.length; firstIndex++) {
     for (
@@ -246,12 +373,18 @@ export const trimSameNetOverlappingTraceTails = ({
         commonTailEnd,
       })
       if (trimmedSecondPath) {
+        const collapsedPath = collapseNearParallelReturnToTrunk({
+          branchPath: trimmedSecondPath,
+          trunkPath: firstTrace.tracePath,
+          inputProblem,
+        })
         // Keep the first tail as the shared trunk and start the second path at
         // the point where its incoming branch diverges.
         outputTraces[secondIndex] = {
           ...secondTrace,
-          tracePath: trimmedSecondPath,
+          tracePath: collapsedPath.path,
         }
+        if (collapsedPath.collapsed) collapsedSameNetHairpinCount++
         trimmedSameNetOverlapCount++
         continue
       }
@@ -261,13 +394,23 @@ export const trimSameNetOverlappingTraceTails = ({
         commonTailEnd,
       })
       if (!trimmedFirstPath) continue
+      const collapsedPath = collapseNearParallelReturnToTrunk({
+        branchPath: trimmedFirstPath,
+        trunkPath: secondTrace.tracePath,
+        inputProblem,
+      })
       outputTraces[firstIndex] = {
         ...firstTrace,
-        tracePath: trimmedFirstPath,
+        tracePath: collapsedPath.path,
       }
+      if (collapsedPath.collapsed) collapsedSameNetHairpinCount++
       trimmedSameNetOverlapCount++
     }
   }
 
-  return { traces: outputTraces, trimmedSameNetOverlapCount }
+  return {
+    traces: outputTraces,
+    trimmedSameNetOverlapCount,
+    collapsedSameNetHairpinCount,
+  }
 }

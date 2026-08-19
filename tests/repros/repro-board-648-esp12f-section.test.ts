@@ -40,6 +40,20 @@ test("board 648 ESP-12F power and boot section", () => {
   expect(
     solver.sameNetJunctionAlignmentSolver!.stats.trimmedSameNetOverlapCount,
   ).toBe(4)
+  expect(
+    solver.sameNetJunctionAlignmentSolver!.stats.collapsedSameNetHairpinCount,
+  ).toBe(1)
+  const gndTrace = output.traces.find(
+    (trace) => trace.mspPairId === "schematic_port_60-schematic_port_43",
+  )!
+  expect(gndTrace.tracePath).toHaveLength(4)
+  expect(
+    gndTrace.tracePath.every((point, index, path) => {
+      const nextPoint = path[index + 1]
+      if (!nextPoint) return true
+      return point.x === nextPoint.x || point.y === nextPoint.y
+    }),
+  ).toBe(true)
   for (let traceIndex = 0; traceIndex < output.traces.length; traceIndex++) {
     const trace = output.traces[traceIndex]!
     const laterSameNetTraces = output.traces

@@ -369,5 +369,7 @@ export const alignSameNetJunctions = ({
     netLabelPlacements: outputNetLabelPlacements,
     alignedJunctionCount,
     trimmedSameNetOverlapCount: trimmedOverlaps.trimmedSameNetOverlapCount,
+    collapsedSameNetHairpinCount:
+      trimmedOverlaps.collapsedSameNetHairpinCount ?? 0,
   }
 }
