@@ -429,7 +429,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         const previousTraceMap = new Map(
           previousOutput.traces.map((trace) => [trace.mspPairId, trace]),
         )
-        let netLabelPlacements = previousOutput.netLabelPlacements
+        let netLabelPlacements = alignmentOutput.netLabelPlacements
 
         for (const trace of alignmentOutput.traces) {
           const previousTrace = previousTraceMap.get(trace.mspPairId)

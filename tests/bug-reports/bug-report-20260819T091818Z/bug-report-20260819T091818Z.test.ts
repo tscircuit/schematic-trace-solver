@@ -7,6 +7,8 @@ import inputProblem from "./bug-report-20260819T091818Z.json"
 import "tests/fixtures/matcher"
 
 test("disconnected netlabel", () => {
+  const expectedAlignedRailX = 3.18
+  const expectedCloserLabelAnchorX = 3.71
   const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
 
   solver.solve()
@@ -31,5 +33,7 @@ test("disconnected netlabel", () => {
       secondPath: labelConnectorTrace.tracePath,
     }),
   ).toBe(0)
+  expect(hostTrace.tracePath[1]!.x).toBeCloseTo(expectedAlignedRailX)
+  expect(targetLabel.anchorPoint.x).toBeCloseTo(expectedCloserLabelAnchorX)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

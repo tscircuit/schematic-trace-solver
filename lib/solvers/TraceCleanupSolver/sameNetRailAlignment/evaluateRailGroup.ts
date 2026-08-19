@@ -1,4 +1,5 @@
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import type { ObstacleRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
@@ -10,6 +11,7 @@ import {
 import { getDistinctCoordinates, pointsEqual } from "./geometry"
 import { getRailAlignmentFallbackCoordinates } from "./getRailAlignmentFallbackCoordinates"
 import { moveRailSegments } from "./moveRailSegments"
+import { moveConnectedNetLabelConnectors } from "./moveConnectedNetLabelConnectors"
 import { preservesLabelAnchors } from "./preservesLabelAnchors"
 import { preservesSameNetTraceJunctions } from "./preservesSameNetTraceJunctions"
 import {
@@ -63,7 +65,7 @@ export const evaluateRailGroup = ({
   const evaluateCoordinates = (coordinates: number[]) => {
     let best: AlignmentCandidate | null = null
     for (const coordinate of coordinates) {
-      const candidateMap = new Map<string, SolvedTracePath>()
+      const candidateMap = new Map<MspConnectionPairId, SolvedTracePath>()
 
       for (const trace of originalGroupTraces) {
         const candidateTrace = moveRailSegments(
@@ -74,16 +76,26 @@ export const evaluateRailGroup = ({
         candidateMap.set(trace.mspPairId, candidateTrace)
       }
 
-      const candidateTraces = [...candidateMap.values()]
-      const allCandidateTraces = traces.map(
+      let allCandidateTraces = traces.map(
         (trace) => candidateMap.get(trace.mspPairId) ?? trace,
+      )
+      const connectorMovement = moveConnectedNetLabelConnectors({
+        originalTraces: traces,
+        reroutedTraces: allCandidateTraces,
+        netLabelPlacements,
+        eligibleTraceIds,
+      })
+      allCandidateTraces = connectorMovement.traces
+      const candidateNetLabelPlacements = connectorMovement.netLabelPlacements
+      const candidateTraces = allCandidateTraces.filter((trace) =>
+        groupTraceIds.has(trace.mspPairId),
       )
       const candidatesAreClear = candidateTraces.every(
         (candidate) =>
           !isPathCollidingWithObstacles(candidate.tracePath, obstacles) &&
           detectTraceLabelOverlap({
             traces: [candidate],
-            netLabels: netLabelPlacements,
+            netLabels: candidateNetLabelPlacements,
           }).length === 0 &&
           !doesPathOverlapTraceStrokes(candidate.tracePath, otherNetTraces) &&
           !doesPathCoincideWithTraces(
@@ -94,8 +106,33 @@ export const evaluateRailGroup = ({
           ),
       )
       if (!candidatesAreClear) continue
+      const movedConnectorTracesAreClear = allCandidateTraces
+        .filter((trace) =>
+          connectorMovement.movedConnectorTraceIds.has(trace.mspPairId),
+        )
+        .every(
+          (connectorTrace) =>
+            !isPathCollidingWithObstacles(
+              connectorTrace.tracePath,
+              obstacles,
+            ) &&
+            detectTraceLabelOverlap({
+              traces: [connectorTrace],
+              netLabels: candidateNetLabelPlacements,
+            }).length === 0 &&
+            !doesPathOverlapTraceStrokes(
+              connectorTrace.tracePath,
+              otherNetTraces,
+            ),
+        )
+      if (!movedConnectorTracesAreClear) continue
       if (
-        !preservesLabelAnchors(netLabelPlacements, traces, allCandidateTraces)
+        !preservesLabelAnchors({
+          beforeLabels: netLabelPlacements,
+          afterLabels: candidateNetLabelPlacements,
+          beforeTraces: traces,
+          afterTraces: allCandidateTraces,
+        })
       ) {
         continue
       }
@@ -134,7 +171,12 @@ export const evaluateRailGroup = ({
         .map((trace) => trace.mspPairId)
       if (changedTraceIds.length === 0) continue
 
-      const candidate = { traces: allCandidateTraces, changedTraceIds, score }
+      const candidate = {
+        traces: allCandidateTraces,
+        netLabelPlacements: candidateNetLabelPlacements,
+        changedTraceIds,
+        score,
+      }
       if (!best || scoreIsBetter(candidate.score, best.score)) best = candidate
     }
 

@@ -55,8 +55,20 @@ test("preserves a same-net connector joined away from its label anchor", () => {
       { pinId: "label-anchor", chipId: "X1", x: -4, y: -1 },
     ],
   )
+  const label: NetLabelPlacement = {
+    globalConnNetId: "power-net",
+    netId: "POWER",
+    mspConnectionPairIds: ["lower"],
+    pinIds: ["label-anchor"],
+    orientation: "x-",
+    anchorPoint: { x: -4, y: -1 },
+    center: { x: -4.2, y: -1 },
+    width: 0.4,
+    height: 0.2,
+  }
 
   const result = align([...rails, labelConnector], {
+    netLabelPlacements: [label],
     eligibleTraceIds: new Set(rails.map((trace) => trace.mspPairId)),
   })
   const lowerRail = result.traces.find((trace) => trace.mspPairId === "lower")!
@@ -70,4 +82,6 @@ test("preserves a same-net connector joined away from its label anchor", () => {
       secondPath: outputLabelConnector.tracePath,
     }),
   ).toBe(0)
+  expect(result.netLabelPlacements[0]!.anchorPoint).toEqual({ x: -3, y: -1 })
+  expect(result.alignedRailGroupCount).toBe(1)
 })

@@ -1,4 +1,5 @@
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { FacingDirection } from "lib/utils/dir"
 
 export type RailOrientation = "horizontal" | "vertical"
@@ -29,6 +30,7 @@ export interface AlignmentScore extends TraceGeometryMetrics {
 
 export interface AlignmentCandidate {
   traces: SolvedTracePath[]
+  netLabelPlacements: NetLabelPlacement[]
   changedTraceIds: string[]
   score: AlignmentScore
 }

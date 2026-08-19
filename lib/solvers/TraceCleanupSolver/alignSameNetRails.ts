@@ -20,10 +20,12 @@ export const alignSameNetRails = ({
   eligibleTraceIds,
 }: AlignSameNetRailsInput): {
   traces: SolvedTracePath[]
+  netLabelPlacements: NetLabelPlacement[]
   alignedRailGroupCount: number
   alignedTraceCount: number
 } => {
   let outputTraces = [...traces]
+  let outputNetLabelPlacements = [...netLabelPlacements]
   const obstacles = getObstacleRects(inputProblem)
   const alignedTraceIds = new Set<string>()
   let alignedRailGroupCount = 0
@@ -45,7 +47,7 @@ export const alignSameNetRails = ({
       applied = evaluateRailGroup({
         group,
         traces: outputTraces,
-        netLabelPlacements,
+        netLabelPlacements: outputNetLabelPlacements,
         obstacles,
         eligibleTraceIds,
       })
@@ -54,12 +56,14 @@ export const alignSameNetRails = ({
     if (!applied) break
 
     outputTraces = applied.traces
+    outputNetLabelPlacements = applied.netLabelPlacements
     alignedRailGroupCount++
     for (const traceId of applied.changedTraceIds) alignedTraceIds.add(traceId)
   }
 
   return {
     traces: outputTraces,
+    netLabelPlacements: outputNetLabelPlacements,
     alignedRailGroupCount,
     alignedTraceCount: alignedTraceIds.size,
   }

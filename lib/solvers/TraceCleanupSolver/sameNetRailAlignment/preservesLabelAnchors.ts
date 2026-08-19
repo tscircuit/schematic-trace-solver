@@ -16,15 +16,23 @@ const getAnchoredTraceIds = (
       .map((trace) => trace.mspPairId),
   )
 
-export const preservesLabelAnchors = (
-  labels: NetLabelPlacement[],
-  before: SolvedTracePath[],
-  after: SolvedTracePath[],
-) =>
-  labels.every((label) => {
-    const anchoredBefore = getAnchoredTraceIds(label, before)
+export const preservesLabelAnchors = ({
+  beforeLabels,
+  afterLabels,
+  beforeTraces,
+  afterTraces,
+}: {
+  beforeLabels: NetLabelPlacement[]
+  afterLabels: NetLabelPlacement[]
+  beforeTraces: SolvedTracePath[]
+  afterTraces: SolvedTracePath[]
+}) =>
+  beforeLabels.every((beforeLabel, labelIndex) => {
+    const afterLabel = afterLabels[labelIndex]
+    if (!afterLabel) return false
+    const anchoredBefore = getAnchoredTraceIds(beforeLabel, beforeTraces)
     if (anchoredBefore.size === 0) return true
 
-    const anchoredAfter = getAnchoredTraceIds(label, after)
+    const anchoredAfter = getAnchoredTraceIds(afterLabel, afterTraces)
     return [...anchoredBefore].every((traceId) => anchoredAfter.has(traceId))
   })
