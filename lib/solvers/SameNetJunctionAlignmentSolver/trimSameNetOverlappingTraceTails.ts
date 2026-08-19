@@ -102,9 +102,15 @@ const getCommonTailEnd = ({
     const sharedLength = Math.min(firstSegmentLength, secondSegmentLength)
     if (nearlyEqual(sharedLength, 0)) break
 
-    commonEnd = {
-      x: commonEnd.x + firstDirection.x * sharedLength,
-      y: commonEnd.y + firstDirection.y * sharedLength,
+    if (
+      firstSegmentLength < secondSegmentLength ||
+      nearlyEqual(firstSegmentLength, secondSegmentLength)
+    ) {
+      commonEnd = firstSegmentEnd
+    } else if (firstDirection.x !== 0) {
+      commonEnd = { x: secondSegmentEnd.x, y: firstSegmentEnd.y }
+    } else {
+      commonEnd = { x: firstSegmentEnd.x, y: secondSegmentEnd.y }
     }
     commonLength += sharedLength
 
