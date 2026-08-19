@@ -17,7 +17,12 @@ import type {
 } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
-import { EPS, LABEL_SEARCH_STEP, WICK_CLEARANCE } from "./constants"
+import {
+  EPS,
+  LABEL_SEARCH_STEP,
+  MAX_RECORDED_CANDIDATES,
+  WICK_CLEARANCE,
+} from "./constants"
 import {
   getConnectorTracePath,
   getMaxSearchDistance,
@@ -27,8 +32,6 @@ import {
   rangesOverlap,
   rectsOverlap,
   simplifyOrthogonalPath,
-  traceCrossesBoundsInterior,
-  tracePathCrossesAnyBounds,
   tracePathIntersectsBounds,
 } from "./geometry"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
@@ -43,6 +46,7 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -64,6 +68,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private maxSearchDistance: number
   private pinMap: Record<string, InputPin & { chipId: string }>
+  private obstacleIndex: AvailableNetOrientationObstacleIndex
 
   constructor(params: AvailableNetOrientationSolverParams) {
     super()
@@ -79,6 +84,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       params.inputProblem._chipObstacleSpatialIndex ??
       new ChipObstacleSpatialIndex(params.inputProblem.chips)
     this.maxSearchDistance = getMaxSearchDistance(params.inputProblem)
+    this.obstacleIndex = new AvailableNetOrientationObstacleIndex({
+      chipObstacleSpatialIndex: this.chipObstacleSpatialIndex,
+      netLabelPlacements: this.outputNetLabelPlacements,
+      traces: this.traces,
+    })
     this.crowdedPortOnlyLabelIndices = this.getCrowdedPortOnlyLabelIndices()
     this.queuedLabelIndices = this.getProcessableLabelIndices()
     this.setCurrentLabel(this.queuedLabelIndices[0] ?? null)
@@ -309,6 +319,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       ...toNetLabelPlacementPatch(candidate),
     }
     this.addConnectorTrace(label, candidate, labelIndex)
+    this.obstacleIndex.rebuild({
+      netLabelPlacements: this.outputNetLabelPlacements,
+      traces: this.traces,
+    })
   }
 
   private addConnectorTrace(
@@ -553,7 +567,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         anchorY - label.anchorPoint.y,
         anchorX - label.anchorPoint.x,
       )
-      this.currentCandidateResults.push(result)
+      this.recordCandidateResult(result)
       if (result.status !== "valid") continue
 
       result.selected = true
@@ -605,7 +619,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         labelIndex,
         "rotate",
       )
-      this.currentCandidateResults.push(result)
+      this.recordCandidateResult(result)
       if (result.status === "valid") {
         result.selected = true
         return result
@@ -637,7 +651,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         labelIndex,
         "trace-anchor",
       )
-      this.currentCandidateResults.push(result)
+      this.recordCandidateResult(result)
 
       if (result.status === "valid") {
         result.selected = true
@@ -682,7 +696,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         labelIndex,
         "outward-trace-anchor",
       )
-      this.currentCandidateResults.push(preservedColumnResult)
+      this.recordCandidateResult(preservedColumnResult)
       if (preservedColumnResult.status === "valid") {
         preservedColumnResult.selected = true
         return preservedColumnResult
@@ -716,7 +730,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           "outward-trace-anchor",
           distance,
         )
-        this.currentCandidateResults.push(result)
+        this.recordCandidateResult(result)
 
         if (result.status === "valid") {
           result.selected = true
@@ -891,7 +905,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         distance,
         outwardDistance,
       )
-      this.currentCandidateResults.push(result)
+      this.recordCandidateResult(result)
 
       if (result.status === "valid") {
         result.selected = true
@@ -924,6 +938,19 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         phase,
       }),
     }
+  }
+
+  private recordCandidateResult(candidate: EvaluatedCandidate) {
+    this.stats.candidateEvaluations = (this.stats.candidateEvaluations ?? 0) + 1
+    if (this.currentCandidateResults.length < MAX_RECORDED_CANDIDATES) {
+      this.currentCandidateResults.push(candidate)
+    } else if (candidate.status === "valid") {
+      this.currentCandidateResults[MAX_RECORDED_CANDIDATES - 1] = candidate
+    }
+    this.stats.maxRecordedCandidates = Math.max(
+      this.stats.maxRecordedCandidates ?? 0,
+      this.currentCandidateResults.length,
+    )
   }
 
   private getCandidateConnectorTrace(
@@ -1269,13 +1296,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       labelIndex,
     )
 
-    for (const chip of this.chipObstacleSpatialIndex.chips) {
-      if (tracePathCrossesAnyBounds(connectorTrace, chip.bounds)) {
-        return "chip-collision"
-      }
+    if (this.obstacleIndex.doesTracePathCrossChip(connectorTrace)) {
+      return "chip-collision"
     }
 
-    for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
+    for (const i of this.obstacleIndex.getLabelIndicesNearTracePath(
+      connectorTrace,
+    )) {
       if (i === labelIndex) continue
       if (this.shouldIgnorePendingCrowdedLabel(labelIndex, i)) continue
       const otherLabel = this.outputNetLabelPlacements[i]!
@@ -1345,7 +1372,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     if (rectIntersectsAnyTextBox(bounds, this.inputProblem)) {
       return "text-collision"
     }
-    if (traceCrossesBoundsInterior(bounds, this.traceMap)) {
+    if (this.obstacleIndex.doesTraceCrossBoundsInterior(bounds)) {
       return "trace-collision"
     }
     if (this.isTraceTooCloseToLabel(bounds, label)) {
@@ -1361,14 +1388,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     if (!this.shouldCheckTraceClearanceForLabel(label)) return false
 
     const clearanceBounds = this.getLabelTraceClearanceBounds(bounds)
-    for (const trace of Object.values(this.traceMap)) {
-      if (trace.globalConnNetId === label.globalConnNetId) continue
-      if (tracePathIntersectsBounds(trace.tracePath, clearanceBounds)) {
-        return true
-      }
-    }
-
-    return false
+    return this.obstacleIndex.doesTraceIntersectBounds({
+      bounds: clearanceBounds,
+      excludedGlobalConnNetId: label.globalConnNetId,
+    })
   }
 
   private getLabelTraceClearanceBounds(bounds: Bounds): Bounds {
@@ -1496,7 +1519,17 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private intersectsAnyOtherNetLabel(bounds: Bounds, labelIndex: number) {
-    for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
+    const searchBounds = {
+      minX: bounds.minX - LABEL_SEARCH_STEP,
+      minY: bounds.minY - LABEL_SEARCH_STEP,
+      maxX: bounds.maxX + LABEL_SEARCH_STEP,
+      maxY: bounds.maxY + LABEL_SEARCH_STEP,
+    }
+    const nearbyLabelIndices = this.obstacleIndex
+      .getLabelIndicesInBounds(searchBounds)
+      .sort((a, b) => a - b)
+
+    for (const i of nearbyLabelIndices) {
       if (i === labelIndex) continue
       if (this.shouldIgnorePendingCrowdedLabel(labelIndex, i)) continue
       const label = this.outputNetLabelPlacements[i]!
@@ -1515,7 +1548,16 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private sharesChipBoundary(bounds: Bounds) {
-    for (const chip of this.chipObstacleSpatialIndex.chips) {
+    const boundarySearchBounds = {
+      minX: bounds.minX - WICK_CLEARANCE - EPS,
+      minY: bounds.minY - WICK_CLEARANCE - EPS,
+      maxX: bounds.maxX + WICK_CLEARANCE + EPS,
+      maxY: bounds.maxY + WICK_CLEARANCE + EPS,
+    }
+    const nearbyChips =
+      this.chipObstacleSpatialIndex.getChipsInBounds(boundarySearchBounds)
+
+    for (const chip of nearbyChips) {
       const chipBounds = chip.bounds
       const adjacentToVerticalSide =
         Math.abs(bounds.minX - chipBounds.maxX) <= WICK_CLEARANCE + EPS ||
