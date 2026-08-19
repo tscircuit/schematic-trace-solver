@@ -2,6 +2,10 @@
   "name": "@tscircuit/schematic-trace-solver",
   "main": "dist/index.js",
   "version": "0.0.137",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tscircuit/schematic-trace-solver"
+  },
   "type": "module",
   "scripts": {
     "start": "cosmos",
