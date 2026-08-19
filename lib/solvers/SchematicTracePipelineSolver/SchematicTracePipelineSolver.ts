@@ -325,6 +325,14 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     this.endTimeOfPhase = {}
     this.timeSpentOnPhase = {}
     this.firstIterationOfPhase = {}
+
+    // Early exit: if there are no connections to route, mark as solved immediately
+    if (
+      this.inputProblem.directConnections.length === 0 &&
+      this.inputProblem.netConnections.length === 0
+    ) {
+      this.solved = true
+    }
   }
 
   override getConstructorParams(): ConstructorParameters<
