@@ -18,6 +18,7 @@ import {
   pathEntersAnyNetLabel,
   pathIntersectsAnyNetLabel,
 } from "./pathIntersectsAnyNetLabel"
+import { trimSameNetOverlappingTraceTails } from "./trimSameNetOverlappingTraceTails"
 
 interface AlignSameNetJunctionsInput {
   inputProblem: InputProblem
@@ -348,9 +349,12 @@ export const alignSameNetJunctions = ({
     }
   }
 
+  const trimmedOverlaps = trimSameNetOverlappingTraceTails(outputTraces)
+
   return {
-    traces: outputTraces,
+    traces: trimmedOverlaps.traces,
     netLabelPlacements: outputNetLabelPlacements,
     alignedJunctionCount,
+    trimmedSameNetOverlapCount: trimmedOverlaps.trimmedSameNetOverlapCount,
   }
 }
