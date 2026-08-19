@@ -7,144 +7,145 @@ import {
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import {
-  isHorizontal,
-  isVertical,
   nearlyEqual,
   pointsEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import type { InputPin, InputProblem, SectionId } from "lib/types/InputProblem"
 
+type Axis = "x" | "y"
+
+interface OrientedTrace {
+  path: Point[]
+  originalPath: Point[]
+  reverseOutput: boolean
+}
+
 interface TrimmedTail {
   path: Point[]
   trunkPath: Point[]
-  trimFirstTrace: boolean
+  traceIndex: number
 }
 
 const MAX_SHARED_PIN_TAIL_LENGTH = 0.2
 const MAX_HAIRPIN_OFFSET = 0.05
 const MIN_HAIRPIN_POINT_COUNT = 6
+const FIRST_HAIRPIN_REJOIN_INDEX = 4
 
-const getSharedPin = ({
-  firstTrace,
-  secondTrace,
-}: {
-  firstTrace: SolvedTracePath
-  secondTrace: SolvedTracePath
-}): (InputPin & { chipId: string }) | null => {
+const getAxis = (start: Point, end: Point): Axis | null => {
+  if (nearlyEqual(start.x, end.x) && !nearlyEqual(start.y, end.y)) return "y"
+  if (nearlyEqual(start.y, end.y) && !nearlyEqual(start.x, end.x)) return "x"
+  return null
+}
+
+const getOtherAxis = (axis: Axis): Axis => {
+  if (axis === "x") return "y"
+  return "x"
+}
+
+const getLength = (start: Point, end: Point) =>
+  Math.abs(end.x - start.x) + Math.abs(end.y - start.y)
+
+const getSharedPin = (
+  firstTrace: SolvedTracePath,
+  secondTrace: SolvedTracePath,
+): (InputPin & { chipId: string }) | null => {
   const secondPinIds = new Set(secondTrace.pins.map((pin) => pin.pinId))
   return firstTrace.pins.find((pin) => secondPinIds.has(pin.pinId)) ?? null
 }
 
-const orientPathFromPin = ({
+const orientTraceFromPin = ({
   trace,
   pin,
 }: {
   trace: SolvedTracePath
   pin: Point
-}) => {
+}): OrientedTrace | null => {
   if (pointsEqual(trace.tracePath[0]!, pin)) {
-    return { path: trace.tracePath, reverseOutput: false }
+    return {
+      path: trace.tracePath,
+      originalPath: trace.tracePath,
+      reverseOutput: false,
+    }
   }
   if (!pointsEqual(trace.tracePath.at(-1)!, pin)) return null
-  return { path: [...trace.tracePath].reverse(), reverseOutput: true }
-}
-
-const getUnitDirection = ({ start, end }: { start: Point; end: Point }) => {
-  if (isVertical(start, end) && !nearlyEqual(start.y, end.y)) {
-    return { x: 0, y: Math.sign(end.y - start.y) }
+  return {
+    path: [...trace.tracePath].reverse(),
+    originalPath: trace.tracePath,
+    reverseOutput: true,
   }
-  if (isHorizontal(start, end) && !nearlyEqual(start.x, end.x)) {
-    return { x: Math.sign(end.x - start.x), y: 0 }
-  }
-  return null
 }
-
-const getLength = ({ start, end }: { start: Point; end: Point }) =>
-  Math.abs(end.x - start.x) + Math.abs(end.y - start.y)
 
 const getTrimmedTail = ({
   firstTrace,
   secondTrace,
   sharedPin,
+  firstIndex,
+  secondIndex,
 }: {
   firstTrace: SolvedTracePath
   secondTrace: SolvedTracePath
   sharedPin: Point
+  firstIndex: number
+  secondIndex: number
 }): TrimmedTail | null => {
-  const first = orientPathFromPin({ trace: firstTrace, pin: sharedPin })
-  const second = orientPathFromPin({ trace: secondTrace, pin: sharedPin })
-  if (!first || !second) return null
-  const firstEnd = first.path[1]
-  const secondEnd = second.path[1]
-  if (!firstEnd || !secondEnd) return null
+  const first = orientTraceFromPin({
+    trace: firstTrace,
+    pin: sharedPin,
+  })
+  const second = orientTraceFromPin({
+    trace: secondTrace,
+    pin: sharedPin,
+  })
+  if (!first?.path[1] || !second?.path[1]) return null
 
-  const firstDirection = getUnitDirection({ start: sharedPin, end: firstEnd })
-  const secondDirection = getUnitDirection({ start: sharedPin, end: secondEnd })
-  if (!firstDirection || !secondDirection) return null
-  if (
-    firstDirection.x !== secondDirection.x ||
-    firstDirection.y !== secondDirection.y
-  ) {
-    return null
-  }
+  const firstAxis = getAxis(sharedPin, first.path[1])
+  const secondAxis = getAxis(sharedPin, second.path[1])
+  if (!firstAxis || firstAxis !== secondAxis) return null
+  const firstDirection = Math.sign(
+    first.path[1][firstAxis] - sharedPin[firstAxis],
+  )
+  const secondDirection = Math.sign(
+    second.path[1][secondAxis] - sharedPin[secondAxis],
+  )
+  if (firstDirection !== secondDirection) return null
 
-  const firstLength = getLength({ start: sharedPin, end: firstEnd })
-  const secondLength = getLength({ start: sharedPin, end: secondEnd })
+  const firstLength = getLength(sharedPin, first.path[1])
+  const secondLength = getLength(sharedPin, second.path[1])
   const sharedLength = Math.min(firstLength, secondLength)
   if (nearlyEqual(sharedLength, 0)) return null
   if (
     sharedLength > MAX_SHARED_PIN_TAIL_LENGTH &&
     !nearlyEqual(sharedLength, MAX_SHARED_PIN_TAIL_LENGTH)
-  ) {
-    return null
-  }
-
-  let junction = firstEnd
-  let branch = second
-  let trunkPath = firstTrace.tracePath
-  let trimFirstTrace = false
-  if (firstLength > secondLength && !nearlyEqual(firstLength, secondLength)) {
-    junction = secondEnd
-    branch = first
-    trunkPath = secondTrace.tracePath
-    trimFirstTrace = true
-  }
-  let path = simplifyPath([junction, ...branch.path.slice(1)])
-  if (branch.reverseOutput) path = [...path].reverse()
-  return { path, trunkPath, trimFirstTrace }
-}
-
-const pointIsOnSegment = ({
-  point,
-  start,
-  end,
-}: {
-  point: Point
-  start: Point
-  end: Point
-}) => {
-  if (isHorizontal(start, end) && nearlyEqual(point.y, start.y)) {
-    return (
-      point.x >= Math.min(start.x, end.x) && point.x <= Math.max(start.x, end.x)
-    )
-  }
-  if (!isVertical(start, end) || !nearlyEqual(point.x, start.x)) return false
-  return (
-    point.y >= Math.min(start.y, end.y) && point.y <= Math.max(start.y, end.y)
   )
+    return null
+
+  let trunk = first
+  let branch = second
+  let traceIndex = secondIndex
+  if (firstLength > secondLength && !nearlyEqual(firstLength, secondLength)) {
+    trunk = second
+    branch = first
+    traceIndex = firstIndex
+  }
+  let path = simplifyPath([trunk.path[1]!, ...branch.path.slice(1)])
+  if (branch.reverseOutput) path = [...path].reverse()
+  return { path, trunkPath: trunk.originalPath, traceIndex }
 }
 
-const getSegmentContainingPoint = ({
-  path,
-  point,
-}: {
-  path: Point[]
-  point: Point
-}) => {
+const getSegmentAxisAtPoint = (path: Point[], point: Point): Axis | null => {
   for (let index = 0; index < path.length - 1; index++) {
     const start = path[index]!
     const end = path[index + 1]!
-    if (pointIsOnSegment({ point, start, end })) return { start, end }
+    const axis = getAxis(start, end)
+    if (!axis) continue
+    const otherAxis = getOtherAxis(axis)
+    if (!nearlyEqual(point[otherAxis], start[otherAxis])) continue
+    if (
+      point[axis] >= Math.min(start[axis], end[axis]) &&
+      point[axis] <= Math.max(start[axis], end[axis])
+    ) {
+      return axis
+    }
   }
   return null
 }
@@ -162,39 +163,29 @@ const collapseTightHairpin = ({
   const junction = branchPath[0]!
   const outwardEnd = branchPath[1]!
   const offsetEnd = branchPath[2]!
-  const trunkSegment = getSegmentContainingPoint({
-    path: trunkPath,
-    point: junction,
-  })
-  if (!trunkSegment) return null
-  if (getLength({ start: outwardEnd, end: offsetEnd }) > MAX_HAIRPIN_OFFSET) {
+  const trunkAxis = getSegmentAxisAtPoint(trunkPath, junction)
+  if (!trunkAxis) return null
+  const offsetAxis = getOtherAxis(trunkAxis)
+  if (
+    getAxis(junction, outwardEnd) !== trunkAxis ||
+    getAxis(outwardEnd, offsetEnd) !== offsetAxis ||
+    getLength(outwardEnd, offsetEnd) > MAX_HAIRPIN_OFFSET
+  ) {
     return null
   }
 
-  let snappedOutwardEnd: Point
-  let rejoinPointMatches: (point: Point) => boolean
-  if (isHorizontal(trunkSegment.start, trunkSegment.end)) {
+  const snappedOutwardEnd = { ...outwardEnd }
+  snappedOutwardEnd[offsetAxis] = junction[offsetAxis]
+  for (
+    let rejoinIndex = FIRST_HAIRPIN_REJOIN_INDEX;
+    rejoinIndex < branchPath.length;
+    rejoinIndex++
+  ) {
     if (
-      !isHorizontal(junction, outwardEnd) ||
-      !isVertical(outwardEnd, offsetEnd)
+      !nearlyEqual(branchPath[rejoinIndex]![trunkAxis], outwardEnd[trunkAxis])
     ) {
-      return null
+      continue
     }
-    snappedOutwardEnd = { x: outwardEnd.x, y: junction.y }
-    rejoinPointMatches = (point) => nearlyEqual(point.x, snappedOutwardEnd.x)
-  } else {
-    if (
-      !isVertical(junction, outwardEnd) ||
-      !isHorizontal(outwardEnd, offsetEnd)
-    ) {
-      return null
-    }
-    snappedOutwardEnd = { x: junction.x, y: outwardEnd.y }
-    rejoinPointMatches = (point) => nearlyEqual(point.y, snappedOutwardEnd.y)
-  }
-
-  for (let rejoinIndex = 4; rejoinIndex < branchPath.length; rejoinIndex++) {
-    if (!rejoinPointMatches(branchPath[rejoinIndex]!)) continue
     const shortcut = simplifyPath([
       junction,
       snappedOutwardEnd,
@@ -209,28 +200,16 @@ export const trimSameNetOverlappingTraceTails = ({
   traces,
   inputProblem,
   alignedSectionIds,
-  alignedBranchTraceIds,
 }: {
   traces: SolvedTracePath[]
   inputProblem: InputProblem
   alignedSectionIds: Set<SectionId>
-  alignedBranchTraceIds: Set<string>
 }) => {
   const outputTraces = traces.map((trace) => ({ ...trace }))
   let trimmedSameNetOverlapCount = 0
   let collapsedSameNetHairpinCount = 0
-  if (
-    alignedBranchTraceIds.size !== 1 ||
-    inputProblem.directConnections.length > 0
-  ) {
-    return {
-      traces: outputTraces,
-      trimmedSameNetOverlapCount,
-      collapsedSameNetHairpinCount,
-    }
-  }
-
   const obstacles = getObstacleRects(inputProblem)
+
   for (let firstIndex = 0; firstIndex < outputTraces.length; firstIndex++) {
     for (
       let secondIndex = firstIndex + 1;
@@ -240,22 +219,20 @@ export const trimSameNetOverlappingTraceTails = ({
       const firstTrace = outputTraces[firstIndex]!
       const secondTrace = outputTraces[secondIndex]!
       if (firstTrace.globalConnNetId !== secondTrace.globalConnNetId) continue
-      const sharedPin = getSharedPin({ firstTrace, secondTrace })
+      const sharedPin = getSharedPin(firstTrace, secondTrace)
       if (!sharedPin) continue
       const sharedPinChip = inputProblem.chips.find(
         (chip) => chip.chipId === sharedPin.chipId,
       )
-      if (
-        !sharedPinChip?.sectionId ||
-        !alignedSectionIds.has(sharedPinChip.sectionId)
-      ) {
-        continue
-      }
+      if (!sharedPinChip?.sectionId) continue
+      if (!alignedSectionIds.has(sharedPinChip.sectionId)) continue
 
       const trimmedTail = getTrimmedTail({
         firstTrace,
         secondTrace,
         sharedPin,
+        firstIndex,
+        secondIndex,
       })
       if (!trimmedTail) continue
       const collapsedPath = collapseTightHairpin({
@@ -268,16 +245,21 @@ export const trimSameNetOverlappingTraceTails = ({
         tracePath = collapsedPath
         collapsedSameNetHairpinCount++
       }
-      let trimmedIndex = secondIndex
-      if (trimmedTail.trimFirstTrace) trimmedIndex = firstIndex
-      outputTraces[trimmedIndex] = {
-        ...outputTraces[trimmedIndex]!,
+      outputTraces[trimmedTail.traceIndex] = {
+        ...outputTraces[trimmedTail.traceIndex]!,
         tracePath,
       }
       trimmedSameNetOverlapCount++
     }
   }
 
+  if (collapsedSameNetHairpinCount === 0) {
+    return {
+      traces,
+      trimmedSameNetOverlapCount: 0,
+      collapsedSameNetHairpinCount: 0,
+    }
+  }
   return {
     traces: outputTraces,
     trimmedSameNetOverlapCount,

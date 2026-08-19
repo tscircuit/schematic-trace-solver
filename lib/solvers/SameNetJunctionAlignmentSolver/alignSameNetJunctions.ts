@@ -276,7 +276,7 @@ export const alignSameNetJunctions = ({
   let outputTraces = [...traces]
   let outputNetLabelPlacements = [...netLabelPlacements]
   const alignedBranchTraceIds = new Set<string>()
-  const alignedSectionIds = new Set<SectionId>()
+  const alignedBranchCountBySectionId = new Map<SectionId, number>()
   let alignedJunctionCount = 0
 
   // Reuse each aligned branch as the rail for the next load in the chain. An
@@ -347,7 +347,12 @@ export const alignSameNetJunctions = ({
         (chip) => chip.chipId === sharedPin.chipId,
       )
       if (sharedPinChip?.sectionId) {
-        alignedSectionIds.add(sharedPinChip.sectionId)
+        const alignedBranchCount =
+          alignedBranchCountBySectionId.get(sharedPinChip.sectionId) ?? 0
+        alignedBranchCountBySectionId.set(
+          sharedPinChip.sectionId,
+          alignedBranchCount + 1,
+        )
       }
       alignedJunctionCount++
       if (!pendingDonorTraceIds.has(branchTrace.mspPairId)) {
@@ -357,11 +362,15 @@ export const alignSameNetJunctions = ({
     }
   }
 
+  const alignedSectionIds = new Set(
+    [...alignedBranchCountBySectionId]
+      .filter(([, alignedBranchCount]) => alignedBranchCount === 1)
+      .map(([sectionId]) => sectionId),
+  )
   const trimmedOverlaps = trimSameNetOverlappingTraceTails({
     traces: outputTraces,
     inputProblem,
     alignedSectionIds,
-    alignedBranchTraceIds,
   })
 
   return {
