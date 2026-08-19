@@ -178,12 +178,14 @@ export const trimSameNetOverlappingTraceTails = ({
   alignedBranchTraceIds: Set<string>
 }) => {
   const outputTraces = traces.map((trace) => ({ ...trace }))
-  // This cleanup is proven for one newly aligned branch and its connected
-  // trace chain. Preserve established multi-alignment layouts unchanged.
-  if (alignedBranchTraceIds.size !== 1) {
+  // This cleanup is proven for a net-connection-only section with one newly
+  // aligned branch. Preserve direct-connection and multi-alignment layouts.
+  if (
+    alignedBranchTraceIds.size !== 1 ||
+    inputProblem.directConnections.length > 0
+  ) {
     return { traces: outputTraces, trimmedSameNetOverlapCount: 0 }
   }
-  const junctionTraceIds = new Set(alignedBranchTraceIds)
   let trimmedSameNetOverlapCount = 0
 
   for (let firstIndex = 0; firstIndex < outputTraces.length; firstIndex++) {
@@ -195,12 +197,6 @@ export const trimSameNetOverlappingTraceTails = ({
       const firstTrace = outputTraces[firstIndex]!
       const secondTrace = outputTraces[secondIndex]!
       if (firstTrace.globalConnNetId !== secondTrace.globalConnNetId) continue
-      if (
-        !junctionTraceIds.has(firstTrace.mspPairId) &&
-        !junctionTraceIds.has(secondTrace.mspPairId)
-      ) {
-        continue
-      }
 
       const sharedPin = getSharedPin({ firstTrace, secondTrace })
       if (!sharedPin) continue
@@ -250,8 +246,6 @@ export const trimSameNetOverlappingTraceTails = ({
           ...secondTrace,
           tracePath: trimmedSecondPath,
         }
-        junctionTraceIds.add(firstTrace.mspPairId)
-        junctionTraceIds.add(secondTrace.mspPairId)
         trimmedSameNetOverlapCount++
         continue
       }
@@ -265,8 +259,6 @@ export const trimSameNetOverlappingTraceTails = ({
         ...firstTrace,
         tracePath: trimmedFirstPath,
       }
-      junctionTraceIds.add(firstTrace.mspPairId)
-      junctionTraceIds.add(secondTrace.mspPairId)
       trimmedSameNetOverlapCount++
     }
   }

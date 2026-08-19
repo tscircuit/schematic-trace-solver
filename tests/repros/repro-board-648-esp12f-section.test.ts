@@ -13,16 +13,14 @@ test("board 648 ESP-12F power and boot section", () => {
   const output = solver.sameNetJunctionAlignmentSolver!.getOutput()
   expect(
     solver.sameNetJunctionAlignmentSolver!.stats.trimmedSameNetOverlapCount,
-  ).toBe(3)
-  const v3V3GlobalNetId = output.traces.find(
-    (trace) => trace.userNetId === "V3_3",
-  )!.globalConnNetId
-  const v3V3Traces = output.traces.filter(
-    (trace) => trace.globalConnNetId === v3V3GlobalNetId,
-  )
-  for (let traceIndex = 0; traceIndex < v3V3Traces.length; traceIndex++) {
-    const trace = v3V3Traces[traceIndex]!
-    const laterSameNetTraces = v3V3Traces.slice(traceIndex + 1)
+  ).toBe(4)
+  for (let traceIndex = 0; traceIndex < output.traces.length; traceIndex++) {
+    const trace = output.traces[traceIndex]!
+    const laterSameNetTraces = output.traces
+      .slice(traceIndex + 1)
+      .filter(
+        (candidate) => candidate.globalConnNetId === trace.globalConnNetId,
+      )
     expect(
       doesPathCoincideWithTraces(trace.tracePath, laterSameNetTraces),
     ).toBe(false)
