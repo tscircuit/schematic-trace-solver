@@ -1,5 +1,9 @@
 {
   "name": "@tscircuit/schematic-trace-solver",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tscircuit/schematic-trace-solver.git"
+  },
   "main": "dist/index.js",
   "version": "0.0.137",
   "type": "module",
