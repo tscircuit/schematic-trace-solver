@@ -14,7 +14,10 @@ import {
   getCenterFromAnchor,
   getRectBounds,
 } from "./geometry"
-import { rectIntersectsAnyTrace } from "./collisions"
+import {
+  rectIntersectsAnyTrace,
+  rectIntersectsAnyPlacedLabel,
+} from "./collisions"
 import { chooseHostTraceForGroup } from "./host"
 import { anchorsForSegment } from "./anchors"
 import { solveNetLabelPlacementForPortOnlyPin } from "./solvePortOnlyPin"
@@ -63,6 +66,10 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
   netLabelWidth?: number
   netLabelHeight?: number
 
+  // Labels already placed by the parent solver, checked to avoid overlapping
+  // a previously-placed label with this one.
+  placedNetLabels: Array<NetLabelPlacement>
+
   netLabelPlacement: NetLabelPlacement | null = null
   testedCandidates: Array<{
     center: { x: number; y: number }
@@ -76,6 +83,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       | "chip-collision"
       | "trace-collision"
       | "text-collision"
+      | "label-collision"
       | "parallel-to-segment"
     hostSegIndex: number
   }> = []
@@ -87,6 +95,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     availableOrientations: FacingDirection[]
     netLabelWidth?: number
     netLabelHeight?: number
+    placedNetLabels?: Array<NetLabelPlacement>
   }) {
     super()
     this.inputProblem = params.inputProblem
@@ -95,6 +104,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
     this.availableOrientations = params.availableOrientations
     this.netLabelWidth = params.netLabelWidth
     this.netLabelHeight = params.netLabelHeight
+    this.placedNetLabels = params.placedNetLabels ?? []
 
     this.chipObstacleSpatialIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
@@ -111,6 +121,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
       availableOrientations: this.availableOrientations,
       netLabelWidth: this.netLabelWidth,
       netLabelHeight: this.netLabelHeight,
+      placedNetLabels: this.placedNetLabels,
     }
   }
 
@@ -130,6 +141,7 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
         availableOrientations: this.availableOrientations,
         netLabelWidth: this.netLabelWidth,
         netLabelHeight: this.netLabelHeight,
+        placedNetLabels: this.placedNetLabels,
       })
       this.testedCandidates.push(...res.testedCandidates)
       if (res.placement) {
@@ -312,6 +324,21 @@ export class SingleNetLabelPlacementSolver extends BaseSolver {
                 anchor,
                 orientation,
                 status: "trace-collision",
+                hostSegIndex: si,
+              })
+              continue
+            }
+
+            // Label collision check (avoid overlapping an already-placed label)
+            if (rectIntersectsAnyPlacedLabel(bounds, this.placedNetLabels)) {
+              this.testedCandidates.push({
+                center: testCenter,
+                width,
+                height,
+                bounds,
+                anchor,
+                orientation,
+                status: "label-collision",
                 hostSegIndex: si,
               })
               continue

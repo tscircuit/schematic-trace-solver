@@ -13,7 +13,10 @@ import {
   getCenterFromAnchor,
   getRectBounds,
 } from "./geometry"
-import { rectIntersectsAnyTrace } from "./collisions"
+import {
+  rectIntersectsAnyTrace,
+  rectIntersectsAnyPlacedLabel,
+} from "./collisions"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 export function solveNetLabelPlacementForPortOnlyPin(params: {
@@ -24,6 +27,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
   availableOrientations: FacingDirection[]
   netLabelWidth?: number
   netLabelHeight?: number
+  placedNetLabels?: Array<NetLabelPlacement>
 }): {
   placement: NetLabelPlacement | null
   testedCandidates: Array<{
@@ -38,6 +42,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
       | "chip-collision"
       | "trace-collision"
       | "text-collision"
+      | "label-collision"
       | "parallel-to-segment"
     hostSegIndex: number
   }>
@@ -51,6 +56,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
     availableOrientations,
     netLabelWidth,
     netLabelHeight,
+    placedNetLabels = [],
   } = params
 
   const pinId = overlappingSameNetTraceGroup.portOnlyPinId
@@ -108,6 +114,7 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
       | "chip-collision"
       | "trace-collision"
       | "text-collision"
+      | "label-collision"
       | "parallel-to-segment"
     hostSegIndex: number
   }> = []
@@ -174,6 +181,21 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
         anchor,
         orientation,
         status: "trace-collision",
+        hostSegIndex: -1,
+      })
+      continue
+    }
+
+    // Label collision check (avoid overlapping an already-placed label)
+    if (rectIntersectsAnyPlacedLabel(bounds, placedNetLabels)) {
+      testedCandidates.push({
+        center,
+        width,
+        height,
+        bounds,
+        anchor,
+        orientation,
+        status: "label-collision",
         hostSegIndex: -1,
       })
       continue
