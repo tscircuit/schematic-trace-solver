@@ -77,6 +77,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
   failedGroups: Array<OverlappingSameNetTraceGroup> = []
   currentGroup: OverlappingSameNetTraceGroup | null = null
   triedAnyOrientationFallbackForCurrentGroup = false
+  triedUserOrientationDefaultDimensionsFallbackForCurrentGroup = false
+  triedDefaultDimensionsFallbackForCurrentGroup = false
 
   constructor(params: {
     inputProblem: InputProblem
@@ -307,6 +309,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
       this.activeSubSolver = null
       this.currentGroup = null
       this.triedAnyOrientationFallbackForCurrentGroup = false
+      this.triedUserOrientationDefaultDimensionsFallbackForCurrentGroup = false
+      this.triedDefaultDimensionsFallbackForCurrentGroup = false
       return
     }
 
@@ -337,6 +341,60 @@ export class NetLabelPlacementSolver extends BaseSolver {
         return
       }
 
+      // A caller-specified net label size (netLabelWidth/netLabelHeight) can be
+      // too large to fit in a cramped island even though the same net places
+      // fine elsewhere. Retry at the default label size before giving up on
+      // the group entirely - first honoring the caller's orientation
+      // constraint, then (if that still doesn't fit) any orientation. A
+      // smaller-than-requested label beats no label at all.
+      if (this.currentGroup) {
+        const netLabelWidth = this.getNetLabelWidthForGroup(this.currentGroup)
+        const netLabelHeight = this.getNetLabelHeightForGroup(this.currentGroup)
+        const hadCustomDimensions =
+          netLabelWidth !== undefined || netLabelHeight !== undefined
+
+        if (
+          hadCustomDimensions &&
+          !this.triedUserOrientationDefaultDimensionsFallbackForCurrentGroup
+        ) {
+          this.triedUserOrientationDefaultDimensionsFallbackForCurrentGroup = true
+          const netId =
+            this.currentGroup.netId ?? this.currentGroup.globalConnNetId
+          const userOrientations =
+            this.inputProblem.availableNetLabelOrientations[netId] ??
+            fullOrients
+          const userOrientationsAlreadyFull =
+            userOrientations.length === 4 &&
+            fullOrients.every((o) => userOrientations.includes(o))
+
+          if (!userOrientationsAlreadyFull) {
+            this.activeSubSolver = new SingleNetLabelPlacementSolver({
+              inputProblem: this.inputProblem,
+              inputTraceMap: this.inputTraceMap,
+              overlappingSameNetTraceGroup: this.currentGroup,
+              availableOrientations: userOrientations,
+              placedNetLabels: this.netLabelPlacements,
+            })
+            return
+          }
+        }
+
+        if (
+          hadCustomDimensions &&
+          !this.triedDefaultDimensionsFallbackForCurrentGroup
+        ) {
+          this.triedDefaultDimensionsFallbackForCurrentGroup = true
+          this.activeSubSolver = new SingleNetLabelPlacementSolver({
+            inputProblem: this.inputProblem,
+            inputTraceMap: this.inputTraceMap,
+            overlappingSameNetTraceGroup: this.currentGroup,
+            availableOrientations: fullOrients,
+            placedNetLabels: this.netLabelPlacements,
+          })
+          return
+        }
+      }
+
       // Record the failure for this group and continue to the next one
       if (this.currentGroup) {
         this.failedGroups.push(this.currentGroup)
@@ -344,6 +402,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
       this.activeSubSolver = null
       this.currentGroup = null
       this.triedAnyOrientationFallbackForCurrentGroup = false
+      this.triedUserOrientationDefaultDimensionsFallbackForCurrentGroup = false
+      this.triedDefaultDimensionsFallbackForCurrentGroup = false
       return
     }
 
@@ -366,6 +426,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
 
     this.currentGroup = nextOverlappingSameNetTraceGroup
     this.triedAnyOrientationFallbackForCurrentGroup = false
+    this.triedUserOrientationDefaultDimensionsFallbackForCurrentGroup = false
+    this.triedDefaultDimensionsFallbackForCurrentGroup = false
 
     const netLabelWidth = this.getNetLabelWidthForGroup(this.currentGroup)
     const netLabelHeight = this.getNetLabelHeightForGroup(this.currentGroup)
