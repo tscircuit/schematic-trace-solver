@@ -5,7 +5,7 @@ import "tests/fixtures/matcher"
 
 const MAX_OVERLAP_ITERATIONS_FOR_REPRO = 100
 
-test("board 1273 exhausts the trace overlap iteration limit", async () => {
+test("board 1273 solves within the trace overlap iteration limit", async () => {
   const inputProblem = JSON.parse(
     await Bun.file(
       new URL(
@@ -22,8 +22,9 @@ test("board 1273 exhausts the trace overlap iteration limit", async () => {
     MAX_OVERLAP_ITERATIONS_FOR_REPRO
   solver.solve()
 
-  expect(solver.failed).toBe(true)
-  expect(solver.traceOverlapShiftSolver?.failed).toBe(true)
-  expect(solver.error).toBe("TraceOverlapShiftSolver ran out of iterations")
+  expect(solver.solved).toBe(true)
+  expect(solver.failed).toBe(false)
+  expect(solver.traceOverlapShiftSolver?.iterations).toBe(21)
+  expect(solver.postLabelTraceOverlapShiftSolver?.iterations).toBe(1)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
