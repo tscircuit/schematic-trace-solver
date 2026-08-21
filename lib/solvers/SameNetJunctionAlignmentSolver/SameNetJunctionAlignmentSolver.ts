@@ -31,6 +31,9 @@ export class SameNetJunctionAlignmentSolver extends BaseSolver {
     this.outputTraces = result.traces
     this.outputNetLabelPlacements = result.netLabelPlacements
     this.stats.alignedJunctionCount = result.alignedJunctionCount
+    this.stats.trimmedSameNetOverlapCount = result.trimmedSameNetOverlapCount
+    this.stats.collapsedSameNetHairpinCount =
+      result.collapsedSameNetHairpinCount
     this.solved = true
   }
 

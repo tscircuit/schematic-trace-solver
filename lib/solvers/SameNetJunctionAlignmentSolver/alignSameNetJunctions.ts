@@ -12,12 +12,13 @@ import {
   isHorizontal,
   nearlyEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
-import type { InputPin, InputProblem } from "lib/types/InputProblem"
+import type { InputPin, InputProblem, SectionId } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 import {
   pathEntersAnyNetLabel,
   pathIntersectsAnyNetLabel,
 } from "./pathIntersectsAnyNetLabel"
+import { trimSameNetOverlappingTraceTails } from "./trimSameNetOverlappingTraceTails"
 
 interface AlignSameNetJunctionsInput {
   inputProblem: InputProblem
@@ -275,6 +276,7 @@ export const alignSameNetJunctions = ({
   let outputTraces = [...traces]
   let outputNetLabelPlacements = [...netLabelPlacements]
   const alignedBranchTraceIds = new Set<string>()
+  const alignedBranchCountBySectionId = new Map<SectionId, number>()
   let alignedJunctionCount = 0
 
   // Reuse each aligned branch as the rail for the next load in the chain. An
@@ -340,6 +342,18 @@ export const alignSameNetJunctions = ({
       })
       outputNetLabelPlacements = candidateNetLabelPlacements
       alignedBranchTraceIds.add(branchTrace.mspPairId)
+      const sharedPin = getSharedPin({ donorTrace, branchTrace })!
+      const sharedPinChip = inputProblem.chips.find(
+        (chip) => chip.chipId === sharedPin.chipId,
+      )
+      if (sharedPinChip?.sectionId) {
+        const alignedBranchCount =
+          alignedBranchCountBySectionId.get(sharedPinChip.sectionId) ?? 0
+        alignedBranchCountBySectionId.set(
+          sharedPinChip.sectionId,
+          alignedBranchCount + 1,
+        )
+      }
       alignedJunctionCount++
       if (!pendingDonorTraceIds.has(branchTrace.mspPairId)) {
         donorTraceIds.push(branchTrace.mspPairId)
@@ -348,9 +362,22 @@ export const alignSameNetJunctions = ({
     }
   }
 
-  return {
+  const alignedSectionIds = new Set(
+    [...alignedBranchCountBySectionId]
+      .filter(([, alignedBranchCount]) => alignedBranchCount === 1)
+      .map(([sectionId]) => sectionId),
+  )
+  const trimmedOverlaps = trimSameNetOverlappingTraceTails({
     traces: outputTraces,
+    inputProblem,
+    alignedSectionIds,
+  })
+
+  return {
+    traces: trimmedOverlaps.traces,
     netLabelPlacements: outputNetLabelPlacements,
     alignedJunctionCount,
+    trimmedSameNetOverlapCount: trimmedOverlaps.trimmedSameNetOverlapCount,
+    collapsedSameNetHairpinCount: trimmedOverlaps.collapsedSameNetHairpinCount,
   }
 }
