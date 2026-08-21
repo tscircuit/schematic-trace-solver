@@ -33,9 +33,12 @@ test("core repro161 power section trace routing", () => {
   }
   expect(
     solver.availableNetOrientationSolver!.stats.candidateEvaluations,
-  ).toBeGreaterThan(MAX_RECORDED_CANDIDATES)
+  ).toBeLessThan(MAX_RECORDED_CANDIDATES)
   expect(
     solver.availableNetOrientationSolver!.stats.maxRecordedCandidates,
-  ).toBe(MAX_RECORDED_CANDIDATES)
+  ).toBeLessThan(MAX_RECORDED_CANDIDATES)
+  expect(
+    solver.availableNetOrientationSolver!.stats.skippedBlockedLateralColumns,
+  ).toBeGreaterThan(0)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
