@@ -17,12 +17,14 @@ import type {
 } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
   MAX_RECORDED_CANDIDATES,
   WICK_CLEARANCE,
 } from "./constants"
+import { doesFixedConnectorPrefixIntersectObstacles } from "./doesFixedConnectorPrefixIntersectObstacles"
 import {
   getConnectorTracePath,
   getMaxSearchDistance,
@@ -34,6 +36,7 @@ import {
   simplifyOrthogonalPath,
   tracePathIntersectsBounds,
 } from "./geometry"
+import { getNextBoundaryCandidateDistance } from "./getNextBoundaryCandidateDistance"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
 import { getPinMap, getTracePins, toNetLabelPlacementPatch } from "./traces"
 import type {
@@ -46,7 +49,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -831,37 +833,55 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     const maxSteps = Math.ceil(this.maxSearchDistance / LABEL_SEARCH_STEP)
-
     for (let step = 1; step <= maxSteps; step++) {
       for (const sign of [-1, 1]) {
-        const lateralOffset = sign * step * LABEL_SEARCH_STEP
-        const baseAnchor = {
-          x: initialBaseAnchor.x + lateralDir.x * lateralOffset,
-          y: initialBaseAnchor.y + lateralDir.y * lateralOffset,
-        }
-
-        const maxSearchDistance = this.getLateralColumnMaxDistance(
-          label,
-          orientation,
-          baseAnchor,
-        )
-
-        const candidate = this.findValidCandidateInShiftColumn({
+        const candidate = this.findValidCandidateInLateralColumn({
           label,
           labelIndex,
           orientation,
           direction,
-          baseAnchor,
-          maxSearchDistance,
-          outwardDistance: lateralOffset,
-          phase: "lateral-shift",
+          initialBaseAnchor,
+          lateralDir,
+          lateralOffset: sign * step * LABEL_SEARCH_STEP,
         })
-
         if (candidate) return candidate
       }
     }
 
     return null
+  }
+
+  private findValidCandidateInLateralColumn(params: {
+    label: NetLabelPlacement
+    labelIndex: number
+    orientation: FacingDirection
+    direction: Point
+    initialBaseAnchor: Point
+    lateralDir: Point
+    lateralOffset: number
+  }) {
+    const baseAnchor = {
+      x:
+        params.initialBaseAnchor.x + params.lateralDir.x * params.lateralOffset,
+      y:
+        params.initialBaseAnchor.y + params.lateralDir.y * params.lateralOffset,
+    }
+    const maxSearchDistance = this.getLateralColumnMaxDistance(
+      params.label,
+      params.orientation,
+      baseAnchor,
+    )
+
+    return this.findValidCandidateInShiftColumn({
+      label: params.label,
+      labelIndex: params.labelIndex,
+      orientation: params.orientation,
+      direction: params.direction,
+      baseAnchor,
+      maxSearchDistance,
+      outwardDistance: params.lateralOffset,
+      phase: "lateral-shift",
+    })
   }
 
   private findValidCandidateInShiftColumn(params: {
@@ -887,11 +907,26 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       stopOnTraceCollision = true,
     } = params
 
-    for (
-      let distance = LABEL_SEARCH_STEP;
-      distance <= maxSearchDistance + EPS;
-      distance += LABEL_SEARCH_STEP
+    // A blocked connector prefix cannot be repaired by moving farther along
+    // the same lateral column, so reject the column before scanning it.
+    if (
+      phase === "lateral-shift" &&
+      this.isLateralColumnConnectorBlocked({
+        label,
+        labelIndex,
+        orientation,
+        direction,
+        baseAnchor,
+        maxSearchDistance,
+      })
     ) {
+      this.stats.skippedBlockedLateralColumns =
+        (this.stats.skippedBlockedLateralColumns ?? 0) + 1
+      return null
+    }
+
+    let distance = LABEL_SEARCH_STEP
+    while (distance <= maxSearchDistance + EPS) {
       const anchorPoint = {
         x: baseAnchor.x + direction.x * distance,
         y: baseAnchor.y + direction.y * distance,
@@ -912,9 +947,98 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         return result
       }
       if (stopOnTraceCollision && result.status === "trace-collision") break
+
+      // Intermediate grid points overlap the same obstacle, so resume at its
+      // boundary and let the normal collision check validate that point.
+      const nextBoundaryDistance = getNextBoundaryCandidateDistance({
+        candidate,
+        candidateStatus: result.status,
+        currentDistance: distance,
+        direction,
+        inputProblem: this.inputProblem,
+        netLabelPlacements: this.outputNetLabelPlacements,
+        labelIndex,
+        crowdedLabelIndices: this.crowdedPortOnlyLabelIndices,
+        queuedLabelIndices: this.queuedLabelIndices,
+        blockedStandaloneLabelIndex: this.blockedStandaloneLabelIndex,
+        chipObstacleSpatialIndex: this.chipObstacleSpatialIndex,
+        obstacleIndex: this.obstacleIndex,
+      })
+      if (
+        nextBoundaryDistance !== null &&
+        nextBoundaryDistance > distance + LABEL_SEARCH_STEP
+      ) {
+        this.stats.skippedGridCandidates =
+          (this.stats.skippedGridCandidates ?? 0) +
+          Math.floor((nextBoundaryDistance - distance) / LABEL_SEARCH_STEP) -
+          1
+        distance = nextBoundaryDistance
+        continue
+      }
+      distance += LABEL_SEARCH_STEP
     }
 
     return null
+  }
+
+  private isLateralColumnConnectorBlocked(params: {
+    label: NetLabelPlacement
+    labelIndex: number
+    orientation: FacingDirection
+    direction: Point
+    baseAnchor: Point
+    maxSearchDistance: number
+  }) {
+    const firstCandidate = this.createCandidate(
+      params.label,
+      {
+        x: params.baseAnchor.x + params.direction.x * LABEL_SEARCH_STEP,
+        y: params.baseAnchor.y + params.direction.y * LABEL_SEARCH_STEP,
+      },
+      params.orientation,
+    )
+    const lastCandidate = this.createCandidate(
+      params.label,
+      {
+        x: params.baseAnchor.x + params.direction.x * params.maxSearchDistance,
+        y: params.baseAnchor.y + params.direction.y * params.maxSearchDistance,
+      },
+      params.orientation,
+    )
+    const firstConnectorTrace = this.getCandidateConnectorTrace(
+      params.label,
+      {
+        anchorPoint: firstCandidate.anchorPoint,
+        orientation: params.orientation,
+        phase: "lateral-shift",
+      },
+      params.labelIndex,
+    )
+    const lastConnectorTrace = this.getCandidateConnectorTrace(
+      params.label,
+      {
+        anchorPoint: lastCandidate.anchorPoint,
+        orientation: params.orientation,
+        phase: "lateral-shift",
+      },
+      params.labelIndex,
+    )
+    const ignoredLabelIndices = new Set<number>()
+    if (this.crowdedPortOnlyLabelIndices.has(params.labelIndex)) {
+      for (const otherLabelIndex of this.queuedLabelIndices) {
+        if (this.crowdedPortOnlyLabelIndices.has(otherLabelIndex)) {
+          ignoredLabelIndices.add(otherLabelIndex)
+        }
+      }
+    }
+    return doesFixedConnectorPrefixIntersectObstacles({
+      firstConnectorTrace,
+      lastConnectorTrace,
+      labelIndex: params.labelIndex,
+      ignoredLabelIndices,
+      netLabelPlacements: this.outputNetLabelPlacements,
+      obstacleIndex: this.obstacleIndex,
+    })
   }
 
   private evaluateCandidate(
