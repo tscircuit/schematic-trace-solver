@@ -10,9 +10,6 @@ import { alignSameNetRails } from "./alignSameNetRails"
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
 
-/**
- * Represents the different stages or steps within the trace cleanup pipeline.
- */
 export type PipelineStep =
   | "untangling_traces"
   | "minimizing_turns"
@@ -20,9 +17,6 @@ export type PipelineStep =
   | "balancing_l_shapes"
   | "aligning_same_net_rails"
 
-/**
- * Defines the input structure for the TraceCleanupSolver.
- */
 export interface TraceCleanupSolverInput {
   inputProblem: InputProblem
   allTraces: SolvedTracePath[]
@@ -146,9 +140,7 @@ export class TraceCleanupSolver extends BaseSolver {
           this.input.mergedLabelNetIdMap[t1.mspPairId]?.has(t2.mspPairId) ||
           this.input.mergedLabelNetIdMap[t2.mspPairId]?.has(t1.mspPairId)
 
-        if (!shareNet) {
-          continue
-        }
+        if (!shareNet) continue
 
         for (const p1 of t1.tracePath) {
           for (const p2 of t2.tracePath) {
@@ -178,7 +170,7 @@ export class TraceCleanupSolver extends BaseSolver {
     this._processTrace("balancing_l_shapes")
   }
 
-    private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
+  private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
     const targetMspConnectionPairId = this.traceIdQueue.shift()!
     this.activeTraceId = targetMspConnectionPairId
 
