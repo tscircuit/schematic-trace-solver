@@ -1,0 +1,137 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 1.08,
+      "height": 0.818910699999999,
+      "pins": [
+        {
+          "pinId": "V1.1",
+          "x": -0.54,
+          "y": -0.0050000000000000044,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "V1.2",
+          "x": 0.54,
+          "y": 0.0049999999999999975,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 0.019999999999999796,
+        "y": 1.4194553499999993
+      },
+      "width": 1.04,
+      "height": 0.6799999999999999,
+      "pins": [
+        {
+          "pinId": "D1.1",
+          "x": -0.5000000000000002,
+          "y": 1.3494553499999995,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "D1.2",
+          "x": 0.5399999999999998,
+          "y": 1.3494553499999995,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": 2.8400000000000003,
+        "y": 0.004999999999999449
+      },
+      "width": 0.5999999999999996,
+      "height": 0.6799999999999999,
+      "pins": [
+        {
+          "pinId": "R1.1",
+          "x": 3.14,
+          "y": 0.004999999999999413,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "R1.2",
+          "x": 2.5400000000000005,
+          "y": 0.004999999999999486,
+          "_facingDirection": "x-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": 1.54,
+        "y": 0.004999999999999893
+      },
+      "width": 0.6000000000000001,
+      "height": 0.84,
+      "pins": [
+        {
+          "pinId": "C1.1",
+          "x": 1.84,
+          "y": 0.004999999999999857,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "C1.2",
+          "x": 1.24,
+          "y": 0.00499999999999993,
+          "_facingDirection": "x-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": [
+        "V1.1",
+        "D1.1"
+      ],
+      "netId": ".V1 > .pin1 to .D1 > .anode"
+    },
+    {
+      "pinIds": [
+        "D1.2",
+        "R1.1"
+      ],
+      "netId": ".D1 > .cathode to .R1 > .pin1"
+    },
+    {
+      "pinIds": [
+        "D1.2",
+        "C1.1"
+      ],
+      "netId": ".D1 > .cathode to .C1 > .pin1"
+    },
+    {
+      "pinIds": [
+        "V1.2",
+        "R1.2"
+      ],
+      "netId": ".V1 > .pin2 to .R1 > .pin2"
+    },
+    {
+      "pinIds": [
+        "V1.2",
+        "C1.2"
+      ],
+      "netId": ".V1 > .pin2 to .C1 > .pin2"
+    }
+  ],
+  "netConnections": [],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {},
+  "maxMspPairDistance": 10
+}

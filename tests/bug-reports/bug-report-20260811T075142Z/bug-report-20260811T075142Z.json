@@ -1,0 +1,194 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 16,
+        "y": 1.8
+      },
+      "width": 2.200000000000001,
+      "height": 1.2000000000000006,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "x": 15.1,
+          "y": 2.4000000000000004
+        },
+        {
+          "pinId": "schematic_port_1",
+          "x": 15.3,
+          "y": 2.4000000000000004
+        },
+        {
+          "pinId": "schematic_port_2",
+          "x": 15.5,
+          "y": 2.4000000000000004
+        },
+        {
+          "pinId": "schematic_port_3",
+          "x": 15.7,
+          "y": 2.4000000000000004
+        },
+        {
+          "pinId": "schematic_port_4",
+          "x": 15.9,
+          "y": 2.4000000000000004
+        },
+        {
+          "pinId": "schematic_port_5",
+          "x": 16.1,
+          "y": 2.4000000000000004
+        },
+        {
+          "pinId": "schematic_port_6",
+          "x": 16.3,
+          "y": 2.4000000000000004
+        },
+        {
+          "pinId": "schematic_port_7",
+          "x": 16.5,
+          "y": 2.4000000000000004
+        },
+        {
+          "pinId": "schematic_port_8",
+          "x": 16.7,
+          "y": 2.4000000000000004
+        },
+        {
+          "pinId": "schematic_port_9",
+          "x": 16.9,
+          "y": 2.4000000000000004
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "QSPI_CS",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_0"
+      ]
+    },
+    {
+      "netId": "RESET",
+      "netLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_1"
+      ]
+    },
+    {
+      "netId": "SWCLK",
+      "netLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_2"
+      ]
+    },
+    {
+      "netId": "SWDIO",
+      "netLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_3"
+      ]
+    },
+    {
+      "netId": "USB_D_MINUS",
+      "netLabelWidth": 1.44,
+      "pinIds": [
+        "schematic_port_4"
+      ]
+    },
+    {
+      "netId": "USB_D_PLUS",
+      "netLabelWidth": 1.32,
+      "pinIds": [
+        "schematic_port_5"
+      ]
+    },
+    {
+      "netId": "V3_3",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_6"
+      ]
+    },
+    {
+      "netId": "VBUS_5V",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.96,
+      "pinIds": [
+        "schematic_port_7"
+      ]
+    },
+    {
+      "netId": "VBAT",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_8"
+      ]
+    },
+    {
+      "netId": "GND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_9"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 17.800000000000004,
+        "y": 2.1149999999999998
+      },
+      "width": 1.3199999999999967,
+      "height": 0.24999999999999978,
+      "text": "Conn_North"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "QSPI_CS": [
+      "x-",
+      "x+"
+    ],
+    "RESET": [
+      "x-",
+      "x+"
+    ],
+    "SWCLK": [
+      "x-",
+      "x+"
+    ],
+    "SWDIO": [
+      "x-",
+      "x+"
+    ],
+    "USB_D_MINUS": [
+      "x-",
+      "x+"
+    ],
+    "USB_D_PLUS": [
+      "x-",
+      "x+"
+    ],
+    "V3_3": [
+      "y+"
+    ],
+    "VBUS_5V": [
+      "y+"
+    ],
+    "VBAT": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}

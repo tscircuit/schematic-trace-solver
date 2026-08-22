@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
+import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import { EPS, TRACE_BOUNDARY_TOLERANCE } from "./constants"
 import type { Bounds, ChipSide } from "./types"
 
@@ -40,7 +41,11 @@ export const traceCrossesBoundsInterior = (
   return false
 }
 
-const segmentCrossesBoundsInterior = (p1: Point, p2: Point, bounds: Bounds) => {
+export const segmentCrossesBoundsInterior = (
+  p1: Point,
+  p2: Point,
+  bounds: Bounds,
+) => {
   const interiorBounds = {
     minX: bounds.minX + TRACE_BOUNDARY_TOLERANCE,
     minY: bounds.minY + TRACE_BOUNDARY_TOLERANCE,
@@ -96,6 +101,18 @@ export const tracePathCrossesAnyBounds = (
     if (
       segmentCrossesBoundsInterior(tracePath[i]!, tracePath[i + 1]!, bounds)
     ) {
+      return true
+    }
+  }
+  return false
+}
+
+export const tracePathIntersectsBounds = (
+  tracePath: Point[],
+  bounds: Bounds,
+) => {
+  for (let i = 0; i < tracePath.length - 1; i++) {
+    if (segmentIntersectsRect(tracePath[i]!, tracePath[i + 1]!, bounds)) {
       return true
     }
   }

@@ -29,6 +29,36 @@ export const applyJogToTerminalSegment = ({
       ? 1
       : -1
 
+  if (pts.length === 2) {
+    // The segment is both the first and last segment: both endpoints are
+    // pins, so jog inward on both sides to keep the endpoints anchored
+    if (isVertical) {
+      const jogYNearStart = start.y + segDir * JOG_SIZE
+      const jogYNearEnd = end.y - segDir * JOG_SIZE
+      pts.splice(
+        1,
+        0,
+        { x: start.x, y: jogYNearStart },
+        { x: start.x + offset, y: jogYNearStart },
+        { x: end.x + offset, y: jogYNearEnd },
+        { x: end.x, y: jogYNearEnd },
+      )
+    } else {
+      // Horizontal
+      const jogXNearStart = start.x + segDir * JOG_SIZE
+      const jogXNearEnd = end.x - segDir * JOG_SIZE
+      pts.splice(
+        1,
+        0,
+        { x: jogXNearStart, y: start.y },
+        { x: jogXNearStart, y: start.y + offset },
+        { x: jogXNearEnd, y: end.y + offset },
+        { x: jogXNearEnd, y: end.y },
+      )
+    }
+    return
+  }
+
   if (si === 0) {
     if (isVertical) {
       const jogY = start.y + segDir * JOG_SIZE

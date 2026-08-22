@@ -6,20 +6,25 @@ import type { ConnectivityMap } from "connectivity-map"
 import {
   TraceOverlapIssueSolver,
   type OverlappingTraceSegmentLocator,
+  type TraceInteractionKind,
 } from "./TraceOverlapIssueSolver/TraceOverlapIssueSolver"
 import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 
 type ConnNetId = string
+type TraceState = Record<MspConnectionPairId, SolvedTracePath>
+
+const TRACE_STATE_POSITION_EPSILON = 1e-6
 
 /**
- * This solver finds traces that overlap (coincident and parallel) and aren't
- * connected via the globalConnMap, then shifts them to avoid the overlap in
- * such a way that minimizes the resulting intersections
+ * This solver finds traces that overlap or meet collinearly and aren't
+ * connected via the globalConnMap, then shifts them apart in the direction
+ * that minimizes the resulting intersections.
  *
  * All traces are orthogonal, so for traces to be considered overlapping, they
- * need to each have a segment where both are horizontal or both are vertical
- * AND the segments must be within 1e-6 of each other in X (if vertical) or
- * Y (if horizontal)
+ * need to each have a segment where both are horizontal or both are vertical,
+ * the segments must be on the same axis, and their ranges must overlap. A
+ * point contact is also handled when both segments are internal rails, where
+ * it can be separated without moving an anchored terminal segment.
  *
  * Each iteration, we find overlapping traces that aren't part of the same net.
  * This is the same as finding two "trace net islands" that have an overlap.
@@ -32,6 +37,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
   inputProblem: InputProblem
   inputTracePaths: Array<SolvedTracePath>
   globalConnMap: ConnectivityMap
+  traceIdsToShift?: Set<MspConnectionPairId>
 
   declare activeSubSolver: TraceOverlapIssueSolver | null
 
@@ -41,6 +47,9 @@ export class TraceOverlapShiftSolver extends BaseSolver {
   traceNetIslands: Record<ConnNetId, Array<SolvedTracePath>> = {}
 
   correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath> = {}
+  // Keep only the current and previous layouts to detect a two-state cycle
+  // without accumulating routing history for the whole solve.
+  recentTraceStates: TraceState[] = []
 
   cleanupPhase: "diagonals" | "done" | null = null
 
@@ -48,16 +57,20 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     inputProblem: InputProblem
     inputTracePaths: Array<SolvedTracePath>
     globalConnMap: ConnectivityMap
+    traceIdsToShift?: Set<MspConnectionPairId>
   }) {
     super()
     this.inputProblem = params.inputProblem
     this.inputTracePaths = params.inputTracePaths
     this.globalConnMap = params.globalConnMap
+    this.traceIdsToShift = params.traceIdsToShift
 
     for (const tracePath of this.inputTracePaths) {
       const { mspPairId } = tracePath
       this.correctedTraceMap[mspPairId] = tracePath
     }
+
+    this.rememberTraceState(this.correctedTraceMap)
 
     this.traceNetIslands = this.computeTraceNetIslands()
   }
@@ -69,6 +82,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       inputTracePaths: this.inputTracePaths,
       globalConnMap: this.globalConnMap,
+      traceIdsToShift: this.traceIdsToShift,
     }
   }
 
@@ -89,6 +103,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
   findNextOverlapIssue(): {
     overlappingTraceSegments: Array<OverlappingTraceSegmentLocator>
+    interactionKind: TraceInteractionKind
   } | null {
     // Detect the next set of overlapping segments between two different net islands.
     const EPS = 2e-3
@@ -111,23 +126,89 @@ export class TraceOverlapShiftSolver extends BaseSolver {
           solvedTracePathIndex: number
           traceSegmentIndex: number
         }> = []
+        const pointContacts: Array<{
+          pathAIndex: number
+          segmentAIndex: number
+          pathBIndex: number
+          segmentBIndex: number
+          combinedLength: number
+        }> = []
 
         // Track to avoid duplicates
         const seenA = new Set<string>()
         const seenB = new Set<string>()
 
-        const overlaps1D = (
+        const getRangeOverlap1D = (
           a1: number,
           a2: number,
           b1: number,
           b2: number,
-        ): boolean => {
+        ) => {
           const minA = Math.min(a1, a2)
           const maxA = Math.max(a1, a2)
           const minB = Math.min(b1, b2)
           const maxB = Math.max(b1, b2)
-          const overlap = Math.min(maxA, maxB) - Math.max(minA, minB)
-          return overlap > EPS
+          return Math.min(maxA, maxB) - Math.max(minA, minB)
+        }
+
+        const recordCollinearInteraction = ({
+          pathAIndex,
+          segmentAIndex,
+          pathBIndex,
+          segmentBIndex,
+          rangeOverlap,
+        }: {
+          pathAIndex: number
+          segmentAIndex: number
+          pathBIndex: number
+          segmentBIndex: number
+          rangeOverlap: number
+        }) => {
+          if (rangeOverlap > EPS) {
+            const keyA = `${pathAIndex}:${segmentAIndex}`
+            const keyB = `${pathBIndex}:${segmentBIndex}`
+            if (!seenA.has(keyA)) {
+              overlapsA.push({
+                solvedTracePathIndex: pathAIndex,
+                traceSegmentIndex: segmentAIndex,
+              })
+              seenA.add(keyA)
+            }
+            if (!seenB.has(keyB)) {
+              overlapsB.push({
+                solvedTracePathIndex: pathBIndex,
+                traceSegmentIndex: segmentBIndex,
+              })
+              seenB.add(keyB)
+            }
+            return
+          }
+          if (rangeOverlap < -EPS) return
+
+          const pathA = pathsA[pathAIndex]!.tracePath
+          const pathB = pathsB[pathBIndex]!.tracePath
+          const segmentAStart = pathA[segmentAIndex]!
+          const segmentAEnd = pathA[segmentAIndex + 1]!
+          const segmentBStart = pathB[segmentBIndex]!
+          const segmentBEnd = pathB[segmentBIndex + 1]!
+          const hasTerminalSegment =
+            segmentAIndex === 0 ||
+            segmentAIndex === pathA.length - 2 ||
+            segmentBIndex === 0 ||
+            segmentBIndex === pathB.length - 2
+          if (hasTerminalSegment) return
+
+          pointContacts.push({
+            pathAIndex,
+            segmentAIndex,
+            pathBIndex,
+            segmentBIndex,
+            combinedLength:
+              Math.abs(segmentAStart.x - segmentAEnd.x) +
+              Math.abs(segmentAStart.y - segmentAEnd.y) +
+              Math.abs(segmentBStart.x - segmentBEnd.x) +
+              Math.abs(segmentBStart.y - segmentBEnd.y),
+          })
         }
 
         for (let pa = 0; pa < pathsA.length; pa++) {
@@ -142,6 +223,13 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
             for (let pb = 0; pb < pathsB.length; pb++) {
               const pathB = pathsB[pb]!
+              if (
+                this.traceIdsToShift &&
+                !this.traceIdsToShift.has(pathA.mspPairId) &&
+                !this.traceIdsToShift.has(pathB.mspPairId)
+              ) {
+                continue
+              }
               const ptsB = pathB.tracePath
               for (let sb = 0; sb < ptsB.length - 1; sb++) {
                 const b1 = ptsB[sb]!
@@ -150,48 +238,26 @@ export class TraceOverlapShiftSolver extends BaseSolver {
                 const bHorz = Math.abs(b1.y - b2.y) < EPS
                 if (!bVert && !bHorz) continue
 
-                // Only consider colinear, parallel orientation overlaps
+                // Only consider collinear, parallel interactions.
                 if (aVert && bVert) {
                   if (Math.abs(a1.x - b1.x) < EPS) {
-                    if (overlaps1D(a1.y, a2.y, b1.y, b2.y)) {
-                      const keyA = `${pa}:${sa}`
-                      const keyB = `${pb}:${sb}`
-                      if (!seenA.has(keyA)) {
-                        overlapsA.push({
-                          solvedTracePathIndex: pa,
-                          traceSegmentIndex: sa,
-                        })
-                        seenA.add(keyA)
-                      }
-                      if (!seenB.has(keyB)) {
-                        overlapsB.push({
-                          solvedTracePathIndex: pb,
-                          traceSegmentIndex: sb,
-                        })
-                        seenB.add(keyB)
-                      }
-                    }
+                    recordCollinearInteraction({
+                      pathAIndex: pa,
+                      segmentAIndex: sa,
+                      pathBIndex: pb,
+                      segmentBIndex: sb,
+                      rangeOverlap: getRangeOverlap1D(a1.y, a2.y, b1.y, b2.y),
+                    })
                   }
                 } else if (aHorz && bHorz) {
                   if (Math.abs(a1.y - b1.y) < EPS) {
-                    if (overlaps1D(a1.x, a2.x, b1.x, b2.x)) {
-                      const keyA = `${pa}:${sa}`
-                      const keyB = `${pb}:${sb}`
-                      if (!seenA.has(keyA)) {
-                        overlapsA.push({
-                          solvedTracePathIndex: pa,
-                          traceSegmentIndex: sa,
-                        })
-                        seenA.add(keyA)
-                      }
-                      if (!seenB.has(keyB)) {
-                        overlapsB.push({
-                          solvedTracePathIndex: pb,
-                          traceSegmentIndex: sb,
-                        })
-                        seenB.add(keyB)
-                      }
-                    }
+                    recordCollinearInteraction({
+                      pathAIndex: pa,
+                      segmentAIndex: sa,
+                      pathBIndex: pb,
+                      segmentBIndex: sb,
+                      rangeOverlap: getRangeOverlap1D(a1.x, a2.x, b1.x, b2.x),
+                    })
                   }
                 }
               }
@@ -201,9 +267,41 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
         if (overlapsA.length > 0 && overlapsB.length > 0) {
           return {
+            interactionKind: "overlap",
             overlappingTraceSegments: [
               { connNetId: netA, pathsWithOverlap: overlapsA },
               { connNetId: netB, pathsWithOverlap: overlapsB },
+            ],
+          }
+        }
+
+        // An elbow can touch on both axes. Separating the longest internal
+        // rail changes one coordinate and avoids moving both sides of it.
+        const bestPointContact = pointContacts.sort(
+          (a, b) => b.combinedLength - a.combinedLength,
+        )[0]
+        if (bestPointContact) {
+          return {
+            interactionKind: "point_contact",
+            overlappingTraceSegments: [
+              {
+                connNetId: netA,
+                pathsWithOverlap: [
+                  {
+                    solvedTracePathIndex: bestPointContact.pathAIndex,
+                    traceSegmentIndex: bestPointContact.segmentAIndex,
+                  },
+                ],
+              },
+              {
+                connNetId: netB,
+                pathsWithOverlap: [
+                  {
+                    solvedTracePathIndex: bestPointContact.pathBIndex,
+                    traceSegmentIndex: bestPointContact.segmentBIndex,
+                  },
+                ],
+              },
             ],
           }
         }
@@ -271,11 +369,19 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
   override _step() {
     if (this.activeSubSolver?.solved) {
-      for (const [mspPairId, newTrace] of Object.entries(
-        this.activeSubSolver.correctedTraceMap,
-      )) {
-        this.correctedTraceMap[mspPairId] = newTrace
+      const nextTraceState = {
+        ...this.correctedTraceMap,
+        ...this.activeSubSolver.correctedTraceMap,
       }
+      // Returning to the older retained layout means corrections are bouncing
+      // A -> B -> A. Keep B and finish this pass instead of retrying forever.
+      if (this.returnsToPreviousTraceState(nextTraceState)) {
+        this.activeSubSolver = null
+        this.solved = true
+        return
+      }
+      this.correctedTraceMap = nextTraceState
+      this.rememberTraceState(nextTraceState)
       this.activeSubSolver = null
       this.traceNetIslands = this.computeTraceNetIslands()
     }
@@ -306,12 +412,55 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       return
     }
 
-    const { overlappingTraceSegments } = overlapIssue
+    const { interactionKind, overlappingTraceSegments } = overlapIssue
 
     this.activeSubSolver = new TraceOverlapIssueSolver({
+      inputProblem: this.inputProblem,
+      interactionKind,
       overlappingTraceSegments,
       traceNetIslands: this.traceNetIslands,
+      traceIdsToShift: this.traceIdsToShift,
     })
+  }
+
+  private rememberTraceState(traceState: TraceState) {
+    this.recentTraceStates.push({ ...traceState })
+    if (this.recentTraceStates.length > 2) {
+      this.recentTraceStates.shift()
+    }
+  }
+
+  private returnsToPreviousTraceState(candidateTraceState: TraceState) {
+    if (this.recentTraceStates.length < 2) return false
+
+    const previousTraceState = this.recentTraceStates[0]!
+    const traceIds = Object.keys(candidateTraceState)
+    if (traceIds.length !== Object.keys(previousTraceState).length) return false
+
+    // Corrections create new objects, so compare the trace geometry itself.
+    for (const traceId of traceIds) {
+      const candidatePath = candidateTraceState[traceId]
+      const previousPath = previousTraceState[traceId]
+      if (!candidatePath || !previousPath) return false
+      if (candidatePath.tracePath.length !== previousPath.tracePath.length) {
+        return false
+      }
+
+      for (let i = 0; i < candidatePath.tracePath.length; i++) {
+        const candidatePoint = candidatePath.tracePath[i]!
+        const previousPoint = previousPath.tracePath[i]!
+        if (
+          Math.abs(candidatePoint.x - previousPoint.x) >
+            TRACE_STATE_POSITION_EPSILON ||
+          Math.abs(candidatePoint.y - previousPoint.y) >
+            TRACE_STATE_POSITION_EPSILON
+        ) {
+          return false
+        }
+      }
+    }
+
+    return true
   }
 
   override visualize() {

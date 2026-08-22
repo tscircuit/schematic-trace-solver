@@ -22,6 +22,7 @@ export type ChipSide = "left" | "right" | "top" | "bottom"
 export type CandidateLabel = {
   orientation: FacingDirection
   anchorPoint: Point
+  connectorSource?: Point
   center: Point
   width: number
   height: number
@@ -30,10 +31,17 @@ export type CandidateLabel = {
 export type CandidateStatus =
   | "valid"
   | "chip-collision"
+  | "text-collision"
   | "trace-collision"
+  | "trace-clearance-violation"
   | "netlabel-collision"
 
-export type CandidatePhase = "rotate" | "shift" | "lateral-shift"
+export type CandidatePhase =
+  | "rotate"
+  | "trace-anchor"
+  | "outward-trace-anchor"
+  | "shift"
+  | "lateral-shift"
 
 export type EvaluatedCandidate = CandidateLabel & {
   status: CandidateStatus

@@ -1,0 +1,59 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 1,
+        "y": 3
+      },
+      "width": 0.6000000000000001,
+      "height": 0.6800000000000006,
+      "pins": [
+        {
+          "pinId": "R1.1",
+          "x": 0.7,
+          "y": 3
+        },
+        {
+          "pinId": "R1.2",
+          "x": 1.3,
+          "y": 3
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 0,
+        "y": 3.1
+      },
+      "width": 1.055825,
+      "height": 0.8677407000000006,
+      "pins": [
+        {
+          "pinId": "L1.1",
+          "x": -0.5279125,
+          "y": 3.10262455
+        },
+        {
+          "pinId": "L1.2",
+          "x": 0.5279125,
+          "y": 3.0973754500000004
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": [
+        "L1.2",
+        "R1.1"
+      ],
+      "netId": ".L1 > .pin2 to .R1 > .pin1"
+    }
+  ],
+  "netConnections": [],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {},
+  "maxMspPairDistance": 2.4
+}

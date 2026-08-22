@@ -1,3 +1,6 @@
+import { distance } from "@tscircuit/math-utils"
+import type { ConnectivityMap } from "connectivity-map"
+import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type {
   InputChip,
@@ -5,16 +8,18 @@ import type {
   InputProblem,
   PinId,
 } from "lib/types/InputProblem"
-import { ConnectivityMap } from "connectivity-map"
+import { getColorFromString } from "lib/utils/getColorFromString"
+import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCenterLines"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
-import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCenterLines"
-import type { GraphicsObject } from "graphics-debug"
-import { getColorFromString } from "lib/utils/getColorFromString"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { isLabeledPeripheralConnection } from "./isLabeledPeripheralConnection"
 
 export type MspConnectionPairId = string
+export const DEFAULT_MAX_MSP_PAIR_DISTANCE = 1
+
+const getPinPairKey = (pinIds: [PinId, PinId]) => [...pinIds].sort().join("::")
 
 export type MspConnectionPair = {
   mspPairId: MspConnectionPairId
@@ -36,12 +41,14 @@ export class MspConnectionPairSolver extends BaseSolver {
 
   pinMap: Record<string, InputPin & { chipId: string }>
   userNetIdByPinId: Record<string, string | undefined>
+  directConnectionPinPairKeys: Set<string>
 
   constructor({ inputProblem }: { inputProblem: InputProblem }) {
     super()
 
     this.inputProblem = inputProblem
-    this.maxMspPairDistance = inputProblem.maxMspPairDistance ?? 1
+    this.maxMspPairDistance =
+      inputProblem.maxMspPairDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
 
     const { directConnMap, netConnMap } =
       getConnectivityMapsFromInputProblem(inputProblem)
@@ -62,7 +69,9 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     // Build a mapping from PinId to user-provided netId (if any)
     this.userNetIdByPinId = {}
+    this.directConnectionPinPairKeys = new Set()
     for (const dc of inputProblem.directConnections) {
+      this.directConnectionPinPairKeys.add(getPinPairKey(dc.pinIds))
       if (dc.netId) {
         const [a, b] = dc.pinIds
         this.userNetIdByPinId[a] = dc.netId
@@ -105,9 +114,21 @@ export class MspConnectionPairSolver extends BaseSolver {
       const [pin1, pin2] = directlyConnectedPins
       const p1 = this.pinMap[pin1!]!
       const p2 = this.pinMap[pin2!]!
-      // Enforce max pair distance (use Manhattan to match orthogonal routing metric)
-      const manhattanDist = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)
-      if (manhattanDist > this.maxMspPairDistance) {
+      const pinPairKey = getPinPairKey([pin1!, pin2!])
+      // Explicit source traces are classified by straight-line distance when
+      // their input is created; named nets retain the orthogonal route metric.
+      let pairDistance = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)
+      if (this.directConnectionPinPairKeys.has(pinPairKey)) {
+        pairDistance = distance(p1, p2)
+      }
+      // Labeled one-pin peripherals need a real trace even when they are far
+      // apart; skipping the MSP pair would leave only the fallback path.
+      const isLabeledPeripheral = isLabeledPeripheralConnection({
+        inputProblem: this.inputProblem,
+        chipMap: this.chipMap,
+        pins: [p1, p2],
+      })
+      if (pairDistance > this.maxMspPairDistance && !isLabeledPeripheral) {
         // Too far apart; skip creating an MSP pair for this net
         return
       }

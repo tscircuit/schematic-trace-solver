@@ -1,17 +1,46 @@
 import type { GraphicsObject } from "graphics-debug"
+import {
+  getPinMap,
+  getTracePins,
+} from "lib/solvers/AvailableNetOrientationSolver/traces"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import {
   detectTraceLabelOverlap,
   type TraceLabelOverlap,
 } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
-import type { InputProblem } from "lib/types/InputProblem"
+import type {
+  ChipId,
+  InputPin,
+  InputProblem,
+  PinId,
+} from "lib/types/InputProblem"
+import { dir } from "lib/utils/dir"
 import { moveAttachedLabelsToReroutedTrace } from "./labelMovement"
 import { findBestReroutePath } from "./reroute"
+import {
+  scoreSolutionTracePath,
+  type TracePathScore,
+} from "./scoreSolutionTracePath"
 import type { Example28SolverParams, RerouteCandidateResult } from "./types"
 import { visualizeExample28Solver } from "./visualize"
+
+const LABEL_OUTWARD_STEP = 0.1
+const LABEL_MAX_OUTWARD_STEPS = 10
+const LABEL_TRACE_CLEARANCE = 0.1
+
+const isScoreBetter = (
+  rerouteScore: TracePathScore | null,
+  labelMoveScore: TracePathScore,
+) => {
+  if (!rerouteScore) return false
+  if (rerouteScore.chipEdgeRuns !== labelMoveScore.chipEdgeRuns) {
+    return rerouteScore.chipEdgeRuns < labelMoveScore.chipEdgeRuns
+  }
+  return rerouteScore.traceCrossings < labelMoveScore.traceCrossings
+}
 
 export class Example28Solver extends BaseSolver {
   inputProblem: InputProblem
@@ -25,6 +54,7 @@ export class Example28Solver extends BaseSolver {
   currentCandidateResults: RerouteCandidateResult[] = []
 
   private chipObstacles: ReturnType<typeof getObstacleRects>
+  private pinMap: Record<PinId, InputPin & { chipId: ChipId }>
 
   constructor(params: Example28SolverParams) {
     super()
@@ -34,6 +64,7 @@ export class Example28Solver extends BaseSolver {
     this.outputTraces = [...params.traces]
     this.outputNetLabelPlacements = [...params.netLabelPlacements]
     this.chipObstacles = getObstacleRects(params.inputProblem)
+    this.pinMap = getPinMap(params.inputProblem)
     this.initializeQueuedOverlaps()
     this.currentOverlap = this.queuedOverlaps[0] ?? null
   }
@@ -144,6 +175,8 @@ export class Example28Solver extends BaseSolver {
     if (traceIndex === -1) return
 
     const currentTrace = this.outputTraces[traceIndex]!
+    const labelMove = this.tryMoveLabelOutward(overlap.label)
+
     const rerouteResult = findBestReroutePath({
       trace: currentTrace,
       obstacleLabel: overlap.label,
@@ -153,6 +186,29 @@ export class Example28Solver extends BaseSolver {
       chipObstacles: this.chipObstacles,
     })
     this.currentCandidateResults = rerouteResult.candidateResults
+
+    let rerouteScore: TracePathScore | null = null
+    if (rerouteResult.bestPath) {
+      rerouteScore = scoreSolutionTracePath({
+        traces: [{ ...currentTrace, tracePath: rerouteResult.bestPath }],
+        outputTraces: this.outputTraces,
+        chipObstacles: this.chipObstacles,
+      })
+    }
+
+    if (labelMove) {
+      const labelMoveScore = scoreSolutionTracePath({
+        traces: [labelMove.connectorTrace, currentTrace],
+        outputTraces: this.outputTraces,
+        chipObstacles: this.chipObstacles,
+      })
+      if (!isScoreBetter(rerouteScore, labelMoveScore)) {
+        this.outputNetLabelPlacements[labelMove.labelIndex] =
+          labelMove.movedLabel
+        this.outputTraces.push(labelMove.connectorTrace)
+        return
+      }
+    }
 
     if (!rerouteResult.bestPath) return
 
@@ -169,6 +225,77 @@ export class Example28Solver extends BaseSolver {
     })
   }
 
+  private tryMoveLabelOutward(labelToMove: NetLabelPlacement) {
+    const labelIndex = this.outputNetLabelPlacements.findIndex(
+      (label) =>
+        label.globalConnNetId === labelToMove.globalConnNetId &&
+        label.anchorPoint.x === labelToMove.anchorPoint.x &&
+        label.anchorPoint.y === labelToMove.anchorPoint.y &&
+        label.pinIds.join(",") === labelToMove.pinIds.join(","),
+    )
+    if (labelIndex === -1) return null
+
+    const label = this.outputNetLabelPlacements[labelIndex]!
+    if (label.mspConnectionPairIds.length > 0) return null
+    if (label.pinIds.length !== 1) return null
+    if (
+      this.outputNetLabelPlacements.filter(
+        (otherLabel) => otherLabel.globalConnNetId === label.globalConnNetId,
+      ).length !== 1
+    ) {
+      return null
+    }
+
+    const outward = dir(label.orientation)
+    if (outward.x === 0 && outward.y === 0) return null
+
+    for (let step = 1; step <= LABEL_MAX_OUTWARD_STEPS; step++) {
+      const distance = step * LABEL_OUTWARD_STEP
+      const candidate = {
+        ...label,
+        anchorPoint: {
+          x: label.anchorPoint.x + outward.x * distance,
+          y: label.anchorPoint.y + outward.y * distance,
+        },
+        center: {
+          x: label.center.x + outward.x * distance,
+          y: label.center.y + outward.y * distance,
+        },
+      }
+      const candidateWithClearance = {
+        ...candidate,
+        width: candidate.width + LABEL_TRACE_CLEARANCE * 2,
+        height: candidate.height + LABEL_TRACE_CLEARANCE * 2,
+      }
+      if (
+        detectTraceLabelOverlap({
+          traces: this.outputTraces,
+          netLabels: [candidateWithClearance],
+        }).length > 0
+      ) {
+        continue
+      }
+
+      const connectorTrace = createPortOnlyLabelConnectorTrace({
+        label,
+        movedLabel: candidate,
+        pinMap: this.pinMap,
+      })
+      if (
+        detectTraceLabelOverlap({
+          traces: [connectorTrace],
+          netLabels: this.outputNetLabelPlacements,
+        }).length > 0
+      ) {
+        continue
+      }
+
+      return { labelIndex, movedLabel: candidate, connectorTrace }
+    }
+
+    return null
+  }
+
   override visualize(): GraphicsObject {
     return visualizeExample28Solver({
       inputProblem: this.inputProblem,
@@ -178,5 +305,31 @@ export class Example28Solver extends BaseSolver {
       currentOverlap: this.currentOverlap,
       currentCandidateResults: this.currentCandidateResults,
     })
+  }
+}
+
+const getPortOnlyLabelConnectorMspPairId = (label: NetLabelPlacement) =>
+  `port-only-label-connector-${label.globalConnNetId}-${label.pinIds[0]}`
+
+const createPortOnlyLabelConnectorTrace = ({
+  label,
+  movedLabel,
+  pinMap,
+}: {
+  label: NetLabelPlacement
+  movedLabel: NetLabelPlacement
+  pinMap: Record<PinId, InputPin & { chipId: ChipId }>
+}): SolvedTracePath => {
+  const mspPairId = getPortOnlyLabelConnectorMspPairId(label)
+
+  return {
+    mspPairId,
+    dcConnNetId: label.dcConnNetId ?? label.globalConnNetId,
+    globalConnNetId: label.globalConnNetId,
+    userNetId: label.netId,
+    pins: getTracePins(label, pinMap),
+    tracePath: [label.anchorPoint, movedLabel.anchorPoint],
+    mspConnectionPairIds: [mspPairId],
+    pinIds: label.pinIds,
   }
 }

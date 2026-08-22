@@ -1,12 +1,9 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import {
-  findPreferredReroutedSegment,
-  findSegmentContainingPoint,
-  projectPointToPath,
-  projectPointToSegment,
-} from "./geometry"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import { getMovedAnchorPointForReroute } from "./getMovedAnchorPointForReroute"
+import { isLabelAttachedToTrace } from "./isLabelAttachedToTrace"
 
 export const moveAttachedLabelsToReroutedTrace = ({
   trace,
@@ -44,39 +41,72 @@ export const moveAttachedLabelsToReroutedTrace = ({
     }
   })
 
-const isLabelAttachedToTrace = (
-  label: NetLabelPlacement,
-  trace: SolvedTracePath,
-) =>
-  label.globalConnNetId === trace.globalConnNetId ||
-  label.mspConnectionPairIds.includes(trace.mspPairId)
-
-const getMovedAnchorPointForReroute = (
-  anchorPoint: Point,
-  originalTracePath: Point[],
-  reroutedTracePath: Point[],
-) => {
-  const originalSegment = findSegmentContainingPoint(
-    originalTracePath,
-    anchorPoint,
-  )
-  if (!originalSegment) return null
-
-  const preferredSegment = findPreferredReroutedSegment(
-    reroutedTracePath,
-    originalSegment.index,
-    originalTracePath.length - 1,
-    originalSegment.orientation,
-    anchorPoint,
+export const moveNetLabelConnectorsToReroutedTraces = ({
+  originalTraces,
+  reroutedTraces,
+  netLabelPlacements,
+}: {
+  originalTraces: SolvedTracePath[]
+  reroutedTraces: SolvedTracePath[]
+  netLabelPlacements: NetLabelPlacement[]
+}) => {
+  const traces = [...reroutedTraces]
+  const reroutedTraceMap = new Map(
+    reroutedTraces.map((trace) => [trace.mspPairId, trace]),
   )
 
-  if (!preferredSegment) {
-    return projectPointToPath(anchorPoint, reroutedTracePath)
-  }
+  const labels = netLabelPlacements.map((label) => {
+    const originalHostTrace = originalTraces.find((trace) => {
+      if (!label.mspConnectionPairIds.includes(trace.mspPairId)) return false
+      const reroutedTrace = reroutedTraceMap.get(trace.mspPairId)
+      if (!reroutedTrace) return false
+      return reroutedTrace.tracePath !== trace.tracePath
+    })
+    if (!originalHostTrace) return label
 
-  return projectPointToSegment(
-    anchorPoint,
-    preferredSegment.start,
-    preferredSegment.end,
-  )
+    const reroutedHostTrace = reroutedTraceMap.get(originalHostTrace.mspPairId)!
+    const connectorIndex = originalTraces.findIndex((trace) => {
+      if (trace.mspPairId === originalHostTrace.mspPairId) return false
+      if (trace.globalConnNetId !== label.globalConnNetId) return false
+      if (!tracePathContainsPoint(trace.tracePath, label.anchorPoint)) {
+        return false
+      }
+      return label.pinIds.every((pinId) => trace.pinIds.includes(pinId))
+    })
+    if (connectorIndex < 0) return label
+
+    const connector = originalTraces[connectorIndex]!
+    const originalJunction = connector.tracePath.find((point) =>
+      tracePathContainsPoint(originalHostTrace.tracePath, point),
+    )
+    if (!originalJunction) return label
+
+    const reroutedJunction = getMovedAnchorPointForReroute(
+      originalJunction,
+      originalHostTrace.tracePath,
+      reroutedHostTrace.tracePath,
+    )
+    if (!reroutedJunction) return label
+
+    const delta = {
+      x: reroutedJunction.x - originalJunction.x,
+      y: reroutedJunction.y - originalJunction.y,
+    }
+    const movedConnector = {
+      ...connector,
+      tracePath: connector.tracePath.map((point) => ({
+        x: point.x + delta.x,
+        y: point.y + delta.y,
+      })),
+    }
+    traces[connectorIndex] = movedConnector
+    return moveAttachedLabelsToReroutedTrace({
+      trace: connector,
+      originalTracePath: connector.tracePath,
+      reroutedTracePath: movedConnector.tracePath,
+      netLabelPlacements: [label],
+    })[0]!
+  })
+
+  return { traces, netLabelPlacements: labels }
 }
