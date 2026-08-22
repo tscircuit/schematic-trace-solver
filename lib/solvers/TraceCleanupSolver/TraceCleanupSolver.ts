@@ -51,7 +51,6 @@ export class TraceCleanupSolver extends BaseSolver {
   private pipelineStep: PipelineStep | null = "untangling_traces"
   private activeTraceId: string | null = null
   override activeSubSolver: BaseSolver | null = null
-  private mergeSameNetTracesExecuted = false
 
   constructor(solverInput: TraceCleanupSolverInput) {
     super()
@@ -60,14 +59,18 @@ export class TraceCleanupSolver extends BaseSolver {
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.operations = solverInput.operations ?? DEFAULT_OPERATIONS
     this.pipelineStep = this.operations[0] ?? null
-    this.traceIdQueue = Array.from(solverInput.allTraces.map((e) => e.mspPairId))
+    this.traceIdQueue = Array.from(
+      solverInput.allTraces.map((e) => e.mspPairId),
+    )
   }
 
   override _step() {
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
       if (this.activeSubSolver.solved) {
-        const output = (this.activeSubSolver as UntangleTraceSubsolver).getOutput()
+        const output = (
+          this.activeSubSolver as UntangleTraceSubsolver
+        ).getOutput()
         this.outputTraces = output.traces
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
@@ -104,24 +107,8 @@ export class TraceCleanupSolver extends BaseSolver {
   }
 
   private _advancePipeline() {
-    // If we just finished minimizing turns, forcefully execute merge_same_net_traces next if it hasn't run yet
-    if (this.operations[this.operationIndex] === "minimizing_turns" && !this.mergeSameNetTracesExecuted) {
-      this.pipelineStep = "merge_same_net_traces"
-      this.traceIdQueue = this.outputTraces.map((trace) => trace.mspPairId)
-      if (this.pipelineStep) this.activeTraceId = null
-      return
-    }
-
     this.operationIndex++
-    let nextStep = this.operations[this.operationIndex] ?? null
-    
-    // Skip if it's already executed
-    if (nextStep === "merge_same_net_traces" && this.mergeSameNetTracesExecuted) {
-      this.operationIndex++
-      nextStep = this.operations[this.operationIndex] ?? null
-    }
-
-    this.pipelineStep = nextStep
+    this.pipelineStep = this.operations[this.operationIndex] ?? null
     this.traceIdQueue = this.outputTraces.map((trace) => trace.mspPairId)
     if (this.pipelineStep) this.activeTraceId = null
   }
@@ -142,7 +129,6 @@ export class TraceCleanupSolver extends BaseSolver {
   }
 
   private _runMergeSameNetTracesStep() {
-    this.mergeSameNetTracesExecuted = true
     const threshold = this.input.paddingBuffer || 0.5
     const traces = Array.from(this.tracesMap.values())
 
@@ -151,8 +137,9 @@ export class TraceCleanupSolver extends BaseSolver {
         const t1 = traces[i]
         const t2 = traces[j]
 
-        const shareNet = t1.mspPairId === t2.mspPairId || 
-          (this.input.mergedLabelNetIdMap[t1.mspPairId]?.has(t2.mspPairId))
+        const shareNet =
+          t1.mspPairId === t2.mspPairId ||
+          this.input.mergedLabelNetIdMap[t1.mspPairId]?.has(t2.mspPairId)
 
         if (shareNet) {
           for (const p1 of t1.tracePath) {
