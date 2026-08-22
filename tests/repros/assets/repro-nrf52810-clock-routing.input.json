@@ -1,0 +1,234 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_30",
+      "center": { "x": -7, "y": 5 },
+      "width": 3.1999999999999993,
+      "height": 0.5999999999999996,
+      "pins": [
+        { "pinId": "schematic_port_38", "x": -5.4, "y": 5.1 },
+        { "pinId": "schematic_port_39", "x": -5.4, "y": 4.9 }
+      ],
+      "sectionId": "hf-clock"
+    },
+    {
+      "chipId": "schematic_component_31",
+      "center": { "x": -4, "y": 5 },
+      "width": 1.08,
+      "height": 1.42,
+      "pins": [
+        {
+          "pinId": "schematic_port_40",
+          "x": -4,
+          "y": 5.71,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_41",
+          "x": -4.02,
+          "y": 4.29,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_42",
+          "x": -4.54,
+          "y": 4.99,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_43",
+          "x": -3.46,
+          "y": 4.99,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "hf-clock"
+    },
+    {
+      "chipId": "schematic_component_32",
+      "center": { "x": -4.9275, "y": 3 },
+      "width": 1.0450000000000008,
+      "height": 0.7600000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_175",
+          "x": -5,
+          "y": 3.3800000000000003,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_176",
+          "x": -5,
+          "y": 2.6199999999999997,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "hf-clock"
+    },
+    {
+      "chipId": "schematic_component_33",
+      "center": { "x": -2.9275, "y": 3 },
+      "width": 1.0450000000000004,
+      "height": 0.7600000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_177",
+          "x": -3,
+          "y": 3.3800000000000003,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_178",
+          "x": -3,
+          "y": 2.6199999999999997,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "hf-clock"
+    },
+    {
+      "chipId": "schematic_component_34",
+      "center": { "x": 3, "y": 5 },
+      "width": 3.1999999999999993,
+      "height": 0.5999999999999996,
+      "pins": [
+        { "pinId": "schematic_port_44", "x": 4.6, "y": 5.1 },
+        { "pinId": "schematic_port_45", "x": 4.6, "y": 4.9 }
+      ],
+      "sectionId": "lf-clock"
+    },
+    {
+      "chipId": "schematic_component_35",
+      "center": { "x": 6, "y": 5 },
+      "width": 1.0999999999999996,
+      "height": 0.8499999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_46",
+          "x": 5.45,
+          "y": 5,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_47",
+          "x": 6.55,
+          "y": 5,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "lf-clock"
+    },
+    {
+      "chipId": "schematic_component_36",
+      "center": { "x": 5.0725, "y": 3 },
+      "width": 1.0450000000000008,
+      "height": 0.7600000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_181",
+          "x": 5,
+          "y": 3.3800000000000003,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_182",
+          "x": 5,
+          "y": 2.6199999999999997,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "lf-clock"
+    },
+    {
+      "chipId": "schematic_component_37",
+      "center": { "x": 7.0725, "y": 3 },
+      "width": 1.0450000000000008,
+      "height": 0.7600000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_183",
+          "x": 7,
+          "y": 3.3800000000000003,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_184",
+          "x": 7,
+          "y": 2.6199999999999997,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "lf-clock"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": ".U1 > .XC1 to .X1 > .XTAL1",
+      "pinIds": ["schematic_port_38", "schematic_port_42"]
+    },
+    {
+      "netId": ".U1 > .XC2 to .X1 > .XTAL2",
+      "pinIds": ["schematic_port_39", "schematic_port_43"]
+    },
+    {
+      "netId": ".X1 > .XTAL1 to .C1 > .pin1",
+      "pinIds": ["schematic_port_42", "schematic_port_175"]
+    },
+    {
+      "netId": ".X1 > .XTAL2 to .C2 > .pin1",
+      "pinIds": ["schematic_port_43", "schematic_port_177"]
+    },
+    {
+      "netId": ".U1 > .XL1 to .X2 > .OSC1",
+      "pinIds": ["schematic_port_44", "schematic_port_46"]
+    },
+    {
+      "netId": ".U1 > .XL2 to .X2 > .OSC2",
+      "pinIds": ["schematic_port_45", "schematic_port_47"]
+    },
+    {
+      "netId": ".X2 > .OSC1 to .C11 > .pin1",
+      "pinIds": ["schematic_port_46", "schematic_port_181"]
+    },
+    {
+      "netId": ".X2 > .OSC2 to .C12 > .pin1",
+      "pinIds": ["schematic_port_47", "schematic_port_183"]
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_40",
+        "schematic_port_41",
+        "schematic_port_176",
+        "schematic_port_178",
+        "schematic_port_182",
+        "schematic_port_184"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_30",
+      "center": { "x": -7.539999999999999, "y": 5.43 },
+      "width": 1.3200000000000003,
+      "height": 0.17999999999999972,
+      "text": "U1 HF Clock"
+    },
+    {
+      "chipId": "schematic_component_34",
+      "center": { "x": 2.46, "y": 5.43 },
+      "width": 1.32,
+      "height": 0.17999999999999972,
+      "text": "U1 LF Clock"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": ["y-"]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}

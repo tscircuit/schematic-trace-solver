@@ -1,0 +1,277 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 2.1,
+      "height": 1.7999999999999998,
+      "pins": [
+        {
+          "pinId": "U1.1",
+          "x": -1.05,
+          "y": 0.7
+        },
+        {
+          "pinId": "U1.2",
+          "x": -1.05,
+          "y": 0.49999999999999994
+        },
+        {
+          "pinId": "U1.3",
+          "x": -1.05,
+          "y": 0.29999999999999993
+        },
+        {
+          "pinId": "U1.4",
+          "x": -1.05,
+          "y": 0.09999999999999987
+        },
+        {
+          "pinId": "U1.5",
+          "x": -1.05,
+          "y": -0.10000000000000009
+        },
+        {
+          "pinId": "U1.6",
+          "x": -1.05,
+          "y": -0.30000000000000004
+        },
+        {
+          "pinId": "U1.7",
+          "x": -1.05,
+          "y": -0.5
+        },
+        {
+          "pinId": "U1.8",
+          "x": -1.05,
+          "y": -0.7
+        },
+        {
+          "pinId": "U1.9",
+          "x": 1.05,
+          "y": -0.6
+        },
+        {
+          "pinId": "U1.10",
+          "x": 1.05,
+          "y": -0.39999999999999997
+        },
+        {
+          "pinId": "U1.11",
+          "x": 1.05,
+          "y": -0.19999999999999996
+        },
+        {
+          "pinId": "U1.12",
+          "x": 1.05,
+          "y": 1.1102230246251565e-16
+        },
+        {
+          "pinId": "U1.13",
+          "x": 1.05,
+          "y": 0.20000000000000007
+        },
+        {
+          "pinId": "U1.14",
+          "x": 1.05,
+          "y": 0.4
+        },
+        {
+          "pinId": "U1.15",
+          "x": 1.05,
+          "y": 0.6
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -11.782499999999999,
+        "y": -2
+      },
+      "width": 1.084999999999999,
+      "height": 0.6000000000000014,
+      "pins": [
+        {
+          "pinId": "RFSET.1",
+          "x": -12,
+          "y": -1.6999999999999993
+        },
+        {
+          "pinId": "RFSET.2",
+          "x": -12,
+          "y": -2.3000000000000007
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -11.782499999999999,
+        "y": -0.18999999999999861
+      },
+      "width": 1.084999999999999,
+      "height": 0.6000000000000014,
+      "pins": [
+        {
+          "pinId": "RTEMP.1",
+          "x": -12,
+          "y": 0.1100000000000021
+        },
+        {
+          "pinId": "RTEMP.2",
+          "x": -12,
+          "y": -0.4899999999999993
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": -11.7225,
+        "y": 1.6750000000000007
+      },
+      "width": 1.205,
+      "height": 0.6000000000000014,
+      "pins": [
+        {
+          "pinId": "RFAULT.1",
+          "x": -12,
+          "y": 1.9750000000000014
+        },
+        {
+          "pinId": "RFAULT.2",
+          "x": -12,
+          "y": 1.375
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": 12,
+        "y": -1
+      },
+      "width": 0.6000000000000014,
+      "height": 0.8399999999999999,
+      "pins": [
+        {
+          "pinId": "CCOMP.1",
+          "x": 11.7,
+          "y": -1
+        },
+        {
+          "pinId": "CCOMP.2",
+          "x": 12.3,
+          "y": -1
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_5",
+      "center": {
+        "x": 13.517500000000002,
+        "y": -1.3000000000000003
+      },
+      "width": 1.084999999999999,
+      "height": 0.6000000000000014,
+      "pins": [
+        {
+          "pinId": "RCOMP.1",
+          "x": 13.3,
+          "y": -0.9999999999999996
+        },
+        {
+          "pinId": "RCOMP.2",
+          "x": 13.3,
+          "y": -1.600000000000001
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": [
+        "U1.13",
+        "RFSET.1"
+      ],
+      "netId": "U1.FSET to RFSET.pin1",
+      "netLabelWidth": 2.05
+    },
+    {
+      "pinIds": [
+        "U1.14",
+        "RTEMP.1"
+      ],
+      "netId": "U1.TEMP to RTEMP.pin1",
+      "netLabelWidth": 2.05
+    },
+    {
+      "pinIds": [
+        "U1.7",
+        "RFAULT.1"
+      ],
+      "netId": "U1.FAULT to RFAULT.pin1",
+      "netLabelWidth": 2.24
+    },
+    {
+      "pinIds": [
+        "U1.12",
+        "CCOMP.1"
+      ],
+      "netId": "U1.COMP to CCOMP.pos",
+      "netLabelWidth": 1.96
+    },
+    {
+      "pinIds": [
+        "CCOMP.2",
+        "RCOMP.1"
+      ],
+      "netId": "CCOMP.neg to RCOMP.pin1"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "pinIds": [
+        "RFSET.2",
+        "RTEMP.2",
+        "RFAULT.2",
+        "RCOMP.2"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0.13,
+        "y": -1.0299999999999998
+      },
+      "width": 1.56,
+      "height": 0.18000000000000005,
+      "text": "TPS923655DMTR"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -0.53,
+        "y": 1.0150000000000001
+      },
+      "width": 0.35999999999999993,
+      "height": 0.2500000000000002,
+      "text": "U1"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ]
+  },
+  "maxMspPairDistance": 2.4
+}

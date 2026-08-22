@@ -1,0 +1,652 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 2.01,
+        "y": 0.20000000000000018
+      },
+      "width": 2.9000000000000004,
+      "height": 3,
+      "pins": [
+        {
+          "pinId": "U1.1",
+          "x": 0.5599999999999996,
+          "y": -0.4999999999999998
+        },
+        {
+          "pinId": "U1.2",
+          "x": 3.46,
+          "y": 0.5000000000000002
+        },
+        {
+          "pinId": "U1.4",
+          "x": 0.5599999999999996,
+          "y": 0.10000000000000009
+        },
+        {
+          "pinId": "U1.5",
+          "x": 0.5599999999999996,
+          "y": -0.2999999999999998
+        },
+        {
+          "pinId": "U1.6",
+          "x": 0.5599999999999996,
+          "y": -0.09999999999999987
+        },
+        {
+          "pinId": "U1.8",
+          "x": 0.5599999999999996,
+          "y": -0.6999999999999997
+        },
+        {
+          "pinId": "U1.10",
+          "x": 3.46,
+          "y": 1.5000000000000002
+        },
+        {
+          "pinId": "U1.12",
+          "x": 3.46,
+          "y": -0.6999999999999998
+        },
+        {
+          "pinId": "U1.13",
+          "x": 0.5599999999999996,
+          "y": 1.1
+        },
+        {
+          "pinId": "U1.14",
+          "x": 3.46,
+          "y": -1.0999999999999999
+        },
+        {
+          "pinId": "U1.15",
+          "x": 3.46,
+          "y": -0.8999999999999999
+        },
+        {
+          "pinId": "U1.16",
+          "x": 3.46,
+          "y": -0.4999999999999998
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -1.3400000000000003,
+        "y": -1.1249999999999998
+      },
+      "width": 2.6000000000000005,
+      "height": 0.45000000000000007,
+      "pins": [
+        {
+          "pinId": "V_IN.1",
+          "x": -2.6400000000000006,
+          "y": -1.1249999999999998
+        },
+        {
+          "pinId": "V_IN.2",
+          "x": -0.040000000000000036,
+          "y": -1.1249999999999998
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -3.159727675,
+        "y": -1.1249999999999998
+      },
+      "width": 0.6394553499999995,
+      "height": 1.08,
+      "pins": [
+        {
+          "pinId": "V_LOGIC.1",
+          "x": -3.164727675,
+          "y": -0.5849999999999997
+        },
+        {
+          "pinId": "V_LOGIC.2",
+          "x": -3.154727675,
+          "y": -1.6649999999999998
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": 7.8889106999999985,
+        "y": -2.2194553499999996
+      },
+      "width": 0.6394553499999986,
+      "height": 1.08,
+      "pins": [
+        {
+          "pinId": "V_BAT.1",
+          "x": 7.883910699999999,
+          "y": -1.6794553499999996
+        },
+        {
+          "pinId": "V_BAT.2",
+          "x": 7.893910699999998,
+          "y": -2.7594553499999996
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": 6.374183024999998,
+        "y": -1.6794553499999996
+      },
+      "width": 1.1099999999999994,
+      "height": 0.8589106999999989,
+      "pins": [
+        {
+          "pinId": "R_BAT_SRC.1",
+          "x": 6.929183024999998,
+          "y": -1.6794553499999996
+        },
+        {
+          "pinId": "R_BAT_SRC.2",
+          "x": 5.819183024999998,
+          "y": -1.6794553499999996
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_5",
+      "center": {
+        "x": 4.7,
+        "y": 0.5
+      },
+      "width": 1.08,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "IBAT_PROBE.1",
+          "x": 4.16,
+          "y": 0.5
+        },
+        {
+          "pinId": "IBAT_PROBE.2",
+          "x": 5.24,
+          "y": 0.5
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_6",
+      "center": {
+        "x": 6.569455349999999,
+        "y": 2.2
+      },
+      "width": 1.0591830249999994,
+      "height": 1.1,
+      "pins": [
+        {
+          "pinId": "R_LOAD.1",
+          "x": 6.1995915125,
+          "y": 2.75
+        },
+        {
+          "pinId": "R_LOAD.2",
+          "x": 6.1995915125,
+          "y": 1.6500000000000001
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_7",
+      "center": {
+        "x": 4.805,
+        "y": 2.2
+      },
+      "width": 0.9599999999999991,
+      "height": 1.1,
+      "pins": [
+        {
+          "pinId": "C_OUT.1",
+          "x": 4.59,
+          "y": 2.75
+        },
+        {
+          "pinId": "C_OUT.2",
+          "x": 4.59,
+          "y": 1.6500000000000001
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_8",
+      "center": {
+        "x": 6.585000000000001,
+        "y": -0.04999999999999982
+      },
+      "width": 0.9599999999999991,
+      "height": 1.1,
+      "pins": [
+        {
+          "pinId": "C_BAT.1",
+          "x": 6.370000000000001,
+          "y": 0.5000000000000002
+        },
+        {
+          "pinId": "C_BAT.2",
+          "x": 6.370000000000001,
+          "y": -0.5999999999999999
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_9",
+      "center": {
+        "x": 5.009455349999999,
+        "y": -1.1999999999999997
+      },
+      "width": 1.0591830249999994,
+      "height": 1.1,
+      "pins": [
+        {
+          "pinId": "R_ISET.1",
+          "x": 4.639591512499999,
+          "y": -0.6499999999999997
+        },
+        {
+          "pinId": "R_ISET.2",
+          "x": 4.639591512499999,
+          "y": -1.7499999999999998
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_10",
+      "center": {
+        "x": 1.5710892999999997,
+        "y": -2.9
+      },
+      "width": 1.0591830249999994,
+      "height": 1.1000000000000005,
+      "pins": [
+        {
+          "pinId": "R_ILIM.1",
+          "x": 1.2012254624999998,
+          "y": -2.3499999999999996
+        },
+        {
+          "pinId": "R_ILIM.2",
+          "x": 1.2012254624999998,
+          "y": -3.45
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_11",
+      "center": {
+        "x": 3.3502723249999997,
+        "y": -2.9
+      },
+      "width": 1.179183024999999,
+      "height": 1.1000000000000005,
+      "pins": [
+        {
+          "pinId": "R_ITERM.1",
+          "x": 2.9204084874999996,
+          "y": -2.3499999999999996
+        },
+        {
+          "pinId": "R_ITERM.2",
+          "x": 2.9204084874999996,
+          "y": -3.45
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_12",
+      "center": {
+        "x": 5.009455349999999,
+        "y": -2.9999999999999996
+      },
+      "width": 1.0591830249999994,
+      "height": 1.1000000000000005,
+      "pins": [
+        {
+          "pinId": "R_TMR.1",
+          "x": 4.639591512499999,
+          "y": -2.4499999999999993
+        },
+        {
+          "pinId": "R_TMR.2",
+          "x": 4.639591512499999,
+          "y": -3.55
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_13",
+      "center": {
+        "x": -4.239183025,
+        "y": -1.1249999999999998
+      },
+      "width": 0.8191830249999996,
+      "height": 1.1,
+      "pins": [
+        {
+          "pinId": "R_TS.1",
+          "x": -4.4890468624999995,
+          "y": -0.5749999999999997
+        },
+        {
+          "pinId": "R_TS.2",
+          "x": -4.4890468624999995,
+          "y": -1.6749999999999998
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": [
+        "IBAT_PROBE.1",
+        "U1.2"
+      ],
+      "netId": ".IBAT_PROBE > .pos to U1.BAT"
+    },
+    {
+      "pinIds": [
+        "IBAT_PROBE.2",
+        "R_BAT_SRC.2"
+      ],
+      "netId": ".IBAT_PROBE > .neg to R_BAT_SRC.pin2"
+    },
+    {
+      "pinIds": [
+        "V_IN.1",
+        "U1.13"
+      ],
+      "netId": "V_IN.OUT to U1.IN",
+      "netLabelWidth": 1.68
+    },
+    {
+      "pinIds": [
+        "V_LOGIC.1",
+        "U1.5"
+      ],
+      "netId": "V_LOGIC.pin1 to U1.EN2",
+      "netLabelWidth": 2.15
+    },
+    {
+      "pinIds": [
+        "U1.1",
+        "R_TS.1"
+      ],
+      "netId": "U1.TS to R_TS.pin1",
+      "netLabelWidth": 1.77
+    },
+    {
+      "pinIds": [
+        "U1.10",
+        "R_LOAD.1"
+      ],
+      "netId": "U1.OUT to R_LOAD.pin1",
+      "netLabelWidth": 2.05
+    },
+    {
+      "pinIds": [
+        "U1.10",
+        "C_OUT.1"
+      ],
+      "netId": "U1.OUT to C_OUT.pin1"
+    },
+    {
+      "pinIds": [
+        "U1.2",
+        "C_BAT.1"
+      ],
+      "netId": "U1.BAT to C_BAT.pin1",
+      "netLabelWidth": 1.96
+    },
+    {
+      "pinIds": [
+        "R_BAT_SRC.1",
+        "V_BAT.1"
+      ],
+      "netId": "R_BAT_SRC.pin1 to V_BAT.pin1"
+    },
+    {
+      "pinIds": [
+        "U1.16",
+        "R_ISET.1"
+      ],
+      "netId": "U1.ISET to R_ISET.pin1"
+    },
+    {
+      "pinIds": [
+        "U1.12",
+        "R_ILIM.1"
+      ],
+      "netId": "U1.ILIM to R_ILIM.pin1",
+      "netLabelWidth": 2.15
+    },
+    {
+      "pinIds": [
+        "U1.15",
+        "R_ITERM.1"
+      ],
+      "netId": "U1.ITERM to R_ITERM.pin1"
+    },
+    {
+      "pinIds": [
+        "U1.14",
+        "R_TMR.1"
+      ],
+      "netId": "U1.TMR to R_TMR.pin1"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "TS",
+      "pinIds": [
+        "U1.1",
+        "R_TS.1"
+      ],
+      "netLabelWidth": 0.36
+    },
+    {
+      "netId": "BAT",
+      "pinIds": [
+        "U1.2",
+        "IBAT_PROBE.1",
+        "C_BAT.1"
+      ],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "GND",
+      "pinIds": [
+        "U1.4",
+        "U1.6",
+        "U1.8",
+        "V_IN.2",
+        "V_LOGIC.2",
+        "V_BAT.2",
+        "R_LOAD.2",
+        "C_OUT.2",
+        "C_BAT.2",
+        "R_ISET.2",
+        "R_ILIM.2",
+        "R_ITERM.2",
+        "R_TMR.2",
+        "R_TS.2"
+      ],
+      "netLabelWidth": 0.48,
+      "netLabelHeight": 0.42
+    },
+    {
+      "netId": "EN2",
+      "pinIds": [
+        "U1.5",
+        "V_LOGIC.1"
+      ],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "OUT",
+      "pinIds": [
+        "U1.10",
+        "R_LOAD.1",
+        "C_OUT.1"
+      ],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "ILIM",
+      "pinIds": [
+        "U1.12",
+        "R_ILIM.1"
+      ],
+      "netLabelWidth": 0.6
+    },
+    {
+      "netId": "VIN",
+      "pinIds": [
+        "U1.13",
+        "V_IN.1"
+      ],
+      "netLabelWidth": 0.48,
+      "netLabelHeight": 0.42
+    },
+    {
+      "netId": "TMR",
+      "pinIds": [
+        "U1.14",
+        "R_TMR.1"
+      ],
+      "netLabelWidth": 0.48
+    },
+    {
+      "netId": "ITERM",
+      "pinIds": [
+        "U1.15",
+        "R_ITERM.1"
+      ],
+      "netLabelWidth": 0.72
+    },
+    {
+      "netId": "ISET",
+      "pinIds": [
+        "U1.16",
+        "R_ISET.1"
+      ],
+      "netLabelWidth": 0.6
+    },
+    {
+      "netId": "BAT_SRC",
+      "pinIds": [
+        "V_BAT.1",
+        "R_BAT_SRC.1"
+      ],
+      "netLabelWidth": 0.96
+    },
+    {
+      "netId": "BAT_PROBE_SRC",
+      "pinIds": [
+        "R_BAT_SRC.2",
+        "IBAT_PROBE.2"
+      ],
+      "netLabelWidth": 1.68
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 1.6199999999999997,
+        "y": -1.4299999999999997
+      },
+      "width": 1.3199999999999996,
+      "height": 0.18000000000000016,
+      "text": "BQ24074RGTR"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 1.0799999999999996,
+        "y": 1.83
+      },
+      "width": 0.24,
+      "height": 0.18000000000000016,
+      "text": "U1"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -0.9200000000000004,
+        "y": -1.4799999999999998
+      },
+      "width": 2.6399999999999997,
+      "height": 0.18000000000000016,
+      "text": "BQ24074-OVP-INPUT-STEP"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -2,
+        "y": -0.7699999999999998
+      },
+      "width": 0.48,
+      "height": 0.17999999999999994,
+      "text": "V_IN"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "VIN": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ],
+    "EN2": [
+      "x-",
+      "x+"
+    ],
+    "TS": [
+      "x-",
+      "x+"
+    ],
+    "OUT": [
+      "x-",
+      "x+"
+    ],
+    "BAT": [
+      "x-",
+      "x+"
+    ],
+    "ISET": [
+      "x-",
+      "x+"
+    ],
+    "ILIM": [
+      "x-",
+      "x+"
+    ],
+    "ITERM": [
+      "x-",
+      "x+"
+    ],
+    "TMR": [
+      "x-",
+      "x+"
+    ],
+    "BAT_SRC": [
+      "x-",
+      "x+"
+    ],
+    "BAT_PROBE_SRC": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4
+}

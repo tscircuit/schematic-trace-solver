@@ -1,0 +1,155 @@
+name: JSON Bug Report
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: json-bug-report-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  import-json-bug-report:
+    if: >-
+      ${{
+        contains(join(github.event.issue.labels.*.name, ','), 'json-bug-report') ||
+        contains(github.event.issue.body || '', '### Solver input JSON attachment')
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN || github.token }}
+          persist-credentials: false
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.1
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Import JSON bug report
+        id: import
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TSCIRCUIT_BOT_GITHUB_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
+        run: bun .github/scripts/import-json-bug-report.ts
+
+      - name: Run generated snapshot test
+        if: steps.import.outputs.created == 'true'
+        run: |
+          set +e
+          timeout 7m bun test "${{ steps.import.outputs.test_path }}" -u 2>&1 | tee bug-report-test.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            {
+              echo "The attached JSON was downloaded and validated, but the generated solver snapshot test failed."
+              echo
+              echo '```'
+              tail -n 80 bug-report-test.log
+              echo '```'
+            } > bug-report-error.md
+            exit "$status"
+          fi
+
+      - name: Format generated test
+        if: steps.import.outputs.created == 'true'
+        run: ./node_modules/.bin/biome format --write "${{ steps.import.outputs.test_path }}" "${{ steps.import.outputs.page_path }}"
+
+      - name: Open pull request
+        id: pr
+        if: steps.import.outputs.created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN || github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPORT_ID: ${{ steps.import.outputs.report_id }}
+          BRANCH_NAME: ${{ steps.import.outputs.branch_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "tscircuit-bot"
+          git config user.email "tscircuit-bot@users.noreply.github.com"
+          git checkout -B "$BRANCH_NAME"
+          git add "${{ steps.import.outputs.report_dir }}"
+          git add "${{ steps.import.outputs.page_path }}"
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Add JSON bug report $REPORT_ID"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force-with-lease origin "HEAD:$BRANCH_NAME"
+
+          pr_body_file="$(mktemp)"
+          {
+            echo "Generated from #${ISSUE_NUMBER}."
+            echo
+            echo "Adds a snapshot-only regression test and debugger page for the attached JSON solver input."
+            echo
+            echo "Workflow run: ${RUN_URL}"
+          } > "$pr_body_file"
+
+          pr_url="$(gh pr view "$BRANCH_NAME" --json url --jq .url 2>/dev/null || true)"
+          if [ -z "$pr_url" ]; then
+            pr_url="$(gh pr create \
+              --base main \
+              --head "$BRANCH_NAME" \
+              --title "Add JSON bug report $REPORT_ID" \
+              --body-file "$pr_body_file")"
+          else
+            gh pr edit "$BRANCH_NAME" \
+              --title "Add JSON bug report $REPORT_ID" \
+              --body-file "$pr_body_file"
+          fi
+
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+
+      - name: Tag original issue
+        if: steps.import.outputs.created == 'true' && steps.pr.outputs.pr_url != ''
+        env:
+          GH_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN || github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPORT_ID: ${{ steps.import.outputs.report_id }}
+          PR_URL: ${{ steps.pr.outputs.pr_url }}
+        run: |
+          message_file="$(mktemp)"
+          {
+            echo "Created or updated ${PR_URL} for this JSON bug report."
+            echo
+            echo "Report id: \`${REPORT_ID}\`"
+          } > "$message_file"
+
+          gh issue comment "$ISSUE_NUMBER" --body-file "$message_file"
+
+      - name: Comment on issue when import fails
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN || github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          message_file="$(mktemp)"
+          {
+            echo "I couldn't import this JSON bug report automatically."
+            echo
+            if [ -f bug-report-error.md ]; then
+              cat bug-report-error.md
+              echo
+            fi
+            echo "Workflow run: ${RUN_URL}"
+          } > "$message_file"
+
+          gh issue comment "$ISSUE_NUMBER" --body-file "$message_file"

@@ -7,7 +7,8 @@ import type { InputProblem } from "lib/types/InputProblem"
  * with the same orientation relative to that chip.
  *
  * @param labels An array of NetLabelPlacement objects to be grouped.
- * @param chips An array of Chip objects from the InputProblem. (Currently not directly used for grouping logic, but part of the signature).
+ * @param chips Chips from the input problem, used to resolve opaque pin IDs to
+ * their owning component.
  * @returns A record where keys are in the format "chipId-orientation" (e.g., "U1-left")
  *          and values are arrays of NetLabelPlacement objects belonging to that group.
  */
@@ -19,6 +20,11 @@ export const groupLabelsByChipAndOrientation = ({
   chips: InputProblem["chips"]
 }): Record<string, NetLabelPlacement[]> => {
   const groupedLabels: Record<string, NetLabelPlacement[]> = {}
+  const chipIdByPinId = new Map(
+    chips.flatMap((chip) =>
+      chip.pins.map((pin) => [pin.pinId, chip.chipId] as const),
+    ),
+  )
 
   for (const label of labels) {
     if (label.pinIds.length === 0) {
@@ -26,10 +32,12 @@ export const groupLabelsByChipAndOrientation = ({
       continue
     }
 
-    // Extract chipId from the first pinId (e.g., "U1.1" -> "U1")
-    const chipId = label.pinIds[0].split(".")[0]
+    const pinId = label.pinIds[0]!
+    // Preserve historical group IDs for component-qualified pins while using
+    // the input's pin ownership for opaque IDs such as schematic_port_123.
+    const legacyChipId = pinId.includes(".") ? pinId.split(".")[0] : undefined
+    const chipId = legacyChipId ?? chipIdByPinId.get(pinId)
     if (!chipId) {
-      // Should not happen if pinIds are well-formed, but good to guard
       continue
     }
 

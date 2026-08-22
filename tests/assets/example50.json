@@ -1,0 +1,149 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -1.4,
+        "y": -6.6
+      },
+      "width": 1.1,
+      "height": 0.7789106999999991,
+      "pins": [
+        {
+          "pinId": "R7.1",
+          "x": -1.95,
+          "y": -6.6
+        },
+        {
+          "pinId": "R7.2",
+          "x": -0.85,
+          "y": -6.6
+        }
+      ],
+      "sectionId": "qspi"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 0,
+        "y": -8.4
+      },
+      "width": 2.245,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "U5.1",
+          "x": -1.5225,
+          "y": -8.1
+        },
+        {
+          "pinId": "U5.2",
+          "x": -1.5225,
+          "y": -8.3
+        },
+        {
+          "pinId": "U5.3",
+          "x": -1.5225,
+          "y": -8.5
+        },
+        {
+          "pinId": "U5.4",
+          "x": -1.5225,
+          "y": -8.700000000000001
+        },
+        {
+          "pinId": "U5.5",
+          "x": 1.5225,
+          "y": -8.1
+        },
+        {
+          "pinId": "U5.6",
+          "x": 1.5225,
+          "y": -8.3
+        },
+        {
+          "pinId": "U5.7",
+          "x": 1.5225,
+          "y": -8.700000000000001
+        },
+        {
+          "pinId": "U5.8",
+          "x": 1.5225,
+          "y": -8.5
+        }
+      ],
+      "sectionId": "qspi"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "V3V3",
+      "pinIds": [
+        "R7.1",
+        "U5.8"
+      ],
+      "netLabelWidth": 0.6
+    },
+    {
+      "netId": "QSPI_CS",
+      "pinIds": [
+        "R7.2",
+        "U5.4"
+      ],
+      "netLabelWidth": 0.96
+    },
+    {
+      "netId": "QSPI_SCK",
+      "pinIds": [
+        "U5.1"
+      ],
+      "netLabelWidth": 1.08
+    },
+    {
+      "netId": "QSPI_DATA0",
+      "pinIds": [
+        "U5.2"
+      ],
+      "netLabelWidth": 1.32
+    },
+    {
+      "netId": "QSPI_DATA1",
+      "pinIds": [
+        "U5.3"
+      ],
+      "netLabelWidth": 1.32
+    },
+    {
+      "netId": "QSPI_DATA2",
+      "pinIds": [
+        "U5.5"
+      ],
+      "netLabelWidth": 1.32
+    },
+    {
+      "netId": "QSPI_DATA3",
+      "pinIds": [
+        "U5.6"
+      ],
+      "netLabelWidth": 1.32
+    },
+    {
+      "netId": "GND",
+      "pinIds": [
+        "U5.7"
+      ],
+      "netLabelWidth": 0.48
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "V3V3": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ]
+  },
+  "maxMspPairDistance": 2.4
+}
+

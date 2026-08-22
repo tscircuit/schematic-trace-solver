@@ -35,6 +35,34 @@ Finally, the `NetLabelPlacementSolver` places net labels for each net connection
 this requires drawing small traces to adapt to the `availableFacingDirections` of the net connection.
 If there is crowding at the pin, we look for an available spot along the trace connected to the pin.
 
+### Inline net labels
+
+A point-to-point signal trace can be labeled *inline*: the net name is drawn
+parallel to the wire (above a horizontal trace, to the left of a vertical one)
+instead of as an anchored label hanging off the end of it. This keeps the visual
+line between the two pins intact.
+
+Inline labels are opt-in per direct connection - set `allowInlineNetLabel: true`
+on the `directConnection`. The caller (usually [@tscircuit/core](https://github.com/tscircuit/core))
+decides which connections deserve one; the solver only honors the request when
+the connection actually got routed, since there is nothing to run parallel to
+otherwise.
+
+The `InlineNetLabelSolver` runs last in the pipeline and exposes
+`inlineNetLabelPlacements`. A net that receives an inline label has its anchored
+`NetLabelPlacement` removed from `getOutput().netLabelPlacements`, so a net is
+never labeled twice.
+
+```tsx
+directConnections: [
+  {
+    pinIds: ["U1.1", "D1.1"],
+    netId: "USER_LED_ANODE",
+    allowInlineNetLabel: true,
+  },
+]
+```
+
 ## Usage
 
 ```tsx

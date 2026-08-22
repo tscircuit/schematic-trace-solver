@@ -38,7 +38,9 @@ export function visualizeSingleNetLabelPlacementSolver(
           ? "rgba(220, 0, 0, 0.25)"
           : c.status === "trace-collision"
             ? "rgba(220, 140, 0, 0.25)"
-            : "rgba(120, 120, 120, 0.15)"
+            : c.status === "text-collision"
+              ? "rgba(160, 0, 220, 0.2)"
+              : "rgba(120, 120, 120, 0.15)"
     const stroke =
       c.status === "ok"
         ? "green"
@@ -46,7 +48,9 @@ export function visualizeSingleNetLabelPlacementSolver(
           ? "red"
           : c.status === "trace-collision"
             ? "orange"
-            : "gray"
+            : c.status === "text-collision"
+              ? "purple"
+              : "gray"
     const candidateLabel =
       c.status === "ok"
         ? "status: ok(valid net label candidate)"
@@ -54,7 +58,9 @@ export function visualizeSingleNetLabelPlacementSolver(
           ? "status: chip-collision"
           : c.status === "trace-collision"
             ? "status: trace-collision"
-            : "status: parallel-to-segment"
+            : c.status === "text-collision"
+              ? "status: text-collision"
+              : "status: parallel-to-segment"
 
     graphics.rects!.push({
       center: {

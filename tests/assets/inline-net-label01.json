@@ -1,0 +1,47 @@
+{
+  "chips": [
+    {
+      "chipId": "U1",
+      "center": { "x": 0, "y": 0 },
+      "width": 1,
+      "height": 0.6,
+      "pins": [{ "pinId": "U1.1", "x": 0.5, "y": 0 }]
+    },
+    {
+      "chipId": "U2",
+      "center": { "x": 3, "y": 0 },
+      "width": 1,
+      "height": 0.6,
+      "pins": [{ "pinId": "U2.1", "x": 2.5, "y": 0 }]
+    },
+    {
+      "chipId": "U3",
+      "center": { "x": 0, "y": -2 },
+      "width": 0.6,
+      "height": 1,
+      "pins": [{ "pinId": "U3.1", "x": 0, "y": -2.5 }]
+    },
+    {
+      "chipId": "U4",
+      "center": { "x": 0, "y": -4.5 },
+      "width": 0.6,
+      "height": 1,
+      "pins": [{ "pinId": "U4.1", "x": 0, "y": -4 }]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": ["U1.1", "U2.1"],
+      "netId": "USER_LED_ANODE",
+      "allowInlineNetLabel": true
+    },
+    {
+      "pinIds": ["U3.1", "U4.1"],
+      "netId": "SPI_SCK",
+      "allowInlineNetLabel": true
+    }
+  ],
+  "netConnections": [],
+  "availableNetLabelOrientations": {},
+  "maxMspPairDistance": 2.4
+}

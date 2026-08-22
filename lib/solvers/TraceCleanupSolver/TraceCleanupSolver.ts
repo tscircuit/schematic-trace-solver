@@ -6,32 +6,49 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { alignSameNetRails } from "./alignSameNetRails"
+import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
+import { is4PointRectangle } from "./is4PointRectangle"
 
-interface TraceCleanupSolverInput {
+/**
+ * Represents the different stages or steps within the trace cleanup pipeline.
+ */
+export type PipelineStep =
+  | "untangling_traces"
+  | "minimizing_turns"
+  | "merge_same_net_traces"
+  | "balancing_l_shapes"
+  | "aligning_same_net_rails"
+
+/**
+ * Defines the input structure for the TraceCleanupSolver.
+ */
+export interface TraceCleanupSolverInput {
   inputProblem: InputProblem
   allTraces: SolvedTracePath[]
   allLabelPlacements: NetLabelPlacement[]
   mergedLabelNetIdMap: Record<string, Set<string>>
   paddingBuffer: number
+  operations?: readonly PipelineStep[]
+  eligibleTraceIds?: ReadonlySet<string>
 }
 
-import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
-import { is4PointRectangle } from "./is4PointRectangle"
-
-type PipelineStep =
-
-  | "untangling_traces"
-  | "minimizing_turns"
-  | "merge_same_net_traces"
-
-  | "balancing_l_shapes"
+const DEFAULT_OPERATIONS: readonly PipelineStep[] = [
+  "untangling_traces",
+  "minimizing_turns",
+  "merge_same_net_traces",
+  "balancing_l_shapes",
+  "aligning_same_net_rails",
+]
 
 export class TraceCleanupSolver extends BaseSolver {
   private input: TraceCleanupSolverInput
   private outputTraces: SolvedTracePath[]
   private traceIdQueue: string[]
   private tracesMap: Map<string, SolvedTracePath>
-  private pipelineStep: PipelineStep = "untangling_traces"
+  private operations: readonly PipelineStep[]
+  private operationIndex = 0
+  private pipelineStep: PipelineStep | null = "untangling_traces"
   private activeTraceId: string | null = null
   override activeSubSolver: BaseSolver | null = null
 
@@ -40,6 +57,8 @@ export class TraceCleanupSolver extends BaseSolver {
     this.input = solverInput
     this.outputTraces = [...solverInput.allTraces]
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.operations = solverInput.operations ?? DEFAULT_OPERATIONS
+    this.pipelineStep = this.operations[0] ?? null
     this.traceIdQueue = Array.from(solverInput.allTraces.map((e) => e.mspPairId))
   }
 
@@ -51,11 +70,16 @@ export class TraceCleanupSolver extends BaseSolver {
         this.outputTraces = output.traces
         this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this._advancePipeline()
       } else if (this.activeSubSolver.failed) {
         this.activeSubSolver = null
-        this.pipelineStep = "minimizing_turns"
+        this._advancePipeline()
       }
+      return
+    }
+
+    if (!this.pipelineStep) {
+      this.solved = true
       return
     }
 
@@ -72,7 +96,17 @@ export class TraceCleanupSolver extends BaseSolver {
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
         break
+      case "aligning_same_net_rails":
+        this._runAlignSameNetRailsStep()
+        break
     }
+  }
+
+  private _advancePipeline() {
+    this.operationIndex++
+    this.pipelineStep = this.operations[this.operationIndex] ?? null
+    this.traceIdQueue = this.outputTraces.map((trace) => trace.mspPairId)
+    if (this.pipelineStep) this.activeTraceId = null
   }
 
   private _runUntangleTracesStep() {
@@ -84,8 +118,8 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
-      this.pipelineStep = "merge_same_net_traces"
-      this.traceIdQueue = Array.from(this.input.allTraces.map((e) => e.mspPairId))
+      // Yahan se fixed: seedha advance karenge taake sequence automatic chlay
+      this._advancePipeline()
       return
     }
     this._processTrace("minimizing_turns")
@@ -100,12 +134,10 @@ export class TraceCleanupSolver extends BaseSolver {
         const t1 = traces[i]
         const t2 = traces[j]
 
-        // Check if traces belong to the same net group
         const shareNet = t1.mspPairId === t2.mspPairId || 
           (this.input.mergedLabelNetIdMap[t1.mspPairId]?.has(t2.mspPairId))
 
         if (shareNet) {
-          // Align close-by points on same X or same Y axis
           for (const p1 of t1.tracePath) {
             for (const p2 of t2.tracePath) {
               if (Math.abs(p1.x - p2.x) < threshold) {
@@ -122,13 +154,14 @@ export class TraceCleanupSolver extends BaseSolver {
 
     this.outputTraces = traces
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
-    this.pipelineStep = "balancing_l_shapes"
+    // Fixed: Haath se agli step set karne ke baad seedha queue refresh karein, automatic advance nahi
     this.traceIdQueue = Array.from(this.input.allTraces.map((e) => e.mspPairId))
+    this._advancePipeline()
   }
 
   private _runBalanceLShapesStep() {
     if (this.traceIdQueue.length === 0) {
-      this.solved = true
+      this._advancePipeline()
       return
     }
     this._processTrace("balancing_l_shapes")
@@ -162,6 +195,22 @@ export class TraceCleanupSolver extends BaseSolver {
 
     this.tracesMap.set(targetMspConnectionPairId, updatedTrace)
     this.outputTraces = Array.from(this.tracesMap.values())
+  }
+
+  private _runAlignSameNetRailsStep() {
+    const alignment = alignSameNetRails({
+      inputProblem: this.input.inputProblem,
+      traces: this.outputTraces,
+      netLabelPlacements: this.input.allLabelPlacements,
+      eligibleTraceIds:
+        this.input.eligibleTraceIds ??
+        new Set(this.outputTraces.map((trace) => trace.mspPairId)),
+    })
+    this.outputTraces = alignment.traces
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.stats.alignedRailGroupCount = alignment.alignedRailGroupCount
+    this.stats.alignedTraceCount = alignment.alignedTraceCount
+    this._advancePipeline()
   }
 
   getOutput() {

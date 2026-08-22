@@ -55,10 +55,19 @@ export const generateRerouteCandidates = ({
     detourCount,
   })
 
-  const { firstInsideIndex, lastInsideIndex } = findTraceViolationZone(
-    initialTrace.tracePath,
+  const effectivePadding = paddingBuffer + detourCount * paddingBuffer
+  const paddedLabelBounds = {
+    minX: labelBounds.minX - effectivePadding,
+    maxX: labelBounds.maxX + effectivePadding,
+    minY: labelBounds.minY - effectivePadding,
+    maxY: labelBounds.maxY + effectivePadding,
+  }
+
+  const { firstInsideIndex, lastInsideIndex } = findTraceViolationZone({
+    path: initialTrace.tracePath,
     labelBounds,
-  )
+    paddedBounds: paddedLabelBounds,
+  })
 
   const snipReconnectCandidates = generateSnipAndReconnectCandidates({
     initialTrace,

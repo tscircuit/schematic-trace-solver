@@ -1,0 +1,138 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 0.8916016,
+      "height": 0.8927476000000006,
+      "pins": [
+        {
+          "pinId": "VS1.1",
+          "x": -0.4458008,
+          "y": 0.00006220000000001225,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "VS1.2",
+          "x": 0.4458008,
+          "y": -0.00006220000000001225,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 1.5258008,
+        "y": 1.1899378
+      },
+      "width": 0.7600000000000002,
+      "height": 0.5,
+      "pins": [
+        {
+          "pinId": "SW1.1",
+          "x": 1.1458008,
+          "y": 1.1899378,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "SW1.2",
+          "x": 1.9058008000000002,
+          "y": 1.1899378,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": 2.7458008,
+        "y": -0.0800621999999995
+      },
+      "width": 0.5999999999999996,
+      "height": 0.8399999999999999,
+      "pins": [
+        {
+          "pinId": "C1.1",
+          "x": 3.0458008,
+          "y": -0.08006219999999957,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "C1.2",
+          "x": 2.4458008,
+          "y": -0.08006219999999949,
+          "_facingDirection": "x-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": 1.4458008,
+        "y": -0.00006219999999990122
+      },
+      "width": 0.6000000000000001,
+      "height": 0.6799999999999999,
+      "pins": [
+        {
+          "pinId": "R1.1",
+          "x": 1.7458008,
+          "y": -0.00006219999999993796,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "R1.2",
+          "x": 1.1458008,
+          "y": -0.00006219999999986448,
+          "_facingDirection": "x-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": [
+        "VS1.1",
+        "SW1.1"
+      ],
+      "netId": "VS1.1 to SW1.1"
+    },
+    {
+      "pinIds": [
+        "C1.1",
+        "SW1.2"
+      ],
+      "netId": ".C1 > .pos to SW1.2"
+    },
+    {
+      "pinIds": [
+        "C1.2",
+        "VS1.2"
+      ],
+      "netId": ".C1 > .neg to VS1.2"
+    },
+    {
+      "pinIds": [
+        "R1.1",
+        "SW1.2"
+      ],
+      "netId": ".R1 > .pin1 to SW1.2"
+    },
+    {
+      "pinIds": [
+        "R1.2",
+        "VS1.2"
+      ],
+      "netId": ".R1 > .pin2 to VS1.2"
+    }
+  ],
+  "netConnections": [],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {},
+  "maxMspPairDistance": 10,
+  "_hideRatsNet": false
+}
