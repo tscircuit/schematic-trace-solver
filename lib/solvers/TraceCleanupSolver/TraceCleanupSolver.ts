@@ -36,6 +36,7 @@ export interface TraceCleanupSolverInput {
 const DEFAULT_OPERATIONS: readonly PipelineStep[] = [
   "untangling_traces",
   "minimizing_turns",
+  "merge_same_net_traces",
   "balancing_l_shapes",
   "aligning_same_net_rails",
 ]
@@ -47,8 +48,9 @@ export class TraceCleanupSolver extends BaseSolver {
   private tracesMap: Map<string, SolvedTracePath>
   private operations: readonly PipelineStep[]
   private operationIndex = 0
-  private pipelineStep: PipelineStep | null = "untangling_traces"
+  private pipelineStep: PipelineStep | null
   private activeTraceId: string | null = null
+
   override activeSubSolver: BaseSolver | null = null
 
   constructor(solverInput: TraceCleanupSolverInput) {
@@ -58,26 +60,29 @@ export class TraceCleanupSolver extends BaseSolver {
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.operations = solverInput.operations ?? DEFAULT_OPERATIONS
     this.pipelineStep = this.operations[0] ?? null
-    this.traceIdQueue = Array.from(
-      solverInput.allTraces.map((e) => e.mspPairId),
-    )
+    this.traceIdQueue = this.outputTraces.map((trace) => trace.mspPairId)
   }
 
   override _step() {
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
+
       if (this.activeSubSolver.solved) {
         const output = (
           this.activeSubSolver as UntangleTraceSubsolver
         ).getOutput()
+
         this.outputTraces = output.traces
-        this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+        this.tracesMap = new Map(
+          this.outputTraces.map((t) => [t.mspPairId, t]),
+        )
         this.activeSubSolver = null
         this._advancePipeline()
       } else if (this.activeSubSolver.failed) {
         this.activeSubSolver = null
         this._advancePipeline()
       }
+
       return
     }
 
@@ -94,11 +99,7 @@ export class TraceCleanupSolver extends BaseSolver {
         this._runMinimizeTurnsStep()
         break
       case "merge_same_net_traces":
-        if (this.input.operations?.includes("merge_same_net_traces")) {
-          this._runMergeSameNetTracesStep()
-        } else {
-          this._advancePipeline()
-        }
+        this._runMergeSameNetTracesStep()
         break
       case "balancing_l_shapes":
         this._runBalanceLShapesStep()
@@ -113,7 +114,10 @@ export class TraceCleanupSolver extends BaseSolver {
     this.operationIndex++
     this.pipelineStep = this.operations[this.operationIndex] ?? null
     this.traceIdQueue = this.outputTraces.map((trace) => trace.mspPairId)
-    if (this.pipelineStep) this.activeTraceId = null
+
+    if (this.pipelineStep) {
+      this.activeTraceId = null
+    }
   }
 
   private _runUntangleTracesStep() {
@@ -128,6 +132,7 @@ export class TraceCleanupSolver extends BaseSolver {
       this._advancePipeline()
       return
     }
+
     this._processTrace("minimizing_turns")
   }
 
@@ -141,18 +146,21 @@ export class TraceCleanupSolver extends BaseSolver {
         const t2 = traces[j]
 
         const shareNet =
-          t1.mspPairId === t2.mspPairId ||
-          this.input.mergedLabelNetIdMap[t1.mspPairId]?.has(t2.mspPairId)
+          this.input.mergedLabelNetIdMap[t1.mspPairId]?.has(t2.mspPairId) ||
+          this.input.mergedLabelNetIdMap[t2.mspPairId]?.has(t1.mspPairId)
 
-        if (shareNet) {
-          for (const p1 of t1.tracePath) {
-            for (const p2 of t2.tracePath) {
-              if (Math.abs(p1.x - p2.x) < threshold) {
-                p1.x = p2.x
-              }
-              if (Math.abs(p1.y - p2.y) < threshold) {
-                p1.y = p2.y
-              }
+        if (!shareNet) {
+          continue
+        }
+
+        for (const p1 of t1.tracePath) {
+          for (const p2 of t2.tracePath) {
+            if (Math.abs(p1.x - p2.x) < threshold) {
+              p1.x = p2.x
+            }
+
+            if (Math.abs(p1.y - p2.y) < threshold) {
+              p1.y = p2.y
             }
           }
         }
@@ -160,7 +168,10 @@ export class TraceCleanupSolver extends BaseSolver {
     }
 
     this.outputTraces = traces
-    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.tracesMap = new Map(
+      this.outputTraces.map((t) => [t.mspPairId, t]),
+    )
+
     this._advancePipeline()
   }
 
@@ -169,12 +180,16 @@ export class TraceCleanupSolver extends BaseSolver {
       this._advancePipeline()
       return
     }
+
     this._processTrace("balancing_l_shapes")
   }
 
-  private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
+  private _processTrace(
+    step: "minimizing_turns" | "balancing_l_shapes",
+  ) {
     const targetMspConnectionPairId = this.traceIdQueue.shift()!
     this.activeTraceId = targetMspConnectionPairId
+
     const originalTrace = this.tracesMap.get(targetMspConnectionPairId)!
 
     if (is4PointRectangle(originalTrace.tracePath)) {
@@ -182,6 +197,7 @@ export class TraceCleanupSolver extends BaseSolver {
     }
 
     const allTraces = Array.from(this.tracesMap.values())
+
     let updatedTrace: SolvedTracePath
 
     if (step === "minimizing_turns") {
@@ -211,15 +227,21 @@ export class TraceCleanupSolver extends BaseSolver {
         this.input.eligibleTraceIds ??
         new Set(this.outputTraces.map((trace) => trace.mspPairId)),
     })
+
     this.outputTraces = alignment.traces
-    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.tracesMap = new Map(
+      this.outputTraces.map((t) => [t.mspPairId, t]),
+    )
     this.stats.alignedRailGroupCount = alignment.alignedRailGroupCount
     this.stats.alignedTraceCount = alignment.alignedTraceCount
+
     this._advancePipeline()
   }
 
   getOutput() {
-    return { traces: this.outputTraces }
+    return {
+      traces: this.outputTraces,
+    }
   }
 
   override visualize(): GraphicsObject {
@@ -232,14 +254,39 @@ export class TraceCleanupSolver extends BaseSolver {
       connectionAlpha: 0.1,
     })
 
-    if (!graphics.lines) graphics.lines = []
+    if (!graphics.lines) {
+      graphics.lines = []
+    }
+
+    if (!graphics.points) {
+      graphics.points = []
+    }
+
+    if (!graphics.rects) {
+      graphics.rects = []
+    }
+
+    if (!graphics.circles) {
+      graphics.circles = []
+    }
+
+    if (!graphics.texts) {
+      graphics.texts = []
+    }
+
     for (const trace of this.outputTraces) {
       const line: Line = {
-        points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
-        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue",
+        points: trace.tracePath.map((p) => ({
+          x: p.x,
+          y: p.y,
+        })),
+        strokeColor:
+          trace.mspPairId === this.activeTraceId ? "red" : "blue",
       }
-      graphics.lines!.push(line)
+
+      graphics.lines.push(line)
     }
+
     return graphics
   }
 }
