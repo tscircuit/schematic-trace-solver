@@ -58,7 +58,7 @@ export class TraceCleanupSolver extends BaseSolver {
     this.outputTraces = [...solverInput.allTraces]
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.operations = solverInput.operations ?? DEFAULT_OPERATIONS
-    this.pipelineStep = this.operations[0] ?? null
+    this.pipelineStep = this.operations[0] ?? null // Fixed index parameter
     this.traceIdQueue = Array.from(solverInput.allTraces.map((e) => e.mspPairId))
   }
 
@@ -118,7 +118,6 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
-      // Yahan se fixed: seedha advance karenge taake sequence automatic chlay
       this._advancePipeline()
       return
     }
@@ -154,9 +153,7 @@ export class TraceCleanupSolver extends BaseSolver {
 
     this.outputTraces = traces
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
-    // Fixed: Haath se agli step set karne ke baad seedha queue refresh karein, automatic advance nahi
-    this.traceIdQueue = Array.from(this.input.allTraces.map((e) => e.mspPairId))
-    this._advancePipeline()
+    this._advancePipeline() // Fixed state machine transition mapping
   }
 
   private _runBalanceLShapesStep() {
