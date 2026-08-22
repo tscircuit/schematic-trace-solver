@@ -60,9 +60,7 @@ export class TraceCleanupSolver extends BaseSolver {
     super()
     this.input = solverInput
     this.outputTraces = [...solverInput.allTraces]
-    this.tracesMap = new Map(
-      this.outputTraces.map((t) => [t.mspPairId, t]),
-    )
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.operations = solverInput.operations ?? DEFAULT_OPERATIONS
     this.pipelineStep = this.operations[0] ?? null
     this.traceIdQueue = this.outputTraces.map((trace) => trace.mspPairId)
@@ -77,10 +75,7 @@ export class TraceCleanupSolver extends BaseSolver {
           this.activeSubSolver as UntangleTraceSubsolver
         ).getOutput()
 
-        this.outputTraces = output.traces
-        this.tracesMap = new Map(
-          this.outputTraces.map((t) => [t.mspPairId, t]),
-        )
+        this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
         this._advancePipeline()
       } else if (this.activeSubSolver.failed) {
@@ -132,9 +127,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
       this.pipelineStep = "balancing_l_shapes"
-      this.traceIdQueue = this.input.allTraces.map(
-        (e) => e.mspPairId,
-      )
+      this.traceIdQueue = this.input.allTraces.map((e) => e.mspPairId)
       this._advancePipeline()
       return
     }
@@ -151,9 +144,7 @@ export class TraceCleanupSolver extends BaseSolver {
     this._processTrace("balancing_l_shapes")
   }
 
-  private _processTrace(
-    step: "minimizing_turns" | "balancing_l_shapes",
-  ) {
+  private _processTrace(step: "minimizing_turns" | "balancing_l_shapes") {
     const targetMspConnectionPairId = this.traceIdQueue.shift()!
     this.activeTraceId = targetMspConnectionPairId
 
@@ -196,11 +187,8 @@ export class TraceCleanupSolver extends BaseSolver {
     })
 
     this.outputTraces = alignment.traces
-    this.tracesMap = new Map(
-      this.outputTraces.map((t) => [t.mspPairId, t]),
-    )
-    this.stats.alignedRailGroupCount =
-      alignment.alignedRailGroupCount
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.stats.alignedRailGroupCount = alignment.alignedRailGroupCount
     this.stats.alignedTraceCount = alignment.alignedTraceCount
     this._advancePipeline()
   }
@@ -233,12 +221,8 @@ export class TraceCleanupSolver extends BaseSolver {
           x: p.x,
           y: p.y,
         })),
-        strokeColor:
-          trace.mspPairId === this.activeTraceId
-            ? "red"
-            : "blue",
+        strokeColor: trace.mspPairId === this.activeTraceId ? "red" : "blue",
       }
-
       graphics.lines.push(line)
     }
 
