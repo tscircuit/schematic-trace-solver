@@ -76,9 +76,7 @@ export class TraceCleanupSolver extends BaseSolver {
         ).getOutput()
 
         this.outputTraces = output.traces
-        this.tracesMap = new Map(
-          this.outputTraces.map((t) => [t.mspPairId, t]),
-        )
+        this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
         this.activeSubSolver = null
         this._advancePipeline()
       } else if (this.activeSubSolver.failed) {
