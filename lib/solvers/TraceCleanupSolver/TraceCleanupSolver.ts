@@ -41,12 +41,8 @@ const DEFAULT_OPERATIONS: readonly PipelineStep[] = [
 ]
 
 /**
- * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
- * It operates in a multi-step pipeline:
- * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
- * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
- * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
- * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
+ * The TraceCleanupSolver is responsible for improving the aesthetics and
+ * readability of schematic traces.
  */
 export class TraceCleanupSolver extends BaseSolver {
   private input: TraceCleanupSolverInput
@@ -57,6 +53,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private operationIndex = 0
   private pipelineStep: TraceCleanupOperation | null
   private activeTraceId: string | null = null
+
   override activeSubSolver: BaseSolver | null = null
 
   constructor(solverInput: TraceCleanupSolverInput) {
@@ -74,10 +71,12 @@ export class TraceCleanupSolver extends BaseSolver {
   override _step() {
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
+
       if (this.activeSubSolver.solved) {
         const output = (
           this.activeSubSolver as UntangleTraceSubsolver
         ).getOutput()
+
         this.outputTraces = output.traces
         this.tracesMap = new Map(
           this.outputTraces.map((t) => [t.mspPairId, t]),
@@ -88,6 +87,7 @@ export class TraceCleanupSolver extends BaseSolver {
         this.activeSubSolver = null
         this._advancePipeline()
       }
+
       return
     }
 
@@ -116,7 +116,10 @@ export class TraceCleanupSolver extends BaseSolver {
     this.operationIndex++
     this.pipelineStep = this.operations[this.operationIndex] ?? null
     this.traceIdQueue = this.outputTraces.map((trace) => trace.mspPairId)
-    if (this.pipelineStep) this.activeTraceId = null
+
+    if (this.pipelineStep) {
+      this.activeTraceId = null
+    }
   }
 
   private _runUntangleTracesStep() {
@@ -153,6 +156,7 @@ export class TraceCleanupSolver extends BaseSolver {
   ) {
     const targetMspConnectionPairId = this.traceIdQueue.shift()!
     this.activeTraceId = targetMspConnectionPairId
+
     const originalTrace = this.tracesMap.get(targetMspConnectionPairId)!
 
     if (is4PointRectangle(originalTrace.tracePath)) {
@@ -190,52 +194,20 @@ export class TraceCleanupSolver extends BaseSolver {
         this.input.eligibleTraceIds ??
         new Set(this.outputTraces.map((trace) => trace.mspPairId)),
     })
+
     this.outputTraces = alignment.traces
     this.tracesMap = new Map(
       this.outputTraces.map((t) => [t.mspPairId, t]),
     )
-    this.stats.alignedRailGroupCount = alignment.alignedRailGroupCount
+    this.stats.alignedRailGroupCount =
+      alignment.alignedRailGroupCount
     this.stats.alignedTraceCount = alignment.alignedTraceCount
     this._advancePipeline()
   }
 
   getOutput() {
-    const tolerance = 0.01
-    const finalTraces = this.outputTraces.map((t) => {
-      const path = t.tracePath || []
-      if (path.length <= 2) return t
-
-      const newPath: Array<{ x: number; y: number }> = [path[0]]
-
-      for (let i = 1; i < path.length - 1; i++) {
-        const prev = newPath[newPath.length - 1]
-        const curr = path[i]
-        const next = path[i + 1]
-
-        const isCollinearX =
-          Math.abs(prev.x - curr.x) <= tolerance &&
-          Math.abs(curr.x - next.x) <= tolerance
-        const isCollinearY =
-          Math.abs(prev.y - curr.y) <= tolerance &&
-          Math.abs(curr.y - next.y) <= tolerance
-
-        if (!isCollinearX && !isCollinearY) {
-          newPath.push(curr)
-        }
-      }
-
-      if (path.length > 1) {
-        newPath.push(path[path.length - 1])
-      }
-
-      return {
-        ...t,
-        tracePath: newPath,
-      }
-    })
-
     return {
-      traces: finalTraces,
+      traces: this.outputTraces,
     }
   }
 
@@ -257,12 +229,19 @@ export class TraceCleanupSolver extends BaseSolver {
 
     for (const trace of this.outputTraces) {
       const line: Line = {
-        points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
+        points: trace.tracePath.map((p) => ({
+          x: p.x,
+          y: p.y,
+        })),
         strokeColor:
-          trace.mspPairId === this.activeTraceId ? "red" : "blue",
+          trace.mspPairId === this.activeTraceId
+            ? "red"
+            : "blue",
       }
+
       graphics.lines.push(line)
     }
+
     return graphics
   }
 }
