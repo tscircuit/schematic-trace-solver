@@ -51,6 +51,12 @@ export class TraceCleanupSolver extends BaseSolver {
   private pipelineStep: PipelineStep | null = "untangling_traces"
   private activeTraceId: string | null = null
   override activeSubSolver: BaseSolver | null = null
+  
+  // FIX 1: stats object ko initialize kiya taake undefined crash na ho
+  public stats: Record<string, any> = {
+    alignedRailGroupCount: 0,
+    alignedTraceCount: 0
+  }
 
   constructor(solverInput: TraceCleanupSolverInput) {
     super()
@@ -124,6 +130,7 @@ export class TraceCleanupSolver extends BaseSolver {
     this._processTrace("minimizing_turns")
   }
 
+  // FIX 2: Immutable objects ko modify karne ke liye new array map function use kiya
   private _runMergeSameNetTracesStep() {
     const threshold = this.input.paddingBuffer || 0.5
     const traces = Array.from(this.tracesMap.values())
@@ -137,16 +144,15 @@ export class TraceCleanupSolver extends BaseSolver {
           (this.input.mergedLabelNetIdMap[t1.mspPairId]?.has(t2.mspPairId))
 
         if (shareNet) {
-          for (const p1 of t1.tracePath) {
+          t1.tracePath = t1.tracePath.map(p1 => {
+            let newX = p1.x
+            let newY = p1.y
             for (const p2 of t2.tracePath) {
-              if (Math.abs(p1.x - p2.x) < threshold) {
-                p1.x = p2.x
-              }
-              if (Math.abs(p1.y - p2.y) < threshold) {
-                p1.y = p2.y
-              }
+              if (Math.abs(newX - p2.x) < threshold) newX = p2.x
+              if (Math.abs(newY - p2.y) < threshold) newY = p2.y
             }
-          }
+            return { ...p1, x: newX, y: newY }
+          })
         }
       }
     }
@@ -205,6 +211,8 @@ export class TraceCleanupSolver extends BaseSolver {
     })
     this.outputTraces = alignment.traces
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    
+    // stats object crash ab nahi hoga
     this.stats.alignedRailGroupCount = alignment.alignedRailGroupCount
     this.stats.alignedTraceCount = alignment.alignedTraceCount
     this._advancePipeline()
