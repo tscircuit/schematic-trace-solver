@@ -29,15 +29,24 @@ export interface TraceCleanupSolverInput {
   eligibleTraceIds?: ReadonlySet<string>
 }
 
-const DEFAULT_OPERATIONS: readonly TraceCleanupOperation[] = [
+/**
+ * Represents the different stages or steps within the trace cleanup pipeline.
+ */
+export type PipelineStep = TraceCleanupOperation
+
+const DEFAULT_OPERATIONS: readonly PipelineStep[] = [
   "untangling_traces",
   "minimizing_turns",
   "balancing_l_shapes",
 ]
 
 /**
- * The TraceCleanupSolver is responsible for improving the aesthetics and
- * readability of schematic traces.
+ * The TraceCleanupSolver is responsible for improving the aesthetics and readability of schematic traces.
+ * It operates in a multi-step pipeline:
+ * 1. **Untangling Traces**: It first attempts to untangle any overlapping or highly convoluted traces using a sub-solver.
+ * 2. **Minimizing Turns**: After untangling, it iterates through each trace to minimize the number of turns, simplifying their paths.
+ * 3. **Balancing L-Shapes**: Finally, it balances L-shaped trace segments to create more visually appealing and consistent layouts.
+ * The solver processes traces one by one, applying these cleanup steps sequentially to refine the overall trace layout.
  */
 export class TraceCleanupSolver extends BaseSolver {
   private input: TraceCleanupSolverInput
@@ -48,45 +57,37 @@ export class TraceCleanupSolver extends BaseSolver {
   private operationIndex = 0
   private pipelineStep: TraceCleanupOperation | null
   private activeTraceId: string | null = null
-
   override activeSubSolver: BaseSolver | null = null
 
   constructor(solverInput: TraceCleanupSolverInput) {
     super()
-
     this.input = solverInput
     this.outputTraces = [...solverInput.allTraces]
     this.tracesMap = new Map(
-      this.outputTraces.map((trace) => [trace.mspPairId, trace]),
+      this.outputTraces.map((t) => [t.mspPairId, t]),
     )
     this.operations = solverInput.operations ?? DEFAULT_OPERATIONS
     this.pipelineStep = this.operations[0] ?? null
-    this.traceIdQueue = this.outputTraces.map(
-      (trace) => trace.mspPairId,
-    )
+    this.traceIdQueue = this.outputTraces.map((trace) => trace.mspPairId)
   }
 
   override _step() {
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
-
       if (this.activeSubSolver.solved) {
         const output = (
           this.activeSubSolver as UntangleTraceSubsolver
         ).getOutput()
-
         this.outputTraces = output.traces
         this.tracesMap = new Map(
-          this.outputTraces.map((trace) => [trace.mspPairId, trace]),
+          this.outputTraces.map((t) => [t.mspPairId, t]),
         )
-
         this.activeSubSolver = null
         this._advancePipeline()
       } else if (this.activeSubSolver.failed) {
         this.activeSubSolver = null
         this._advancePipeline()
       }
-
       return
     }
 
@@ -113,14 +114,9 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _advancePipeline() {
     this.operationIndex++
-    this.pipelineStep =
-      this.operations[this.operationIndex] ?? null
-
-    this.traceIdQueue = this.outputTraces.map(
-      (trace) => trace.mspPairId,
-    )
-
-    this.activeTraceId = null
+    this.pipelineStep = this.operations[this.operationIndex] ?? null
+    this.traceIdQueue = this.outputTraces.map((trace) => trace.mspPairId)
+    if (this.pipelineStep) this.activeTraceId = null
   }
 
   private _runUntangleTracesStep() {
@@ -132,6 +128,10 @@ export class TraceCleanupSolver extends BaseSolver {
 
   private _runMinimizeTurnsStep() {
     if (this.traceIdQueue.length === 0) {
+      this.pipelineStep = "balancing_l_shapes"
+      this.traceIdQueue = this.input.allTraces.map(
+        (e) => e.mspPairId,
+      )
       this._advancePipeline()
       return
     }
@@ -151,46 +151,33 @@ export class TraceCleanupSolver extends BaseSolver {
   private _processTrace(
     step: "minimizing_turns" | "balancing_l_shapes",
   ) {
-    const targetMspConnectionPairId = this.traceIdQueue.shift()
-
-    if (!targetMspConnectionPairId) {
-      return
-    }
-
-    const originalTrace = this.tracesMap.get(
-      targetMspConnectionPairId,
-    )
-
-    if (!originalTrace) {
-      return
-    }
+    const targetMspConnectionPairId = this.traceIdQueue.shift()!
+    this.activeTraceId = targetMspConnectionPairId
+    const originalTrace = this.tracesMap.get(targetMspConnectionPairId)!
 
     if (is4PointRectangle(originalTrace.tracePath)) {
       return
     }
 
-    this.activeTraceId = targetMspConnectionPairId
-
     const allTraces = Array.from(this.tracesMap.values())
 
-    const updatedTrace =
-      step === "minimizing_turns"
-        ? minimizeTurnsWithFilteredLabels({
-            ...this.input,
-            targetMspConnectionPairId,
-            traces: allTraces,
-          })
-        : balanceZShapes({
-            ...this.input,
-            targetMspConnectionPairId,
-            traces: allTraces,
-          })
+    let updatedTrace: SolvedTracePath
 
-    this.tracesMap.set(
-      targetMspConnectionPairId,
-      updatedTrace,
-    )
+    if (step === "minimizing_turns") {
+      updatedTrace = minimizeTurnsWithFilteredLabels({
+        ...this.input,
+        targetMspConnectionPairId,
+        traces: allTraces,
+      })
+    } else {
+      updatedTrace = balanceZShapes({
+        ...this.input,
+        targetMspConnectionPairId,
+        traces: allTraces,
+      })
+    }
 
+    this.tracesMap.set(targetMspConnectionPairId, updatedTrace)
     this.outputTraces = Array.from(this.tracesMap.values())
   }
 
@@ -201,35 +188,24 @@ export class TraceCleanupSolver extends BaseSolver {
       netLabelPlacements: this.input.allLabelPlacements,
       eligibleTraceIds:
         this.input.eligibleTraceIds ??
-        new Set(
-          this.outputTraces.map(
-            (trace) => trace.mspPairId,
-          ),
-        ),
+        new Set(this.outputTraces.map((trace) => trace.mspPairId)),
     })
-
     this.outputTraces = alignment.traces
     this.tracesMap = new Map(
-      this.outputTraces.map((trace) => [
-        trace.mspPairId,
-        trace,
-      ]),
+      this.outputTraces.map((t) => [t.mspPairId, t]),
     )
-
+    this.stats.alignedRailGroupCount = alignment.alignedRailGroupCount
+    this.stats.alignedTraceCount = alignment.alignedTraceCount
     this._advancePipeline()
   }
 
   getOutput() {
     const tolerance = 0.01
+    const finalTraces = this.outputTraces.map((t) => {
+      const path = t.tracePath || []
+      if (path.length <= 2) return t
 
-    const finalTraces = this.outputTraces.map((trace) => {
-      const path = trace.tracePath
-
-      if (path.length <= 2) {
-        return trace
-      }
-
-      const newPath = [path[0]]
+      const newPath: Array<{ x: number; y: number }> = [path[0]]
 
       for (let i = 1; i < path.length - 1; i++) {
         const prev = newPath[newPath.length - 1]
@@ -239,7 +215,6 @@ export class TraceCleanupSolver extends BaseSolver {
         const isCollinearX =
           Math.abs(prev.x - curr.x) <= tolerance &&
           Math.abs(curr.x - next.x) <= tolerance
-
         const isCollinearY =
           Math.abs(prev.y - curr.y) <= tolerance &&
           Math.abs(curr.y - next.y) <= tolerance
@@ -249,10 +224,12 @@ export class TraceCleanupSolver extends BaseSolver {
         }
       }
 
-      newPath.push(path[path.length - 1])
+      if (path.length > 1) {
+        newPath.push(path[path.length - 1])
+      }
 
       return {
-        ...trace,
+        ...t,
         tracePath: newPath,
       }
     })
@@ -267,13 +244,10 @@ export class TraceCleanupSolver extends BaseSolver {
       return this.activeSubSolver.visualize()
     }
 
-    const graphics = visualizeInputProblem(
-      this.input.inputProblem,
-      {
-        chipAlpha: 0.1,
-        connectionAlpha: 0.1,
-      },
-    )
+    const graphics = visualizeInputProblem(this.input.inputProblem, {
+      chipAlpha: 0.1,
+      connectionAlpha: 0.1,
+    })
 
     if (!graphics.lines) graphics.lines = []
     if (!graphics.points) graphics.points = []
@@ -283,19 +257,12 @@ export class TraceCleanupSolver extends BaseSolver {
 
     for (const trace of this.outputTraces) {
       const line: Line = {
-        points: trace.tracePath.map((point) => ({
-          x: point.x,
-          y: point.y,
-        })),
+        points: trace.tracePath.map((p) => ({ x: p.x, y: p.y })),
         strokeColor:
-          trace.mspPairId === this.activeTraceId
-            ? "red"
-            : "blue",
+          trace.mspPairId === this.activeTraceId ? "red" : "blue",
       }
-
       graphics.lines.push(line)
     }
-
     return graphics
   }
 }
