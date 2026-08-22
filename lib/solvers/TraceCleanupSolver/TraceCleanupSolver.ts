@@ -129,6 +129,12 @@ export class TraceCleanupSolver extends BaseSolver {
   }
 
   private _runMergeSameNetTracesStep() {
+    // If the input operations specifically provided a list and it doesn't include merge_same_net_traces, skip it safely
+    if (this.input.operations && !this.input.operations.includes("merge_same_net_traces")) {
+      this._advancePipeline()
+      return
+    }
+
     const threshold = this.input.paddingBuffer || 0.5
     const traces = Array.from(this.tracesMap.values())
 
