@@ -635,13 +635,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number,
   ) {
     const direction = dir(orientation)
-    const candidatePoints = this.getTraceAnchorCandidatePoints(label).sort(
-      (a, b) => {
-        const aAlongDirection = a.x * direction.x + a.y * direction.y
-        const bAlongDirection = b.x * direction.x + b.y * direction.y
-        return bAlongDirection - aAlongDirection
-      },
-    )
+    const candidatePoints = this.getTraceAnchorCandidatePoints(
+      label,
+      orientation,
+    ).sort((a, b) => {
+      const aAlongDirection = a.x * direction.x + a.y * direction.y
+      const bAlongDirection = b.x * direction.x + b.y * direction.y
+      return bAlongDirection - aAlongDirection
+    })
 
     for (const anchorPoint of candidatePoints) {
       const candidate = this.createCandidate(label, anchorPoint, orientation)
@@ -668,13 +669,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number,
   ) {
     const direction = dir(orientation)
-    const candidatePoints = this.getTraceAnchorCandidatePoints(label).sort(
-      (a, b) => {
-        const aAlongDirection = a.x * direction.x + a.y * direction.y
-        const bAlongDirection = b.x * direction.x + b.y * direction.y
-        return bAlongDirection - aAlongDirection
-      },
-    )
+    const candidatePoints = this.getTraceAnchorCandidatePoints(
+      label,
+      orientation,
+    ).sort((a, b) => {
+      const aAlongDirection = a.x * direction.x + a.y * direction.y
+      const bAlongDirection = b.x * direction.x + b.y * direction.y
+      return bAlongDirection - aAlongDirection
+    })
 
     for (const connectorSource of candidatePoints) {
       const preservedColumnAnchor = this.getSearchStartAnchor(
@@ -742,11 +744,45 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return null
   }
 
-  private getTraceAnchorCandidatePoints(label: NetLabelPlacement) {
+  private getTraceAnchorCandidatePoints(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+  ) {
     const seen = new Set<string>()
     const points: Point[] = []
+    const connectedTraceIds = new Set(label.mspConnectionPairIds ?? [])
 
-    for (const traceId of label.mspConnectionPairIds ?? []) {
+    if (isYOrientation(orientation)) {
+      const connectedPinIds = new Set<string>()
+      for (const traceId of connectedTraceIds) {
+        for (const pinId of this.traceMap[traceId]?.pinIds ?? []) {
+          connectedPinIds.add(pinId)
+        }
+      }
+
+      // Multi-pin rails are routed as a chain of pairwise traces. Follow the
+      // shared pins so a vertical power/ground label can choose the true end
+      // of the local rail instead of being limited to its initially labeled
+      // pair. Requiring shared pins keeps disconnected uses of the same net in
+      // other schematic sections out of this candidate set.
+      let foundConnectedTrace = true
+      while (foundConnectedTrace) {
+        foundConnectedTrace = false
+        for (const trace of Object.values(this.traceMap)) {
+          if (connectedTraceIds.has(trace.mspPairId)) continue
+          if (trace.mspPairId.startsWith("available-net-orientation-")) continue
+          if (trace.globalConnNetId !== label.globalConnNetId) continue
+          if (!trace.pinIds.some((pinId) => connectedPinIds.has(pinId)))
+            continue
+
+          connectedTraceIds.add(trace.mspPairId)
+          for (const pinId of trace.pinIds) connectedPinIds.add(pinId)
+          foundConnectedTrace = true
+        }
+      }
+    }
+
+    for (const traceId of connectedTraceIds) {
       const trace = this.traceMap[traceId]
       if (!trace) continue
       for (const point of trace.tracePath) {
