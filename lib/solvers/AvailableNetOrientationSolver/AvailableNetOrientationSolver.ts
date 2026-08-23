@@ -761,10 +761,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       }
 
       // Multi-pin rails are routed as a chain of pairwise traces. Follow the
-      // shared pins so a vertical power/ground label can choose the true end
-      // of the local rail instead of being limited to its initially labeled
-      // pair. Requiring shared pins keeps disconnected uses of the same net in
-      // other schematic sections out of this candidate set.
+      // pairs only when they share both a pin and an aligned vertical rail,
+      // which identifies one continuous rail. A shared pin alone can join
+      // unrelated branches whose rail offsets are far apart; walking those
+      // branches would extend the label connector across the schematic.
       let foundConnectedTrace = true
       while (foundConnectedTrace) {
         foundConnectedTrace = false
@@ -774,6 +774,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           if (trace.globalConnNetId !== label.globalConnNetId) continue
           if (!trace.pinIds.some((pinId) => connectedPinIds.has(pinId)))
             continue
+          const connectedTraces = [...connectedTraceIds].flatMap((traceId) => {
+            const connectedTrace = this.traceMap[traceId]
+            return connectedTrace ? [connectedTrace] : []
+          })
+          if (!this.sharesVerticalRailWithAny(trace, connectedTraces)) {
+            continue
+          }
 
           connectedTraceIds.add(trace.mspPairId)
           for (const pinId of trace.pinIds) connectedPinIds.add(pinId)
@@ -794,6 +801,39 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return points
+  }
+
+  private sharesVerticalRailWithAny(
+    trace: SolvedTracePath,
+    otherTraces: SolvedTracePath[],
+  ) {
+    const verticalRailXs = new Set<number>()
+    for (const otherTrace of otherTraces) {
+      for (let i = 0; i < otherTrace.tracePath.length - 1; i++) {
+        const start = otherTrace.tracePath[i]!
+        const end = otherTrace.tracePath[i + 1]!
+        if (
+          Math.abs(start.x - end.x) <= EPS &&
+          Math.abs(start.y - end.y) > EPS
+        ) {
+          verticalRailXs.add(start.x)
+        }
+      }
+    }
+
+    for (let i = 0; i < trace.tracePath.length - 1; i++) {
+      const start = trace.tracePath[i]!
+      const end = trace.tracePath[i + 1]!
+      if (
+        Math.abs(start.x - end.x) <= EPS &&
+        Math.abs(start.y - end.y) > EPS &&
+        [...verticalRailXs].some((x) => Math.abs(x - start.x) <= EPS)
+      ) {
+        return true
+      }
+    }
+
+    return false
   }
 
   private getAvailableOrientations(label: NetLabelPlacement) {
