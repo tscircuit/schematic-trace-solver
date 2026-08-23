@@ -6,6 +6,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type {
   InputDirectConnection,
+  InputNetConnection,
   InputProblem,
   PinId,
 } from "lib/types/InputProblem"
@@ -15,6 +16,7 @@ import {
   type AxisAlignedSegment,
   getAxisAlignedSegments,
 } from "./getAxisAlignedSegments"
+import { alignPortOnlyInlineNetLabelStubs } from "./alignPortOnlyInlineNetLabelStubs"
 
 export const DEFAULT_INLINE_NET_LABEL_HEIGHT = 0.18
 
@@ -45,8 +47,14 @@ export const INLINE_NET_LABEL_MAX_SPAN_JOG = 0.4
 export interface InlineNetLabelPlacement {
   globalConnNetId: string
   netId?: string
-  mspPairId: string
+  mspPairId?: string
   pinIds: PinId[]
+
+  /**
+   * A generated single-ended trace stub. Present only for an eligible
+   * single-pin net connection; routed point-to-point traces omit it.
+   */
+  stubTracePath?: [Point, Point]
 
   /** Axis the text runs along: "x" reads left-to-right, "y" reads bottom-to-top */
   axis: "x" | "y"
@@ -96,7 +104,11 @@ export class InlineNetLabelSolver extends BaseSolver {
   /** Direct connections that opted in, still waiting to be processed */
   queuedDirectConnections: InputDirectConnection[]
 
+  /** Single-pin net connections that opted in, still waiting to be processed */
+  queuedPortOnlyNetConnections: InputNetConnection[]
+
   private tracesByPinPairKey: Map<string, SolvedTracePath[]>
+  private hasAlignedPortOnlyStubs = false
 
   constructor(input: InlineNetLabelSolverInput) {
     super()
@@ -106,6 +118,9 @@ export class InlineNetLabelSolver extends BaseSolver {
 
     this.queuedDirectConnections = this.inputProblem.directConnections.filter(
       (dc) => dc.allowInlineNetLabel && dc.netId,
+    )
+    this.queuedPortOnlyNetConnections = this.inputProblem.netConnections.filter(
+      (nc) => nc.allowInlineNetLabel && nc.pinIds.length === 1 && nc.netId,
     )
 
     this.tracesByPinPairKey = new Map()
@@ -132,15 +147,129 @@ export class InlineNetLabelSolver extends BaseSolver {
 
   override _step() {
     const directConnection = this.queuedDirectConnections.shift()
-    if (!directConnection) {
-      this.solved = true
-      this.stats.inlineNetLabelCount = this.inlineNetLabelPlacements.length
+    if (directConnection) {
+      const placement = this.computeInlinePlacement(directConnection)
+      if (placement) {
+        this.inlineNetLabelPlacements.push(placement)
+      }
       return
     }
 
-    const placement = this.computeInlinePlacement(directConnection)
-    if (placement) {
-      this.inlineNetLabelPlacements.push(placement)
+    const portOnlyNetConnection = this.queuedPortOnlyNetConnections.shift()
+    if (portOnlyNetConnection) {
+      const placement = this.computePortOnlyInlinePlacement(
+        portOnlyNetConnection,
+      )
+      if (placement) {
+        this.inlineNetLabelPlacements.push(placement)
+      }
+      return
+    }
+
+    if (!this.hasAlignedPortOnlyStubs) {
+      this.inlineNetLabelPlacements = alignPortOnlyInlineNetLabelStubs({
+        placements: this.inlineNetLabelPlacements,
+        inputProblem: this.inputProblem,
+        traces: this.traces,
+        netLabelPlacements: this.inputNetLabelPlacements,
+      })
+      this.hasAlignedPortOnlyStubs = true
+      return
+    }
+
+    this.solved = true
+    this.stats.inlineNetLabelCount = this.inlineNetLabelPlacements.length
+  }
+
+  /**
+   * Converts a conventional port-only anchored placement into an inline label
+   * on a generated outward stub. The anchored solver has already selected a
+   * collision-free orientation, so the stub follows that same direction.
+   */
+  private computePortOnlyInlinePlacement(
+    netConnection: InputNetConnection,
+  ): InlineNetLabelPlacement | null {
+    const [pinId] = netConnection.pinIds
+    if (!pinId) return null
+
+    const anchoredPlacement = this.inputNetLabelPlacements.find(
+      (placement) =>
+        placement.netId === netConnection.netId &&
+        placement.pinIds.length === 1 &&
+        placement.pinIds[0] === pinId,
+    )
+    if (!anchoredPlacement) return null
+
+    const height =
+      netConnection.inlineNetLabelHeight ?? DEFAULT_INLINE_NET_LABEL_HEIGHT
+    const width =
+      netConnection.inlineNetLabelWidth ??
+      netConnection.netLabelWidth ??
+      estimateInlineNetLabelWidth(netConnection.netId, height)
+
+    // Leave a small wire tail at both ends of the text so it unmistakably
+    // reads as a label on a trace rather than free-standing text.
+    const stubLength = Math.max(width + 0.2, 0.6)
+    const start = anchoredPlacement.anchorPoint
+    const direction = anchoredPlacement.orientation
+    const end: Point =
+      direction === "x+"
+        ? { x: start.x + stubLength, y: start.y }
+        : direction === "x-"
+          ? { x: start.x - stubLength, y: start.y }
+          : direction === "y+"
+            ? { x: start.x, y: start.y + stubLength }
+            : { x: start.x, y: start.y - stubLength }
+
+    const axis: InlineNetLabelPlacement["axis"] =
+      direction === "x+" || direction === "x-" ? "x" : "y"
+    const side: InlineNetLabelPlacement["side"] = axis === "x" ? "y+" : "x-"
+    const anchorPoint = {
+      x: (start.x + end.x) / 2,
+      y: (start.y + end.y) / 2,
+    }
+    const offset = height / 2 + INLINE_NET_LABEL_TRACE_MARGIN
+    const center: Point =
+      side === "y+"
+        ? { x: anchorPoint.x, y: anchorPoint.y + offset }
+        : { x: anchorPoint.x - offset, y: anchorPoint.y }
+
+    const halfAlong = width / 2
+    const halfAcross = height / 2
+    const bounds: Bounds =
+      axis === "x"
+        ? {
+            minX: center.x - halfAlong,
+            maxX: center.x + halfAlong,
+            minY: center.y - halfAcross,
+            maxY: center.y + halfAcross,
+          }
+        : {
+            minX: center.x - halfAcross,
+            maxX: center.x + halfAcross,
+            minY: center.y - halfAlong,
+            maxY: center.y + halfAlong,
+          }
+
+    if (
+      this.isObstructed(bounds, {
+        ownGlobalConnNetId: anchoredPlacement.globalConnNetId,
+      })
+    ) {
+      return null
+    }
+
+    return {
+      globalConnNetId: anchoredPlacement.globalConnNetId,
+      netId: netConnection.netId,
+      pinIds: [pinId],
+      stubTracePath: [start, end],
+      axis,
+      anchorPoint,
+      center,
+      width,
+      height,
+      side,
     }
   }
 
@@ -209,7 +338,13 @@ export class InlineNetLabelSolver extends BaseSolver {
                   maxY: center.y + halfAlong,
                 }
 
-          if (this.isObstructed(bounds, trace)) continue
+          if (
+            this.isObstructed(bounds, {
+              ownTrace: trace,
+              ownGlobalConnNetId: trace.globalConnNetId,
+            })
+          )
+            continue
 
           return {
             globalConnNetId: trace.globalConnNetId,
@@ -334,7 +469,13 @@ export class InlineNetLabelSolver extends BaseSolver {
                 maxY: center.y + halfAlong,
               }
 
-        if (this.isObstructed(bounds, trace)) continue
+        if (
+          this.isObstructed(bounds, {
+            ownTrace: trace,
+            ownGlobalConnNetId: trace.globalConnNetId,
+          })
+        )
+          continue
 
         const anchorPoint: Point =
           axis === "x"
@@ -363,7 +504,16 @@ export class InlineNetLabelSolver extends BaseSolver {
    * An inline label may not sit on top of a chip, a component's text, or a
    * trace belonging to another net.
    */
-  private isObstructed(bounds: Bounds, ownTrace: SolvedTracePath): boolean {
+  private isObstructed(
+    bounds: Bounds,
+    {
+      ownTrace,
+      ownGlobalConnNetId,
+    }: {
+      ownTrace?: SolvedTracePath
+      ownGlobalConnNetId: string
+    },
+  ): boolean {
     for (const chip of this.inputProblem.chips) {
       const chipBounds: Bounds = {
         minX: chip.center.x - chip.width / 2,
@@ -379,8 +529,8 @@ export class InlineNetLabelSolver extends BaseSolver {
     }
 
     for (const trace of this.traces) {
-      if (trace.mspPairId === ownTrace.mspPairId) continue
-      if (trace.globalConnNetId === ownTrace.globalConnNetId) continue
+      if (ownTrace && trace.mspPairId === ownTrace.mspPairId) continue
+      if (trace.globalConnNetId === ownGlobalConnNetId) continue
       if (doesPathIntersectBounds(trace.tracePath, bounds)) return true
     }
 
@@ -446,6 +596,12 @@ export class InlineNetLabelSolver extends BaseSolver {
     }
 
     for (const inlineLabel of this.inlineNetLabelPlacements) {
+      if (inlineLabel.stubTracePath) {
+        graphics.lines.push({
+          points: inlineLabel.stubTracePath,
+          strokeColor: "purple",
+        })
+      }
       const isHorizontal = inlineLabel.axis === "x"
       graphics.rects.push({
         center: inlineLabel.center,
@@ -460,12 +616,29 @@ export class InlineNetLabelSolver extends BaseSolver {
         ].join("\n"),
       } as Rect & { strokeColor: string })
       graphics.texts.push({
-        x: inlineLabel.center.x,
-        y: inlineLabel.center.y,
+        x:
+          inlineLabel.stubTracePath && inlineLabel.axis === "x"
+            ? inlineLabel.center.x +
+              (inlineLabel.stubTracePath[1].x > inlineLabel.stubTracePath[0].x
+                ? -inlineLabel.width / 2
+                : inlineLabel.width / 2)
+            : inlineLabel.center.x,
+        y:
+          inlineLabel.stubTracePath && inlineLabel.axis === "y"
+            ? inlineLabel.center.y +
+              (inlineLabel.stubTracePath[1].y > inlineLabel.stubTracePath[0].y
+                ? -inlineLabel.width / 2
+                : inlineLabel.width / 2)
+            : inlineLabel.center.y,
         text: inlineLabel.netId ?? "",
         color: "green",
         fontSize: inlineLabel.height,
-        anchorSide: "center",
+        anchorSide: inlineLabel.stubTracePath
+          ? inlineLabel.stubTracePath[1][inlineLabel.axis] >
+            inlineLabel.stubTracePath[0][inlineLabel.axis]
+            ? "center_left"
+            : "center_right"
+          : "center",
         // Vertical labels read bottom-to-top, alongside the wire they name.
         rotation: inlineLabel.axis === "y" ? 90 : undefined,
       })

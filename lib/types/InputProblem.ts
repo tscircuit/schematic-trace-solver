@@ -65,6 +65,19 @@ export interface InputNetConnection {
   pinIds: Array<PinId>
   netLabelWidth?: number
   netLabelHeight?: number
+
+  /**
+   * When true, a named single-pin net may be drawn as a short outward trace
+   * stub with its net name placed inline. Multi-pin net connections retain the
+   * regular anchored-label behavior.
+   */
+  allowInlineNetLabel?: boolean
+
+  /** Extent of the inline text along the generated trace stub. */
+  inlineNetLabelWidth?: number
+
+  /** Height of the inline text perpendicular to the generated trace stub. */
+  inlineNetLabelHeight?: number
 }
 
 export interface InputProblem {
