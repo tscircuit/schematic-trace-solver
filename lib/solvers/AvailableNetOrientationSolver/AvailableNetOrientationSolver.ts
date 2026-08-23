@@ -635,13 +635,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number,
   ) {
     const direction = dir(orientation)
-    const candidatePoints = this.getTraceAnchorCandidatePoints(label).sort(
-      (a, b) => {
-        const aAlongDirection = a.x * direction.x + a.y * direction.y
-        const bAlongDirection = b.x * direction.x + b.y * direction.y
-        return bAlongDirection - aAlongDirection
-      },
-    )
+    const candidatePoints = this.getTraceAnchorCandidatePoints(
+      label,
+      orientation,
+    ).sort((a, b) => {
+      const aAlongDirection = a.x * direction.x + a.y * direction.y
+      const bAlongDirection = b.x * direction.x + b.y * direction.y
+      return bAlongDirection - aAlongDirection
+    })
 
     for (const anchorPoint of candidatePoints) {
       const candidate = this.createCandidate(label, anchorPoint, orientation)
@@ -668,13 +669,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number,
   ) {
     const direction = dir(orientation)
-    const candidatePoints = this.getTraceAnchorCandidatePoints(label).sort(
-      (a, b) => {
-        const aAlongDirection = a.x * direction.x + a.y * direction.y
-        const bAlongDirection = b.x * direction.x + b.y * direction.y
-        return bAlongDirection - aAlongDirection
-      },
-    )
+    const candidatePoints = this.getTraceAnchorCandidatePoints(
+      label,
+      orientation,
+    ).sort((a, b) => {
+      const aAlongDirection = a.x * direction.x + a.y * direction.y
+      const bAlongDirection = b.x * direction.x + b.y * direction.y
+      return bAlongDirection - aAlongDirection
+    })
 
     for (const connectorSource of candidatePoints) {
       const preservedColumnAnchor = this.getSearchStartAnchor(
@@ -742,11 +744,52 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return null
   }
 
-  private getTraceAnchorCandidatePoints(label: NetLabelPlacement) {
+  private getTraceAnchorCandidatePoints(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+  ) {
     const seen = new Set<string>()
     const points: Point[] = []
+    const connectedTraceIds = new Set(label.mspConnectionPairIds ?? [])
 
-    for (const traceId of label.mspConnectionPairIds ?? []) {
+    if (isYOrientation(orientation)) {
+      const connectedPinIds = new Set<string>()
+      for (const traceId of connectedTraceIds) {
+        for (const pinId of this.traceMap[traceId]?.pinIds ?? []) {
+          connectedPinIds.add(pinId)
+        }
+      }
+
+      // Multi-pin rails are routed as a chain of pairwise traces. Follow the
+      // pairs only when they share both a pin and an aligned vertical rail,
+      // which identifies one continuous rail. A shared pin alone can join
+      // unrelated branches whose rail offsets are far apart; walking those
+      // branches would extend the label connector across the schematic.
+      let foundConnectedTrace = true
+      while (foundConnectedTrace) {
+        foundConnectedTrace = false
+        for (const trace of Object.values(this.traceMap)) {
+          if (connectedTraceIds.has(trace.mspPairId)) continue
+          if (trace.mspPairId.startsWith("available-net-orientation-")) continue
+          if (trace.globalConnNetId !== label.globalConnNetId) continue
+          if (!trace.pinIds.some((pinId) => connectedPinIds.has(pinId)))
+            continue
+          const connectedTraces = [...connectedTraceIds].flatMap((traceId) => {
+            const connectedTrace = this.traceMap[traceId]
+            return connectedTrace ? [connectedTrace] : []
+          })
+          if (!this.sharesVerticalRailWithAny(trace, connectedTraces)) {
+            continue
+          }
+
+          connectedTraceIds.add(trace.mspPairId)
+          for (const pinId of trace.pinIds) connectedPinIds.add(pinId)
+          foundConnectedTrace = true
+        }
+      }
+    }
+
+    for (const traceId of connectedTraceIds) {
       const trace = this.traceMap[traceId]
       if (!trace) continue
       for (const point of trace.tracePath) {
@@ -758,6 +801,39 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return points
+  }
+
+  private sharesVerticalRailWithAny(
+    trace: SolvedTracePath,
+    otherTraces: SolvedTracePath[],
+  ) {
+    const verticalRailXs = new Set<number>()
+    for (const otherTrace of otherTraces) {
+      for (let i = 0; i < otherTrace.tracePath.length - 1; i++) {
+        const start = otherTrace.tracePath[i]!
+        const end = otherTrace.tracePath[i + 1]!
+        if (
+          Math.abs(start.x - end.x) <= EPS &&
+          Math.abs(start.y - end.y) > EPS
+        ) {
+          verticalRailXs.add(start.x)
+        }
+      }
+    }
+
+    for (let i = 0; i < trace.tracePath.length - 1; i++) {
+      const start = trace.tracePath[i]!
+      const end = trace.tracePath[i + 1]!
+      if (
+        Math.abs(start.x - end.x) <= EPS &&
+        Math.abs(start.y - end.y) > EPS &&
+        [...verticalRailXs].some((x) => Math.abs(x - start.x) <= EPS)
+      ) {
+        return true
+      }
+    }
+
+    return false
   }
 
   private getAvailableOrientations(label: NetLabelPlacement) {
