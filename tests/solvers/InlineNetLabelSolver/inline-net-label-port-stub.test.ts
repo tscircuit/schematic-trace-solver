@@ -10,9 +10,11 @@ test("single-pin named nets get outward inline-label stubs", () => {
 
   const placements = solver.inlineNetLabelSolver!.inlineNetLabelPlacements
   expect(placements.map((placement) => placement.netId).sort()).toEqual([
+    "NET_BOTTOM",
     "NET_MDC",
     "NET_PRU0_MII_RXLINK1",
     "NET_PRU0_MII_TX_CLK1",
+    "NET_TOP",
   ])
   expect(placements.every((placement) => placement.pinIds.length === 1)).toBe(
     true,
@@ -29,6 +31,27 @@ test("single-pin named nets get outward inline-label stubs", () => {
   )!.stubTracePath!
   expect(leftStub[1]!.x).toBeLessThan(leftStub[0]!.x)
   expect(rightStub[1]!.x).toBeGreaterThan(rightStub[0]!.x)
+
+  const topPlacement = placements.find(
+    (placement) => placement.netId === "NET_TOP",
+  )!
+  const bottomPlacement = placements.find(
+    (placement) => placement.netId === "NET_BOTTOM",
+  )!
+  expect(topPlacement.axis).toBe("y")
+  expect(bottomPlacement.axis).toBe("y")
+  expect(topPlacement.stubTracePath![1]!.x).toBe(
+    topPlacement.stubTracePath![0]!.x,
+  )
+  expect(bottomPlacement.stubTracePath![1]!.x).toBe(
+    bottomPlacement.stubTracePath![0]!.x,
+  )
+  expect(topPlacement.stubTracePath![1]!.y).toBeGreaterThan(
+    topPlacement.stubTracePath![0]!.y,
+  )
+  expect(bottomPlacement.stubTracePath![1]!.y).toBeLessThan(
+    bottomPlacement.stubTracePath![0]!.y,
+  )
 
   const shortLeftStub = placements.find(
     (placement) => placement.netId === "NET_MDC",
@@ -47,8 +70,12 @@ test("single-pin named nets get outward inline-label stubs", () => {
     9,
   )
 
+  const output = solver.inlineNetLabelSolver!.getOutput()
+  expect(output.netLabelPlacements).toHaveLength(0)
   expect(
-    solver.inlineNetLabelSolver!.getOutput().netLabelPlacements,
+    output.traces.filter((trace) =>
+      trace.mspPairId.startsWith("available-net-orientation-"),
+    ),
   ).toHaveLength(0)
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)

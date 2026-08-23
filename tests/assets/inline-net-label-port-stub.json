@@ -8,7 +8,9 @@
       "pins": [
         { "pinId": "U1.1", "x": -0.5, "y": 0.3, "_facingDirection": "x-" },
         { "pinId": "U1.2", "x": 0.5, "y": -0.2, "_facingDirection": "x+" },
-        { "pinId": "U1.3", "x": -0.5, "y": -0.1, "_facingDirection": "x-" }
+        { "pinId": "U1.3", "x": -0.5, "y": -0.1, "_facingDirection": "x-" },
+        { "pinId": "U1.4", "x": -0.2, "y": 0.5, "_facingDirection": "y+" },
+        { "pinId": "U1.5", "x": 0.2, "y": -0.5, "_facingDirection": "y-" }
       ]
     }
   ],
@@ -37,11 +39,29 @@
       "allowInlineNetLabel": true,
       "inlineNetLabelWidth": 0.65,
       "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "NET_TOP",
+      "pinIds": ["U1.4"],
+      "netLabelWidth": 0.75,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.75,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "NET_BOTTOM",
+      "pinIds": ["U1.5"],
+      "netLabelWidth": 0.95,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.95,
+      "inlineNetLabelHeight": 0.12
     }
   ],
   "availableNetLabelOrientations": {
     "NET_PRU0_MII_TX_CLK1": ["x-", "x+"],
     "NET_PRU0_MII_RXLINK1": ["x-", "x+"],
-    "NET_MDC": ["x-", "x+"]
+    "NET_MDC": ["x-", "x+"],
+    "NET_TOP": ["x-", "x+"],
+    "NET_BOTTOM": ["x-", "x+"]
   }
 }

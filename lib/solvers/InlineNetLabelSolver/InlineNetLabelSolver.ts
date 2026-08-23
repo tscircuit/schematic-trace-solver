@@ -3,6 +3,7 @@ import type { GraphicsObject, Rect } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type {
   InputDirectConnection,
@@ -183,8 +184,9 @@ export class InlineNetLabelSolver extends BaseSolver {
 
   /**
    * Converts a conventional port-only anchored placement into an inline label
-   * on a generated outward stub. The anchored solver has already selected a
-   * collision-free orientation, so the stub follows that same direction.
+   * on a generated outward stub. The stub follows the pin's true facing
+   * direction; an anchored label may finish in another direction after an
+   * elbow, which is not the direction a terminal stub should leave the pin.
    */
   private computePortOnlyInlinePlacement(
     netConnection: InputNetConnection,
@@ -200,6 +202,11 @@ export class InlineNetLabelSolver extends BaseSolver {
     )
     if (!anchoredPlacement) return null
 
+    const inputChip = this.inputProblem.chips.find((chip) =>
+      chip.pins.some((pin) => pin.pinId === pinId),
+    )
+    const inputPin = inputChip?.pins.find((pin) => pin.pinId === pinId)
+
     const height =
       netConnection.inlineNetLabelHeight ?? DEFAULT_INLINE_NET_LABEL_HEIGHT
     const width =
@@ -210,8 +217,13 @@ export class InlineNetLabelSolver extends BaseSolver {
     // Leave a small wire tail at both ends of the text so it unmistakably
     // reads as a label on a trace rather than free-standing text.
     const stubLength = Math.max(width + 0.2, 0.6)
-    const start = anchoredPlacement.anchorPoint
-    const direction = anchoredPlacement.orientation
+    const start = inputPin
+      ? { x: inputPin.x, y: inputPin.y }
+      : anchoredPlacement.anchorPoint
+    const direction =
+      inputPin && inputChip
+        ? (inputPin._facingDirection ?? getPinDirection(inputPin, inputChip))
+        : anchoredPlacement.orientation
     const end: Point =
       direction === "x+"
         ? { x: start.x + stubLength, y: start.y }
@@ -549,10 +561,23 @@ export class InlineNetLabelSolver extends BaseSolver {
     return keys
   }
 
+  private getOutputTraces(supersededNetLabelKeys: Set<string>) {
+    return this.traces.filter(
+      (trace) =>
+        !(
+          supersededNetLabelKeys.has(trace.globalConnNetId) &&
+          trace.mspPairId.startsWith("available-net-orientation-")
+        ),
+    )
+  }
+
   getOutput() {
     const superseded = this.getSupersededNetLabelKeys()
     return {
-      traces: this.traces,
+      // AvailableNetOrientationSolver may have routed an elbow from a port to
+      // the anchored label that this inline placement supersedes. Keep the
+      // actual net trace, but discard that now-orphaned label connector.
+      traces: this.getOutputTraces(superseded),
       netLabelPlacements: this.inputNetLabelPlacements.filter(
         (placement) => !superseded.has(placement.globalConnNetId),
       ),
@@ -570,7 +595,8 @@ export class InlineNetLabelSolver extends BaseSolver {
     graphics.points ??= []
     graphics.texts ??= []
 
-    for (const trace of this.traces) {
+    const output = this.getOutput()
+    for (const trace of output.traces) {
       graphics.lines.push({
         points: trace.tracePath,
         strokeColor: "purple",
