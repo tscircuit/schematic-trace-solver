@@ -42,5 +42,36 @@ test("repro TIDA-010076 page 02 net-label placement", () => {
   expect(j5AgndLabel.anchorPoint.y).toBeCloseTo(
     Math.min(...j5GroundPins.map((pin) => pin.y)),
   )
+
+  const powerConnectorPinPairs = [
+    ["schematic_port_50", "schematic_port_266"],
+    ["schematic_port_53", "schematic_port_268"],
+    ["schematic_port_54", "schematic_port_270"],
+    ["schematic_port_55", "schematic_port_264"],
+  ]
+  const output = solver.inlineNetLabelSolver!.getOutput()
+  const clusteredPowerNetIds = new Set(
+    inputProblem.directConnections
+      .filter((connection) =>
+        powerConnectorPinPairs.some((pair) =>
+          pair.every((pinId) => connection.pinIds.includes(pinId)),
+        ),
+      )
+      .map((connection) => connection.netId),
+  )
+
+  for (const pinPair of powerConnectorPinPairs) {
+    expect(
+      output.traces.some((trace) =>
+        pinPair.every((pinId) => trace.pinIds.includes(pinId)),
+      ),
+    ).toBe(true)
+  }
+  expect(
+    output.netLabelPlacements.filter((label) =>
+      clusteredPowerNetIds.has(label.netId),
+    ),
+  ).toEqual([])
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

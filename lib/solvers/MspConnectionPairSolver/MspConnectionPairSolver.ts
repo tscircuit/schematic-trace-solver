@@ -14,7 +14,7 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCenterLines"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
-import { isLabeledPeripheralConnection } from "./isLabeledPeripheralConnection"
+import { getLabeledConnectionRouteReason } from "./isLabeledPeripheralConnection"
 
 export type MspConnectionPairId = string
 export const DEFAULT_MAX_MSP_PAIR_DISTANCE = 1
@@ -26,6 +26,8 @@ export type MspConnectionPair = {
   dcConnNetId: string
   globalConnNetId: string
   userNetId?: string
+  /** The trace replaces fallback labels that could not fit between its pins. */
+  suppressNetLabel?: boolean
   pins: [InputPin & { chipId: string }, InputPin & { chipId: string }]
 }
 
@@ -121,14 +123,17 @@ export class MspConnectionPairSolver extends BaseSolver {
       if (this.directConnectionPinPairKeys.has(pinPairKey)) {
         pairDistance = distance(p1, p2)
       }
-      // Labeled one-pin peripherals need a real trace even when they are far
-      // apart; skipping the MSP pair would leave only the fallback path.
-      const isLabeledPeripheral = isLabeledPeripheralConnection({
+      // Labeled one-pin peripherals and opposed pins whose fallback labels
+      // cannot fit need a real trace even when they are far apart.
+      const labeledConnectionRouteReason = getLabeledConnectionRouteReason({
         inputProblem: this.inputProblem,
         chipMap: this.chipMap,
         pins: [p1, p2],
       })
-      if (pairDistance > this.maxMspPairDistance && !isLabeledPeripheral) {
+      if (
+        pairDistance > this.maxMspPairDistance &&
+        !labeledConnectionRouteReason
+      ) {
         // Too far apart; skip creating an MSP pair for this net
         return
       }
@@ -155,12 +160,16 @@ export class MspConnectionPairSolver extends BaseSolver {
       const globalConnNetId = this.globalConnMap.getNetConnectedToId(pin1!)!
       const userNetId =
         this.userNetIdByPinId[pin1!] ?? this.userNetIdByPinId[pin2!]
+      const suppressNetLabel =
+        pairDistance > this.maxMspPairDistance &&
+        labeledConnectionRouteReason === "overlapping-fallback-labels"
 
       this.mspConnectionPairs.push({
         mspPairId: `${pin1}-${pin2}`,
         dcConnNetId: dcNetId,
         globalConnNetId,
         userNetId,
+        suppressNetLabel,
         pins: [p1, p2],
       })
 
