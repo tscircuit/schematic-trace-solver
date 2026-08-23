@@ -43,7 +43,9 @@ export interface InputDirectConnection {
    *
    * Only set this for connections whose net name is worth showing on the wire -
    * the solver trusts the caller (e.g. @tscircuit/core) to make that decision.
-   * An inline label is only emitted when the connection actually got routed.
+   * When the connection is routed, the label is placed along the trace. If
+   * routing is intentionally skipped, both endpoint labels may instead become
+   * outward inline stubs.
    */
   allowInlineNetLabel?: boolean
 
@@ -67,9 +69,10 @@ export interface InputNetConnection {
   netLabelHeight?: number
 
   /**
-   * When true, a named single-pin net may be drawn as a short outward trace
-   * stub with its net name placed inline. Multi-pin net connections retain the
-   * regular anchored-label behavior.
+   * When true, a named one- or two-pin net may use inline labels. A single-pin
+   * net gets an outward stub. A routed two-pin net gets one label along its
+   * trace; when that route is intentionally skipped, both endpoints get
+   * outward stubs. Nets with more than two pins retain anchored labels.
    */
   allowInlineNetLabel?: boolean
 

@@ -52,8 +52,9 @@ export interface InlineNetLabelPlacement {
   pinIds: PinId[]
 
   /**
-   * A generated single-ended trace stub. Present only for an eligible
-   * single-pin net connection; routed point-to-point traces omit it.
+   * A generated single-ended trace stub. Present for a single-pin net or for
+   * one endpoint of an unrouted two-pin net; routed point-to-point traces omit
+   * it.
    */
   stubTracePath?: [Point, Point]
 
@@ -85,12 +86,15 @@ interface InlineNetLabelSolverInput {
   netLabelPlacements: NetLabelPlacement[]
 }
 
+type InlineEligibleConnection = InputDirectConnection | InputNetConnection
+
 const getPinPairKey = (pinIds: readonly string[]) =>
   [...pinIds].sort().join("::")
 
 /**
  * Places "inline net labels" - net names drawn alongside the trace they belong
- * to - for direct connections that opted in via `allowInlineNetLabel`.
+ * to - for one- or two-pin connections that opted in via
+ * `allowInlineNetLabel`.
  *
  * Any regular (anchored) net label placement for the same net is dropped, so a
  * net is never labeled twice.
@@ -102,11 +106,8 @@ export class InlineNetLabelSolver extends BaseSolver {
 
   inlineNetLabelPlacements: InlineNetLabelPlacement[] = []
 
-  /** Direct connections that opted in, still waiting to be processed */
-  queuedDirectConnections: InputDirectConnection[]
-
-  /** Single-pin net connections that opted in, still waiting to be processed */
-  queuedPortOnlyNetConnections: InputNetConnection[]
+  /** Eligible one- or two-pin connections still waiting to be processed. */
+  queuedConnections: InlineEligibleConnection[]
 
   private tracesByPinPairKey: Map<string, SolvedTracePath[]>
   private hasAlignedPortOnlyStubs = false
@@ -117,12 +118,18 @@ export class InlineNetLabelSolver extends BaseSolver {
     this.traces = input.traces
     this.inputNetLabelPlacements = input.netLabelPlacements
 
-    this.queuedDirectConnections = this.inputProblem.directConnections.filter(
-      (dc) => dc.allowInlineNetLabel && dc.netId,
-    )
-    this.queuedPortOnlyNetConnections = this.inputProblem.netConnections.filter(
-      (nc) => nc.allowInlineNetLabel && nc.pinIds.length === 1 && nc.netId,
-    )
+    this.queuedConnections = [
+      ...this.inputProblem.directConnections.filter(
+        (connection) => connection.allowInlineNetLabel && connection.netId,
+      ),
+      ...this.inputProblem.netConnections.filter(
+        (connection) =>
+          connection.allowInlineNetLabel &&
+          connection.pinIds.length >= 1 &&
+          connection.pinIds.length <= 2 &&
+          connection.netId,
+      ),
+    ]
 
     this.tracesByPinPairKey = new Map()
     for (const trace of this.traces) {
@@ -147,22 +154,28 @@ export class InlineNetLabelSolver extends BaseSolver {
   }
 
   override _step() {
-    const directConnection = this.queuedDirectConnections.shift()
-    if (directConnection) {
-      const placement = this.computeInlinePlacement(directConnection)
-      if (placement) {
-        this.inlineNetLabelPlacements.push(placement)
-      }
-      return
-    }
+    const connection = this.queuedConnections.shift()
+    if (connection) {
+      const routedTraces =
+        connection.pinIds.length === 2
+          ? (this.tracesByPinPairKey.get(getPinPairKey(connection.pinIds)) ??
+            [])
+          : []
 
-    const portOnlyNetConnection = this.queuedPortOnlyNetConnections.shift()
-    if (portOnlyNetConnection) {
-      const placement = this.computePortOnlyInlinePlacement(
-        portOnlyNetConnection,
-      )
-      if (placement) {
-        this.inlineNetLabelPlacements.push(placement)
+      if (routedTraces.length > 0) {
+        const placement = this.computeInlinePlacement(connection)
+        if (placement) this.inlineNetLabelPlacements.push(placement)
+      } else {
+        // A one-pin net has one conventional endpoint label, while a skipped
+        // two-pin route has one at each endpoint. Convert a two-pin pair
+        // atomically so a collision at one endpoint cannot leave mixed inline
+        // and anchored representations for the same net.
+        const terminalPlacements = connection.pinIds.map((pinId) =>
+          this.computeTerminalInlinePlacement(connection, pinId),
+        )
+        if (terminalPlacements.every((placement) => placement !== null)) {
+          this.inlineNetLabelPlacements.push(...terminalPlacements)
+        }
       }
       return
     }
@@ -183,20 +196,20 @@ export class InlineNetLabelSolver extends BaseSolver {
   }
 
   /**
-   * Converts a conventional port-only anchored placement into an inline label
-   * on a generated outward stub. The stub follows the pin's true facing
-   * direction; an anchored label may finish in another direction after an
-   * elbow, which is not the direction a terminal stub should leave the pin.
+   * Converts one conventional endpoint placement into an inline label on a
+   * generated outward stub. The stub follows the pin's true facing direction;
+   * an anchored label may finish in another direction after an elbow, which is
+   * not the direction a terminal stub should leave the pin.
    */
-  private computePortOnlyInlinePlacement(
-    netConnection: InputNetConnection,
+  private computeTerminalInlinePlacement(
+    connection: InlineEligibleConnection,
+    pinId: PinId,
   ): InlineNetLabelPlacement | null {
-    const [pinId] = netConnection.pinIds
-    if (!pinId) return null
+    if (!connection.netId) return null
 
     const anchoredPlacement = this.inputNetLabelPlacements.find(
       (placement) =>
-        placement.netId === netConnection.netId &&
+        placement.netId === connection.netId &&
         placement.pinIds.length === 1 &&
         placement.pinIds[0] === pinId,
     )
@@ -208,11 +221,11 @@ export class InlineNetLabelSolver extends BaseSolver {
     const inputPin = inputChip?.pins.find((pin) => pin.pinId === pinId)
 
     const height =
-      netConnection.inlineNetLabelHeight ?? DEFAULT_INLINE_NET_LABEL_HEIGHT
+      connection.inlineNetLabelHeight ?? DEFAULT_INLINE_NET_LABEL_HEIGHT
     const width =
-      netConnection.inlineNetLabelWidth ??
-      netConnection.netLabelWidth ??
-      estimateInlineNetLabelWidth(netConnection.netId, height)
+      connection.inlineNetLabelWidth ??
+      connection.netLabelWidth ??
+      estimateInlineNetLabelWidth(connection.netId, height)
 
     // Leave a small wire tail at both ends of the text so it unmistakably
     // reads as a label on a trace rather than free-standing text.
@@ -273,7 +286,7 @@ export class InlineNetLabelSolver extends BaseSolver {
 
     return {
       globalConnNetId: anchoredPlacement.globalConnNetId,
-      netId: netConnection.netId,
+      netId: connection.netId,
       pinIds: [pinId],
       stubTracePath: [start, end],
       axis,
@@ -286,12 +299,12 @@ export class InlineNetLabelSolver extends BaseSolver {
   }
 
   private computeInlinePlacement(
-    directConnection: InputDirectConnection,
+    connection: InlineEligibleConnection,
   ): InlineNetLabelPlacement | null {
     // Only connections the router actually drew a trace for can carry an inline
     // label - there's nothing to run parallel to otherwise.
     const traces =
-      this.tracesByPinPairKey.get(getPinPairKey(directConnection.pinIds)) ?? []
+      this.tracesByPinPairKey.get(getPinPairKey(connection.pinIds)) ?? []
     if (traces.length === 0) return null
 
     const trace = traces[0]!
@@ -299,11 +312,11 @@ export class InlineNetLabelSolver extends BaseSolver {
     if (segments.length === 0) return null
 
     const height =
-      directConnection.inlineNetLabelHeight ?? DEFAULT_INLINE_NET_LABEL_HEIGHT
+      connection.inlineNetLabelHeight ?? DEFAULT_INLINE_NET_LABEL_HEIGHT
     const width =
-      directConnection.inlineNetLabelWidth ??
-      directConnection.netLabelWidth ??
-      estimateInlineNetLabelWidth(directConnection.netId!, height)
+      connection.inlineNetLabelWidth ??
+      connection.netLabelWidth ??
+      estimateInlineNetLabelWidth(connection.netId!, height)
 
     const offset = height / 2 + INLINE_NET_LABEL_TRACE_MARGIN
 
@@ -360,9 +373,9 @@ export class InlineNetLabelSolver extends BaseSolver {
 
           return {
             globalConnNetId: trace.globalConnNetId,
-            netId: directConnection.netId,
+            netId: connection.netId,
             mspPairId: trace.mspPairId,
-            pinIds: [...directConnection.pinIds],
+            pinIds: [...connection.pinIds],
             axis: segment.axis,
             anchorPoint,
             center,
@@ -380,7 +393,7 @@ export class InlineNetLabelSolver extends BaseSolver {
     // endpoints.
     const spanPlacement = this.computeSpanPlacement({
       trace,
-      directConnection,
+      connection,
       width,
       height,
       offset,
@@ -400,13 +413,13 @@ export class InlineNetLabelSolver extends BaseSolver {
    */
   private computeSpanPlacement({
     trace,
-    directConnection,
+    connection,
     width,
     height,
     offset,
   }: {
     trace: SolvedTracePath
-    directConnection: InputDirectConnection
+    connection: InlineEligibleConnection
     width: number
     height: number
     offset: number
@@ -496,9 +509,9 @@ export class InlineNetLabelSolver extends BaseSolver {
 
         return {
           globalConnNetId: trace.globalConnNetId,
-          netId: directConnection.netId,
+          netId: connection.netId,
           mspPairId: trace.mspPairId,
-          pinIds: [...directConnection.pinIds],
+          pinIds: [...connection.pinIds],
           axis,
           anchorPoint,
           center,
