@@ -4,7 +4,9 @@ import inputProblem from "../assets/example51.json"
 import "tests/fixtures/matcher"
 
 test("example51", () => {
-  const solver = new SchematicTracePipelineSolver(inputProblem as any)
+  const solver = new SchematicTracePipelineSolver(inputProblem as any, {
+    hideRatsNet: true,
+  })
 
   solver.solve()
 

@@ -1945,7 +1945,7 @@
     },
     {
       "netId": ".C31 > .pin1 to .R9 > .pin1",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.48,
       "pinIds": [
         "schematic_port_35",
         "schematic_port_88"
@@ -1953,7 +1953,7 @@
     },
     {
       "netId": ".C31 > .pin1 to .C4 > .pin1",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.48,
       "pinIds": [
         "schematic_port_35",
         "schematic_port_6"
@@ -1961,7 +1961,7 @@
     },
     {
       "netId": ".C31 > .pin1 to .C20 > .pin1",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.48,
       "pinIds": [
         "schematic_port_35",
         "schematic_port_12"
@@ -1969,7 +1969,7 @@
     },
     {
       "netId": ".C31 > .pin1 to .R2 > .pin2",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.48,
       "pinIds": [
         "schematic_port_35",
         "schematic_port_75"
@@ -2057,7 +2057,7 @@
     },
     {
       "netId": ".R1 > .pin1 to .R6 > .pin2",
-      "netLabelWidth": 1.08,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_72",
         "schematic_port_83"
@@ -2065,7 +2065,7 @@
     },
     {
       "netId": ".R1 > .pin1 to .R4 > .pin1",
-      "netLabelWidth": 1.08,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_72",
         "schematic_port_78"
@@ -2073,7 +2073,7 @@
     },
     {
       "netId": ".R1 > .pin1 to .R3 > .pin2",
-      "netLabelWidth": 1.08,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_72",
         "schematic_port_77"
@@ -2081,7 +2081,7 @@
     },
     {
       "netId": ".R1 > .pin1 to .C52 > .pin1",
-      "netLabelWidth": 1.08,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_72",
         "schematic_port_58"
@@ -2089,7 +2089,7 @@
     },
     {
       "netId": ".R1 > .pin1 to .C51 > .pin1",
-      "netLabelWidth": 1.08,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_72",
         "schematic_port_56"
@@ -2097,7 +2097,7 @@
     },
     {
       "netId": ".R1 > .pin1 to .C50 > .pin1",
-      "netLabelWidth": 1.08,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_72",
         "schematic_port_54"
@@ -2105,7 +2105,7 @@
     },
     {
       "netId": ".R1 > .pin1 to .C53 > .pin1",
-      "netLabelWidth": 1.08,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_72",
         "schematic_port_60"
@@ -2113,7 +2113,7 @@
     },
     {
       "netId": ".R1 > .pin1 to .C100 > .pin1",
-      "netLabelWidth": 1.08,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_72",
         "schematic_port_70"
@@ -2121,7 +2121,7 @@
     },
     {
       "netId": ".C34 > .pin1 to .R8 > .pin1",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_40",
         "schematic_port_86"
@@ -2129,7 +2129,7 @@
     },
     {
       "netId": ".C34 > .pin1 to .U1 > .pin28",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_40",
         "schematic_port_145"
@@ -2137,7 +2137,7 @@
     },
     {
       "netId": ".C32 > .pin1 to .R8 > .pin2",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_36",
         "schematic_port_87"
@@ -2145,7 +2145,7 @@
     },
     {
       "netId": ".C32 > .pin1 to .U1 > .pin7",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_36",
         "schematic_port_128"
@@ -2153,7 +2153,7 @@
     },
     {
       "netId": ".C32 > .pin1 to .P1 > .pin2",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_36",
         "schematic_port_125"
@@ -2161,7 +2161,7 @@
     },
     {
       "netId": ".C32 > .pin1 to .R110 > .pin2",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_36",
         "schematic_port_109"
@@ -2169,7 +2169,7 @@
     },
     {
       "netId": ".C32 > .pin1 to .R11 > .pin2",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.6,
       "pinIds": [
         "schematic_port_36",
         "schematic_port_91"
@@ -2177,7 +2177,7 @@
     },
     {
       "netId": ".C2 > .pin1 to .R1 > .pin2",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.84,
       "pinIds": [
         "schematic_port_2",
         "schematic_port_73"
@@ -2185,7 +2185,7 @@
     },
     {
       "netId": ".C2 > .pin1 to .R5 > .pin2",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.84,
       "pinIds": [
         "schematic_port_2",
         "schematic_port_81"
@@ -2307,7 +2307,7 @@
     },
     {
       "netId": ".C31 > .pin2 to .R7 > .pin1",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.84,
       "pinIds": [
         "schematic_port_34",
         "schematic_port_84"
@@ -2315,7 +2315,7 @@
     },
     {
       "netId": ".C31 > .pin2 to .C3 > .pin1",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.84,
       "pinIds": [
         "schematic_port_34",
         "schematic_port_4"
@@ -2323,7 +2323,7 @@
     },
     {
       "netId": ".C31 > .pin2 to .U1 > .pin22",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.84,
       "pinIds": [
         "schematic_port_34",
         "schematic_port_150"
@@ -2331,7 +2331,7 @@
     },
     {
       "netId": ".C31 > .pin2 to .Q2 > .drain",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.84,
       "pinIds": [
         "schematic_port_34",
         "schematic_port_115"
@@ -2339,7 +2339,7 @@
     },
     {
       "netId": ".C31 > .pin2 to .C55 > .pin1",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.84,
       "pinIds": [
         "schematic_port_34",
         "schematic_port_62"
@@ -2347,7 +2347,7 @@
     },
     {
       "netId": ".C31 > .pin2 to .C56 > .pin1",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.84,
       "pinIds": [
         "schematic_port_34",
         "schematic_port_64"
@@ -2355,7 +2355,7 @@
     },
     {
       "netId": ".C31 > .pin2 to .C57 > .pin1",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.84,
       "pinIds": [
         "schematic_port_34",
         "schematic_port_66"
@@ -2363,7 +2363,7 @@
     },
     {
       "netId": ".C31 > .pin2 to .C58 > .pin1",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.84,
       "pinIds": [
         "schematic_port_34",
         "schematic_port_68"
@@ -2371,7 +2371,7 @@
     },
     {
       "netId": ".C31 > .pin2 to .R2 > .pin1",
-      "netLabelWidth": 0.96,
+      "netLabelWidth": 0.84,
       "pinIds": [
         "schematic_port_34",
         "schematic_port_74"
@@ -2588,6 +2588,18 @@
   ],
   "netConnections": [
     {
+      "netId": "NET_01",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.84,
+      "pinIds": [
+        "schematic_port_2",
+        "schematic_port_14",
+        "schematic_port_73",
+        "schematic_port_81",
+        "schematic_port_112"
+      ]
+    },
+    {
       "netId": "GND",
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.48,
@@ -2634,6 +2646,98 @@
         "schematic_port_151",
         "schematic_port_158"
       ]
+    },
+    {
+      "netId": "NET_08",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.84,
+      "pinIds": [
+        "schematic_port_4",
+        "schematic_port_34",
+        "schematic_port_62",
+        "schematic_port_64",
+        "schematic_port_66",
+        "schematic_port_68",
+        "schematic_port_74",
+        "schematic_port_84",
+        "schematic_port_115",
+        "schematic_port_150"
+      ]
+    },
+    {
+      "netId": "BAT",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_6",
+        "schematic_port_12",
+        "schematic_port_35",
+        "schematic_port_75",
+        "schematic_port_88"
+      ]
+    },
+    {
+      "netId": "NET_03",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.84,
+      "pinIds": [
+        "schematic_port_17",
+        "schematic_port_110",
+        "schematic_port_113",
+        "schematic_port_118",
+        "schematic_port_131"
+      ]
+    },
+    {
+      "netId": "NET_05",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.84,
+      "pinIds": [
+        "schematic_port_19",
+        "schematic_port_111",
+        "schematic_port_116",
+        "schematic_port_121",
+        "schematic_port_132"
+      ]
+    },
+    {
+      "netId": "VDDA",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_36",
+        "schematic_port_87",
+        "schematic_port_91",
+        "schematic_port_109",
+        "schematic_port_125",
+        "schematic_port_128"
+      ]
+    },
+    {
+      "netId": "REGN",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_40",
+        "schematic_port_86",
+        "schematic_port_145"
+      ]
+    },
+    {
+      "netId": "PPHV",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_54",
+        "schematic_port_56",
+        "schematic_port_58",
+        "schematic_port_60",
+        "schematic_port_70",
+        "schematic_port_72",
+        "schematic_port_77",
+        "schematic_port_78",
+        "schematic_port_83"
+      ]
     }
   ],
   "textBoxes": [
@@ -2661,6 +2765,30 @@
   "availableNetLabelOrientations": {
     "GND": [
       "y-"
+    ],
+    "BAT": [
+      "y+"
+    ],
+    "PPHV": [
+      "y+"
+    ],
+    "REGN": [
+      "y+"
+    ],
+    "VDDA": [
+      "y+"
+    ],
+    "NET_01": [
+      "y+"
+    ],
+    "NET_03": [
+      "y+"
+    ],
+    "NET_05": [
+      "y+"
+    ],
+    "NET_08": [
+      "y+"
     ]
   },
   "maxMspPairDistance": 2.4,
@@ -5097,6 +5225,5 @@
       }
     },
     "spatialIndexIdToChip": {}
-  },
-  "_hideRatsNet": false
+  }
 }
