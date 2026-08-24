@@ -128,6 +128,24 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
   expect(
     circuitJson.filter((element) => element.type === "schematic_component"),
   ).toHaveLength(3)
+  const genericBoxComponent = circuitJson.find(
+    (element) =>
+      element.type === "schematic_component" &&
+      element.source_component_id === "source_component_0",
+  )
+  if (genericBoxComponent?.type !== "schematic_component") {
+    throw new Error("Expected generic box schematic component")
+  }
+  expect(genericBoxComponent.size.width).toBeCloseTo(0.2)
+  expect(genericBoxComponent.size.height).toBe(1)
+  expect(
+    circuitJson.find(
+      (element) =>
+        element.type === "schematic_port" &&
+        element.schematic_component_id ===
+          genericBoxComponent.schematic_component_id,
+    ),
+  ).toMatchObject({ distance_from_component_edge: 0.4 })
   expect(
     circuitJson.find(
       (element) =>

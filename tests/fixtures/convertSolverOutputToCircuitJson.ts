@@ -372,6 +372,65 @@ type SnapshotSymbolGeometry = {
   circuitToSvgOffset: Point
 }
 
+const GENERIC_BOX_STEM_LENGTH = 0.4
+const CHIP_EDGE_TOLERANCE = 1e-6
+
+/**
+ * Legacy solver inputs describe generic box obstacles from stem tip to stem
+ * tip. Circuit JSON's schematic_component size describes only the box body,
+ * while each schematic_port's distance_from_component_edge draws its stem.
+ * Newer inputs already place pin tips outside the box, so only contract an
+ * axis when a pin tip lies on that obstacle's edge.
+ */
+const getGenericBoxSize = (chip: InputChip) => {
+  const halfWidth = chip.width / 2
+  const halfHeight = chip.height / 2
+  const hasHorizontalPinOnEdge = chip.pins.some((pin) => {
+    const direction = getFacingDirection(pin, chip)
+    return (
+      (direction === "x+" || direction === "x-") &&
+      Math.abs(Math.abs(pin.x - chip.center.x) - halfWidth) <=
+        CHIP_EDGE_TOLERANCE
+    )
+  })
+  const hasVerticalPinOnEdge = chip.pins.some((pin) => {
+    const direction = getFacingDirection(pin, chip)
+    return (
+      (direction === "y+" || direction === "y-") &&
+      Math.abs(Math.abs(pin.y - chip.center.y) - halfHeight) <=
+        CHIP_EDGE_TOLERANCE
+    )
+  })
+
+  return {
+    width: hasHorizontalPinOnEdge
+      ? Math.max(0.1, chip.width - 2 * GENERIC_BOX_STEM_LENGTH)
+      : chip.width,
+    height: hasVerticalPinOnEdge
+      ? Math.max(0.1, chip.height - 2 * GENERIC_BOX_STEM_LENGTH)
+      : chip.height,
+  }
+}
+
+const getGenericBoxPortStemLength = ({
+  pin,
+  chip,
+  componentSize,
+  sideOfComponent,
+}: {
+  pin: InputPin
+  chip: InputChip
+  componentSize: { width: number; height: number }
+  sideOfComponent: "left" | "right" | "top" | "bottom"
+}) => {
+  const distanceFromBody =
+    sideOfComponent === "left" || sideOfComponent === "right"
+      ? Math.abs(pin.x - chip.center.x) - componentSize.width / 2
+      : Math.abs(pin.y - chip.center.y) - componentSize.height / 2
+
+  return Math.max(0, Math.min(GENERIC_BOX_STEM_LENGTH, distanceFromBody))
+}
+
 /**
  * Core passes the solver a text-inclusive chip obstacle. Its center and size
  * can therefore include {REF}, {VAL}, or explicit MPN text and must not be used
@@ -736,10 +795,7 @@ export const convertSolverOutputToCircuitJson = (
     const symbolName = symbolGeometry?.symbolName
     const symbolOffset = symbolGeometry?.circuitToSvgOffset ?? { x: 0, y: 0 }
     const componentCenter = symbolGeometry?.center ?? chip.center
-    const componentSize = symbolGeometry?.size ?? {
-      width: chip.width,
-      height: chip.height,
-    }
+    const componentSize = symbolGeometry?.size ?? getGenericBoxSize(chip)
 
     circuitJson.push({
       type: "source_component",
@@ -782,10 +838,19 @@ export const convertSolverOutputToCircuitJson = (
       const sideOfComponent = facingDirectionToSide(facingDirection)
       const pinLabel = getPinLabel(pin.pinId)
       const pinNumber = getPinNumber(pin.pinId)
-      const componentDimension =
-        sideOfComponent === "left" || sideOfComponent === "right"
-          ? chip.width
-          : chip.height
+      const distanceFromComponentEdge = symbolName
+        ? Math.min(
+            0.2,
+            (sideOfComponent === "left" || sideOfComponent === "right"
+              ? componentSize.width
+              : componentSize.height) / 3,
+          )
+        : getGenericBoxPortStemLength({
+            pin,
+            chip,
+            componentSize,
+            sideOfComponent,
+          })
 
       circuitJson.push({
         type: "source_port",
@@ -806,7 +871,7 @@ export const convertSolverOutputToCircuitJson = (
         },
         facing_direction: facingDirectionToCircuitJson(facingDirection),
         side_of_component: sideOfComponent,
-        distance_from_component_edge: Math.min(0.2, componentDimension / 3),
+        distance_from_component_edge: distanceFromComponentEdge,
         display_pin_label: pinNumber === undefined ? pinLabel : undefined,
         pin_number: pinNumber,
       } satisfies SchematicPort)

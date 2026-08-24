@@ -1,4 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="800" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(480.3650774589,0,0,-480.3650774589,636.0273808094,384.2920619671)"><style>
+<svg width="2416" height="1200" viewBox="0 0 2416 1200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on the left and Circuit JSON schematic on the right">
+  <g transform="translate(0, 0) scale(1.875, 1.875) translate(0, 0)">
+    <rect width="100%" height="100%" fill="white"/><g><polyline data-points="-1.2246467991473533e-17,0.2 -1.2246467991473533e-17,0.25 -0.25,0.25 -0.25,0.14900000000000002" data-type="line" data-label="" points="440.48192771084337,88.19277108433738 440.48192771084337,40.00000000000003 199.5180722891566,40.00000000000003 199.5180722891566,137.34939759036146" fill="none" stroke="purple" stroke-width="1px"/></g><g><rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="344.0963855421687" y="88.19277108433738" width="192.77108433734935" height="385.5421686746988" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.0010375"/></g><g><rect data-type="rect" data-label="netId: GND
+globalConnNetId: connectivity_net0" data-x="-0.25" data-y="-0.09099999999999997" x="103.13253012048193" y="137.3493975903615" width="192.77108433734935" height="462.6506024096385" fill="#00000066" stroke="#000000" stroke-width="0.0010375"/></g><g><circle data-type="point" data-label="TP1.1
+y+" data-x="-1.2246467991473533e-17" data-y="0.2" cx="440.48192771084337" cy="88.19277108433738" r="3" fill="hsl(128, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="anchorPoint
+orientation: y-" data-x="-0.25" data-y="0.14900000000000002" cx="199.5180722891566" cy="137.34939759036146" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g id="crosshair" style="display: none"><line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5"/><line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5"/><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+                const svg = e.currentTarget;
+                const rect = svg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const crosshair = svg.getElementById('crosshair');
+                const h = svg.getElementById('crosshair-h');
+                const v = svg.getElementById('crosshair-v');
+                const coords = svg.getElementById('coordinates');
+
+                crosshair.style.display = 'block';
+                h.setAttribute('x1', '0');
+                h.setAttribute('x2', '640');
+                h.setAttribute('y1', y);
+                h.setAttribute('y2', y);
+                v.setAttribute('x1', x);
+                v.setAttribute('x2', x);
+                v.setAttribute('y1', '0');
+                v.setAttribute('y2', '640');
+
+                // Calculate real coordinates using inverse transformation
+                const matrix = {"a":963.855421686747,"c":0,"e":440.48192771084337,"b":0,"d":-963.855421686747,"f":280.9638554216868};
+                // Manually invert and apply the affine transform
+                // Since we only use translate and scale, we can directly compute:
+                // x' = (x - tx) / sx
+                // y' = (y - ty) / sy
+                const sx = matrix.a;
+                const sy = matrix.d;
+                const tx = matrix.e;
+                const ty = matrix.f;
+                const realPoint = {
+                  x: (x - tx) / sx,
+                  y: (y - ty) / sy // Flip y back since we used negative scale
+                }
+
+                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+                coords.setAttribute('x', (x + 5).toString());
+                coords.setAttribute('y', (y - 5).toString());
+              });
+              document.currentScript.parentElement.addEventListener('mouseleave', () => {
+                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+              });
+            ]]></script>
+  </g>
+  <g transform="translate(1216, 200)">
+    <style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
               .component { fill: none; stroke: rgb(132, 0, 0); }
@@ -9,11 +60,13 @@
               .port-label { fill: rgb(0, 100, 100); }
               .component-name { fill: rgb(0, 100, 100); }
 
-            </style><rect class="boundary" x="0" y="0" width="1200" height="800"/><g class="trace sch-trace" data-layer="base" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0"><path d="M 636.0273808094 288.21904647532 L 636.0273808094 264.200792602375 L 515.936111444675 264.200792602375 L 515.936111444675 312.7176654257239" class="trace-invisible-hover-outline sch-trace-hitbox" stroke="rgb(0, 150, 0)" fill="none" stroke-width="76.858412393424px" stroke-linecap="round" opacity="0" stroke-linejoin="round"/><path class="sch-trace-path" d="M 636.0273808094 288.21904647532 L 636.0273808094 264.200792602375 L 515.936111444675 264.200792602375 L 515.936111444675 312.7176654257239" stroke="rgb(0, 150, 0)" fill="none" stroke-width="9.607301549178px" stroke-linecap="round" stroke-linejoin="round"/></g><g class="trace-overlays sch-trace-overlays" data-layer="overlay" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0"/><g class="sch-component" data-circuit-json-type="schematic_component" data-schematic-component-id="schematic_component_0"><rect class="component chip sch-component-body" x="587.99087306351" y="288.21904647532" width="96.0730154917801" height="192.14603098355997" stroke-width="9.607301549178px" fill="rgb(255, 255, 194)" stroke="rgb(132, 0, 0)"/><rect class="component-overlay sch-component-overlay" x="587.99087306351" y="288.21904647532" width="96.0730154917801" height="192.14603098355997" fill="transparent"/><text class="sch-text" x="636.0273808094" y="384.2920619671" fill="#0f172a" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="64.04867699452px" transform="rotate(0, 636.0273808094, 384.2920619671)">TP1</text><line class="component-pin sch-component-pin sch-port-line" x1="636.0273808094" y1="352.26772346984" x2="636.0273808094" y2="288.21904647532" stroke-width="9.607301549178px"/><g class="sch-port" data-schematic-port-id="source_port_0_0"><rect x="626.420079260222" y="278.611744926142" width="19.214603098356" height="19.214603098356" opacity="0"/></g><text class="pin-number sch-pin-number" x="626.420079260222" y="320.24338497258" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="72.05476161883499px" transform="rotate(-90 626.420079260222 320.24338497258)">1</text></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_0"><circle cx="636.0273808094" cy="288.21904647532" r="19.214603098356" fill="red" opacity="0"/></g><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0" d="
+            </style><rect class="boundary" x="0" y="0" width="1200" height="800"/><g class="trace sch-trace" data-layer="base" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0__stack1"><path d="M 636.0273808094 288.21904647532 L 636.0273808094 264.200792602375 L 515.936111444675 264.200792602375 L 515.936111444675 312.7176654257239" class="trace-invisible-hover-outline sch-trace-hitbox" stroke="rgb(0, 150, 0)" fill="none" stroke-width="76.858412393424px" stroke-linecap="round" opacity="0" stroke-linejoin="round"/><path class="sch-trace-path" d="M 636.0273808094 288.21904647532 L 636.0273808094 264.200792602375 L 515.936111444675 264.200792602375 L 515.936111444675 312.7176654257239" stroke="rgb(0, 150, 0)" fill="none" stroke-width="9.607301549178px" stroke-linecap="round" stroke-linejoin="round"/></g><g class="trace-overlays sch-trace-overlays" data-layer="overlay" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0__stack1"/><g class="sch-component" data-circuit-json-type="schematic_component" data-schematic-component-id="schematic_component_0__stack1"><rect class="component chip sch-component-body" x="587.99087306351" y="360.27380809415496" width="96.0730154917801" height="48.03650774589005" stroke-width="9.607301549178px" fill="rgb(255, 255, 194)" stroke="rgb(132, 0, 0)"/><rect class="component-overlay sch-component-overlay" x="587.99087306351" y="360.27380809415496" width="96.0730154917801" height="48.03650774589005" fill="transparent"/><text class="sch-text" x="636.0273808094" y="384.2920619671" fill="#0f172a" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="64.04867699452px" transform="rotate(0, 636.0273808094, 384.2920619671)">TP1</text><line class="component-pin sch-component-pin sch-port-line" x1="636.0273808094" y1="360.273808094155" x2="636.0273808094" y2="288.21904647532" stroke-width="9.607301549178px"/><g class="sch-port" data-schematic-port-id="source_port_0_0__stack1"><rect x="626.420079260222" y="278.611744926142" width="19.214603098356" height="19.214603098356" opacity="0"/></g><text class="pin-number sch-pin-number" x="626.420079260222" y="324.2464272847375" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="72.05476161883499px" transform="rotate(-90 626.420079260222 324.2464272847375)">1</text></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_0__stack1"><circle cx="636.0273808094" cy="288.21904647532" r="19.214603098356" fill="red" opacity="0"/></g><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0__stack1" d="
     M 515.936111444675,312.7176654257239
     L 563.9726191905651,338.6573796085045
     L 563.9726191905651,559.817461270582
     L 467.89960369878503,559.817461270582
     L 467.89960369878503,338.6573796085045
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="9.607301549178px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0" x="515.936111444675" y="355.9505223970249" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="86.465713942602px" transform="rotate(90 515.936111444675 355.9505223970249)">XXX</text></svg>
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="9.607301549178px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0__stack1" x="515.936111444675" y="355.9505223970249" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="86.465713942602px" transform="rotate(90 515.936111444675 355.9505223970249)">XXX</text>
+  </g>
+</svg>
