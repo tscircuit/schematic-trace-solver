@@ -1137,6 +1137,7 @@
       },
       "width": 5.84,
       "height": 7.540000000000001,
+      "sectionId": "card_top_unboxed",
       "pins": [
         {
           "pinId": "schematic_port_0",
@@ -1363,6 +1364,7 @@
       },
       "width": 5.84,
       "height": 6.767000000000001,
+      "sectionId": "card_top_unboxed",
       "pins": [
         {
           "pinId": "schematic_port_43",

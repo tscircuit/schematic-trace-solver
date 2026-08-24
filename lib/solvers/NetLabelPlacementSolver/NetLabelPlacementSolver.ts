@@ -188,6 +188,13 @@ export class NetLabelPlacementSolver extends BaseSolver {
         )
 
         if (compTraces.length > 0) {
+          // This routed trace exists specifically because two endpoint labels
+          // could not fit in the available gap. Do not replace that pair with
+          // one redundant long label on the newly routed wire. If routing had
+          // failed there would be no trace here, so the port-only fallback
+          // branch below would still label both endpoints.
+          if (compTraces.some((trace) => trace.suppressNetLabel)) continue
+
           // Choose a representative trace (longest by L1 length)
           const lengthOf = (path: SolvedTracePath) => {
             let sum = 0
