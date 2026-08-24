@@ -9,6 +9,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 
 /**
  * A group of traces that have at least one overlapping segment and
@@ -261,31 +262,15 @@ export class NetLabelPlacementSolver extends BaseSolver {
   private getNetLabelWidthForGroup(
     group: OverlappingSameNetTraceGroup,
   ): number | undefined {
-    if (group.netId) {
-      const ncWidth = this.inputProblem.netConnections.find(
-        (nc) => nc.netId === group.netId,
-      )?.netLabelWidth
-      if (ncWidth !== undefined) return ncWidth
-
-      const dcWidthByNetId = this.inputProblem.directConnections.find(
-        (dc) => dc.netId === group.netId,
-      )?.netLabelWidth
-      if (dcWidthByNetId !== undefined) return dcWidthByNetId
-    }
-
     const pinIds = group.overlappingTraces?.pins.map((p) => p.pinId) ?? []
     if (group.portOnlyPinId) {
       pinIds.push(group.portOnlyPinId)
     }
-
-    const dcWidthByPinId = this.inputProblem.directConnections.find((dc) =>
-      dc.pinIds.some((pid) => pinIds.includes(pid)),
-    )?.netLabelWidth
-    if (dcWidthByPinId !== undefined) return dcWidthByPinId
-
-    return this.inputProblem.netConnections.find((nc) =>
-      nc.pinIds.some((pid) => pinIds.includes(pid)),
-    )?.netLabelWidth
+    return getNetLabelWidthForConnection({
+      inputProblem: this.inputProblem,
+      netId: group.netId,
+      pinIds,
+    })
   }
 
   private getNetLabelHeightForGroup(

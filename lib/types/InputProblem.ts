@@ -36,6 +36,13 @@ export interface InputDirectConnection {
   netLabelWidth?: number
 
   /**
+   * Width of the conventional anchored label to use only when an inline label
+   * cannot be placed. Unlike `netLabelWidth`, this does not affect whether or
+   * how the point-to-point connection is routed.
+   */
+  fallbackNetLabelWidth?: number
+
+  /**
    * When true, this point-to-point connection may be labeled with an "inline
    * net label": the net name is drawn parallel to (and offset from) the routed
    * trace instead of being placed as a separate anchored net label at the end
@@ -66,6 +73,7 @@ export interface InputNetConnection {
   netId: string
   pinIds: Array<PinId>
   netLabelWidth?: number
+  fallbackNetLabelWidth?: number
   netLabelHeight?: number
 
   /**
