@@ -99,56 +99,41 @@ const getTrimmedTail = ({
     return null
 
   let trunkPath = firstPath
-  let originalTrunkPath = firstTrace.tracePath
+  let trunkTrace = firstTrace
   let branchPath = secondPath
   let branchTrace = secondTrace
   let traceIndex = secondIndex
   if (firstLength > secondLength && !nearlyEqual(firstLength, secondLength)) {
     trunkPath = secondPath
-    originalTrunkPath = secondTrace.tracePath
+    trunkTrace = secondTrace
     branchPath = firstPath
     branchTrace = firstTrace
     traceIndex = firstIndex
+  }
+  let trunkAxis: Axis | null = firstAxis
+  if (!pointsEqual(trunkTrace.tracePath[0]!, sharedPin)) {
+    trunkAxis = getAxis(trunkPath[1]!, trunkPath[2]!)
   }
   let path = simplifyPath([trunkPath[1]!, ...branchPath.slice(1)])
   if (!pointsEqual(branchTrace.tracePath[0]!, sharedPin)) {
     path = [...path].reverse()
   }
-  return { path, trunkPath: originalTrunkPath, traceIndex }
-}
-
-const getSegmentAxisAtPoint = (path: Point[], point: Point): Axis | null => {
-  for (let index = 0; index < path.length - 1; index++) {
-    const start = path[index]!
-    const end = path[index + 1]!
-    const axis = getAxis(start, end)
-    if (!axis) continue
-    const otherAxis = getOtherAxis(axis)
-    if (!nearlyEqual(point[otherAxis], start[otherAxis])) continue
-    if (
-      point[axis] >= Math.min(start[axis], end[axis]) &&
-      point[axis] <= Math.max(start[axis], end[axis])
-    ) {
-      return axis
-    }
-  }
-  return null
+  return { path, trunkAxis, traceIndex }
 }
 
 const collapseTightHairpin = ({
   branchPath,
-  trunkPath,
+  trunkAxis,
   obstacles,
 }: {
   branchPath: Point[]
-  trunkPath: Point[]
+  trunkAxis: Axis | null
   obstacles: ObstacleRect[]
 }): Point[] | null => {
   if (branchPath.length < MIN_HAIRPIN_POINT_COUNT) return null
   const junction = branchPath[0]!
   const outwardEnd = branchPath[1]!
   const offsetEnd = branchPath[2]!
-  const trunkAxis = getSegmentAxisAtPoint(trunkPath, junction)
   if (!trunkAxis) return null
   const offsetAxis = getOtherAxis(trunkAxis)
   if (
@@ -224,7 +209,7 @@ export const trimSameNetOverlappingTraceTails = ({
       if (!trimmedTail) continue
       const collapsedPath = collapseTightHairpin({
         branchPath: trimmedTail.path,
-        trunkPath: trimmedTail.trunkPath,
+        trunkAxis: trimmedTail.trunkAxis,
         obstacles,
       })
       let tracePath = trimmedTail.path
