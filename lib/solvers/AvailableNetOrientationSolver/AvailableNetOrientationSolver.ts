@@ -18,7 +18,6 @@ import type {
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -48,6 +47,7 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 

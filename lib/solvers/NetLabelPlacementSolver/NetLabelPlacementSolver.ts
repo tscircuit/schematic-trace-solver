@@ -1,15 +1,15 @@
-import type { Point } from "@tscircuit/math-utils"
-import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { InputProblem, PinId } from "lib/types/InputProblem"
-import type { FacingDirection } from "lib/utils/dir"
-import { getColorFromString } from "lib/utils/getColorFromString"
-import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
-import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
-import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 import { SingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver/SingleNetLabelPlacementSolver"
+import type { FacingDirection } from "lib/utils/dir"
+import type { Point } from "@tscircuit/math-utils"
+import type { GraphicsObject } from "graphics-debug"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import { getColorFromString } from "lib/utils/getColorFromString"
+import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 
 /**
  * A group of traces that have at least one overlapping segment and
