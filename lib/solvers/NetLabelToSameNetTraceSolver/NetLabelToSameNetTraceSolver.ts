@@ -55,7 +55,7 @@ interface JunctionCandidate {
   key: string
 }
 
-export interface NetLabelTraceJunctionSolverInput {
+export interface NetLabelToSameNetTraceSolverInput {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
@@ -222,7 +222,7 @@ const unionTraceRoots = ({
   if (firstRoot !== secondRoot) parents[secondRoot] = firstRoot
 }
 
-export class NetLabelTraceJunctionSolver extends BaseSolver {
+export class NetLabelToSameNetTraceSolver extends BaseSolver {
   inputProblem: InputProblem
   inputTraces: SolvedTracePath[]
   inputNetLabelPlacements: NetLabelPlacement[]
@@ -242,7 +242,7 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
   private currentCandidate: JunctionCandidate | null = null
   declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
 
-  constructor(private input: NetLabelTraceJunctionSolverInput) {
+  constructor(private input: NetLabelToSameNetTraceSolverInput) {
     super()
     this.inputProblem = input.inputProblem
     this.inputTraces = input.traces
@@ -264,7 +264,7 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
     this.stats.recoveredTraceCount = 0
   }
 
-  override getConstructorParams(): [NetLabelTraceJunctionSolverInput] {
+  override getConstructorParams(): [NetLabelToSameNetTraceSolverInput] {
     return [this.input]
   }
 
