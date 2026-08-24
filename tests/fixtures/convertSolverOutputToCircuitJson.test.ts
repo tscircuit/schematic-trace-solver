@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test"
-import { any_circuit_element, type SchematicTrace } from "circuit-json"
+import {
+  any_circuit_element,
+  type SchematicPort,
+  type SchematicTrace,
+} from "circuit-json"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -53,8 +57,8 @@ class SnapshotTestSolver extends BaseSolver {
       traces: [
         {
           mspPairId: "routed-trace",
-          globalConnNetId: "ROUTED",
-          userNetId: "ROUTED",
+          globalConnNetId: "internal-global-net-id",
+          userNetId: "",
           pinIds: ["U1.1", "C1.1"],
           tracePath: [
             { x: 0.5, y: 0.2 },
@@ -66,8 +70,8 @@ class SnapshotTestSolver extends BaseSolver {
       ],
       netLabelPlacements: [
         {
-          globalConnNetId: "ROUTED",
-          netId: "ROUTED",
+          globalConnNetId: "internal-global-net-id",
+          netId: "   ",
           mspConnectionPairIds: ["routed-trace"],
           pinIds: ["U1.1", "C1.1"],
           orientation: "x+" as const,
@@ -99,18 +103,48 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
         element.source_component_id === "source_component_1",
     ),
   ).toMatchObject({ symbol_name: "capacitor_up" })
+
+  const capacitorComponent = circuitJson.find(
+    (element) =>
+      element.type === "schematic_component" &&
+      element.source_component_id === "source_component_1",
+  )
+  expect(capacitorComponent).toMatchObject({
+    center: { x: 2 },
+  })
+  if (capacitorComponent?.type !== "schematic_component") {
+    throw new Error("Expected capacitor schematic component")
+  }
+  expect(capacitorComponent.center.y).toBeCloseTo(-0.2)
+
+  const capacitorPorts = circuitJson
+    .filter(
+      (element): element is SchematicPort =>
+        element.type === "schematic_port" &&
+        element.schematic_component_id ===
+          capacitorComponent.schematic_component_id,
+    )
+    .sort((a, b) => a.center.y - b.center.y)
+  expect(capacitorPorts[0]!.center.y).toBeCloseTo(-0.7)
+  expect(capacitorPorts[1]!.center.y).toBeCloseTo(0.3)
   expect(
     circuitJson.filter((element) => element.type === "schematic_box"),
   ).toHaveLength(1)
   expect(
     circuitJson.filter((element) => element.type === "schematic_net_label"),
   ).toHaveLength(1)
+  expect(
+    circuitJson.find((element) => element.type === "schematic_net_label"),
+  ).toMatchObject({ text: "ROUTED" })
 
   const schematicTraces = circuitJson.filter(
     (element): element is SchematicTrace => element.type === "schematic_trace",
   )
   expect(schematicTraces).toHaveLength(1)
   expect(schematicTraces[0]!.edges).toHaveLength(3)
+  expect(
+    circuitJson.find((element) => element.type === "source_trace"),
+  ).toMatchObject({ name: "ROUTED" })
   expect(schematicTraces[0]!.edges).not.toContainEqual({
     from: { x: 0.5, y: -0.2 },
     to: { x: 2, y: -0.5 },

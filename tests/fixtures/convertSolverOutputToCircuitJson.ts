@@ -19,6 +19,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import type { InputChip, InputPin, InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
+import { symbols, type SchSymbol } from "schematic-symbols"
 
 type SnapshotTrace = Partial<SolvedTracePath> & {
   tracePath: Point[]
@@ -253,6 +254,86 @@ const getPassiveSymbolName = (chip: InputChip, refdes: string) => {
   return `${baseSymbol}_${isHorizontal ? "right" : "up"}`
 }
 
+const getAngularDifference = (angle1: number, angle2: number) => {
+  const normalizedAngle1 = angle1 < 0 ? angle1 + 2 * Math.PI : angle1
+  const normalizedAngle2 = angle2 < 0 ? angle2 + 2 * Math.PI : angle2
+  const difference = Math.abs(normalizedAngle1 - normalizedAngle2)
+  return difference > Math.PI ? 2 * Math.PI - difference : difference
+}
+
+/**
+ * circuit-to-svg@0.0.407 derives a symbol transform from two schematic ports.
+ * Its scale is correct, but its translation is calculated in unscaled symbol
+ * coordinates. Offsetting the component and both ports here makes the rendered
+ * symbol terminals land on the original solver pin coordinates.
+ */
+const getCircuitToSvgSymbolOffset = (
+  chip: InputChip,
+  symbolName: string | undefined,
+): Point => {
+  if (!symbolName) return { x: 0, y: 0 }
+  const symbol = symbols[symbolName as keyof typeof symbols] as
+    | SchSymbol
+    | undefined
+  if (!symbol || chip.pins.length !== 2 || symbol.ports.length !== 2) {
+    return { x: 0, y: 0 }
+  }
+
+  const pinsByAngle = chip.pins
+    .map((pin) => ({
+      pin,
+      angle: Math.atan2(pin.y - chip.center.y, pin.x - chip.center.x),
+    }))
+    .sort((a, b) => a.angle - b.angle)
+  const symbolPortsByAngle = symbol.ports
+    .map((port) => ({
+      port,
+      angle: Math.atan2(port.y - symbol.center.y, port.x - symbol.center.x),
+    }))
+    .sort((a, b) => a.angle - b.angle)
+
+  const matches: Array<{
+    pin: InputPin
+    symbolPort: SchSymbol["ports"][number]
+  }> = []
+  const usedSymbolPorts = new Set<SchSymbol["ports"][number]>()
+  for (const pinWithAngle of pinsByAngle) {
+    const match = symbolPortsByAngle
+      .filter(({ port }) => !usedSymbolPorts.has(port))
+      .map(({ port, angle }) => ({
+        port,
+        difference: getAngularDifference(pinWithAngle.angle, angle),
+      }))
+      .sort((a, b) => a.difference - b.difference)[0]
+    if (!match || match.difference >= Math.PI / 4) continue
+    matches.push({ pin: pinWithAngle.pin, symbolPort: match.port })
+    usedSymbolPorts.add(match.port)
+  }
+
+  if (matches.length !== 2) return { x: 0, y: 0 }
+
+  // Match circuit-to-svg's point-pair order: the second match is the
+  // translation anchor and the first match determines the scale.
+  const anchorMatch = matches[1]!
+  const otherMatch = matches[0]!
+  const symbolPortDistance = Math.hypot(
+    otherMatch.symbolPort.x - anchorMatch.symbolPort.x,
+    otherMatch.symbolPort.y - anchorMatch.symbolPort.y,
+  )
+  if (symbolPortDistance === 0) return { x: 0, y: 0 }
+
+  const schematicPortDistance = Math.hypot(
+    otherMatch.pin.x - anchorMatch.pin.x,
+    otherMatch.pin.y - anchorMatch.pin.y,
+  )
+  const scale = schematicPortDistance / symbolPortDistance
+
+  return {
+    x: (1 - scale) * anchorMatch.symbolPort.x,
+    y: (1 - scale) * anchorMatch.symbolPort.y,
+  }
+}
+
 const pointKey = (point: Point) => `${point.x.toFixed(9)},${point.y.toFixed(9)}`
 
 const traceKey = (trace: SnapshotTrace) =>
@@ -267,13 +348,108 @@ const dedupeTraces = (traces: SnapshotTrace[]) => {
   return [...uniqueTraces.values()]
 }
 
-const getTraceNetName = (trace: SnapshotTrace) =>
-  trace.userNetId ?? trace.netId ?? trace.globalConnNetId
-
 const getTracePinIds = (trace: SnapshotTrace) =>
   trace.pinIds ?? trace.pins?.map((pin) => pin.pinId) ?? []
 
-const getJunctionsByTraceIndex = (traces: SnapshotTrace[]) => {
+const nonEmptyNetName = (name: string | undefined) => {
+  const trimmedName = name?.trim()
+  return trimmedName ? trimmedName : undefined
+}
+
+const getNetNameResolvers = (
+  inputProblem: InputProblem,
+  traces: SnapshotTrace[],
+  netLabelPlacements: NetLabelPlacement[],
+  inlineNetLabelPlacements: InlineNetLabelPlacement[],
+) => {
+  const userNetNameByPinId = new Map<string, string>()
+  for (const connection of inputProblem.directConnections) {
+    if (!connection.netId) continue
+    for (const pinId of connection.pinIds) {
+      userNetNameByPinId.set(pinId, connection.netId)
+    }
+  }
+  for (const connection of inputProblem.netConnections) {
+    for (const pinId of connection.pinIds) {
+      userNetNameByPinId.set(pinId, connection.netId)
+    }
+  }
+
+  const inferFromPinIds = (pinIds: readonly string[]) => {
+    const names = [
+      ...new Set(
+        pinIds
+          .map((pinId) => userNetNameByPinId.get(pinId))
+          .filter((name): name is string => Boolean(name)),
+      ),
+    ]
+    return names.length === 1 ? names[0] : undefined
+  }
+
+  const userNetNameByGlobalConnNetId = new Map<string, string>()
+  const userNetNameByMspPairId = new Map<string, string>()
+  for (const trace of traces) {
+    const userNetName =
+      nonEmptyNetName(trace.userNetId) ??
+      inferFromPinIds(getTracePinIds(trace)) ??
+      nonEmptyNetName(trace.netId)
+    if (!userNetName) continue
+    if (trace.globalConnNetId) {
+      userNetNameByGlobalConnNetId.set(trace.globalConnNetId, userNetName)
+    }
+    for (const mspPairId of [
+      trace.mspPairId,
+      ...(trace.mspConnectionPairIds ?? []),
+    ]) {
+      if (mspPairId) userNetNameByMspPairId.set(mspPairId, userNetName)
+    }
+  }
+
+  for (const label of [...netLabelPlacements, ...inlineNetLabelPlacements]) {
+    const userNetName =
+      nonEmptyNetName(label.netId) ?? inferFromPinIds(label.pinIds)
+    if (userNetName) {
+      userNetNameByGlobalConnNetId.set(label.globalConnNetId, userNetName)
+    }
+  }
+
+  const getTraceNetName = (trace: SnapshotTrace) =>
+    nonEmptyNetName(trace.userNetId) ??
+    inferFromPinIds(getTracePinIds(trace)) ??
+    (trace.globalConnNetId
+      ? userNetNameByGlobalConnNetId.get(trace.globalConnNetId)
+      : undefined) ??
+    nonEmptyNetName(trace.netId) ??
+    nonEmptyNetName(trace.globalConnNetId)
+
+  const getNetLabelName = (label: NetLabelPlacement) =>
+    nonEmptyNetName(label.netId) ??
+    inferFromPinIds(label.pinIds) ??
+    label.mspConnectionPairIds
+      .map((mspPairId) => userNetNameByMspPairId.get(mspPairId))
+      .find((name): name is string => Boolean(name)) ??
+    userNetNameByGlobalConnNetId.get(label.globalConnNetId) ??
+    nonEmptyNetName(label.dcConnNetId) ??
+    nonEmptyNetName(label.globalConnNetId) ??
+    "unnamed net"
+
+  const getInlineNetLabelName = (label: InlineNetLabelPlacement) =>
+    nonEmptyNetName(label.netId) ??
+    inferFromPinIds(label.pinIds) ??
+    (label.mspPairId
+      ? userNetNameByMspPairId.get(label.mspPairId)
+      : undefined) ??
+    userNetNameByGlobalConnNetId.get(label.globalConnNetId) ??
+    nonEmptyNetName(label.globalConnNetId) ??
+    "unnamed net"
+
+  return { getTraceNetName, getNetLabelName, getInlineNetLabelName }
+}
+
+const getJunctionsByTraceIndex = (
+  traces: SnapshotTrace[],
+  getTraceNetName: (trace: SnapshotTrace) => string | undefined,
+) => {
   const traceIndexesByNetPoint = new Map<
     string,
     { point: Point; traceIndexes: Set<number> }
@@ -341,6 +517,13 @@ export const convertSolverOutputToCircuitJson = (
 
   const snapshotData = getSnapshotData(solver)
   const traces = dedupeTraces(snapshotData.traces)
+  const { getTraceNetName, getNetLabelName, getInlineNetLabelName } =
+    getNetNameResolvers(
+      inputProblem,
+      traces,
+      snapshotData.netLabelPlacements,
+      snapshotData.inlineNetLabelPlacements,
+    )
   const circuitJson: AnyCircuitElement[] = []
   const sourcePortIdByPinId = new Map<string, string>()
   const schematicPortIdByPinId = new Map<string, string>()
@@ -352,6 +535,7 @@ export const convertSolverOutputToCircuitJson = (
     const schematicComponentId = `schematic_component_${chipIndex}`
     const refdes = getRefdes(chip)
     const symbolName = getPassiveSymbolName(chip, refdes)
+    const symbolOffset = getCircuitToSvgSymbolOffset(chip, symbolName)
 
     circuitJson.push({
       type: "source_component",
@@ -364,7 +548,10 @@ export const convertSolverOutputToCircuitJson = (
       type: "schematic_component",
       schematic_component_id: schematicComponentId,
       source_component_id: sourceComponentId,
-      center: chip.center,
+      center: {
+        x: chip.center.x + symbolOffset.x,
+        y: chip.center.y + symbolOffset.y,
+      },
       size: { width: chip.width, height: chip.height },
       is_box_with_pins: true,
       symbol_name: symbolName,
@@ -409,7 +596,10 @@ export const convertSolverOutputToCircuitJson = (
         schematic_port_id: schematicPortId,
         source_port_id: sourcePortId,
         schematic_component_id: schematicComponentId,
-        center: { x: pin.x, y: pin.y },
+        center: {
+          x: pin.x + symbolOffset.x,
+          y: pin.y + symbolOffset.y,
+        },
         facing_direction: facingDirectionToCircuitJson(facingDirection),
         side_of_component: sideOfComponent,
         distance_from_component_edge: Math.min(0.2, componentDimension / 3),
@@ -470,10 +660,10 @@ export const convertSolverOutputToCircuitJson = (
     if (netName) netNames.add(netName)
   }
   for (const label of snapshotData.netLabelPlacements) {
-    netNames.add(label.netId ?? label.dcConnNetId ?? label.globalConnNetId)
+    netNames.add(getNetLabelName(label))
   }
   for (const label of snapshotData.inlineNetLabelPlacements) {
-    netNames.add(label.netId ?? label.globalConnNetId)
+    netNames.add(getInlineNetLabelName(label))
   }
 
   const sourceNetIdByName = new Map<string, string>()
@@ -490,7 +680,10 @@ export const convertSolverOutputToCircuitJson = (
     } satisfies SourceNet)
   }
 
-  const junctionsByTraceIndex = getJunctionsByTraceIndex(traces)
+  const junctionsByTraceIndex = getJunctionsByTraceIndex(
+    traces,
+    getTraceNetName,
+  )
   for (const [traceIndex, trace] of traces.entries()) {
     const sourceTraceId = `source_trace_${traceIndex}`
     const schematicTraceId = `schematic_trace_${traceIndex}`
@@ -563,7 +756,7 @@ export const convertSolverOutputToCircuitJson = (
   }
 
   for (const [labelIndex, label] of snapshotData.netLabelPlacements.entries()) {
-    const netName = label.netId ?? label.dcConnNetId ?? label.globalConnNetId
+    const netName = getNetLabelName(label)
     circuitJson.push({
       type: "schematic_net_label",
       schematic_net_label_id: `schematic_net_label_${labelIndex}`,
@@ -579,10 +772,11 @@ export const convertSolverOutputToCircuitJson = (
     labelIndex,
     label,
   ] of snapshotData.inlineNetLabelPlacements.entries()) {
+    const netName = getInlineNetLabelName(label)
     circuitJson.push({
       type: "schematic_text",
       schematic_text_id: `schematic_inline_net_label_${labelIndex}`,
-      text: label.netId ?? label.globalConnNetId,
+      text: netName,
       font_size: label.height,
       position: label.center,
       // Match core's schematic convention: vertical labels read bottom-to-top.
