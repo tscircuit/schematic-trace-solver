@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { doSegmentsIntersect } from "@tscircuit/math-utils"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
@@ -103,10 +104,33 @@ const inputProblem: InputProblem = {
   _hideRatsNet: false,
 }
 
-test("core 555 power section cross-net overlap below SW1", () => {
+test("core 555 power section avoids a cross-net overlap below SW1", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
 
   solver.solve()
 
+  const traces = solver.sameNetJunctionAlignmentSolver!.outputTraces
+  const btnTrace = traces.find(
+    (trace) => trace.mspPairId === "schematic_port_0-schematic_port_2",
+  )!
+  const groundTrace = traces.find(
+    (trace) => trace.mspPairId === "schematic_port_1-schematic_port_5",
+  )!
+  const hasIntersection = btnTrace.tracePath
+    .slice(0, -1)
+    .some((start, index) =>
+      groundTrace.tracePath
+        .slice(0, -1)
+        .some((otherStart, otherIndex) =>
+          doSegmentsIntersect(
+            start,
+            btnTrace.tracePath[index + 1]!,
+            otherStart,
+            groundTrace.tracePath[otherIndex + 1]!,
+          ),
+        ),
+    )
+
+  expect(hasIntersection).toBeFalse()
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

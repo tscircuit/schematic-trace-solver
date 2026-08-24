@@ -12,6 +12,7 @@ import {
 } from "./findIntersectionsWithObstacles"
 import {
   generateLShapeRerouteCandidates,
+  generatePerimeterCornerTraceDetours,
   generatePerpendicularTraceDetours,
 } from "./generateLShapeRerouteCandidates"
 import { isPathColliding, type CollisionInfo } from "./isPathColliding"
@@ -53,6 +54,7 @@ export interface UntangleTraceSubsolverInput {
   allLabelPlacements: NetLabelPlacement[]
   mergedLabelNetIdMap: Record<string, Set<string>>
   paddingBuffer: number
+  eligibleTraceIds?: ReadonlySet<string>
 }
 
 /**
@@ -127,7 +129,7 @@ export class UntangleTraceSubsolver extends BaseSolver {
 
     if (this.processingCrossings) {
       // The L-shape pass below only reacts when both arms intersect obstacles.
-      // Resolve strict crossings on merged-label bundles before entering it.
+      // Resolve eligible strict cross-net crossings before entering it.
       const crossing = this._findCrossing()
       if (crossing) {
         if (!this._resolveCrossing(crossing)) {
@@ -207,8 +209,12 @@ export class UntangleTraceSubsolver extends BaseSolver {
         const otherTrace = traces[secondIndex]!
         if (trace.globalConnNetId === otherTrace.globalConnNetId) continue
         const isInitialBundleCrossing = this._isTraceBundle(trace, otherTrace)
+        const isEligibleInitialCrossing =
+          this.input.eligibleTraceIds?.has(trace.mspPairId) === true ||
+          this.input.eligibleTraceIds?.has(otherTrace.mspPairId) === true
         if (
           !isInitialBundleCrossing &&
+          !isEligibleInitialCrossing &&
           !this.reroutedTraceIds.has(trace.mspPairId) &&
           !this.reroutedTraceIds.has(otherTrace.mspPairId)
         ) {
@@ -256,6 +262,16 @@ export class UntangleTraceSubsolver extends BaseSolver {
         segmentIndex: crossing.otherSegmentIndex,
         obstacleStart: crossing.trace.tracePath[crossing.segmentIndex]!,
         obstacleEnd: crossing.trace.tracePath[crossing.segmentIndex + 1]!,
+        chipBounds,
+        clearance: this.input.paddingBuffer,
+      }),
+      ...generatePerimeterCornerTraceDetours({
+        trace: crossing.trace,
+        chipBounds,
+        clearance: this.input.paddingBuffer,
+      }),
+      ...generatePerimeterCornerTraceDetours({
+        trace: crossing.otherTrace,
         chipBounds,
         clearance: this.input.paddingBuffer,
       }),
