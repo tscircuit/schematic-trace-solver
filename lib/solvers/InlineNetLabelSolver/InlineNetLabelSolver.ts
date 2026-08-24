@@ -1,5 +1,5 @@
 import type { Bounds, Point } from "@tscircuit/math-utils"
-import type { GraphicsObject, Rect } from "graphics-debug"
+import type { GraphicsObject, Rect, Text } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
@@ -90,6 +90,13 @@ interface InlineNetLabelSolverInput {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+}
+
+export interface InlineNetLabelOutput {
+  inputProblem: InputProblem
+  traces: SolvedTracePath[]
+  netLabelPlacements: NetLabelPlacement[]
+  inlineNetLabelPlacements: InlineNetLabelPlacement[]
 }
 
 type InlineEligibleConnection = InputDirectConnection | InputNetConnection
@@ -646,95 +653,117 @@ export class InlineNetLabelSolver extends BaseSolver {
     // Mirrors the previous pipeline stage's visualization so that a problem
     // with no inline labels renders identically, then layers the inline labels
     // on top.
-    const graphics = visualizeInputProblem(this.inputProblem)
-    graphics.lines ??= []
-    graphics.rects ??= []
-    graphics.points ??= []
-    graphics.texts ??= []
+    return visualizeInlineNetLabelOutput({
+      inputProblem: this.inputProblem,
+      ...this.getOutput(),
+    })
+  }
+}
 
-    const output = this.getOutput()
-    for (const trace of output.traces) {
+export const visualizeInlineNetLabelOutput = ({
+  inputProblem,
+  traces,
+  netLabelPlacements,
+  inlineNetLabelPlacements,
+}: InlineNetLabelOutput): GraphicsObject => {
+  const graphics = visualizeInputProblem(inputProblem)
+  graphics.lines ??= []
+  graphics.rects ??= []
+  graphics.points ??= []
+  graphics.texts ??= []
+
+  for (const trace of traces) {
+    graphics.lines.push({
+      points: trace.tracePath,
+      strokeColor: "purple",
+    })
+  }
+
+  for (const label of netLabelPlacements) {
+    graphics.rects.push({
+      center: label.center,
+      width: label.width,
+      height: label.height,
+      fill: getColorFromString(label.globalConnNetId, 0.35),
+      strokeColor: getColorFromString(label.globalConnNetId, 0.9),
+      label: `netId: ${label.netId}\nglobalConnNetId: ${label.globalConnNetId}`,
+    } as Rect & { strokeColor: string })
+    graphics.points.push({
+      x: label.anchorPoint.x,
+      y: label.anchorPoint.y,
+      color: getColorFromString(label.globalConnNetId, 0.9),
+      label: `anchorPoint\norientation: ${label.orientation}`,
+    })
+  }
+
+  for (const inlineLabel of inlineNetLabelPlacements) {
+    if (inlineLabel.stubTracePath) {
       graphics.lines.push({
-        points: trace.tracePath,
+        points: inlineLabel.stubTracePath,
         strokeColor: "purple",
       })
     }
-
-    const { netLabelPlacements } = this.getOutput()
-    for (const label of netLabelPlacements) {
-      graphics.rects.push({
-        center: label.center,
-        width: label.width,
-        height: label.height,
-        fill: getColorFromString(label.globalConnNetId, 0.35),
-        strokeColor: getColorFromString(label.globalConnNetId, 0.9),
-        label: `netId: ${label.netId}\nglobalConnNetId: ${label.globalConnNetId}`,
-      } as Rect & { strokeColor: string })
-      graphics.points.push({
-        x: label.anchorPoint.x,
-        y: label.anchorPoint.y,
-        color: getColorFromString(label.globalConnNetId, 0.9),
-        label: `anchorPoint\norientation: ${label.orientation}`,
-      })
+    const isHorizontal = inlineLabel.axis === "x"
+    let renderedWidth = inlineLabel.width
+    let renderedHeight = inlineLabel.height
+    if (!isHorizontal) {
+      renderedWidth = inlineLabel.height
+      renderedHeight = inlineLabel.width
     }
+    graphics.rects.push({
+      center: inlineLabel.center,
+      width: renderedWidth,
+      height: renderedHeight,
+      fill: getColorFromString(inlineLabel.globalConnNetId, 0.35),
+      strokeColor: "green",
+      label: [
+        `INLINE netId: ${inlineLabel.netId}`,
+        `axis: ${inlineLabel.axis}`,
+        `side: ${inlineLabel.side}`,
+      ].join("\n"),
+    } as Rect & { strokeColor: string })
 
-    for (const inlineLabel of this.inlineNetLabelPlacements) {
-      if (inlineLabel.stubTracePath) {
-        graphics.lines.push({
-          points: inlineLabel.stubTracePath,
-          strokeColor: "purple",
-        })
+    let textX = inlineLabel.center.x
+    let textY = inlineLabel.center.y
+    let anchorSide: Text["anchorSide"] = "center"
+    let rotation: Text["rotation"]
+    if (inlineLabel.stubTracePath) {
+      const stubStart = inlineLabel.stubTracePath[0]
+      const stubEnd = inlineLabel.stubTracePath[1]
+      let labelOffset = inlineLabel.width / 2
+      if (stubEnd[inlineLabel.axis] > stubStart[inlineLabel.axis]) {
+        labelOffset = -inlineLabel.width / 2
+        anchorSide = "center_left"
+      } else {
+        anchorSide = "center_right"
       }
-      const isHorizontal = inlineLabel.axis === "x"
-      graphics.rects.push({
-        center: inlineLabel.center,
-        width: isHorizontal ? inlineLabel.width : inlineLabel.height,
-        height: isHorizontal ? inlineLabel.height : inlineLabel.width,
-        fill: getColorFromString(inlineLabel.globalConnNetId, 0.35),
-        strokeColor: "green",
-        label: [
-          `INLINE netId: ${inlineLabel.netId}`,
-          `axis: ${inlineLabel.axis}`,
-          `side: ${inlineLabel.side}`,
-        ].join("\n"),
-      } as Rect & { strokeColor: string })
-      graphics.texts.push({
-        x:
-          inlineLabel.stubTracePath && inlineLabel.axis === "x"
-            ? inlineLabel.center.x +
-              (inlineLabel.stubTracePath[1].x > inlineLabel.stubTracePath[0].x
-                ? -inlineLabel.width / 2
-                : inlineLabel.width / 2)
-            : inlineLabel.center.x,
-        y:
-          inlineLabel.stubTracePath && inlineLabel.axis === "y"
-            ? inlineLabel.center.y +
-              (inlineLabel.stubTracePath[1].y > inlineLabel.stubTracePath[0].y
-                ? -inlineLabel.width / 2
-                : inlineLabel.width / 2)
-            : inlineLabel.center.y,
-        text: inlineLabel.netLabelText ?? inlineLabel.netId ?? "",
-        color: "green",
-        fontSize: inlineLabel.height,
-        anchorSide: inlineLabel.stubTracePath
-          ? inlineLabel.stubTracePath[1][inlineLabel.axis] >
-            inlineLabel.stubTracePath[0][inlineLabel.axis]
-            ? "center_left"
-            : "center_right"
-          : "center",
-        // Vertical labels read bottom-to-top, alongside the wire they name.
-        rotation: inlineLabel.axis === "y" ? 90 : undefined,
-      })
-      graphics.points.push({
-        x: inlineLabel.anchorPoint.x,
-        y: inlineLabel.anchorPoint.y,
-        color: "green",
-        label: `inline anchor\n${inlineLabel.netLabelText ?? inlineLabel.netId}`,
-      })
+      if (inlineLabel.axis === "x") {
+        textX += labelOffset
+      } else {
+        textY += labelOffset
+      }
     }
+    if (inlineLabel.axis === "y") rotation = 90
 
-    return graphics
+    graphics.texts.push({
+      x: textX,
+      y: textY,
+      text: inlineLabel.netLabelText ?? inlineLabel.netId ?? "",
+      color: "green",
+      fontSize: inlineLabel.height,
+      anchorSide,
+      // Vertical labels read bottom-to-top, alongside the wire they name.
+      rotation,
+    })
+    graphics.points.push({
+      x: inlineLabel.anchorPoint.x,
+      y: inlineLabel.anchorPoint.y,
+      color: "green",
+      label: `inline anchor\n${inlineLabel.netLabelText ?? inlineLabel.netId}`,
+    })
   }
+
+  return graphics
 }
 
 /**

@@ -35,6 +35,7 @@ import { UnroutedTraceRecoverySolver } from "../UnroutedTraceRecoverySolver/Unro
 import { SameNetJunctionAlignmentSolver } from "../SameNetJunctionAlignmentSolver/SameNetJunctionAlignmentSolver"
 import { TraceElbowTransitionSimplificationSolver } from "../TraceElbowTransitionSimplificationSolver/TraceElbowTransitionSimplificationSolver"
 import { InlineNetLabelSolver } from "../InlineNetLabelSolver/InlineNetLabelSolver"
+import { NetLabelToTraceSolver } from "../NetLabelToTraceSolver/NetLabelToTraceSolver"
 import { findPerpendicularPathCrossings } from "../TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
@@ -103,6 +104,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   finalTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   sameNetJunctionAlignmentSolver?: SameNetJunctionAlignmentSolver
   inlineNetLabelSolver?: InlineNetLabelSolver
+  netLabelToTraceSolver?: NetLabelToTraceSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -584,6 +586,19 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             inputProblem: instance.inputProblem,
             traces: junctionOutput.traces,
             netLabelPlacements: junctionOutput.netLabelPlacements,
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
+      "netLabelToTraceSolver",
+      NetLabelToTraceSolver,
+      (instance) => {
+        const inlineOutput = instance.inlineNetLabelSolver!.getOutput()
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            ...inlineOutput,
           },
         ]
       },
