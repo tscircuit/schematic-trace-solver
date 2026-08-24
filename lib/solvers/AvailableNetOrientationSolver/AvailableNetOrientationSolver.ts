@@ -459,11 +459,30 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (shiftedCandidate) return shiftedCandidate
 
-    return this.findValidLateralShiftedCandidate(
+    const lateralShiftedCandidate = this.findValidLateralShiftedCandidate(
       label,
       orientations[0]!,
       labelIndex,
     )
+    if (lateralShiftedCandidate) return lateralShiftedCandidate
+
+    if (
+      orientations.length === 1 &&
+      isYOrientation(requiredOrientation) &&
+      this.isOutwardHorizontalFallback(label)
+    ) {
+      // A short perpendicular trace can block the first candidate in a column
+      // without blocking positions farther along it. Retry the exhaustive
+      // search only when the constrained label otherwise remains unresolved.
+      return this.findValidLateralShiftedCandidate(
+        label,
+        requiredOrientation,
+        labelIndex,
+        false,
+      )
+    }
+
+    return null
   }
 
   private findValidCrowdedTopVerticalFanoutCandidate(
@@ -896,6 +915,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     label: NetLabelPlacement,
     orientation: FacingDirection,
     labelIndex: number,
+    stopOnTraceCollision = true,
   ): EvaluatedCandidate | null {
     const direction = dir(orientation)
     const initialBaseAnchor = this.getSearchStartAnchor(label, orientation)
@@ -931,6 +951,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           maxSearchDistance,
           outwardDistance: lateralOffset,
           phase: "lateral-shift",
+          stopOnTraceCollision,
         })
 
         if (candidate) return candidate
