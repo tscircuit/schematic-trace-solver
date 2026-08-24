@@ -5098,5 +5098,5 @@
     },
     "spatialIndexIdToChip": {}
   },
-  "_hideRatsNet": false
+  "_hideRatsNet": true
 }
