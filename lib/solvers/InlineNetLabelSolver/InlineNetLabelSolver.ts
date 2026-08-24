@@ -1,5 +1,5 @@
 import type { Bounds, Point } from "@tscircuit/math-utils"
-import type { GraphicsObject, Rect } from "graphics-debug"
+import type { GraphicsObject, Rect, Text } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
@@ -694,10 +694,16 @@ export const visualizeInlineNetLabelOutput = ({
       })
     }
     const isHorizontal = inlineLabel.axis === "x"
+    let renderedWidth = inlineLabel.width
+    let renderedHeight = inlineLabel.height
+    if (!isHorizontal) {
+      renderedWidth = inlineLabel.height
+      renderedHeight = inlineLabel.width
+    }
     graphics.rects.push({
       center: inlineLabel.center,
-      width: isHorizontal ? inlineLabel.width : inlineLabel.height,
-      height: isHorizontal ? inlineLabel.height : inlineLabel.width,
+      width: renderedWidth,
+      height: renderedHeight,
       fill: getColorFromString(inlineLabel.globalConnNetId, 0.35),
       strokeColor: "green",
       label: [
@@ -706,32 +712,38 @@ export const visualizeInlineNetLabelOutput = ({
         `side: ${inlineLabel.side}`,
       ].join("\n"),
     } as Rect & { strokeColor: string })
+
+    let textX = inlineLabel.center.x
+    let textY = inlineLabel.center.y
+    let anchorSide: Text["anchorSide"] = "center"
+    let rotation: Text["rotation"]
+    if (inlineLabel.stubTracePath) {
+      const stubStart = inlineLabel.stubTracePath[0]
+      const stubEnd = inlineLabel.stubTracePath[1]
+      let labelOffset = inlineLabel.width / 2
+      if (stubEnd[inlineLabel.axis] > stubStart[inlineLabel.axis]) {
+        labelOffset = -inlineLabel.width / 2
+        anchorSide = "center_left"
+      } else {
+        anchorSide = "center_right"
+      }
+      if (inlineLabel.axis === "x") {
+        textX += labelOffset
+      } else {
+        textY += labelOffset
+      }
+    }
+    if (inlineLabel.axis === "y") rotation = 90
+
     graphics.texts.push({
-      x:
-        inlineLabel.stubTracePath && inlineLabel.axis === "x"
-          ? inlineLabel.center.x +
-            (inlineLabel.stubTracePath[1].x > inlineLabel.stubTracePath[0].x
-              ? -inlineLabel.width / 2
-              : inlineLabel.width / 2)
-          : inlineLabel.center.x,
-      y:
-        inlineLabel.stubTracePath && inlineLabel.axis === "y"
-          ? inlineLabel.center.y +
-            (inlineLabel.stubTracePath[1].y > inlineLabel.stubTracePath[0].y
-              ? -inlineLabel.width / 2
-              : inlineLabel.width / 2)
-          : inlineLabel.center.y,
+      x: textX,
+      y: textY,
       text: inlineLabel.netId ?? "",
       color: "green",
       fontSize: inlineLabel.height,
-      anchorSide: inlineLabel.stubTracePath
-        ? inlineLabel.stubTracePath[1][inlineLabel.axis] >
-          inlineLabel.stubTracePath[0][inlineLabel.axis]
-          ? "center_left"
-          : "center_right"
-        : "center",
+      anchorSide,
       // Vertical labels read bottom-to-top, alongside the wire they name.
-      rotation: inlineLabel.axis === "y" ? 90 : undefined,
+      rotation,
     })
     graphics.points.push({
       x: inlineLabel.anchorPoint.x,

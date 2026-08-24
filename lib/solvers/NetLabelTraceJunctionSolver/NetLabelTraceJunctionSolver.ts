@@ -1,13 +1,26 @@
-import { doSegmentsIntersect, type Point } from "@tscircuit/math-utils"
+import {
+  doSegmentsIntersect,
+  pointToSegmentClosestPoint,
+  pointToSegmentDistance,
+  type Point,
+} from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import { doesPairCrossRestrictedCenterLines } from "lib/solvers/MspConnectionPairSolver/doesPairCrossRestrictedCenterLines"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import {
+  getTraceRecoveryConnectivityMaps,
+  type TraceRecoveryPin,
+} from "lib/solvers/NetLabelTraceRecovery/getTraceRecoveryConnectivityMaps"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import { SchematicTraceSingleLineSolver2 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
-import type { InputChip, InputPin, InputProblem } from "lib/types/InputProblem"
+import type {
+  ChipId,
+  InputChip,
+  InputProblem,
+  PinId,
+} from "lib/types/InputProblem"
 import { arePinsInDifferentSchematicSections } from "lib/utils/arePinsInDifferentSchematicSections"
 import type { FacingDirection } from "lib/utils/dir"
 import {
@@ -22,24 +35,19 @@ const MAX_CONTINUATION_OFFSET = 0.15
 // deliberate net-label boundary rather than becoming a page-spanning trace.
 const MAX_PORT_TO_TRACE_DISTANCE = 2
 
-type PinWithChipId = InputPin & {
-  chipId: string
-  _facingDirection: FacingDirection
-}
-
 interface TraceComponent {
   id: number
-  globalConnNetId: string
+  globalConnNetId: SolvedTracePath["globalConnNetId"]
   traces: SolvedTracePath[]
 }
 
-interface Candidate {
+interface JunctionCandidate {
   sourceLabel: NetLabelPlacement
   sourceKind: "trace" | "port"
   sourceComponentId: number | null
   targetComponentId: number
-  sourcePin: PinWithChipId
-  targetPin: PinWithChipId
+  sourcePin: TraceRecoveryPin
+  targetPin: TraceRecoveryPin
   sourcePoint: Point
   targetPoint: Point
   perpendicularOffset: number
@@ -66,25 +74,17 @@ const pathIsAxisAligned = (path: Point[]) =>
       Math.abs(point.y - path[index - 1]!.y) <= EPSILON,
   )
 
-const pointOnSegment = (point: Point, start: Point, end: Point) => {
-  const crossProduct =
-    (point.x - start.x) * (end.y - start.y) -
-    (point.y - start.y) * (end.x - start.x)
-  if (Math.abs(crossProduct) > EPSILON) return false
-  return (
-    point.x >= Math.min(start.x, end.x) - EPSILON &&
-    point.x <= Math.max(start.x, end.x) + EPSILON &&
-    point.y >= Math.min(start.y, end.y) - EPSILON &&
-    point.y <= Math.max(start.y, end.y) + EPSILON
-  )
-}
-
-const segmentsOverlapBeyondPoint = (
-  firstStart: Point,
-  firstEnd: Point,
-  secondStart: Point,
-  secondEnd: Point,
-) => {
+const segmentsOverlapBeyondPoint = ({
+  firstStart,
+  firstEnd,
+  secondStart,
+  secondEnd,
+}: {
+  firstStart: Point
+  firstEnd: Point
+  secondStart: Point
+  secondEnd: Point
+}) => {
   const firstHorizontal = Math.abs(firstStart.y - firstEnd.y) <= EPSILON
   const secondHorizontal = Math.abs(secondStart.y - secondEnd.y) <= EPSILON
   if (firstHorizontal && secondHorizontal) {
@@ -149,32 +149,9 @@ const tracesTouch = (first: SolvedTracePath, second: SolvedTracePath) => {
   return false
 }
 
-const closestPointOnSegment = (
-  point: Point,
-  start: Point,
-  end: Point,
-): Point => {
-  const deltaX = end.x - start.x
-  const deltaY = end.y - start.y
-  const lengthSquared = deltaX * deltaX + deltaY * deltaY
-  if (lengthSquared <= EPSILON) return { ...start }
-  const projection = Math.max(
-    0,
-    Math.min(
-      1,
-      ((point.x - start.x) * deltaX + (point.y - start.y) * deltaY) /
-        lengthSquared,
-    ),
-  )
-  return {
-    x: start.x + projection * deltaX,
-    y: start.y + projection * deltaY,
-  }
-}
-
 const getAdjacentTracePoint = (
   trace: SolvedTracePath,
-  pin: PinWithChipId,
+  pin: TraceRecoveryPin,
 ): Point | null => {
   if (pointsEqual(trace.tracePath[0]!, pin)) return trace.tracePath[1] ?? null
   if (pointsEqual(trace.tracePath.at(-1)!, pin)) {
@@ -186,29 +163,64 @@ const getAdjacentTracePoint = (
 const directionToward = (from: Point, to: Point): FacingDirection => {
   const deltaX = to.x - from.x
   const deltaY = to.y - from.y
-  if (Math.abs(deltaX) >= Math.abs(deltaY)) return deltaX >= 0 ? "x+" : "x-"
-  return deltaY >= 0 ? "y+" : "y-"
+  if (Math.abs(deltaX) >= Math.abs(deltaY)) {
+    if (deltaX >= 0) return "x+"
+    return "x-"
+  }
+  if (deltaY >= 0) return "y+"
+  return "y-"
 }
 
-const isPointInDirection = (
-  origin: Point,
-  point: Point,
-  direction: FacingDirection,
-) => {
+const isPointInDirection = ({
+  origin,
+  point,
+  direction,
+}: {
+  origin: Point
+  point: Point
+  direction: FacingDirection
+}) => {
   if (direction === "x+") return point.x >= origin.x - EPSILON
   if (direction === "x-") return point.x <= origin.x + EPSILON
   if (direction === "y+") return point.y >= origin.y - EPSILON
   return point.y <= origin.y + EPSILON
 }
 
-const getPerpendicularOffset = (
-  source: Point,
-  target: Point,
-  direction: FacingDirection,
-) =>
-  direction === "x+" || direction === "x-"
-    ? Math.abs(source.y - target.y)
-    : Math.abs(source.x - target.x)
+const getPerpendicularOffset = ({
+  source,
+  target,
+  direction,
+}: {
+  source: Point
+  target: Point
+  direction: FacingDirection
+}) => {
+  if (direction === "x+" || direction === "x-") {
+    return Math.abs(source.y - target.y)
+  }
+  return Math.abs(source.x - target.x)
+}
+
+const findTraceRoot = (parents: number[], traceIndex: number): number => {
+  if (parents[traceIndex] !== traceIndex) {
+    parents[traceIndex] = findTraceRoot(parents, parents[traceIndex]!)
+  }
+  return parents[traceIndex]!
+}
+
+const unionTraceRoots = ({
+  parents,
+  firstTraceIndex,
+  secondTraceIndex,
+}: {
+  parents: number[]
+  firstTraceIndex: number
+  secondTraceIndex: number
+}) => {
+  const firstRoot = findTraceRoot(parents, firstTraceIndex)
+  const secondRoot = findTraceRoot(parents, secondTraceIndex)
+  if (firstRoot !== secondRoot) parents[secondRoot] = firstRoot
+}
 
 export class NetLabelTraceJunctionSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -220,14 +232,14 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
   outputNetLabelPlacements: NetLabelPlacement[]
   recoveredTraces: SolvedTracePath[] = []
 
-  private chipMap: Record<string, InputChip> = {}
-  private pinMap = new Map<string, PinWithChipId>()
+  private chipMap: Record<ChipId, InputChip> = {}
+  private pinMap = new Map<PinId, TraceRecoveryPin>()
   private components: TraceComponent[] = []
   private componentByTraceIndex = new Map<number, number>()
   private componentParents: number[] = []
-  private queuedCandidates: Candidate[] = []
-  private usedPortSourcePinIds = new Set<string>()
-  private currentCandidate: Candidate | null = null
+  private queuedCandidates: JunctionCandidate[] = []
+  private usedPortSourcePinIds = new Set<PinId>()
+  private currentCandidate: JunctionCandidate | null = null
   declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
 
   constructor(private input: NetLabelTraceJunctionSolverInput) {
@@ -239,16 +251,11 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
     this.outputTraces = [...input.traces]
     this.outputNetLabelPlacements = [...input.netLabelPlacements]
 
-    for (const chip of this.inputProblem.chips) {
-      this.chipMap[chip.chipId] = chip
-      for (const pin of chip.pins) {
-        this.pinMap.set(pin.pinId, {
-          ...pin,
-          chipId: chip.chipId,
-          _facingDirection: pin._facingDirection ?? getPinDirection(pin, chip),
-        })
-      }
-    }
+    const { chipMap, pinMap } = getTraceRecoveryConnectivityMaps(
+      this.inputProblem,
+    )
+    this.chipMap = chipMap
+    this.pinMap = pinMap
 
     this.buildTraceComponents()
     this.componentParents = this.components.map((component) => component.id)
@@ -263,15 +270,6 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
 
   private buildTraceComponents() {
     const parents = this.inputTraces.map((_, index) => index)
-    const find = (index: number): number => {
-      if (parents[index] !== index) parents[index] = find(parents[index]!)
-      return parents[index]!
-    }
-    const union = (first: number, second: number) => {
-      const firstRoot = find(first)
-      const secondRoot = find(second)
-      if (firstRoot !== secondRoot) parents[secondRoot] = firstRoot
-    }
 
     for (
       let firstIndex = 0;
@@ -289,7 +287,11 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
           first.globalConnNetId === second.globalConnNetId &&
           tracesTouch(first, second)
         ) {
-          union(firstIndex, secondIndex)
+          unionTraceRoots({
+            parents,
+            firstTraceIndex: firstIndex,
+            secondTraceIndex: secondIndex,
+          })
         }
       }
     }
@@ -300,7 +302,7 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
       traceIndex < this.inputTraces.length;
       traceIndex++
     ) {
-      const root = find(traceIndex)
+      const root = findTraceRoot(parents, traceIndex)
       let component = componentsByRoot.get(root)
       if (!component) {
         component = {
@@ -316,7 +318,10 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
     this.components = [...componentsByRoot.values()]
   }
 
-  private isEligibleLabel(label: NetLabelPlacement, groundNetId?: string) {
+  private isEligibleLabel(
+    label: NetLabelPlacement,
+    groundNetId?: NetLabelPlacement["globalConnNetId"],
+  ) {
     if (
       !label.netId ||
       label.netId === "GND" ||
@@ -339,7 +344,8 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
       ),
     )
     const componentId = this.componentByTraceIndex.get(traceIndex)
-    return componentId === undefined ? null : this.components[componentId]!
+    if (componentId === undefined) return null
+    return this.components[componentId]!
   }
 
   private getClosestTarget(
@@ -351,7 +357,7 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
       | undefined
     for (const trace of targetComponent.traces) {
       for (let index = 0; index < trace.tracePath.length - 1; index++) {
-        const point = closestPointOnSegment(
+        const point = pointToSegmentClosestPoint(
           sourcePoint,
           trace.tracePath[index]!,
           trace.tracePath[index + 1]!,
@@ -372,7 +378,7 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
   ) {
     return targetTrace.pinIds
       .map((pinId) => this.pinMap.get(pinId))
-      .filter((pin): pin is PinWithChipId => pin !== undefined)
+      .filter((pin): pin is TraceRecoveryPin => pin !== undefined)
       .sort(
         (first, second) =>
           Math.abs(first.x - targetPoint.x) +
@@ -383,9 +389,9 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
   }
 
   private pinsCanShareJunction(
-    sourcePin: PinWithChipId,
-    targetPin: PinWithChipId | undefined,
-  ): targetPin is PinWithChipId {
+    sourcePin: TraceRecoveryPin,
+    targetPin: TraceRecoveryPin | undefined,
+  ): targetPin is TraceRecoveryPin {
     return Boolean(
       targetPin &&
         !arePinsInDifferentSchematicSections(
@@ -408,7 +414,7 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
       this.inputProblem,
     )
     const groundNetId = netConnMap.getNetConnectedToId("GND") ?? undefined
-    const candidates: Candidate[] = []
+    const candidates: JunctionCandidate[] = []
 
     for (const label of this.inputNetLabelPlacements) {
       if (!this.isEligibleLabel(label, groundNetId)) continue
@@ -441,11 +447,11 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
             targetPin,
             sourcePoint: sourcePin,
             targetPoint: closestTarget.point,
-            perpendicularOffset: getPerpendicularOffset(
-              sourcePin,
-              closestTarget.point,
-              sourcePin._facingDirection,
-            ),
+            perpendicularOffset: getPerpendicularOffset({
+              source: sourcePin,
+              target: closestTarget.point,
+              direction: sourcePin._facingDirection,
+            }),
             routeDistance: closestTarget.distance,
             key: [
               `port-${sourcePin.pinId}`,
@@ -467,11 +473,11 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
           if (!sourcePoint) continue
           if (pointsEqual(sourcePoint, sourcePin)) continue
           if (
-            !isPointInDirection(
-              sourcePin,
-              sourcePoint,
-              sourcePin._facingDirection,
-            )
+            !isPointInDirection({
+              origin: sourcePin,
+              point: sourcePoint,
+              direction: sourcePin._facingDirection,
+            })
           ) {
             continue
           }
@@ -490,19 +496,19 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
             )
             if (!closestTarget) continue
             if (
-              !isPointInDirection(
-                sourcePoint,
-                closestTarget.point,
-                sourcePin._facingDirection,
-              )
+              !isPointInDirection({
+                origin: sourcePoint,
+                point: closestTarget.point,
+                direction: sourcePin._facingDirection,
+              })
             ) {
               continue
             }
-            const perpendicularOffset = getPerpendicularOffset(
-              sourcePoint,
-              closestTarget.point,
-              sourcePin._facingDirection,
-            )
+            const perpendicularOffset = getPerpendicularOffset({
+              source: sourcePoint,
+              target: closestTarget.point,
+              direction: sourcePin._facingDirection,
+            })
             if (perpendicularOffset > MAX_CONTINUATION_OFFSET) continue
 
             const targetPin = this.getClosestTargetPin(
@@ -559,7 +565,10 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
     if (firstRoot !== secondRoot) this.componentParents[secondRoot] = firstRoot
   }
 
-  private pathCrossesExistingTraces(path: Point[], candidate: Candidate) {
+  private pathCrossesExistingTraces(
+    path: Point[],
+    candidate: JunctionCandidate,
+  ) {
     for (
       let traceIndex = 0;
       traceIndex < this.inputTraces.length;
@@ -595,13 +604,14 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
             (junction) =>
               (pointsEqual(pathStart, junction) ||
                 pointsEqual(pathEnd, junction)) &&
-              pointOnSegment(junction, traceStart, traceEnd) &&
-              !segmentsOverlapBeyondPoint(
-                pathStart,
-                pathEnd,
-                traceStart,
-                traceEnd,
-              ),
+              pointToSegmentDistance(junction, traceStart, traceEnd) <=
+                EPSILON &&
+              !segmentsOverlapBeyondPoint({
+                firstStart: pathStart,
+                firstEnd: pathEnd,
+                secondStart: traceStart,
+                secondEnd: traceEnd,
+              }),
           )
           if (!allowedPointContact) return true
         }
@@ -716,29 +726,27 @@ export class NetLabelTraceJunctionSolver extends BaseSolver {
     }
 
     this.currentCandidate = candidate
-    const sourceRoutingPin: PinWithChipId =
-      candidate.sourceKind === "port"
-        ? { ...candidate.sourcePin }
-        : {
-            ...candidate.sourcePoint,
-            pinId: `junction-source-${candidate.key}`,
-            chipId: `junction-source-${candidate.key}`,
-            _facingDirection: candidate.sourcePin._facingDirection,
-          }
-    const targetRoutingPin: PinWithChipId = pointsEqual(
-      candidate.targetPoint,
-      candidate.targetPin,
-    )
-      ? { ...candidate.targetPin }
-      : {
-          ...candidate.targetPoint,
-          pinId: `junction-target-${candidate.key}`,
-          chipId: `junction-target-${candidate.key}`,
-          _facingDirection: directionToward(
-            candidate.targetPoint,
-            candidate.sourcePoint,
-          ),
-        }
+    let sourceRoutingPin: TraceRecoveryPin = { ...candidate.sourcePin }
+    if (candidate.sourceKind !== "port") {
+      sourceRoutingPin = {
+        ...candidate.sourcePoint,
+        pinId: `junction-source-${candidate.key}`,
+        chipId: `junction-source-${candidate.key}`,
+        _facingDirection: candidate.sourcePin._facingDirection,
+      }
+    }
+    let targetRoutingPin: TraceRecoveryPin = { ...candidate.targetPin }
+    if (!pointsEqual(candidate.targetPoint, candidate.targetPin)) {
+      targetRoutingPin = {
+        ...candidate.targetPoint,
+        pinId: `junction-target-${candidate.key}`,
+        chipId: `junction-target-${candidate.key}`,
+        _facingDirection: directionToward(
+          candidate.targetPoint,
+          candidate.sourcePoint,
+        ),
+      }
+    }
     this.activeSubSolver = new SchematicTraceSingleLineSolver2({
       inputProblem: this.inputProblem,
       pins: [sourceRoutingPin, targetRoutingPin],

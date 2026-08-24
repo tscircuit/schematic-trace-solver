@@ -1,30 +1,38 @@
-import { doSegmentsIntersect, type Point } from "@tscircuit/math-utils"
+import {
+  doesSegmentIntersectRect,
+  getBoundFromCenteredRect,
+  type Point,
+} from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import { doesPairCrossRestrictedCenterLines } from "lib/solvers/MspConnectionPairSolver/doesPairCrossRestrictedCenterLines"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import {
+  getTraceRecoveryConnectivityMaps,
+  type TraceRecoveryPin,
+} from "lib/solvers/NetLabelTraceRecovery/getTraceRecoveryConnectivityMaps"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import { SchematicTraceSingleLineSolver2 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
-import type { InputChip, InputPin, InputProblem } from "lib/types/InputProblem"
+import type {
+  ChipId,
+  InputChip,
+  InputProblem,
+  PinId,
+} from "lib/types/InputProblem"
 import { arePinsInDifferentSchematicSections } from "lib/utils/arePinsInDifferentSchematicSections"
 import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
-import type { FacingDirection } from "lib/utils/dir"
 import {
   type InlineNetLabelPlacement,
   visualizeInlineNetLabelOutput,
 } from "../InlineNetLabelSolver/InlineNetLabelSolver"
 
-type PinWithChipId = InputPin & {
-  chipId: string
-  _facingDirection: FacingDirection
-}
+type GlobalConnNetId = NetLabelPlacement["globalConnNetId"]
 
 interface CandidatePair {
   firstLabel: NetLabelPlacement
   secondLabel: NetLabelPlacement
-  pins: [PinWithChipId, PinWithChipId]
+  pins: [TraceRecoveryPin, TraceRecoveryPin]
   perpendicularOffset: number
   routeDistance: number
   key: string
@@ -38,52 +46,27 @@ export interface NetLabelToTraceSolverInput {
 }
 
 const AVAILABLE_NET_ORIENTATION_PREFIX = "available-net-orientation-"
-const COLLISION_EPSILON = 1e-9
 
-const getCanonicalPairKey = (firstPinId: string, secondPinId: string) =>
+const getCanonicalPairKey = (firstPinId: PinId, secondPinId: PinId) =>
   [firstPinId, secondPinId].sort().join("--")
 
 const getRenderedLabelBounds = (label: {
   center: Point
   width: number
   height: number
-  axis?: "x" | "y"
+  axis?: InlineNetLabelPlacement["axis"]
 }) => {
-  const width = label.axis === "y" ? label.height : label.width
-  const height = label.axis === "y" ? label.width : label.height
-  return {
-    minX: label.center.x - width / 2,
-    maxX: label.center.x + width / 2,
-    minY: label.center.y - height / 2,
-    maxY: label.center.y + height / 2,
+  let width = label.width
+  let height = label.height
+  if (label.axis === "y") {
+    width = label.height
+    height = label.width
   }
-}
-
-const segmentIntersectsBounds = (
-  start: Point,
-  end: Point,
-  bounds: ReturnType<typeof getRenderedLabelBounds>,
-) => {
-  const pointIsInside = (point: Point) =>
-    point.x >= bounds.minX - COLLISION_EPSILON &&
-    point.x <= bounds.maxX + COLLISION_EPSILON &&
-    point.y >= bounds.minY - COLLISION_EPSILON &&
-    point.y <= bounds.maxY + COLLISION_EPSILON
-
-  if (pointIsInside(start) || pointIsInside(end)) return true
-
-  const topLeft = { x: bounds.minX, y: bounds.maxY }
-  const topRight = { x: bounds.maxX, y: bounds.maxY }
-  const bottomRight = { x: bounds.maxX, y: bounds.minY }
-  const bottomLeft = { x: bounds.minX, y: bounds.minY }
-  return [
-    [topLeft, topRight],
-    [topRight, bottomRight],
-    [bottomRight, bottomLeft],
-    [bottomLeft, topLeft],
-  ].some(([edgeStart, edgeEnd]) =>
-    doSegmentsIntersect(start, end, edgeStart!, edgeEnd!),
-  )
+  return getBoundFromCenteredRect({
+    center: label.center,
+    width,
+    height,
+  })
 }
 
 export const pathIntersectsRenderedLabel = (
@@ -93,7 +76,7 @@ export const pathIntersectsRenderedLabel = (
   const bounds = getRenderedLabelBounds(label)
   for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
     if (
-      segmentIntersectsBounds(path[pathIndex]!, path[pathIndex + 1]!, bounds)
+      doesSegmentIntersectRect(path[pathIndex]!, path[pathIndex + 1]!, bounds)
     ) {
       return true
     }
@@ -102,12 +85,13 @@ export const pathIntersectsRenderedLabel = (
 }
 
 const getPerpendicularOffset = (
-  firstPin: PinWithChipId,
-  secondPin: PinWithChipId,
+  firstPin: TraceRecoveryPin,
+  secondPin: TraceRecoveryPin,
 ) => {
   const xDistance = Math.abs(firstPin.x - secondPin.x)
   const yDistance = Math.abs(firstPin.y - secondPin.y)
-  return xDistance >= yDistance ? yDistance : xDistance
+  if (xDistance >= yDistance) return yDistance
+  return xDistance
 }
 
 export class NetLabelToTraceSolver extends BaseSolver {
@@ -120,10 +104,10 @@ export class NetLabelToTraceSolver extends BaseSolver {
   outputNetLabelPlacements: NetLabelPlacement[]
   recoveredTraces: SolvedTracePath[] = []
 
-  private chipMap: Record<string, InputChip> = {}
-  private pinMap = new Map<string, PinWithChipId>()
+  private chipMap: Record<ChipId, InputChip> = {}
+  private pinMap = new Map<PinId, TraceRecoveryPin>()
   private queuedCandidates: CandidatePair[]
-  private usedPinIds = new Set<string>()
+  private usedPinIds = new Set<PinId>()
   private currentCandidate: CandidatePair | null = null
   declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
 
@@ -136,16 +120,11 @@ export class NetLabelToTraceSolver extends BaseSolver {
     this.outputTraces = [...input.traces]
     this.outputNetLabelPlacements = [...input.netLabelPlacements]
 
-    for (const chip of this.inputProblem.chips) {
-      this.chipMap[chip.chipId] = chip
-      for (const pin of chip.pins) {
-        this.pinMap.set(pin.pinId, {
-          ...pin,
-          chipId: chip.chipId,
-          _facingDirection: pin._facingDirection ?? getPinDirection(pin, chip),
-        })
-      }
-    }
+    const { chipMap, pinMap } = getTraceRecoveryConnectivityMaps(
+      this.inputProblem,
+    )
+    this.chipMap = chipMap
+    this.pinMap = pinMap
 
     this.queuedCandidates = this.buildCandidatePairs()
     this.stats.candidateCount = this.queuedCandidates.length
@@ -158,7 +137,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
 
   private isEligiblePortOnlyDirectConnectionLabel(
     label: NetLabelPlacement,
-    groundGlobalConnNetId?: string,
+    groundGlobalConnNetId?: GlobalConnNetId,
   ) {
     if (
       label.pinIds.length !== 1 ||
@@ -183,7 +162,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
     )
     const groundGlobalConnNetId =
       netConnMap.getNetConnectedToId("GND") ?? undefined
-    const labelsByGlobalNet = new Map<string, NetLabelPlacement[]>()
+    const labelsByGlobalNet = new Map<GlobalConnNetId, NetLabelPlacement[]>()
 
     for (const label of this.inputNetLabelPlacements) {
       if (
@@ -200,7 +179,6 @@ export class NetLabelToTraceSolver extends BaseSolver {
     }
 
     const candidates: CandidatePair[] = []
-    const pinIdMap = this.pinMap as Map<string, InputPin & { chipId: string }>
     for (const labels of labelsByGlobalNet.values()) {
       for (let firstIndex = 0; firstIndex < labels.length; firstIndex++) {
         for (
@@ -226,7 +204,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
             doesPairCrossRestrictedCenterLines({
               inputProblem: this.inputProblem,
               chipMap: this.chipMap,
-              pinIdMap,
+              pinIdMap: this.pinMap,
               p1: firstPin,
               p2: secondPin,
             })
