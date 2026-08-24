@@ -19,7 +19,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import type { InputChip, InputPin, InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
-import { symbols, type SchSymbol } from "schematic-symbols"
+import { type SchSymbol, symbols } from "schematic-symbols"
 
 type SnapshotTrace = Partial<SolvedTracePath> & {
   tracePath: Point[]
@@ -235,23 +235,61 @@ const facingDirectionToCircuitJson = (
   }
 }
 
-const getPassiveSymbolName = (chip: InputChip, refdes: string) => {
-  if (chip.pins.length !== 2) return undefined
+const getDefaultSymbolBaseName = (refdes: string) => {
   const prefix = refdes.match(/^[A-Za-z]+/)?.[0]?.toUpperCase()
-  const baseSymbol =
-    prefix === "R"
-      ? "resistor"
-      : prefix === "C"
-        ? "capacitor"
-        : prefix === "L"
-          ? "inductor"
-          : undefined
-  if (!baseSymbol) return undefined
+  if (!prefix) return undefined
 
-  const [firstPin, secondPin] = chip.pins
-  const isHorizontal =
-    Math.abs(firstPin!.x - secondPin!.x) >= Math.abs(firstPin!.y - secondPin!.y)
-  return `${baseSymbol}_${isHorizontal ? "right" : "up"}`
+  // Match the defaults used by tscircuit/core's normal components. The more
+  // specific LED prefix must be checked before the generic inductor prefix.
+  if (prefix === "LED") return "led"
+  if (prefix.startsWith("R")) return "boxresistor"
+  if (["C", "CIN", "COUT", "CCOMP"].includes(prefix)) return "capacitor"
+  if (prefix === "L") return "inductor"
+  if (prefix.startsWith("D")) return "diode"
+  if (prefix === "F") return "fuse"
+  if (["B", "BT", "BAT"].includes(prefix)) return "battery"
+  if (prefix === "X" || prefix === "Y") return "crystal"
+  if (prefix === "SW") return "spst_switch"
+  if (prefix === "I") return "current_source"
+  if (prefix === "V" || prefix === "VS") return "ac_voltmeter"
+
+  return undefined
+}
+
+const getPinsInNumberOrder = (chip: InputChip) =>
+  [...chip.pins].sort((pinA, pinB) => {
+    const pinNumberA = getPinNumber(pinA.pinId)
+    const pinNumberB = getPinNumber(pinB.pinId)
+    if (pinNumberA === undefined || pinNumberB === undefined) return 0
+    return pinNumberA - pinNumberB
+  })
+
+const getDefaultSymbolName = (chip: InputChip, refdes: string) => {
+  if (chip.pins.length !== 2) return undefined
+  if (chip.symbolName && chip.symbolName in symbols) return chip.symbolName
+  const baseSymbolName = getDefaultSymbolBaseName(refdes)
+  if (!baseSymbolName) return undefined
+
+  const [firstPin, secondPin] = getPinsInNumberOrder(chip)
+  const deltaX = secondPin!.x - firstPin!.x
+  const deltaY = secondPin!.y - firstPin!.y
+  const isHorizontal = Math.abs(deltaX) >= Math.abs(deltaY)
+
+  const suffix =
+    baseSymbolName === "fuse"
+      ? isHorizontal
+        ? "horz"
+        : "vert"
+      : isHorizontal
+        ? deltaX >= 0
+          ? "right"
+          : "left"
+        : deltaY >= 0
+          ? "up"
+          : "down"
+  const symbolName = `${baseSymbolName}_${suffix}`
+
+  return symbolName in symbols ? symbolName : undefined
 }
 
 const getAngularDifference = (angle1: number, angle2: number) => {
@@ -267,22 +305,21 @@ const getAngularDifference = (angle1: number, angle2: number) => {
  * coordinates. Offsetting the component and both ports here makes the rendered
  * symbol terminals land on the original solver pin coordinates.
  */
-const getCircuitToSvgSymbolOffset = (
-  chip: InputChip,
-  symbolName: string | undefined,
-): Point => {
-  if (!symbolName) return { x: 0, y: 0 }
-  const symbol = symbols[symbolName as keyof typeof symbols] as
-    | SchSymbol
-    | undefined
-  if (!symbol || chip.pins.length !== 2 || symbol.ports.length !== 2) {
-    return { x: 0, y: 0 }
-  }
-
+const getCircuitToSvgSymbolOffset = ({
+  chip,
+  componentCenter,
+  symbol,
+  scale,
+}: {
+  chip: InputChip
+  componentCenter: Point
+  symbol: SchSymbol
+  scale: number
+}): Point => {
   const pinsByAngle = chip.pins
     .map((pin) => ({
       pin,
-      angle: Math.atan2(pin.y - chip.center.y, pin.x - chip.center.x),
+      angle: Math.atan2(pin.y - componentCenter.y, pin.x - componentCenter.x),
     }))
     .sort((a, b) => a.angle - b.angle)
   const symbolPortsByAngle = symbol.ports
@@ -322,15 +359,92 @@ const getCircuitToSvgSymbolOffset = (
   )
   if (symbolPortDistance === 0) return { x: 0, y: 0 }
 
-  const schematicPortDistance = Math.hypot(
-    otherMatch.pin.x - anchorMatch.pin.x,
-    otherMatch.pin.y - anchorMatch.pin.y,
-  )
-  const scale = schematicPortDistance / symbolPortDistance
-
   return {
     x: (1 - scale) * anchorMatch.symbolPort.x,
     y: (1 - scale) * anchorMatch.symbolPort.y,
+  }
+}
+
+type SnapshotSymbolGeometry = {
+  symbolName: string
+  center: Point
+  size: { width: number; height: number }
+  circuitToSvgOffset: Point
+}
+
+/**
+ * Core passes the solver a text-inclusive chip obstacle. Its center and size
+ * can therefore include {REF}, {VAL}, or explicit MPN text and must not be used
+ * as the drawable symbol bounds. Reconstruct the original component geometry
+ * from the two schematic pin positions and the selected symbol instead.
+ */
+const getSnapshotSymbolGeometry = (
+  chip: InputChip,
+  refdes: string,
+): SnapshotSymbolGeometry | undefined => {
+  const symbolName = getDefaultSymbolName(chip, refdes)
+  if (!symbolName) return undefined
+  const symbol = symbols[symbolName as keyof typeof symbols] as
+    | SchSymbol
+    | undefined
+  if (!symbol || chip.pins.length !== 2 || symbol.ports.length !== 2) {
+    return undefined
+  }
+
+  const unusedSymbolPorts = new Set(symbol.ports)
+  const matches = chip.pins.map((pin) => {
+    const pinLabel = getPinLabel(pin.pinId)
+    const symbolPort = [...unusedSymbolPorts].find((port) =>
+      port.labels.includes(pinLabel),
+    )
+    if (symbolPort) unusedSymbolPorts.delete(symbolPort)
+    return symbolPort ? { pin, symbolPort } : undefined
+  })
+
+  const matchedByLabel = matches.every(
+    (match): match is NonNullable<typeof match> => Boolean(match),
+  )
+  const pinPortMatches = matchedByLabel
+    ? matches
+    : getPinsInNumberOrder(chip).map((pin, index) => ({
+        pin,
+        symbolPort: symbol.ports[index]!,
+      }))
+
+  const [firstMatch, secondMatch] = pinPortMatches
+  const symbolPortDistance = Math.hypot(
+    secondMatch!.symbolPort.x - firstMatch!.symbolPort.x,
+    secondMatch!.symbolPort.y - firstMatch!.symbolPort.y,
+  )
+  const schematicPortDistance = Math.hypot(
+    secondMatch!.pin.x - firstMatch!.pin.x,
+    secondMatch!.pin.y - firstMatch!.pin.y,
+  )
+  if (symbolPortDistance === 0 || schematicPortDistance === 0) return undefined
+
+  const scale = schematicPortDistance / symbolPortDistance
+  const centers = pinPortMatches.map(({ pin, symbolPort }) => ({
+    x: pin.x - (symbolPort.x - symbol.center.x) * scale,
+    y: pin.y - (symbolPort.y - symbol.center.y) * scale,
+  }))
+  const center = {
+    x: (centers[0]!.x + centers[1]!.x) / 2,
+    y: (centers[0]!.y + centers[1]!.y) / 2,
+  }
+
+  return {
+    symbolName,
+    center,
+    size: {
+      width: symbol.size.width * scale,
+      height: symbol.size.height * scale,
+    },
+    circuitToSvgOffset: getCircuitToSvgSymbolOffset({
+      chip,
+      componentCenter: center,
+      symbol,
+      scale,
+    }),
   }
 }
 
@@ -618,8 +732,14 @@ export const convertSolverOutputToCircuitJson = (
     const sourceComponentId = `source_component_${chipIndex}`
     const schematicComponentId = `schematic_component_${chipIndex}`
     const refdes = getRefdes(chip)
-    const symbolName = getPassiveSymbolName(chip, refdes)
-    const symbolOffset = getCircuitToSvgSymbolOffset(chip, symbolName)
+    const symbolGeometry = getSnapshotSymbolGeometry(chip, refdes)
+    const symbolName = symbolGeometry?.symbolName
+    const symbolOffset = symbolGeometry?.circuitToSvgOffset ?? { x: 0, y: 0 }
+    const componentCenter = symbolGeometry?.center ?? chip.center
+    const componentSize = symbolGeometry?.size ?? {
+      width: chip.width,
+      height: chip.height,
+    }
 
     circuitJson.push({
       type: "source_component",
@@ -633,10 +753,10 @@ export const convertSolverOutputToCircuitJson = (
       schematic_component_id: schematicComponentId,
       source_component_id: sourceComponentId,
       center: {
-        x: chip.center.x + symbolOffset.x,
-        y: chip.center.y + symbolOffset.y,
+        x: componentCenter.x + symbolOffset.x,
+        y: componentCenter.y + symbolOffset.y,
       },
-      size: { width: chip.width, height: chip.height },
+      size: componentSize,
       is_box_with_pins: true,
       symbol_name: symbolName,
     } satisfies SchematicComponent)

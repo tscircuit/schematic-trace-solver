@@ -24,6 +24,15 @@ export interface TextBoxes {
 
 export interface InputChip {
   chipId: ChipId
+
+  /**
+   * Exact directional/oriented schematic-symbol name when the caller has it.
+   * `center`, `width`, and `height` describe the solver obstacle and may be
+   * expanded to include reference/value or manufacturer-part-number text, so
+   * renderers should use this symbol's geometry for the component body.
+   */
+  symbolName?: string
+
   center: { x: number; y: number }
   width: number
   height: number

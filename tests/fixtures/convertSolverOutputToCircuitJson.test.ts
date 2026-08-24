@@ -23,12 +23,25 @@ const inputProblem: InputProblem = {
     },
     {
       chipId: "schematic_component_1",
-      center: { x: 2, y: 0 },
-      width: 0.5,
-      height: 1,
+      // tscircuit/core passes a text-inclusive obstacle here. These bounds are
+      // deliberately much larger and off-center from the capacitor symbol.
+      center: { x: 2.2, y: 0.35 },
+      width: 2,
+      height: 1.6,
       pins: [
-        { pinId: "C1.1", x: 2, y: 0.5, _facingDirection: "y+" },
-        { pinId: "C1.2", x: 2, y: -0.5, _facingDirection: "y-" },
+        { pinId: "C1.1", x: 2, y: 0.3, _facingDirection: "y+" },
+        { pinId: "C1.2", x: 2, y: -0.3, _facingDirection: "y-" },
+      ],
+    },
+    {
+      chipId: "schematic_component_2",
+      symbolName: "led_right",
+      center: { x: 4.35, y: 0.4 },
+      width: 2.2,
+      height: 1.45,
+      pins: [
+        { pinId: "LED1.1", x: 3.46, y: 0, _facingDirection: "x-" },
+        { pinId: "LED1.2", x: 4.54, y: 0, _facingDirection: "x+" },
       ],
     },
   ],
@@ -71,8 +84,8 @@ class SnapshotTestSolver extends BaseSolver {
           tracePath: [
             { x: 0.5, y: 0.2 },
             { x: 1.2, y: 0.2 },
-            { x: 1.2, y: 0.5 },
-            { x: 2, y: 0.5 },
+            { x: 1.2, y: 0.3 },
+            { x: 2, y: 0.3 },
           ],
         },
       ],
@@ -114,14 +127,14 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
 
   expect(
     circuitJson.filter((element) => element.type === "schematic_component"),
-  ).toHaveLength(2)
+  ).toHaveLength(3)
   expect(
     circuitJson.find(
       (element) =>
         element.type === "schematic_component" &&
         element.source_component_id === "source_component_1",
     ),
-  ).toMatchObject({ symbol_name: "capacitor_up" })
+  ).toMatchObject({ symbol_name: "capacitor_down" })
 
   const capacitorComponent = circuitJson.find(
     (element) =>
@@ -129,12 +142,22 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
       element.source_component_id === "source_component_1",
   )
   expect(capacitorComponent).toMatchObject({
-    center: { x: 2 },
+    center: { x: 2, y: 0 },
+    size: { width: 0.9, height: 0.6 },
   })
   if (capacitorComponent?.type !== "schematic_component") {
     throw new Error("Expected capacitor schematic component")
   }
-  expect(capacitorComponent.center.y).toBeCloseTo(-0.2)
+  const ledComponent = circuitJson.find(
+    (element) =>
+      element.type === "schematic_component" &&
+      element.source_component_id === "source_component_2",
+  )
+  expect(ledComponent).toMatchObject({
+    center: { x: 4, y: 0 },
+    size: { width: 1.13, height: 0.65 },
+    symbol_name: "led_right",
+  })
 
   const capacitorPorts = circuitJson
     .filter(
@@ -144,7 +167,7 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
           capacitorComponent.schematic_component_id,
     )
     .sort((a, b) => a.center.y - b.center.y)
-  expect(capacitorPorts[0]!.center.y).toBeCloseTo(-0.7)
+  expect(capacitorPorts[0]!.center.y).toBeCloseTo(-0.3)
   expect(capacitorPorts[1]!.center.y).toBeCloseTo(0.3)
   expect(
     circuitJson.filter((element) => element.type === "schematic_box"),
@@ -168,7 +191,7 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
   ).toMatchObject({ name: "ROUTED" })
   expect(schematicTraces[0]!.edges).not.toContainEqual({
     from: { x: 0.5, y: -0.2 },
-    to: { x: 2, y: -0.5 },
+    to: { x: 2, y: -0.3 },
   })
 
   const svg = convertCircuitJsonToSchematicSvg(circuitJson)
