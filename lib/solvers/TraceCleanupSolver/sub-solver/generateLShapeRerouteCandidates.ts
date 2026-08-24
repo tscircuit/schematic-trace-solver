@@ -122,6 +122,58 @@ export interface TraceDetourCandidate {
   path: Point[]
 }
 
+export const generatePerimeterCornerTraceDetours = ({
+  trace,
+  chipBounds,
+  clearance,
+}: Omit<
+  PerpendicularTraceDetourInput,
+  "segmentIndex" | "obstacleStart" | "obstacleEnd"
+>): TraceDetourCandidate[] => {
+  if (trace.tracePath.length < 4 || chipBounds.length === 0) return []
+
+  const start = trace.tracePath[0]!
+  const firstEscape = trace.tracePath[1]!
+  const lastEscape = trace.tracePath.at(-2)!
+  const end = trace.tracePath.at(-1)!
+  const minX = Math.min(...chipBounds.map((bounds) => bounds.minX)) - clearance
+  const maxX = Math.max(...chipBounds.map((bounds) => bounds.maxX)) + clearance
+  const minY = Math.min(...chipBounds.map((bounds) => bounds.minY)) - clearance
+  const maxY = Math.max(...chipBounds.map((bounds) => bounds.maxY)) + clearance
+  const candidates: TraceDetourCandidate[] = []
+
+  for (const channelX of [minX, maxX]) {
+    for (const channelY of [minY, maxY]) {
+      candidates.push({
+        traceId: trace.mspPairId,
+        path: simplifyPath([
+          start,
+          firstEscape,
+          { x: firstEscape.x, y: channelY },
+          { x: channelX, y: channelY },
+          { x: channelX, y: lastEscape.y },
+          lastEscape,
+          end,
+        ]),
+      })
+      candidates.push({
+        traceId: trace.mspPairId,
+        path: simplifyPath([
+          start,
+          firstEscape,
+          { x: channelX, y: firstEscape.y },
+          { x: channelX, y: channelY },
+          { x: lastEscape.x, y: channelY },
+          lastEscape,
+          end,
+        ]),
+      })
+    }
+  }
+
+  return candidates
+}
+
 export const generatePerpendicularTraceDetours = ({
   trace,
   segmentIndex,
