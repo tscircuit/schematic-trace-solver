@@ -185,6 +185,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       netId: blockedLabel.netId,
       pinIds: blockedLabel.pinIds,
+      includeFallbackNetLabelWidth:
+        blockedLabel.mspConnectionPairIds.length === 0,
     })
     let columnLabelIndex: number | undefined
     if (blockedLabelWidth !== undefined) {
@@ -196,6 +198,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
             inputProblem: this.inputProblem,
             netId: label.netId,
             pinIds: label.pinIds,
+            includeFallbackNetLabelWidth:
+              label.mspConnectionPairIds.length === 0,
           }) === blockedLabelWidth
         )
       })
@@ -496,6 +500,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
+        includeFallbackNetLabelWidth: label.mspConnectionPairIds.length === 0,
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
@@ -1113,6 +1118,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
+        includeFallbackNetLabelWidth: label.mspConnectionPairIds.length === 0,
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
@@ -1141,6 +1147,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
+        includeFallbackNetLabelWidth: label.mspConnectionPairIds.length === 0,
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
@@ -1224,6 +1231,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
+        includeFallbackNetLabelWidth: label.mspConnectionPairIds.length === 0,
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
@@ -1309,6 +1317,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
+        includeFallbackNetLabelWidth: label.mspConnectionPairIds.length === 0,
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })

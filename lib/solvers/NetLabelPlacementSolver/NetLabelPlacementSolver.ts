@@ -270,6 +270,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       netId: group.netId,
       pinIds,
+      includeFallbackNetLabelWidth: group.portOnlyPinId !== undefined,
     })
   }
 

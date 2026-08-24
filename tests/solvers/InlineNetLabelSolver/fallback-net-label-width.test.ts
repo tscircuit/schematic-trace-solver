@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { NET_LABEL_HORIZONTAL_WIDTH } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type {
   InputDirectConnection,
@@ -88,8 +89,16 @@ const routedInputProblem: InputProblem = {
 
 test("fallback label width does not split routable inline connections", () => {
   const solver = new SchematicTracePipelineSolver(routedInputProblem)
+  const inputWithoutFallbackWidths = structuredClone(routedInputProblem)
+  for (const connection of inputWithoutFallbackWidths.directConnections) {
+    delete connection.fallbackNetLabelWidth
+  }
+  const solverWithoutFallbackWidths = new SchematicTracePipelineSolver(
+    inputWithoutFallbackWidths,
+  )
 
   solver.solve()
+  solverWithoutFallbackWidths.solve()
 
   expect(solver.schematicTraceLinesSolver!.solvedTracePaths).toHaveLength(5)
   expect(solver.schematicTraceLinesSolver!.failedConnectionPairs).toHaveLength(
@@ -104,6 +113,20 @@ test("fallback label width does not split routable inline connections", () => {
       (placement) => placement.stubTracePath === undefined,
     ),
   ).toBe(true)
+  expect(
+    solver.netLabelPlacementSolver!.netLabelPlacements.every(
+      (placement) =>
+        Math.max(placement.width, placement.height) ===
+        NET_LABEL_HORIZONTAL_WIDTH,
+    ),
+  ).toBe(true)
+  expect(
+    output.traces.map(({ mspPairId, tracePath }) => ({ mspPairId, tracePath })),
+  ).toEqual(
+    solverWithoutFallbackWidths
+      .inlineNetLabelSolver!.getOutput()
+      .traces.map(({ mspPairId, tracePath }) => ({ mspPairId, tracePath })),
+  )
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
@@ -126,7 +149,8 @@ test("fallback label width sizes anchored labels when routing is skipped", () =>
         pins: [{ pinId: "U2.1", x: 2.5, y: 0, _facingDirection: "x-" }],
       },
     ],
-    directConnections: [
+    directConnections: [],
+    netConnections: [
       {
         netId: "SIGNAL",
         pinIds: ["U1.1", "U2.1"],
@@ -136,7 +160,6 @@ test("fallback label width sizes anchored labels when routing is skipped", () =>
         inlineNetLabelHeight: 0.12,
       },
     ],
-    netConnections: [],
     availableNetLabelOrientations: {},
     maxMspPairDistance: 1,
   }

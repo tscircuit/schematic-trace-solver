@@ -315,6 +315,7 @@ const getNetLabelWidth = (
     inputProblem,
     netId: label.netId,
     pinIds: label.pinIds,
+    includeFallbackNetLabelWidth: label.mspConnectionPairIds.length === 0,
   })
   if (configuredWidth !== undefined) return configuredWidth
 
