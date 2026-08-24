@@ -2,6 +2,7 @@ import type {
   InputDirectConnection,
   InputNetConnection,
   InputProblem,
+  NetId,
   PinId,
 } from "lib/types/InputProblem"
 
@@ -29,7 +30,7 @@ export const getNetLabelWidthForConnection = ({
   includeFallbackNetLabelWidth = true,
 }: {
   inputProblem: InputProblem
-  netId?: string
+  netId?: NetId
   pinIds: readonly PinId[]
   includeFallbackNetLabelWidth?: boolean
 }): number | undefined => {

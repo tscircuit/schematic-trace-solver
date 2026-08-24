@@ -202,7 +202,12 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     const orientations =
       this.inputProblem.availableNetLabelOrientations[netId] ??
       (["x+", "x-", "y+", "y-"] as FacingDirection[])
-    const netLabelWidth = this.getNetLabelWidthForConnectionPair(netId)
+    const netLabelWidth = getNetLabelWidthForConnection({
+      inputProblem: this.inputProblem,
+      netId,
+      pinIds: this.pins.map((pin) => pin.pinId),
+      includeFallbackNetLabelWidth: false,
+    })
     const netLabelHeight = this.getNetLabelHeightForConnectionPair(netId)
     const padding: Required<RectPadding> = {
       minX: 0,
@@ -238,16 +243,6 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     }
 
     return padding
-  }
-
-  private getNetLabelWidthForConnectionPair(netId: string) {
-    const pinIds = this.pins.map((p) => p.pinId)
-    return getNetLabelWidthForConnection({
-      inputProblem: this.inputProblem,
-      netId,
-      pinIds,
-      includeFallbackNetLabelWidth: false,
-    })
   }
 
   private getNetLabelHeightForConnectionPair(netId: string) {
