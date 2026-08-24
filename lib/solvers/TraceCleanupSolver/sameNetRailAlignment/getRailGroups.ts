@@ -118,6 +118,7 @@ export const getRailGroups = (
       }
     }
 
+    // Mixed groups fall back to their original component-side groups.
     const componentGroups: RailSegment[][] = []
     for (const segment of group) {
       const componentGroup = componentGroups.find(

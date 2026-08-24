@@ -26,6 +26,8 @@ interface EvaluateRailGroupInput {
   eligibleTraceIds: ReadonlySet<string>
 }
 
+const MIN_COMPONENT_RAIL_BUS_SIZE = 3
+
 const tracePathChanged = (
   original: SolvedTracePath,
   candidate: SolvedTracePath,
@@ -58,7 +60,9 @@ export const evaluateRailGroup = ({
   )
   // A bus joins at least three component sides; two sides are point-to-point.
   const formsComponentRailBus =
-    spansComponents && group.length >= 3 && groupNetLabels.length === 1
+    spansComponents &&
+    group.length >= MIN_COMPONENT_RAIL_BUS_SIZE &&
+    groupNetLabels.length === 1
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
   )
@@ -113,8 +117,7 @@ export const evaluateRailGroup = ({
         allCandidateTraces,
       )
       if (metrics.otherNetCrossings > baseline.otherNetCrossings) continue
-      const alignsToLabelRail = netLabelPlacements.some((label) => {
-        if (label.globalConnNetId !== group[0]!.globalConnNetId) return false
+      const alignsToLabelRail = groupNetLabels.some((label) => {
         if (label.orientation !== group[0]!.componentFacingDirection) {
           return false
         }
