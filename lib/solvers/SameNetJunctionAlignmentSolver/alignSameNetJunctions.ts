@@ -35,7 +35,6 @@ interface HorizontalSegment {
 const MAX_ALIGNED_LOAD_PIN_OFFSET = 0.2
 // Limit label-boundary alignment to small corrections that cannot create spikes.
 const MAX_SAME_NET_LABEL_BOUNDARY_RAIL_OFFSET = 0.2
-const MAX_ALIGNED_BRANCHES_FOR_TAIL_TRIMMING = 1
 
 const getSharedPin = ({
   donorTrace,
@@ -363,19 +362,15 @@ export const alignSameNetJunctions = ({
     }
   }
 
-  const eligibleChipIds = new Set(
-    inputProblem.chips
-      .filter(
-        (chip) =>
-          chip.sectionId &&
-          alignedBranchCountBySectionId.get(chip.sectionId) ===
-            MAX_ALIGNED_BRANCHES_FOR_TAIL_TRIMMING,
-      )
-      .map((chip) => chip.chipId),
+  const alignedSectionIds = new Set(
+    [...alignedBranchCountBySectionId]
+      .filter(([, alignedBranchCount]) => alignedBranchCount === 1)
+      .map(([sectionId]) => sectionId),
   )
   const trimmedOverlaps = trimSameNetOverlappingTraceTails({
     traces: outputTraces,
-    eligibleChipIds,
+    inputProblem,
+    alignedSectionIds,
   })
 
   return {
@@ -383,5 +378,6 @@ export const alignSameNetJunctions = ({
     netLabelPlacements: outputNetLabelPlacements,
     alignedJunctionCount,
     trimmedSameNetOverlapCount: trimmedOverlaps.trimmedSameNetOverlapCount,
+    collapsedSameNetHairpinCount: trimmedOverlaps.collapsedSameNetHairpinCount,
   }
 }
