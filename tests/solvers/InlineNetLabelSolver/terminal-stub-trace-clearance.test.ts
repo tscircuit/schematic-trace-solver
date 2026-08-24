@@ -5,7 +5,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 
-test("reproduces terminal inline-label stubs crossing an unrelated trace", () => {
+test("terminal inline-label stubs stop before an unrelated trace", () => {
   const inputProblem: InputProblem = {
     chips: [
       {
@@ -88,6 +88,15 @@ test("reproduces terminal inline-label stubs crossing an unrelated trace", () =>
     netLabelPlacements,
   })
   solver.solve()
+
+  const placements = solver.getOutput().inlineNetLabelPlacements
+  expect(placements).toHaveLength(2)
+  for (const placement of placements) {
+    const [start, end] = placement.stubTracePath!
+    expect(end.x).toBeCloseTo(0.95)
+    expect(end.x).toBeLessThan(1)
+    expect(end.x - start.x).toBeGreaterThanOrEqual(placement.width + 0.1)
+  }
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
