@@ -26,8 +26,6 @@ interface EvaluateRailGroupInput {
   eligibleTraceIds: ReadonlySet<string>
 }
 
-const MINIMUM_COMPONENT_RAIL_BUS_SIZE = 3
-
 const tracePathChanged = (
   original: SolvedTracePath,
   candidate: SolvedTracePath,
@@ -58,11 +56,6 @@ export const evaluateRailGroup = ({
   const groupNetLabels = netLabelPlacements.filter(
     (label) => label.globalConnNetId === group[0]!.globalConnNetId,
   )
-  // A bus can contain any number of component sides above this minimum.
-  const formsComponentRailBus =
-    spansComponents &&
-    group.length >= MINIMUM_COMPONENT_RAIL_BUS_SIZE &&
-    groupNetLabels.length === 1
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
   )
@@ -127,7 +120,8 @@ export const evaluateRailGroup = ({
         return nearlyEqual(label.anchorPoint.x, coordinate)
       })
       const alignsConnectedComponentSides =
-        formsComponentRailBus &&
+        spansComponents &&
+        groupNetLabels.length === 1 &&
         alignsToLabelRail &&
         metrics.turnCount <= baseline.turnCount
       let improvesReadability = isReadabilityImprovement(metrics, baseline)
