@@ -14,7 +14,15 @@ import {
   type TraceRecoveryPin,
 } from "lib/solvers/NetLabelTraceRecovery/getTraceRecoveryConnectivityMaps"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import {
+  isHorizontal,
+  isVertical,
+} from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { SchematicTraceSingleLineSolver2 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
+import {
+  pointsAreEqual,
+  segmentsOverlapBeyondEndpoint,
+} from "lib/solvers/UnroutedTraceRecoverySolver/UnroutedTraceRecoverySolver"
 import type {
   ChipId,
   InputChip,
@@ -25,12 +33,14 @@ import { arePinsInDifferentSchematicSections } from "lib/utils/arePinsInDifferen
 import type { FacingDirection } from "lib/utils/dir"
 import {
   type InlineNetLabelPlacement,
+  type InlineNetLabelOutput,
   visualizeInlineNetLabelOutput,
 } from "../InlineNetLabelSolver/InlineNetLabelSolver"
 import { pathIntersectsRenderedLabel } from "../NetLabelToTraceSolver/NetLabelToTraceSolver"
 
 const EPSILON = 1e-9
 const MAX_CONTINUATION_OFFSET = 0.15
+const RECOVERED_TRACE_PREFIX = "net-label-trace-junction-"
 // Standalone ports may join nearby copper, but a distant connection remains a
 // deliberate net-label boundary rather than becoming a page-spanning trace.
 const MAX_PORT_TO_TRACE_DISTANCE = 2
@@ -43,7 +53,6 @@ interface TraceComponent {
 
 interface JunctionCandidate {
   sourceLabel: NetLabelPlacement
-  sourceKind: "trace" | "port"
   sourceComponentId: number | null
   targetComponentId: number
   sourcePin: TraceRecoveryPin
@@ -55,72 +64,13 @@ interface JunctionCandidate {
   key: string
 }
 
-export interface NetLabelToSameNetTraceSolverInput {
-  inputProblem: InputProblem
-  traces: SolvedTracePath[]
-  netLabelPlacements: NetLabelPlacement[]
-  inlineNetLabelPlacements: InlineNetLabelPlacement[]
-}
-
-const pointsEqual = (first: Point, second: Point) =>
-  Math.abs(first.x - second.x) <= EPSILON &&
-  Math.abs(first.y - second.y) <= EPSILON
-
 const pathIsAxisAligned = (path: Point[]) =>
   path.every(
     (point, index) =>
       index === 0 ||
-      Math.abs(point.x - path[index - 1]!.x) <= EPSILON ||
-      Math.abs(point.y - path[index - 1]!.y) <= EPSILON,
+      isHorizontal(point, path[index - 1]!) ||
+      isVertical(point, path[index - 1]!),
   )
-
-const segmentsOverlapBeyondPoint = ({
-  firstStart,
-  firstEnd,
-  secondStart,
-  secondEnd,
-}: {
-  firstStart: Point
-  firstEnd: Point
-  secondStart: Point
-  secondEnd: Point
-}) => {
-  const firstHorizontal = Math.abs(firstStart.y - firstEnd.y) <= EPSILON
-  const secondHorizontal = Math.abs(secondStart.y - secondEnd.y) <= EPSILON
-  if (firstHorizontal && secondHorizontal) {
-    if (Math.abs(firstStart.y - secondStart.y) > EPSILON) return false
-    return (
-      Math.min(
-        Math.max(firstStart.x, firstEnd.x),
-        Math.max(secondStart.x, secondEnd.x),
-      ) -
-        Math.max(
-          Math.min(firstStart.x, firstEnd.x),
-          Math.min(secondStart.x, secondEnd.x),
-        ) >
-      EPSILON
-    )
-  }
-
-  const firstVertical = Math.abs(firstStart.x - firstEnd.x) <= EPSILON
-  const secondVertical = Math.abs(secondStart.x - secondEnd.x) <= EPSILON
-  if (firstVertical && secondVertical) {
-    if (Math.abs(firstStart.x - secondStart.x) > EPSILON) return false
-    return (
-      Math.min(
-        Math.max(firstStart.y, firstEnd.y),
-        Math.max(secondStart.y, secondEnd.y),
-      ) -
-        Math.max(
-          Math.min(firstStart.y, firstEnd.y),
-          Math.min(secondStart.y, secondEnd.y),
-        ) >
-      EPSILON
-    )
-  }
-
-  return false
-}
 
 const tracesTouch = (first: SolvedTracePath, second: SolvedTracePath) => {
   if (first.pinIds.some((pinId) => second.pinIds.includes(pinId))) return true
@@ -153,8 +103,10 @@ const getAdjacentTracePoint = (
   trace: SolvedTracePath,
   pin: TraceRecoveryPin,
 ): Point | null => {
-  if (pointsEqual(trace.tracePath[0]!, pin)) return trace.tracePath[1] ?? null
-  if (pointsEqual(trace.tracePath.at(-1)!, pin)) {
+  if (pointsAreEqual(trace.tracePath[0]!, pin)) {
+    return trace.tracePath[1] ?? null
+  }
+  if (pointsAreEqual(trace.tracePath.at(-1)!, pin)) {
     return trace.tracePath.at(-2) ?? null
   }
   return null
@@ -201,53 +153,24 @@ const getPerpendicularOffset = ({
   return Math.abs(source.x - target.x)
 }
 
-const findTraceRoot = (parents: number[], traceIndex: number): number => {
-  if (parents[traceIndex] !== traceIndex) {
-    parents[traceIndex] = findTraceRoot(parents, parents[traceIndex]!)
-  }
-  return parents[traceIndex]!
-}
-
-const unionTraceRoots = ({
-  parents,
-  firstTraceIndex,
-  secondTraceIndex,
-}: {
-  parents: number[]
-  firstTraceIndex: number
-  secondTraceIndex: number
-}) => {
-  const firstRoot = findTraceRoot(parents, firstTraceIndex)
-  const secondRoot = findTraceRoot(parents, secondTraceIndex)
-  if (firstRoot !== secondRoot) parents[secondRoot] = firstRoot
-}
-
 export class NetLabelToSameNetTraceSolver extends BaseSolver {
   inputProblem: InputProblem
-  inputTraces: SolvedTracePath[]
-  inputNetLabelPlacements: NetLabelPlacement[]
-  inlineNetLabelPlacements: InlineNetLabelPlacement[]
 
   outputTraces: SolvedTracePath[]
   outputNetLabelPlacements: NetLabelPlacement[]
-  recoveredTraces: SolvedTracePath[] = []
 
-  private chipMap: Record<ChipId, InputChip> = {}
-  private pinMap = new Map<PinId, TraceRecoveryPin>()
+  private chipMap: Record<ChipId, InputChip>
+  private pinMap: Map<PinId, TraceRecoveryPin>
   private components: TraceComponent[] = []
-  private componentByTraceIndex = new Map<number, number>()
-  private componentParents: number[] = []
-  private queuedCandidates: JunctionCandidate[] = []
-  private usedPortSourcePinIds = new Set<PinId>()
+  private componentIdByTrace = new Map<SolvedTracePath, number>()
+  private componentParents: number[]
+  private queuedCandidates: JunctionCandidate[]
   private currentCandidate: JunctionCandidate | null = null
   declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
 
-  constructor(private input: NetLabelToSameNetTraceSolverInput) {
+  constructor(private input: InlineNetLabelOutput) {
     super()
     this.inputProblem = input.inputProblem
-    this.inputTraces = input.traces
-    this.inputNetLabelPlacements = input.netLabelPlacements
-    this.inlineNetLabelPlacements = input.inlineNetLabelPlacements
     this.outputTraces = [...input.traces]
     this.outputNetLabelPlacements = [...input.netLabelPlacements]
 
@@ -264,58 +187,37 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     this.stats.recoveredTraceCount = 0
   }
 
-  override getConstructorParams(): [NetLabelToSameNetTraceSolverInput] {
+  override getConstructorParams(): [InlineNetLabelOutput] {
     return [this.input]
   }
 
   private buildTraceComponents() {
-    const parents = this.inputTraces.map((_, index) => index)
-
-    for (
-      let firstIndex = 0;
-      firstIndex < this.inputTraces.length;
-      firstIndex++
-    ) {
-      for (
-        let secondIndex = firstIndex + 1;
-        secondIndex < this.inputTraces.length;
-        secondIndex++
-      ) {
-        const first = this.inputTraces[firstIndex]!
-        const second = this.inputTraces[secondIndex]!
-        if (
-          first.globalConnNetId === second.globalConnNetId &&
-          tracesTouch(first, second)
-        ) {
-          unionTraceRoots({
-            parents,
-            firstTraceIndex: firstIndex,
-            secondTraceIndex: secondIndex,
-          })
+    const unassignedTraces = new Set(this.input.traces)
+    while (unassignedTraces.size > 0) {
+      const firstTrace = unassignedTraces.values().next().value!
+      unassignedTraces.delete(firstTrace)
+      const component: TraceComponent = {
+        id: this.components.length,
+        globalConnNetId: firstTrace.globalConnNetId,
+        traces: [],
+      }
+      const queuedTraces = [firstTrace]
+      while (queuedTraces.length > 0) {
+        const trace = queuedTraces.shift()!
+        component.traces.push(trace)
+        this.componentIdByTrace.set(trace, component.id)
+        for (const candidateTrace of unassignedTraces) {
+          if (
+            candidateTrace.globalConnNetId === component.globalConnNetId &&
+            tracesTouch(trace, candidateTrace)
+          ) {
+            unassignedTraces.delete(candidateTrace)
+            queuedTraces.push(candidateTrace)
+          }
         }
       }
+      this.components.push(component)
     }
-
-    const componentsByRoot = new Map<number, TraceComponent>()
-    for (
-      let traceIndex = 0;
-      traceIndex < this.inputTraces.length;
-      traceIndex++
-    ) {
-      const root = findTraceRoot(parents, traceIndex)
-      let component = componentsByRoot.get(root)
-      if (!component) {
-        component = {
-          id: componentsByRoot.size,
-          globalConnNetId: this.inputTraces[traceIndex]!.globalConnNetId,
-          traces: [],
-        }
-        componentsByRoot.set(root, component)
-      }
-      component.traces.push(this.inputTraces[traceIndex]!)
-      this.componentByTraceIndex.set(traceIndex, component.id)
-    }
-    this.components = [...componentsByRoot.values()]
   }
 
   private isEligibleLabel(
@@ -338,12 +240,13 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
   }
 
   private getLabelComponent(label: NetLabelPlacement) {
-    const traceIndex = this.inputTraces.findIndex((trace) =>
+    const trace = this.input.traces.find((trace) =>
       trace.mspConnectionPairIds.some((id) =>
         label.mspConnectionPairIds.includes(id),
       ),
     )
-    const componentId = this.componentByTraceIndex.get(traceIndex)
+    if (!trace) return null
+    const componentId = this.componentIdByTrace.get(trace)
     if (componentId === undefined) return null
     return this.components[componentId]!
   }
@@ -416,7 +319,7 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     const groundNetId = netConnMap.getNetConnectedToId("GND") ?? undefined
     const candidates: JunctionCandidate[] = []
 
-    for (const label of this.inputNetLabelPlacements) {
+    for (const label of this.input.netLabelPlacements) {
       if (!this.isEligibleLabel(label, groundNetId)) continue
 
       if (label.mspConnectionPairIds.length === 0) {
@@ -440,7 +343,6 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
 
           candidates.push({
             sourceLabel: label,
-            sourceKind: "port",
             sourceComponentId: null,
             targetComponentId: targetComponent.id,
             sourcePin,
@@ -471,7 +373,7 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
           if (!sourcePin) continue
           const sourcePoint = getAdjacentTracePoint(sourceTrace, sourcePin)
           if (!sourcePoint) continue
-          if (pointsEqual(sourcePoint, sourcePin)) continue
+          if (pointsAreEqual(sourcePoint, sourcePin)) continue
           if (
             !isPointInDirection({
               origin: sourcePin,
@@ -524,7 +426,6 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
             ].join("--")
             candidates.push({
               sourceLabel: label,
-              sourceKind: "trace",
               sourceComponentId: sourceComponent.id,
               targetComponentId: targetComponent.id,
               sourcePin,
@@ -542,8 +443,8 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
 
     return candidates.sort(
       (first, second) =>
-        Number(first.sourceKind === "port") -
-          Number(second.sourceKind === "port") ||
+        Number(first.sourceComponentId === null) -
+          Number(second.sourceComponentId === null) ||
         first.perpendicularOffset - second.perpendicularOffset ||
         first.routeDistance - second.routeDistance ||
         first.key.localeCompare(second.key),
@@ -569,22 +470,17 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     path: Point[],
     candidate: JunctionCandidate,
   ) {
-    for (
-      let traceIndex = 0;
-      traceIndex < this.inputTraces.length;
-      traceIndex++
-    ) {
-      const trace = this.inputTraces[traceIndex]!
-      const componentId = this.componentByTraceIndex.get(traceIndex)!
-      const allowedJunctions: Point[] = []
+    for (const trace of this.outputTraces) {
+      const componentId = this.componentIdByTrace.get(trace)
+      let allowedJunction: Point | undefined
       if (
         candidate.sourceComponentId !== null &&
         componentId === candidate.sourceComponentId
       ) {
-        allowedJunctions.push(candidate.sourcePoint)
+        allowedJunction = candidate.sourcePoint
       }
       if (componentId === candidate.targetComponentId) {
-        allowedJunctions.push(candidate.targetPoint)
+        allowedJunction = candidate.targetPoint
       }
 
       for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
@@ -600,44 +496,23 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
           if (!doSegmentsIntersect(pathStart, pathEnd, traceStart, traceEnd)) {
             continue
           }
-          const allowedPointContact = allowedJunctions.some(
-            (junction) =>
-              (pointsEqual(pathStart, junction) ||
-                pointsEqual(pathEnd, junction)) &&
-              pointToSegmentDistance(junction, traceStart, traceEnd) <=
-                EPSILON &&
-              !segmentsOverlapBeyondPoint({
-                firstStart: pathStart,
-                firstEnd: pathEnd,
-                secondStart: traceStart,
-                secondEnd: traceEnd,
-              }),
-          )
+          const allowedPointContact =
+            allowedJunction !== undefined &&
+            (pointsAreEqual(pathStart, allowedJunction) ||
+              pointsAreEqual(pathEnd, allowedJunction)) &&
+            pointToSegmentDistance(allowedJunction, traceStart, traceEnd) <=
+              EPSILON &&
+            !segmentsOverlapBeyondEndpoint({
+              firstStart: pathStart,
+              firstEnd: pathEnd,
+              secondStart: traceStart,
+              secondEnd: traceEnd,
+            })
           if (!allowedPointContact) return true
         }
       }
     }
 
-    for (const recoveredTrace of this.recoveredTraces) {
-      for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
-        for (
-          let tracePointIndex = 0;
-          tracePointIndex < recoveredTrace.tracePath.length - 1;
-          tracePointIndex++
-        ) {
-          if (
-            doSegmentsIntersect(
-              path[pathIndex]!,
-              path[pathIndex + 1]!,
-              recoveredTrace.tracePath[tracePointIndex]!,
-              recoveredTrace.tracePath[tracePointIndex + 1]!,
-            )
-          ) {
-            return true
-          }
-        }
-      }
-    }
     return false
   }
 
@@ -649,7 +524,7 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
       if (label === sourceLabel) continue
       if (pathIntersectsRenderedLabel(path, label)) return true
     }
-    return this.inlineNetLabelPlacements.some((label) =>
+    return this.input.inlineNetLabelPlacements.some((label) =>
       pathIntersectsRenderedLabel(path, label),
     )
   }
@@ -666,7 +541,7 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
       return
     }
 
-    const mspPairId = `net-label-trace-junction-${candidate.key}`
+    const mspPairId = `${RECOVERED_TRACE_PREFIX}${candidate.key}`
     const recoveredTrace: SolvedTracePath = {
       mspPairId,
       dcConnNetId:
@@ -683,16 +558,13 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     this.outputNetLabelPlacements = this.outputNetLabelPlacements.filter(
       (label) => label !== candidate.sourceLabel,
     )
-    this.recoveredTraces.push(recoveredTrace)
-    if (candidate.sourceComponentId === null) {
-      this.usedPortSourcePinIds.add(candidate.sourcePin.pinId)
-    } else {
+    if (candidate.sourceComponentId !== null) {
       this.unionComponents(
         candidate.sourceComponentId,
         candidate.targetComponentId,
       )
     }
-    this.stats.recoveredTraceCount = this.recoveredTraces.length
+    this.stats.recoveredTraceCount++
   }
 
   override _step() {
@@ -715,7 +587,6 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
       ((candidate.sourceComponentId !== null &&
         this.findComponent(candidate.sourceComponentId) ===
           this.findComponent(candidate.targetComponentId)) ||
-        this.usedPortSourcePinIds.has(candidate.sourcePin.pinId) ||
         !this.outputNetLabelPlacements.includes(candidate.sourceLabel))
     ) {
       candidate = this.queuedCandidates.shift()
@@ -726,8 +597,8 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     }
 
     this.currentCandidate = candidate
-    let sourceRoutingPin: TraceRecoveryPin = { ...candidate.sourcePin }
-    if (candidate.sourceKind !== "port") {
+    let sourceRoutingPin = candidate.sourcePin
+    if (candidate.sourceComponentId !== null) {
       sourceRoutingPin = {
         ...candidate.sourcePoint,
         pinId: `junction-source-${candidate.key}`,
@@ -735,8 +606,8 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
         _facingDirection: candidate.sourcePin._facingDirection,
       }
     }
-    let targetRoutingPin: TraceRecoveryPin = { ...candidate.targetPin }
-    if (!pointsEqual(candidate.targetPoint, candidate.targetPin)) {
+    let targetRoutingPin = candidate.targetPin
+    if (!pointsAreEqual(candidate.targetPoint, candidate.targetPin)) {
       targetRoutingPin = {
         ...candidate.targetPoint,
         pinId: `junction-target-${candidate.key}`,
@@ -758,7 +629,7 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     return {
       traces: this.outputTraces,
       netLabelPlacements: this.outputNetLabelPlacements,
-      inlineNetLabelPlacements: this.inlineNetLabelPlacements,
+      inlineNetLabelPlacements: this.input.inlineNetLabelPlacements,
     }
   }
 
@@ -768,7 +639,8 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       ...this.getOutput(),
     })
-    for (const trace of this.recoveredTraces) {
+    for (const trace of this.outputTraces) {
+      if (!trace.mspPairId.startsWith(RECOVERED_TRACE_PREFIX)) continue
       graphics.lines!.push({
         points: trace.tracePath,
         strokeColor: "green",

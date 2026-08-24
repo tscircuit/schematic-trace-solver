@@ -600,9 +600,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         return [
           {
             inputProblem: instance.inputProblem,
-            traces: inlineOutput.traces,
-            netLabelPlacements: inlineOutput.netLabelPlacements,
-            inlineNetLabelPlacements: inlineOutput.inlineNetLabelPlacements,
+            ...inlineOutput,
           },
         ]
       },
@@ -616,10 +614,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         return [
           {
             inputProblem: instance.inputProblem,
-            traces: netLabelToTraceOutput.traces,
-            netLabelPlacements: netLabelToTraceOutput.netLabelPlacements,
-            inlineNetLabelPlacements:
-              netLabelToTraceOutput.inlineNetLabelPlacements,
+            ...netLabelToTraceOutput,
           },
         ]
       },

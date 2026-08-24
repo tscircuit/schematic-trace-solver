@@ -24,6 +24,7 @@ import { arePinsInDifferentSchematicSections } from "lib/utils/arePinsInDifferen
 import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
 import {
   type InlineNetLabelPlacement,
+  type InlineNetLabelOutput,
   visualizeInlineNetLabelOutput,
 } from "../InlineNetLabelSolver/InlineNetLabelSolver"
 
@@ -38,42 +39,27 @@ interface CandidatePair {
   key: string
 }
 
-export interface NetLabelToTraceSolverInput {
-  inputProblem: InputProblem
-  traces: SolvedTracePath[]
-  netLabelPlacements: NetLabelPlacement[]
-  inlineNetLabelPlacements: InlineNetLabelPlacement[]
-}
-
 const AVAILABLE_NET_ORIENTATION_PREFIX = "available-net-orientation-"
+const RECOVERED_TRACE_PREFIX = "net-label-to-trace-"
 
 const getCanonicalPairKey = (firstPinId: PinId, secondPinId: PinId) =>
   [firstPinId, secondPinId].sort().join("--")
 
-const getRenderedLabelBounds = (label: {
-  center: Point
-  width: number
-  height: number
-  axis?: InlineNetLabelPlacement["axis"]
-}) => {
+export const pathIntersectsRenderedLabel = (
+  path: Point[],
+  label: NetLabelPlacement | InlineNetLabelPlacement,
+) => {
   let width = label.width
   let height = label.height
-  if (label.axis === "y") {
+  if ("axis" in label && label.axis === "y") {
     width = label.height
     height = label.width
   }
-  return getBoundFromCenteredRect({
+  const bounds = getBoundFromCenteredRect({
     center: label.center,
     width,
     height,
   })
-}
-
-export const pathIntersectsRenderedLabel = (
-  path: Point[],
-  label: Parameters<typeof getRenderedLabelBounds>[0],
-) => {
-  const bounds = getRenderedLabelBounds(label)
   for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
     if (
       doesSegmentIntersectRect(path[pathIndex]!, path[pathIndex + 1]!, bounds)
@@ -96,27 +82,19 @@ const getPerpendicularOffset = (
 
 export class NetLabelToTraceSolver extends BaseSolver {
   inputProblem: InputProblem
-  inputTraces: SolvedTracePath[]
-  inputNetLabelPlacements: NetLabelPlacement[]
-  inlineNetLabelPlacements: InlineNetLabelPlacement[]
 
   outputTraces: SolvedTracePath[]
   outputNetLabelPlacements: NetLabelPlacement[]
-  recoveredTraces: SolvedTracePath[] = []
 
-  private chipMap: Record<ChipId, InputChip> = {}
-  private pinMap = new Map<PinId, TraceRecoveryPin>()
+  private chipMap: Record<ChipId, InputChip>
+  private pinMap: Map<PinId, TraceRecoveryPin>
   private queuedCandidates: CandidatePair[]
-  private usedPinIds = new Set<PinId>()
   private currentCandidate: CandidatePair | null = null
   declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
 
-  constructor(private input: NetLabelToTraceSolverInput) {
+  constructor(private input: InlineNetLabelOutput) {
     super()
     this.inputProblem = input.inputProblem
-    this.inputTraces = input.traces
-    this.inputNetLabelPlacements = input.netLabelPlacements
-    this.inlineNetLabelPlacements = input.inlineNetLabelPlacements
     this.outputTraces = [...input.traces]
     this.outputNetLabelPlacements = [...input.netLabelPlacements]
 
@@ -131,7 +109,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
     this.stats.recoveredTraceCount = 0
   }
 
-  override getConstructorParams(): [NetLabelToTraceSolverInput] {
+  override getConstructorParams(): [InlineNetLabelOutput] {
     return [this.input]
   }
 
@@ -164,7 +142,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
       netConnMap.getNetConnectedToId("GND") ?? undefined
     const labelsByGlobalNet = new Map<GlobalConnNetId, NetLabelPlacement[]>()
 
-    for (const label of this.inputNetLabelPlacements) {
+    for (const label of this.input.netLabelPlacements) {
       if (
         !this.isEligiblePortOnlyDirectConnectionLabel(
           label,
@@ -256,7 +234,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
       }
       if (pathIntersectsRenderedLabel(tracePath, label)) return true
     }
-    return this.inlineNetLabelPlacements.some((label) =>
+    return this.input.inlineNetLabelPlacements.some((label) =>
       pathIntersectsRenderedLabel(tracePath, label),
     )
   }
@@ -277,7 +255,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
     }
 
     const [firstPin, secondPin] = candidate.pins
-    const mspPairId = `net-label-to-trace-${candidate.key}`
+    const mspPairId = `${RECOVERED_TRACE_PREFIX}${candidate.key}`
     const recoveredTrace: SolvedTracePath = {
       mspPairId,
       dcConnNetId: candidate.firstLabel.globalConnNetId,
@@ -293,10 +271,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
       (label) =>
         label !== candidate.firstLabel && label !== candidate.secondLabel,
     )
-    this.recoveredTraces.push(recoveredTrace)
-    this.usedPinIds.add(firstPin.pinId)
-    this.usedPinIds.add(secondPin.pinId)
-    this.stats.recoveredTraceCount = this.recoveredTraces.length
+    this.stats.recoveredTraceCount++
   }
 
   override _step() {
@@ -316,7 +291,8 @@ export class NetLabelToTraceSolver extends BaseSolver {
     let candidate = this.queuedCandidates.shift()
     while (
       candidate &&
-      candidate.pins.some((pin) => this.usedPinIds.has(pin.pinId))
+      (!this.outputNetLabelPlacements.includes(candidate.firstLabel) ||
+        !this.outputNetLabelPlacements.includes(candidate.secondLabel))
     ) {
       candidate = this.queuedCandidates.shift()
     }
@@ -338,7 +314,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
     return {
       traces: this.outputTraces,
       netLabelPlacements: this.outputNetLabelPlacements,
-      inlineNetLabelPlacements: this.inlineNetLabelPlacements,
+      inlineNetLabelPlacements: this.input.inlineNetLabelPlacements,
     }
   }
 
@@ -349,7 +325,8 @@ export class NetLabelToTraceSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       ...this.getOutput(),
     })
-    for (const trace of this.recoveredTraces) {
+    for (const trace of this.outputTraces) {
+      if (!trace.mspPairId.startsWith(RECOVERED_TRACE_PREFIX)) continue
       graphics.lines!.push({
         points: trace.tracePath,
         strokeColor: "green",
