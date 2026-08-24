@@ -13,11 +13,11 @@ import type {
 } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
+import { alignPortOnlyInlineNetLabelStubs } from "./alignPortOnlyInlineNetLabelStubs"
 import {
   type AxisAlignedSegment,
   getAxisAlignedSegments,
 } from "./getAxisAlignedSegments"
-import { alignPortOnlyInlineNetLabelStubs } from "./alignPortOnlyInlineNetLabelStubs"
 import { pushAnchoredNetLabelsAwayFromInlineLabels } from "./pushAnchoredNetLabelsAwayFromInlineLabels"
 
 export const DEFAULT_INLINE_NET_LABEL_HEIGHT = 0.18
@@ -26,6 +26,9 @@ export const DEFAULT_INLINE_NET_LABEL_HEIGHT = 0.18
  * Gap between the trace and the near edge of the inline label text.
  */
 export const INLINE_NET_LABEL_TRACE_MARGIN = 0.05
+
+/** Clearance between a generated terminal stub and an unrelated trace. */
+export const INLINE_NET_LABEL_STUB_TRACE_CLEARANCE = 0.05
 
 /**
  * Largest perpendicular deviation a route may have and still be labeled as one
@@ -248,7 +251,7 @@ export class InlineNetLabelSolver extends BaseSolver {
       inputPin && inputChip
         ? (inputPin._facingDirection ?? getPinDirection(inputPin, inputChip))
         : anchoredPlacement.orientation
-    const end: Point =
+    const intendedEnd: Point =
       direction === "x+"
         ? { x: start.x + stubLength, y: start.y }
         : direction === "x-"
@@ -256,6 +259,15 @@ export class InlineNetLabelSolver extends BaseSolver {
           : direction === "y+"
             ? { x: start.x, y: start.y + stubLength }
             : { x: start.x, y: start.y - stubLength }
+
+    const end = getCollisionLimitedTerminalStubEnd({
+      start,
+      intendedEnd,
+      minimumLength: width + 2 * INLINE_NET_LABEL_TRACE_MARGIN,
+      traces: this.traces,
+      ownGlobalConnNetId: anchoredPlacement.globalConnNetId,
+    })
+    if (!end) return null
 
     const axis: InlineNetLabelPlacement["axis"] =
       direction === "x+" || direction === "x-" ? "x" : "y"
@@ -776,4 +788,91 @@ const doesPathIntersectBounds = (path: Point[], bounds: Bounds): boolean => {
     if (boundsOverlap(segmentBounds, bounds)) return true
   }
   return false
+}
+
+const GEOMETRY_EPSILON = 1e-6
+
+/**
+ * Shortens an axis-aligned terminal stub before the first unrelated trace.
+ * Coordinates are schematic-world millimetres with +x right and +y up.
+ */
+const getCollisionLimitedTerminalStubEnd = ({
+  start,
+  intendedEnd,
+  minimumLength,
+  traces,
+  ownGlobalConnNetId,
+}: {
+  start: Point
+  intendedEnd: Point
+  minimumLength: number
+  traces: SolvedTracePath[]
+  ownGlobalConnNetId: string
+}): Point | null => {
+  const isHorizontal =
+    Math.abs(intendedEnd.x - start.x) >= Math.abs(intendedEnd.y - start.y)
+  const alongAxis = isHorizontal ? "x" : "y"
+  const acrossAxis = isHorizontal ? "y" : "x"
+  const direction = Math.sign(intendedEnd[alongAxis] - start[alongAxis]) || 1
+  const intendedLength = Math.abs(intendedEnd[alongAxis] - start[alongAxis])
+  let availableLength = intendedLength
+
+  for (const trace of traces) {
+    if (trace.globalConnNetId === ownGlobalConnNetId) continue
+
+    for (
+      let segmentIndex = 0;
+      segmentIndex < trace.tracePath.length - 1;
+      segmentIndex++
+    ) {
+      const segmentStart = trace.tracePath[segmentIndex]!
+      const segmentEnd = trace.tracePath[segmentIndex + 1]!
+      const startAlong =
+        (segmentStart[alongAxis] - start[alongAxis]) * direction
+      const endAlong = (segmentEnd[alongAxis] - start[alongAxis]) * direction
+      const startAcross = segmentStart[acrossAxis] - start[acrossAxis]
+      const endAcross = segmentEnd[acrossAxis] - start[acrossAxis]
+      const minAlong = Math.min(startAlong, endAlong)
+      const maxAlong = Math.max(startAlong, endAlong)
+      const minAcross = Math.min(startAcross, endAcross)
+      const maxAcross = Math.max(startAcross, endAcross)
+
+      let collisionDistance: number | undefined
+      const isCollinear =
+        Math.abs(startAcross) <= GEOMETRY_EPSILON &&
+        Math.abs(endAcross) <= GEOMETRY_EPSILON
+      if (
+        isCollinear &&
+        maxAlong >= -GEOMETRY_EPSILON &&
+        minAlong <= intendedLength + GEOMETRY_EPSILON
+      ) {
+        collisionDistance = Math.max(0, minAlong)
+      } else {
+        const crossesStubAxis =
+          minAcross <= GEOMETRY_EPSILON && maxAcross >= -GEOMETRY_EPSILON
+        const perpendicularAlong = (startAlong + endAlong) / 2
+        if (
+          crossesStubAxis &&
+          Math.abs(startAlong - endAlong) <= GEOMETRY_EPSILON &&
+          perpendicularAlong >= -GEOMETRY_EPSILON &&
+          perpendicularAlong <= intendedLength + GEOMETRY_EPSILON
+        ) {
+          collisionDistance = Math.max(0, perpendicularAlong)
+        }
+      }
+
+      if (collisionDistance !== undefined) {
+        availableLength = Math.min(
+          availableLength,
+          collisionDistance - INLINE_NET_LABEL_STUB_TRACE_CLEARANCE,
+        )
+      }
+    }
+  }
+
+  if (availableLength + GEOMETRY_EPSILON < minimumLength) return null
+
+  return isHorizontal
+    ? { x: start.x + direction * availableLength, y: start.y }
+    : { x: start.x, y: start.y + direction * availableLength }
 }
