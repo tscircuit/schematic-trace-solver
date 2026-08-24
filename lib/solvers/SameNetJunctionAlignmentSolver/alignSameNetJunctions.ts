@@ -362,15 +362,10 @@ export const alignSameNetJunctions = ({
     }
   }
 
-  const alignedSectionIds = new Set(
-    [...alignedBranchCountBySectionId]
-      .filter(([, alignedBranchCount]) => alignedBranchCount === 1)
-      .map(([sectionId]) => sectionId),
-  )
   const trimmedOverlaps = trimSameNetOverlappingTraceTails({
     traces: outputTraces,
     inputProblem,
-    alignedSectionIds,
+    alignedBranchCountBySectionId,
   })
 
   return {
