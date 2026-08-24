@@ -197,9 +197,17 @@ const getRefdes = (chip: InputChip) => {
 const getPinLabel = (pinId: string) =>
   pinId.includes(".") ? pinId.slice(pinId.indexOf(".") + 1) : pinId
 
-const getPinNumber = (pinId: string) => {
-  const label = getPinLabel(pinId)
-  return /^\d+$/.test(label) ? Number(label) : undefined
+const getPinDisplayName = (pin: InputPin) => {
+  if (pin.displayName !== undefined) return pin.displayName || undefined
+  return getPinLabel(pin.pinId)
+}
+
+const getPinNumber = (pin: InputPin) => {
+  const idLabel = getPinLabel(pin.pinId)
+  if (/^\d+$/.test(idLabel)) return Number(idLabel)
+  return pin.displayName && /^\d+$/.test(pin.displayName)
+    ? Number(pin.displayName)
+    : undefined
 }
 
 const getFacingDirection = (pin: InputPin, chip: InputChip): FacingDirection =>
@@ -258,8 +266,8 @@ const getDefaultSymbolBaseName = (refdes: string) => {
 
 const getPinsInNumberOrder = (chip: InputChip) =>
   [...chip.pins].sort((pinA, pinB) => {
-    const pinNumberA = getPinNumber(pinA.pinId)
-    const pinNumberB = getPinNumber(pinB.pinId)
+    const pinNumberA = getPinNumber(pinA)
+    const pinNumberB = getPinNumber(pinB)
     if (pinNumberA === undefined || pinNumberB === undefined) return 0
     return pinNumberA - pinNumberB
   })
@@ -452,10 +460,12 @@ const getSnapshotSymbolGeometry = (
 
   const unusedSymbolPorts = new Set(symbol.ports)
   const matches = chip.pins.map((pin) => {
-    const pinLabel = getPinLabel(pin.pinId)
-    const symbolPort = [...unusedSymbolPorts].find((port) =>
-      port.labels.includes(pinLabel),
-    )
+    const pinDisplayName = getPinDisplayName(pin)
+    const symbolPort = pinDisplayName
+      ? [...unusedSymbolPorts].find((port) =>
+          port.labels.includes(pinDisplayName),
+        )
+      : undefined
     if (symbolPort) unusedSymbolPorts.delete(symbolPort)
     return symbolPort ? { pin, symbolPort } : undefined
   })
@@ -836,8 +846,16 @@ export const convertSolverOutputToCircuitJson = (
       const schematicPortId = `schematic_port_${chipIndex}_${pinIndex}`
       const facingDirection = getFacingDirection(pin, chip)
       const sideOfComponent = facingDirectionToSide(facingDirection)
-      const pinLabel = getPinLabel(pin.pinId)
-      const pinNumber = getPinNumber(pin.pinId)
+      const pinDisplayName = getPinDisplayName(pin)
+      const pinNumber = getPinNumber(pin)
+      const displayPinLabel =
+        pin.displayName !== undefined
+          ? pin.displayName && !/^\d+$/.test(pin.displayName)
+            ? pin.displayName
+            : undefined
+          : pinNumber === undefined
+            ? pinDisplayName
+            : undefined
       const distanceFromComponentEdge = symbolName
         ? Math.min(
             0.2,
@@ -856,7 +874,7 @@ export const convertSolverOutputToCircuitJson = (
         type: "source_port",
         source_port_id: sourcePortId,
         source_component_id: sourceComponentId,
-        name: pinLabel,
+        name: pinDisplayName ?? `pin${pinNumber ?? pinIndex + 1}`,
         pin_number: pinNumber,
       } satisfies SourcePort)
 
@@ -872,7 +890,7 @@ export const convertSolverOutputToCircuitJson = (
         facing_direction: facingDirectionToCircuitJson(facingDirection),
         side_of_component: sideOfComponent,
         distance_from_component_edge: distanceFromComponentEdge,
-        display_pin_label: pinNumber === undefined ? pinLabel : undefined,
+        display_pin_label: displayPinLabel,
         pin_number: pinNumber,
       } satisfies SchematicPort)
 

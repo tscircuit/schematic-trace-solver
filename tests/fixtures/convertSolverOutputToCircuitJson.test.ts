@@ -3,9 +3,11 @@ import {
   any_circuit_element,
   type SchematicPort,
   type SchematicTrace,
+  type SourcePort,
 } from "circuit-json"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem } from "lib/types/InputProblem"
 import { convertSolverOutputToCircuitJson } from "./convertSolverOutputToCircuitJson"
 
@@ -17,7 +19,13 @@ const inputProblem: InputProblem = {
       width: 1,
       height: 1,
       pins: [
-        { pinId: "U1.1", x: 0.5, y: 0.2, _facingDirection: "x+" },
+        {
+          pinId: "U1.1",
+          displayName: "VCC",
+          x: 0.5,
+          y: 0.2,
+          _facingDirection: "x+",
+        },
         { pinId: "U1.2", x: 0.5, y: -0.2, _facingDirection: "x+" },
       ],
     },
@@ -42,6 +50,28 @@ const inputProblem: InputProblem = {
       pins: [
         { pinId: "LED1.1", x: 3.46, y: 0, _facingDirection: "x-" },
         { pinId: "LED1.2", x: 4.54, y: 0, _facingDirection: "x+" },
+      ],
+    },
+    {
+      chipId: "schematic_component_3",
+      center: { x: 6, y: 0 },
+      width: 2.2,
+      height: 1,
+      pins: [
+        {
+          pinId: "schematic_port_opaque_input",
+          displayName: "VIN",
+          x: 4.9,
+          y: 0,
+          _facingDirection: "x-",
+        },
+        {
+          pinId: "schematic_port_opaque_output",
+          displayName: "VOUT",
+          x: 7.1,
+          y: 0,
+          _facingDirection: "x+",
+        },
       ],
     },
   ],
@@ -120,6 +150,15 @@ class SnapshotTestSolver extends BaseSolver {
 
 test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
   const circuitJson = convertSolverOutputToCircuitJson(new SnapshotTestSolver())
+  const inputGraphics = visualizeInputProblem(inputProblem)
+
+  expect(
+    inputGraphics.points?.find((point) => point.x === 4.9 && point.y === 0)
+      ?.label,
+  ).toBe("VIN\nx-")
+  expect(
+    inputGraphics.points?.some((point) => point.label?.includes("opaque")),
+  ).toBe(false)
 
   for (const element of circuitJson) {
     expect(any_circuit_element.safeParse(element).success).toBe(true)
@@ -127,7 +166,7 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
 
   expect(
     circuitJson.filter((element) => element.type === "schematic_component"),
-  ).toHaveLength(3)
+  ).toHaveLength(4)
   const genericBoxComponent = circuitJson.find(
     (element) =>
       element.type === "schematic_component" &&
@@ -146,6 +185,20 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
           genericBoxComponent.schematic_component_id,
     ),
   ).toMatchObject({ distance_from_component_edge: 0.4 })
+  expect(
+    circuitJson.find(
+      (element) =>
+        element.type === "source_port" &&
+        element.source_port_id === "source_port_0_0",
+    ),
+  ).toMatchObject({ name: "VCC", pin_number: 1 })
+  expect(
+    circuitJson.find(
+      (element) =>
+        element.type === "schematic_port" &&
+        element.source_port_id === "source_port_0_0",
+    ),
+  ).toMatchObject({ display_pin_label: "VCC", pin_number: 1 })
   expect(
     circuitJson.find(
       (element) =>
@@ -176,6 +229,15 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
     size: { width: 1.13, height: 0.65 },
     symbol_name: "led_right",
   })
+  expect(
+    circuitJson
+      .filter(
+        (element): element is SourcePort =>
+          element.type === "source_port" &&
+          element.source_component_id === "source_component_3",
+      )
+      .map((sourcePort) => sourcePort.name),
+  ).toEqual(["VIN", "VOUT"])
 
   const capacitorPorts = circuitJson
     .filter(
@@ -216,4 +278,5 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
   expect(svg).toContain('data-circuit-json-type="schematic_component"')
   expect(svg).toContain('data-circuit-json-type="schematic_trace"')
   expect(svg).toContain('data-circuit-json-type="schematic_net_label"')
+  expect(svg).not.toContain("schematic_port_opaque")
 })

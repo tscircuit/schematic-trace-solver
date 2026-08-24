@@ -8,6 +8,13 @@ export type SectionId = string
 
 export interface InputPin {
   pinId: PinId
+
+  /**
+   * User-facing label for this schematic port. `pinId` remains the stable,
+   * opaque routing identity and must not be shown in schematic output.
+   */
+  displayName?: string
+
   x: number
   y: number
 
