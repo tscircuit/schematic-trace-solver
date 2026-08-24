@@ -50,18 +50,15 @@ export const evaluateRailGroup = ({
   const originalCoordinates = getDistinctCoordinates(
     group.map((segment) => segment.coordinate),
   )
-  const componentSideCount = new Set(
-    group.map((segment) => segment.componentId),
-  ).size
+  const spansComponents = group.some(
+    (segment) => segment.componentId !== group[0]!.componentId,
+  )
   const groupNetLabels = netLabelPlacements.filter(
     (label) => label.globalConnNetId === group[0]!.globalConnNetId,
   )
-  const spansComponents = componentSideCount > 1
   // A bus joins at least three component sides; two sides are point-to-point.
   const formsComponentRailBus =
-    componentSideCount >= 3 &&
-    componentSideCount === group.length &&
-    groupNetLabels.length === 1
+    spansComponents && group.length >= 3 && groupNetLabels.length === 1
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
   )

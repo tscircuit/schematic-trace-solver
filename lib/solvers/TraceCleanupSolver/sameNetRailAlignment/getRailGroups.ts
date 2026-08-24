@@ -43,62 +43,50 @@ const tracesSharePin = (
   if (a.traceId === b.traceId) return true
 
   const aPins = traceMap.get(a.traceId)!.pins
-  return traceMap
-    .get(b.traceId)!
-    .pins.some((bPin) =>
-      aPins.some(
-        (aPin) => aPin.pinId === bPin.pinId && aPin.chipId === bPin.chipId,
-      ),
-    )
+  const bPins = traceMap.get(b.traceId)!.pins
+  return aPins.some((aPin) =>
+    bPins.some(
+      (bPin) => aPin.pinId === bPin.pinId && aPin.chipId === bPin.chipId,
+    ),
+  )
 }
 
 const rangesMeetAtEndpoint = (a: RailSegment, b: RailSegment) =>
   nearlyEqual(a.minAlong, b.maxAlong) || nearlyEqual(a.maxAlong, b.minAlong)
 
-const canJoinComponentRailGroup = (
+const canJoinRailGroup = (
   start: RailSegment,
   current: RailSegment,
   candidate: RailSegment,
   traceMap: Map<string, SolvedTracePath>,
   obstacles: ObstacleRect[],
-) =>
-  candidate.globalConnNetId === start.globalConnNetId &&
-  candidate.orientation === start.orientation &&
-  candidate.componentId === start.componentId &&
-  candidate.componentFacingDirection === start.componentFacingDirection &&
-  (rangesTouchOrOverlap(current, candidate) ||
-    tracesSharePin(current, candidate, traceMap)) &&
-  corridorIsClear(current, candidate, obstacles)
-
-const canJoinSharedPinRailGroup = (
-  start: RailSegment,
-  current: RailSegment,
-  candidate: RailSegment,
-  traceMap: Map<string, SolvedTracePath>,
-  obstacles: ObstacleRect[],
-) =>
-  candidate.globalConnNetId === start.globalConnNetId &&
-  candidate.orientation === start.orientation &&
-  candidate.componentId !== current.componentId &&
-  candidate.componentFacingDirection === start.componentFacingDirection &&
-  tracesSharePin(current, candidate, traceMap) &&
-  rangesMeetAtEndpoint(current, candidate) &&
-  corridorIsClear(current, candidate, obstacles)
-
-type CanJoinRailGroup = (
-  start: RailSegment,
-  current: RailSegment,
-  candidate: RailSegment,
-  traceMap: Map<string, SolvedTracePath>,
-  obstacles: ObstacleRect[],
-) => boolean
-
-const collectRailGroups = (
-  segments: RailSegment[],
-  traceMap: Map<string, SolvedTracePath>,
-  obstacles: ObstacleRect[],
-  canJoinRailGroup: CanJoinRailGroup,
 ) => {
+  const sameComponentSide = candidate.componentId === start.componentId
+  const tracesConnect = tracesSharePin(current, candidate, traceMap)
+  const componentBusConnects =
+    tracesConnect && rangesMeetAtEndpoint(current, candidate)
+
+  return (
+    candidate.globalConnNetId === start.globalConnNetId &&
+    candidate.orientation === start.orientation &&
+    candidate.componentFacingDirection === start.componentFacingDirection &&
+    (sameComponentSide || componentBusConnects) &&
+    (rangesTouchOrOverlap(current, candidate) || tracesConnect) &&
+    corridorIsClear(current, candidate, obstacles)
+  )
+}
+
+export const getRailGroups = (
+  traces: SolvedTracePath[],
+  eligibleTraceIds: ReadonlySet<string>,
+  inputProblem: InputProblem,
+  obstacles: ObstacleRect[],
+): RailSegment[][] => {
+  const chipMap = new Map(inputProblem.chips.map((chip) => [chip.chipId, chip]))
+  const segments = traces
+    .filter((trace) => eligibleTraceIds.has(trace.mspPairId))
+    .flatMap((trace) => getComponentSideRailSegments(trace, chipMap))
+  const traceMap = new Map(traces.map((trace) => [trace.mspPairId, trace]))
   const visited = new Set<number>()
   const groups: RailSegment[][] = []
 
@@ -130,41 +118,31 @@ const collectRailGroups = (
       }
     }
 
-    const traceCount = new Set(group.map((segment) => segment.traceId)).size
-    const hasDifferentCoordinates = group.some(
-      (segment) => !nearlyEqual(segment.coordinate, group[0]!.coordinate),
-    )
-    if (traceCount >= 2 && hasDifferentCoordinates) groups.push(group)
+    const componentGroups: RailSegment[][] = []
+    for (const segment of group) {
+      const componentGroup = componentGroups.find(
+        (candidateGroup) =>
+          candidateGroup[0]!.componentId === segment.componentId,
+      )
+      if (componentGroup) componentGroup.push(segment)
+      else componentGroups.push([segment])
+    }
+    let candidateGroups = componentGroups
+    if (componentGroups.length === group.length) candidateGroups = [group]
+
+    for (const candidateGroup of candidateGroups) {
+      const traceCount = new Set(
+        candidateGroup.map((segment) => segment.traceId),
+      ).size
+      const hasDifferentCoordinates = candidateGroup.some(
+        (segment) =>
+          !nearlyEqual(segment.coordinate, candidateGroup[0]!.coordinate),
+      )
+      if (traceCount >= 2 && hasDifferentCoordinates) {
+        groups.push(candidateGroup)
+      }
+    }
   }
 
   return groups
-}
-
-export const getRailGroups = (
-  traces: SolvedTracePath[],
-  eligibleTraceIds: ReadonlySet<string>,
-  inputProblem: InputProblem,
-  obstacles: ObstacleRect[],
-): RailSegment[][] => {
-  const chipMap = new Map(inputProblem.chips.map((chip) => [chip.chipId, chip]))
-  const segments = traces
-    .filter((trace) => eligibleTraceIds.has(trace.mspPairId))
-    .flatMap((trace) => getComponentSideRailSegments(trace, chipMap))
-  const traceMap = new Map(traces.map((trace) => [trace.mspPairId, trace]))
-
-  return [
-    ...collectRailGroups(
-      segments,
-      traceMap,
-      obstacles,
-      canJoinComponentRailGroup,
-    ),
-    // Keep shared-pin buses separate so they cannot consume component groups.
-    ...collectRailGroups(
-      segments,
-      traceMap,
-      obstacles,
-      canJoinSharedPinRailGroup,
-    ),
-  ]
 }
