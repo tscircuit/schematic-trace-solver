@@ -26,7 +26,7 @@ interface EvaluateRailGroupInput {
   eligibleTraceIds: ReadonlySet<string>
 }
 
-const MIN_COMPONENT_RAIL_BUS_SIZE = 3
+const MINIMUM_COMPONENT_RAIL_BUS_SIZE = 3
 
 const tracePathChanged = (
   original: SolvedTracePath,
@@ -58,10 +58,10 @@ export const evaluateRailGroup = ({
   const groupNetLabels = netLabelPlacements.filter(
     (label) => label.globalConnNetId === group[0]!.globalConnNetId,
   )
-  // A bus joins at least three component sides; two sides are point-to-point.
+  // A bus can contain any number of component sides above this minimum.
   const formsComponentRailBus =
     spansComponents &&
-    group.length >= MIN_COMPONENT_RAIL_BUS_SIZE &&
+    group.length >= MINIMUM_COMPONENT_RAIL_BUS_SIZE &&
     groupNetLabels.length === 1
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
