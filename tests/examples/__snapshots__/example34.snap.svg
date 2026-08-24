@@ -1,56 +1,40 @@
-<svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="white"/><g><polyline data-points="1.1,-0.10000000000000003 1.601,-0.10000000000000003 1.601,0.4009999999999999" data-type="line" data-label="" points="479.84291324526953,329.9964298464834 580.0071403070332,329.9964298464834 580.0071403070332,229.83220278471975" fill="none" stroke="purple" stroke-width="1px"/></g><g><polyline data-points="1.1,-0.30000000000000004 1.201,-0.30000000000000004 1.201,-0.5010000000000001" data-type="line" data-label="" points="479.84291324526953,369.982149232417 500.035701535166,369.982149232417 500.035701535166,410.1677972152803" fill="none" stroke="purple" stroke-width="1px"/></g><g><rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="40" y="210.03927168868262" width="439.84291324526953" height="199.92859692966795" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.005001785714285715"/></g><g><rect data-type="rect" data-label="netId: SCL
-globalConnNetId: connectivity_net0" data-x="1.326" data-y="0.30000000000000004" x="480.0428418421992" y="230.03213138164938" width="89.96786861835062" height="39.985719385933635" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005001785714285715"/></g><g><rect data-type="rect" data-label="netId: SDA
-globalConnNetId: connectivity_net1" data-x="1.326" data-y="0.09999999999999998" x="480.0428418421992" y="270.017850767583" width="89.96786861835062" height="39.98571938593358" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005001785714285715"/></g><g><rect data-type="rect" data-label="netId: V3_3
-globalConnNetId: connectivity_net2" data-x="1.601" data-y="0.6259999999999999" x="560.0142806140664" y="139.86433416636913" width="39.985719385933635" height="89.9678686183506" fill="#ef444466" stroke="#ef4444" stroke-width="0.005001785714285715"/></g><g><rect data-type="rect" data-label="netId: GND
-globalConnNetId: connectivity_net3" data-x="1.201" data-y="-0.7260000000000001" x="480.0428418421992" y="410.1677972152803" width="39.985719385933635" height="89.96786861835051" fill="#00000066" stroke="#000000" stroke-width="0.005001785714285715"/></g><g><circle data-type="point" data-label="U1.1
-x+" data-x="1.1" data-y="0.30000000000000004" cx="479.84291324526953" cy="250.0249910746162" r="3" fill="hsl(319, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="U1.2
-x+" data-x="1.1" data-y="0.09999999999999998" cx="479.84291324526953" cy="290.0107104605498" r="3" fill="hsl(320, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="U1.3
-x+" data-x="1.1" data-y="-0.10000000000000003" cx="479.84291324526953" cy="329.9964298464834" r="3" fill="hsl(321, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="U1.4
-x+" data-x="1.1" data-y="-0.30000000000000004" cx="479.84291324526953" cy="369.982149232417" r="3" fill="hsl(322, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="anchorPoint
-orientation: x+" data-x="1.1" data-y="0.30000000000000004" cx="479.84291324526953" cy="250.0249910746162" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
-orientation: x+" data-x="1.1" data-y="0.09999999999999998" cx="479.84291324526953" cy="290.0107104605498" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="1.601" data-y="0.4009999999999999" cx="580.0071403070332" cy="229.83220278471975" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
-orientation: y-" data-x="1.201" data-y="-0.5010000000000001" cx="500.035701535166" cy="410.1677972152803" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g id="crosshair" style="display: none"><line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5"/><line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5"/><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
-              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
-                const svg = e.currentTarget;
-                const rect = svg.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const crosshair = svg.getElementById('crosshair');
-                const h = svg.getElementById('crosshair-h');
-                const v = svg.getElementById('crosshair-v');
-                const coords = svg.getElementById('coordinates');
-                
-                crosshair.style.display = 'block';
-                h.setAttribute('x1', '0');
-                h.setAttribute('x2', '640');
-                h.setAttribute('y1', y);
-                h.setAttribute('y2', y);
-                v.setAttribute('x1', x);
-                v.setAttribute('x2', x);
-                v.setAttribute('y1', '0');
-                v.setAttribute('y2', '640');
+<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="800" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(264.7603918454,0,0,-264.7603918454,520.4395022505,389.9567558027)"><style>
+              .boundary { fill: rgb(245, 241, 237); }
+              .schematic-boundary { fill: none; stroke: #fff; }
+              .component { fill: none; stroke: rgb(132, 0, 0); }
+              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
+              .component-pin { fill: none; stroke: rgb(132, 0, 0); }
+              .text { font-family: sans-serif; fill: rgb(0, 150, 0); }
+              .pin-number { fill: rgb(169, 0, 0); }
+              .port-label { fill: rgb(0, 100, 100); }
+              .component-name { fill: rgb(0, 100, 100); }
 
-                // Calculate real coordinates using inverse transformation
-                const matrix = {"a":199.92859692966798,"c":0,"e":259.92145662263476,"b":0,"d":-199.92859692966798,"f":310.0035701535166};
-                // Manually invert and apply the affine transform
-                // Since we only use translate and scale, we can directly compute:
-                // x' = (x - tx) / sx
-                // y' = (y - ty) / sy
-                const sx = matrix.a;
-                const sy = matrix.d;
-                const tx = matrix.e; 
-                const ty = matrix.f;
-                const realPoint = {
-                  x: (x - tx) / sx,
-                  y: (y - ty) / sy // Flip y back since we used negative scale
-                }
-                
-                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
-                coords.setAttribute('x', (x + 5).toString());
-                coords.setAttribute('y', (y - 5).toString());
-              });
-              document.currentScript.parentElement.addEventListener('mouseleave', () => {
-                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
-              });
-            ]]></script></svg>
+            </style><rect class="boundary" x="0" y="0" width="1200" height="800"/><g class="trace sch-trace" data-layer="base" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0"><path d="M 811.6759332804401 416.43279498724 L 944.3208895949854 416.43279498724 L 944.3208895949854 283.78783867269465" class="trace-invisible-hover-outline sch-trace-hitbox" stroke="rgb(0, 150, 0)" fill="none" stroke-width="42.361662695264px" stroke-linecap="round" opacity="0" stroke-linejoin="round"/><path class="sch-trace-path" d="M 811.6759332804401 416.43279498724 L 944.3208895949854 416.43279498724 L 944.3208895949854 283.78783867269465" stroke="rgb(0, 150, 0)" fill="none" stroke-width="5.295207836908px" stroke-linecap="round" stroke-linejoin="round"/></g><g class="trace sch-trace" data-layer="base" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_1"><path d="M 811.6759332804401 469.38487335632 L 838.4167328568255 469.38487335632 L 838.4167328568255 522.6017121172455" class="trace-invisible-hover-outline sch-trace-hitbox" stroke="rgb(0, 150, 0)" fill="none" stroke-width="42.361662695264px" stroke-linecap="round" opacity="0" stroke-linejoin="round"/><path class="sch-trace-path" d="M 811.6759332804401 469.38487335632 L 838.4167328568255 469.38487335632 L 838.4167328568255 522.6017121172455" stroke="rgb(0, 150, 0)" fill="none" stroke-width="5.295207836908px" stroke-linecap="round" stroke-linejoin="round"/></g><g class="trace-overlays sch-trace-overlays" data-layer="overlay" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0"/><g class="trace-overlays sch-trace-overlays" data-layer="overlay" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_1"/><g class="sch-component" data-circuit-json-type="schematic_component" data-schematic-component-id="schematic_component_0"><rect class="component chip sch-component-body" x="229.20307122056" y="257.57655988" width="582.4728620598801" height="264.7603918454" stroke-width="5.295207836908px" fill="rgb(255, 255, 194)" stroke="rgb(132, 0, 0)"/><rect class="component-overlay sch-component-overlay" x="229.20307122056" y="257.57655988" width="582.4728620598801" height="264.7603918454" fill="transparent"/><text class="sch-text" x="520.4395022505" y="389.9567558027" fill="#0f172a" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="47.656870532172px" transform="rotate(0, 520.4395022505, 389.9567558027)">U1</text><line class="component-pin sch-component-pin sch-port-line" x1="758.7238549113601" y1="310.52863824908" x2="806.3807254435321" y2="310.52863824908" stroke-width="5.295207836908px"/><g class="sch-port" data-schematic-port-id="source_port_0_0"><circle class="component-pin sch-component-pin sch-port-terminal" cx="811.6759332804401" cy="310.52863824908" r="5.295207836908" stroke-width="5.295207836908px"/><rect x="806.380725443532" y="305.233430412172" width="10.590415673816" height="10.590415673816" opacity="0"/></g><text class="pin-number sch-pin-number" x="785.1998940959" y="305.23343041217197" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="39.71405877681px" transform="">1</text><line class="component-pin sch-component-pin sch-port-line" x1="758.7238549113601" y1="363.48071661816" x2="806.3807254435321" y2="363.48071661816" stroke-width="5.295207836908px"/><g class="sch-port" data-schematic-port-id="source_port_0_1"><circle class="component-pin sch-component-pin sch-port-terminal" cx="811.6759332804401" cy="363.48071661816" r="5.295207836908" stroke-width="5.295207836908px"/><rect x="806.380725443532" y="358.185508781252" width="10.590415673816" height="10.590415673816" opacity="0"/></g><text class="pin-number sch-pin-number" x="785.1998940959" y="358.185508781252" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="39.71405877681px" transform="">2</text><line class="component-pin sch-component-pin sch-port-line" x1="758.7238549113601" y1="416.43279498724" x2="811.6759332804401" y2="416.43279498724" stroke-width="5.295207836908px"/><g class="sch-port" data-schematic-port-id="source_port_0_2"><rect x="806.380725443532" y="411.137587150332" width="10.590415673816" height="10.590415673816" opacity="0"/></g><text class="pin-number sch-pin-number" x="785.1998940959" y="411.137587150332" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="39.71405877681px" transform="">3</text><line class="component-pin sch-component-pin sch-port-line" x1="758.7238549113601" y1="469.38487335632" x2="811.6759332804401" y2="469.38487335632" stroke-width="5.295207836908px"/><g class="sch-port" data-schematic-port-id="source_port_0_3"><rect x="806.380725443532" y="464.089665519412" width="10.590415673816" height="10.590415673816" opacity="0"/></g><text class="pin-number sch-pin-number" x="785.1998940959" y="464.089665519412" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="39.71405877681px" transform="">4</text></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_0"><circle cx="811.6759332804401" cy="310.52863824908" r="10.590415673816" fill="red" opacity="0"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_1"><circle cx="811.6759332804401" cy="363.48071661816" r="10.590415673816" fill="red" opacity="0"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_2"><circle cx="811.6759332804401" cy="416.43279498724" r="10.590415673816" fill="red" opacity="0"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_3"><circle cx="811.6759332804401" cy="469.38487335632" r="10.590415673816" fill="red" opacity="0"/></g><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0" d="
+    M 811.6759332804401,310.52863824908
+    L 825.9729944400916,284.05259906454
+    L 944.3385402877751,284.05259906454
+    L 944.3385402877751,337.00467743362003
+    L 825.9729944400916,337.00467743362003
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="5.295207836908px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0" x="835.504368546526" y="310.52863824908" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="47.656870532172px" transform="">SCL</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_1" d="
+    M 811.6759332804401,363.48071661816
+    L 825.9729944400916,337.00467743362
+    L 949.6337481246832,337.00467743362
+    L 949.6337481246832,389.9567558027
+    L 825.9729944400916,389.9567558027
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="5.295207836908px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_1" x="835.504368546526" y="363.48071661816" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="47.656870532172px" transform="">SDA</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_2" d="
+    M 944.3208895949854,283.78783867269465
+    L 917.8448504104454,269.49077751304304
+    L 917.8448504104454,132.38019592270524
+    L 970.7969287795254,132.38019592270524
+    L 970.7969287795254,269.49077751304304
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="5.295207836908px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_2" x="944.3208895949854" y="259.95940340660866" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="47.656870532172px" transform="rotate(-90 944.3208895949854 259.95940340660866)">V3_3</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_3" d="
+    M 838.4167328568255,522.6017121172455
+    L 864.8927720413656,536.898773276897
+    L 864.8927720413656,667.6198040773659
+    L 811.9406936722855,667.6198040773659
+    L 811.9406936722855,536.898773276897
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="5.295207836908px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_3" x="838.4167328568255" y="546.4301473833315" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="47.656870532172px" transform="rotate(90 838.4167328568255 546.4301473833315)">GND</text></svg>

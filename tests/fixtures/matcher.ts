@@ -3,6 +3,11 @@ import { expect, type MatcherResult } from "bun:test"
 import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { colorAvailableNetOrientationLabels } from "lib/solvers/SchematicTracePipelineSolver/colorAvailableNetOrientationLabels"
 import type { InputProblem } from "lib/types/InputProblem"
+import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
+import {
+  convertSolverOutputToCircuitJson,
+  getInputProblemFromSolver,
+} from "./convertSolverOutputToCircuitJson"
 
 const getAllElms = (graphicsObject: GraphicsObject) => {
   return [
@@ -20,6 +25,19 @@ async function toMatchSolverSnapshot(
   testPathOriginal: string,
   svgName?: string,
 ): Promise<MatcherResult> {
+  const inputProblem = getInputProblemFromSolver(received)
+  if (inputProblem) {
+    const circuitJson = convertSolverOutputToCircuitJson(received)
+    const svg = convertCircuitJsonToSchematicSvg(circuitJson, {
+      width: 1200,
+      height: 800,
+    }).replace(/[ \t]+$/gm, "")
+
+    return expect(svg).toMatchSvgSnapshot(testPathOriginal, svgName)
+  }
+
+  // Keep a graphics-debug fallback for solver snapshots that do not expose an
+  // InputProblem. Semantic Circuit JSON rendering is the default.
   const graphicsObject = received.visualize()
 
   const allElms = getAllElms(graphicsObject)
@@ -45,9 +63,9 @@ async function toMatchSolverSnapshot(
     )
   }
 
-  const inputProblem = getInputProblem(received)
-  if (received.solved && inputProblem) {
-    colorAvailableNetOrientationLabels(graphicsObject, inputProblem)
+  const fallbackInputProblem = getInputProblem(received)
+  if (received.solved && fallbackInputProblem) {
+    colorAvailableNetOrientationLabels(graphicsObject, fallbackInputProblem)
   }
 
   const svg = getSvgFromGraphicsObject(graphicsObject, {

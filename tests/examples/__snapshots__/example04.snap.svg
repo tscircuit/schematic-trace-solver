@@ -1,49 +1,19 @@
-<svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="white"/><g><polyline data-points="0.30397715550000004,0.5800832909999993 0.31067575550000137,-0.5800832909999993" data-type="line" data-label="" points="376.82474681593334,221.07952010516527 378.69086877497443,544.2832245830261" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1px" stroke-dasharray="4 2"/></g><g><polyline data-points="0.30397715550000004,0.5800832909999993 0.30397715550000004,0.7800832909999993 0.6467558855000002,0.7800832909999993 0.6467558855000002,-0.7800832909999993 0.31067575550000137,-0.7800832909999993 0.31067575550000137,-0.5800832909999993" data-type="line" data-label="" points="376.82474681593334,221.07952010516527 376.82474681593334,165.36274468819136 472.3173744015611,165.36274468819136 472.3173744015611,600 378.69086877497443,600 378.69086877497443,544.2832245830261" fill="none" stroke="purple" stroke-width="1px"/></g><g><rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="167.68262559843902" y="221.07952010516524" width="248.91797338614813" height="323.20370447786087" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.0035895831821428554"/></g><g><rect data-type="rect" data-label="netId: V3_3
-globalConnNetId: connectivity_net0" data-x="0.30397715550000004" data-y="1.0050832909999994" x="348.96635910744635" y="40.00000000000004" width="55.71677541697392" height="125.36274468819127" fill="#ef444466" stroke="#ef4444" stroke-width="0.0035895831821428554"/></g><g><circle data-type="point" data-label="Q1.1
-y+" data-x="0.30397715550000004" data-y="0.5800832909999993" cx="376.82474681593334" cy="221.07952010516527" r="3" fill="hsl(315, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="Q1.2
-y-" data-x="0.31067575550000137" data-y="-0.5800832909999993" cx="378.69086877497443" cy="544.2832245830261" r="3" fill="hsl(316, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="Q1.3
-x-" data-x="-0.4467558855000001" data-y="-0.10250625000000019" cx="167.682625598439" cy="411.2379608945266" r="3" fill="hsl(317, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="0.30397715550000004" data-y="0.7800832909999993" cx="376.82474681593334" cy="165.36274468819136" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g id="crosshair" style="display: none"><line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5"/><line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5"/><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
-              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
-                const svg = e.currentTarget;
-                const rect = svg.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const crosshair = svg.getElementById('crosshair');
-                const h = svg.getElementById('crosshair-h');
-                const v = svg.getElementById('crosshair-v');
-                const coords = svg.getElementById('coordinates');
-                
-                crosshair.style.display = 'block';
-                h.setAttribute('x1', '0');
-                h.setAttribute('x2', '640');
-                h.setAttribute('y1', y);
-                h.setAttribute('y2', y);
-                v.setAttribute('x1', x);
-                v.setAttribute('x2', x);
-                v.setAttribute('y1', '0');
-                v.setAttribute('y2', '640');
+<svg xmlns="http://www.w3.org/2000/svg" class="tscircuit-schematic" width="1200" height="800" style="background-color: rgb(245, 241, 237)" data-real-to-screen-transform="matrix(251.4115779071,0,0,-251.4115779071,581.144131657,465.6016610619)"><style>
+              .boundary { fill: rgb(245, 241, 237); }
+              .schematic-boundary { fill: none; stroke: #fff; }
+              .component { fill: none; stroke: rgb(132, 0, 0); }
+              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
+              .component-pin { fill: none; stroke: rgb(132, 0, 0); }
+              .text { font-family: sans-serif; fill: rgb(0, 150, 0); }
+              .pin-number { fill: rgb(169, 0, 0); }
+              .port-label { fill: rgb(0, 100, 100); }
+              .component-name { fill: rgb(0, 100, 100); }
 
-                // Calculate real coordinates using inverse transformation
-                const matrix = {"a":278.5838770848695,"c":0,"e":292.14161229151307,"b":0,"d":-278.5838770848695,"f":382.6813723440957};
-                // Manually invert and apply the affine transform
-                // Since we only use translate and scale, we can directly compute:
-                // x' = (x - tx) / sx
-                // y' = (y - ty) / sy
-                const sx = matrix.a;
-                const sy = matrix.d;
-                const tx = matrix.e; 
-                const ty = matrix.f;
-                const realPoint = {
-                  x: (x - tx) / sx,
-                  y: (y - ty) / sy // Flip y back since we used negative scale
-                }
-                
-                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
-                coords.setAttribute('x', (x + 5).toString());
-                coords.setAttribute('y', (y - 5).toString());
-              });
-              document.currentScript.parentElement.addEventListener('mouseleave', () => {
-                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
-              });
-            ]]></script></svg>
+            </style><rect class="boundary" x="0" y="0" width="1200" height="800"/><g class="trace sch-trace" data-layer="base" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0"><path d="M 657.5675079689669 319.7620055540467 L 657.5675079689669 269.4796899726267 L 743.7460493512588 269.4796899726267 L 743.7460493512588 661.7236321511733 L 659.2516135647357 661.7236321511733 L 659.2516135647357 611.4413165697533" class="trace-invisible-hover-outline sch-trace-hitbox" stroke="rgb(0, 150, 0)" fill="none" stroke-width="40.225852465136px" stroke-linecap="round" opacity="0" stroke-linejoin="round"/><path class="sch-trace-path" d="M 657.5675079689669 319.7620055540467 L 657.5675079689669 269.4796899726267 L 743.7460493512588 269.4796899726267 L 743.7460493512588 661.7236321511733 L 659.2516135647357 661.7236321511733 L 659.2516135647357 611.4413165697533" stroke="rgb(0, 150, 0)" fill="none" stroke-width="5.028231558142px" stroke-linecap="round" stroke-linejoin="round"/></g><g class="trace-overlays sch-trace-overlays" data-layer="overlay" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0"/><g class="sch-component" data-circuit-json-type="schematic_component" data-schematic-component-id="schematic_component_0"><rect class="component chip sch-component-body" x="468.8245295441613" y="319.7620055540467" width="224.63920422567747" height="291.6793110157066" stroke-width="5.028231558142px" fill="rgb(255, 255, 194)" stroke="rgb(132, 0, 0)"/><rect class="component-overlay sch-component-overlay" x="468.8245295441613" y="319.7620055540467" width="224.63920422567747" height="291.6793110157066" fill="transparent"/><text class="sch-text" x="581.144131657" y="465.6016610619" fill="#0f172a" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="45.254084023278px" transform="rotate(0, 581.144131657, 465.6016610619)">Q1</text><line class="component-pin sch-component-pin sch-port-line" x1="657.5675079689669" y1="370.0443211354667" x2="657.5675079689669" y2="319.7620055540467" stroke-width="5.028231558142px"/><g class="sch-port" data-schematic-port-id="source_port_0_0"><rect x="652.5392764108249" y="314.7337739959047" width="10.056463116284" height="10.056463116284" opacity="0"/></g><text class="pin-number sch-pin-number" x="652.5392764108249" y="344.9031633447567" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="37.711736686064995px" transform="rotate(-90 652.5392764108249 344.9031633447567)">1</text><line class="component-pin sch-component-pin sch-port-line" x1="659.2516135647357" y1="561.1590009883333" x2="659.2516135647357" y2="611.4413165697533" stroke-width="5.028231558142px"/><g class="sch-port" data-schematic-port-id="source_port_0_1"><rect x="654.2233820065937" y="606.4130850116113" width="10.056463116284" height="10.056463116284" opacity="0"/></g><text class="pin-number sch-pin-number" x="654.2233820065937" y="586.3001587790433" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="37.711736686064995px" transform="rotate(-90 654.2233820065937 586.3001587790433)">2</text><line class="component-pin sch-component-pin sch-port-line" x1="519.1068451255812" y1="491.3729191197397" x2="473.85276110230325" y2="491.3729191197397" stroke-width="5.028231558142px"/><g class="sch-port" data-schematic-port-id="source_port_0_2"><circle class="component-pin sch-component-pin sch-port-terminal" cx="468.8245295441613" cy="491.3729191197397" r="5.028231558142" stroke-width="5.028231558142px"/><rect x="463.7962979860193" y="486.3446875615977" width="10.056463116284" height="10.056463116284" opacity="0"/></g><text class="pin-number sch-pin-number" x="493.9656873348713" y="486.3446875615977" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="37.711736686064995px" transform="">3</text></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_0"><circle cx="657.5675079689669" cy="319.7620055540467" r="10.056463116284" fill="red" opacity="0"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_1"><circle cx="659.2516135647357" cy="611.4413165697533" r="10.056463116284" fill="red" opacity="0"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_2"><circle cx="468.8245295441613" cy="491.3729191197397" r="10.056463116284" fill="red" opacity="0"/></g><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0" d="
+    M 657.5675079689669,269.4796899726267
+    L 632.4263501782568,255.90346476564332
+    L 632.4263501782569,125.70578895348649
+    L 682.7086657596769,125.70578895348649
+    L 682.7086657596769,255.90346476564332
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="5.028231558142px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0" x="657.5675079689669" y="246.85264796098772" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="45.254084023278px" transform="rotate(-90 657.5675079689669 246.85264796098772)">V3_3</text></svg>
