@@ -7,7 +7,7 @@ import {
   doesPathCoincideWithTraces,
   doesPathOverlapTraceStrokes,
 } from "lib/utils/doesPathCoincideWithTraces"
-import { getDistinctCoordinates, pointsEqual } from "./geometry"
+import { getDistinctCoordinates, nearlyEqual, pointsEqual } from "./geometry"
 import { getRailAlignmentFallbackCoordinates } from "./getRailAlignmentFallbackCoordinates"
 import { moveRailSegments } from "./moveRailSegments"
 import { preservesLabelAnchors } from "./preservesLabelAnchors"
@@ -50,6 +50,18 @@ export const evaluateRailGroup = ({
   const originalCoordinates = getDistinctCoordinates(
     group.map((segment) => segment.coordinate),
   )
+  const componentSideCount = new Set(
+    group.map((segment) => segment.componentId),
+  ).size
+  const groupNetLabels = netLabelPlacements.filter(
+    (label) => label.globalConnNetId === group[0]!.globalConnNetId,
+  )
+  const spansComponents = componentSideCount > 1
+  // A bus joins at least three component sides; two sides are point-to-point.
+  const formsComponentRailBus =
+    componentSideCount >= 3 &&
+    componentSideCount === group.length &&
+    groupNetLabels.length === 1
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
   )
@@ -104,7 +116,23 @@ export const evaluateRailGroup = ({
         allCandidateTraces,
       )
       if (metrics.otherNetCrossings > baseline.otherNetCrossings) continue
-      if (!isReadabilityImprovement(metrics, baseline)) continue
+      const alignsToLabelRail = netLabelPlacements.some((label) => {
+        if (label.globalConnNetId !== group[0]!.globalConnNetId) return false
+        if (label.orientation !== group[0]!.componentFacingDirection) {
+          return false
+        }
+        if (group[0]!.orientation === "horizontal") {
+          return nearlyEqual(label.anchorPoint.y, coordinate)
+        }
+        return nearlyEqual(label.anchorPoint.x, coordinate)
+      })
+      const alignsConnectedComponentSides =
+        formsComponentRailBus &&
+        alignsToLabelRail &&
+        metrics.turnCount <= baseline.turnCount
+      let improvesReadability = isReadabilityImprovement(metrics, baseline)
+      if (spansComponents) improvesReadability = alignsConnectedComponentSides
+      if (!improvesReadability) continue
 
       const score: AlignmentScore = {
         ...metrics,
