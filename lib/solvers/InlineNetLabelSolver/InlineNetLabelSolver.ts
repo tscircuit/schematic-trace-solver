@@ -52,6 +52,8 @@ export const INLINE_NET_LABEL_MAX_SPAN_JOG = 0.4
 export interface InlineNetLabelPlacement {
   globalConnNetId: string
   netId?: string
+  /** User-facing label content, separate from the connectivity identifier. */
+  netLabelText?: string
   mspPairId?: string
   pinIds: PinId[]
 
@@ -236,10 +238,11 @@ export class InlineNetLabelSolver extends BaseSolver {
 
     const height =
       connection.inlineNetLabelHeight ?? DEFAULT_INLINE_NET_LABEL_HEIGHT
+    const netLabelText = connection.netLabelText?.trim() || undefined
     const width =
       connection.inlineNetLabelWidth ??
       connection.netLabelWidth ??
-      estimateInlineNetLabelWidth(connection.netId, height)
+      estimateInlineNetLabelWidth(netLabelText ?? connection.netId, height)
 
     // Leave a small wire tail at both ends of the text so it unmistakably
     // reads as a label on a trace rather than free-standing text.
@@ -310,6 +313,7 @@ export class InlineNetLabelSolver extends BaseSolver {
     return {
       globalConnNetId: anchoredPlacement.globalConnNetId,
       netId: connection.netId,
+      netLabelText,
       pinIds: [pinId],
       stubTracePath: [start, end],
       axis,
@@ -336,10 +340,11 @@ export class InlineNetLabelSolver extends BaseSolver {
 
     const height =
       connection.inlineNetLabelHeight ?? DEFAULT_INLINE_NET_LABEL_HEIGHT
+    const netLabelText = connection.netLabelText?.trim() || undefined
     const width =
       connection.inlineNetLabelWidth ??
       connection.netLabelWidth ??
-      estimateInlineNetLabelWidth(connection.netId!, height)
+      estimateInlineNetLabelWidth(netLabelText ?? connection.netId!, height)
 
     const offset = height / 2 + INLINE_NET_LABEL_TRACE_MARGIN
 
@@ -397,6 +402,7 @@ export class InlineNetLabelSolver extends BaseSolver {
           return {
             globalConnNetId: trace.globalConnNetId,
             netId: connection.netId,
+            netLabelText,
             mspPairId: trace.mspPairId,
             pinIds: [...connection.pinIds],
             axis: segment.axis,
@@ -417,6 +423,7 @@ export class InlineNetLabelSolver extends BaseSolver {
     const spanPlacement = this.computeSpanPlacement({
       trace,
       connection,
+      netLabelText,
       width,
       height,
       offset,
@@ -437,12 +444,14 @@ export class InlineNetLabelSolver extends BaseSolver {
   private computeSpanPlacement({
     trace,
     connection,
+    netLabelText,
     width,
     height,
     offset,
   }: {
     trace: SolvedTracePath
     connection: InlineEligibleConnection
+    netLabelText?: string
     width: number
     height: number
     offset: number
@@ -533,6 +542,7 @@ export class InlineNetLabelSolver extends BaseSolver {
         return {
           globalConnNetId: trace.globalConnNetId,
           netId: connection.netId,
+          netLabelText,
           mspPairId: trace.mspPairId,
           pinIds: [...connection.pinIds],
           axis,
@@ -703,7 +713,7 @@ export class InlineNetLabelSolver extends BaseSolver {
                 ? -inlineLabel.width / 2
                 : inlineLabel.width / 2)
             : inlineLabel.center.y,
-        text: inlineLabel.netId ?? "",
+        text: inlineLabel.netLabelText ?? inlineLabel.netId ?? "",
         color: "green",
         fontSize: inlineLabel.height,
         anchorSide: inlineLabel.stubTracePath
@@ -719,7 +729,7 @@ export class InlineNetLabelSolver extends BaseSolver {
         x: inlineLabel.anchorPoint.x,
         y: inlineLabel.anchorPoint.y,
         color: "green",
-        label: `inline anchor\n${inlineLabel.netId}`,
+        label: `inline anchor\n${inlineLabel.netLabelText ?? inlineLabel.netId}`,
       })
     }
 

@@ -48,7 +48,8 @@ const png = await getPngBufferFromGraphicsObject(graphics, {
 
 ## Existing Repo Helpers
 
-- `tests/fixtures/matcher.ts`: `expect(solver).toMatchSolverSnapshot(import.meta.path)` converts `solver.visualize()` to SVG and snapshots it.
+- `tests/fixtures/matcher.ts`: `expect(solver).toMatchSolverSnapshot(import.meta.path)` converts the solver's semantic output to Circuit JSON and renders it with `circuit-to-svg`. These snapshots hide the input rats nest by default.
+- `tests/fixtures/convertSolverOutputToCircuitJson.ts`: builds snapshot Circuit JSON with schematic components/symbols, ports, routed traces, net labels, text, and boxes.
 - `tests/fixtures/getLastStepGraphicsObject.ts`: filters a `GraphicsObject` to its highest numbered `step`.
 - `tests/fixtures/getLastStepSvg.ts`: converts only the last step to SVG.
 - `lib/testing/PipelineStageDebugRunner.ts`: runs `SchematicTracePipelineSolver` and writes per-stage PNG/SVG/graphics JSON artifacts.
@@ -56,13 +57,17 @@ const png = await getPngBufferFromGraphicsObject(graphics, {
 
 ## Minimal SVG Tests
 
-Prefer focused solver SVG snapshots over broad dumps:
+Prefer focused solver SVG snapshots over broad dumps. Solver snapshots use the
+semantic Circuit JSON renderer by default:
 
 ```ts
 const solver = new SchematicTracePipelineSolver(inputProblem as any)
 solver.solve()
 expect(solver).toMatchSolverSnapshot(import.meta.path)
 ```
+
+Use `solver.visualize()` with `getSvgFromGraphicsObject` directly when a test is
+specifically about internal candidates, failed geometry, or staged debug state.
 
 For multi-step graphics where only the final stage matters:
 

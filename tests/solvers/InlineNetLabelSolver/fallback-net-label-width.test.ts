@@ -11,8 +11,10 @@ const inlineConnection = (
   pinIds: [string, string],
   fallbackNetLabelWidth: number,
   inlineNetLabelWidth: number,
+  netLabelText?: string,
 ): InputDirectConnection => ({
   netId,
+  netLabelText,
   pinIds,
   allowInlineNetLabel: true,
   fallbackNetLabelWidth,
@@ -52,7 +54,7 @@ const routedInputProblem: InputProblem = {
     },
   ],
   directConnections: [
-    inlineConnection("OUT_A_P", ["J4.1", "U1.4"], 0.96, 0.64),
+    inlineConnection("OUT_A_P", ["J4.1", "U1.4"], 0.96, 0.64, "OUT A+"),
     inlineConnection("OUT_A_N", ["J4.2", "U1.6"], 0.96, 0.64),
     inlineConnection("OUT_B_N", ["J4.3", "U1.7"], 0.96, 0.64),
     inlineConnection("OUT_B_P", ["J4.4", "U1.9"], 0.96, 0.64),
@@ -104,6 +106,11 @@ test("fallback label width does not split routable inline connections", () => {
       (placement) => placement.stubTracePath === undefined,
     ),
   ).toBe(true)
+  expect(
+    output.inlineNetLabelPlacements.find(
+      (placement) => placement.netId === "OUT_A_P",
+    )?.netLabelText,
+  ).toBe("OUT A+")
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
@@ -129,6 +136,7 @@ test("fallback label width sizes anchored labels when routing is skipped", () =>
     directConnections: [
       {
         netId: "SIGNAL",
+        netLabelText: "User-facing signal",
         pinIds: ["U1.1", "U2.1"],
         allowInlineNetLabel: true,
         fallbackNetLabelWidth: 0.96,
@@ -149,4 +157,5 @@ test("fallback label width sizes anchored labels when routing is skipped", () =>
   expect(Math.max(fallbackPlacement!.width, fallbackPlacement!.height)).toBe(
     0.96,
   )
+  expect(fallbackPlacement!.netLabelText).toBe("User-facing signal")
 })
