@@ -18,6 +18,7 @@ import {
   getAxisAlignedSegments,
 } from "./getAxisAlignedSegments"
 import { alignPortOnlyInlineNetLabelStubs } from "./alignPortOnlyInlineNetLabelStubs"
+import { pushAnchoredNetLabelsAwayFromInlineLabels } from "./pushAnchoredNetLabelsAwayFromInlineLabels"
 
 export const DEFAULT_INLINE_NET_LABEL_HEIGHT = 0.18
 
@@ -111,6 +112,11 @@ export class InlineNetLabelSolver extends BaseSolver {
 
   private tracesByPinPairKey: Map<string, SolvedTracePath[]>
   private hasAlignedPortOnlyStubs = false
+  private postProcessedOutput?: {
+    traces: SolvedTracePath[]
+    netLabelPlacements: NetLabelPlacement[]
+    inlineNetLabelPlacements: InlineNetLabelPlacement[]
+  }
 
   constructor(input: InlineNetLabelSolverInput) {
     super()
@@ -188,6 +194,11 @@ export class InlineNetLabelSolver extends BaseSolver {
         netLabelPlacements: this.inputNetLabelPlacements,
       })
       this.hasAlignedPortOnlyStubs = true
+      return
+    }
+
+    if (!this.postProcessedOutput) {
+      this.postProcessedOutput = this.buildPostProcessedOutput()
       return
     }
 
@@ -584,18 +595,29 @@ export class InlineNetLabelSolver extends BaseSolver {
     )
   }
 
-  getOutput() {
+  private buildPostProcessedOutput() {
     const superseded = this.getSupersededNetLabelKeys()
+    const retainedNetLabelPlacements = this.inputNetLabelPlacements.filter(
+      (placement) => !superseded.has(placement.globalConnNetId),
+    )
+    const outputTraces = this.getOutputTraces(superseded)
+    const pushed = pushAnchoredNetLabelsAwayFromInlineLabels({
+      inputProblem: this.inputProblem,
+      traces: outputTraces,
+      netLabelPlacements: retainedNetLabelPlacements,
+      inlineNetLabelPlacements: this.inlineNetLabelPlacements,
+    })
+    this.stats.pushedAnchoredNetLabelCount = pushed.movedLabelCount
     return {
-      // AvailableNetOrientationSolver may have routed an elbow from a port to
-      // the anchored label that this inline placement supersedes. Keep the
-      // actual net trace, but discard that now-orphaned label connector.
-      traces: this.getOutputTraces(superseded),
-      netLabelPlacements: this.inputNetLabelPlacements.filter(
-        (placement) => !superseded.has(placement.globalConnNetId),
-      ),
+      traces: pushed.traces,
+      netLabelPlacements: pushed.netLabelPlacements,
       inlineNetLabelPlacements: this.inlineNetLabelPlacements,
     }
+  }
+
+  getOutput() {
+    if (this.postProcessedOutput) return this.postProcessedOutput
+    return this.buildPostProcessedOutput()
   }
 
   override visualize(): GraphicsObject {
