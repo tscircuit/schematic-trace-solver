@@ -52,8 +52,11 @@ The `InlineNetLabelSolver` exposes `inlineNetLabelPlacements`. A net that
 receives an inline label has its anchored `NetLabelPlacement` removed from
 `getOutput().netLabelPlacements`, so a net is never labeled twice.
 `NetLabelToTraceSolver` then replaces pairs of port-only fallback labels with
-real traces whenever the router finds a clear path. Its `getOutput()` is the
-pipeline's final output.
+real traces whenever the router finds a clear path.
+`NetLabelToSameNetTraceSolver` joins a labeled trace branch to a nearby, aligned
+trace on the same net when the route is clear. It also replaces a port-only
+fallback label with a short connection to an existing same-net trace. Its
+`getOutput()` is the pipeline's final output.
 
 ```tsx
 directConnections: [
