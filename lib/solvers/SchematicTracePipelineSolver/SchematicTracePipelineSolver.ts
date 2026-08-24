@@ -36,6 +36,7 @@ import { SameNetJunctionAlignmentSolver } from "../SameNetJunctionAlignmentSolve
 import { TraceElbowTransitionSimplificationSolver } from "../TraceElbowTransitionSimplificationSolver/TraceElbowTransitionSimplificationSolver"
 import { InlineNetLabelSolver } from "../InlineNetLabelSolver/InlineNetLabelSolver"
 import { NetLabelToTraceSolver } from "../NetLabelToTraceSolver/NetLabelToTraceSolver"
+import { NetLabelToSameNetTraceSolver } from "../NetLabelToSameNetTraceSolver/NetLabelToSameNetTraceSolver"
 import { findPerpendicularPathCrossings } from "../TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
@@ -105,6 +106,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   sameNetJunctionAlignmentSolver?: SameNetJunctionAlignmentSolver
   inlineNetLabelSolver?: InlineNetLabelSolver
   netLabelToTraceSolver?: NetLabelToTraceSolver
+  netLabelToSameNetTraceSolver?: NetLabelToSameNetTraceSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -603,11 +605,25 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
+    definePipelineStep(
+      "netLabelToSameNetTraceSolver",
+      NetLabelToSameNetTraceSolver,
+      (instance) => {
+        const netLabelToTraceOutput =
+          instance.netLabelToTraceSolver!.getOutput()
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            ...netLabelToTraceOutput,
+          },
+        ]
+      },
+    ),
   ]
 
   constructor(inputProblem: InputProblem, opts?: Options) {
     super()
-    this.hideRatsNet = opts?.hideRatsNet ?? false
+    this.hideRatsNet = opts?.hideRatsNet ?? inputProblem._hideRatsNet ?? false
     this.inputProblem = this.cloneAndCorrectInputProblem(inputProblem)
     this.MAX_ITERATIONS = 1e6
     this.startTimeOfPhase = {}

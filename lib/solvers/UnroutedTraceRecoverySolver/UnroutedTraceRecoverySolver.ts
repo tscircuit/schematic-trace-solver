@@ -25,7 +25,10 @@ const ROUTE_CLEARANCE = 0.2
 const COORDINATE_TOLERANCE = 1e-9
 const GROUND_NET_ID = "GND"
 
-const pointsAreEqual = (firstPoint: Point, secondPoint: Point): boolean => {
+export const pointsAreEqual = (
+  firstPoint: Point,
+  secondPoint: Point,
+): boolean => {
   return (
     Math.abs(firstPoint.x - secondPoint.x) <= COORDINATE_TOLERANCE &&
     Math.abs(firstPoint.y - secondPoint.y) <= COORDINATE_TOLERANCE
@@ -355,7 +358,7 @@ const hasParallelFailedConnection = ({
   })
 }
 
-const segmentsOverlapBeyondEndpoint = ({
+export const segmentsOverlapBeyondEndpoint = ({
   firstStart,
   firstEnd,
   secondStart,
