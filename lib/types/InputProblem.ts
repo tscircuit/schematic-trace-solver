@@ -67,6 +67,8 @@ export interface InputNetConnection {
   pinIds: Array<PinId>
   netLabelWidth?: number
   netLabelHeight?: number
+  /** True when this connection represents an electrical ground rail. */
+  isGround?: boolean
 
   /**
    * When true, a named one- or two-pin net may use inline labels. A single-pin
