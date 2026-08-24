@@ -16,7 +16,9 @@ import type {
   InputProblem,
 } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
+import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -46,7 +48,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -1292,26 +1293,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private getNetLabelWidth(label: NetLabelPlacement) {
-    if (label.netId) {
-      const ncWidth = this.inputProblem.netConnections.find(
-        (connection) => connection.netId === label.netId,
-      )?.netLabelWidth
-      if (ncWidth !== undefined) return ncWidth
-
-      const dcWidthByNetId = this.inputProblem.directConnections.find(
-        (dc) => dc.netId === label.netId,
-      )?.netLabelWidth
-      if (dcWidthByNetId !== undefined) return dcWidthByNetId
-    }
-
-    const dcWidthByPinId = this.inputProblem.directConnections.find((dc) =>
-      dc.pinIds.some((pid) => label.pinIds.includes(pid)),
-    )?.netLabelWidth
-    if (dcWidthByPinId !== undefined) return dcWidthByPinId
-
-    return this.inputProblem.netConnections.find((nc) =>
-      nc.pinIds.some((pid) => label.pinIds.includes(pid)),
-    )?.netLabelWidth
+    return getNetLabelWidthForConnection({
+      inputProblem: this.inputProblem,
+      netId: label.netId,
+      pinIds: label.pinIds,
+    })
   }
 
   private getNetLabelHeight(label: NetLabelPlacement) {
