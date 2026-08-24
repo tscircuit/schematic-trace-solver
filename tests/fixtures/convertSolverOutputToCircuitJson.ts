@@ -356,42 +356,84 @@ const nonEmptyNetName = (name: string | undefined) => {
   return trimmedName ? trimmedName : undefined
 }
 
+/**
+ * circuit-to-svg sizes conventional net labels from their text. Approximate a
+ * missing label with X characters so the rendered outline stays close to the
+ * width that @tscircuit/core measured and supplied to the solver.
+ */
+const getAnchoredNetLabelPlaceholder = (label: NetLabelPlacement) => {
+  const labelWidth =
+    label.orientation === "x+" || label.orientation === "x-"
+      ? label.width
+      : label.height
+  const fontSize = 0.18
+  const fixedWidthInFontSizes = 0.9
+  const xWidthInFontSizes = 16 / 27 + 0.06
+  const xCount = Math.max(
+    1,
+    Math.round(
+      (labelWidth / fontSize - fixedWidthInFontSizes) / xWidthInFontSizes,
+    ),
+  )
+  return "X".repeat(xCount)
+}
+
+const getInlineNetLabelPlaceholder = (label: InlineNetLabelPlacement) => {
+  const fontScale = label.height / 0.18
+  const characterWidth = 0.12 * fontScale
+  const xCount = Math.max(1, Math.round(label.width / characterWidth - 1))
+  return "X".repeat(xCount)
+}
+
 const getNetNameResolvers = (
   inputProblem: InputProblem,
   traces: SnapshotTrace[],
   netLabelPlacements: NetLabelPlacement[],
   inlineNetLabelPlacements: InlineNetLabelPlacement[],
 ) => {
-  const userNetNameByPinId = new Map<string, string>()
+  const netNameByPinId = new Map<string, string>()
+  const netLabelTextByPinId = new Map<string, string>()
   for (const connection of inputProblem.directConnections) {
-    if (!connection.netId) continue
     for (const pinId of connection.pinIds) {
-      userNetNameByPinId.set(pinId, connection.netId)
+      if (connection.netId) netNameByPinId.set(pinId, connection.netId)
+      const netLabelText = nonEmptyNetName(connection.netLabelText)
+      if (netLabelText) netLabelTextByPinId.set(pinId, netLabelText)
     }
   }
   for (const connection of inputProblem.netConnections) {
     for (const pinId of connection.pinIds) {
-      userNetNameByPinId.set(pinId, connection.netId)
+      netNameByPinId.set(pinId, connection.netId)
+      const netLabelText = nonEmptyNetName(connection.netLabelText)
+      if (netLabelText) netLabelTextByPinId.set(pinId, netLabelText)
     }
   }
 
-  const inferFromPinIds = (pinIds: readonly string[]) => {
+  const inferUniqueFromPinIds = (
+    pinIds: readonly string[],
+    valuesByPinId: Map<string, string>,
+  ) => {
     const names = [
       ...new Set(
         pinIds
-          .map((pinId) => userNetNameByPinId.get(pinId))
+          .map((pinId) => valuesByPinId.get(pinId))
           .filter((name): name is string => Boolean(name)),
       ),
     ]
     return names.length === 1 ? names[0] : undefined
   }
+  const inferNetNameFromPinIds = (pinIds: readonly string[]) =>
+    inferUniqueFromPinIds(pinIds, netNameByPinId)
+  const inferNetLabelTextFromPinIds = (pinIds: readonly string[]) =>
+    inferUniqueFromPinIds(pinIds, netLabelTextByPinId)
 
   const userNetNameByGlobalConnNetId = new Map<string, string>()
   const userNetNameByMspPairId = new Map<string, string>()
+  const netLabelTextByGlobalConnNetId = new Map<string, string>()
+  const netLabelTextByMspPairId = new Map<string, string>()
   for (const trace of traces) {
     const userNetName =
       nonEmptyNetName(trace.userNetId) ??
-      inferFromPinIds(getTracePinIds(trace)) ??
+      inferNetNameFromPinIds(getTracePinIds(trace)) ??
       nonEmptyNetName(trace.netId)
     if (!userNetName) continue
     if (trace.globalConnNetId) {
@@ -407,24 +449,37 @@ const getNetNameResolvers = (
 
   for (const label of [...netLabelPlacements, ...inlineNetLabelPlacements]) {
     const userNetName =
-      nonEmptyNetName(label.netId) ?? inferFromPinIds(label.pinIds)
+      nonEmptyNetName(label.netId) ?? inferNetNameFromPinIds(label.pinIds)
     if (userNetName) {
       userNetNameByGlobalConnNetId.set(label.globalConnNetId, userNetName)
+    }
+
+    const netLabelText =
+      nonEmptyNetName(label.netLabelText) ??
+      inferNetLabelTextFromPinIds(label.pinIds)
+    if (!netLabelText) continue
+    netLabelTextByGlobalConnNetId.set(label.globalConnNetId, netLabelText)
+    if ("mspConnectionPairIds" in label) {
+      for (const mspPairId of label.mspConnectionPairIds) {
+        netLabelTextByMspPairId.set(mspPairId, netLabelText)
+      }
+    } else if (label.mspPairId) {
+      netLabelTextByMspPairId.set(label.mspPairId, netLabelText)
     }
   }
 
   const getTraceNetName = (trace: SnapshotTrace) =>
     nonEmptyNetName(trace.userNetId) ??
-    inferFromPinIds(getTracePinIds(trace)) ??
+    inferNetNameFromPinIds(getTracePinIds(trace)) ??
     (trace.globalConnNetId
       ? userNetNameByGlobalConnNetId.get(trace.globalConnNetId)
       : undefined) ??
     nonEmptyNetName(trace.netId) ??
     nonEmptyNetName(trace.globalConnNetId)
 
-  const getNetLabelName = (label: NetLabelPlacement) =>
+  const getNetLabelNetName = (label: NetLabelPlacement) =>
     nonEmptyNetName(label.netId) ??
-    inferFromPinIds(label.pinIds) ??
+    inferNetNameFromPinIds(label.pinIds) ??
     label.mspConnectionPairIds
       .map((mspPairId) => userNetNameByMspPairId.get(mspPairId))
       .find((name): name is string => Boolean(name)) ??
@@ -433,9 +488,9 @@ const getNetNameResolvers = (
     nonEmptyNetName(label.globalConnNetId) ??
     "unnamed net"
 
-  const getInlineNetLabelName = (label: InlineNetLabelPlacement) =>
+  const getInlineNetLabelNetName = (label: InlineNetLabelPlacement) =>
     nonEmptyNetName(label.netId) ??
-    inferFromPinIds(label.pinIds) ??
+    inferNetNameFromPinIds(label.pinIds) ??
     (label.mspPairId
       ? userNetNameByMspPairId.get(label.mspPairId)
       : undefined) ??
@@ -443,7 +498,31 @@ const getNetNameResolvers = (
     nonEmptyNetName(label.globalConnNetId) ??
     "unnamed net"
 
-  return { getTraceNetName, getNetLabelName, getInlineNetLabelName }
+  const getNetLabelText = (label: NetLabelPlacement) =>
+    nonEmptyNetName(label.netLabelText) ??
+    inferNetLabelTextFromPinIds(label.pinIds) ??
+    label.mspConnectionPairIds
+      .map((mspPairId) => netLabelTextByMspPairId.get(mspPairId))
+      .find((text): text is string => Boolean(text)) ??
+    netLabelTextByGlobalConnNetId.get(label.globalConnNetId) ??
+    getAnchoredNetLabelPlaceholder(label)
+
+  const getInlineNetLabelText = (label: InlineNetLabelPlacement) =>
+    nonEmptyNetName(label.netLabelText) ??
+    inferNetLabelTextFromPinIds(label.pinIds) ??
+    (label.mspPairId
+      ? netLabelTextByMspPairId.get(label.mspPairId)
+      : undefined) ??
+    netLabelTextByGlobalConnNetId.get(label.globalConnNetId) ??
+    getInlineNetLabelPlaceholder(label)
+
+  return {
+    getTraceNetName,
+    getNetLabelNetName,
+    getNetLabelText,
+    getInlineNetLabelNetName,
+    getInlineNetLabelText,
+  }
 }
 
 const getJunctionsByTraceIndex = (
@@ -517,13 +596,18 @@ export const convertSolverOutputToCircuitJson = (
 
   const snapshotData = getSnapshotData(solver)
   const traces = dedupeTraces(snapshotData.traces)
-  const { getTraceNetName, getNetLabelName, getInlineNetLabelName } =
-    getNetNameResolvers(
-      inputProblem,
-      traces,
-      snapshotData.netLabelPlacements,
-      snapshotData.inlineNetLabelPlacements,
-    )
+  const {
+    getTraceNetName,
+    getNetLabelNetName,
+    getNetLabelText,
+    getInlineNetLabelNetName,
+    getInlineNetLabelText,
+  } = getNetNameResolvers(
+    inputProblem,
+    traces,
+    snapshotData.netLabelPlacements,
+    snapshotData.inlineNetLabelPlacements,
+  )
   const circuitJson: AnyCircuitElement[] = []
   const sourcePortIdByPinId = new Map<string, string>()
   const schematicPortIdByPinId = new Map<string, string>()
@@ -660,10 +744,10 @@ export const convertSolverOutputToCircuitJson = (
     if (netName) netNames.add(netName)
   }
   for (const label of snapshotData.netLabelPlacements) {
-    netNames.add(getNetLabelName(label))
+    netNames.add(getNetLabelNetName(label))
   }
   for (const label of snapshotData.inlineNetLabelPlacements) {
-    netNames.add(getInlineNetLabelName(label))
+    netNames.add(getInlineNetLabelNetName(label))
   }
 
   const sourceNetIdByName = new Map<string, string>()
@@ -756,7 +840,7 @@ export const convertSolverOutputToCircuitJson = (
   }
 
   for (const [labelIndex, label] of snapshotData.netLabelPlacements.entries()) {
-    const netName = getNetLabelName(label)
+    const netName = getNetLabelNetName(label)
     circuitJson.push({
       type: "schematic_net_label",
       schematic_net_label_id: `schematic_net_label_${labelIndex}`,
@@ -764,7 +848,7 @@ export const convertSolverOutputToCircuitJson = (
       center: label.center,
       anchor_position: label.anchorPoint,
       anchor_side: orientationToAnchorSide(label.orientation),
-      text: netName,
+      text: getNetLabelText(label),
     } satisfies SchematicNetLabel)
   }
 
@@ -772,11 +856,10 @@ export const convertSolverOutputToCircuitJson = (
     labelIndex,
     label,
   ] of snapshotData.inlineNetLabelPlacements.entries()) {
-    const netName = getInlineNetLabelName(label)
     circuitJson.push({
       type: "schematic_text",
       schematic_text_id: `schematic_inline_net_label_${labelIndex}`,
-      text: netName,
+      text: getInlineNetLabelText(label),
       font_size: label.height,
       position: label.center,
       // Match core's schematic convention: vertical labels read bottom-to-top.

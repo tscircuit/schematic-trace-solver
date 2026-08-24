@@ -33,6 +33,14 @@ export interface InputChip {
 export interface InputDirectConnection {
   pinIds: [PinId, PinId]
   netId?: string
+
+  /**
+   * User-facing text to render for this net label. `netId` remains the stable
+   * connectivity identifier and may be an internal id. When this is omitted
+   * but a label width is provided, renderers should use a width-preserving
+   * placeholder instead of exposing `netId` as label text.
+   */
+  netLabelText?: string
   netLabelWidth?: number
 
   /**
@@ -58,7 +66,8 @@ export interface InputDirectConnection {
 
   /**
    * Extent of the inline net label along the trace. Falls back to
-   * `netLabelWidth`, then to an estimate from the netId text.
+   * `netLabelWidth`, then to an estimate from `netLabelText` (or `netId` for
+   * backwards compatibility).
    */
   inlineNetLabelWidth?: number
 
@@ -72,6 +81,14 @@ export interface InputDirectConnection {
 export interface InputNetConnection {
   netId: string
   pinIds: Array<PinId>
+
+  /**
+   * User-facing text to render for this net label. `netId` remains the stable
+   * connectivity identifier and may be an internal id. When this is omitted
+   * but a label width is provided, renderers should use a width-preserving
+   * placeholder instead of exposing `netId` as label text.
+   */
+  netLabelText?: string
   netLabelWidth?: number
   fallbackNetLabelWidth?: number
   netLabelHeight?: number

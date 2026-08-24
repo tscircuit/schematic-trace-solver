@@ -18,6 +18,7 @@ import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConn
 export type OverlappingSameNetTraceGroup = {
   globalConnNetId: string
   netId?: string
+  netLabelText?: string
   overlappingTraces?: SolvedTracePath
   portOnlyPinId?: string
   mspConnectionPairIds?: MspConnectionPairId[]
@@ -30,6 +31,8 @@ export interface NetLabelPlacement {
    * Optional user-provided net identifier (if present in the input problem).
    */
   netId?: string
+  /** User-facing label content, separate from the connectivity identifier. */
+  netLabelText?: string
   /**
    * MSP pair ids that the label is associated with. Port-only labels use [].
    */
@@ -116,18 +119,27 @@ export class NetLabelPlacementSolver extends BaseSolver {
       }
     }
 
-    // Map pins to user-provided netIds (if any)
+    // Map pins to user-provided connectivity ids and display text (if any).
     const userNetIdByPinId: Record<string, string | undefined> = {}
+    const netLabelTextByPinId: Record<string, string | undefined> = {}
     for (const dc of this.inputProblem.directConnections) {
       if (dc.netId) {
         const [a, b] = dc.pinIds
         userNetIdByPinId[a] = dc.netId
         userNetIdByPinId[b] = dc.netId
       }
+      const netLabelText = dc.netLabelText?.trim()
+      if (netLabelText) {
+        const [a, b] = dc.pinIds
+        netLabelTextByPinId[a] = netLabelText
+        netLabelTextByPinId[b] = netLabelText
+      }
     }
     for (const nc of this.inputProblem.netConnections) {
       for (const pid of nc.pinIds) {
         userNetIdByPinId[pid] = nc.netId
+        const netLabelText = nc.netLabelText?.trim()
+        if (netLabelText) netLabelTextByPinId[pid] = netLabelText
       }
     }
 
@@ -237,6 +249,9 @@ export class NetLabelPlacementSolver extends BaseSolver {
           const group = {
             globalConnNetId,
             netId: userNetId,
+            netLabelText: [...component]
+              .map((pinId) => netLabelTextByPinId[pinId])
+              .find((text): text is string => Boolean(text)),
             overlappingTraces: rep,
             mspConnectionPairIds,
           }
@@ -249,6 +264,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
             groups.push({
               globalConnNetId,
               netId: userNetId,
+              netLabelText: netLabelTextByPinId[p],
               portOnlyPinId: p,
             })
           }

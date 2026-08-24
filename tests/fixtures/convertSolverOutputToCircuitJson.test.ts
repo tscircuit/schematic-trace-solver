@@ -33,8 +33,16 @@ const inputProblem: InputProblem = {
     },
   ],
   directConnections: [
-    { pinIds: ["U1.1", "C1.1"], netId: "ROUTED" },
-    { pinIds: ["U1.2", "C1.2"], netId: "UNROUTED" },
+    {
+      pinIds: ["U1.1", "C1.1"],
+      netId: "ROUTED",
+      netLabelText: "CLK",
+      netLabelWidth: 0.514,
+    },
+    {
+      pinIds: ["U1.2", "C1.2"],
+      netId: "UNROUTED",
+    },
   ],
   netConnections: [],
   textBoxes: [
@@ -79,6 +87,17 @@ class SnapshotTestSolver extends BaseSolver {
           width: 0.8,
           height: 0.2,
           center: { x: 1.6, y: 0.2 },
+        },
+        {
+          globalConnNetId: "internal-unrouted-net-id",
+          netId: "   ",
+          mspConnectionPairIds: [],
+          pinIds: ["U1.2", "C1.2"],
+          orientation: "x+" as const,
+          anchorPoint: { x: 0.5, y: -0.2 },
+          width: 0.514,
+          height: 0.2,
+          center: { x: 0.757, y: -0.2 },
         },
       ],
       inlineNetLabelPlacements: [],
@@ -132,10 +151,12 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
   ).toHaveLength(1)
   expect(
     circuitJson.filter((element) => element.type === "schematic_net_label"),
-  ).toHaveLength(1)
+  ).toHaveLength(2)
   expect(
-    circuitJson.find((element) => element.type === "schematic_net_label"),
-  ).toMatchObject({ text: "ROUTED" })
+    circuitJson
+      .filter((element) => element.type === "schematic_net_label")
+      .map((element) => element.text),
+  ).toEqual(["CLK", "XXX"])
 
   const schematicTraces = circuitJson.filter(
     (element): element is SchematicTrace => element.type === "schematic_trace",
