@@ -92,10 +92,13 @@ export const getInputProblemFromSolver = (
 
 const safelyGetOutput = (solver: SolverLike): SolverOutput | undefined => {
   try {
+    if (solver.getOutput) {
+      return solver.getOutput()
+    }
     if (solver.inlineNetLabelSolver?.getOutput) {
       return solver.inlineNetLabelSolver.getOutput()
     }
-    return solver.getOutput?.()
+    return undefined
   } catch {
     // A partially solved solver can expose getOutput before it is ready. The
     // property fallbacks below still produce a useful snapshot in that case.

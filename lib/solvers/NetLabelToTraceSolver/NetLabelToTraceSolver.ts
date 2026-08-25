@@ -6,6 +6,7 @@ import {
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import { DEFAULT_MAX_MSP_PAIR_DISTANCE } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import { doesPairCrossRestrictedCenterLines } from "lib/solvers/MspConnectionPairSolver/doesPairCrossRestrictedCenterLines"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
@@ -22,6 +23,7 @@ import type {
 } from "lib/types/InputProblem"
 import { arePinsInDifferentSchematicSections } from "lib/utils/arePinsInDifferentSchematicSections"
 import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
+import { tracePathContainsPoint } from "../RailNetLabelCornerPlacementSolver/geometry"
 import {
   type InlineNetLabelPlacement,
   type InlineNetLabelOutput,
@@ -34,6 +36,8 @@ interface CandidatePair {
   firstLabel: NetLabelPlacement
   secondLabel: NetLabelPlacement
   pins: [TraceRecoveryPin, TraceRecoveryPin]
+  connectsToExistingTrace?: boolean
+  outputPinIds?: PinId[]
   perpendicularOffset: number
   routeDistance: number
   key: string
@@ -78,6 +82,25 @@ const getPerpendicularOffset = (
   const yDistance = Math.abs(firstPin.y - secondPin.y)
   if (xDistance >= yDistance) return yDistance
   return xDistance
+}
+
+const getFacingDirectionForTraceAnchor = ({
+  portPin,
+  anchorPoint,
+  hostSegmentStart,
+  hostSegmentEnd,
+}: {
+  portPin: TraceRecoveryPin
+  anchorPoint: Point
+  hostSegmentStart: Point
+  hostSegmentEnd: Point
+}): TraceRecoveryPin["_facingDirection"] => {
+  if (hostSegmentStart.y === hostSegmentEnd.y) {
+    if (portPin.y < anchorPoint.y) return "y-"
+    return "y+"
+  }
+  if (portPin.x < anchorPoint.x) return "x-"
+  return "x+"
 }
 
 export class NetLabelToTraceSolver extends BaseSolver {
@@ -132,6 +155,102 @@ export class NetLabelToTraceSolver extends BaseSolver {
       (connection) =>
         connection.netId === label.netId && connection.pinIds.includes(pinId),
     )
+  }
+
+  private buildAnchoredTraceCandidate(
+    portLabel: NetLabelPlacement,
+    anchoredLabel: NetLabelPlacement,
+  ): CandidatePair | undefined {
+    const portPin = this.pinMap.get(portLabel.pinIds[0]!)
+    if (!portPin) return
+    if (anchoredLabel.globalConnNetId !== portLabel.globalConnNetId) return
+    if (anchoredLabel.netId !== portLabel.netId) return
+
+    const directNeighborPinIds = new Set(
+      this.inputProblem.directConnections
+        .filter((connection) => connection.pinIds.includes(portPin.pinId))
+        .flatMap((connection) => connection.pinIds)
+        .filter((pinId) => pinId !== portPin.pinId),
+    )
+    if (anchoredLabel.pinIds.length < 2) return
+    if (
+      !anchoredLabel.pinIds.every((pinId) => directNeighborPinIds.has(pinId))
+    ) {
+      return
+    }
+
+    const hostTrace = this.outputTraces.find(
+      (trace) =>
+        anchoredLabel.mspConnectionPairIds.some(
+          (pairId) =>
+            trace.mspPairId === pairId ||
+            trace.mspConnectionPairIds.includes(pairId),
+        ) && tracePathContainsPoint(trace.tracePath, anchoredLabel.anchorPoint),
+    )
+    if (!hostTrace) return
+
+    let hostSegmentStart: Point | undefined
+    let hostSegmentEnd: Point | undefined
+    for (let index = 0; index < hostTrace.tracePath.length - 1; index++) {
+      const segmentStart = hostTrace.tracePath[index]!
+      const segmentEnd = hostTrace.tracePath[index + 1]!
+      if (
+        !tracePathContainsPoint(
+          [segmentStart, segmentEnd],
+          anchoredLabel.anchorPoint,
+        )
+      ) {
+        continue
+      }
+      hostSegmentStart = segmentStart
+      hostSegmentEnd = segmentEnd
+      break
+    }
+    if (!hostSegmentStart || !hostSegmentEnd) return
+
+    const facingDirection = getFacingDirectionForTraceAnchor({
+      portPin,
+      anchorPoint: anchoredLabel.anchorPoint,
+      hostSegmentStart,
+      hostSegmentEnd,
+    })
+    const anchorPinId = `${RECOVERED_TRACE_PREFIX}anchor-${anchoredLabel.mspConnectionPairIds.join("--")}`
+    const anchorChipId = `${anchorPinId}-chip`
+    const anchorPin: TraceRecoveryPin = {
+      pinId: anchorPinId,
+      chipId: anchorChipId,
+      ...anchoredLabel.anchorPoint,
+      _facingDirection: facingDirection,
+    }
+    const maxAxisDistance = Math.max(
+      Math.abs(portPin.x - anchorPin.x),
+      Math.abs(portPin.y - anchorPin.y),
+    )
+    let maxMspPairDistance = this.inputProblem.maxMspPairDistance
+    if (maxMspPairDistance === undefined) {
+      maxMspPairDistance = DEFAULT_MAX_MSP_PAIR_DISTANCE
+    }
+    if (maxAxisDistance > maxMspPairDistance) return
+
+    this.chipMap[anchorChipId] = {
+      chipId: anchorChipId,
+      center: anchoredLabel.anchorPoint,
+      width: 0,
+      height: 0,
+      pins: [anchorPin],
+    }
+
+    return {
+      firstLabel: portLabel,
+      secondLabel: anchoredLabel,
+      pins: [portPin, anchorPin],
+      connectsToExistingTrace: true,
+      outputPinIds: [...portLabel.pinIds, ...anchoredLabel.pinIds],
+      perpendicularOffset: getPerpendicularOffset(portPin, anchorPin),
+      routeDistance:
+        Math.abs(portPin.x - anchorPin.x) + Math.abs(portPin.y - anchorPin.y),
+      key: getCanonicalPairKey(portPin.pinId, anchorPin.pinId),
+    }
   }
 
   private buildCandidatePairs() {
@@ -204,6 +323,23 @@ export class NetLabelToTraceSolver extends BaseSolver {
       }
     }
 
+    const anchoredLabels = this.input.netLabelPlacements.filter(
+      (label) => label.mspConnectionPairIds.length > 0,
+    )
+
+    for (const portLabels of labelsByGlobalNet.values()) {
+      for (const portLabel of portLabels) {
+        for (const anchoredLabel of anchoredLabels) {
+          const candidate = this.buildAnchoredTraceCandidate(
+            portLabel,
+            anchoredLabel,
+          )
+          if (!candidate) continue
+          candidates.push(candidate)
+        }
+      }
+    }
+
     candidates.sort(
       (first, second) =>
         first.perpendicularOffset - second.perpendicularOffset ||
@@ -247,8 +383,15 @@ export class NetLabelToTraceSolver extends BaseSolver {
     const retainedTraces = this.outputTraces.filter(
       (trace) => !this.isSupersededConnectorTrace(trace, candidate),
     )
+    let collisionTraces = retainedTraces
+    if (candidate.connectsToExistingTrace) {
+      collisionTraces = retainedTraces.filter(
+        (trace) =>
+          trace.globalConnNetId !== candidate.firstLabel.globalConnNetId,
+      )
+    }
     if (
-      doesTraceOverlapWithExistingTraces(tracePath, retainedTraces) ||
+      doesTraceOverlapWithExistingTraces(tracePath, collisionTraces) ||
       this.routeIntersectsRemainingLabels(tracePath, candidate)
     ) {
       return
@@ -263,7 +406,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
       pins: [firstPin, secondPin],
       tracePath,
       mspConnectionPairIds: [mspPairId],
-      pinIds: [firstPin.pinId, secondPin.pinId],
+      pinIds: candidate.outputPinIds ?? [firstPin.pinId, secondPin.pinId],
     }
 
     this.outputTraces = [...retainedTraces, recoveredTrace]
