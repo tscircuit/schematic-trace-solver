@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { NET_LABEL_HORIZONTAL_WIDTH } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type {
   InputDirectConnection,
@@ -9,7 +10,7 @@ import "tests/fixtures/matcher"
 const inlineConnection = (
   netId: string,
   pinIds: [string, string],
-  fallbackNetLabelWidth: number,
+  anchoredNetLabelWidth: number,
   inlineNetLabelWidth: number,
   netLabelText?: string,
 ): InputDirectConnection => ({
@@ -17,7 +18,7 @@ const inlineConnection = (
   netLabelText,
   pinIds,
   allowInlineNetLabel: true,
-  fallbackNetLabelWidth,
+  anchoredNetLabelWidth,
   inlineNetLabelWidth,
   inlineNetLabelHeight: 0.12,
 })
@@ -88,10 +89,18 @@ const routedInputProblem: InputProblem = {
   maxMspPairDistance: 20,
 }
 
-test("fallback label width does not split routable inline connections", () => {
+test("anchored label width does not split routable inline connections", () => {
   const solver = new SchematicTracePipelineSolver(routedInputProblem)
+  const inputWithoutAnchoredWidths = structuredClone(routedInputProblem)
+  for (const connection of inputWithoutAnchoredWidths.directConnections) {
+    delete connection.anchoredNetLabelWidth
+  }
+  const solverWithoutAnchoredWidths = new SchematicTracePipelineSolver(
+    inputWithoutAnchoredWidths,
+  )
 
   solver.solve()
+  solverWithoutAnchoredWidths.solve()
 
   expect(solver.schematicTraceLinesSolver!.solvedTracePaths).toHaveLength(5)
   expect(solver.schematicTraceLinesSolver!.failedConnectionPairs).toHaveLength(
@@ -107,6 +116,20 @@ test("fallback label width does not split routable inline connections", () => {
     ),
   ).toBe(true)
   expect(
+    solver.netLabelPlacementSolver!.netLabelPlacements.every(
+      (placement) =>
+        Math.max(placement.width, placement.height) ===
+        NET_LABEL_HORIZONTAL_WIDTH,
+    ),
+  ).toBe(true)
+  expect(
+    output.traces.map(({ mspPairId, tracePath }) => ({ mspPairId, tracePath })),
+  ).toEqual(
+    solverWithoutAnchoredWidths
+      .inlineNetLabelSolver!.getOutput()
+      .traces.map(({ mspPairId, tracePath }) => ({ mspPairId, tracePath })),
+  )
+  expect(
     output.inlineNetLabelPlacements.find(
       (placement) => placement.netId === "OUT_A_P",
     )?.netLabelText,
@@ -115,7 +138,7 @@ test("fallback label width does not split routable inline connections", () => {
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
 
-test("fallback label width sizes anchored labels when routing is skipped", () => {
+test("anchored label width sizes anchored labels when routing is skipped", () => {
   const inputProblem: InputProblem = {
     chips: [
       {
@@ -133,18 +156,18 @@ test("fallback label width sizes anchored labels when routing is skipped", () =>
         pins: [{ pinId: "U2.1", x: 2.5, y: 0, _facingDirection: "x-" }],
       },
     ],
-    directConnections: [
+    directConnections: [],
+    netConnections: [
       {
         netId: "SIGNAL",
         netLabelText: "User-facing signal",
         pinIds: ["U1.1", "U2.1"],
         allowInlineNetLabel: true,
-        fallbackNetLabelWidth: 0.96,
+        anchoredNetLabelWidth: 0.96,
         inlineNetLabelWidth: 0.64,
         inlineNetLabelHeight: 0.12,
       },
     ],
-    netConnections: [],
     availableNetLabelOrientations: {},
     maxMspPairDistance: 1,
   }
@@ -152,10 +175,10 @@ test("fallback label width sizes anchored labels when routing is skipped", () =>
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
 
-  const [fallbackPlacement] = solver.netLabelPlacementSolver!.netLabelPlacements
-  expect(fallbackPlacement).toBeDefined()
-  expect(Math.max(fallbackPlacement!.width, fallbackPlacement!.height)).toBe(
+  const [anchoredPlacement] = solver.netLabelPlacementSolver!.netLabelPlacements
+  expect(anchoredPlacement).toBeDefined()
+  expect(Math.max(anchoredPlacement!.width, anchoredPlacement!.height)).toBe(
     0.96,
   )
-  expect(fallbackPlacement!.netLabelText).toBe("User-facing signal")
+  expect(anchoredPlacement!.netLabelText).toBe("User-facing signal")
 })

@@ -286,6 +286,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       netId: group.netId,
       pinIds,
+      isPortOnlyLabel: group.portOnlyPinId !== undefined,
     })
   }
 

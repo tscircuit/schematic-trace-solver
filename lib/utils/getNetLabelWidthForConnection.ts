@@ -10,29 +10,28 @@ type ConnectionWithLabelWidth = InputDirectConnection | InputNetConnection
 
 const getConfiguredWidth = (
   connections: Array<ConnectionWithLabelWidth | undefined>,
-  includeFallbackNetLabelWidth: boolean,
+  isPortOnlyLabel: boolean,
 ) => {
-  const explicitWidth = connections.find(
+  const width = connections.find(
     (connection) => connection?.netLabelWidth !== undefined,
   )?.netLabelWidth
-  if (explicitWidth !== undefined) return explicitWidth
-  if (!includeFallbackNetLabelWidth) return undefined
+  if (width !== undefined || !isPortOnlyLabel) return width
 
   return connections.find(
-    (connection) => connection?.fallbackNetLabelWidth !== undefined,
-  )?.fallbackNetLabelWidth
+    (connection) => connection?.anchoredNetLabelWidth !== undefined,
+  )?.anchoredNetLabelWidth
 }
 
 export const getNetLabelWidthForConnection = ({
   inputProblem,
   netId,
   pinIds,
-  includeFallbackNetLabelWidth = true,
+  isPortOnlyLabel,
 }: {
   inputProblem: InputProblem
   netId?: NetId
   pinIds: readonly PinId[]
-  includeFallbackNetLabelWidth?: boolean
+  isPortOnlyLabel: boolean
 }): number | undefined => {
   if (netId) {
     const widthByNetId = getConfiguredWidth(
@@ -44,7 +43,7 @@ export const getNetLabelWidthForConnection = ({
           (connection) => connection.netId === netId,
         ),
       ],
-      includeFallbackNetLabelWidth,
+      isPortOnlyLabel,
     )
     if (widthByNetId !== undefined) return widthByNetId
   }
@@ -58,6 +57,6 @@ export const getNetLabelWidthForConnection = ({
         connection.pinIds.some((pinId) => pinIds.includes(pinId)),
       ),
     ],
-    includeFallbackNetLabelWidth,
+    isPortOnlyLabel,
   )
 }

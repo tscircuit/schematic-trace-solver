@@ -185,6 +185,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       netId: blockedLabel.netId,
       pinIds: blockedLabel.pinIds,
+      isPortOnlyLabel: this.isPortOnlyLabel(blockedLabel),
     })
     let columnLabelIndex: number | undefined
     if (blockedLabelWidth !== undefined) {
@@ -196,6 +197,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
             inputProblem: this.inputProblem,
             netId: label.netId,
             pinIds: label.pinIds,
+            isPortOnlyLabel: this.isPortOnlyLabel(label),
           }) === blockedLabelWidth
         )
       })
@@ -496,6 +498,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
+        isPortOnlyLabel: this.isPortOnlyLabel(label),
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
@@ -1113,6 +1116,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
+        isPortOnlyLabel: this.isPortOnlyLabel(label),
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
@@ -1141,6 +1145,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
+        isPortOnlyLabel: this.isPortOnlyLabel(label),
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
@@ -1224,6 +1229,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
+        isPortOnlyLabel: this.isPortOnlyLabel(label),
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
@@ -1309,6 +1315,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
+        isPortOnlyLabel: this.isPortOnlyLabel(label),
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
