@@ -5,6 +5,10 @@ import type { ObstacleRect } from "lib/solvers/SchematicTraceLinesSolver/Schemat
 import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
 import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
 import {
+  getLabelBounds,
+  rectsOverlap,
+} from "lib/solvers/TraceAnchoredNetLabelOverlapSolver/geometry"
+import {
   doesPathCoincideWithTraces,
   doesPathOverlapTraceStrokes,
 } from "lib/utils/doesPathCoincideWithTraces"
@@ -73,6 +77,40 @@ const moveVerticalLabelsWithReroutedTraces = ({
   return movedNetLabelPlacements
 }
 
+const introducesCrossNetLabelOverlap = (
+  before: NetLabelPlacement[],
+  after: NetLabelPlacement[],
+) => {
+  for (let firstIndex = 0; firstIndex < after.length; firstIndex++) {
+    const firstAfter = after[firstIndex]!
+    const firstBefore = before[firstIndex]
+    if (!firstBefore) return true
+
+    for (
+      let secondIndex = firstIndex + 1;
+      secondIndex < after.length;
+      secondIndex++
+    ) {
+      const secondAfter = after[secondIndex]!
+      const secondBefore = before[secondIndex]
+      if (!secondBefore) return true
+      if (firstAfter.globalConnNetId === secondAfter.globalConnNetId) continue
+
+      const overlappedBefore = rectsOverlap(
+        getLabelBounds(firstBefore),
+        getLabelBounds(secondBefore),
+      )
+      const overlapsAfter = rectsOverlap(
+        getLabelBounds(firstAfter),
+        getLabelBounds(secondAfter),
+      )
+      if (!overlappedBefore && overlapsAfter) return true
+    }
+  }
+
+  return false
+}
+
 export const evaluateRailGroup = ({
   group,
   traces,
@@ -120,6 +158,14 @@ export const evaluateRailGroup = ({
         candidateTraces,
         netLabelPlacements,
       })
+      if (
+        introducesCrossNetLabelOverlap(
+          netLabelPlacements,
+          candidateNetLabelPlacements,
+        )
+      ) {
+        continue
+      }
       const candidatesAreClear = candidateTraces.every(
         (candidate) =>
           !isPathCollidingWithObstacles(candidate.tracePath, obstacles) &&

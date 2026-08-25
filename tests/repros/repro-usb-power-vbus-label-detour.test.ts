@@ -37,6 +37,13 @@ test("routes the usb power vbus connection without a label detour", () => {
         label.pinIds.includes("schematic_port_54") &&
         label.pinIds.includes("schematic_port_162"),
     )
+  const chainedGndLabel =
+    solver.sameNetJunctionAlignmentSolver!.outputNetLabelPlacements.find(
+      (label) =>
+        label.mspConnectionPairIds.includes(
+          "schematic_port_187-schematic_port_181",
+        ),
+    )
 
   expect(gndLabel?.orientation).toBe("y-")
   expect(gndLabel?.anchorPoint.x).toBeCloseTo(-2.34)
@@ -47,6 +54,9 @@ test("routes the usb power vbus connection without a label detour", () => {
   ])
   expect(neighboringV3v3Label?.anchorPoint.x).toBeCloseTo(-3.655)
   expect(neighboringV3v3Label?.anchorPoint.y).toBeCloseTo(-0.3)
+  expect(chainedGndLabel?.orientation).toBe("y-")
+  expect(chainedGndLabel?.anchorPoint.x).toBeCloseTo(-1.561)
+  expect(chainedGndLabel?.anchorPoint.y).toBeCloseTo(6.3)
   expect(vbusTrace?.tracePath).toEqual([
     { x: 13, y: -6.2 },
     { x: 12.8, y: -6.2 },

@@ -12,6 +12,12 @@ test("bug-report-20260825T103621Z", () => {
   const c24ToC26Trace = alignmentOutput.traces.find(
     (trace) => trace.mspPairId === "schematic_port_78-schematic_port_76",
   )
+  const c22ToC23Trace = alignmentOutput.traces.find(
+    (trace) => trace.mspPairId === "schematic_port_74-schematic_port_72",
+  )
+  const c23ToC24Trace = alignmentOutput.traces.find(
+    (trace) => trace.mspPairId === "schematic_port_76-schematic_port_74",
+  )
   const groundLabel = alignmentOutput.netLabelPlacements.find(
     (label) =>
       label.mspConnectionPairIds.includes(
@@ -35,6 +41,18 @@ test("bug-report-20260825T103621Z", () => {
     { x: -3.9000000000000004, y: -6.78 },
     { x: -5.1, y: -6.78 },
     { x: -5.1, y: -6.58 },
+  ])
+  expect(c22ToC23Trace?.tracePath).toEqual([
+    { x: -6, y: -6.58 },
+    { x: -6, y: -6.78 },
+    { x: -7, y: -6.78 },
+    { x: -7, y: -6.58 },
+  ])
+  expect(c23ToC24Trace?.tracePath).toEqual([
+    { x: -5.1, y: -6.58 },
+    { x: -5.1, y: -6.78 },
+    { x: -6, y: -6.78 },
+    { x: -6, y: -6.58 },
   ])
   expect(groundLabel?.anchorPoint).toEqual({
     x: -3.9000000000000004,
