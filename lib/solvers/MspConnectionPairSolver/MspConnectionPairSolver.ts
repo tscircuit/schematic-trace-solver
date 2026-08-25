@@ -18,6 +18,7 @@ import { getLabeledConnectionRouteReason } from "./isLabeledPeripheralConnection
 
 export type MspConnectionPairId = string
 export const DEFAULT_MAX_MSP_PAIR_DISTANCE = 1
+const DIRECT_CONNECTION_DISTANCE_TOLERANCE = 0.2
 
 const getPinPairKey = (pinIds: [PinId, PinId]) => [...pinIds].sort().join("::")
 
@@ -44,6 +45,7 @@ export class MspConnectionPairSolver extends BaseSolver {
   pinMap: Record<string, InputPin & { chipId: string }>
   userNetIdByPinId: Record<string, string | undefined>
   directConnectionPinPairKeys: Set<string>
+  labeledDirectConnectionPinPairKeys: Set<string>
 
   constructor({ inputProblem }: { inputProblem: InputProblem }) {
     super()
@@ -72,8 +74,13 @@ export class MspConnectionPairSolver extends BaseSolver {
     // Build a mapping from PinId to user-provided netId (if any)
     this.userNetIdByPinId = {}
     this.directConnectionPinPairKeys = new Set()
+    this.labeledDirectConnectionPinPairKeys = new Set()
     for (const dc of inputProblem.directConnections) {
-      this.directConnectionPinPairKeys.add(getPinPairKey(dc.pinIds))
+      const pinPairKey = getPinPairKey(dc.pinIds)
+      this.directConnectionPinPairKeys.add(pinPairKey)
+      if (dc.netLabelWidth !== undefined) {
+        this.labeledDirectConnectionPinPairKeys.add(pinPairKey)
+      }
       if (dc.netId) {
         const [a, b] = dc.pinIds
         this.userNetIdByPinId[a] = dc.netId
@@ -120,9 +127,20 @@ export class MspConnectionPairSolver extends BaseSolver {
       // Explicit source traces are classified by straight-line distance when
       // their input is created; named nets retain the orthogonal route metric.
       let pairDistance = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y)
-      if (this.directConnectionPinPairKeys.has(pinPairKey)) {
+      const isDirectConnection =
+        this.directConnectionPinPairKeys.has(pinPairKey)
+      if (isDirectConnection) {
         pairDistance = distance(p1, p2)
       }
+      // A source trace can land just beyond the configured cutoff after its
+      // endpoint geometry is normalized. Allow labeled point-to-point traces
+      // one routing-clearance unit of tolerance so a near-boundary trace is
+      // not replaced by labels. Unlabeled traces retain the strict cutoff.
+      const maxPairDistance =
+        this.maxMspPairDistance +
+        (this.labeledDirectConnectionPinPairKeys.has(pinPairKey)
+          ? DIRECT_CONNECTION_DISTANCE_TOLERANCE
+          : 0)
       // Labeled one-pin peripherals and opposed pins whose fallback labels
       // cannot fit need a real trace even when they are far apart.
       const labeledConnectionRouteReason = getLabeledConnectionRouteReason({
@@ -130,10 +148,7 @@ export class MspConnectionPairSolver extends BaseSolver {
         chipMap: this.chipMap,
         pins: [p1, p2],
       })
-      if (
-        pairDistance > this.maxMspPairDistance &&
-        !labeledConnectionRouteReason
-      ) {
+      if (pairDistance > maxPairDistance && !labeledConnectionRouteReason) {
         // Too far apart; skip creating an MSP pair for this net
         return
       }
