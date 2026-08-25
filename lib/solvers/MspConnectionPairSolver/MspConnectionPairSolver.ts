@@ -35,6 +35,7 @@ export class MspConnectionPairSolver extends BaseSolver {
   inputProblem: InputProblem
 
   mspConnectionPairs: MspConnectionPair[] = []
+  mspConnectionPairIds = new Set<MspConnectionPairId>()
   dcConnMap: ConnectivityMap
   globalConnMap: ConnectivityMap
   queuedDcNetIds: string[]
@@ -95,6 +96,13 @@ export class MspConnectionPairSolver extends BaseSolver {
     return {
       inputProblem: this.inputProblem,
     }
+  }
+
+  private addMspConnectionPair(pair: MspConnectionPair) {
+    if (this.mspConnectionPairIds.has(pair.mspPairId)) return
+
+    this.mspConnectionPairIds.add(pair.mspPairId)
+    this.mspConnectionPairs.push(pair)
   }
 
   override _step() {
@@ -164,7 +172,7 @@ export class MspConnectionPairSolver extends BaseSolver {
         pairDistance > this.maxMspPairDistance &&
         labeledConnectionRouteReason === "overlapping-fallback-labels"
 
-      this.mspConnectionPairs.push({
+      this.addMspConnectionPair({
         mspPairId: `${pin1}-${pin2}`,
         dcConnNetId: dcNetId,
         globalConnNetId,
@@ -226,7 +234,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       const globalConnNetId = this.globalConnMap.getNetConnectedToId(pin1!)!
       const userNetId =
         this.userNetIdByPinId[pin1!] ?? this.userNetIdByPinId[pin2!]
-      this.mspConnectionPairs.push({
+      this.addMspConnectionPair({
         mspPairId: `${pin1}-${pin2}`,
         dcConnNetId: dcNetId,
         globalConnNetId,
