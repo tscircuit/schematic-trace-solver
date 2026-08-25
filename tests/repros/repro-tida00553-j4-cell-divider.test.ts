@@ -9,7 +9,7 @@ test("repro TIDA-00553 J4 cell divider routing", () => {
   solver.solve()
 
   const output = solver.sameNetJunctionAlignmentSolver!.getOutput()
-  const tapNetIds = new Set(["2-Cell tap", "3-Cell tap"])
+  const tapNetIds = new Set(["2-Cell/J4-R28", "3-Cell/J4-R28"])
   const routedTapTraces = output.traces.filter((trace) =>
     tapNetIds.has(trace.userNetId ?? ""),
   )
@@ -19,13 +19,13 @@ test("repro TIDA-00553 J4 cell divider routing", () => {
 
   expect(solver.solved).toBe(true)
 
-  // Current mismatch: these short, explicitly direct connections should route
-  // from the divider junctions to J4.1/J4.3. Instead, no traces are emitted and
-  // the solver replaces both connections with fallback endpoint net labels.
-  expect(routedTapTraces).toHaveLength(0)
+  // Current mismatch: both direct tap connections are routed, but the solver
+  // also emits fallback endpoint labels for them. Those labels appear as XX in
+  // the rendered schematic instead of the clean vertical traces in the source.
+  expect(routedTapTraces).toHaveLength(2)
   expect(fallbackTapLabels.map((label) => label.netId).sort()).toEqual([
-    "2-Cell tap",
-    "3-Cell tap",
+    "2-Cell/J4-R28",
+    "3-Cell/J4-R28",
   ])
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
