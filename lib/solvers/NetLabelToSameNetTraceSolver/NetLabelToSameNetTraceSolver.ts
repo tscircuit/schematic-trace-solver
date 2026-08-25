@@ -511,7 +511,6 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     const candidates: JunctionCandidate[] = []
 
     for (const label of this.input.netLabelPlacements) {
-      if (this.retainedLabels.has(label)) continue
       if (!this.isEligibleLabel(label, netConnMap, groundNetId)) continue
 
       if (label.mspConnectionPairIds.length === 0) {

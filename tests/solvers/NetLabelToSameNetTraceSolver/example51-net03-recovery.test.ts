@@ -53,3 +53,19 @@ test("example51 connects component 36 NET_01 to the same-net trace", () => {
   expect(net01Labels).toHaveLength(1)
   expect(component36Recovery).toBeDefined()
 })
+
+test("example51 connects component 36 left pin to the PPHV rail", () => {
+  const output = solveExample51()
+  const pphvLabels = output.netLabelPlacements.filter(
+    (label) => label.netId === "PPHV",
+  )
+  const component36Recovery = output.traces.find(
+    (trace) =>
+      trace.globalConnNetId === "connectivity_net6" &&
+      trace.mspPairId.startsWith("net-label-trace-junction-") &&
+      trace.pinIds.includes("schematic_port_72"),
+  )
+
+  expect(pphvLabels.length).toBeGreaterThanOrEqual(1)
+  expect(component36Recovery).toBeDefined()
+})
