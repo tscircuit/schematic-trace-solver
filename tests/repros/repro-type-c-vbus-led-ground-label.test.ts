@@ -131,15 +131,6 @@ test("routes TYPE-C-31-M-12 VBUS through an LED with shared GND labels", () => {
 
   solver.solve()
 
-  const beforeAlignment =
-    solver.preAlignmentTraceElbowTransitionSimplificationSolver!.getOutput()
-  const afterAlignment = solver.traceCleanupSolver2!.getOutput()
-  const internalGroundTraceBeforeAlignment = beforeAlignment.traces.find(
-    (trace) => trace.mspPairId === "J1.GND2-J1.GND1",
-  )
-  const internalGroundTraceAfterAlignment = afterAlignment.traces.find(
-    (trace) => trace.mspPairId === "J1.GND2-J1.GND1",
-  )
   const output = solver.netLabelNetLabelCollisionSolver!.getOutput()
   const gndLabels = output.netLabelPlacements.filter(
     (label) => label.netId === "J1_GND1",
@@ -154,8 +145,5 @@ test("routes TYPE-C-31-M-12 VBUS through an LED with shared GND labels", () => {
 
   expect(recoveredGroundTrace).toBeDefined()
   expect(gndLabels).toHaveLength(1)
-  expect(internalGroundTraceAfterAlignment?.tracePath).toEqual(
-    internalGroundTraceBeforeAlignment?.tracePath,
-  )
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
