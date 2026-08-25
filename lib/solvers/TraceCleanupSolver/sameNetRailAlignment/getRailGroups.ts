@@ -57,6 +57,8 @@ const rangesMeetAtEndpoint = (a: RailSegment, b: RailSegment) =>
 const connectedRailsFormBus = (a: RailSegment, b: RailSegment) => {
   if (!rangesMeetAtEndpoint(a, b)) return false
 
+  // A local bus runs farther along its axis than the gap between its rails;
+  // otherwise alignment would stretch a short pin join into parallel traces.
   const coordinateGap = Math.abs(a.coordinate - b.coordinate)
   const connectedRailSpan =
     Math.max(a.maxAlong, b.maxAlong) - Math.min(a.minAlong, b.minAlong)
