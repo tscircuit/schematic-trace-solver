@@ -9,15 +9,13 @@ const solveExample51 = (problem: typeof inputProblem = inputProblem) => {
 
   solver.solve()
 
-  return solver
-    .netLabelToSameNetTraceSolver!.getOutput()
-    .netLabelPlacements.filter(
-      (label) => label.globalConnNetId === "connectivity_net11",
-    )
+  return solver.netLabelToSameNetTraceSolver!.getOutput()
 }
 
 test("example51 connects NET_03 branches while retaining one y+ label", () => {
-  const net03Labels = solveExample51()
+  const net03Labels = solveExample51().netLabelPlacements.filter(
+    (label) => label.globalConnNetId === "connectivity_net11",
+  )
 
   expect(net03Labels).toHaveLength(1)
   expect(net03Labels[0]!.orientation).toBe("y+")
@@ -33,5 +31,25 @@ test("example51 retains one label for an explicit power net", () => {
     net03Connection as typeof net03Connection & { isPowerNet: boolean }
   ).isPowerNet = true
 
-  expect(solveExample51(powerProblem)).toHaveLength(1)
+  expect(
+    solveExample51(powerProblem).netLabelPlacements.filter(
+      (label) => label.globalConnNetId === "connectivity_net11",
+    ),
+  ).toHaveLength(1)
+})
+
+test("example51 connects component 36 NET_01 to the same-net trace", () => {
+  const output = solveExample51()
+  const net01Labels = output.netLabelPlacements.filter(
+    (label) => label.globalConnNetId === "connectivity_net9",
+  )
+  const component36Recovery = output.traces.find(
+    (trace) =>
+      trace.globalConnNetId === "connectivity_net9" &&
+      trace.mspPairId.startsWith("net-label-trace-junction-") &&
+      trace.pinIds.includes("schematic_port_73"),
+  )
+
+  expect(net01Labels).toHaveLength(1)
+  expect(component36Recovery).toBeDefined()
 })

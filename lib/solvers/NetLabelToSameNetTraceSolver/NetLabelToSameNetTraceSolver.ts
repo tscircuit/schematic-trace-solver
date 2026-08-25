@@ -102,6 +102,28 @@ const pathIsAxisAligned = (path: Point[]) =>
       isVertical(point, path[index - 1]!),
   )
 
+const orthogonalizeNearAlignedContinuation = (
+  path: Point[],
+  candidate: JunctionCandidate,
+) => {
+  if (
+    path.length !== 2 ||
+    pathIsAxisAligned(path) ||
+    candidate.sourceComponentId === null ||
+    candidate.perpendicularOffset > MAX_CONTINUATION_OFFSET
+  ) {
+    return path
+  }
+
+  const [start, end] = path as [Point, Point]
+  const elbow =
+    candidate.sourcePin._facingDirection === "x+" ||
+    candidate.sourcePin._facingDirection === "x-"
+      ? { x: end.x, y: start.y }
+      : { x: start.x, y: end.y }
+  return [start, elbow, end]
+}
+
 const tracesTouch = (first: SolvedTracePath, second: SolvedTracePath) => {
   if (first.pinIds.some((pinId) => second.pinIds.includes(pinId))) return true
   for (
@@ -726,8 +748,12 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
 
   private tryAcceptCurrentRoute() {
     const candidate = this.currentCandidate
-    const tracePath = this.activeSubSolver?.solvedTracePath
-    if (!candidate || !tracePath) return
+    const solvedTracePath = this.activeSubSolver?.solvedTracePath
+    if (!candidate || !solvedTracePath) return
+    const tracePath = orthogonalizeNearAlignedContinuation(
+      solvedTracePath,
+      candidate,
+    )
     if (
       !pathIsAxisAligned(tracePath) ||
       this.pathCrossesExistingTraces(tracePath, candidate) ||
