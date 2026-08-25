@@ -11,7 +11,7 @@ import type { InputProblem, SectionId } from "lib/types/InputProblem"
 
 type Axis = "x" | "y"
 
-// Conservative V1 limits cover the observed short stub and tight hairpin only.
+// These conservative limits cover only the observed short stub and tight hairpin.
 const MAX_SHARED_PIN_TAIL_LENGTH = 0.2
 const MAX_HAIRPIN_OFFSET = 0.05
 const MIN_HAIRPIN_POINT_COUNT = 6
@@ -55,7 +55,7 @@ const getTailRewrite = ({
   const secondPath = orientPathFromPin(secondTrace, sharedPin)
   if (!firstPath?.[1] || !secondPath?.[1]) return null
 
-  // V1 handles only short tails leaving the shared pin in the same direction.
+  // Only short tails leaving the shared pin in the same direction are eligible.
   const firstAxis = getAxis(sharedPin, firstPath[1])
   const secondAxis = getAxis(sharedPin, secondPath[1])
   if (!firstAxis || firstAxis !== secondAxis) return null
@@ -120,7 +120,7 @@ const getTailRewrite = ({
   const snappedOutwardEnd = { ...outwardEnd }
   // Snap the detour onto the junction rail before reconnecting its trailing path.
   snappedOutwardEnd[offsetAxis] = junction[offsetAxis]
-  // V1 handles a hairpin that rejoins three points before the trace end.
+  // The supported hairpin rejoins three points before the trace end.
   const rejoinIndex = path.length - HAIRPIN_TRAILING_POINT_COUNT
   if (!nearlyEqual(path[rejoinIndex]![trunkAxis], outwardEnd[trunkAxis])) {
     return { path, traceIndex, collapsedHairpin: false }

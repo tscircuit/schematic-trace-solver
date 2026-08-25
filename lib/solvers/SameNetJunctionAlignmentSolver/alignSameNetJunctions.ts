@@ -356,7 +356,7 @@ export const alignSameNetJunctions = ({
   }
 
   // Cleanup is intentionally scoped to the section changed by this pass.
-  // V1 skips cleanup when multiple alignments make that section ambiguous.
+  // Multiple alignments make the affected section ambiguous, so skip cleanup.
   if (alignedJunctionCount !== 1) alignedSectionId = null
   const trimmedOverlaps = trimSameNetOverlappingTraceTails({
     traces: outputTraces,
