@@ -3,7 +3,9 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import type { ObstacleRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { InputProblem } from "lib/types/InputProblem"
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { getComponentSideRailSegments } from "./getComponentSideRailSegments"
+import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
 import { nearlyEqual, rangesTouchOrOverlap } from "./geometry"
 import type { RailSegment } from "./types"
 
@@ -66,49 +68,113 @@ export const getRailGroups = (
   eligibleTraceIds: ReadonlySet<string>,
   inputProblem: InputProblem,
   obstacles: ObstacleRect[],
+  netLabelPlacements: NetLabelPlacement[],
 ): RailSegment[][] => {
   const chipMap = new Map(inputProblem.chips.map((chip) => [chip.chipId, chip]))
-  const segments = traces
-    .filter((trace) => eligibleTraceIds.has(trace.mspPairId))
-    .flatMap((trace) => getComponentSideRailSegments(trace, chipMap))
   const traceMap = new Map(traces.map((trace) => [trace.mspPairId, trace]))
-  const visited = new Set<number>()
-  const groups: RailSegment[][] = []
+  const eligibleTraces = traces.filter((trace) =>
+    eligibleTraceIds.has(trace.mspPairId),
+  )
 
-  for (let startIndex = 0; startIndex < segments.length; startIndex++) {
-    if (visited.has(startIndex)) continue
+  const collectConnectedGroups = (segments: RailSegment[]) => {
+    const visited = new Set<number>()
+    const connectedGroups: RailSegment[][] = []
 
-    const start = segments[startIndex]!
-    const queue = [startIndex]
-    const group: RailSegment[] = []
-    visited.add(startIndex)
+    for (let startIndex = 0; startIndex < segments.length; startIndex++) {
+      if (visited.has(startIndex)) continue
 
-    for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
-      const current = segments[queue[queueIndex]!]!
-      group.push(current)
+      const start = segments[startIndex]!
+      const queue = [startIndex]
+      const group: RailSegment[] = []
+      visited.add(startIndex)
 
-      for (
-        let candidateIndex = 0;
-        candidateIndex < segments.length;
-        candidateIndex++
-      ) {
-        if (visited.has(candidateIndex)) continue
-        const candidate = segments[candidateIndex]!
-        if (!canJoinRailGroup(start, current, candidate, traceMap, obstacles)) {
-          continue
+      for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
+        const current = segments[queue[queueIndex]!]!
+        group.push(current)
+
+        for (
+          let candidateIndex = 0;
+          candidateIndex < segments.length;
+          candidateIndex++
+        ) {
+          if (visited.has(candidateIndex)) continue
+          const candidate = segments[candidateIndex]!
+          if (
+            !canJoinRailGroup(start, current, candidate, traceMap, obstacles)
+          ) {
+            continue
+          }
+
+          visited.add(candidateIndex)
+          queue.push(candidateIndex)
         }
-
-        visited.add(candidateIndex)
-        queue.push(candidateIndex)
       }
+
+      connectedGroups.push(group)
     }
 
+    return connectedGroups
+  }
+
+  const groupKey = (group: RailSegment[]) =>
+    [
+      group[0]!.componentId,
+      group[0]!.componentFacingDirection,
+      group[0]!.orientation,
+      ...group
+        .map((segment) => `${segment.traceId}:${segment.segmentIndex}`)
+        .sort(),
+    ].join("|")
+
+  const selectedGroups: RailSegment[][] = []
+  const selectedGroupKeys = new Set<string>()
+  const addEligibleGroup = (
+    group: RailSegment[],
+    options?: { requireFixedLabel?: boolean },
+  ) => {
     const traceCount = new Set(group.map((segment) => segment.traceId)).size
+    if (traceCount < 2) return
+
+    const fixedLabelCoordinate = getFixedLabelCoordinate(
+      group,
+      netLabelPlacements,
+      traces,
+    )
+    if (options?.requireFixedLabel && fixedLabelCoordinate === null) return
+
     const hasDifferentCoordinates = group.some(
       (segment) => !nearlyEqual(segment.coordinate, group[0]!.coordinate),
     )
-    if (traceCount >= 2 && hasDifferentCoordinates) groups.push(group)
+    const hasDifferentFixedLabelCoordinate =
+      fixedLabelCoordinate !== null &&
+      !nearlyEqual(fixedLabelCoordinate, group[0]!.coordinate)
+    if (!hasDifferentCoordinates && !hasDifferentFixedLabelCoordinate) return
+
+    const key = groupKey(group)
+    if (selectedGroupKeys.has(key)) return
+    selectedGroupKeys.add(key)
+    selectedGroups.push(group)
   }
 
-  return groups
+  const primarySegments = eligibleTraces.flatMap((trace) =>
+    getComponentSideRailSegments(trace, chipMap),
+  )
+  // Preserve the original nearest-endpoint grouping and its ordering.
+  for (const group of collectConnectedGroups(primarySegments)) {
+    addEligibleGroup(group)
+  }
+
+  // Equal-distance endpoint associations can bridge a component chain, but
+  // only a fixed label is allowed to opt that broader group into alignment.
+  const tiedEndpointSegments = eligibleTraces.flatMap((trace) =>
+    getComponentSideRailSegments(trace, chipMap, {
+      includeTiedEndpointAssociations: true,
+      maxMspPairDistance: inputProblem.maxMspPairDistance,
+    }),
+  )
+  for (const group of collectConnectedGroups(tiedEndpointSegments)) {
+    addEligibleGroup(group, { requireFixedLabel: true })
+  }
+
+  return selectedGroups
 }

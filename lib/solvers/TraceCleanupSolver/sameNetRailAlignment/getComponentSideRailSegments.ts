@@ -1,3 +1,5 @@
+import { distance } from "@tscircuit/math-utils"
+import { DEFAULT_MAX_MSP_PAIR_DISTANCE } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import type { InputChip } from "lib/types/InputProblem"
@@ -80,12 +82,22 @@ const railIsOutsideComponent = (
   }
 }
 
-/** Associates each movable internal rail with the nearest component endpoint. */
+/**
+ * Associates each movable rail with its nearest endpoint. Label-anchored group
+ * discovery may opt into equally-near endpoints for local connections.
+ */
 export const getComponentSideRailSegments = (
   trace: SolvedTracePath,
   chipMap: Map<string, InputChip>,
+  options?: {
+    includeTiedEndpointAssociations?: boolean
+    maxMspPairDistance?: number
+  },
 ): RailSegment[] => {
   const segments: RailSegment[] = []
+  const isLocalConnection =
+    distance(trace.pins[0]!, trace.pins[1]!) <=
+    (options?.maxMspPairDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE)
 
   for (const segment of getMovableRailSegments(trace)) {
     const associations = trace.pins.flatMap((pin, pinIndex) => {
@@ -111,10 +123,21 @@ export const getComponentSideRailSegments = (
     })
 
     associations.sort((a, b) => a.distanceFromEndpoint - b.distanceFromEndpoint)
-    const association = associations[0]
-    if (!association) continue
-
-    segments.push({ ...segment, ...association })
+    const minimumDistance = associations[0]?.distanceFromEndpoint
+    const nearestAssociationKeys = new Set<string>()
+    for (const association of associations) {
+      if (
+        nearestAssociationKeys.size > 0 &&
+        (!options?.includeTiedEndpointAssociations || !isLocalConnection)
+      ) {
+        break
+      }
+      if (association.distanceFromEndpoint !== minimumDistance) continue
+      const associationKey = `${association.componentId}:${association.componentFacingDirection}`
+      if (nearestAssociationKeys.has(associationKey)) continue
+      nearestAssociationKeys.add(associationKey)
+      segments.push({ ...segment, ...association })
+    }
   }
 
   return segments

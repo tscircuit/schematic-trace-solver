@@ -1,5 +1,6 @@
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { simplifyPath } from "../simplifyPath"
+import { nearlyEqual } from "./geometry"
 import type { RailSegment } from "./types"
 
 export const moveRailSegments = (
@@ -9,6 +10,7 @@ export const moveRailSegments = (
 ): SolvedTracePath => {
   const pointsToMove = new Set<number>()
   for (const segment of segments) {
+    if (nearlyEqual(segment.coordinate, coordinate)) continue
     pointsToMove.add(segment.segmentIndex)
     pointsToMove.add(segment.segmentIndex + 1)
   }

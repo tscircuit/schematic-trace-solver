@@ -9,6 +9,7 @@ import {
 } from "lib/utils/doesPathCoincideWithTraces"
 import { getDistinctCoordinates, pointsEqual } from "./geometry"
 import { getRailAlignmentFallbackCoordinates } from "./getRailAlignmentFallbackCoordinates"
+import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
 import { moveRailSegments } from "./moveRailSegments"
 import { preservesLabelAnchors } from "./preservesLabelAnchors"
 import {
@@ -50,6 +51,11 @@ export const evaluateRailGroup = ({
   const originalCoordinates = getDistinctCoordinates(
     group.map((segment) => segment.coordinate),
   )
+  const fixedLabelCoordinate = getFixedLabelCoordinate(
+    group,
+    netLabelPlacements,
+    traces,
+  )
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
   )
@@ -59,7 +65,10 @@ export const evaluateRailGroup = ({
       !eligibleTraceIds.has(trace.mspPairId),
   )
 
-  const evaluateCoordinates = (coordinates: number[]) => {
+  const evaluateCoordinates = (
+    coordinates: number[],
+    options?: { coordinateIsFixedByLabel?: boolean },
+  ) => {
     let best: AlignmentCandidate | null = null
     for (const coordinate of coordinates) {
       const candidateMap = new Map<string, SolvedTracePath>()
@@ -104,7 +113,15 @@ export const evaluateRailGroup = ({
         allCandidateTraces,
       )
       if (metrics.otherNetCrossings > baseline.otherNetCrossings) continue
-      if (!isReadabilityImprovement(metrics, baseline)) continue
+      // A fixed label anchor determines the rail coordinate. It may lengthen
+      // endpoint legs, but it must still preserve turns and every safety gate.
+      if (
+        options?.coordinateIsFixedByLabel
+          ? metrics.turnCount > baseline.turnCount
+          : !isReadabilityImprovement(metrics, baseline)
+      ) {
+        continue
+      }
 
       const score: AlignmentScore = {
         ...metrics,
@@ -124,15 +141,26 @@ export const evaluateRailGroup = ({
         .map((trace) => trace.mspPairId)
       if (changedTraceIds.length === 0) continue
 
-      const candidate = { traces: allCandidateTraces, changedTraceIds, score }
+      const candidate = {
+        traces: allCandidateTraces,
+        changedTraceIds,
+        score,
+      }
       if (!best || scoreIsBetter(candidate.score, best.score)) best = candidate
     }
 
     return best
   }
 
-  const originalCandidate = evaluateCoordinates(originalCoordinates)
+  const originalCandidate = evaluateCoordinates(
+    fixedLabelCoordinate === null
+      ? originalCoordinates
+      : [fixedLabelCoordinate],
+    { coordinateIsFixedByLabel: fixedLabelCoordinate !== null },
+  )
   if (originalCandidate) return originalCandidate
+
+  if (fixedLabelCoordinate !== null) return null
 
   return evaluateCoordinates(
     getRailAlignmentFallbackCoordinates({
