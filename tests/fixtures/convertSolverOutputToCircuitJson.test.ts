@@ -162,14 +162,6 @@ class FinalStageSnapshotTestSolver extends SnapshotTestSolver {
       inlineNetLabelPlacements: [],
     }),
   }
-
-  inlineNetLabelSolver = {
-    getOutput: () => ({
-      traces: this.getOutput().traces,
-      netLabelPlacements: [],
-      inlineNetLabelPlacements: [],
-    }),
-  }
 }
 
 test("solver snapshot uses the final pipeline stage", () => {

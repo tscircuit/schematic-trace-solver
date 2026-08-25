@@ -62,7 +62,6 @@ type SolverLike = BaseSolver & {
   inlineNetLabelPlacements?: InlineNetLabelPlacement[]
   label?: NetLabelPlacement
   getOutput?: () => SolverOutput
-  inlineNetLabelSolver?: { getOutput: () => SolverOutput }
   netLabelToTraceSolver?: { getOutput: () => SolverOutput }
 }
 
@@ -96,13 +95,7 @@ const safelyGetOutput = (solver: SolverLike): SolverOutput | undefined => {
     if (solver.netLabelToTraceSolver?.getOutput) {
       return solver.netLabelToTraceSolver.getOutput()
     }
-    if (solver.getOutput) {
-      return solver.getOutput()
-    }
-    if (solver.inlineNetLabelSolver?.getOutput) {
-      return solver.inlineNetLabelSolver.getOutput()
-    }
-    return undefined
+    return solver.getOutput?.()
   } catch {
     // A partially solved solver can expose getOutput before it is ready. The
     // property fallbacks below still produce a useful snapshot in that case.
