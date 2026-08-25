@@ -9,5 +9,12 @@ test("isolated DC power regulator trace routing", () => {
   solver.solve()
 
   expect(solver.failed).toBe(false)
+  expect(
+    solver.netLabelToTraceSolver!.outputTraces.some(
+      (trace) =>
+        trace.pinIds.includes("schematic_port_1") &&
+        trace.pinIds.includes("schematic_port_10"),
+    ),
+  ).toBe(true)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

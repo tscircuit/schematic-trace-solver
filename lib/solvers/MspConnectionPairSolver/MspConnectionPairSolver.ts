@@ -16,6 +16,7 @@ import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInp
 import { getGroundConnectionPolicy } from "./getGroundConnectionPolicy"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 import { getLabeledConnectionRouteReason } from "./isLabeledPeripheralConnection"
+import { NET_LABEL_HORIZONTAL_HEIGHT } from "../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 
 export type MspConnectionPairId = string
 export const DEFAULT_MAX_MSP_PAIR_DISTANCE = 1
@@ -135,6 +136,13 @@ export class MspConnectionPairSolver extends BaseSolver {
       if (this.directConnectionPinPairKeys.has(pinPairKey)) {
         pairDistance = distance(p1, p2)
       }
+      const directConnection = this.inputProblem.directConnections.find(
+        (connection) => getPinPairKey(connection.pinIds) === pinPairKey,
+      )
+      let maxPairDistance = this.maxMspPairDistance
+      if (directConnection?.netLabelWidth !== undefined) {
+        maxPairDistance += NET_LABEL_HORIZONTAL_HEIGHT
+      }
       // Labeled one-pin peripherals and opposed pins whose fallback labels
       // cannot fit need a real trace even when they are far apart.
       const labeledConnectionRouteReason = getLabeledConnectionRouteReason({
@@ -142,10 +150,7 @@ export class MspConnectionPairSolver extends BaseSolver {
         chipMap: this.chipMap,
         pins: [p1, p2],
       })
-      if (
-        pairDistance > this.maxMspPairDistance &&
-        !labeledConnectionRouteReason
-      ) {
+      if (pairDistance > maxPairDistance && !labeledConnectionRouteReason) {
         // Too far apart; skip creating an MSP pair for this net
         return
       }
