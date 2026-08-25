@@ -78,6 +78,11 @@ export class SchematicTraceLinesSolver extends BaseSolver {
     super()
     this.inputProblem = params.inputProblem
     this.mspConnectionPairs = params.mspConnectionPairs
+
+    // This solver coordinates one independently budgeted single-line solver
+    // per pair. Give the queue one base budget per pair so the coordinator
+    // cannot stop before later pairs get their own attempt.
+    this.MAX_ITERATIONS *= Math.max(1, this.mspConnectionPairs.length)
     this.dcConnMap = params.dcConnMap
     this.globalConnMap = params.globalConnMap
     this.chipMap = params.chipMap
