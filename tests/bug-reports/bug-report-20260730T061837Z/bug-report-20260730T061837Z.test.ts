@@ -16,6 +16,11 @@ test("bug-report-20260730T061837Z", () => {
   const vbusBranch = traces.find(
     (trace) => trace.mspPairId === "schematic_port_31-schematic_port_29",
   )!
+  const groundCapBranches = [
+    "schematic_port_33-schematic_port_38",
+    "schematic_port_32-schematic_port_33",
+    "schematic_port_30-schematic_port_32",
+  ].map((traceId) => traces.find((trace) => trace.mspPairId === traceId))
 
   expect(vddBranch.tracePath).toContainEqual({
     x: -2.905,
@@ -30,5 +35,10 @@ test("bug-report-20260730T061837Z", () => {
   ).toBe(false)
   expect(vbusBranch.tracePath[1]!.y).toBeCloseTo(0.9)
   expect(vbusBranch.tracePath[2]!.y).toBeCloseTo(0.9)
+  for (const branch of groundCapBranches) {
+    expect(branch).toBeDefined()
+    expect(branch!.tracePath[1]!.y).toBeCloseTo(-2.02)
+    expect(branch!.tracePath[2]!.y).toBeCloseTo(-2.02)
+  }
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

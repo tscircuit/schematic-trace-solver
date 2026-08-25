@@ -653,12 +653,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number,
   ) {
     const direction = dir(orientation)
-    const candidatePoints = this.getTraceAnchorCandidatePoints(
-      label,
-      orientation,
-    ).sort((a, b) => {
-      // Prefer the furthest outward row, then the shortest connection back to
-      // the label's established column when that row contains multiple points.
+    const { points } = this.getTraceAnchorCandidates(label, orientation)
+    const candidatePoints = points.sort((a, b) => {
       const aAlongDirection = a.x * direction.x + a.y * direction.y
       const bAlongDirection = b.x * direction.x + b.y * direction.y
       return bAlongDirection - aAlongDirection
@@ -690,12 +686,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   ) {
     const direction = dir(orientation)
     const preservedColumnAnchor = this.getSearchStartAnchor(label, orientation)
-    const candidatePoints = this.getTraceAnchorCandidatePoints(
-      label,
-      orientation,
-    ).sort((a, b) => {
+    const { points, preferNearestBendOnOutwardRow } =
+      this.getTraceAnchorCandidates(label, orientation)
+    const candidatePoints = points.sort((a, b) => {
       const aAlongDirection = a.x * direction.x + a.y * direction.y
       const bAlongDirection = b.x * direction.x + b.y * direction.y
+      if (!preferNearestBendOnOutwardRow) {
+        return bAlongDirection - aAlongDirection
+      }
+
       const aPerpendicularDistance = isYOrientation(orientation)
         ? Math.abs(a.x - preservedColumnAnchor.x)
         : Math.abs(a.y - preservedColumnAnchor.y)
@@ -770,13 +769,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return null
   }
 
-  private getTraceAnchorCandidatePoints(
+  private getTraceAnchorCandidates(
     label: NetLabelPlacement,
     orientation: FacingDirection,
   ) {
     const seen = new Set<string>()
     const points: Point[] = []
-    const connectedTraceIds = new Set(label.mspConnectionPairIds ?? [])
+    const directHostTraceIds = new Set(label.mspConnectionPairIds ?? [])
+    const connectedTraceIds = new Set(directHostTraceIds)
 
     if (isYOrientation(orientation)) {
       const connectedPinIds = new Set<string>()
@@ -826,7 +826,43 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       }
     }
 
-    return points
+    const direction = dir(orientation)
+    const furthestAlong = Math.max(
+      ...points.map((point) => point.x * direction.x + point.y * direction.y),
+    )
+    const furthestRowPoints = points.filter(
+      (point) =>
+        Math.abs(
+          point.x * direction.x + point.y * direction.y - furthestAlong,
+        ) <= EPS,
+    )
+    const directHostPinIds = new Set(
+      [...directHostTraceIds].flatMap(
+        (traceId) => this.traceMap[traceId]?.pinIds ?? [],
+      ),
+    )
+    const adjacentTraces = [...connectedTraceIds].flatMap((traceId) => {
+      if (directHostTraceIds.has(traceId)) return []
+      const trace = this.traceMap[traceId]
+      if (!trace?.pinIds.some((pinId) => directHostPinIds.has(pinId))) return []
+      return [trace]
+    })
+
+    return {
+      points,
+      // Prefer the nearest bend when the outward row is on a trace directly
+      // adjacent to the label's host. Deeper transitive chains keep their
+      // stable trace ordering.
+      preferNearestBendOnOutwardRow: adjacentTraces.some((trace) =>
+        furthestRowPoints.some((point) =>
+          trace.tracePath.some(
+            (tracePoint) =>
+              Math.abs(tracePoint.x - point.x) <= EPS &&
+              Math.abs(tracePoint.y - point.y) <= EPS,
+          ),
+        ),
+      ),
+    }
   }
 
   private sharesVerticalRailWithAny(

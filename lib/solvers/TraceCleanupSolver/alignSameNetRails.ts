@@ -13,6 +13,14 @@ interface AlignSameNetRailsInput {
   eligibleTraceIds: ReadonlySet<string>
 }
 
+const getTraceStateKey = (traces: SolvedTracePath[]) =>
+  JSON.stringify(
+    traces.map((trace) => ({
+      mspPairId: trace.mspPairId,
+      tracePath: trace.tracePath,
+    })),
+  )
+
 export const alignSameNetRails = ({
   inputProblem,
   traces,
@@ -24,6 +32,7 @@ export const alignSameNetRails = ({
   alignedTraceCount: number
 } => {
   let outputTraces = [...traces]
+  const seenTraceStates = new Set([getTraceStateKey(outputTraces)])
   const obstacles = getObstacleRects(inputProblem)
   const alignedTraceIds = new Set<string>()
   let alignedRailGroupCount = 0
@@ -54,9 +63,16 @@ export const alignSameNetRails = ({
     }
     if (!applied) break
 
+    const candidateStateKey = getTraceStateKey(applied.traces)
+    // A rail can be eligible from both endpoint components. When that creates
+    // a cycle, restore the first-seen state instead of making the final layout
+    // depend on the maximum-pass parity.
+    const repeatsSeenState = seenTraceStates.has(candidateStateKey)
+    if (!repeatsSeenState) seenTraceStates.add(candidateStateKey)
     outputTraces = applied.traces
     alignedRailGroupCount++
     for (const traceId of applied.changedTraceIds) alignedTraceIds.add(traceId)
+    if (repeatsSeenState) break
   }
 
   return {

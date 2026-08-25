@@ -61,26 +61,45 @@ export const getFixedLabelCoordinate = (
   if (!groupHasOnlySingleRailTraces) return null
 
   const orientation = group[0]!.orientation
+  const linkedLabels = getLabelsLinkedToRailGroup(
+    group,
+    netLabelPlacements,
+    traces,
+  )
+  const anchoringLabels = linkedLabels.filter(
+    (label) =>
+      label.orientation === group[0]!.componentFacingDirection &&
+      label.mspConnectionPairIds.some((traceId) => {
+        const trace = traceMap.get(traceId)
+        return (
+          trace && tracePathContainsPoint(trace.tracePath, label.anchorPoint)
+        )
+      }),
+  )
   const coordinates = getDistinctCoordinates(
-    getLabelsLinkedToRailGroup(group, netLabelPlacements, traces)
-      .filter(
-        (label) =>
-          label.orientation === group[0]!.componentFacingDirection &&
-          label.mspConnectionPairIds.some((traceId) => {
-            const trace = traceMap.get(traceId)
-            return (
-              trace &&
-              tracePathContainsPoint(trace.tracePath, label.anchorPoint)
-            )
-          }),
-      )
-      .map((label) =>
-        orientation === "vertical" ? label.anchorPoint.x : label.anchorPoint.y,
-      ),
+    anchoringLabels.map((label) =>
+      orientation === "vertical" ? label.anchorPoint.x : label.anchorPoint.y,
+    ),
   )
   if (coordinates.length !== 1) return null
 
-  const coordinate = coordinates[0]!
+  const labelCoordinate = coordinates[0]!
+  const coordinate =
+    group.find(
+      (segment) =>
+        Math.abs(segment.coordinate - labelCoordinate) <=
+        RAIL_ALIGNMENT_EPSILON,
+    )?.coordinate ?? labelCoordinate
+  const labelIsAnchoredToRoutedBackbone = anchoringLabels.some((label) =>
+    label.mspConnectionPairIds.some(
+      (traceId) => (traceMap.get(traceId)?.tracePath.length ?? 0) > 4,
+    ),
+  )
+  // A multi-turn label trace is an intentional routed backbone, so its rail
+  // coordinate may propagate through the local component chain. Labels riding
+  // a single movable rail remain subject to the per-connection locality gate.
+  if (labelIsAnchoredToRoutedBackbone) return coordinate
+
   // Rail cleanup is local: a label cannot pull a connection farther than the
   // span of the pins that connection already joins.
   const coordinateIsLocalToEveryTrace = group.every((segment) => {
