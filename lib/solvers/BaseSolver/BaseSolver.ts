@@ -5,6 +5,8 @@ export class BaseSolver {
   solved = false
   failed = false
   iterations = 0
+  /** Iterations spent advancing this solver itself instead of an active child. */
+  iterationsWithoutActiveSubSolver = 0
   progress = 0
   error: string | null = null
   activeSubSolver?: BaseSolver | null
@@ -16,7 +18,11 @@ export class BaseSolver {
   step() {
     if (this.solved) return
     if (this.failed) return
+    const wasDelegatingToSubSolver = Boolean(this.activeSubSolver)
     this.iterations++
+    if (!wasDelegatingToSubSolver) {
+      this.iterationsWithoutActiveSubSolver++
+    }
     try {
       this._step()
     } catch (e) {
@@ -24,10 +30,16 @@ export class BaseSolver {
       this.failed = true
       throw e
     }
-    if (!this.solved && this.iterations > this.MAX_ITERATIONS) {
+    if (
+      !this.solved &&
+      this.iterationsWithoutActiveSubSolver > this.MAX_ITERATIONS
+    ) {
       this.tryFinalAcceptance()
     }
-    if (!this.solved && this.iterations > this.MAX_ITERATIONS) {
+    if (
+      !this.solved &&
+      this.iterationsWithoutActiveSubSolver > this.MAX_ITERATIONS
+    ) {
       this.error = `${this.constructor.name} ran out of iterations`
       this.failed = true
     }
