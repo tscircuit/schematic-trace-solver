@@ -7,13 +7,15 @@ import { PipelineStageTable } from "./PipelineStageTable"
 
 export const PipelineDebugger = ({
   inputProblem,
+  hideRatsNet = false,
 }: {
   inputProblem: InputProblem
+  hideRatsNet?: boolean
 }) => {
   const [, incRenderCount] = useReducer((x) => x + 1, 0)
   const solver = useMemo(
-    () => new SchematicTracePipelineSolver(inputProblem),
-    [],
+    () => new SchematicTracePipelineSolver(inputProblem, { hideRatsNet }),
+    [inputProblem, hideRatsNet],
   )
 
   return (
