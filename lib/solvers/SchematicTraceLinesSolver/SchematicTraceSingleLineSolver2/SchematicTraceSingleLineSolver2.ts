@@ -90,6 +90,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   aabb: { minX: number; maxX: number; minY: number; maxY: number }
 
   baseElbow: Point[]
+  preferExteriorDetours: boolean
 
   solvedTracePath: Point[] | null = null
 
@@ -102,12 +103,14 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     connectionPair?: MspConnectionPair
     inputProblem: InputProblem
     chipMap: Record<string, InputChip>
+    preferExteriorDetours?: boolean
   }) {
     super()
     this.pins = params.pins
     this.connectionPair = params.connectionPair
     this.inputProblem = params.inputProblem
     this.chipMap = params.chipMap
+    this.preferExteriorDetours = params.preferExteriorDetours ?? true
 
     // Ensure facing directions are present
     for (const pin of this.pins) {
@@ -190,6 +193,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       pins: this.pins,
       connectionPair: this.connectionPair,
       inputProblem: this.inputProblem,
+      preferExteriorDetours: this.preferExteriorDetours,
     }
   }
 
@@ -423,16 +427,8 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     if (canGenerateEndpointDetour && (isFirstSegment || isLastSegment)) {
       // A three-point detour replaces an L elbow, so the shortest valid route
       // remains the best choice. A four-point detour preserves the far side of
-      // a U elbow; prefer the candidate that keeps its new internal rails out
-      // of the pin band, then use length to choose between equivalent routes.
-      const compareDetours =
-        path.length === 4
-          ? (a: Point[], b: Point[]) =>
-              this.getPinBandPenalty(a) - this.getPinBandPenalty(b) ||
-              this.pathLength(a) - this.pathLength(b)
-          : (a: Point[], b: Point[]) =>
-              this.pathLength(a) - this.pathLength(b) ||
-              this.getPinBandPenalty(a) - this.getPinBandPenalty(b)
+      // a U elbow. Bundled or net-connected traces preserve the exterior route;
+      // isolated direct traces prefer the shorter route.
       const detours = generateEndpointCollisionDetours({
         path,
         collidingSegmentIndex: segIndex,
@@ -444,7 +440,19 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
           this.visited.add(key)
           return true
         })
-        .sort(compareDetours)
+        .sort((a, b) => {
+          if (path.length === 4 && this.preferExteriorDetours) {
+            return (
+              this.getPinBandPenalty(a) - this.getPinBandPenalty(b) ||
+              this.pathLength(a) - this.pathLength(b)
+            )
+          }
+
+          return (
+            this.pathLength(a) - this.pathLength(b) ||
+            this.getPinBandPenalty(a) - this.getPinBandPenalty(b)
+          )
+        })
 
       for (const detour of detours) {
         const nextCollisionRects = new Set(collisionRects)
