@@ -34,7 +34,7 @@ const getTransitivelyConnectedTraceIds = (
   return connectedTraceIds
 }
 
-export const getLabelsLinkedToRailGroup = (
+const getLabelsLinkedToRailGroup = (
   group: RailSegment[],
   netLabelPlacements: NetLabelPlacement[],
   traces: SolvedTracePath[],
@@ -45,7 +45,7 @@ export const getLabelsLinkedToRailGroup = (
   )
 }
 
-export const getFixedLabelCoordinates = (
+export const getFixedLabelCoordinate = (
   group: RailSegment[],
   netLabelPlacements: NetLabelPlacement[],
   traces: SolvedTracePath[],
@@ -69,5 +69,5 @@ export const getFixedLabelCoordinates = (
         orientation === "vertical" ? label.anchorPoint.x : label.anchorPoint.y,
       ),
   )
-  return coordinates.length === 1 ? coordinates : []
+  return coordinates.length === 1 ? coordinates[0]! : null
 }

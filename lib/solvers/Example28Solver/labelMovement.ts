@@ -4,7 +4,6 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { getMovedAnchorPointForReroute } from "./getMovedAnchorPointForReroute"
 import { isLabelAttachedToTrace } from "./isLabelAttachedToTrace"
-import { trimNetLabelConnectorsAtRoutedJunctions } from "./trimNetLabelConnectorsAtRoutedJunctions"
 
 export const moveAttachedLabelsToReroutedTrace = ({
   trace,
@@ -109,11 +108,5 @@ export const moveNetLabelConnectorsToReroutedTraces = ({
     })[0]!
   })
 
-  return {
-    traces: trimNetLabelConnectorsAtRoutedJunctions({
-      traces,
-      netLabelPlacements: labels,
-    }),
-    netLabelPlacements: labels,
-  }
+  return { traces, netLabelPlacements: labels }
 }

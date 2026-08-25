@@ -5,7 +5,7 @@ import type { ObstacleRect } from "lib/solvers/SchematicTraceLinesSolver/Schemat
 import type { InputProblem } from "lib/types/InputProblem"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { getComponentSideRailSegments } from "./getComponentSideRailSegments"
-import { getFixedLabelCoordinates } from "./getFixedLabelCoordinates"
+import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
 import { nearlyEqual, rangesTouchOrOverlap } from "./geometry"
 import type { RailSegment } from "./types"
 
@@ -110,11 +110,14 @@ export const getRailGroups = (
     const hasDifferentCoordinates = group.some(
       (segment) => !nearlyEqual(segment.coordinate, group[0]!.coordinate),
     )
-    const hasDifferentFixedLabelCoordinate = getFixedLabelCoordinates(
+    const fixedLabelCoordinate = getFixedLabelCoordinate(
       group,
       netLabelPlacements,
       traces,
-    ).some((coordinate) => !nearlyEqual(coordinate, group[0]!.coordinate))
+    )
+    const hasDifferentFixedLabelCoordinate =
+      fixedLabelCoordinate !== null &&
+      !nearlyEqual(fixedLabelCoordinate, group[0]!.coordinate)
     if (
       traceCount >= 2 &&
       (hasDifferentCoordinates || hasDifferentFixedLabelCoordinate)

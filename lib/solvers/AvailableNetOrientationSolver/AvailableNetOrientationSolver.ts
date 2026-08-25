@@ -687,20 +687,28 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number,
   ) {
     const direction = dir(orientation)
+    const preservedColumnAnchor = this.getSearchStartAnchor(label, orientation)
     const candidatePoints = this.getTraceAnchorCandidatePoints(
       label,
       orientation,
     ).sort((a, b) => {
+      // Prefer the furthest outward row, then the shortest connection back to
+      // the label's established column when that row contains multiple points.
       const aAlongDirection = a.x * direction.x + a.y * direction.y
       const bAlongDirection = b.x * direction.x + b.y * direction.y
-      return bAlongDirection - aAlongDirection
+      const aPerpendicularDistance = isYOrientation(orientation)
+        ? Math.abs(a.x - preservedColumnAnchor.x)
+        : Math.abs(a.y - preservedColumnAnchor.y)
+      const bPerpendicularDistance = isYOrientation(orientation)
+        ? Math.abs(b.x - preservedColumnAnchor.x)
+        : Math.abs(b.y - preservedColumnAnchor.y)
+      return (
+        bAlongDirection - aAlongDirection ||
+        aPerpendicularDistance - bPerpendicularDistance
+      )
     })
 
     for (const connectorSource of candidatePoints) {
-      const preservedColumnAnchor = this.getSearchStartAnchor(
-        label,
-        orientation,
-      )
       const preservedColumnCandidate = this.createCandidate(
         label,
         {

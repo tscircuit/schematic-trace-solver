@@ -57,6 +57,10 @@ test("bug-report-20260825T103621Z", () => {
     finalOutput.traces.find((trace) => trace.mspPairId === mspPairId)
   const lowerGroundTrace = getFinalTrace("schematic_port_48-schematic_port_44")
   const groundLabelConnector = getFinalTrace("available-net-orientation-13-GND")
+  const createdGroundLabelConnector =
+    solver.availableNetOrientationSolver!.traces.find(
+      (trace) => trace.mspPairId === "available-net-orientation-13-GND",
+    )
   const threePinGroundLabel = finalOutput.netLabelPlacements.find(
     (label) =>
       label.mspConnectionPairIds.includes(
@@ -72,6 +76,9 @@ test("bug-report-20260825T103621Z", () => {
     lowerGroundTrace.tracePath[1]!,
     threePinGroundLabel.anchorPoint,
   ])
+  expect(createdGroundLabelConnector?.tracePath).toEqual(
+    groundLabelConnector.tracePath,
+  )
   expect(threePinGroundLabel.anchorPoint).toEqual({
     x: 2.105,
     y: -6.0749999999999975,

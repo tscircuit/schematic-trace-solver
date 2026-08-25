@@ -9,7 +9,7 @@ import {
 } from "lib/utils/doesPathCoincideWithTraces"
 import { getDistinctCoordinates, pointsEqual } from "./geometry"
 import { getRailAlignmentFallbackCoordinates } from "./getRailAlignmentFallbackCoordinates"
-import { getFixedLabelCoordinates } from "./getFixedLabelCoordinates"
+import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
 import { moveRailSegments } from "./moveRailSegments"
 import { preservesLabelAnchors } from "./preservesLabelAnchors"
 import {
@@ -51,7 +51,7 @@ export const evaluateRailGroup = ({
   const originalCoordinates = getDistinctCoordinates(
     group.map((segment) => segment.coordinate),
   )
-  const fixedLabelCoordinates = getFixedLabelCoordinates(
+  const fixedLabelCoordinate = getFixedLabelCoordinate(
     group,
     netLabelPlacements,
     traces,
@@ -67,7 +67,7 @@ export const evaluateRailGroup = ({
 
   const evaluateCoordinates = (
     coordinates: number[],
-    options?: { coordinatesAreFixedByLabels?: boolean },
+    options?: { coordinateIsFixedByLabel?: boolean },
   ) => {
     let best: AlignmentCandidate | null = null
     for (const coordinate of coordinates) {
@@ -113,8 +113,10 @@ export const evaluateRailGroup = ({
         allCandidateTraces,
       )
       if (metrics.otherNetCrossings > baseline.otherNetCrossings) continue
+      // A fixed label anchor determines the rail coordinate. It may lengthen
+      // endpoint legs, but it must still preserve turns and every safety gate.
       if (
-        options?.coordinatesAreFixedByLabels
+        options?.coordinateIsFixedByLabel
           ? metrics.turnCount > baseline.turnCount
           : !isReadabilityImprovement(metrics, baseline)
       ) {
@@ -151,14 +153,14 @@ export const evaluateRailGroup = ({
   }
 
   const originalCandidate = evaluateCoordinates(
-    fixedLabelCoordinates.length > 0
-      ? fixedLabelCoordinates
-      : originalCoordinates,
-    { coordinatesAreFixedByLabels: fixedLabelCoordinates.length > 0 },
+    fixedLabelCoordinate === null
+      ? originalCoordinates
+      : [fixedLabelCoordinate],
+    { coordinateIsFixedByLabel: fixedLabelCoordinate !== null },
   )
   if (originalCandidate) return originalCandidate
 
-  if (fixedLabelCoordinates.length > 0) return null
+  if (fixedLabelCoordinate !== null) return null
 
   return evaluateCoordinates(
     getRailAlignmentFallbackCoordinates({
