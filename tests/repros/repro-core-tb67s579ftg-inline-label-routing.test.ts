@@ -13,7 +13,8 @@ const getPinPair = (pinIds: string[]): [string, string] => {
 }
 
 // Captured from @tscircuit/core@12b2ef60's TB67S579FTG breakout repro. The
-// fallback widths supplied for inline labels affect the routed traces beside J4.
+// anchored-label widths supplied for inline labels must not affect the routed
+// traces beside J4.
 test("core TB67S579FTG inline label routing", () => {
   const solverInput: InputProblem = {
     ...inputProblem,
@@ -34,7 +35,7 @@ test("core TB67S579FTG inline label routing", () => {
   expect(
     inputProblem.directConnections.find(
       (connection) => connection.netId === "AGC_OUT",
-    )?.fallbackNetLabelWidth,
+    )?.anchoredNetLabelWidth,
   ).toBe(0.96)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

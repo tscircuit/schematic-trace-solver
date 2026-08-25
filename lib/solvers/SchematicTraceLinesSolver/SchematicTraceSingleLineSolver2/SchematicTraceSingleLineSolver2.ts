@@ -206,7 +206,6 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       inputProblem: this.inputProblem,
       netId,
       pinIds: this.pins.map((pin) => pin.pinId),
-      includeFallbackNetLabelWidth: false,
     })
     const netLabelHeight = this.getNetLabelHeightForConnectionPair(netId)
     const padding: Required<RectPadding> = {

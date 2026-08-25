@@ -8,7 +8,10 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { dedupeOrientations } from "lib/utils/dedupeOrientations"
 import type { FacingDirection } from "lib/utils/dir"
 import { getOrientationConstraint } from "lib/utils/getOrientationConstraint"
-import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
+import {
+  getAnchoredNetLabelWidthForConnection,
+  getNetLabelWidthForConnection,
+} from "lib/utils/getNetLabelWidthForConnection"
 import {
   EPS,
   getManhattanDistance,
@@ -311,11 +314,14 @@ const getNetLabelWidth = (
   inputProblem: InputProblem,
   label: NetLabelPlacement,
 ) => {
-  const configuredWidth = getNetLabelWidthForConnection({
+  const getWidth =
+    label.mspConnectionPairIds.length === 0
+      ? getAnchoredNetLabelWidthForConnection
+      : getNetLabelWidthForConnection
+  const configuredWidth = getWidth({
     inputProblem,
     netId: label.netId,
     pinIds: label.pinIds,
-    includeFallbackNetLabelWidth: label.mspConnectionPairIds.length === 0,
   })
   if (configuredWidth !== undefined) return configuredWidth
 

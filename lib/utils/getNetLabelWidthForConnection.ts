@@ -8,56 +8,58 @@ import type {
 
 type ConnectionWithLabelWidth = InputDirectConnection | InputNetConnection
 
-const getConfiguredWidth = (
-  connections: Array<ConnectionWithLabelWidth | undefined>,
-  includeFallbackNetLabelWidth: boolean,
-) => {
-  const explicitWidth = connections.find(
-    (connection) => connection?.netLabelWidth !== undefined,
-  )?.netLabelWidth
-  if (explicitWidth !== undefined) return explicitWidth
-  if (!includeFallbackNetLabelWidth) return undefined
-
-  return connections.find(
-    (connection) => connection?.fallbackNetLabelWidth !== undefined,
-  )?.fallbackNetLabelWidth
-}
-
-export const getNetLabelWidthForConnection = ({
-  inputProblem,
-  netId,
-  pinIds,
-  includeFallbackNetLabelWidth = true,
-}: {
+type ConnectionLookup = {
   inputProblem: InputProblem
   netId?: NetId
   pinIds: readonly PinId[]
-  includeFallbackNetLabelWidth?: boolean
-}): number | undefined => {
+}
+
+const getNetLabelWidth = (
+  connections: Array<ConnectionWithLabelWidth | undefined>,
+) =>
+  connections.find((connection) => connection?.netLabelWidth !== undefined)
+    ?.netLabelWidth
+
+const getAnchoredNetLabelWidth = (
+  connections: Array<ConnectionWithLabelWidth | undefined>,
+) =>
+  getNetLabelWidth(connections) ??
+  connections.find(
+    (connection) => connection?.anchoredNetLabelWidth !== undefined,
+  )?.anchoredNetLabelWidth
+
+const getWidthForConnection = (
+  { inputProblem, netId, pinIds }: ConnectionLookup,
+  getWidth: (
+    connections: Array<ConnectionWithLabelWidth | undefined>,
+  ) => number | undefined,
+): number | undefined => {
   if (netId) {
-    const widthByNetId = getConfiguredWidth(
-      [
-        inputProblem.netConnections.find(
-          (connection) => connection.netId === netId,
-        ),
-        inputProblem.directConnections.find(
-          (connection) => connection.netId === netId,
-        ),
-      ],
-      includeFallbackNetLabelWidth,
-    )
+    const widthByNetId = getWidth([
+      inputProblem.netConnections.find(
+        (connection) => connection.netId === netId,
+      ),
+      inputProblem.directConnections.find(
+        (connection) => connection.netId === netId,
+      ),
+    ])
     if (widthByNetId !== undefined) return widthByNetId
   }
 
-  return getConfiguredWidth(
-    [
-      inputProblem.directConnections.find((connection) =>
-        connection.pinIds.some((pinId) => pinIds.includes(pinId)),
-      ),
-      inputProblem.netConnections.find((connection) =>
-        connection.pinIds.some((pinId) => pinIds.includes(pinId)),
-      ),
-    ],
-    includeFallbackNetLabelWidth,
-  )
+  return getWidth([
+    inputProblem.directConnections.find((connection) =>
+      connection.pinIds.some((pinId) => pinIds.includes(pinId)),
+    ),
+    inputProblem.netConnections.find((connection) =>
+      connection.pinIds.some((pinId) => pinIds.includes(pinId)),
+    ),
+  ])
 }
+
+export const getNetLabelWidthForConnection = (
+  lookup: ConnectionLookup,
+): number | undefined => getWidthForConnection(lookup, getNetLabelWidth)
+
+export const getAnchoredNetLabelWidthForConnection = (
+  lookup: ConnectionLookup,
+): number | undefined => getWidthForConnection(lookup, getAnchoredNetLabelWidth)

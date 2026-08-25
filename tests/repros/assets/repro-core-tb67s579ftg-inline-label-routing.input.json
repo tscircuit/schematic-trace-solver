@@ -475,7 +475,7 @@
   "directConnections": [
     {
       "netId": "STOP_DET_VTH",
-      "fallbackNetLabelWidth": 1.56,
+      "anchoredNetLabelWidth": 1.56,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 1.04,
@@ -486,7 +486,7 @@
     },
     {
       "netId": "KPKI_NANO",
-      "fallbackNetLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.8,
@@ -497,7 +497,7 @@
     },
     {
       "netId": "AGC_TIME",
-      "fallbackNetLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.72,
@@ -508,7 +508,7 @@
     },
     {
       "netId": "FREQ_MIN",
-      "fallbackNetLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.72,
@@ -519,7 +519,7 @@
     },
     {
       "netId": "VSP_MIN",
-      "fallbackNetLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.64,
@@ -530,7 +530,7 @@
     },
     {
       "netId": "AGC_KI",
-      "fallbackNetLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.56,
@@ -541,7 +541,7 @@
     },
     {
       "netId": "AGC_KP",
-      "fallbackNetLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.56,
@@ -552,7 +552,7 @@
     },
     {
       "netId": "TARGET_ANGLE",
-      "fallbackNetLabelWidth": 1.56,
+      "anchoredNetLabelWidth": 1.56,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 1.04,
@@ -563,7 +563,7 @@
     },
     {
       "netId": "NFHYS",
-      "fallbackNetLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.48,
@@ -574,7 +574,7 @@
     },
     {
       "netId": "MTBLANK",
-      "fallbackNetLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.64,
@@ -585,7 +585,7 @@
     },
     {
       "netId": "STBLANK",
-      "fallbackNetLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.64,
@@ -596,7 +596,7 @@
     },
     {
       "netId": "CTBLANK",
-      "fallbackNetLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.64,
@@ -621,7 +621,7 @@
     },
     {
       "netId": "VREG",
-      "fallbackNetLabelWidth": 0.6,
+      "anchoredNetLabelWidth": 0.6,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.4,
@@ -632,7 +632,7 @@
     },
     {
       "netId": "GND",
-      "fallbackNetLabelWidth": 0.48,
+      "anchoredNetLabelWidth": 0.48,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.32,
@@ -643,7 +643,7 @@
     },
     {
       "netId": "OUT_A_P",
-      "fallbackNetLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.64,
@@ -654,7 +654,7 @@
     },
     {
       "netId": "OUT_A_N",
-      "fallbackNetLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.64,
@@ -665,7 +665,7 @@
     },
     {
       "netId": "OUT_B_N",
-      "fallbackNetLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.64,
@@ -676,7 +676,7 @@
     },
     {
       "netId": "OUT_B_P",
-      "fallbackNetLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.64,
@@ -687,7 +687,7 @@
     },
     {
       "netId": "SERIAL_IN",
-      "fallbackNetLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.8,
@@ -698,7 +698,7 @@
     },
     {
       "netId": "SERIAL_CLK",
-      "fallbackNetLabelWidth": 1.32,
+      "anchoredNetLabelWidth": 1.32,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.88,
@@ -709,7 +709,7 @@
     },
     {
       "netId": "DMODE2",
-      "fallbackNetLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.56,
@@ -720,7 +720,7 @@
     },
     {
       "netId": "DMODE1",
-      "fallbackNetLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.56,
@@ -731,7 +731,7 @@
     },
     {
       "netId": "DMODE0",
-      "fallbackNetLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.56,
@@ -742,7 +742,7 @@
     },
     {
       "netId": "CLK",
-      "fallbackNetLabelWidth": 0.48,
+      "anchoredNetLabelWidth": 0.48,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.32,
@@ -753,7 +753,7 @@
     },
     {
       "netId": "CW_CCW",
-      "fallbackNetLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.56,
@@ -764,7 +764,7 @@
     },
     {
       "netId": "ENABLE",
-      "fallbackNetLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.56,
@@ -775,7 +775,7 @@
     },
     {
       "netId": "RESET_X",
-      "fallbackNetLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.64,
@@ -786,7 +786,7 @@
     },
     {
       "netId": "SLEEP_X",
-      "fallbackNetLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.64,
@@ -797,7 +797,7 @@
     },
     {
       "netId": "LO2",
-      "fallbackNetLabelWidth": 0.48,
+      "anchoredNetLabelWidth": 0.48,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.32,
@@ -808,7 +808,7 @@
     },
     {
       "netId": "LO1",
-      "fallbackNetLabelWidth": 0.48,
+      "anchoredNetLabelWidth": 0.48,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.32,
@@ -819,7 +819,7 @@
     },
     {
       "netId": "LO0",
-      "fallbackNetLabelWidth": 0.48,
+      "anchoredNetLabelWidth": 0.48,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.32,
@@ -830,7 +830,7 @@
     },
     {
       "netId": "MO",
-      "fallbackNetLabelWidth": 0.36,
+      "anchoredNetLabelWidth": 0.36,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.24,
@@ -841,7 +841,7 @@
     },
     {
       "netId": "AGC_OUT",
-      "fallbackNetLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.64,
