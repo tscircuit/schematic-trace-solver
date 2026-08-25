@@ -43,6 +43,13 @@ interface CandidatePair {
   key: string
 }
 
+interface AnchoredTraceCandidateInput {
+  portLabel: NetLabelPlacement
+  portPin: TraceRecoveryPin
+  anchoredLabel: NetLabelPlacement
+  directNeighborPinIds: ReadonlySet<PinId>
+}
+
 const AVAILABLE_NET_ORIENTATION_PREFIX = "available-net-orientation-"
 const RECOVERED_TRACE_PREFIX = "net-label-to-trace-"
 
@@ -111,6 +118,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
 
   private chipMap: Record<ChipId, InputChip>
   private pinMap: Map<PinId, TraceRecoveryPin>
+  private maxMspPairDistance: number
   private queuedCandidates: CandidatePair[]
   private currentCandidate: CandidatePair | null = null
   declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
@@ -126,6 +134,8 @@ export class NetLabelToTraceSolver extends BaseSolver {
     )
     this.chipMap = chipMap
     this.pinMap = pinMap
+    this.maxMspPairDistance =
+      input.inputProblem.maxMspPairDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
 
     this.queuedCandidates = this.buildCandidatePairs()
     this.stats.candidateCount = this.queuedCandidates.length
@@ -157,21 +167,13 @@ export class NetLabelToTraceSolver extends BaseSolver {
     )
   }
 
-  private buildAnchoredTraceCandidate(
-    portLabel: NetLabelPlacement,
-    anchoredLabel: NetLabelPlacement,
-  ): CandidatePair | undefined {
-    const portPin = this.pinMap.get(portLabel.pinIds[0]!)
-    if (!portPin) return
-    if (anchoredLabel.globalConnNetId !== portLabel.globalConnNetId) return
+  private buildAnchoredTraceCandidate({
+    portLabel,
+    portPin,
+    anchoredLabel,
+    directNeighborPinIds,
+  }: AnchoredTraceCandidateInput): CandidatePair | undefined {
     if (anchoredLabel.netId !== portLabel.netId) return
-
-    const directNeighborPinIds = new Set(
-      this.inputProblem.directConnections
-        .filter((connection) => connection.pinIds.includes(portPin.pinId))
-        .flatMap((connection) => connection.pinIds)
-        .filter((pinId) => pinId !== portPin.pinId),
-    )
     if (anchoredLabel.pinIds.length < 2) return
     if (
       !anchoredLabel.pinIds.every((pinId) => directNeighborPinIds.has(pinId))
@@ -179,32 +181,32 @@ export class NetLabelToTraceSolver extends BaseSolver {
       return
     }
 
-    const hostTrace = this.outputTraces.find(
-      (trace) =>
-        anchoredLabel.mspConnectionPairIds.some(
-          (pairId) =>
-            trace.mspPairId === pairId ||
-            trace.mspConnectionPairIds.includes(pairId),
-        ) && tracePathContainsPoint(trace.tracePath, anchoredLabel.anchorPoint),
-    )
-    if (!hostTrace) return
-
     let hostSegmentStart: Point | undefined
     let hostSegmentEnd: Point | undefined
-    for (let index = 0; index < hostTrace.tracePath.length - 1; index++) {
-      const segmentStart = hostTrace.tracePath[index]!
-      const segmentEnd = hostTrace.tracePath[index + 1]!
-      if (
-        !tracePathContainsPoint(
-          [segmentStart, segmentEnd],
-          anchoredLabel.anchorPoint,
-        )
-      ) {
-        continue
+    for (const trace of this.outputTraces) {
+      const matchesAnchoredLabel = anchoredLabel.mspConnectionPairIds.some(
+        (pairId) =>
+          trace.mspPairId === pairId ||
+          trace.mspConnectionPairIds.includes(pairId),
+      )
+      if (!matchesAnchoredLabel) continue
+
+      for (let index = 0; index < trace.tracePath.length - 1; index++) {
+        const segmentStart = trace.tracePath[index]!
+        const segmentEnd = trace.tracePath[index + 1]!
+        if (
+          !tracePathContainsPoint(
+            [segmentStart, segmentEnd],
+            anchoredLabel.anchorPoint,
+          )
+        ) {
+          continue
+        }
+        hostSegmentStart = segmentStart
+        hostSegmentEnd = segmentEnd
+        break
       }
-      hostSegmentStart = segmentStart
-      hostSegmentEnd = segmentEnd
-      break
+      if (hostSegmentStart) break
     }
     if (!hostSegmentStart || !hostSegmentEnd) return
 
@@ -222,15 +224,10 @@ export class NetLabelToTraceSolver extends BaseSolver {
       ...anchoredLabel.anchorPoint,
       _facingDirection: facingDirection,
     }
-    const maxAxisDistance = Math.max(
-      Math.abs(portPin.x - anchorPin.x),
-      Math.abs(portPin.y - anchorPin.y),
-    )
-    let maxMspPairDistance = this.inputProblem.maxMspPairDistance
-    if (maxMspPairDistance === undefined) {
-      maxMspPairDistance = DEFAULT_MAX_MSP_PAIR_DISTANCE
-    }
-    if (maxAxisDistance > maxMspPairDistance) return
+    const xDistance = Math.abs(portPin.x - anchorPin.x)
+    const yDistance = Math.abs(portPin.y - anchorPin.y)
+    const maxAxisDistance = Math.max(xDistance, yDistance)
+    if (maxAxisDistance > this.maxMspPairDistance) return
 
     this.chipMap[anchorChipId] = {
       chipId: anchorChipId,
@@ -246,9 +243,8 @@ export class NetLabelToTraceSolver extends BaseSolver {
       pins: [portPin, anchorPin],
       connectsToExistingTrace: true,
       outputPinIds: [...portLabel.pinIds, ...anchoredLabel.pinIds],
-      perpendicularOffset: getPerpendicularOffset(portPin, anchorPin),
-      routeDistance:
-        Math.abs(portPin.x - anchorPin.x) + Math.abs(portPin.y - anchorPin.y),
+      perpendicularOffset: Math.min(xDistance, yDistance),
+      routeDistance: xDistance + yDistance,
       key: getCanonicalPairKey(portPin.pinId, anchorPin.pinId),
     }
   }
@@ -260,8 +256,18 @@ export class NetLabelToTraceSolver extends BaseSolver {
     const groundGlobalConnNetId =
       netConnMap.getNetConnectedToId("GND") ?? undefined
     const labelsByGlobalNet = new Map<GlobalConnNetId, NetLabelPlacement[]>()
+    const anchoredLabelsByGlobalNet = new Map<
+      GlobalConnNetId,
+      NetLabelPlacement[]
+    >()
 
     for (const label of this.input.netLabelPlacements) {
+      if (label.mspConnectionPairIds.length > 0) {
+        const anchoredLabels =
+          anchoredLabelsByGlobalNet.get(label.globalConnNetId) ?? []
+        anchoredLabels.push(label)
+        anchoredLabelsByGlobalNet.set(label.globalConnNetId, anchoredLabels)
+      }
       if (
         !this.isEligiblePortOnlyDirectConnectionLabel(
           label,
@@ -323,17 +329,25 @@ export class NetLabelToTraceSolver extends BaseSolver {
       }
     }
 
-    const anchoredLabels = this.input.netLabelPlacements.filter(
-      (label) => label.mspConnectionPairIds.length > 0,
-    )
-
-    for (const portLabels of labelsByGlobalNet.values()) {
+    for (const [globalConnNetId, portLabels] of labelsByGlobalNet) {
+      const anchoredLabels = anchoredLabelsByGlobalNet.get(globalConnNetId)
+      if (!anchoredLabels) continue
       for (const portLabel of portLabels) {
+        const portPin = this.pinMap.get(portLabel.pinIds[0]!)
+        if (!portPin) continue
+        const directNeighborPinIds = new Set(
+          this.inputProblem.directConnections
+            .filter((connection) => connection.pinIds.includes(portPin.pinId))
+            .flatMap((connection) => connection.pinIds)
+            .filter((pinId) => pinId !== portPin.pinId),
+        )
         for (const anchoredLabel of anchoredLabels) {
-          const candidate = this.buildAnchoredTraceCandidate(
+          const candidate = this.buildAnchoredTraceCandidate({
             portLabel,
+            portPin,
             anchoredLabel,
-          )
+            directNeighborPinIds,
+          })
           if (!candidate) continue
           candidates.push(candidate)
         }
