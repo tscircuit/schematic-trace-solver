@@ -6,18 +6,16 @@ import { trimNetLabelConnectorsAtRoutedJunctions } from "lib/solvers/Example28So
 const createTrace = (
   mspPairId: string,
   tracePath: SolvedTracePath["tracePath"],
-  pinIds: string[],
+  pinIds: [string, string],
 ): SolvedTracePath => ({
   mspPairId,
   globalConnNetId: "ground-net",
   dcConnNetId: mspPairId,
   userNetId: "GND",
-  pins: pinIds.map((pinId) => ({
-    pinId,
-    chipId: "U1",
-    x: 0,
-    y: 0,
-  })),
+  pins: [
+    { pinId: pinIds[0], chipId: "U1", x: 0, y: 0 },
+    { pinId: pinIds[1], chipId: "U1", x: 0, y: 0 },
+  ],
   tracePath,
   mspConnectionPairIds: [mspPairId],
   pinIds,

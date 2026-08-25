@@ -64,11 +64,15 @@ test("bug-report-20260825T103621Z", () => {
       ) && label.netId === "GND",
   )
 
+  if (!lowerGroundTrace || !groundLabelConnector || !threePinGroundLabel) {
+    throw new Error("Expected the three-pin GND traces and label")
+  }
+
   expect(groundLabelConnector?.tracePath).toEqual([
-    lowerGroundTrace?.tracePath[1],
-    threePinGroundLabel?.anchorPoint,
+    lowerGroundTrace.tracePath[1]!,
+    threePinGroundLabel.anchorPoint,
   ])
-  expect(threePinGroundLabel?.anchorPoint).toEqual({
+  expect(threePinGroundLabel.anchorPoint).toEqual({
     x: 2.105,
     y: -6.0749999999999975,
   })
