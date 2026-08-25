@@ -11,6 +11,7 @@ import { SchematicTraceSingleLineSolver2 } from "./SchematicTraceSingleLineSolve
 import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
 import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
 import type { Point } from "@tscircuit/math-utils"
+import { shouldPreferExteriorDetours } from "./shouldPreferExteriorDetours"
 
 export interface SolvedTracePath extends MspConnectionPair {
   tracePath: Point[]
@@ -112,6 +113,11 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       pins,
       connectionPair,
       chipMap: this.chipMap,
+      preferExteriorDetours: shouldPreferExteriorDetours({
+        connectionPair,
+        allConnectionPairs: this.mspConnectionPairs,
+        inputProblem: this.inputProblem,
+      }),
     })
   }
 
