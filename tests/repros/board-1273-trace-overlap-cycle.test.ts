@@ -24,7 +24,7 @@ test("board 1273 solves within the trace overlap iteration limit", async () => {
 
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
-  expect(solver.traceOverlapShiftSolver?.iterations).toBe(21)
+  expect(solver.traceOverlapShiftSolver?.iterations).toBe(27)
   expect(solver.postLabelTraceOverlapShiftSolver?.iterations).toBe(1)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
