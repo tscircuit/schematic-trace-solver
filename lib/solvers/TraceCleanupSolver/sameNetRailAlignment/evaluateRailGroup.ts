@@ -3,17 +3,13 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import type { ObstacleRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
-import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
-import {
-  getLabelBounds,
-  rectsOverlap,
-} from "lib/solvers/TraceAnchoredNetLabelOverlapSolver/geometry"
 import {
   doesPathCoincideWithTraces,
   doesPathOverlapTraceStrokes,
 } from "lib/utils/doesPathCoincideWithTraces"
 import { getDistinctCoordinates, pointsEqual } from "./geometry"
 import { getRailAlignmentFallbackCoordinates } from "./getRailAlignmentFallbackCoordinates"
+import { getFixedLabelCoordinates } from "./getFixedLabelCoordinates"
 import { moveRailSegments } from "./moveRailSegments"
 import { preservesLabelAnchors } from "./preservesLabelAnchors"
 import {
@@ -40,77 +36,6 @@ const tracePathChanged = (
     (point, index) => !pointsEqual(point, original.tracePath[index]!),
   )
 
-const moveVerticalLabelsWithReroutedTraces = ({
-  originalTraces,
-  candidateTraces,
-  netLabelPlacements,
-}: {
-  originalTraces: SolvedTracePath[]
-  candidateTraces: SolvedTracePath[]
-  netLabelPlacements: NetLabelPlacement[]
-}) => {
-  let movedNetLabelPlacements = [...netLabelPlacements]
-  const originalTraceMap = new Map(
-    originalTraces.map((trace) => [trace.mspPairId, trace]),
-  )
-
-  for (const candidateTrace of candidateTraces) {
-    const originalTrace = originalTraceMap.get(candidateTrace.mspPairId)!
-    if (!tracePathChanged(originalTrace, candidateTrace)) continue
-
-    const currentNetLabelPlacements = movedNetLabelPlacements
-    const movedLabels = moveAttachedLabelsToReroutedTrace({
-      trace: originalTrace,
-      originalTracePath: originalTrace.tracePath,
-      reroutedTracePath: candidateTrace.tracePath,
-      netLabelPlacements: currentNetLabelPlacements,
-    })
-    movedNetLabelPlacements = movedLabels.map((movedLabel, labelIndex) => {
-      const originalLabel = currentNetLabelPlacements[labelIndex]!
-      return originalLabel.orientation === "y+" ||
-        originalLabel.orientation === "y-"
-        ? movedLabel
-        : originalLabel
-    })
-  }
-
-  return movedNetLabelPlacements
-}
-
-const introducesCrossNetLabelOverlap = (
-  before: NetLabelPlacement[],
-  after: NetLabelPlacement[],
-) => {
-  for (let firstIndex = 0; firstIndex < after.length; firstIndex++) {
-    const firstAfter = after[firstIndex]!
-    const firstBefore = before[firstIndex]
-    if (!firstBefore) return true
-
-    for (
-      let secondIndex = firstIndex + 1;
-      secondIndex < after.length;
-      secondIndex++
-    ) {
-      const secondAfter = after[secondIndex]!
-      const secondBefore = before[secondIndex]
-      if (!secondBefore) return true
-      if (firstAfter.globalConnNetId === secondAfter.globalConnNetId) continue
-
-      const overlappedBefore = rectsOverlap(
-        getLabelBounds(firstBefore),
-        getLabelBounds(secondBefore),
-      )
-      const overlapsAfter = rectsOverlap(
-        getLabelBounds(firstAfter),
-        getLabelBounds(secondAfter),
-      )
-      if (!overlappedBefore && overlapsAfter) return true
-    }
-  }
-
-  return false
-}
-
 export const evaluateRailGroup = ({
   group,
   traces,
@@ -126,6 +51,11 @@ export const evaluateRailGroup = ({
   const originalCoordinates = getDistinctCoordinates(
     group.map((segment) => segment.coordinate),
   )
+  const fixedLabelCoordinates = getFixedLabelCoordinates(
+    group,
+    netLabelPlacements,
+    traces,
+  )
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
   )
@@ -135,7 +65,10 @@ export const evaluateRailGroup = ({
       !eligibleTraceIds.has(trace.mspPairId),
   )
 
-  const evaluateCoordinates = (coordinates: number[]) => {
+  const evaluateCoordinates = (
+    coordinates: number[],
+    options?: { coordinatesAreFixedByLabels?: boolean },
+  ) => {
     let best: AlignmentCandidate | null = null
     for (const coordinate of coordinates) {
       const candidateMap = new Map<string, SolvedTracePath>()
@@ -153,25 +86,12 @@ export const evaluateRailGroup = ({
       const allCandidateTraces = traces.map(
         (trace) => candidateMap.get(trace.mspPairId) ?? trace,
       )
-      const candidateNetLabelPlacements = moveVerticalLabelsWithReroutedTraces({
-        originalTraces: originalGroupTraces,
-        candidateTraces,
-        netLabelPlacements,
-      })
-      if (
-        introducesCrossNetLabelOverlap(
-          netLabelPlacements,
-          candidateNetLabelPlacements,
-        )
-      ) {
-        continue
-      }
       const candidatesAreClear = candidateTraces.every(
         (candidate) =>
           !isPathCollidingWithObstacles(candidate.tracePath, obstacles) &&
           detectTraceLabelOverlap({
             traces: [candidate],
-            netLabels: candidateNetLabelPlacements,
+            netLabels: netLabelPlacements,
           }).length === 0 &&
           !doesPathOverlapTraceStrokes(candidate.tracePath, otherNetTraces) &&
           !doesPathCoincideWithTraces(
@@ -183,12 +103,7 @@ export const evaluateRailGroup = ({
       )
       if (!candidatesAreClear) continue
       if (
-        !preservesLabelAnchors(
-          netLabelPlacements,
-          traces,
-          allCandidateTraces,
-          candidateNetLabelPlacements,
-        )
+        !preservesLabelAnchors(netLabelPlacements, traces, allCandidateTraces)
       ) {
         continue
       }
@@ -198,7 +113,13 @@ export const evaluateRailGroup = ({
         allCandidateTraces,
       )
       if (metrics.otherNetCrossings > baseline.otherNetCrossings) continue
-      if (!isReadabilityImprovement(metrics, baseline)) continue
+      if (
+        options?.coordinatesAreFixedByLabels
+          ? metrics.turnCount > baseline.turnCount
+          : !isReadabilityImprovement(metrics, baseline)
+      ) {
+        continue
+      }
 
       const score: AlignmentScore = {
         ...metrics,
@@ -220,7 +141,6 @@ export const evaluateRailGroup = ({
 
       const candidate = {
         traces: allCandidateTraces,
-        netLabelPlacements: candidateNetLabelPlacements,
         changedTraceIds,
         score,
       }
@@ -230,8 +150,15 @@ export const evaluateRailGroup = ({
     return best
   }
 
-  const originalCandidate = evaluateCoordinates(originalCoordinates)
+  const originalCandidate = evaluateCoordinates(
+    fixedLabelCoordinates.length > 0
+      ? fixedLabelCoordinates
+      : originalCoordinates,
+    { coordinatesAreFixedByLabels: fixedLabelCoordinates.length > 0 },
+  )
   if (originalCandidate) return originalCandidate
+
+  if (fixedLabelCoordinates.length > 0) return null
 
   return evaluateCoordinates(
     getRailAlignmentFallbackCoordinates({

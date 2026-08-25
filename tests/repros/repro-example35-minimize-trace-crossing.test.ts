@@ -14,8 +14,8 @@ test("example35 keeps capacitor-chain zig-zags aligned with same-net branches", 
 
   expect(trace?.tracePath).toEqual([
     { x: -4, y: -2.6199999999999997 },
-    { x: -4, y: -1.58 },
-    { x: -3, y: -1.58 },
+    { x: -4, y: -1.9999999999999996 },
+    { x: -3, y: -1.9999999999999996 },
     { x: -3, y: -1.38 },
   ])
   expect(solver).toMatchSolverSnapshot(import.meta.path)

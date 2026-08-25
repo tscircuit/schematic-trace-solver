@@ -3,7 +3,9 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import type { ObstacleRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { InputProblem } from "lib/types/InputProblem"
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { getComponentSideRailSegments } from "./getComponentSideRailSegments"
+import { getFixedLabelCoordinates } from "./getFixedLabelCoordinates"
 import { nearlyEqual, rangesTouchOrOverlap } from "./geometry"
 import type { RailSegment } from "./types"
 
@@ -66,6 +68,7 @@ export const getRailGroups = (
   eligibleTraceIds: ReadonlySet<string>,
   inputProblem: InputProblem,
   obstacles: ObstacleRect[],
+  netLabelPlacements: NetLabelPlacement[],
 ): RailSegment[][] => {
   const chipMap = new Map(inputProblem.chips.map((chip) => [chip.chipId, chip]))
   const segments = traces
@@ -107,7 +110,17 @@ export const getRailGroups = (
     const hasDifferentCoordinates = group.some(
       (segment) => !nearlyEqual(segment.coordinate, group[0]!.coordinate),
     )
-    if (traceCount >= 2 && hasDifferentCoordinates) groups.push(group)
+    const hasDifferentFixedLabelCoordinate = getFixedLabelCoordinates(
+      group,
+      netLabelPlacements,
+      traces,
+    ).some((coordinate) => !nearlyEqual(coordinate, group[0]!.coordinate))
+    if (
+      traceCount >= 2 &&
+      (hasDifferentCoordinates || hasDifferentFixedLabelCoordinate)
+    ) {
+      groups.push(group)
+    }
   }
 
   return groups

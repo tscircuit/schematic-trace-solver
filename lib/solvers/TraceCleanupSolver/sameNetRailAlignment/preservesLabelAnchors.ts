@@ -17,17 +17,14 @@ const getAnchoredTraceIds = (
   )
 
 export const preservesLabelAnchors = (
-  beforeLabels: NetLabelPlacement[],
+  labels: NetLabelPlacement[],
   before: SolvedTracePath[],
   after: SolvedTracePath[],
-  afterLabels = beforeLabels,
 ) =>
-  beforeLabels.every((beforeLabel, labelIndex) => {
-    const anchoredBefore = getAnchoredTraceIds(beforeLabel, before)
+  labels.every((label) => {
+    const anchoredBefore = getAnchoredTraceIds(label, before)
     if (anchoredBefore.size === 0) return true
 
-    const afterLabel = afterLabels[labelIndex]
-    if (!afterLabel) return false
-    const anchoredAfter = getAnchoredTraceIds(afterLabel, after)
+    const anchoredAfter = getAnchoredTraceIds(label, after)
     return [...anchoredBefore].every((traceId) => anchoredAfter.has(traceId))
   })

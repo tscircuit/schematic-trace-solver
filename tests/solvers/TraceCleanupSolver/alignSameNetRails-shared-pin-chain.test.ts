@@ -83,12 +83,25 @@ test("aligns a chain of rails between separate components", () => {
   })
 
   expect(result.alignedRailGroupCount).toBe(1)
+  expect(result.alignedTraceCount).toBe(2)
+  expect(result.traces[0]!.tracePath).toEqual([
+    { x: 1, y: 0 },
+    { x: 1, y: -0.3 },
+    { x: 0, y: -0.3 },
+    { x: 0, y: 0 },
+  ])
+  expect(result.traces[1]!.tracePath).toEqual([
+    { x: 2, y: 0 },
+    { x: 2, y: -0.3 },
+    { x: 1, y: -0.3 },
+    { x: 1, y: 0 },
+  ])
   expect(result.traces[2]!.tracePath).toEqual([
     { x: 3, y: -0.1 },
-    { x: 3, y: -0.2 },
-    { x: 2, y: -0.2 },
+    { x: 3, y: -0.3 },
+    { x: 2, y: -0.3 },
     { x: 2, y: 0 },
   ])
-  expect(result.netLabelPlacements[0]!.anchorPoint).toEqual({ x: 3, y: -0.2 })
-  expect(result.netLabelPlacements[0]!.center).toEqual({ x: 3, y: -0.4 })
+  expect(labels[0]!.anchorPoint).toEqual({ x: 3, y: -0.3 })
+  expect(labels[0]!.center).toEqual({ x: 3, y: -0.5 })
 })

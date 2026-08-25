@@ -18,7 +18,6 @@ import type {
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -48,6 +47,7 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -417,16 +417,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.hasTraceContinuingInOrientation(label, requiredOrientation) &&
       (isDistanceSplitVerticalRail || isPairedSameSidePowerRail)
     ) {
-      // Prefer terminating the label directly at an existing vertical rail.
-      // This keeps a multi-pin bus and its power label on one continuous axis.
-      const alignedRailCandidate = this.findValidTraceAnchorCandidate(
-        label,
-        requiredOrientation,
-        labelIndex,
-        { requireParallelSegment: true },
-      )
-      if (alignedRailCandidate) return alignedRailCandidate
-
       // Keep the established outward column, but attach at the furthest trace
       // point in the required vertical direction. This places y+ labels above
       // a rail and y- labels below it while using a short horizontal connector.
@@ -661,32 +651,19 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     label: NetLabelPlacement,
     orientation: FacingDirection,
     labelIndex: number,
-    options?: { requireParallelSegment?: boolean },
   ) {
     const direction = dir(orientation)
     const candidatePoints = this.getTraceAnchorCandidatePoints(
       label,
       orientation,
-    )
-      .filter(
-        (point) =>
-          !options?.requireParallelSegment ||
-          this.isPointOnSharedParallelRail(label, point, orientation),
-      )
-      .sort((a, b) => {
-        const aAlongDirection = a.x * direction.x + a.y * direction.y
-        const bAlongDirection = b.x * direction.x + b.y * direction.y
-        return bAlongDirection - aAlongDirection
-      })
+    ).sort((a, b) => {
+      const aAlongDirection = a.x * direction.x + a.y * direction.y
+      const bAlongDirection = b.x * direction.x + b.y * direction.y
+      return bAlongDirection - aAlongDirection
+    })
 
     for (const anchorPoint of candidatePoints) {
       const candidate = this.createCandidate(label, anchorPoint, orientation)
-      if (
-        options?.requireParallelSegment &&
-        !this.fitsAlongCollidingChipSide(candidate, label)
-      ) {
-        continue
-      }
       const result = this.evaluateCandidate(
         candidate,
         label,
@@ -702,82 +679,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return null
-  }
-
-  private isPointOnSharedParallelRail(
-    label: NetLabelPlacement,
-    point: Point,
-    orientation: FacingDirection,
-  ) {
-    const traceIdsOnRail = new Set<string>()
-    let pointIsOnRail = false
-    for (const traceId of this.getConnectedTraceIdsForLabel(
-      label,
-      orientation,
-    )) {
-      const trace = this.traceMap[traceId]
-      if (!trace || trace.globalConnNetId !== label.globalConnNetId) continue
-      for (let index = 0; index < trace.tracePath.length - 1; index++) {
-        const start = trace.tracePath[index]!
-        const end = trace.tracePath[index + 1]!
-        const segmentIsParallel = isYOrientation(orientation)
-          ? Math.abs(start.x - end.x) <= EPS && Math.abs(start.y - end.y) > EPS
-          : Math.abs(start.y - end.y) <= EPS && Math.abs(start.x - end.x) > EPS
-        if (!segmentIsParallel) continue
-        const isSameRail = isYOrientation(orientation)
-          ? Math.abs(point.x - start.x) <= EPS
-          : Math.abs(point.y - start.y) <= EPS
-        if (!isSameRail) continue
-
-        traceIdsOnRail.add(trace.mspPairId)
-        if (
-          point.x >= Math.min(start.x, end.x) - EPS &&
-          point.x <= Math.max(start.x, end.x) + EPS &&
-          point.y >= Math.min(start.y, end.y) - EPS &&
-          point.y <= Math.max(start.y, end.y) + EPS
-        ) {
-          pointIsOnRail = true
-        }
-      }
-
-      if (pointIsOnRail && traceIdsOnRail.size >= 2) return true
-    }
-
-    return false
-  }
-
-  private fitsAlongCollidingChipSide(
-    candidate: CandidateLabel,
-    label: NetLabelPlacement,
-  ) {
-    const bounds = getRectBounds(
-      candidate.center,
-      candidate.width,
-      candidate.height,
-    )
-    const collidingChips =
-      this.chipObstacleSpatialIndex.getChipsInBounds(bounds)
-    if (collidingChips.length === 0) return true
-
-    const labelChipIds = new Set(
-      label.pinIds
-        .map((pinId) => this.pinMap[pinId]?.chipId)
-        .filter((chipId): chipId is string => Boolean(chipId)),
-    )
-
-    return collidingChips.every((chip) => {
-      if (!labelChipIds.has(chip.chipId)) return false
-      if (isYOrientation(candidate.orientation)) {
-        return (
-          bounds.minY >= chip.bounds.minY - EPS &&
-          bounds.maxY <= chip.bounds.maxY + EPS
-        )
-      }
-      return (
-        bounds.minX >= chip.bounds.minX - EPS &&
-        bounds.maxX <= chip.bounds.maxX + EPS
-      )
-    })
   }
 
   private findValidOutwardTraceAnchorCandidate(
@@ -867,29 +768,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   ) {
     const seen = new Set<string>()
     const points: Point[] = []
-    const connectedTraceIds = this.getConnectedTraceIdsForLabel(
-      label,
-      orientation,
-    )
-
-    for (const traceId of connectedTraceIds) {
-      const trace = this.traceMap[traceId]
-      if (!trace) continue
-      for (const point of trace.tracePath) {
-        const key = `${point.x.toFixed(9)},${point.y.toFixed(9)}`
-        if (seen.has(key)) continue
-        seen.add(key)
-        points.push(point)
-      }
-    }
-
-    return points
-  }
-
-  private getConnectedTraceIdsForLabel(
-    label: NetLabelPlacement,
-    orientation: FacingDirection,
-  ) {
     const connectedTraceIds = new Set(label.mspConnectionPairIds ?? [])
 
     if (isYOrientation(orientation)) {
@@ -929,7 +807,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       }
     }
 
-    return connectedTraceIds
+    for (const traceId of connectedTraceIds) {
+      const trace = this.traceMap[traceId]
+      if (!trace) continue
+      for (const point of trace.tracePath) {
+        const key = `${point.x.toFixed(9)},${point.y.toFixed(9)}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        points.push(point)
+      }
+    }
+
+    return points
   }
 
   private sharesVerticalRailWithAny(
