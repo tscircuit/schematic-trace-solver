@@ -31,6 +31,7 @@ test("aligns a chain of rails between separate components", () => {
     netConnections: [],
     textBoxes: [],
     availableNetLabelOrientations: {},
+    maxMspPairDistance: 2,
   }
   const pinById = new Map(
     pinDefinitions.map((pin) => [
@@ -81,9 +82,15 @@ test("aligns a chain of rails between separate components", () => {
     inputProblem,
     netLabelPlacements: labels,
   })
+  const unanchoredResult = align(traces, {
+    inputProblem,
+    netLabelPlacements: [],
+  })
 
   expect(result.alignedRailGroupCount).toBe(1)
   expect(result.alignedTraceCount).toBe(2)
+  expect(unanchoredResult.alignedRailGroupCount).toBe(0)
+  expect(unanchoredResult.alignedTraceCount).toBe(0)
   expect(result.traces[0]!.tracePath).toEqual([
     { x: 1, y: 0 },
     { x: 1, y: -0.3 },

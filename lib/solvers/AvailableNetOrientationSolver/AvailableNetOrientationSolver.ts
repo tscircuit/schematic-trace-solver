@@ -657,6 +657,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       label,
       orientation,
     ).sort((a, b) => {
+      // Prefer the furthest outward row, then the shortest connection back to
+      // the label's established column when that row contains multiple points.
       const aAlongDirection = a.x * direction.x + a.y * direction.y
       const bAlongDirection = b.x * direction.x + b.y * direction.y
       return bAlongDirection - aAlongDirection
@@ -692,8 +694,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       label,
       orientation,
     ).sort((a, b) => {
-      // Prefer the furthest outward row, then the shortest connection back to
-      // the label's established column when that row contains multiple points.
       const aAlongDirection = a.x * direction.x + a.y * direction.y
       const bAlongDirection = b.x * direction.x + b.y * direction.y
       const aPerpendicularDistance = isYOrientation(orientation)
