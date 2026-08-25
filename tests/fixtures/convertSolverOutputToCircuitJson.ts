@@ -63,6 +63,7 @@ type SolverLike = BaseSolver & {
   label?: NetLabelPlacement
   getOutput?: () => SolverOutput
   inlineNetLabelSolver?: { getOutput: () => SolverOutput }
+  netLabelToTraceSolver?: { getOutput: () => SolverOutput }
 }
 
 const isInputProblem = (value: unknown): value is InputProblem => {
@@ -92,6 +93,9 @@ export const getInputProblemFromSolver = (
 
 const safelyGetOutput = (solver: SolverLike): SolverOutput | undefined => {
   try {
+    if (solver.netLabelToTraceSolver?.getOutput) {
+      return solver.netLabelToTraceSolver.getOutput()
+    }
     if (solver.getOutput) {
       return solver.getOutput()
     }

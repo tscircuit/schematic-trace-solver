@@ -683,12 +683,6 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     return this.pipelineDef[this.currentPipelineStepIndex]?.solverName ?? "none"
   }
 
-  getOutput() {
-    const finalStageSolver = this.netLabelToTraceSolver
-    if (!finalStageSolver) throw new Error("Pipeline has no final output")
-    return finalStageSolver.getOutput()
-  }
-
   override visualize(): GraphicsObject {
     if (!this.solved && this.activeSubSolver)
       return this.activeSubSolver.visualize()

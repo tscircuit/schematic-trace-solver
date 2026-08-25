@@ -155,23 +155,31 @@ class SnapshotTestSolver extends BaseSolver {
 }
 
 class FinalStageSnapshotTestSolver extends SnapshotTestSolver {
-  inlineNetLabelSolver = {
+  netLabelToTraceSolver = {
     getOutput: () => ({
       traces: [],
       netLabelPlacements: [],
       inlineNetLabelPlacements: [],
     }),
   }
+
+  inlineNetLabelSolver = {
+    getOutput: () => ({
+      traces: this.getOutput().traces,
+      netLabelPlacements: [],
+      inlineNetLabelPlacements: [],
+    }),
+  }
 }
 
-test("solver snapshot uses the solver output before an intermediate stage", () => {
+test("solver snapshot uses the final pipeline stage", () => {
   const circuitJson = convertSolverOutputToCircuitJson(
     new FinalStageSnapshotTestSolver(),
   )
 
   expect(
     circuitJson.filter((element) => element.type === "schematic_trace"),
-  ).toHaveLength(1)
+  ).toHaveLength(0)
 })
 
 test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
