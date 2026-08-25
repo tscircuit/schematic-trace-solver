@@ -8,6 +8,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { dedupeOrientations } from "lib/utils/dedupeOrientations"
 import type { FacingDirection } from "lib/utils/dir"
 import { getOrientationConstraint } from "lib/utils/getOrientationConstraint"
+import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 import {
   EPS,
   getManhattanDistance,
@@ -310,20 +311,12 @@ const getNetLabelWidth = (
   inputProblem: InputProblem,
   label: NetLabelPlacement,
 ) => {
-  const ncWidthByNetId = inputProblem.netConnections.find(
-    (connection) => connection.netId === label.netId,
-  )?.netLabelWidth
-  if (ncWidthByNetId !== undefined) return ncWidthByNetId
-
-  const dcWidth = inputProblem.directConnections.find((dc) =>
-    dc.pinIds.some((pid) => label.pinIds.includes(pid)),
-  )?.netLabelWidth
-  if (dcWidth !== undefined) return dcWidth
-
-  const ncWidthByPinId = inputProblem.netConnections.find((nc) =>
-    nc.pinIds.some((pid) => label.pinIds.includes(pid)),
-  )?.netLabelWidth
-  if (ncWidthByPinId !== undefined) return ncWidthByPinId
+  const configuredWidth = getNetLabelWidthForConnection({
+    inputProblem,
+    netId: label.netId,
+    pinIds: label.pinIds,
+  })
+  if (configuredWidth !== undefined) return configuredWidth
 
   if (label.orientation === "y+" || label.orientation === "y-") {
     return label.height

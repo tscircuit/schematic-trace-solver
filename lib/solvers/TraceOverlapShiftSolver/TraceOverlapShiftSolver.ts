@@ -11,6 +11,9 @@ import {
 import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 
 type ConnNetId = string
+type TraceState = Record<MspConnectionPairId, SolvedTracePath>
+
+const TRACE_STATE_POSITION_EPSILON = 1e-6
 
 /**
  * This solver finds traces that overlap or meet collinearly and aren't
@@ -44,6 +47,9 @@ export class TraceOverlapShiftSolver extends BaseSolver {
   traceNetIslands: Record<ConnNetId, Array<SolvedTracePath>> = {}
 
   correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath> = {}
+  // Keep only the current and previous layouts to detect a two-state cycle
+  // without accumulating routing history for the whole solve.
+  recentTraceStates: TraceState[] = []
 
   cleanupPhase: "diagonals" | "done" | null = null
 
@@ -63,6 +69,8 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       const { mspPairId } = tracePath
       this.correctedTraceMap[mspPairId] = tracePath
     }
+
+    this.rememberTraceState(this.correctedTraceMap)
 
     this.traceNetIslands = this.computeTraceNetIslands()
   }
@@ -361,11 +369,19 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
   override _step() {
     if (this.activeSubSolver?.solved) {
-      for (const [mspPairId, newTrace] of Object.entries(
-        this.activeSubSolver.correctedTraceMap,
-      )) {
-        this.correctedTraceMap[mspPairId] = newTrace
+      const nextTraceState = {
+        ...this.correctedTraceMap,
+        ...this.activeSubSolver.correctedTraceMap,
       }
+      // Returning to the older retained layout means corrections are bouncing
+      // A -> B -> A. Keep B and finish this pass instead of retrying forever.
+      if (this.returnsToPreviousTraceState(nextTraceState)) {
+        this.activeSubSolver = null
+        this.solved = true
+        return
+      }
+      this.correctedTraceMap = nextTraceState
+      this.rememberTraceState(nextTraceState)
       this.activeSubSolver = null
       this.traceNetIslands = this.computeTraceNetIslands()
     }
@@ -405,6 +421,46 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       traceNetIslands: this.traceNetIslands,
       traceIdsToShift: this.traceIdsToShift,
     })
+  }
+
+  private rememberTraceState(traceState: TraceState) {
+    this.recentTraceStates.push({ ...traceState })
+    if (this.recentTraceStates.length > 2) {
+      this.recentTraceStates.shift()
+    }
+  }
+
+  private returnsToPreviousTraceState(candidateTraceState: TraceState) {
+    if (this.recentTraceStates.length < 2) return false
+
+    const previousTraceState = this.recentTraceStates[0]!
+    const traceIds = Object.keys(candidateTraceState)
+    if (traceIds.length !== Object.keys(previousTraceState).length) return false
+
+    // Corrections create new objects, so compare the trace geometry itself.
+    for (const traceId of traceIds) {
+      const candidatePath = candidateTraceState[traceId]
+      const previousPath = previousTraceState[traceId]
+      if (!candidatePath || !previousPath) return false
+      if (candidatePath.tracePath.length !== previousPath.tracePath.length) {
+        return false
+      }
+
+      for (let i = 0; i < candidatePath.tracePath.length; i++) {
+        const candidatePoint = candidatePath.tracePath[i]!
+        const previousPoint = previousPath.tracePath[i]!
+        if (
+          Math.abs(candidatePoint.x - previousPoint.x) >
+            TRACE_STATE_POSITION_EPSILON ||
+          Math.abs(candidatePoint.y - previousPoint.y) >
+            TRACE_STATE_POSITION_EPSILON
+        ) {
+          return false
+        }
+      }
+    }
+
+    return true
   }
 
   override visualize() {

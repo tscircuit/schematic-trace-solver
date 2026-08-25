@@ -16,6 +16,7 @@ import type {
   InputProblem,
 } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
+import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 import {
   EPS,
@@ -180,13 +181,23 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       const bY = this.outputNetLabelPlacements[b]!.anchorPoint.y
       return requiredOrientation === "y+" ? bY - aY : aY - bY
     })
-    const blockedLabelWidth = this.getNetLabelWidth(blockedLabel)
+    const blockedLabelWidth = getNetLabelWidthForConnection({
+      inputProblem: this.inputProblem,
+      netId: blockedLabel.netId,
+      pinIds: blockedLabel.pinIds,
+    })
     let columnLabelIndex: number | undefined
     if (blockedLabelWidth !== undefined) {
       columnLabelIndex = labelsToOrder.find((index) => {
         if (index === blockedStandaloneLabelIndex) return false
         const label = this.outputNetLabelPlacements[index]!
-        return this.getNetLabelWidth(label) === blockedLabelWidth
+        return (
+          getNetLabelWidthForConnection({
+            inputProblem: this.inputProblem,
+            netId: label.netId,
+            pinIds: label.pinIds,
+          }) === blockedLabelWidth
+        )
       })
     }
     if (columnLabelIndex !== undefined) {
@@ -481,7 +492,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
     const { width, height } = getDimsForOrientation({
       orientation,
-      netLabelWidth: this.getNetLabelWidth(label),
+      netLabelWidth: getNetLabelWidthForConnection({
+        inputProblem: this.inputProblem,
+        netId: label.netId,
+        pinIds: label.pinIds,
+      }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
 
@@ -635,13 +650,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number,
   ) {
     const direction = dir(orientation)
-    const candidatePoints = this.getTraceAnchorCandidatePoints(label).sort(
-      (a, b) => {
-        const aAlongDirection = a.x * direction.x + a.y * direction.y
-        const bAlongDirection = b.x * direction.x + b.y * direction.y
-        return bAlongDirection - aAlongDirection
-      },
-    )
+    const candidatePoints = this.getTraceAnchorCandidatePoints(
+      label,
+      orientation,
+    ).sort((a, b) => {
+      const aAlongDirection = a.x * direction.x + a.y * direction.y
+      const bAlongDirection = b.x * direction.x + b.y * direction.y
+      return bAlongDirection - aAlongDirection
+    })
 
     for (const anchorPoint of candidatePoints) {
       const candidate = this.createCandidate(label, anchorPoint, orientation)
@@ -668,13 +684,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number,
   ) {
     const direction = dir(orientation)
-    const candidatePoints = this.getTraceAnchorCandidatePoints(label).sort(
-      (a, b) => {
-        const aAlongDirection = a.x * direction.x + a.y * direction.y
-        const bAlongDirection = b.x * direction.x + b.y * direction.y
-        return bAlongDirection - aAlongDirection
-      },
-    )
+    const candidatePoints = this.getTraceAnchorCandidatePoints(
+      label,
+      orientation,
+    ).sort((a, b) => {
+      const aAlongDirection = a.x * direction.x + a.y * direction.y
+      const bAlongDirection = b.x * direction.x + b.y * direction.y
+      return bAlongDirection - aAlongDirection
+    })
 
     for (const connectorSource of candidatePoints) {
       const preservedColumnAnchor = this.getSearchStartAnchor(
@@ -742,11 +759,52 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return null
   }
 
-  private getTraceAnchorCandidatePoints(label: NetLabelPlacement) {
+  private getTraceAnchorCandidatePoints(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+  ) {
     const seen = new Set<string>()
     const points: Point[] = []
+    const connectedTraceIds = new Set(label.mspConnectionPairIds ?? [])
 
-    for (const traceId of label.mspConnectionPairIds ?? []) {
+    if (isYOrientation(orientation)) {
+      const connectedPinIds = new Set<string>()
+      for (const traceId of connectedTraceIds) {
+        for (const pinId of this.traceMap[traceId]?.pinIds ?? []) {
+          connectedPinIds.add(pinId)
+        }
+      }
+
+      // Multi-pin rails are routed as a chain of pairwise traces. Follow the
+      // pairs only when they share both a pin and an aligned vertical rail,
+      // which identifies one continuous rail. A shared pin alone can join
+      // unrelated branches whose rail offsets are far apart; walking those
+      // branches would extend the label connector across the schematic.
+      let foundConnectedTrace = true
+      while (foundConnectedTrace) {
+        foundConnectedTrace = false
+        for (const trace of Object.values(this.traceMap)) {
+          if (connectedTraceIds.has(trace.mspPairId)) continue
+          if (trace.mspPairId.startsWith("available-net-orientation-")) continue
+          if (trace.globalConnNetId !== label.globalConnNetId) continue
+          if (!trace.pinIds.some((pinId) => connectedPinIds.has(pinId)))
+            continue
+          const connectedTraces = [...connectedTraceIds].flatMap((traceId) => {
+            const connectedTrace = this.traceMap[traceId]
+            return connectedTrace ? [connectedTrace] : []
+          })
+          if (!this.sharesVerticalRailWithAny(trace, connectedTraces)) {
+            continue
+          }
+
+          connectedTraceIds.add(trace.mspPairId)
+          for (const pinId of trace.pinIds) connectedPinIds.add(pinId)
+          foundConnectedTrace = true
+        }
+      }
+    }
+
+    for (const traceId of connectedTraceIds) {
       const trace = this.traceMap[traceId]
       if (!trace) continue
       for (const point of trace.tracePath) {
@@ -758,6 +816,39 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return points
+  }
+
+  private sharesVerticalRailWithAny(
+    trace: SolvedTracePath,
+    otherTraces: SolvedTracePath[],
+  ) {
+    const verticalRailXs = new Set<number>()
+    for (const otherTrace of otherTraces) {
+      for (let i = 0; i < otherTrace.tracePath.length - 1; i++) {
+        const start = otherTrace.tracePath[i]!
+        const end = otherTrace.tracePath[i + 1]!
+        if (
+          Math.abs(start.x - end.x) <= EPS &&
+          Math.abs(start.y - end.y) > EPS
+        ) {
+          verticalRailXs.add(start.x)
+        }
+      }
+    }
+
+    for (let i = 0; i < trace.tracePath.length - 1; i++) {
+      const start = trace.tracePath[i]!
+      const end = trace.tracePath[i + 1]!
+      if (
+        Math.abs(start.x - end.x) <= EPS &&
+        Math.abs(start.y - end.y) > EPS &&
+        [...verticalRailXs].some((x) => Math.abs(x - start.x) <= EPS)
+      ) {
+        return true
+      }
+    }
+
+    return false
   }
 
   private getAvailableOrientations(label: NetLabelPlacement) {
@@ -1018,7 +1109,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private labelIntersectsDifferentNetTrace(label: NetLabelPlacement) {
     const { width, height } = getDimsForOrientation({
       orientation: label.orientation,
-      netLabelWidth: this.getNetLabelWidth(label),
+      netLabelWidth: getNetLabelWidthForConnection({
+        inputProblem: this.inputProblem,
+        netId: label.netId,
+        pinIds: label.pinIds,
+      }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
     const center = getCenterFromAnchor(
@@ -1042,7 +1137,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const anchorPoint = this.getWickOffsetAnchor(label.anchorPoint, orientation)
     const { width, height } = getDimsForOrientation({
       orientation,
-      netLabelWidth: this.getNetLabelWidth(label),
+      netLabelWidth: getNetLabelWidthForConnection({
+        inputProblem: this.inputProblem,
+        netId: label.netId,
+        pinIds: label.pinIds,
+      }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
 
@@ -1121,7 +1220,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   ) {
     const { width, height } = getDimsForOrientation({
       orientation,
-      netLabelWidth: this.getNetLabelWidth(label),
+      netLabelWidth: getNetLabelWidthForConnection({
+        inputProblem: this.inputProblem,
+        netId: label.netId,
+        pinIds: label.pinIds,
+      }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
     const labelLength =
@@ -1202,7 +1305,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   ): CandidateLabel {
     const { width, height } = getDimsForOrientation({
       orientation,
-      netLabelWidth: this.getNetLabelWidth(label),
+      netLabelWidth: getNetLabelWidthForConnection({
+        inputProblem: this.inputProblem,
+        netId: label.netId,
+        pinIds: label.pinIds,
+      }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
     return {
@@ -1213,29 +1320,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       height,
       center: getCenterFromAnchor(anchorPoint, orientation, width, height),
     }
-  }
-
-  private getNetLabelWidth(label: NetLabelPlacement) {
-    if (label.netId) {
-      const ncWidth = this.inputProblem.netConnections.find(
-        (connection) => connection.netId === label.netId,
-      )?.netLabelWidth
-      if (ncWidth !== undefined) return ncWidth
-
-      const dcWidthByNetId = this.inputProblem.directConnections.find(
-        (dc) => dc.netId === label.netId,
-      )?.netLabelWidth
-      if (dcWidthByNetId !== undefined) return dcWidthByNetId
-    }
-
-    const dcWidthByPinId = this.inputProblem.directConnections.find((dc) =>
-      dc.pinIds.some((pid) => label.pinIds.includes(pid)),
-    )?.netLabelWidth
-    if (dcWidthByPinId !== undefined) return dcWidthByPinId
-
-    return this.inputProblem.netConnections.find((nc) =>
-      nc.pinIds.some((pid) => label.pinIds.includes(pid)),
-    )?.netLabelWidth
   }
 
   private getNetLabelHeight(label: NetLabelPlacement) {

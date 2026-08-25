@@ -35,6 +35,8 @@ import { UnroutedTraceRecoverySolver } from "../UnroutedTraceRecoverySolver/Unro
 import { SameNetJunctionAlignmentSolver } from "../SameNetJunctionAlignmentSolver/SameNetJunctionAlignmentSolver"
 import { TraceElbowTransitionSimplificationSolver } from "../TraceElbowTransitionSimplificationSolver/TraceElbowTransitionSimplificationSolver"
 import { InlineNetLabelSolver } from "../InlineNetLabelSolver/InlineNetLabelSolver"
+import { NetLabelToTraceSolver } from "../NetLabelToTraceSolver/NetLabelToTraceSolver"
+import { findPerpendicularPathCrossings } from "../TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -102,6 +104,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   finalTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   sameNetJunctionAlignmentSolver?: SameNetJunctionAlignmentSolver
   inlineNetLabelSolver?: InlineNetLabelSolver
+  netLabelToTraceSolver?: NetLabelToTraceSolver
 
   startTimeOfPhase: Record<string, number>
   endTimeOfPhase: Record<string, number>
@@ -259,6 +262,61 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       const prevSolverOutput =
         instance.traceElbowTransitionSimplificationSolver!.getOutput()
       const traces = prevSolverOutput.traces
+      const overlapShiftSolver = instance.traceOverlapShiftSolver!
+      const inlineLabelNetIds = new Set(
+        [
+          ...instance.inputProblem.directConnections,
+          ...instance.inputProblem.netConnections,
+        ]
+          .filter((connection) => connection.allowInlineNetLabel)
+          .map((connection) => connection.netId),
+      )
+      // An overlap shift can separate collinear inline-label traces by creating
+      // a new perpendicular crossing. Limit the extra untangle work to those
+      // newly introduced crossings so established routes remain stable.
+      const traceIdsInNewCrossingsAfterOverlapShift = new Set<string>()
+      for (
+        let traceIndex = 0;
+        traceIndex < overlapShiftSolver.inputTracePaths.length;
+        traceIndex++
+      ) {
+        const inputTrace = overlapShiftSolver.inputTracePaths[traceIndex]!
+        const shiftedTrace =
+          overlapShiftSolver.correctedTraceMap[inputTrace.mspPairId]!
+        for (
+          let otherTraceIndex = traceIndex + 1;
+          otherTraceIndex < overlapShiftSolver.inputTracePaths.length;
+          otherTraceIndex++
+        ) {
+          const otherInputTrace =
+            overlapShiftSolver.inputTracePaths[otherTraceIndex]!
+          if (inputTrace.globalConnNetId === otherInputTrace.globalConnNetId) {
+            continue
+          }
+          if (
+            !inlineLabelNetIds.has(inputTrace.userNetId ?? "") &&
+            !inlineLabelNetIds.has(otherInputTrace.userNetId ?? "")
+          ) {
+            continue
+          }
+          const otherShiftedTrace =
+            overlapShiftSolver.correctedTraceMap[otherInputTrace.mspPairId]!
+          const crossingCountBeforeShift = findPerpendicularPathCrossings(
+            inputTrace.tracePath,
+            otherInputTrace.tracePath,
+          ).length
+          const crossingCountAfterShift = findPerpendicularPathCrossings(
+            shiftedTrace.tracePath,
+            otherShiftedTrace.tracePath,
+          ).length
+          if (crossingCountAfterShift > crossingCountBeforeShift) {
+            traceIdsInNewCrossingsAfterOverlapShift.add(inputTrace.mspPairId)
+            traceIdsInNewCrossingsAfterOverlapShift.add(
+              otherInputTrace.mspPairId,
+            )
+          }
+        }
+      }
 
       const labelMergingOutput =
         instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput()
@@ -270,6 +328,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           allLabelPlacements: labelMergingOutput.netLabelPlacements,
           mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
           paddingBuffer: 0.1,
+          eligibleTraceIds: traceIdsInNewCrossingsAfterOverlapShift,
         },
       ]
     }),
@@ -527,6 +586,19 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             inputProblem: instance.inputProblem,
             traces: junctionOutput.traces,
             netLabelPlacements: junctionOutput.netLabelPlacements,
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
+      "netLabelToTraceSolver",
+      NetLabelToTraceSolver,
+      (instance) => {
+        const inlineOutput = instance.inlineNetLabelSolver!.getOutput()
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            ...inlineOutput,
           },
         ]
       },

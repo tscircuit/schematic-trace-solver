@@ -44,7 +44,7 @@ export const visualizeInputProblem = (
 
     for (const pin of chip.pins) {
       graphics.points.push({
-        label: `${pin.pinId}\n${pin._facingDirection ?? getPinDirection(pin, chip)}`,
+        label: `${pin.displayName ?? pin.pinId}\n${pin._facingDirection ?? getPinDirection(pin, chip)}`,
         x: pin.x,
         y: pin.y,
         color: getColorFromString(pin.pinId, 0.8),
