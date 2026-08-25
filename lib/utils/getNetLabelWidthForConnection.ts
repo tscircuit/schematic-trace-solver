@@ -10,12 +10,12 @@ type ConnectionWithLabelWidth = InputDirectConnection | InputNetConnection
 
 const getConfiguredWidth = (
   connections: Array<ConnectionWithLabelWidth | undefined>,
-  labelType: "inline" | "anchored",
+  isPortOnlyLabel: boolean,
 ) => {
   const width = connections.find(
     (connection) => connection?.netLabelWidth !== undefined,
   )?.netLabelWidth
-  if (width !== undefined || labelType === "inline") return width
+  if (width !== undefined || !isPortOnlyLabel) return width
 
   return connections.find(
     (connection) => connection?.anchoredNetLabelWidth !== undefined,
@@ -26,12 +26,12 @@ export const getNetLabelWidthForConnection = ({
   inputProblem,
   netId,
   pinIds,
-  labelType,
+  isPortOnlyLabel,
 }: {
   inputProblem: InputProblem
   netId?: NetId
   pinIds: readonly PinId[]
-  labelType: "inline" | "anchored"
+  isPortOnlyLabel: boolean
 }): number | undefined => {
   if (netId) {
     const widthByNetId = getConfiguredWidth(
@@ -43,7 +43,7 @@ export const getNetLabelWidthForConnection = ({
           (connection) => connection.netId === netId,
         ),
       ],
-      labelType,
+      isPortOnlyLabel,
     )
     if (widthByNetId !== undefined) return widthByNetId
   }
@@ -57,6 +57,6 @@ export const getNetLabelWidthForConnection = ({
         connection.pinIds.some((pinId) => pinIds.includes(pinId)),
       ),
     ],
-    labelType,
+    isPortOnlyLabel,
   )
 }

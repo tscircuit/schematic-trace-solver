@@ -185,8 +185,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       netId: blockedLabel.netId,
       pinIds: blockedLabel.pinIds,
-      labelType:
-        blockedLabel.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+      isPortOnlyLabel: this.isPortOnlyLabel(blockedLabel),
     })
     let columnLabelIndex: number | undefined
     if (blockedLabelWidth !== undefined) {
@@ -198,8 +197,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
             inputProblem: this.inputProblem,
             netId: label.netId,
             pinIds: label.pinIds,
-            labelType:
-              label.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+            isPortOnlyLabel: this.isPortOnlyLabel(label),
           }) === blockedLabelWidth
         )
       })
@@ -500,8 +498,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
-        labelType:
-          label.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+        isPortOnlyLabel: this.isPortOnlyLabel(label),
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
@@ -1119,8 +1116,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
-        labelType:
-          label.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+        isPortOnlyLabel: this.isPortOnlyLabel(label),
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
@@ -1149,8 +1145,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
-        labelType:
-          label.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+        isPortOnlyLabel: this.isPortOnlyLabel(label),
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
@@ -1234,8 +1229,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
-        labelType:
-          label.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+        isPortOnlyLabel: this.isPortOnlyLabel(label),
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
@@ -1321,8 +1315,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         netId: label.netId,
         pinIds: label.pinIds,
-        labelType:
-          label.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+        isPortOnlyLabel: this.isPortOnlyLabel(label),
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })

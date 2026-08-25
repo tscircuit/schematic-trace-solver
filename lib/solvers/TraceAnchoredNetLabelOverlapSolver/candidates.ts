@@ -315,7 +315,7 @@ const getNetLabelWidth = (
     inputProblem,
     netId: label.netId,
     pinIds: label.pinIds,
-    labelType: label.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+    isPortOnlyLabel: label.mspConnectionPairIds.length === 0,
   })
   if (configuredWidth !== undefined) return configuredWidth
 
