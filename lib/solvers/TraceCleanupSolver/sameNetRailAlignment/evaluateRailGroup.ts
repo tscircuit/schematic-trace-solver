@@ -3,6 +3,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import type { ObstacleRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
+import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
 import {
   doesPathCoincideWithTraces,
   doesPathOverlapTraceStrokes,
@@ -34,6 +35,43 @@ const tracePathChanged = (
   candidate.tracePath.some(
     (point, index) => !pointsEqual(point, original.tracePath[index]!),
   )
+
+const moveVerticalLabelsWithReroutedTraces = ({
+  originalTraces,
+  candidateTraces,
+  netLabelPlacements,
+}: {
+  originalTraces: SolvedTracePath[]
+  candidateTraces: SolvedTracePath[]
+  netLabelPlacements: NetLabelPlacement[]
+}) => {
+  let movedNetLabelPlacements = [...netLabelPlacements]
+  const originalTraceMap = new Map(
+    originalTraces.map((trace) => [trace.mspPairId, trace]),
+  )
+
+  for (const candidateTrace of candidateTraces) {
+    const originalTrace = originalTraceMap.get(candidateTrace.mspPairId)!
+    if (!tracePathChanged(originalTrace, candidateTrace)) continue
+
+    const currentNetLabelPlacements = movedNetLabelPlacements
+    const movedLabels = moveAttachedLabelsToReroutedTrace({
+      trace: originalTrace,
+      originalTracePath: originalTrace.tracePath,
+      reroutedTracePath: candidateTrace.tracePath,
+      netLabelPlacements: currentNetLabelPlacements,
+    })
+    movedNetLabelPlacements = movedLabels.map((movedLabel, labelIndex) => {
+      const originalLabel = currentNetLabelPlacements[labelIndex]!
+      return originalLabel.orientation === "y+" ||
+        originalLabel.orientation === "y-"
+        ? movedLabel
+        : originalLabel
+    })
+  }
+
+  return movedNetLabelPlacements
+}
 
 export const evaluateRailGroup = ({
   group,
@@ -77,12 +115,17 @@ export const evaluateRailGroup = ({
       const allCandidateTraces = traces.map(
         (trace) => candidateMap.get(trace.mspPairId) ?? trace,
       )
+      const candidateNetLabelPlacements = moveVerticalLabelsWithReroutedTraces({
+        originalTraces: originalGroupTraces,
+        candidateTraces,
+        netLabelPlacements,
+      })
       const candidatesAreClear = candidateTraces.every(
         (candidate) =>
           !isPathCollidingWithObstacles(candidate.tracePath, obstacles) &&
           detectTraceLabelOverlap({
             traces: [candidate],
-            netLabels: netLabelPlacements,
+            netLabels: candidateNetLabelPlacements,
           }).length === 0 &&
           !doesPathOverlapTraceStrokes(candidate.tracePath, otherNetTraces) &&
           !doesPathCoincideWithTraces(
@@ -94,7 +137,12 @@ export const evaluateRailGroup = ({
       )
       if (!candidatesAreClear) continue
       if (
-        !preservesLabelAnchors(netLabelPlacements, traces, allCandidateTraces)
+        !preservesLabelAnchors(
+          netLabelPlacements,
+          traces,
+          allCandidateTraces,
+          candidateNetLabelPlacements,
+        )
       ) {
         continue
       }
@@ -124,7 +172,12 @@ export const evaluateRailGroup = ({
         .map((trace) => trace.mspPairId)
       if (changedTraceIds.length === 0) continue
 
-      const candidate = { traces: allCandidateTraces, changedTraceIds, score }
+      const candidate = {
+        traces: allCandidateTraces,
+        netLabelPlacements: candidateNetLabelPlacements,
+        changedTraceIds,
+        score,
+      }
       if (!best || scoreIsBetter(candidate.score, best.score)) best = candidate
     }
 

@@ -68,9 +68,7 @@ test("repro TIDA-010076 J4 ground pins should share one vertical bus", () => {
     groundTraces.map((trace) => trace.tracePath[1]!.x.toFixed(3)),
   )
 
-  // Current mismatch: the first three GND pins use one vertical offset while
-  // the final pair detours around the manufacturer text at a second offset.
-  expect(verticalBranchOffsets.size).toBe(2)
+  expect(verticalBranchOffsets.size).toBe(1)
   expect(
     output.netLabelPlacements.filter((label) => label.netId === "NET_AGND"),
   ).toHaveLength(1)

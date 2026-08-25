@@ -491,15 +491,15 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         const connectorMovement = moveNetLabelConnectorsToReroutedTraces({
           originalTraces: previousOutput.traces,
           reroutedTraces: alignmentOutput.traces,
-          netLabelPlacements: previousOutput.netLabelPlacements,
+          netLabelPlacements: alignmentOutput.netLabelPlacements,
         })
-        const previousTraceMap = new Map(
-          previousOutput.traces.map((trace) => [trace.mspPairId, trace]),
+        const connectorInputTraceMap = new Map(
+          alignmentOutput.traces.map((trace) => [trace.mspPairId, trace]),
         )
         let netLabelPlacements = connectorMovement.netLabelPlacements
 
         for (const trace of connectorMovement.traces) {
-          const previousTrace = previousTraceMap.get(trace.mspPairId)
+          const previousTrace = connectorInputTraceMap.get(trace.mspPairId)
           if (!previousTrace || previousTrace.tracePath === trace.tracePath) {
             continue
           }

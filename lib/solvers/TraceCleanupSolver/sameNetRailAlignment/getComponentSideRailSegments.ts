@@ -80,7 +80,7 @@ const railIsOutsideComponent = (
   }
 }
 
-/** Associates each movable internal rail with the nearest component endpoint. */
+/** Associates each movable internal rail with its nearest component endpoint(s). */
 export const getComponentSideRailSegments = (
   trace: SolvedTracePath,
   chipMap: Map<string, InputChip>,
@@ -110,11 +110,17 @@ export const getComponentSideRailSegments = (
       ]
     })
 
-    associations.sort((a, b) => a.distanceFromEndpoint - b.distanceFromEndpoint)
-    const association = associations[0]
-    if (!association) continue
-
-    segments.push({ ...segment, ...association })
+    const minimumDistance = Math.min(
+      ...associations.map((association) => association.distanceFromEndpoint),
+    )
+    const nearestAssociationKeys = new Set<string>()
+    for (const association of associations) {
+      if (association.distanceFromEndpoint !== minimumDistance) continue
+      const associationKey = `${association.componentId}:${association.componentFacingDirection}`
+      if (nearestAssociationKeys.has(associationKey)) continue
+      nearestAssociationKeys.add(associationKey)
+      segments.push({ ...segment, ...association })
+    }
   }
 
   return segments
