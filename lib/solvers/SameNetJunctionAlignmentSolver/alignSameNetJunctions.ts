@@ -34,6 +34,9 @@ interface HorizontalSegment {
 const MAX_ALIGNED_LOAD_PIN_OFFSET = 0.2
 // Limit label-boundary alignment to small corrections that cannot create spikes.
 const MAX_SAME_NET_LABEL_BOUNDARY_RAIL_OFFSET = 0.2
+// A shared vertical pin can anchor an existing rail when the rail is only a
+// symbol-stem correction away from the pin itself.
+const MAX_SHARED_PIN_RAIL_OFFSET = 0.05
 
 const getSharedPin = ({
   donorTrace,
@@ -94,6 +97,48 @@ const railIsOnFacingSide = ({
 }) => {
   if (pin._facingDirection === "y+") return railY > pin.y
   return false
+}
+
+const railIsOnSharedPinFacingSide = ({
+  railY,
+  pin,
+}: {
+  railY: number
+  pin: InputPin
+}) => {
+  if (pin._facingDirection === "y+") return railY > pin.y
+  if (pin._facingDirection === "y-") return railY < pin.y
+  return false
+}
+
+const getHorizontalPinApproachPoint = ({
+  branchTrace,
+  sharedPin,
+  otherPin,
+}: {
+  branchTrace: SolvedTracePath
+  sharedPin: InputPin
+  otherPin: InputPin
+}): Point | null => {
+  if (
+    otherPin._facingDirection !== "x-" &&
+    otherPin._facingDirection !== "x+"
+  ) {
+    return null
+  }
+
+  const sharedToOtherPath =
+    branchTrace.pins[0].pinId === sharedPin.pinId
+      ? branchTrace.tracePath
+      : [...branchTrace.tracePath].reverse()
+  const approachPoint = sharedToOtherPath.at(-2)
+  if (!approachPoint || !nearlyEqual(approachPoint.y, otherPin.y)) return null
+
+  const approachesFromFacingSide =
+    otherPin._facingDirection === "x-"
+      ? approachPoint.x < otherPin.x
+      : approachPoint.x > otherPin.x
+  return approachesFromFacingSide ? approachPoint : null
 }
 
 const getAttachedLabelIndexes = (
@@ -165,7 +210,17 @@ const getAlignedBranchPath = ({
   if (branchRail && nearlyEqual(branchRail.start.y, donorRail.start.y)) {
     return null
   }
-  if (!railIsOnFacingSide({ railY: donorRail.start.y, pin: otherPin })) {
+  const railFacesOtherPin = railIsOnFacingSide({
+    railY: donorRail.start.y,
+    pin: otherPin,
+  })
+  const railFacesSharedPin =
+    railIsOnSharedPinFacingSide({
+      railY: donorRail.start.y,
+      pin: sharedPin,
+    }) &&
+    Math.abs(donorRail.start.y - sharedPin.y) <= MAX_SHARED_PIN_RAIL_OFFSET
+  if (!railFacesOtherPin && !railFacesSharedPin) {
     return null
   }
 
@@ -175,13 +230,31 @@ const getAlignedBranchPath = ({
     (donorOtherPin.x > junction.x && otherPin.x < junction.x)
   if (!extendsDonorRail) return null
 
-  const sharedToOther = simplifyPath([
-    { x: sharedPin.x, y: sharedPin.y },
-    { x: junction.x, y: sharedPin.y },
-    { x: junction.x, y: junction.y },
-    { x: otherPin.x, y: junction.y },
-    { x: otherPin.x, y: otherPin.y },
-  ])
+  let sharedToOther: Point[]
+  if (!railFacesOtherPin && railFacesSharedPin) {
+    const approachPoint = getHorizontalPinApproachPoint({
+      branchTrace,
+      sharedPin,
+      otherPin,
+    })
+    if (!approachPoint) return null
+    sharedToOther = simplifyPath([
+      { x: sharedPin.x, y: sharedPin.y },
+      { x: junction.x, y: sharedPin.y },
+      { x: junction.x, y: junction.y },
+      { x: approachPoint.x, y: junction.y },
+      { x: approachPoint.x, y: otherPin.y },
+      { x: otherPin.x, y: otherPin.y },
+    ])
+  } else {
+    sharedToOther = simplifyPath([
+      { x: sharedPin.x, y: sharedPin.y },
+      { x: junction.x, y: sharedPin.y },
+      { x: junction.x, y: junction.y },
+      { x: otherPin.x, y: junction.y },
+      { x: otherPin.x, y: otherPin.y },
+    ])
+  }
 
   if (branchTrace.pins[0].pinId === sharedPin.pinId) return sharedToOther
   return [...sharedToOther].reverse()
