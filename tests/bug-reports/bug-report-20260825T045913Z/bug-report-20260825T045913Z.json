@@ -645,7 +645,6 @@
     },
     {
       "netId": "U1_EN",
-      "netLabelWidth": 0.72,
       "pinIds": [
         "schematic_port_10",
         "schematic_port_16"
@@ -667,7 +666,6 @@
     },
     {
       "netId": ".U1 > .BOOT to .R4 > .pin1",
-      "netLabelWidth": 0.96,
       "pinIds": [
         "schematic_port_22",
         "schematic_port_26"
@@ -682,7 +680,6 @@
     },
     {
       "netId": ".C4 > .pin2 to .U1 > .SW",
-      "netLabelWidth": 0.72,
       "pinIds": [
         "schematic_port_29",
         "schematic_port_21"
@@ -690,7 +687,6 @@
     },
     {
       "netId": "U1_SW",
-      "netLabelWidth": 0.72,
       "pinIds": [
         "schematic_port_21",
         "schematic_port_30"
@@ -726,7 +722,6 @@
     },
     {
       "netId": "U1_FB",
-      "netLabelWidth": 0.72,
       "pinIds": [
         "schematic_port_37",
         "schematic_port_17"
@@ -734,7 +729,6 @@
     },
     {
       "netId": ".C10 > .pin2 to .U1 > .FB",
-      "netLabelWidth": 0.72,
       "pinIds": [
         "schematic_port_41",
         "schematic_port_17"
@@ -742,7 +736,6 @@
     },
     {
       "netId": ".R7 > .pin1 to .U1 > .FB",
-      "netLabelWidth": 0.72,
       "pinIds": [
         "schematic_port_42",
         "schematic_port_17"
@@ -876,6 +869,6 @@
       "y+"
     ]
   },
-  "maxMspPairDistance": 2.4,
+  "maxMspPairDistance": 100,
   "_hideRatsNet": false
 }
