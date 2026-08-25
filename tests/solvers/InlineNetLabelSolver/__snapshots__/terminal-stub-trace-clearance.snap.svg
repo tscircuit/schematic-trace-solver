@@ -1,0 +1,71 @@
+<svg width="2416" height="1200" viewBox="0 0 2416 1200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on the left and Circuit JSON schematic on the right">
+  <g transform="translate(0, 0) scale(1.875, 1.875) translate(0, 0)">
+    <rect width="100%" height="100%" fill="white"/><g><polyline data-points="0.5,-0.1 1,-0.1 1,0.5" data-type="line" data-label="" points="413.33333333333337,394.66666666666663 600,394.66666666666663 600,170.66666666666666" fill="none" stroke="purple" stroke-width="1px"/></g><g><polyline data-points="0.5,0.3 0.95,0.3" data-type="line" data-label="" points="413.33333333333337,245.33333333333331 581.3333333333333,245.33333333333331" fill="none" stroke="purple" stroke-width="1px"/></g><g><polyline data-points="0.5,0.1 0.95,0.1" data-type="line" data-label="" points="413.33333333333337,320 581.3333333333333,320" fill="none" stroke="purple" stroke-width="1px"/></g><g><rect data-type="rect" data-label="U1" data-x="0" data-y="0.1" x="40" y="170.66666666666669" width="373.33333333333337" height="298.66666666666663" fill="hsl(164, 100%, 50%, 0.8)" stroke="black" stroke-width="0.0026785714285714286"/></g><g><rect data-type="rect" data-label="INLINE netId: SCL
+axis: x
+side: y+" data-x="0.725" data-y="0.41" x="441.33333333333337" y="181.86666666666667" width="111.99999999999994" height="44.79999999999998" fill="hsl(196, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0026785714285714286"/></g><g><rect data-type="rect" data-label="INLINE netId: SDA
+axis: x
+side: y+" data-x="0.725" data-y="0.21000000000000002" x="441.33333333333337" y="256.5333333333333" width="111.99999999999994" height="44.80000000000001" fill="hsl(216, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0026785714285714286"/></g><text data-type="text" data-label="SCL" data-x="0.575" data-y="0.41" x="441.3333333333333" y="204.26666666666665" fill="green" font-size="44.8" font-family="sans-serif" text-anchor="start" dominant-baseline="central">SCL</text><text data-type="text" data-label="SDA" data-x="0.575" data-y="0.21000000000000002" x="441.3333333333333" y="278.9333333333333" fill="green" font-size="44.8" font-family="sans-serif" text-anchor="start" dominant-baseline="central">SDA</text><g><circle data-type="point" data-label="U1.scl
+x+" data-x="0.5" data-y="0.3" cx="413.33333333333337" cy="245.33333333333331" r="3" fill="hsl(202, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="U1.sda
+x+" data-x="0.5" data-y="0.1" cx="413.33333333333337" cy="320" r="3" fill="hsl(222, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="U1.vcc
+x+" data-x="0.5" data-y="-0.1" cx="413.33333333333337" cy="394.66666666666663" r="3" fill="hsl(196, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="inline anchor
+SCL" data-x="0.725" data-y="0.3" cx="497.3333333333333" cy="245.33333333333331" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
+SDA" data-x="0.725" data-y="0.1" cx="497.3333333333333" cy="320" r="3" fill="green"/></g><g id="crosshair" style="display: none"><line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5"/><line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5"/><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+                const svg = e.currentTarget;
+                const rect = svg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const crosshair = svg.getElementById('crosshair');
+                const h = svg.getElementById('crosshair-h');
+                const v = svg.getElementById('crosshair-v');
+                const coords = svg.getElementById('coordinates');
+
+                crosshair.style.display = 'block';
+                h.setAttribute('x1', '0');
+                h.setAttribute('x2', '640');
+                h.setAttribute('y1', y);
+                h.setAttribute('y2', y);
+                v.setAttribute('x1', x);
+                v.setAttribute('x2', x);
+                v.setAttribute('y1', '0');
+                v.setAttribute('y2', '640');
+
+                // Calculate real coordinates using inverse transformation
+                const matrix = {"a":373.3333333333333,"c":0,"e":226.66666666666669,"b":0,"d":-373.3333333333333,"f":357.3333333333333};
+                // Manually invert and apply the affine transform
+                // Since we only use translate and scale, we can directly compute:
+                // x' = (x - tx) / sx
+                // y' = (y - ty) / sy
+                const sx = matrix.a;
+                const sy = matrix.d;
+                const tx = matrix.e;
+                const ty = matrix.f;
+                const realPoint = {
+                  x: (x - tx) / sx,
+                  y: (y - ty) / sy // Flip y back since we used negative scale
+                }
+
+                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+                coords.setAttribute('x', (x + 5).toString());
+                coords.setAttribute('y', (y - 5).toString());
+              });
+              document.currentScript.parentElement.addEventListener('mouseleave', () => {
+                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+              });
+            ]]></script>
+  </g>
+  <g transform="translate(1216, 200)">
+    <style>
+              .boundary { fill: rgb(245, 241, 237); }
+              .schematic-boundary { fill: none; stroke: #fff; }
+              .component { fill: none; stroke: rgb(132, 0, 0); }
+              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
+              .component-pin { fill: none; stroke: rgb(132, 0, 0); }
+              .text { font-family: sans-serif; fill: rgb(0, 150, 0); }
+              .pin-number { fill: rgb(169, 0, 0); }
+              .port-label { fill: rgb(0, 100, 100); }
+              .component-name { fill: rgb(0, 100, 100); }
+
+            </style><rect class="boundary" x="0" y="0" width="1200" height="800"/><g class="trace sch-trace" data-layer="base" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0__stack1"><path d="M 628.1081081080999 497.29729729734 L 844.3243243243 497.29729729734 L 844.3243243243 237.8378378379" class="trace-invisible-hover-outline sch-trace-hitbox" stroke="rgb(0, 150, 0)" fill="none" stroke-width="69.189189189184px" stroke-linecap="round" opacity="0" stroke-linejoin="round"/><path class="sch-trace-path" d="M 628.1081081080999 497.29729729734 L 844.3243243243 497.29729729734 L 844.3243243243 237.8378378379" stroke="rgb(0, 150, 0)" fill="none" stroke-width="8.648648648648px" stroke-linecap="round" stroke-linejoin="round"/></g><g class="trace sch-trace" data-layer="base" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_1__stack1"><path d="M 628.1081081080999 324.32432432438 L 822.70270270268 324.32432432438" class="trace-invisible-hover-outline sch-trace-hitbox" stroke="rgb(0, 150, 0)" fill="none" stroke-width="69.189189189184px" stroke-linecap="round" opacity="0" stroke-linejoin="round"/><path class="sch-trace-path" d="M 628.1081081080999 324.32432432438 L 822.70270270268 324.32432432438" stroke="rgb(0, 150, 0)" fill="none" stroke-width="8.648648648648px" stroke-linecap="round" stroke-linejoin="round"/></g><g class="trace sch-trace" data-layer="base" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_2__stack1"><path d="M 628.1081081080999 410.81081081086 L 822.70270270268 410.81081081086" class="trace-invisible-hover-outline sch-trace-hitbox" stroke="rgb(0, 150, 0)" fill="none" stroke-width="69.189189189184px" stroke-linecap="round" opacity="0" stroke-linejoin="round"/><path class="sch-trace-path" d="M 628.1081081080999 410.81081081086 L 822.70270270268 410.81081081086" stroke="rgb(0, 150, 0)" fill="none" stroke-width="8.648648648648px" stroke-linecap="round" stroke-linejoin="round"/></g><g class="trace-overlays sch-trace-overlays" data-layer="overlay" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0__stack1"/><g class="trace-overlays sch-trace-overlays" data-layer="overlay" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_1__stack1"/><g class="trace-overlays sch-trace-overlays" data-layer="overlay" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_2__stack1"/><g class="sch-component" data-circuit-json-type="schematic_component" data-schematic-component-id="schematic_component_0__stack1"><rect class="component chip sch-component-body" x="368.64864864866" y="237.8378378379" width="86.48648648647998" height="345.94594594592" stroke-width="8.648648648648px" fill="rgb(255, 255, 194)" stroke="rgb(132, 0, 0)"/><rect class="component-overlay sch-component-overlay" x="368.64864864866" y="237.8378378379" width="86.48648648647998" height="345.94594594592" fill="transparent"/><text class="sch-text" x="411.8918918919" y="410.81081081086" fill="#0f172a" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="77.837837837832px" transform="rotate(0, 411.8918918919, 410.81081081086)">U1</text><line class="component-pin sch-component-pin sch-port-line" x1="455.13513513514" y1="324.32432432438" x2="628.1081081080999" y2="324.32432432438" stroke-width="8.648648648648px"/><g class="sch-port" data-schematic-port-id="source_port_0_0__stack1"><rect x="619.459459459452" y="315.67567567573195" width="17.297297297296" height="17.297297297296" opacity="0"/></g><text class="pin-number sch-pin-number" x="541.62162162162" y="315.675675675732" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="64.86486486486px" transform=""></text><text class="pin-number sch-pin-label" x="411.8918918919" y="324.32432432438" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="end" dominant-baseline="middle" font-size="64.86486486486px" transform="">scl</text><line class="component-pin sch-component-pin sch-port-line" x1="455.13513513514" y1="410.81081081086" x2="628.1081081080999" y2="410.81081081086" stroke-width="8.648648648648px"/><g class="sch-port" data-schematic-port-id="source_port_0_1__stack1"><rect x="619.459459459452" y="402.162162162212" width="17.297297297296" height="17.297297297296" opacity="0"/></g><text class="pin-number sch-pin-number" x="541.62162162162" y="402.162162162212" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="64.86486486486px" transform=""></text><text class="pin-number sch-pin-label" x="411.8918918919" y="410.81081081086" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="end" dominant-baseline="middle" font-size="64.86486486486px" transform="">sda</text><line class="component-pin sch-component-pin sch-port-line" x1="455.13513513514" y1="497.29729729734" x2="628.1081081080999" y2="497.29729729734" stroke-width="8.648648648648px"/><g class="sch-port" data-schematic-port-id="source_port_0_2__stack1"><rect x="619.459459459452" y="488.64864864869196" width="17.297297297296" height="17.297297297296" opacity="0"/></g><text class="pin-number sch-pin-number" x="541.62162162162" y="488.648648648692" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="64.86486486486px" transform=""></text><text class="pin-number sch-pin-label" x="411.8918918919" y="497.29729729734" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="end" dominant-baseline="middle" font-size="64.86486486486px" transform="">vcc</text></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_0__stack1"><circle cx="628.1081081080999" cy="324.32432432438" r="17.297297297296" fill="red" opacity="0"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_1__stack1"><circle cx="628.1081081080999" cy="410.81081081086" r="17.297297297296" fill="red" opacity="0"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_2__stack1"><circle cx="628.1081081080999" cy="497.29729729734" r="17.297297297296" fill="red" opacity="0"/></g><text class="sch-text" x="725.40540540539" y="276.756756756816" fill="#047857" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="51.891891891887994px" transform="rotate(0, 725.40540540539, 276.756756756816)">XXX</text><text class="sch-text" x="725.40540540539" y="363.243243243296" fill="#047857" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="51.891891891887994px" transform="rotate(0, 725.40540540539, 363.243243243296)">XXX</text>
+  </g>
+</svg>

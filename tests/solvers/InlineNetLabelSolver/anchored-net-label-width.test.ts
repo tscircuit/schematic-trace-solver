@@ -12,8 +12,10 @@ const inlineConnection = (
   pinIds: [string, string],
   anchoredNetLabelWidth: number,
   inlineNetLabelWidth: number,
+  netLabelText?: string,
 ): InputDirectConnection => ({
   netId,
+  netLabelText,
   pinIds,
   allowInlineNetLabel: true,
   anchoredNetLabelWidth,
@@ -53,7 +55,7 @@ const routedInputProblem: InputProblem = {
     },
   ],
   directConnections: [
-    inlineConnection("OUT_A_P", ["J4.1", "U1.4"], 0.96, 0.64),
+    inlineConnection("OUT_A_P", ["J4.1", "U1.4"], 0.96, 0.64, "OUT A+"),
     inlineConnection("OUT_A_N", ["J4.2", "U1.6"], 0.96, 0.64),
     inlineConnection("OUT_B_N", ["J4.3", "U1.7"], 0.96, 0.64),
     inlineConnection("OUT_B_P", ["J4.4", "U1.9"], 0.96, 0.64),
@@ -127,6 +129,11 @@ test("anchored label width does not split routable inline connections", () => {
       .inlineNetLabelSolver!.getOutput()
       .traces.map(({ mspPairId, tracePath }) => ({ mspPairId, tracePath })),
   )
+  expect(
+    output.inlineNetLabelPlacements.find(
+      (placement) => placement.netId === "OUT_A_P",
+    )?.netLabelText,
+  ).toBe("OUT A+")
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
@@ -153,6 +160,7 @@ test("anchored label width sizes anchored labels when routing is skipped", () =>
     netConnections: [
       {
         netId: "SIGNAL",
+        netLabelText: "User-facing signal",
         pinIds: ["U1.1", "U2.1"],
         allowInlineNetLabel: true,
         anchoredNetLabelWidth: 0.96,
@@ -172,4 +180,5 @@ test("anchored label width sizes anchored labels when routing is skipped", () =>
   expect(Math.max(anchoredPlacement!.width, anchoredPlacement!.height)).toBe(
     0.96,
   )
+  expect(anchoredPlacement!.netLabelText).toBe("User-facing signal")
 })

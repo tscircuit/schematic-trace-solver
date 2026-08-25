@@ -48,10 +48,12 @@ decides which connections deserve one; the solver only honors the request when
 the connection actually got routed, since there is nothing to run parallel to
 otherwise.
 
-The `InlineNetLabelSolver` runs last in the pipeline and exposes
-`inlineNetLabelPlacements`. A net that receives an inline label has its anchored
-`NetLabelPlacement` removed from `getOutput().netLabelPlacements`, so a net is
-never labeled twice.
+The `InlineNetLabelSolver` exposes `inlineNetLabelPlacements`. A net that
+receives an inline label has its anchored `NetLabelPlacement` removed from
+`getOutput().netLabelPlacements`, so a net is never labeled twice.
+`NetLabelToTraceSolver` then replaces pairs of port-only fallback labels with
+real traces whenever the router finds a clear path. Its `getOutput()` is the
+pipeline's final output.
 
 ```tsx
 directConnections: [
