@@ -4,7 +4,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblemJson from "./assets/repro-pmp11282-routing-fallback.input.json"
 
-test("repro PMP11282 exhausts a fixed trace queue budget", () => {
+test("PMP11282 gives every trace pair its own routing attempt", () => {
   const inputProblem: InputProblem = JSON.parse(
     JSON.stringify(inputProblemJson),
   )
@@ -15,10 +15,11 @@ test("repro PMP11282 exhausts a fixed trace queue budget", () => {
   solver.solve()
 
   const traceSolver = solver.schematicTraceLinesSolver!
-  expect(solver.failed).toBe(true)
-  expect(solver.error).toBe("SchematicTraceLinesSolver ran out of iterations")
-  expect(traceSolver.solvedTracePaths).toHaveLength(72)
-  expect(traceSolver.failedConnectionPairs).toHaveLength(35)
-  expect(traceSolver.queuedConnectionPairs).toHaveLength(95)
+  expect(solver.solved).toBe(true)
+  expect(solver.failed).toBe(false)
+  expect(solver.error).toBeNull()
+  expect(traceSolver.solvedTracePaths).toHaveLength(145)
+  expect(traceSolver.failedConnectionPairs).toHaveLength(58)
+  expect(traceSolver.queuedConnectionPairs).toHaveLength(0)
   expect(traceSolver).toMatchSolverSnapshot(import.meta.path)
 }, 30_000)
