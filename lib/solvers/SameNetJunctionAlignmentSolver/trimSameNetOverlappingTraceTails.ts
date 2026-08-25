@@ -11,6 +11,7 @@ import type { InputProblem, SectionId } from "lib/types/InputProblem"
 
 type Axis = "x" | "y"
 
+// Conservative V1 limits cover the observed short stub and tight hairpin only.
 const MAX_SHARED_PIN_TAIL_LENGTH = 0.2
 const MAX_HAIRPIN_OFFSET = 0.05
 const MIN_HAIRPIN_POINT_COUNT = 6
@@ -29,6 +30,7 @@ const orientPathFromPin = (
   trace: SolvedTracePath,
   pin: Point,
 ): Point[] | null => {
+  // Normalize both paths so index zero is always the shared-pin endpoint.
   if (pointsEqual(trace.tracePath[0]!, pin)) return trace.tracePath
   if (!pointsEqual(trace.tracePath.at(-1)!, pin)) return null
   return [...trace.tracePath].reverse()
@@ -78,6 +80,7 @@ const getTailRewrite = ({
   let branchPath = secondPath
   let branchTrace = secondTrace
   let traceIndex = secondIndex
+  // Preserve the shorter tail as the trunk; rewrite the longer branch from it.
   if (firstLength > secondLength && !nearlyEqual(firstLength, secondLength)) {
     trunkPath = secondPath
     trunkTrace = secondTrace
@@ -90,6 +93,7 @@ const getTailRewrite = ({
   if (!pointsEqual(trunkTrace.tracePath[0]!, sharedPin)) {
     trunkAxis = getAxis(trunkPath[1]!, trunkPath[2]!)
   }
+  // Start at the trunk endpoint to remove the segment shared by both traces.
   let path = simplifyPath([trunkPath[1]!, ...branchPath.slice(1)])
   if (!pointsEqual(branchTrace.tracePath[0]!, sharedPin)) {
     path = [...path].reverse()
@@ -104,6 +108,7 @@ const getTailRewrite = ({
   const offsetEnd = path[2]!
   let offsetAxis: Axis = "x"
   if (trunkAxis === "x") offsetAxis = "y"
+  // A supported hairpin first travels outward, then makes one short side step.
   if (
     getAxis(junction, outwardEnd) !== trunkAxis ||
     getAxis(outwardEnd, offsetEnd) !== offsetAxis ||
@@ -113,6 +118,7 @@ const getTailRewrite = ({
   }
 
   const snappedOutwardEnd = { ...outwardEnd }
+  // Snap the detour onto the junction rail before reconnecting its trailing path.
   snappedOutwardEnd[offsetAxis] = junction[offsetAxis]
   // V1 handles a hairpin that rejoins three points before the trace end.
   const rejoinIndex = path.length - HAIRPIN_TRAILING_POINT_COUNT
@@ -143,8 +149,10 @@ export const trimSameNetOverlappingTraceTails = ({
     traces,
     trimmedSameNetOverlapCount: 0,
   }
+  // No single aligned section means this conservative cleanup has no safe scope.
   if (!alignedSectionId) return unchangedResult
 
+  // Rewrites stay on a copy until one complete, collision-free hairpin is found.
   const outputTraces = traces.map((trace) => ({ ...trace }))
   const obstacles = getObstacleRects(inputProblem)
   let trimmedSameNetOverlapCount = 0
@@ -158,6 +166,7 @@ export const trimSameNetOverlappingTraceTails = ({
     ) {
       const firstTrace = outputTraces[firstIndex]!
       const secondTrace = outputTraces[secondIndex]!
+      // Only traces on the same net and physical pin can share an electrical tail.
       if (firstTrace.globalConnNetId !== secondTrace.globalConnNetId) continue
       const secondPinIds = new Set(secondTrace.pins.map((pin) => pin.pinId))
       const sharedPin = firstTrace.pins.find((pin) =>
