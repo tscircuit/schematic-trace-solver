@@ -42,11 +42,12 @@ import {
 
 const EPSILON = 1e-9
 const MAX_CONTINUATION_OFFSET = 0.15
+const TARGET_JUNCTION_INSET = 0.2
 const AVAILABLE_NET_ORIENTATION_PREFIX = "available-net-orientation-"
 const RECOVERED_TRACE_PREFIX = "net-label-trace-junction-"
 // Standalone ports may join nearby copper, but a distant connection remains a
 // deliberate net-label boundary rather than becoming a page-spanning trace.
-const MAX_PORT_TO_TRACE_DISTANCE = 2
+const MAX_PORT_TO_TRACE_DISTANCE = 5
 
 interface TraceComponent {
   id: number
@@ -60,6 +61,7 @@ interface JunctionCandidate {
   targetComponentId: number
   sourcePin: TraceRecoveryPin
   targetPin: TraceRecoveryPin
+  targetTrace: SolvedTracePath
   sourcePoint: Point
   targetPoint: Point
   perpendicularOffset: number
@@ -140,6 +142,37 @@ const getAdjacentTracePoint = (
   return null
 }
 
+const getTargetJunctionAwayFromPin = (
+  trace: SolvedTracePath,
+  pin: TraceRecoveryPin,
+): Point | null => {
+  let points: Point[]
+  if (pointsAreEqual(trace.tracePath[0]!, pin)) {
+    points = trace.tracePath
+  } else if (pointsAreEqual(trace.tracePath.at(-1)!, pin)) {
+    points = [...trace.tracePath].reverse()
+  } else {
+    return null
+  }
+
+  const segmentStart = points.length >= 3 ? points[1]! : points[0]!
+  const segmentEnd = points.length >= 3 ? points[2]! : points[1]
+  if (!segmentEnd) return null
+  const segmentLength =
+    Math.abs(segmentEnd.x - segmentStart.x) +
+    Math.abs(segmentEnd.y - segmentStart.y)
+  if (segmentLength <= EPSILON) return segmentEnd
+  const inset = Math.min(TARGET_JUNCTION_INSET, segmentLength / 2)
+  return {
+    x:
+      segmentStart.x +
+      ((segmentEnd.x - segmentStart.x) / segmentLength) * inset,
+    y:
+      segmentStart.y +
+      ((segmentEnd.y - segmentStart.y) / segmentLength) * inset,
+  }
+}
+
 const directionToward = (from: Point, to: Point): FacingDirection => {
   const deltaX = to.x - from.x
   const deltaY = to.y - from.y
@@ -149,6 +182,48 @@ const directionToward = (from: Point, to: Point): FacingDirection => {
   }
   if (deltaY >= 0) return "y+"
   return "y-"
+}
+
+const getAvailableJunctionDirection = ({
+  trace,
+  junctionPoint,
+  sourcePoint,
+}: {
+  trace: SolvedTracePath
+  junctionPoint: Point
+  sourcePoint: Point
+}): FacingDirection => {
+  const occupiedDirections = new Set<FacingDirection>()
+  for (let index = 0; index < trace.tracePath.length - 1; index++) {
+    const start = trace.tracePath[index]!
+    const end = trace.tracePath[index + 1]!
+    if (pointToSegmentDistance(junctionPoint, start, end) > EPSILON) continue
+    if (!pointsAreEqual(junctionPoint, start)) {
+      occupiedDirections.add(directionToward(junctionPoint, start))
+    }
+    if (!pointsAreEqual(junctionPoint, end)) {
+      occupiedDirections.add(directionToward(junctionPoint, end))
+    }
+  }
+
+  const deltaX = sourcePoint.x - junctionPoint.x
+  const deltaY = sourcePoint.y - junctionPoint.y
+  const directionsByPreference: FacingDirection[] = ["x+", "x-", "y+", "y-"]
+  directionsByPreference.sort((first, second) => {
+    const score = (direction: FacingDirection) => {
+      if (direction === "x+") return deltaX
+      if (direction === "x-") return -deltaX
+      if (direction === "y+") return deltaY
+      return -deltaY
+    }
+    return score(second) - score(first)
+  })
+
+  return (
+    directionsByPreference.find(
+      (direction) => !occupiedDirections.has(direction),
+    ) ?? directionToward(junctionPoint, sourcePoint)
+  )
 }
 
 const isPointInDirection = ({
@@ -304,6 +379,26 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
         }
       }
     }
+
+    if (best) {
+      const targetPin = this.getClosestTargetPin(best.trace, best.point)
+      if (targetPin && pointsAreEqual(best.point, targetPin)) {
+        const targetJunction = getTargetJunctionAwayFromPin(
+          best.trace,
+          targetPin,
+        )
+        if (targetJunction) {
+          best = {
+            ...best,
+            point: targetJunction,
+            distance:
+              Math.abs(sourcePoint.x - targetJunction.x) +
+              Math.abs(sourcePoint.y - targetJunction.y),
+          }
+        }
+      }
+    }
+
     return best
   }
 
@@ -380,6 +475,7 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
             targetComponentId: targetComponent.id,
             sourcePin,
             targetPin,
+            targetTrace: closestTarget.trace,
             sourcePoint: sourcePin,
             targetPoint: closestTarget.point,
             perpendicularOffset: getPerpendicularOffset({
@@ -463,6 +559,7 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
               targetComponentId: targetComponent.id,
               sourcePin,
               targetPin,
+              targetTrace: closestTarget.trace,
               sourcePoint,
               targetPoint: closestTarget.point,
               perpendicularOffset,
@@ -608,7 +705,13 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     )
     this.outputTraces.push(recoveredTrace)
     this.outputNetLabelPlacements = this.outputNetLabelPlacements.filter(
-      (label) => label !== candidate.sourceLabel,
+      (label) => {
+        if (label === candidate.sourceLabel) return false
+        if (label.globalConnNetId !== candidate.sourceLabel.globalConnNetId) {
+          return true
+        }
+        return this.getLabelComponent(label)?.id !== candidate.targetComponentId
+      },
     )
     if (candidate.sourceComponentId !== null) {
       this.unionComponents(
@@ -664,10 +767,11 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
         ...candidate.targetPoint,
         pinId: `junction-target-${candidate.key}`,
         chipId: `junction-target-${candidate.key}`,
-        _facingDirection: directionToward(
-          candidate.targetPoint,
-          candidate.sourcePoint,
-        ),
+        _facingDirection: getAvailableJunctionDirection({
+          trace: candidate.targetTrace,
+          junctionPoint: candidate.targetPoint,
+          sourcePoint: candidate.sourcePoint,
+        }),
       }
     }
     this.activeSubSolver = new SchematicTraceSingleLineSolver2({
