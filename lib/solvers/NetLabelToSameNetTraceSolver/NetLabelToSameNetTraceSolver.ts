@@ -267,6 +267,7 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
   private components: TraceComponent[] = []
   private componentIdByTrace = new Map<SolvedTracePath, number>()
   private componentParents: number[]
+  private retainedLabels = new Set<NetLabelPlacement>()
   private queuedCandidates: JunctionCandidate[]
   private currentCandidate: JunctionCandidate | null = null
   declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
@@ -285,6 +286,7 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
 
     this.buildTraceComponents()
     this.componentParents = this.components.map((component) => component.id)
+    this.reserveProtectedNetLabels()
     this.queuedCandidates = this.buildCandidates()
     this.stats.candidateCount = this.queuedCandidates.length
     this.stats.recoveredTraceCount = 0
@@ -320,6 +322,45 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
         }
       }
       this.components.push(component)
+    }
+  }
+
+  private shouldRetainNetLabel(label: NetLabelPlacement) {
+    if (!label.netId) return false
+    if (
+      this.inputProblem.availableNetLabelOrientations[label.netId]?.includes(
+        "y+",
+      )
+    ) {
+      return true
+    }
+    return [
+      ...this.inputProblem.directConnections,
+      ...this.inputProblem.netConnections,
+    ].some(
+      (connection) =>
+        connection.netId === label.netId && connection.isPowerNet === true,
+    )
+  }
+
+  private reserveProtectedNetLabels() {
+    const labelsByGlobalNetId = new Map<string, NetLabelPlacement[]>()
+    for (const label of this.outputNetLabelPlacements) {
+      if (!this.shouldRetainNetLabel(label)) continue
+      const labels = labelsByGlobalNetId.get(label.globalConnNetId) ?? []
+      labels.push(label)
+      labelsByGlobalNetId.set(label.globalConnNetId, labels)
+    }
+
+    for (const labels of labelsByGlobalNetId.values()) {
+      labels.sort(
+        (first, second) =>
+          Number(second.orientation === "y+") -
+            Number(first.orientation === "y+") ||
+          Number(second.mspConnectionPairIds.length > 0) -
+            Number(first.mspConnectionPairIds.length > 0),
+      )
+      this.retainedLabels.add(labels[0]!)
     }
   }
 
@@ -448,6 +489,7 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     const candidates: JunctionCandidate[] = []
 
     for (const label of this.input.netLabelPlacements) {
+      if (this.retainedLabels.has(label)) continue
       if (!this.isEligibleLabel(label, netConnMap, groundNetId)) continue
 
       if (label.mspConnectionPairIds.length === 0) {
@@ -667,6 +709,14 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
   ) {
     for (const label of this.outputNetLabelPlacements) {
       if (label === sourceLabel) continue
+      if (
+        this.retainedLabels.has(label) &&
+        label.globalConnNetId === sourceLabel.globalConnNetId
+      ) {
+        // Other branches must still be able to join the trace carrying the
+        // one label reserved for this net.
+        continue
+      }
       if (pathIntersectsRenderedLabel(path, label)) return true
     }
     return this.input.inlineNetLabelPlacements.some((label) =>
@@ -706,6 +756,7 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     this.outputTraces.push(recoveredTrace)
     this.outputNetLabelPlacements = this.outputNetLabelPlacements.filter(
       (label) => {
+        if (this.retainedLabels.has(label)) return true
         if (label === candidate.sourceLabel) return false
         if (label.globalConnNetId !== candidate.sourceLabel.globalConnNetId) {
           return true

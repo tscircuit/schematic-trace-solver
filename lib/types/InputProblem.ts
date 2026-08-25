@@ -49,6 +49,8 @@ export interface InputChip {
 export interface InputDirectConnection {
   pinIds: [PinId, PinId]
   netId?: string
+  /** Keep at least one visible net label after same-net trace recovery. */
+  isPowerNet?: boolean
 
   /**
    * User-facing text to render for this net label. `netId` remains the stable
@@ -97,6 +99,8 @@ export interface InputDirectConnection {
 export interface InputNetConnection {
   netId: string
   pinIds: Array<PinId>
+  /** Keep at least one visible net label after same-net trace recovery. */
+  isPowerNet?: boolean
 
   /**
    * User-facing text to render for this net label. `netId` remains the stable
