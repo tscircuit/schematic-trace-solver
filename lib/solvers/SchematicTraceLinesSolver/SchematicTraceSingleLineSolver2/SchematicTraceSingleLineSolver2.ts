@@ -7,6 +7,7 @@ import { getDimsForOrientation } from "lib/solvers/NetLabelPlacementSolver/Singl
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
+import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 import { getTextBoxBounds, type RectPadding } from "lib/utils/textBoxBounds"
 import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
 import { calculateDirectShortPath } from "./calculateDirectShortPath"
@@ -201,7 +202,12 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     const orientations =
       this.inputProblem.availableNetLabelOrientations[netId] ??
       (["x+", "x-", "y+", "y-"] as FacingDirection[])
-    const netLabelWidth = this.getNetLabelWidthForConnectionPair(netId)
+    const netLabelWidth = getNetLabelWidthForConnection({
+      inputProblem: this.inputProblem,
+      netId,
+      pinIds: this.pins.map((pin) => pin.pinId),
+      includeFallbackNetLabelWidth: false,
+    })
     const netLabelHeight = this.getNetLabelHeightForConnectionPair(netId)
     const padding: Required<RectPadding> = {
       minX: 0,
@@ -237,28 +243,6 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     }
 
     return padding
-  }
-
-  private getNetLabelWidthForConnectionPair(netId: string) {
-    const ncWidth = this.inputProblem.netConnections.find(
-      (nc) => nc.netId === netId,
-    )?.netLabelWidth
-    if (ncWidth !== undefined) return ncWidth
-
-    const dcWidthByNetId = this.inputProblem.directConnections.find(
-      (dc) => dc.netId === netId,
-    )?.netLabelWidth
-    if (dcWidthByNetId !== undefined) return dcWidthByNetId
-
-    const pinIds = this.pins.map((p) => p.pinId)
-    const dcWidthByPinId = this.inputProblem.directConnections.find((dc) =>
-      dc.pinIds.some((pid) => pinIds.includes(pid)),
-    )?.netLabelWidth
-    if (dcWidthByPinId !== undefined) return dcWidthByPinId
-
-    return this.inputProblem.netConnections.find((nc) =>
-      nc.pinIds.some((pid) => pinIds.includes(pid)),
-    )?.netLabelWidth
   }
 
   private getNetLabelHeightForConnectionPair(netId: string) {

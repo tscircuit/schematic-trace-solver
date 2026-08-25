@@ -132,11 +132,14 @@ export const getRailGroups = (
     if (componentGroups.length === group.length) candidateGroups = [group]
 
     for (const candidateGroup of candidateGroups) {
+      const traceCount = new Set(
+        candidateGroup.map((segment) => segment.traceId),
+      ).size
       const hasDifferentCoordinates = candidateGroup.some(
         (segment) =>
           !nearlyEqual(segment.coordinate, candidateGroup[0]!.coordinate),
       )
-      if (hasDifferentCoordinates) {
+      if (traceCount >= 2 && hasDifferentCoordinates) {
         groups.push(candidateGroup)
       }
     }

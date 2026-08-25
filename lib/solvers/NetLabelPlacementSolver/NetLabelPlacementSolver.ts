@@ -9,6 +9,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 
 /**
  * A group of traces that have at least one overlapping segment and
@@ -17,6 +18,7 @@ import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/
 export type OverlappingSameNetTraceGroup = {
   globalConnNetId: string
   netId?: string
+  netLabelText?: string
   overlappingTraces?: SolvedTracePath
   portOnlyPinId?: string
   mspConnectionPairIds?: MspConnectionPairId[]
@@ -29,6 +31,8 @@ export interface NetLabelPlacement {
    * Optional user-provided net identifier (if present in the input problem).
    */
   netId?: string
+  /** User-facing label content, separate from the connectivity identifier. */
+  netLabelText?: string
   /**
    * MSP pair ids that the label is associated with. Port-only labels use [].
    */
@@ -115,18 +119,27 @@ export class NetLabelPlacementSolver extends BaseSolver {
       }
     }
 
-    // Map pins to user-provided netIds (if any)
+    // Map pins to user-provided connectivity ids and display text (if any).
     const userNetIdByPinId: Record<string, string | undefined> = {}
+    const netLabelTextByPinId: Record<string, string | undefined> = {}
     for (const dc of this.inputProblem.directConnections) {
       if (dc.netId) {
         const [a, b] = dc.pinIds
         userNetIdByPinId[a] = dc.netId
         userNetIdByPinId[b] = dc.netId
       }
+      const netLabelText = dc.netLabelText?.trim()
+      if (netLabelText) {
+        const [a, b] = dc.pinIds
+        netLabelTextByPinId[a] = netLabelText
+        netLabelTextByPinId[b] = netLabelText
+      }
     }
     for (const nc of this.inputProblem.netConnections) {
       for (const pid of nc.pinIds) {
         userNetIdByPinId[pid] = nc.netId
+        const netLabelText = nc.netLabelText?.trim()
+        if (netLabelText) netLabelTextByPinId[pid] = netLabelText
       }
     }
 
@@ -236,6 +249,9 @@ export class NetLabelPlacementSolver extends BaseSolver {
           const group = {
             globalConnNetId,
             netId: userNetId,
+            netLabelText: [...component]
+              .map((pinId) => netLabelTextByPinId[pinId])
+              .find((text): text is string => Boolean(text)),
             overlappingTraces: rep,
             mspConnectionPairIds,
           }
@@ -248,6 +264,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
             groups.push({
               globalConnNetId,
               netId: userNetId,
+              netLabelText: netLabelTextByPinId[p],
               portOnlyPinId: p,
             })
           }
@@ -261,31 +278,15 @@ export class NetLabelPlacementSolver extends BaseSolver {
   private getNetLabelWidthForGroup(
     group: OverlappingSameNetTraceGroup,
   ): number | undefined {
-    if (group.netId) {
-      const ncWidth = this.inputProblem.netConnections.find(
-        (nc) => nc.netId === group.netId,
-      )?.netLabelWidth
-      if (ncWidth !== undefined) return ncWidth
-
-      const dcWidthByNetId = this.inputProblem.directConnections.find(
-        (dc) => dc.netId === group.netId,
-      )?.netLabelWidth
-      if (dcWidthByNetId !== undefined) return dcWidthByNetId
-    }
-
     const pinIds = group.overlappingTraces?.pins.map((p) => p.pinId) ?? []
     if (group.portOnlyPinId) {
       pinIds.push(group.portOnlyPinId)
     }
-
-    const dcWidthByPinId = this.inputProblem.directConnections.find((dc) =>
-      dc.pinIds.some((pid) => pinIds.includes(pid)),
-    )?.netLabelWidth
-    if (dcWidthByPinId !== undefined) return dcWidthByPinId
-
-    return this.inputProblem.netConnections.find((nc) =>
-      nc.pinIds.some((pid) => pinIds.includes(pid)),
-    )?.netLabelWidth
+    return getNetLabelWidthForConnection({
+      inputProblem: this.inputProblem,
+      netId: group.netId,
+      pinIds,
+    })
   }
 
   private getNetLabelHeightForGroup(

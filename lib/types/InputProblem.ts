@@ -8,6 +8,13 @@ export type SectionId = string
 
 export interface InputPin {
   pinId: PinId
+
+  /**
+   * User-facing label for this schematic port. `pinId` remains the stable,
+   * opaque routing identity and must not be shown in schematic output.
+   */
+  displayName?: string
+
   x: number
   y: number
 
@@ -24,6 +31,15 @@ export interface TextBoxes {
 
 export interface InputChip {
   chipId: ChipId
+
+  /**
+   * Exact directional/oriented schematic-symbol name when the caller has it.
+   * `center`, `width`, and `height` describe the solver obstacle and may be
+   * expanded to include reference/value or manufacturer-part-number text, so
+   * renderers should use this symbol's geometry for the component body.
+   */
+  symbolName?: string
+
   center: { x: number; y: number }
   width: number
   height: number
@@ -33,7 +49,22 @@ export interface InputChip {
 export interface InputDirectConnection {
   pinIds: [PinId, PinId]
   netId?: string
+
+  /**
+   * User-facing text to render for this net label. `netId` remains the stable
+   * connectivity identifier and may be an internal id. When this is omitted
+   * but a label width is provided, renderers should use a width-preserving
+   * placeholder instead of exposing `netId` as label text.
+   */
+  netLabelText?: string
   netLabelWidth?: number
+
+  /**
+   * Width of the conventional anchored label to use only when an inline label
+   * cannot be placed. Unlike `netLabelWidth`, this does not affect whether or
+   * how the point-to-point connection is routed.
+   */
+  fallbackNetLabelWidth?: number
 
   /**
    * When true, this point-to-point connection may be labeled with an "inline
@@ -51,7 +82,8 @@ export interface InputDirectConnection {
 
   /**
    * Extent of the inline net label along the trace. Falls back to
-   * `netLabelWidth`, then to an estimate from the netId text.
+   * `netLabelWidth`, then to an estimate from `netLabelText` (or `netId` for
+   * backwards compatibility).
    */
   inlineNetLabelWidth?: number
 
@@ -65,7 +97,16 @@ export interface InputDirectConnection {
 export interface InputNetConnection {
   netId: string
   pinIds: Array<PinId>
+
+  /**
+   * User-facing text to render for this net label. `netId` remains the stable
+   * connectivity identifier and may be an internal id. When this is omitted
+   * but a label width is provided, renderers should use a width-preserving
+   * placeholder instead of exposing `netId` as label text.
+   */
+  netLabelText?: string
   netLabelWidth?: number
+  fallbackNetLabelWidth?: number
   netLabelHeight?: number
 
   /**
