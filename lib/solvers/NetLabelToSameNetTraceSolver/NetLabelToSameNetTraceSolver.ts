@@ -35,10 +35,10 @@ import type {
 import { arePinsInDifferentSchematicSections } from "lib/utils/arePinsInDifferentSchematicSections"
 import type { FacingDirection } from "lib/utils/dir"
 import {
-  type InlineNetLabelPlacement,
   type InlineNetLabelOutput,
   visualizeInlineNetLabelOutput,
 } from "../InlineNetLabelSolver/InlineNetLabelSolver"
+import { pathIntersectsRenderedLabel } from "../NetLabelToTraceSolver/NetLabelToTraceSolver"
 
 const EPSILON = 1e-9
 const MAX_CONTINUATION_OFFSET = 0.15
@@ -55,6 +55,8 @@ interface TraceComponent {
   traces: SolvedTracePath[]
 }
 
+type GlobalConnNetId = NetLabelPlacement["globalConnNetId"]
+
 interface JunctionCandidate {
   sourceLabel: NetLabelPlacement
   sourceComponentId: number | null
@@ -67,31 +69,6 @@ interface JunctionCandidate {
   perpendicularOffset: number
   routeDistance: number
   key: string
-}
-
-const pathIntersectsRenderedLabel = (
-  path: Point[],
-  label: NetLabelPlacement | InlineNetLabelPlacement,
-) => {
-  let width = label.width
-  let height = label.height
-  if ("axis" in label && label.axis === "y") {
-    width = label.height
-    height = label.width
-  }
-  const bounds = getBoundFromCenteredRect({
-    center: label.center,
-    width,
-    height,
-  })
-  for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
-    if (
-      doesSegmentIntersectRect(path[pathIndex]!, path[pathIndex + 1]!, bounds)
-    ) {
-      return true
-    }
-  }
-  return false
 }
 
 const pathIsAxisAligned = (path: Point[]) =>
@@ -206,6 +183,21 @@ const directionToward = (from: Point, to: Point): FacingDirection => {
   return "y-"
 }
 
+const getDirectionPreferenceScore = ({
+  direction,
+  deltaX,
+  deltaY,
+}: {
+  direction: FacingDirection
+  deltaX: number
+  deltaY: number
+}) => {
+  if (direction === "x+") return deltaX
+  if (direction === "x-") return -deltaX
+  if (direction === "y+") return deltaY
+  return -deltaY
+}
+
 const getAvailableJunctionDirection = ({
   trace,
   junctionPoint,
@@ -231,15 +223,11 @@ const getAvailableJunctionDirection = ({
   const deltaX = sourcePoint.x - junctionPoint.x
   const deltaY = sourcePoint.y - junctionPoint.y
   const directionsByPreference: FacingDirection[] = ["x+", "x-", "y+", "y-"]
-  directionsByPreference.sort((first, second) => {
-    const score = (direction: FacingDirection) => {
-      if (direction === "x+") return deltaX
-      if (direction === "x-") return -deltaX
-      if (direction === "y+") return deltaY
-      return -deltaY
-    }
-    return score(second) - score(first)
-  })
+  directionsByPreference.sort(
+    (first, second) =>
+      getDirectionPreferenceScore({ direction: second, deltaX, deltaY }) -
+      getDirectionPreferenceScore({ direction: first, deltaX, deltaY }),
+  )
 
   return (
     directionsByPreference.find(
@@ -278,6 +266,52 @@ const getPerpendicularOffset = ({
   return Math.abs(source.x - target.x)
 }
 
+const isPointOnExteriorSideOfLabelAnchor = ({
+  point,
+  label,
+}: {
+  point: Point
+  label: NetLabelPlacement
+}) => {
+  if (label.orientation === "x+") {
+    return point.x <= label.anchorPoint.x + EPSILON
+  }
+  if (label.orientation === "x-") {
+    return point.x >= label.anchorPoint.x - EPSILON
+  }
+  if (label.orientation === "y+") {
+    return point.y <= label.anchorPoint.y + EPSILON
+  }
+  return point.y >= label.anchorPoint.y - EPSILON
+}
+
+const pathIntersectsRetainedLabelBeyondAnchor = (
+  path: Point[],
+  label: NetLabelPlacement,
+) => {
+  const bounds = getBoundFromCenteredRect({
+    center: label.center,
+    width: label.width,
+    height: label.height,
+  })
+  for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
+    const start = path[pathIndex]!
+    const end = path[pathIndex + 1]!
+    if (!doesSegmentIntersectRect(start, end, bounds)) continue
+
+    const startIsExterior = isPointOnExteriorSideOfLabelAnchor({
+      point: start,
+      label,
+    })
+    const endIsExterior = isPointOnExteriorSideOfLabelAnchor({
+      point: end,
+      label,
+    })
+    if (!startIsExterior || !endIsExterior) return true
+  }
+  return false
+}
+
 export class NetLabelToSameNetTraceSolver extends BaseSolver {
   inputProblem: InputProblem
 
@@ -308,8 +342,11 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
 
     this.buildTraceComponents()
     this.componentParents = this.components.map((component) => component.id)
-    this.reserveProtectedNetLabels()
-    this.queuedCandidates = this.buildCandidates()
+    const { netConnMap } = getConnectivityMapsFromInputProblem(
+      this.inputProblem,
+    )
+    this.reserveProtectedNetLabels(netConnMap)
+    this.queuedCandidates = this.buildCandidates(netConnMap)
     this.stats.candidateCount = this.queuedCandidates.length
     this.stats.recoveredTraceCount = 0
   }
@@ -347,7 +384,13 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     }
   }
 
-  private shouldRetainNetLabel(label: NetLabelPlacement) {
+  private shouldRetainNetLabel({
+    label,
+    netConnMap,
+  }: {
+    label: NetLabelPlacement
+    netConnMap: ConnectivityMap
+  }) {
     if (!label.netId) return false
     if (
       this.inputProblem.availableNetLabelOrientations[label.netId]?.includes(
@@ -361,14 +404,17 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
       ...this.inputProblem.netConnections,
     ].some(
       (connection) =>
-        connection.netId === label.netId && connection.isPowerNet === true,
+        connection.isPowerNet === true &&
+        connection.netId !== undefined &&
+        netConnMap.getNetConnectedToId(connection.netId) ===
+          label.globalConnNetId,
     )
   }
 
-  private reserveProtectedNetLabels() {
-    const labelsByGlobalNetId = new Map<string, NetLabelPlacement[]>()
+  private reserveProtectedNetLabels(netConnMap: ConnectivityMap) {
+    const labelsByGlobalNetId = new Map<GlobalConnNetId, NetLabelPlacement[]>()
     for (const label of this.outputNetLabelPlacements) {
-      if (!this.shouldRetainNetLabel(label)) continue
+      if (!this.shouldRetainNetLabel({ label, netConnMap })) continue
       const labels = labelsByGlobalNetId.get(label.globalConnNetId) ?? []
       labels.push(label)
       labelsByGlobalNetId.set(label.globalConnNetId, labels)
@@ -386,11 +432,15 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     }
   }
 
-  private isEligibleLabel(
-    label: NetLabelPlacement,
-    netConnMap: ConnectivityMap,
-    groundNetId?: NetLabelPlacement["globalConnNetId"],
-  ) {
+  private isEligibleLabel({
+    label,
+    netConnMap,
+    groundNetId,
+  }: {
+    label: NetLabelPlacement
+    netConnMap: ConnectivityMap
+    groundNetId?: GlobalConnNetId
+  }) {
     if (
       !label.netId ||
       label.netId === "GND" ||
@@ -503,15 +553,12 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     )
   }
 
-  private buildCandidates() {
-    const { netConnMap } = getConnectivityMapsFromInputProblem(
-      this.inputProblem,
-    )
+  private buildCandidates(netConnMap: ConnectivityMap) {
     const groundNetId = netConnMap.getNetConnectedToId("GND") ?? undefined
     const candidates: JunctionCandidate[] = []
 
     for (const label of this.input.netLabelPlacements) {
-      if (!this.isEligibleLabel(label, netConnMap, groundNetId)) continue
+      if (!this.isEligibleLabel({ label, netConnMap, groundNetId })) continue
 
       if (label.mspConnectionPairIds.length === 0) {
         const sourcePin = this.pinMap.get(label.pinIds[0]!)
@@ -729,15 +776,14 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     sourceLabel: NetLabelPlacement,
   ) {
     for (const label of this.outputNetLabelPlacements) {
-      if (label === sourceLabel) continue
       if (
         this.retainedLabels.has(label) &&
         label.globalConnNetId === sourceLabel.globalConnNetId
       ) {
-        // Other branches must still be able to join the trace carrying the
-        // one label reserved for this net.
+        if (pathIntersectsRetainedLabelBeyondAnchor(path, label)) return true
         continue
       }
+      if (label === sourceLabel) continue
       if (pathIntersectsRenderedLabel(path, label)) return true
     }
     return this.input.inlineNetLabelPlacements.some((label) =>
@@ -774,8 +820,12 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
       mspConnectionPairIds: [mspPairId],
       pinIds: [candidate.sourcePin.pinId, candidate.targetPin.pinId],
     }
+    const shouldRemoveSourceLabelConnector = !this.retainedLabels.has(
+      candidate.sourceLabel,
+    )
     this.outputTraces = this.outputTraces.filter(
       (trace) =>
+        !shouldRemoveSourceLabelConnector ||
         !this.isSourceLabelConnectorTrace(trace, candidate.sourceLabel),
     )
     this.outputTraces.push(recoveredTrace)
