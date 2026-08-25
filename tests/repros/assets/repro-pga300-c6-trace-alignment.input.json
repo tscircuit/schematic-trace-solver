@@ -1,0 +1,97 @@
+{
+  "chips": [
+    {
+      "chipId": "U1",
+      "center": { "x": -4.2, "y": 0 },
+      "width": 4.6,
+      "height": 8,
+      "pins": [
+        { "pinId": "U1.VINPP", "x": -6.5, "y": 0.75 },
+        { "pinId": "U1.VINPN", "x": -6.5, "y": 0.24 }
+      ]
+    },
+    {
+      "chipId": "R2",
+      "center": { "x": -10.1, "y": 0.95 },
+      "width": 0.6,
+      "height": 0.68,
+      "pins": [
+        {
+          "pinId": "R2.1",
+          "x": -10.4,
+          "y": 0.95,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R2.2",
+          "x": -9.8,
+          "y": 0.95,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "R3",
+      "center": { "x": -10.1, "y": 0.15 },
+      "width": 0.6,
+      "height": 0.68,
+      "pins": [
+        {
+          "pinId": "R3.1",
+          "x": -10.4,
+          "y": 0.15,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R3.2",
+          "x": -9.8,
+          "y": 0.15,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "C6",
+      "center": { "x": -8.3775, "y": 0.55 },
+      "width": 1.045,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "C6.1",
+          "x": -8.45,
+          "y": 0.93,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C6.2",
+          "x": -8.45,
+          "y": 0.17,
+          "_facingDirection": "y-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": ["U1.VINPP", "R2.2"],
+      "netId": "U1.VINPP to R2.pin2"
+    },
+    {
+      "pinIds": ["R2.2", "C6.1"],
+      "netId": "R2.pin2 to C6.pin1"
+    },
+    {
+      "pinIds": ["U1.VINPN", "R3.2"],
+      "netId": "U1.VINPN to R3.pin2"
+    },
+    {
+      "pinIds": ["R3.2", "C6.2"],
+      "netId": "R3.pin2 to C6.pin2"
+    }
+  ],
+  "netConnections": [],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {},
+  "maxMspPairDistance": 100,
+  "_hideRatsNet": false
+}
