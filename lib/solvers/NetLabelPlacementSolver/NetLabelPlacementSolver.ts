@@ -9,10 +9,7 @@ import type { GraphicsObject } from "graphics-debug"
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
-import {
-  getAnchoredNetLabelWidthForConnection,
-  getNetLabelWidthForConnection,
-} from "lib/utils/getNetLabelWidthForConnection"
+import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 
 /**
  * A group of traces that have at least one overlapping segment and
@@ -269,13 +266,11 @@ export class NetLabelPlacementSolver extends BaseSolver {
     if (group.portOnlyPinId) {
       pinIds.push(group.portOnlyPinId)
     }
-    const getWidth = group.portOnlyPinId
-      ? getAnchoredNetLabelWidthForConnection
-      : getNetLabelWidthForConnection
-    return getWidth({
+    return getNetLabelWidthForConnection({
       inputProblem: this.inputProblem,
       netId: group.netId,
       pinIds,
+      labelType: group.portOnlyPinId ? "anchored" : "inline",
     })
   }
 

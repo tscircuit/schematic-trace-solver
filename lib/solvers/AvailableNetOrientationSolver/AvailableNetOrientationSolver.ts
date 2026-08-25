@@ -16,10 +16,7 @@ import type {
   InputProblem,
 } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
-import {
-  getAnchoredNetLabelWidthForConnection,
-  getNetLabelWidthForConnection,
-} from "lib/utils/getNetLabelWidthForConnection"
+import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 import {
   EPS,
@@ -184,13 +181,27 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       const bY = this.outputNetLabelPlacements[b]!.anchorPoint.y
       return requiredOrientation === "y+" ? bY - aY : aY - bY
     })
-    const blockedLabelWidth = this.getNetLabelWidth(blockedLabel)
+    const blockedLabelWidth = getNetLabelWidthForConnection({
+      inputProblem: this.inputProblem,
+      netId: blockedLabel.netId,
+      pinIds: blockedLabel.pinIds,
+      labelType:
+        blockedLabel.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+    })
     let columnLabelIndex: number | undefined
     if (blockedLabelWidth !== undefined) {
       columnLabelIndex = labelsToOrder.find((index) => {
         if (index === blockedStandaloneLabelIndex) return false
         const label = this.outputNetLabelPlacements[index]!
-        return this.getNetLabelWidth(label) === blockedLabelWidth
+        return (
+          getNetLabelWidthForConnection({
+            inputProblem: this.inputProblem,
+            netId: label.netId,
+            pinIds: label.pinIds,
+            labelType:
+              label.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+          }) === blockedLabelWidth
+        )
       })
     }
     if (columnLabelIndex !== undefined) {
@@ -485,7 +496,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
     const { width, height } = getDimsForOrientation({
       orientation,
-      netLabelWidth: this.getNetLabelWidth(label),
+      netLabelWidth: getNetLabelWidthForConnection({
+        inputProblem: this.inputProblem,
+        netId: label.netId,
+        pinIds: label.pinIds,
+        labelType:
+          label.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+      }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
 
@@ -1098,7 +1115,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private labelIntersectsDifferentNetTrace(label: NetLabelPlacement) {
     const { width, height } = getDimsForOrientation({
       orientation: label.orientation,
-      netLabelWidth: this.getNetLabelWidth(label),
+      netLabelWidth: getNetLabelWidthForConnection({
+        inputProblem: this.inputProblem,
+        netId: label.netId,
+        pinIds: label.pinIds,
+        labelType:
+          label.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+      }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
     const center = getCenterFromAnchor(
@@ -1122,7 +1145,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const anchorPoint = this.getWickOffsetAnchor(label.anchorPoint, orientation)
     const { width, height } = getDimsForOrientation({
       orientation,
-      netLabelWidth: this.getNetLabelWidth(label),
+      netLabelWidth: getNetLabelWidthForConnection({
+        inputProblem: this.inputProblem,
+        netId: label.netId,
+        pinIds: label.pinIds,
+        labelType:
+          label.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+      }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
 
@@ -1201,7 +1230,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   ) {
     const { width, height } = getDimsForOrientation({
       orientation,
-      netLabelWidth: this.getNetLabelWidth(label),
+      netLabelWidth: getNetLabelWidthForConnection({
+        inputProblem: this.inputProblem,
+        netId: label.netId,
+        pinIds: label.pinIds,
+        labelType:
+          label.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+      }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
     const labelLength =
@@ -1282,7 +1317,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   ): CandidateLabel {
     const { width, height } = getDimsForOrientation({
       orientation,
-      netLabelWidth: this.getNetLabelWidth(label),
+      netLabelWidth: getNetLabelWidthForConnection({
+        inputProblem: this.inputProblem,
+        netId: label.netId,
+        pinIds: label.pinIds,
+        labelType:
+          label.mspConnectionPairIds.length === 0 ? "anchored" : "inline",
+      }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
     return {
@@ -1293,18 +1334,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       height,
       center: getCenterFromAnchor(anchorPoint, orientation, width, height),
     }
-  }
-
-  private getNetLabelWidth(label: NetLabelPlacement) {
-    const getWidth =
-      label.mspConnectionPairIds.length === 0
-        ? getAnchoredNetLabelWidthForConnection
-        : getNetLabelWidthForConnection
-    return getWidth({
-      inputProblem: this.inputProblem,
-      netId: label.netId,
-      pinIds: label.pinIds,
-    })
   }
 
   private getNetLabelHeight(label: NetLabelPlacement) {
