@@ -140,10 +140,22 @@ test("routes TYPE-C-31-M-12 VBUS through an LED with shared GND labels", () => {
     solver.longDistancePairSolver!.solvedLongDistanceTraces.find(
       (trace) =>
         trace.pinIds.includes("D1.2") &&
-        trace.pinIds.some((pinId) => pinId.startsWith("J1.GND")),
+        (trace.pinIds.includes("J1.GND1") || trace.pinIds.includes("J1.GND2")),
+    )
+  const localGroundTrace = solver
+    .traceCleanupSolver2!.getOutput()
+    .traces.find(
+      (trace) =>
+        trace.pinIds.includes("J1.GND1") && trace.pinIds.includes("J1.GND2"),
     )
 
   expect(recoveredGroundTrace).toBeDefined()
   expect(gndLabels).toHaveLength(1)
+  expect(localGroundTrace!.tracePath).toEqual([
+    { x: -1.7, y: -1.65 },
+    { x: -1.5, y: -1.65 },
+    { x: -1.5, y: -1.35 },
+    { x: -1.7, y: -1.35 },
+  ])
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

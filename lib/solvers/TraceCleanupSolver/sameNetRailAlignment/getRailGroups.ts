@@ -54,6 +54,18 @@ const tracesSharePin = (
 const rangesMeetAtEndpoint = (a: RailSegment, b: RailSegment) =>
   nearlyEqual(a.minAlong, b.maxAlong) || nearlyEqual(a.maxAlong, b.minAlong)
 
+const connectedRailsFormBus = (a: RailSegment, b: RailSegment) => {
+  if (!rangesMeetAtEndpoint(a, b)) return false
+
+  const coordinateGap = Math.abs(a.coordinate - b.coordinate)
+  const connectedRailSpan =
+    Math.max(a.maxAlong, b.maxAlong) - Math.min(a.minAlong, b.minAlong)
+  return (
+    coordinateGap < connectedRailSpan ||
+    nearlyEqual(coordinateGap, connectedRailSpan)
+  )
+}
+
 const canJoinRailGroup = (
   start: RailSegment,
   current: RailSegment,
@@ -64,7 +76,7 @@ const canJoinRailGroup = (
   const sameComponentSide = candidate.componentId === start.componentId
   const tracesConnect = tracesSharePin(current, candidate, traceMap)
   const componentBusConnects =
-    tracesConnect && rangesMeetAtEndpoint(current, candidate)
+    tracesConnect && connectedRailsFormBus(current, candidate)
 
   return (
     candidate.globalConnNetId === start.globalConnNetId &&

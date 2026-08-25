@@ -14,18 +14,25 @@ test("repro ti power output section", () => {
   const { traces } = solver.traceCleanupSolver2!.getOutput()
   const { netLabelPlacements } =
     solver.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
-  const gndTraces = traces.filter((trace) => trace.userNetId === "GND")
-  const gndLabels = netLabelPlacements.filter((label) => label.netId === "GND")
-  const gndRailY = gndLabels[0]!.anchorPoint.y
+  const groundConnection = inputProblem.netConnections.find((connection) =>
+    connection.pinIds.includes("schematic_port_14"),
+  )!
+  const groundTraces = traces.filter((trace) =>
+    trace.pinIds.every((pinId) => groundConnection.pinIds.includes(pinId)),
+  )
+  const groundLabels = netLabelPlacements.filter(
+    (label) => label.globalConnNetId === groundTraces[0]!.globalConnNetId,
+  )
+  const groundRailY = groundLabels[0]!.anchorPoint.y
 
-  expect(gndLabels).toHaveLength(1)
-  expect(gndTraces).toHaveLength(4)
+  expect(groundLabels).toHaveLength(1)
+  expect(groundTraces).toHaveLength(4)
   expect(
-    gndTraces.every((trace) =>
+    groundTraces.every((trace) =>
       trace.tracePath.some((point, pointIndex) => {
         const nextPoint = trace.tracePath[pointIndex + 1]
         if (!nextPoint) return false
-        return point.y === gndRailY && nextPoint.y === gndRailY
+        return point.y === groundRailY && nextPoint.y === groundRailY
       }),
     ),
   ).toBe(true)
