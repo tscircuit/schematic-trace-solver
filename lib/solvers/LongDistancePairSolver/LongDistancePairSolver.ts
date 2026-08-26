@@ -1,23 +1,24 @@
-import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { Point } from "@tscircuit/math-utils"
+import type { ConnectivityMap } from "connectivity-map"
+import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import {
   DEFAULT_MAX_MSP_PAIR_DISTANCE,
   type MspConnectionPair,
 } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type {
-  InputProblem,
-  InputPin,
-  PinId,
   InputChip,
+  InputPin,
+  InputProblem,
+  PinId,
 } from "lib/types/InputProblem"
-import { BaseSolver } from "../BaseSolver/BaseSolver"
-import { SchematicTraceSingleLineSolver2 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { ConnectivityMap } from "connectivity-map"
 import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
+import { BaseSolver } from "../BaseSolver/BaseSolver"
+import { getGroundConnectionPolicy } from "../MspConnectionPairSolver/getGroundConnectionPolicy"
 import { isLabeledPeripheralConnection } from "../MspConnectionPairSolver/isLabeledPeripheralConnection"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { SchematicTraceSingleLineSolver2 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 
 const NEAREST_NEIGHBOR_COUNT = 3
 
@@ -163,6 +164,7 @@ export class LongDistancePairSolver extends BaseSolver {
 
     const { inputProblem, primaryMspConnectionPairs, alreadySolvedTraces } =
       this.params
+    const canRouteGroundPair = getGroundConnectionPolicy(inputProblem)
 
     this.inputProblem = inputProblem
     this.allSolvedTraces = [...alreadySolvedTraces]
@@ -189,6 +191,10 @@ export class LongDistancePairSolver extends BaseSolver {
     // new nearest-neighbor candidates.
     this.queuedFailedConnectionPairs = this.params.failedConnectionPairs.filter(
       (connectionPair) =>
+        canRouteGroundPair(
+          connectionPair.pins[0].pinId,
+          connectionPair.pins[1].pinId,
+        ) &&
         isLabeledPeripheralConnection({
           inputProblem: this.inputProblem,
           chipMap: this.chipMap,
@@ -219,6 +225,7 @@ export class LongDistancePairSolver extends BaseSolver {
           .flatMap((otherPinId) => {
             const targetPin = pinMap.get(otherPinId)
             if (!targetPin) return [] // Gracefully handle missing pins
+            if (!canRouteGroundPair(sourcePin.pinId, targetPin.pinId)) return []
             const isNamedTwoPinConnection = inputProblem.netConnections.some(
               (connection) =>
                 connection.pinIds.length === 2 &&
