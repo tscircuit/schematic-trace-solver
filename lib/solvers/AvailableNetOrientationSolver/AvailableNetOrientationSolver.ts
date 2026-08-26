@@ -1756,7 +1756,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         orientation,
         direction,
         baseAnchor: connectorSource,
-        maxSearchDistance: this.maxSearchDistance,
+        maxSearchDistance: this.getSearchDistanceLimit(label, orientation),
         outwardDistance: 0,
         stopOnTraceCollision: false,
         connectorSource,
