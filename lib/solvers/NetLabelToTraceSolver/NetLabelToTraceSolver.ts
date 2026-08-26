@@ -41,6 +41,9 @@ interface CandidatePair {
 
 const AVAILABLE_NET_ORIENTATION_PREFIX = "available-net-orientation-"
 const RECOVERED_TRACE_PREFIX = "net-label-to-trace-"
+// Keep ordinary distant named-net endpoints as labels; only reconnect terminal
+// labels that already read as one nearly straight rail in a multi-pin net.
+const MAX_NAMED_NET_RECOVERY_PERPENDICULAR_OFFSET = 0.05
 
 const getCanonicalPairKey = (firstPinId: PinId, secondPinId: PinId) =>
   [firstPinId, secondPinId].sort().join("--")
@@ -113,24 +116,36 @@ export class NetLabelToTraceSolver extends BaseSolver {
     return [this.input]
   }
 
-  private isEligiblePortOnlyDirectConnectionLabel(
+  private isPortOnlyFallbackLabel(
     label: NetLabelPlacement,
     groundGlobalConnNetId?: GlobalConnNetId,
   ) {
-    if (
+    return !(
       label.pinIds.length !== 1 ||
       label.mspConnectionPairIds.length !== 0 ||
       !label.netId ||
       label.netId === "GND" ||
       label.globalConnNetId === groundGlobalConnNetId
-    ) {
-      return false
-    }
+    )
+  }
 
+  private isDirectConnectionLabel(label: NetLabelPlacement) {
+    if (!label.netId || label.pinIds.length !== 1) return false
     const pinId = label.pinIds[0]!
     return this.inputProblem.directConnections.some(
       (connection) =>
         connection.netId === label.netId && connection.pinIds.includes(pinId),
+    )
+  }
+
+  private getMultiPinNetConnection(label: NetLabelPlacement) {
+    if (!label.netId || label.pinIds.length !== 1) return undefined
+    const pinId = label.pinIds[0]!
+    return this.inputProblem.netConnections.find(
+      (connection) =>
+        connection.pinIds.length > 2 &&
+        connection.netId === label.netId &&
+        connection.pinIds.includes(pinId),
     )
   }
 
@@ -144,10 +159,9 @@ export class NetLabelToTraceSolver extends BaseSolver {
 
     for (const label of this.input.netLabelPlacements) {
       if (
-        !this.isEligiblePortOnlyDirectConnectionLabel(
-          label,
-          groundGlobalConnNetId,
-        )
+        !this.isPortOnlyFallbackLabel(label, groundGlobalConnNetId) ||
+        (!this.isDirectConnectionLabel(label) &&
+          !this.getMultiPinNetConnection(label))
       ) {
         continue
       }
@@ -169,6 +183,25 @@ export class NetLabelToTraceSolver extends BaseSolver {
           const firstPin = this.pinMap.get(firstLabel.pinIds[0]!)
           const secondPin = this.pinMap.get(secondLabel.pinIds[0]!)
           if (!firstPin || !secondPin) continue
+          const perpendicularOffset = getPerpendicularOffset(
+            firstPin,
+            secondPin,
+          )
+          const bothLabelsBelongToDirectConnections =
+            this.isDirectConnectionLabel(firstLabel) &&
+            this.isDirectConnectionLabel(secondLabel)
+          const firstMultiPinNetConnection =
+            this.getMultiPinNetConnection(firstLabel)
+          const secondMultiPinNetConnection =
+            this.getMultiPinNetConnection(secondLabel)
+          if (
+            !bothLabelsBelongToDirectConnections &&
+            (!firstMultiPinNetConnection ||
+              firstMultiPinNetConnection !== secondMultiPinNetConnection ||
+              perpendicularOffset > MAX_NAMED_NET_RECOVERY_PERPENDICULAR_OFFSET)
+          ) {
+            continue
+          }
           if (
             arePinsInDifferentSchematicSections(
               this.inputProblem,
@@ -194,7 +227,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
             firstLabel,
             secondLabel,
             pins: [firstPin, secondPin],
-            perpendicularOffset: getPerpendicularOffset(firstPin, secondPin),
+            perpendicularOffset,
             routeDistance:
               Math.abs(firstPin.x - secondPin.x) +
               Math.abs(firstPin.y - secondPin.y),
