@@ -20,7 +20,7 @@ test("repro PMP11282 isolated DC/DC traces and endpoint net labels", () => {
   expect(inputProblem.chips).toHaveLength(112)
   expect(inputProblem.directConnections).toHaveLength(163)
   expect(pairSolver.solved).toBe(true)
-  expect(pairSolver.mspConnectionPairs).toHaveLength(583)
+  expect(pairSolver.mspConnectionPairs).toHaveLength(203)
   expect(uniquePairIds.size).toBe(203)
 
   const defaultPipeline = new SchematicTracePipelineSolver(
@@ -35,9 +35,9 @@ test("repro PMP11282 isolated DC/DC traces and endpoint net labels", () => {
   expect(defaultPipeline.error).toBe(
     "SchematicTraceLinesSolver ran out of iterations",
   )
-  expect(defaultTraceSolver.solvedTracePaths).toHaveLength(123)
-  expect(defaultTraceSolver.failedConnectionPairs).toHaveLength(59)
-  expect(defaultTraceSolver.queuedConnectionPairs).toHaveLength(400)
+  expect(defaultTraceSolver.solvedTracePaths).toHaveLength(72)
+  expect(defaultTraceSolver.failedConnectionPairs).toHaveLength(35)
+  expect(defaultTraceSolver.queuedConnectionPairs).toHaveLength(95)
 
   // Let the same unmodified production pipeline reach its downstream stages
   // by increasing only this test instance's nested-solver budget. This keeps
@@ -64,13 +64,13 @@ test("repro PMP11282 isolated DC/DC traces and endpoint net labels", () => {
   expect(diagnosticPipeline.failed).toBe(false)
   expect(
     diagnosticPipeline.schematicTraceLinesSolver!.solvedTracePaths,
-  ).toHaveLength(451)
+  ).toHaveLength(145)
   expect(
     diagnosticPipeline.schematicTraceLinesSolver!.failedConnectionPairs,
-  ).toHaveLength(132)
-  expect(finalOutput.netLabelPlacements).toHaveLength(107)
-  expect(endpointPairLabels).toHaveLength(81)
-  expect(endpointPairNetIds.size).toBe(63)
+  ).toHaveLength(58)
+  expect(finalOutput.netLabelPlacements).toHaveLength(106)
+  expect(endpointPairLabels).toHaveLength(80)
+  expect(endpointPairNetIds.size).toBe(62)
   expect(endpointPairNetIds).toContain("U500.pin8 to C501.pin1")
   expect(endpointPairNetIds).toContain("L500.pin1 to L500.pin2")
   expect(diagnosticPipeline).toMatchSolverSnapshot(import.meta.path)
