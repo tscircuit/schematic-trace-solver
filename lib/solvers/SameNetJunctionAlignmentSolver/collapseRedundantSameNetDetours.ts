@@ -202,6 +202,7 @@ const getBestDetourCandidate = ({
     (trace) => trace.globalConnNetId === targetTrace.globalConnNetId,
   )
   const initialVisibleLength = getVisibleTraceLength(sameNetTraces)
+  const initialTargetLength = getVisibleTraceLength([targetTrace])
   let bestCandidate: DetourCandidate | null = null
 
   for (const donorTrace of sameNetTraces) {
@@ -227,6 +228,13 @@ const getBestDetourCandidate = ({
         crossing,
       })
       const candidateTrace = { ...targetTrace, tracePath }
+      const candidateTargetLength = getVisibleTraceLength([candidateTrace])
+      if (
+        candidateTargetLength >
+        initialTargetLength + VISIBLE_LENGTH_EPSILON
+      ) {
+        continue
+      }
       const candidateNetLabelPlacements = moveAttachedLabelsToReroutedTrace({
         trace: targetTrace,
         originalTracePath: targetTrace.tracePath,

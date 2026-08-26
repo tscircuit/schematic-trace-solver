@@ -117,3 +117,38 @@ test("keeps a valid shared same-net branch", () => {
   expect(result.collapsedDetourCount).toBe(0)
   expect(result.traces).toEqual(traces)
 })
+
+test("does not lengthen a trace to reuse shared donor geometry", () => {
+  const traces = [
+    createTraceFixture({
+      mspPairId: "short-trace",
+      pinIds: ["short-end", "shared"],
+      tracePath: [
+        { x: 0, y: 0 },
+        { x: 0, y: -1 },
+        { x: 2, y: -1 },
+        { x: 2, y: 0 },
+      ],
+    }),
+    createTraceFixture({
+      mspPairId: "long-donor",
+      pinIds: ["shared", "donor-end"],
+      tracePath: [
+        { x: 2, y: 0 },
+        { x: 2, y: -1 },
+        { x: 4, y: -1 },
+        { x: 4, y: -2 },
+        { x: 1, y: -2 },
+        { x: 1, y: 1 },
+        { x: 5, y: 1 },
+      ],
+    }),
+  ]
+
+  const result = collapseRedundantSameNetDetours({
+    traces,
+    netLabelPlacements: [],
+  })
+
+  expect(result.traces[0]).toEqual(traces[0])
+})
