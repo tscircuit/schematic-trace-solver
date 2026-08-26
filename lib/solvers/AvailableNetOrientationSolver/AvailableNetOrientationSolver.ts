@@ -1443,7 +1443,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     })
     if (boundsStatus !== "valid") {
       if (
-        phase !== "trace-anchor" ||
+        (phase !== "trace-anchor" && phase !== "connected-rail-shift") ||
         boundsStatus !== "chip-collision" ||
         !this.isAcceptableTraceAnchorChipCollision(candidate, label, bounds)
       ) {
@@ -1758,6 +1758,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         baseAnchor: connectorSource,
         maxSearchDistance: this.getSearchDistanceLimit(label, orientation),
         outwardDistance: 0,
+        phase: "connected-rail-shift",
         stopOnTraceCollision: false,
         connectorSource,
         startDistance: 0,
