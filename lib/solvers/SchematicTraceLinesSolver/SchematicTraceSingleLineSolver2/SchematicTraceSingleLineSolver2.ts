@@ -91,6 +91,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
   baseElbow: Point[]
   preferExteriorDetours: boolean
+  retriedExplicitDirectConnectionWithoutTextPadding = false
 
   solvedTracePath: Point[] | null = null
 
@@ -261,6 +262,49 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     )?.netLabelHeight
   }
 
+  private isExplicitSourceDirectConnection(): boolean {
+    const pairPinIds = new Set(this.pins.map((pin) => pin.pinId))
+    return (
+      pairPinIds.size === 2 &&
+      this.inputProblem.directConnections.some(
+        (directConnection) =>
+          directConnection.pinIds.length === 2 &&
+          directConnection.pinIds.every((pinId) => pairPinIds.has(pinId)),
+      )
+    )
+  }
+
+  private retryExplicitDirectConnectionWithoutTextPadding(): boolean {
+    if (
+      this.retriedExplicitDirectConnectionWithoutTextPadding ||
+      !this.isExplicitSourceDirectConnection() ||
+      this.textObstacles.size === 0
+    ) {
+      return false
+    }
+
+    // Label clearance is provisional for an explicit physical connection.
+    // Keep actual text as an obstacle, but retry once without the provisional
+    // padding before replacing the requested wire with two terminal labels;
+    // downstream label placement can use the resulting routed geometry.
+    this.retriedExplicitDirectConnectionWithoutTextPadding = true
+    this.obstacles = getObstacleRects(this.inputProblem)
+    this.textObstacles = new Set(this.obstacles.filter(isTextBoxObstacle))
+    const endpointChipIds = new Set(this.pins.map((pin) => pin.chipId))
+    this.endpointTextObstacles = new Set(
+      this.obstacles
+        .filter(isTextBoxObstacle)
+        .filter(
+          (obstacle) =>
+            obstacle.textBox.chipId !== undefined &&
+            endpointChipIds.has(obstacle.textBox.chipId),
+        ),
+    )
+    this.queue.push({ path: this.baseElbow, collisionRects: new Set() })
+    this.visited = new Set([pathKey(this.baseElbow)])
+    return true
+  }
+
   private axisOfSegment(a: Point, b: Point): Axis | null {
     if (isVertical(a, b)) return "x"
     if (isHorizontal(a, b)) return "y"
@@ -313,6 +357,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
 
     const state = this.queue.shift()
     if (!state) {
+      if (this.retryExplicitDirectConnectionWithoutTextPadding()) return
       this.failed = true
       this.error = "No collision-free path found"
       return

@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test"
+import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
+import { getTextBoxBounds } from "lib/utils/textBoxBounds"
 import "tests/fixtures/matcher"
 
 // Reduced from C504.pin2 -> R504.pin1 in the PMP11282 reproduction. The
@@ -102,7 +104,7 @@ const inputProblem: InputProblem = {
 const targetPairId = "schematic_port_9-schematic_port_74"
 const targetNetId = "C504.pin2 to R504.pin1"
 
-test("PMP11282 direct trace falls back after padded text blocks its escape", () => {
+test("PMP11282 direct trace retries without provisional label padding", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem, {
     hideRatsNet: true,
   })
@@ -114,16 +116,29 @@ test("PMP11282 direct trace falls back after padded text blocks its escape", () 
     solver.schematicTraceLinesSolver!.failedConnectionPairs.map(
       (pair) => pair.mspPairId,
     ),
-  ).toContain(targetPairId)
-  expect(
-    solver.schematicTraceLinesSolver!.solvedTracePaths.map(
-      (trace) => trace.mspPairId,
-    ),
   ).not.toContain(targetPairId)
+  const trace = solver.schematicTraceLinesSolver!.solvedTracePaths.find(
+    (candidate) => candidate.mspPairId === targetPairId,
+  )
+  expect(trace).toBeDefined()
   expect(
     solver
       .inlineNetLabelSolver!.getOutput()
       .netLabelPlacements.filter((label) => label.netId === targetNetId),
-  ).toHaveLength(2)
+  ).toHaveLength(1)
+  const h500 = inputProblem.chips.find(
+    (chip) => chip.chipId === "schematic_component_103",
+  )!
+  expect(
+    isPathCollidingWithObstacles(trace!.tracePath, [
+      {
+        minX: h500.center.x - h500.width / 2,
+        maxX: h500.center.x + h500.width / 2,
+        minY: h500.center.y - h500.height / 2,
+        maxY: h500.center.y + h500.height / 2,
+      },
+      ...inputProblem.textBoxes!.map((textBox) => getTextBoxBounds(textBox)),
+    ]),
+  ).toBe(false)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
