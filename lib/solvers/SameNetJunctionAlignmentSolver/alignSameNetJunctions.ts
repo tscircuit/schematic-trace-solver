@@ -41,7 +41,7 @@ const MAX_SAME_NET_LABEL_BOUNDARY_RAIL_OFFSET = 0.2
 const MAX_SHARED_PIN_RAIL_OFFSET = 0.05
 const MIN_RETURN_STEM_LENGTH = 0.05
 
-const getSharedPin = ({
+export const getSharedPin = ({
   donorTrace,
   branchTrace,
 }: {
