@@ -6,12 +6,9 @@ import type { InputProblem } from "lib/types/InputProblem"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { getComponentSideRailSegments } from "./getComponentSideRailSegments"
 import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
+import { getRailChainCoordinate } from "./getRailChainCoordinate"
 import { nearlyEqual, rangesTouchOrOverlap } from "./geometry"
 import type { RailSegment } from "./types"
-
-const MIN_UNLABELED_RAIL_CHAIN_TRACE_COUNT = 3
-export const MIN_CROSS_COMPONENT_RAIL_CHAIN_TRACE_COUNT = 5
-export const SINGLE_RAIL_TRACE_POINT_COUNT = 4
 
 const getCorridor = (a: RailSegment, b: RailSegment): [Point, Point] => {
   const overlapMin = Math.max(a.minAlong, b.minAlong)
@@ -185,8 +182,8 @@ export const getRailGroups = (
     addEligibleGroup(group)
   }
 
-  // Equal-distance endpoint associations can bridge a component chain, but
-  // only a fixed label is allowed to opt that broader group into alignment.
+  // Equal-distance endpoint associations can bridge a simple chain when both
+  // terminal rails already define the same coordinate.
   const tiedEndpointSegments = eligibleTraces.flatMap((trace) =>
     getComponentSideRailSegments(trace, chipMap, {
       includeTiedEndpointAssociations: true,
@@ -195,30 +192,17 @@ export const getRailGroups = (
   )
   const singleRailTiedEndpointSegments = tiedEndpointSegments.filter(
     (segment) =>
-      traceMap.get(segment.traceId)?.tracePath.length ===
-      SINGLE_RAIL_TRACE_POINT_COUNT,
+      tiedEndpointSegments.every(
+        (candidate) =>
+          candidate.traceId !== segment.traceId ||
+          candidate.segmentIndex === segment.segmentIndex,
+      ),
   )
-  for (const group of collectConnectedGroups(singleRailTiedEndpointSegments)) {
-    const groupTraceIds = new Set(group.map((segment) => segment.traceId))
-    if (groupTraceIds.size < MIN_UNLABELED_RAIL_CHAIN_TRACE_COUNT) continue
-    addEligibleGroup(group)
-  }
   for (const group of collectConnectedGroups(
     singleRailTiedEndpointSegments,
     true,
   )) {
-    const groupTraceIds = new Set(group.map((segment) => segment.traceId))
-    if (groupTraceIds.size < MIN_CROSS_COMPONENT_RAIL_CHAIN_TRACE_COUNT)
-      continue
-    for (let index = selectedGroups.length - 1; index >= 0; index--) {
-      if (
-        selectedGroups[index]!.every((segment) =>
-          groupTraceIds.has(segment.traceId),
-        )
-      ) {
-        selectedGroups.splice(index, 1)
-      }
-    }
+    if (getRailChainCoordinate(group, traces) === null) continue
     addEligibleGroup(group)
   }
   for (const group of collectConnectedGroups(tiedEndpointSegments)) {

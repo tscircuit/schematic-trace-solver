@@ -10,10 +10,7 @@ import {
 import { getDistinctCoordinates, pointsEqual } from "./geometry"
 import { getRailAlignmentFallbackCoordinates } from "./getRailAlignmentFallbackCoordinates"
 import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
-import {
-  MIN_CROSS_COMPONENT_RAIL_CHAIN_TRACE_COUNT,
-  SINGLE_RAIL_TRACE_POINT_COUNT,
-} from "./getRailGroups"
+import { getRailChainCoordinate } from "./getRailChainCoordinate"
 import { moveRailSegments } from "./moveRailSegments"
 import { preservesLabelAnchors } from "./preservesLabelAnchors"
 import {
@@ -51,22 +48,13 @@ export const evaluateRailGroup = ({
   const originalGroupTraces = traces.filter((trace) =>
     groupTraceIds.has(trace.mspPairId),
   )
-  const groupIsMultiComponentSingleRailChain =
-    originalGroupTraces.length >= MIN_CROSS_COMPONENT_RAIL_CHAIN_TRACE_COUNT &&
-    originalGroupTraces.every(
-      (trace) => trace.tracePath.length === SINGLE_RAIL_TRACE_POINT_COUNT,
-    ) &&
-    new Set(group.map((segment) => segment.componentId)).size > 1 &&
-    !netLabelPlacements.some((label) =>
-      label.mspConnectionPairIds.some((traceId) => groupTraceIds.has(traceId)),
-    )
   const baseline = getTraceGeometryMetrics(originalGroupTraces, traces)
   const originalCoordinates = getDistinctCoordinates(
     group.map((segment) => segment.coordinate),
   )
-  let fixedLabelCoordinate: number | null = null
-  if (!groupIsMultiComponentSingleRailChain) {
-    fixedLabelCoordinate = getFixedLabelCoordinate(
+  let fixedRailCoordinate = getRailChainCoordinate(group, traces)
+  if (fixedRailCoordinate === null) {
+    fixedRailCoordinate = getFixedLabelCoordinate(
       group,
       netLabelPlacements,
       traces,
@@ -83,7 +71,7 @@ export const evaluateRailGroup = ({
 
   const evaluateCoordinates = (
     coordinates: number[],
-    options?: { coordinateIsFixedByLabel?: boolean },
+    options?: { coordinateIsFixedByRailAnchor?: boolean },
   ) => {
     let best: AlignmentCandidate | null = null
     for (const coordinate of coordinates) {
@@ -129,12 +117,9 @@ export const evaluateRailGroup = ({
         allCandidateTraces,
       )
       if (metrics.otherNetCrossings > baseline.otherNetCrossings) continue
-      // A fixed label anchor determines the rail coordinate. It may lengthen
-      // endpoint legs, but it must still preserve turns and every safety gate.
-      if (
-        options?.coordinateIsFixedByLabel ||
-        groupIsMultiComponentSingleRailChain
-      ) {
+      // Terminal rails and fixed labels may lengthen endpoint legs, but they
+      // must still preserve turns and every safety gate.
+      if (options?.coordinateIsFixedByRailAnchor) {
         if (metrics.turnCount > baseline.turnCount) continue
       } else {
         if (!isReadabilityImprovement(metrics, baseline)) continue
@@ -169,15 +154,16 @@ export const evaluateRailGroup = ({
     return best
   }
 
-  const originalCandidate = evaluateCoordinates(
-    fixedLabelCoordinate === null
-      ? originalCoordinates
-      : [fixedLabelCoordinate],
-    { coordinateIsFixedByLabel: fixedLabelCoordinate !== null },
-  )
+  let candidateCoordinates = originalCoordinates
+  if (fixedRailCoordinate !== null) {
+    candidateCoordinates = [fixedRailCoordinate]
+  }
+  const originalCandidate = evaluateCoordinates(candidateCoordinates, {
+    coordinateIsFixedByRailAnchor: fixedRailCoordinate !== null,
+  })
   if (originalCandidate) return originalCandidate
 
-  if (fixedLabelCoordinate !== null) return null
+  if (fixedRailCoordinate !== null) return null
 
   return evaluateCoordinates(
     getRailAlignmentFallbackCoordinates({
