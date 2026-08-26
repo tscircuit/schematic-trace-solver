@@ -6,6 +6,7 @@ import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/
 import type { InputProblem } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { alignSameNetJunctions } from "./alignSameNetJunctions"
+import { collapseRedundantSameNetDetours } from "./collapseRedundantSameNetDetours"
 
 interface SameNetJunctionAlignmentSolverInput {
   inputProblem: InputProblem
@@ -27,10 +28,15 @@ export class SameNetJunctionAlignmentSolver extends BaseSolver {
   }
 
   override _step() {
-    const result = alignSameNetJunctions(this.input)
-    this.outputTraces = result.traces
-    this.outputNetLabelPlacements = result.netLabelPlacements
-    this.stats.alignedJunctionCount = result.alignedJunctionCount
+    const alignment = alignSameNetJunctions(this.input)
+    const collapsedDetours = collapseRedundantSameNetDetours({
+      traces: alignment.traces,
+      netLabelPlacements: alignment.netLabelPlacements,
+    })
+    this.outputTraces = collapsedDetours.traces
+    this.outputNetLabelPlacements = alignment.netLabelPlacements
+    this.stats.alignedJunctionCount = alignment.alignedJunctionCount
+    this.stats.collapsedDetourCount = collapsedDetours.collapsedDetourCount
     this.solved = true
   }
 

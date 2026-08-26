@@ -11,5 +11,8 @@ test("repro isolated RS-485 ISOW7841 schematic traces", () => {
 
   solver.solve()
 
+  expect(
+    solver.sameNetJunctionAlignmentSolver?.stats.collapsedDetourCount,
+  ).toBe(2)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
