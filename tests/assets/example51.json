@@ -2589,6 +2589,7 @@
   "netConnections": [
     {
       "netId": "NET_01",
+      "isGround": false,
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.84,
       "pinIds": [
@@ -2649,6 +2650,7 @@
     },
     {
       "netId": "NET_08",
+      "isGround": false,
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.84,
       "pinIds": [
@@ -2666,6 +2668,7 @@
     },
     {
       "netId": "BAT",
+      "isGround": false,
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.48,
       "pinIds": [
@@ -2678,6 +2681,7 @@
     },
     {
       "netId": "NET_03",
+      "isGround": false,
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.84,
       "pinIds": [
@@ -2690,6 +2694,7 @@
     },
     {
       "netId": "NET_05",
+      "isGround": false,
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.84,
       "pinIds": [
@@ -2725,6 +2730,7 @@
     },
     {
       "netId": "PPHV",
+      "isGround": false,
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.6,
       "pinIds": [

@@ -134,14 +134,13 @@ export class NetLabelToTraceSolver extends BaseSolver {
 
   private isPortOnlyFallbackLabel(
     label: NetLabelPlacement,
-    groundGlobalConnNetId?: GlobalConnNetId,
+    groundGlobalConnNetIds: Set<GlobalConnNetId>,
   ) {
     return !(
       label.pinIds.length !== 1 ||
       label.mspConnectionPairIds.length !== 0 ||
       !label.netId ||
-      label.netId === "GND" ||
-      label.globalConnNetId === groundGlobalConnNetId
+      groundGlobalConnNetIds.has(label.globalConnNetId)
     )
   }
 
@@ -159,6 +158,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
     const pinId = label.pinIds[0]!
     return this.inputProblem.netConnections.find(
       (connection) =>
+        connection.isGround === false &&
         connection.pinIds.length > 2 &&
         connection.netId === label.netId &&
         connection.pinIds.includes(pinId),
@@ -169,13 +169,17 @@ export class NetLabelToTraceSolver extends BaseSolver {
     const { netConnMap } = getConnectivityMapsFromInputProblem(
       this.inputProblem,
     )
-    const groundGlobalConnNetId =
-      netConnMap.getNetConnectedToId("GND") ?? undefined
+    const groundGlobalConnNetIds = new Set<GlobalConnNetId>()
+    for (const connection of this.inputProblem.netConnections) {
+      if (!connection.isGround) continue
+      const globalConnNetId = netConnMap.getNetConnectedToId(connection.netId)
+      if (globalConnNetId) groundGlobalConnNetIds.add(globalConnNetId)
+    }
     const labelsByGlobalNet = new Map<GlobalConnNetId, NetLabelPlacement[]>()
 
     for (const label of this.input.netLabelPlacements) {
       if (
-        !this.isPortOnlyFallbackLabel(label, groundGlobalConnNetId) ||
+        !this.isPortOnlyFallbackLabel(label, groundGlobalConnNetIds) ||
         (!this.isDirectConnectionLabel(label) &&
           !this.getMultiPinNetConnection(label))
       ) {
@@ -269,14 +273,13 @@ export class NetLabelToTraceSolver extends BaseSolver {
     const { netConnMap } = getConnectivityMapsFromInputProblem(
       this.inputProblem,
     )
-    const groundGlobalConnNetId = netConnMap.getNetConnectedToId("GND")
     const candidates: CandidatePair[] = []
 
     for (const connection of this.inputProblem.netConnections) {
-      if (connection.pinIds.length <= 2) continue
-      const globalConnNetId = netConnMap.getNetConnectedToId(connection.netId)
-      if (!globalConnNetId || globalConnNetId === groundGlobalConnNetId)
+      if (connection.pinIds.length <= 2 || connection.isGround !== false)
         continue
+      const globalConnNetId = netConnMap.getNetConnectedToId(connection.netId)
+      if (!globalConnNetId) continue
 
       const traceConnectedPinComponents = getTraceConnectedPinComponents({
         pinIds: connection.pinIds,
