@@ -206,6 +206,7 @@ export const getRailGroups = (
       maxMspPairDistance: inputProblem.maxMspPairDistance,
     }),
   )
+  // Cross-component chains move one rail segment per trace as a single unit.
   const singleRailTiedEndpointSegments = tiedEndpointSegments.filter(
     (segment) =>
       tiedEndpointSegments.every(

@@ -18,6 +18,7 @@ export const getRailChainCoordinate = (
   )
   if (groupTraces.length < 2) return null
 
+  // A rail chain has two terminals and no pin with more than two connections.
   const pinDegrees = new Map<PinId, number>()
   for (const trace of groupTraces) {
     if (trace.pinIds.length !== 2) return null
@@ -31,6 +32,7 @@ export const getRailChainCoordinate = (
   if (terminalPinIds.length !== 2) return null
   if ([...pinDegrees.values()].some((degree) => degree > 2)) return null
 
+  // Walking terminal-to-terminal must consume every trace, rejecting cycles.
   const remainingTraceIds = new Set(groupTraceIds)
   let currentPinId = terminalPinIds[0]!
   while (remainingTraceIds.size > 0) {
@@ -46,6 +48,7 @@ export const getRailChainCoordinate = (
   }
   if (currentPinId !== terminalPinIds[1]) return null
 
+  // Matching terminal rails provide the alignment coordinate for the chain.
   const terminalCoordinates = terminalPinIds.map((pinId) => {
     const terminalTrace = groupTraces.find((trace) =>
       trace.pinIds.includes(pinId),
