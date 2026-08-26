@@ -19,7 +19,8 @@ test("repro: MSPM0L1306 aligned decoupling capacitor rails", async () => {
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
 
-  const traces = solver.netLabelToTraceSolver!.getOutput().traces
+  const { traces, netLabelPlacements } =
+    solver.netLabelToTraceSolver!.getOutput()
   const getTrace = (...pinIds: string[]) => {
     const trace = traces.find((trace) =>
       pinIds.every((pinId) => trace.pinIds.includes(pinId)),
@@ -43,12 +44,44 @@ test("repro: MSPM0L1306 aligned decoupling capacitor rails", async () => {
     expect([start!.x, end!.x].sort()).toEqual([-3.5, -4.5].sort())
   }
 
-  // The lower return should continue the C1 column, not introduce a third
-  // column between C1/C2 or an extra horizontal step near VSS.
-  const returnPath = getTrace("C3.2", "C2.2").tracePath
-  expect(returnPath.some((point) => Math.abs(point.x + 4.5) < 1e-6)).toBe(true)
-  expect(returnPath.every((point) => [-4.5, -3.5].includes(point.x))).toBe(true)
-  expect(returnPath.some((point) => Math.abs(point.y - 0.65) < 1e-6)).toBe(true)
+  // C3 and C4 share the electrical GND net with the decoupling rail, but
+  // should each terminate locally instead of being wired to other capacitors.
+  for (const pinId of ["C3.2", "C4.2"]) {
+    expect(
+      traces.some(
+        (trace) => trace.pinIds.includes(pinId) && trace.pinIds.length > 1,
+      ),
+    ).toBe(false)
+    expect(
+      netLabelPlacements.some(
+        (label) =>
+          label.netId === "GND" &&
+          label.pinIds.includes(pinId) &&
+          label.orientation === "y-",
+      ),
+    ).toBe(true)
+  }
+  const railGround = netLabelPlacements.find(
+    (label) =>
+      label.netId === "GND" &&
+      label.mspConnectionPairIds.some((pairId) =>
+        traces.some(
+          (trace) =>
+            trace.mspPairId === pairId && trace.pinIds.includes("C1.2"),
+        ),
+      ),
+  )
+  expect(railGround).toBeDefined()
+  expect(railGround!.orientation).toBe("y-")
+  expect(railGround!.anchorPoint.x).toBeCloseTo(-4.5, 6)
+  expect(railGround!.anchorPoint.y).toBeCloseTo(0.65, 6)
+  const groundNetId =
+    solver.mspConnectionPairSolver!.globalConnMap.getNetConnectedToId("GND")
+  expect(
+    netLabelPlacements
+      .filter((label) => label.netId === "GND")
+      .every((label) => label.globalConnNetId === groundNetId),
+  ).toBe(true)
 
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
