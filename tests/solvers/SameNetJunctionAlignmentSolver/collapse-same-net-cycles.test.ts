@@ -8,17 +8,20 @@ import {
   getVisibleTraceSegmentCount,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import type { PinId } from "lib/types/InputProblem"
+import type { FacingDirection } from "lib/utils/dir"
 
 interface TraceFixtureInput {
   mspPairId: string
   pinIds: [PinId, PinId]
   tracePath: Point[]
+  facingDirections?: [FacingDirection, FacingDirection]
 }
 
 const createTraceFixture = ({
   mspPairId,
   pinIds,
   tracePath,
+  facingDirections,
 }: TraceFixtureInput): SolvedTracePath => ({
   mspPairId,
   dcConnNetId: "same-net",
@@ -28,11 +31,13 @@ const createTraceFixture = ({
       pinId: pinIds[0],
       chipId: `chip-${pinIds[0]}`,
       ...tracePath[0]!,
+      _facingDirection: facingDirections?.[0],
     },
     {
       pinId: pinIds[1],
       chipId: `chip-${pinIds[1]}`,
       ...tracePath.at(-1)!,
+      _facingDirection: facingDirections?.[1],
     },
   ],
   tracePath,
@@ -151,4 +156,39 @@ test("does not lengthen a trace to reuse shared donor geometry", () => {
   })
 
   expect(result.traces[0]).toEqual(traces[0])
+})
+
+test("keeps a local return path between aligned same-facing pins", () => {
+  const traces = [
+    createTraceFixture({
+      mspPairId: "local-return",
+      pinIds: ["lower", "upper"],
+      facingDirections: ["y-", "y-"],
+      tracePath: [
+        { x: 0, y: -3 },
+        { x: 0, y: -4 },
+        { x: 2, y: -4 },
+        { x: 2, y: 1 },
+        { x: 0, y: 1 },
+        { x: 0, y: 2 },
+      ],
+    }),
+    createTraceFixture({
+      mspPairId: "remote-branch",
+      pinIds: ["remote", "upper"],
+      tracePath: [
+        { x: 5, y: 0 },
+        { x: 0, y: 0 },
+        { x: 0, y: 2 },
+      ],
+    }),
+  ]
+
+  const result = collapseSameNetCycles({
+    traces,
+    netLabelPlacements: [],
+  })
+
+  expect(result.collapsedCycleCount).toBe(0)
+  expect(result.traces).toEqual(traces)
 })
