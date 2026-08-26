@@ -53,6 +53,12 @@ export const getFixedLabelCoordinate = (
 ) => {
   const traceMap = new Map(traces.map((trace) => [trace.mspPairId, trace]))
   const groupTraceIds = new Set(group.map((segment) => segment.traceId))
+  const groupIsWithinSingleComponent = [...groupTraceIds].every(
+    (traceId) =>
+      traceMap
+        .get(traceId)
+        ?.pins.every((pin) => pin.chipId === group[0]!.componentId) === true,
+  )
   const groupHasOnlySingleRailTraces = [...groupTraceIds].every(
     (traceId) => traceMap.get(traceId)?.tracePath.length === 4,
   )
@@ -66,16 +72,27 @@ export const getFixedLabelCoordinate = (
     netLabelPlacements,
     traces,
   )
-  const anchoringLabels = linkedLabels.filter(
-    (label) =>
-      label.orientation === group[0]!.componentFacingDirection &&
-      label.mspConnectionPairIds.some((traceId) => {
-        const trace = traceMap.get(traceId)
-        return (
-          trace && tracePathContainsPoint(trace.tracePath, label.anchorPoint)
-        )
-      }),
+  const labelsOrientedAlongRail = new Set(
+    linkedLabels.filter(
+      (label) =>
+        (orientation === "vertical" &&
+          (label.orientation === "y+" || label.orientation === "y-")) ||
+        (orientation === "horizontal" &&
+          (label.orientation === "x+" || label.orientation === "x-")),
+    ),
   )
+  const anchoringLabels = linkedLabels.filter((label) => {
+    if (
+      label.orientation !== group[0]!.componentFacingDirection &&
+      (!groupIsWithinSingleComponent || !labelsOrientedAlongRail.has(label))
+    ) {
+      return false
+    }
+    return label.mspConnectionPairIds.some((traceId) => {
+      const trace = traceMap.get(traceId)
+      return trace && tracePathContainsPoint(trace.tracePath, label.anchorPoint)
+    })
+  })
   const coordinates = getDistinctCoordinates(
     anchoringLabels.map((label) =>
       orientation === "vertical" ? label.anchorPoint.x : label.anchorPoint.y,
@@ -95,10 +112,23 @@ export const getFixedLabelCoordinate = (
       (traceId) => (traceMap.get(traceId)?.tracePath.length ?? 0) > 4,
     ),
   )
-  // A multi-turn label trace is an intentional routed backbone, so its rail
-  // coordinate may propagate through the local component chain. Labels riding
-  // a single movable rail remain subject to the per-connection locality gate.
+  // A multi-turn label trace is an intentional routed backbone, so its
+  // coordinate may propagate through the connected rail group.
   if (labelIsAnchoredToRoutedBackbone) return coordinate
+
+  // A label at a same-component rail end may set the shared bus coordinate.
+  if (anchoringLabels.some((label) => labelsOrientedAlongRail.has(label))) {
+    const railGroupSpan =
+      Math.max(...group.map((segment) => segment.maxAlong)) -
+      Math.min(...group.map((segment) => segment.minAlong))
+    const coordinateIsLocalToRailGroup = group.every(
+      (segment) =>
+        Math.abs(segment.coordinate - coordinate) <=
+        railGroupSpan + RAIL_ALIGNMENT_EPSILON,
+    )
+    if (coordinateIsLocalToRailGroup) return coordinate
+    return null
+  }
 
   // Rail cleanup is local: a label cannot pull a connection farther than the
   // span of the pins that connection already joins.
@@ -110,5 +140,6 @@ export const getFixedLabelCoordinate = (
       distance(trace.pins[0]!, trace.pins[1]!) + RAIL_ALIGNMENT_EPSILON
     )
   })
-  return coordinateIsLocalToEveryTrace ? coordinate : null
+  if (coordinateIsLocalToEveryTrace) return coordinate
+  return null
 }
