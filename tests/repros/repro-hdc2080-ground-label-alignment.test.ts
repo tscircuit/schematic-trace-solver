@@ -212,10 +212,28 @@ const inputProblem: InputProblem = {
   _hideRatsNet: false,
 }
 
-test("repro HDC2080 GND label branches away from its vertical rail", () => {
+test("aligns the HDC2080 GND label with its vertical rail", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
 
   solver.solve()
 
+  const orientationOutput = solver.availableNetOrientationSolver!.getOutput()
+  const groundLabel = orientationOutput.netLabelPlacements.find(
+    (label) =>
+      label.netId === "GND" && label.pinIds.includes("schematic_port_6"),
+  )
+  const groundRailTrace = orientationOutput.traces.find(
+    (trace) => trace.mspPairId === "schematic_port_7-schematic_port_6",
+  )
+  const matchingGroundTraces = orientationOutput.traces.filter(
+    (trace) =>
+      trace.userNetId === "GND" &&
+      trace.pinIds.includes("schematic_port_6") &&
+      trace.pinIds.includes("schematic_port_7"),
+  )
+
+  expect(groundLabel?.anchorPoint.x).toBeCloseTo(0.1)
+  expect(groundRailTrace?.tracePath[1]?.x).toBeCloseTo(0.1)
+  expect(matchingGroundTraces).toHaveLength(1)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
