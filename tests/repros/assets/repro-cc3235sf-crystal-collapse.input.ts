@@ -1,0 +1,162 @@
+import type { InputProblem } from "lib/types/InputProblem"
+
+const inputProblem = {
+  chips: [
+    {
+      chipId: "U2",
+      center: { x: 0, y: 0 },
+      width: 4.3,
+      height: 8.300000000000004,
+      pins: [
+        {
+          pinId: "U2.WLAN_XTAL_N",
+          displayName: "WLAN_XTAL_N",
+          x: 2.15,
+          y: -3.2500000000000018,
+        },
+        {
+          pinId: "U2.WLAN_XTAL_P",
+          displayName: "WLAN_XTAL_P",
+          x: 2.15,
+          y: -3.0500000000000016,
+        },
+        {
+          pinId: "U2.GND1",
+          displayName: "GND1",
+          x: 2.15,
+          y: -3.550000000000002,
+        },
+        {
+          pinId: "U2.GND2",
+          displayName: "GND2",
+          x: 2.15,
+          y: -3.7500000000000018,
+        },
+        {
+          pinId: "U2.GND_TAB",
+          displayName: "GND_TAB",
+          x: 2.15,
+          y: -3.950000000000002,
+        },
+      ],
+    },
+    {
+      chipId: "Y2",
+      center: { x: 9.580000000000002, y: -5.4 },
+      width: 2.6400000000000006,
+      height: 1.42,
+      pins: [
+        {
+          pinId: "Y2.2",
+          displayName: "gnd1",
+          x: 8.8,
+          y: -4.69,
+        },
+        {
+          pinId: "Y2.4",
+          displayName: "gnd2",
+          x: 8.780000000000001,
+          y: -6.11,
+        },
+        {
+          pinId: "Y2.1",
+          displayName: "X1",
+          x: 8.260000000000002,
+          y: -5.41,
+        },
+        {
+          pinId: "Y2.3",
+          displayName: "X2",
+          x: 9.34,
+          y: -6.11,
+        },
+      ],
+    },
+    {
+      chipId: "C28",
+      center: { x: 11.182500000000001, y: -4.54 },
+      width: 1.1649999999999991,
+      height: 0.7599999999999998,
+      pins: [
+        {
+          pinId: "C28.1",
+          displayName: "anode",
+          x: 11.05,
+          y: -4.16,
+          _facingDirection: "y+",
+        },
+        {
+          pinId: "C28.2",
+          displayName: "cathode",
+          x: 11.05,
+          y: -4.92,
+          _facingDirection: "y-",
+        },
+      ],
+      symbolName: "capacitor_down",
+    },
+    {
+      chipId: "C30",
+      center: { x: 7.352499999999999, y: -5.15 },
+      width: 1.165,
+      height: 0.7599999999999998,
+      pins: [
+        {
+          pinId: "C30.1",
+          displayName: "anode",
+          x: 7.22,
+          y: -4.7700000000000005,
+          _facingDirection: "y+",
+        },
+        {
+          pinId: "C30.2",
+          displayName: "cathode",
+          x: 7.22,
+          y: -5.53,
+          _facingDirection: "y-",
+        },
+      ],
+      symbolName: "capacitor_down",
+    },
+  ],
+  directConnections: [
+    {
+      netId: "WLANP_Y2",
+      pinIds: ["U2.WLAN_XTAL_P", "Y2.1"],
+    },
+    {
+      netId: "WLANN_Y2",
+      pinIds: ["U2.WLAN_XTAL_N", "Y2.3"],
+    },
+    {
+      netId: ".C28 > .pin1 to .Y2 .pin1",
+      pinIds: ["C28.1", "Y2.1"],
+    },
+    {
+      netId: ".C30 > .pin1 to .Y2 .pin3",
+      pinIds: ["C30.1", "Y2.3"],
+    },
+  ],
+  netConnections: [
+    {
+      netId: "GND",
+      isGround: true,
+      netLabelWidth: 0.42,
+      netLabelHeight: 0.48,
+      pinIds: [
+        "U2.GND1",
+        "U2.GND2",
+        "U2.GND_TAB",
+        "Y2.2",
+        "Y2.4",
+        "C28.2",
+        "C30.2",
+      ],
+    },
+  ],
+  availableNetLabelOrientations: { GND: ["y-"] },
+  maxMspPairDistance: 10,
+  _hideRatsNet: false,
+} satisfies InputProblem
+
+export default inputProblem
