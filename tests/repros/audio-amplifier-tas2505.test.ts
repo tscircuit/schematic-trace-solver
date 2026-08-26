@@ -22,7 +22,7 @@ test("repro AudioAmplifier TAS2505 schematic traces", () => {
     .traces.find((trace) => trace.mspPairId === firstCapacitorRailTraceId)!
     .tracePath[1]!.y
   const capacitorRailYs = solver
-    .traceCleanupSolver2!.getOutput()
+    .inlineNetLabelSolver!.getOutput()
     .traces.filter((trace) => capacitorRailTraceIds.has(trace.mspPairId))
     .map((trace) => trace.tracePath[1]!.y)
   expect(new Set(capacitorRailYs)).toEqual(new Set([firstCapacitorRailY]))

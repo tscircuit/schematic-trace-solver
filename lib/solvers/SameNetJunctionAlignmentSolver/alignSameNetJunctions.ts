@@ -1,6 +1,7 @@
 import type { Point } from "@tscircuit/math-utils"
 import { getSegmentIntersection } from "@tscircuit/math-utils/line-intersections"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
@@ -25,6 +26,7 @@ interface AlignSameNetJunctionsInput {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  alignedRailTraceIds?: ReadonlySet<MspConnectionPairId>
 }
 
 interface HorizontalSegment {
@@ -456,6 +458,7 @@ export const alignSameNetJunctions = ({
   inputProblem,
   traces,
   netLabelPlacements,
+  alignedRailTraceIds = new Set<MspConnectionPairId>(),
 }: AlignSameNetJunctionsInput) => {
   let outputTraces = [...traces]
   let outputNetLabelPlacements = [...netLabelPlacements]
@@ -477,6 +480,7 @@ export const alignSameNetJunctions = ({
         (trace) => trace.mspPairId === donorTraceId,
       )!
       for (const branchTrace of outputTraces) {
+        if (alignedRailTraceIds.has(branchTrace.mspPairId)) continue
         if (alignedBranchTraceIds.has(branchTrace.mspPairId)) continue
         if (donorTrace.mspPairId === branchTrace.mspPairId) continue
         if (donorTrace.globalConnNetId !== branchTrace.globalConnNetId) continue

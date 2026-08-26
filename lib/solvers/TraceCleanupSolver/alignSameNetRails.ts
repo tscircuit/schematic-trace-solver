@@ -1,4 +1,5 @@
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -30,11 +31,13 @@ export const alignSameNetRails = ({
   traces: SolvedTracePath[]
   alignedRailGroupCount: number
   alignedTraceCount: number
+  alignedRailTraceIds: ReadonlySet<MspConnectionPairId>
 } => {
   let outputTraces = [...traces]
   const seenTraceStates = new Set([getTraceStateKey(outputTraces)])
   const obstacles = getObstacleRects(inputProblem)
-  const alignedTraceIds = new Set<string>()
+  const alignedRailTraceIds = new Set<MspConnectionPairId>()
+  const changedTraceIds = new Set<MspConnectionPairId>()
   let alignedRailGroupCount = 0
   const maximumPasses = Math.max(
     1,
@@ -59,7 +62,12 @@ export const alignSameNetRails = ({
         obstacles,
         eligibleTraceIds,
       })
-      if (applied) break
+      if (applied) {
+        for (const segment of group) {
+          alignedRailTraceIds.add(segment.traceId)
+        }
+        break
+      }
     }
     if (!applied) break
 
@@ -71,13 +79,16 @@ export const alignSameNetRails = ({
     if (!repeatsSeenState) seenTraceStates.add(candidateStateKey)
     outputTraces = applied.traces
     alignedRailGroupCount++
-    for (const traceId of applied.changedTraceIds) alignedTraceIds.add(traceId)
+    for (const traceId of applied.changedTraceIds) {
+      changedTraceIds.add(traceId)
+    }
     if (repeatsSeenState) break
   }
 
   return {
     traces: outputTraces,
     alignedRailGroupCount,
-    alignedTraceCount: alignedTraceIds.size,
+    alignedTraceCount: changedTraceIds.size,
+    alignedRailTraceIds,
   }
 }
