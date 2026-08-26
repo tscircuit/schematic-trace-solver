@@ -8,7 +8,7 @@
               .pin-number { fill: rgb(169, 0, 0); }
               .port-label { fill: rgb(0, 100, 100); }
               .component-name { fill: rgb(0, 100, 100); }
-              
+
             </style><rect class="boundary" x="0" y="0" width="600" height="400"/><rect class="component-overlay sch-component-overlay sch-net-label-overlay" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0" x="139.765678842152" y="129.2212267402" width="62.02618883529601" height="46.51964162647198" fill="transparent"/><path class="sch-net-label-symbol-path" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0" d="M 139.765678842152 175.74086836667198 L 201.791867677448 175.74086836667198" stroke="rgb(132, 0, 0)" fill="none" stroke-width="5.168849069608px" stroke-linecap="round"/><path class="sch-net-label-symbol-path" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0" d="M 170.7787732598 175.74086836667198 L 170.7787732598 129.2212267402" stroke="rgb(132, 0, 0)" fill="none" stroke-width="5.168849069608px" stroke-linecap="round"/><text class="sch-net-label-symbol-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0" x="170.7787732598" y="188.662991040692" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="middle" dominant-baseline="hanging" font-size="46.519641626471994px">0V</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_1" d="
     M 429.2212267402,129.2212267402
     L 455.06547208823997,143.17711922814158
