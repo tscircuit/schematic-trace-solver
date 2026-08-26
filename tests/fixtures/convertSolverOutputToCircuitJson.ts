@@ -17,7 +17,12 @@ import type { InlineNetLabelPlacement } from "lib/solvers/InlineNetLabelSolver/I
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
-import type { InputChip, InputPin, InputProblem } from "lib/types/InputProblem"
+import type {
+  InputChip,
+  InputPin,
+  InputProblem,
+  NetId,
+} from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
 import { type SchSymbol, symbols } from "schematic-symbols"
 
@@ -947,6 +952,10 @@ export const convertSolverOutputToCircuitJson = (
   }
 
   const netNames = new Set<string>()
+  const groundNetIds = new Set<NetId>()
+  for (const connection of inputProblem.netConnections) {
+    if (connection.isGround) groundNetIds.add(connection.netId)
+  }
   for (const connection of [
     ...inputProblem.directConnections,
     ...inputProblem.netConnections,
@@ -973,7 +982,7 @@ export const convertSolverOutputToCircuitJson = (
       source_net_id: sourceNetId,
       name: netName,
       member_source_group_ids: [],
-      is_ground: /(^|[._-])gnd($|[._-])/i.test(netName),
+      is_ground: groundNetIds.has(netName),
       is_power: /(^|[._-])(vcc|vdd|vss|gnd)($|[._-])/i.test(netName),
     } satisfies SourceNet)
   }
@@ -1055,14 +1064,20 @@ export const convertSolverOutputToCircuitJson = (
 
   for (const [labelIndex, label] of snapshotData.netLabelPlacements.entries()) {
     const netName = getNetLabelNetName(label)
+    const anchorSide = orientationToAnchorSide(label.orientation)
+    let symbolName: string | undefined
+    if (groundNetIds.has(netName) && anchorSide === "top") {
+      symbolName = "rail_down"
+    }
     circuitJson.push({
       type: "schematic_net_label",
       schematic_net_label_id: `schematic_net_label_${labelIndex}`,
       source_net_id: sourceNetIdByName.get(netName)!,
       center: label.center,
       anchor_position: label.anchorPoint,
-      anchor_side: orientationToAnchorSide(label.orientation),
+      anchor_side: anchorSide,
       text: getNetLabelText(label),
+      symbol_name: symbolName,
     } satisfies SchematicNetLabel)
   }
 
