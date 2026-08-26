@@ -20,7 +20,6 @@ import {
   pathEntersAnyNetLabel,
   pathIntersectsAnyNetLabel,
 } from "./pathIntersectsAnyNetLabel"
-import { getAlignedSharedPinParallelTrunkPath } from "./getAlignedSharedPinParallelTrunkPath"
 
 interface AlignSameNetJunctionsInput {
   inputProblem: InputProblem
@@ -484,24 +483,15 @@ export const alignSameNetJunctions = ({
 
         // Prefer the existing return stem. If extending the outer column
         // meets another net, try shorter escapes without moving any pins.
-        let candidatePaths: Array<Point[] | null>
-        if (alignReturnBranches) {
-          candidatePaths = [1, 0.5, 0.25].map((returnStemScale) =>
-            getAlignedReturnBranchPath({
-              donorTrace,
-              branchTrace,
-              returnStemScale,
-            }),
-          )
-        } else {
-          candidatePaths = [
-            getAlignedSharedPinParallelTrunkPath({
-              donorTrace,
-              branchTrace,
-            }),
-            getAlignedBranchPath({ donorTrace, branchTrace }),
-          ]
-        }
+        const candidatePaths = alignReturnBranches
+          ? [1, 0.5, 0.25].map((returnStemScale) =>
+              getAlignedReturnBranchPath({
+                donorTrace,
+                branchTrace,
+                returnStemScale,
+              }),
+            )
+          : [getAlignedBranchPath({ donorTrace, branchTrace })]
         for (const candidatePath of candidatePaths) {
           if (!candidatePath) continue
           const candidateTrace = { ...branchTrace, tracePath: candidatePath }
