@@ -23,7 +23,7 @@ interface CollapseSameNetCyclesInput {
 }
 
 interface PathCrossing {
-  point: Point
+  intersectionPoint: Point
   targetSegmentIndex: number
   donorSegmentIndex: number
 }
@@ -31,36 +31,28 @@ interface PathCrossing {
 interface CycleCollapseCandidate {
   tracePath: Point[]
   netLabelPlacements: NetLabelPlacement[]
-  visibleLength: number
-  visibleSegmentCount: number
+  netVisibleLength: number
+  netVisibleSegmentCount: number
 }
 
 const TRACE_LENGTH_EPSILON = 1e-6
 
-const getTracePathStartingAtPin = ({
-  trace,
-  pin,
-}: {
-  trace: SolvedTracePath
-  pin: Point
-}): Point[] | null => {
+const getTracePathStartingAtPin = (
+  trace: SolvedTracePath,
+  pin: Point,
+): Point[] | null => {
   const pathStart = trace.tracePath[0]
   const pathEnd = trace.tracePath.at(-1)
   if (!pathStart || !pathEnd) return null
   if (pointsEqual(pathStart, pin)) return trace.tracePath
-  if (pointsEqual(pathEnd, pin)) {
-    return [...trace.tracePath].reverse()
-  }
+  if (pointsEqual(pathEnd, pin)) return [...trace.tracePath].reverse()
   return null
 }
 
-const getPerpendicularPathCrossings = ({
-  targetPath,
-  donorPath,
-}: {
-  targetPath: Point[]
-  donorPath: Point[]
-}): PathCrossing[] => {
+const getPerpendicularPathCrossings = (
+  targetPath: Point[],
+  donorPath: Point[],
+): PathCrossing[] => {
   const crossings: PathCrossing[] = []
   const sharedEndpoint = targetPath[0]!
 
@@ -84,15 +76,24 @@ const getPerpendicularPathCrossings = ({
       const donorOrientation = getRailOrientation(donorStart, donorEnd)
       if (!donorOrientation || donorOrientation === targetOrientation) continue
 
-      const point = getSegmentIntersection(
+      const intersectionPoint = getSegmentIntersection(
         targetStart,
         targetEnd,
         donorStart,
         donorEnd,
       )
-      if (!point || pointsEqual(point, sharedEndpoint)) continue
+      if (
+        !intersectionPoint ||
+        pointsEqual(intersectionPoint, sharedEndpoint)
+      ) {
+        continue
+      }
 
-      crossings.push({ point, targetSegmentIndex, donorSegmentIndex })
+      crossings.push({
+        intersectionPoint,
+        targetSegmentIndex,
+        donorSegmentIndex,
+      })
     }
   }
 
@@ -112,7 +113,7 @@ const buildCollapsedCyclePath = ({
 }) => {
   const pathFromSharedPin = simplifyPath([
     ...donorPath.slice(0, crossing.donorSegmentIndex + 1),
-    crossing.point,
+    crossing.intersectionPoint,
     ...targetPath.slice(crossing.targetSegmentIndex + 1),
   ])
   if (pointsEqual(targetTrace.tracePath[0]!, targetPath[0]!)) {
@@ -121,77 +122,75 @@ const buildCollapsedCyclePath = ({
   return pathFromSharedPin.reverse()
 }
 
-const candidatePreservesLabelAttachments = ({
+const getNetLabelPlacementsForCycleCollapse = ({
   targetTrace,
-  candidateTrace,
+  tracePath,
   netLabelPlacements,
-  candidateNetLabelPlacements,
 }: {
   targetTrace: SolvedTracePath
-  candidateTrace: SolvedTracePath
+  tracePath: Point[]
   netLabelPlacements: NetLabelPlacement[]
-  candidateNetLabelPlacements: NetLabelPlacement[]
-}) =>
-  netLabelPlacements.every((label, labelIndex) => {
-    const wasAttached =
-      label.globalConnNetId === targetTrace.globalConnNetId &&
-      tracePathContainsPoint(targetTrace.tracePath, label.anchorPoint)
-    if (!wasAttached) return true
-
-    const candidateLabel = candidateNetLabelPlacements[labelIndex]!
-    return tracePathContainsPoint(
-      candidateTrace.tracePath,
-      candidateLabel.anchorPoint,
-    )
+}): NetLabelPlacement[] | null => {
+  const candidateNetLabelPlacements = moveAttachedLabelsToReroutedTrace({
+    trace: targetTrace,
+    originalTracePath: targetTrace.tracePath,
+    reroutedTracePath: tracePath,
+    netLabelPlacements,
   })
 
-const candidateAvoidsNetLabels = ({
-  candidateTrace,
-  netLabelPlacements,
-}: {
-  candidateTrace: SolvedTracePath
-  netLabelPlacements: NetLabelPlacement[]
-}) => {
-  const otherNetLabelPlacements = netLabelPlacements.filter(
-    (label) => label.globalConnNetId !== candidateTrace.globalConnNetId,
+  for (
+    let labelIndex = 0;
+    labelIndex < netLabelPlacements.length;
+    labelIndex++
+  ) {
+    const label = netLabelPlacements[labelIndex]!
+    if (label.globalConnNetId !== targetTrace.globalConnNetId) continue
+    if (!tracePathContainsPoint(targetTrace.tracePath, label.anchorPoint)) {
+      continue
+    }
+    const candidateLabel = candidateNetLabelPlacements[labelIndex]!
+    if (!tracePathContainsPoint(tracePath, candidateLabel.anchorPoint)) {
+      return null
+    }
+  }
+
+  const otherNetLabelPlacements = candidateNetLabelPlacements.filter(
+    (label) => label.globalConnNetId !== targetTrace.globalConnNetId,
   )
   if (
     pathIntersectsAnyNetLabel({
-      path: candidateTrace.tracePath,
+      path: tracePath,
       netLabelPlacements: otherNetLabelPlacements,
     })
   ) {
-    return false
+    return null
   }
 
-  const sameNetLabelPlacements = netLabelPlacements.filter(
-    (label) => label.globalConnNetId === candidateTrace.globalConnNetId,
+  const sameNetLabelPlacements = candidateNetLabelPlacements.filter(
+    (label) => label.globalConnNetId === targetTrace.globalConnNetId,
   )
-  return !pathEntersAnyNetLabel({
-    path: candidateTrace.tracePath,
-    netLabelPlacements: sameNetLabelPlacements,
-  })
+  if (
+    pathEntersAnyNetLabel({
+      path: tracePath,
+      netLabelPlacements: sameNetLabelPlacements,
+    })
+  ) {
+    return null
+  }
+  return candidateNetLabelPlacements
 }
 
-const candidateIsBetter = ({
-  candidate,
-  bestCandidate,
-}: {
-  candidate: CycleCollapseCandidate
-  bestCandidate: CycleCollapseCandidate | null
-}) => {
+const candidateIsBetter = (
+  candidate: CycleCollapseCandidate,
+  bestCandidate: CycleCollapseCandidate | null,
+) => {
   if (!bestCandidate) return true
-  if (
-    candidate.visibleLength <
-    bestCandidate.visibleLength - TRACE_LENGTH_EPSILON
-  ) {
-    return true
+  const visibleLengthDelta =
+    candidate.netVisibleLength - bestCandidate.netVisibleLength
+  if (Math.abs(visibleLengthDelta) > TRACE_LENGTH_EPSILON) {
+    return visibleLengthDelta < 0
   }
-  return (
-    Math.abs(candidate.visibleLength - bestCandidate.visibleLength) <=
-      TRACE_LENGTH_EPSILON &&
-    candidate.visibleSegmentCount < bestCandidate.visibleSegmentCount
-  )
+  return candidate.netVisibleSegmentCount < bestCandidate.netVisibleSegmentCount
 }
 
 const getBestCycleCollapseCandidate = ({
@@ -206,8 +205,8 @@ const getBestCycleCollapseCandidate = ({
   const sameNetTraces = traces.filter(
     (trace) => trace.globalConnNetId === targetTrace.globalConnNetId,
   )
-  const initialVisibleLength = getVisibleTraceLength(sameNetTraces)
-  const initialTargetLength = getVisibleTraceLength([targetTrace])
+  const baselineNetVisibleLength = getVisibleTraceLength(sameNetTraces)
+  const baselineTargetVisibleLength = getVisibleTraceLength([targetTrace])
   let bestCandidate: CycleCollapseCandidate | null = null
 
   for (const donorTrace of sameNetTraces) {
@@ -217,17 +216,11 @@ const getBestCycleCollapseCandidate = ({
       branchTrace: targetTrace,
     })
     if (!sharedPin) continue
-    const targetPath = getTracePathStartingAtPin({
-      trace: targetTrace,
-      pin: sharedPin,
-    })
-    const donorPath = getTracePathStartingAtPin({
-      trace: donorTrace,
-      pin: sharedPin,
-    })
+    const targetPath = getTracePathStartingAtPin(targetTrace, sharedPin)
+    const donorPath = getTracePathStartingAtPin(donorTrace, sharedPin)
     if (!targetPath || !donorPath) continue
 
-    const crossings = getPerpendicularPathCrossings({ targetPath, donorPath })
+    const crossings = getPerpendicularPathCrossings(targetPath, donorPath)
     for (const crossing of crossings) {
       const tracePath = buildCollapsedCyclePath({
         targetTrace,
@@ -236,48 +229,41 @@ const getBestCycleCollapseCandidate = ({
         crossing,
       })
       const candidateTrace = { ...targetTrace, tracePath }
-      const candidateTargetLength = getVisibleTraceLength([candidateTrace])
-      if (candidateTargetLength > initialTargetLength + TRACE_LENGTH_EPSILON) {
-        continue
-      }
-      const candidateNetLabelPlacements = moveAttachedLabelsToReroutedTrace({
-        trace: targetTrace,
-        originalTracePath: targetTrace.tracePath,
-        reroutedTracePath: tracePath,
-        netLabelPlacements,
-      })
+      const candidateTargetVisibleLength = getVisibleTraceLength([
+        candidateTrace,
+      ])
       if (
-        !candidatePreservesLabelAttachments({
-          targetTrace,
-          candidateTrace,
-          netLabelPlacements,
-          candidateNetLabelPlacements,
-        }) ||
-        !candidateAvoidsNetLabels({
-          candidateTrace,
-          netLabelPlacements: candidateNetLabelPlacements,
-        })
+        candidateTargetVisibleLength >
+        baselineTargetVisibleLength + TRACE_LENGTH_EPSILON
       ) {
         continue
       }
+      const candidateNetLabelPlacements = getNetLabelPlacementsForCycleCollapse(
+        {
+          targetTrace,
+          tracePath,
+          netLabelPlacements,
+        },
+      )
+      if (!candidateNetLabelPlacements) continue
 
       const candidateNetTraces = sameNetTraces.map((trace) => {
         if (trace.mspPairId === targetTrace.mspPairId) return candidateTrace
         return trace
       })
-      const visibleLength = getVisibleTraceLength(candidateNetTraces)
-      if (visibleLength >= initialVisibleLength - TRACE_LENGTH_EPSILON) {
+      const netVisibleLength = getVisibleTraceLength(candidateNetTraces)
+      if (netVisibleLength >= baselineNetVisibleLength - TRACE_LENGTH_EPSILON) {
         continue
       }
-      const visibleSegmentCount =
+      const netVisibleSegmentCount =
         getVisibleTraceSegmentCount(candidateNetTraces)
       const candidate = {
         tracePath,
         netLabelPlacements: candidateNetLabelPlacements,
-        visibleLength,
-        visibleSegmentCount,
+        netVisibleLength,
+        netVisibleSegmentCount,
       }
-      if (candidateIsBetter({ candidate, bestCandidate })) {
+      if (candidateIsBetter(candidate, bestCandidate)) {
         bestCandidate = candidate
       }
     }
