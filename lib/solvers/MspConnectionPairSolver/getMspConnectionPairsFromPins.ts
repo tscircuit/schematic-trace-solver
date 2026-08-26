@@ -16,11 +16,11 @@ import type { InputPin, PinId } from "lib/types/InputProblem"
  * - When multiple candidates have the same distance, we pick the one
  *   whose pinId is lexicographically smallest (for stable output).
  */
-export function getOrthogonalMinimumSpanningTree(
-  pins: InputPin[],
+export function getOrthogonalMinimumSpanningTree<Pin extends InputPin>(
+  pins: Pin[],
   opts: {
     maxDistance?: number
-    forbidEdge?: (a: InputPin, b: InputPin) => boolean
+    forbidEdge?: (a: Pin, b: Pin) => boolean
   } = {},
 ): Array<[PinId, PinId]> {
   const n = pins.length

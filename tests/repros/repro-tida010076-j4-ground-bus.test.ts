@@ -59,20 +59,24 @@ test("repro TIDA-010076 J4 ground pins should share one vertical bus", () => {
   solver.solve()
 
   const output = solver.sameNetJunctionAlignmentSolver!.getOutput()
+  const groundConnection = inputProblem.netConnections[0]!
+  const groundPinIds = new Set(groundConnection.pinIds)
   const groundTraces = output.traces.filter(
     (trace) =>
-      trace.userNetId === "NET_AGND" &&
-      trace.pinIds.every((pinId) => pinId.startsWith("J4.")),
+      trace.userNetId === groundConnection.netId &&
+      trace.pinIds.every((pinId) => groundPinIds.has(pinId)),
   )
-  const verticalBranchOffsets = new Set(
-    groundTraces.map((trace) => trace.tracePath[1]!.x.toFixed(3)),
+  const verticalRailXs = groundTraces.map((trace) => trace.tracePath[1]!.x)
+  const groundLabel = output.netLabelPlacements.find(
+    (label) => label.netId === groundConnection.netId,
   )
 
-  // Current mismatch: the first three GND pins use one vertical offset while
-  // the final pair detours around the manufacturer text at a second offset.
-  expect(verticalBranchOffsets.size).toBe(2)
-  expect(
-    output.netLabelPlacements.filter((label) => label.netId === "NET_AGND"),
-  ).toHaveLength(1)
+  expect(new Set(verticalRailXs.map((x) => x.toFixed(3))).size).toBe(1)
+  expect(verticalRailXs[0]).toBeCloseTo(0.975)
+  expect(groundLabel?.anchorPoint.x).toBeCloseTo(verticalRailXs[0]!)
+  const productTextBox = inputProblem.textBoxes![0]!
+  expect(groundLabel?.anchorPoint.y).toBeLessThan(
+    productTextBox.center.y - productTextBox.height / 2,
+  )
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
