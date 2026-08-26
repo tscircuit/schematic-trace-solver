@@ -38,6 +38,10 @@ test("repro PMP11282 isolated DC/DC traces and endpoint net labels", () => {
   expect(defaultTraceSolver.solvedTracePaths).toHaveLength(70)
   expect(defaultTraceSolver.failedConnectionPairs).toHaveLength(37)
   expect(defaultTraceSolver.queuedConnectionPairs).toHaveLength(95)
+  expect(defaultPipeline).toMatchSolverSnapshot(
+    import.meta.path,
+    "repro-pmp11282-isolated-dcdc-default-budget",
+  )
 
   // Let the same unmodified production pipeline reach its downstream stages
   // by increasing only this test instance's nested-solver budget. This keeps
