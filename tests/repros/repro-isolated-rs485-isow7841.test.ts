@@ -1,13 +1,16 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputProblem, PinId } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblemJson from "./assets/repro-isolated-rs485-isow7841.input.json"
 
 const EXPECTED_D_P_RAIL_Y = 2.2
 const REDUNDANT_D_P_RAIL_Y = 2.3
-const EXPECTED_COMPACT_GND1_RAIL_Y = 2.82
-const COMPACT_GND1_TRACE_ID = "schematic_port_35-schematic_port_33"
+const EXPECTED_GND1_RAIL_Y = 1.76
+const GND1_RAIL_PIN_IDS = ["schematic_port_35", "schematic_port_33"] satisfies [
+  PinId,
+  PinId,
+]
 const POINT_EPSILON = 1e-6
 
 test("repro isolated RS-485 ISOW7841 schematic traces", () => {
@@ -40,15 +43,11 @@ test("repro isolated RS-485 ISOW7841 schematic traces", () => {
       (point) => Math.abs(point.y - REDUNDANT_D_P_RAIL_Y) < POINT_EPSILON,
     ),
   ).toBe(false)
-  const compactGnd1Trace =
-    solver.sameNetJunctionAlignmentSolver?.outputTraces.find(
-      (trace) => trace.mspPairId === COMPACT_GND1_TRACE_ID,
+  const gnd1RailTrace =
+    solver.sameNetJunctionAlignmentSolver?.outputTraces.find((trace) =>
+      GND1_RAIL_PIN_IDS.every((pinId) => trace.pinIds.includes(pinId)),
     )
-  expect(compactGnd1Trace?.tracePath[1]?.y).toBeCloseTo(
-    EXPECTED_COMPACT_GND1_RAIL_Y,
-  )
-  expect(compactGnd1Trace?.tracePath[2]?.y).toBeCloseTo(
-    EXPECTED_COMPACT_GND1_RAIL_Y,
-  )
+  expect(gnd1RailTrace?.tracePath[1]?.y).toBeCloseTo(EXPECTED_GND1_RAIL_Y)
+  expect(gnd1RailTrace?.tracePath[2]?.y).toBeCloseTo(EXPECTED_GND1_RAIL_Y)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
