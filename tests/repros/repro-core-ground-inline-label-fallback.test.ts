@@ -29,13 +29,6 @@ test("repro: core inline signal labels fall back near shared rail labels", () =>
   expect(signalInlineLabels).toHaveLength(0)
   expect(
     signalAnchoredLabels.map((placement) => placement.netId).sort(),
-  ).toEqual([
-    "direction",
-    "direction",
-    "enable",
-    "enable",
-    "step",
-    "step",
-  ])
+  ).toEqual(["direction", "direction", "enable", "enable", "step", "step"])
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
