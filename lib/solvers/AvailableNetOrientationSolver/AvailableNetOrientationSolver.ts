@@ -48,6 +48,7 @@ import type {
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
 import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
+import { isVerticalRailAnchorCandidateClearAlongChipSide } from "./isVerticalRailAnchorCandidateClearAlongChipSide"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -417,23 +418,28 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.hasTraceContinuingInOrientation(label, requiredOrientation) &&
       (isDistanceSplitVerticalRail || isPairedSameSidePowerRail)
     ) {
-      const isThreePinSplitDownwardRail =
-        isDistanceSplitVerticalRail &&
-        netConnection?.pinIds.length === 3 &&
-        requiredOrientation === "y-"
-      if (isThreePinSplitDownwardRail) {
-        // Prefer placing a downward label directly on a short split rail. This
-        // avoids a tap-like connector when the rail end itself has room.
-        const alignedTraceAnchorCandidate = this.findValidTraceAnchorCandidate(
+      const alignedTraceAnchorCandidate = this.findValidTraceAnchorCandidate(
+        label,
+        requiredOrientation,
+        labelIndex,
+      )
+      if (
+        alignedTraceAnchorCandidate &&
+        isVerticalRailAnchorCandidateClearAlongChipSide({
+          candidate: alignedTraceAnchorCandidate,
           label,
-          requiredOrientation,
-          labelIndex,
-        )
-        if (alignedTraceAnchorCandidate) return alignedTraceAnchorCandidate
+          traces: this.traces,
+          pinMap: this.pinMap,
+          chips: this.chipObstacleSpatialIndex.chips,
+        })
+      ) {
+        return alignedTraceAnchorCandidate
       }
+      if (alignedTraceAnchorCandidate)
+        alignedTraceAnchorCandidate.selected = false
 
-      // Keep the established outward column when the direct rail end is blocked
-      // or when a larger rail bank needs consistent outside-chip placement.
+      // Keep the established outward column when the direct rail end is not a
+      // clear segment of the connected component side.
       const traceAnchorCandidate = this.findValidOutwardTraceAnchorCandidate(
         label,
         requiredOrientation,

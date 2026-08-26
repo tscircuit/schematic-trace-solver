@@ -217,5 +217,23 @@ test("aligns the HDC2080 GND label with its vertical rail", () => {
 
   solver.solve()
 
+  const output = solver.availableNetOrientationSolver!.getOutput()
+  const groundLabel = output.netLabelPlacements.find(
+    (label) =>
+      label.netId === "GND" && label.pinIds.includes("schematic_port_6"),
+  )
+  const groundRail = output.traces.find(
+    (trace) => trace.mspPairId === "schematic_port_7-schematic_port_6",
+  )
+  const groundRailTraces = output.traces.filter(
+    (trace) =>
+      trace.userNetId === "GND" &&
+      trace.pinIds.includes("schematic_port_6") &&
+      trace.pinIds.includes("schematic_port_7"),
+  )
+
+  expect(groundLabel?.anchorPoint.x).toBeCloseTo(0.1)
+  expect(groundRail?.tracePath[1]?.x).toBeCloseTo(0.1)
+  expect(groundRailTraces).toHaveLength(1)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
