@@ -1,6 +1,7 @@
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
 
 const SAME_RAIL_Y_TOLERANCE = 1e-6
+// Three aligned pins distinguish a grouped component rail from an ordinary branch.
 const MIN_GROUPED_RAIL_PIN_COUNT = 3
 
 const isGroupedHorizontalRail = ({
@@ -38,6 +39,7 @@ export const shouldSeparateDownwardNetLabelRails = ({
 
   if (Math.abs(pin1.y - pin2.y) <= SAME_RAIL_Y_TOLERANCE) return false
 
+  // Keep established rails local; net labels preserve connectivity between rows.
   return (
     isGroupedHorizontalRail({ pin: pin1, netPins }) &&
     isGroupedHorizontalRail({ pin: pin2, netPins })
