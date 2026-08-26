@@ -769,6 +769,7 @@ const orientationToAnchorSide = (
  */
 export const convertSolverOutputToCircuitJson = (
   solver: BaseSolver,
+  options: { hideComponentAndPortLabels?: boolean } = {},
 ): AnyCircuitElement[] => {
   const inputProblem = getInputProblemFromSolver(solver)
   if (!inputProblem) {
@@ -792,6 +793,7 @@ export const convertSolverOutputToCircuitJson = (
     snapshotData.inlineNetLabelPlacements,
   )
   const circuitJson: AnyCircuitElement[] = []
+  const showComponentAndPortLabels = !options.hideComponentAndPortLabels
   const sourcePortIdByPinId = new Map<string, string>()
   const schematicPortIdByPinId = new Map<string, string>()
   const sourcePortIdsByPoint = new Map<string, string[]>()
@@ -811,7 +813,7 @@ export const convertSolverOutputToCircuitJson = (
       type: "source_component",
       ftype: "simple_chip",
       source_component_id: sourceComponentId,
-      name: refdes,
+      name: showComponentAndPortLabels ? refdes : "",
     } satisfies SourceSimpleChip)
 
     circuitJson.push({
@@ -827,7 +829,7 @@ export const convertSolverOutputToCircuitJson = (
       symbol_name: symbolName,
     } satisfies SchematicComponent)
 
-    if (!symbolName) {
+    if (showComponentAndPortLabels && !symbolName) {
       circuitJson.push({
         type: "schematic_text",
         schematic_text_id: `schematic_component_label_${chipIndex}`,
@@ -874,7 +876,9 @@ export const convertSolverOutputToCircuitJson = (
         type: "source_port",
         source_port_id: sourcePortId,
         source_component_id: sourceComponentId,
-        name: pinDisplayName ?? `pin${pinNumber ?? pinIndex + 1}`,
+        name: showComponentAndPortLabels
+          ? (pinDisplayName ?? `pin${pinNumber ?? pinIndex + 1}`)
+          : "",
         pin_number: pinNumber,
       } satisfies SourcePort)
 
@@ -890,8 +894,10 @@ export const convertSolverOutputToCircuitJson = (
         facing_direction: facingDirectionToCircuitJson(facingDirection),
         side_of_component: sideOfComponent,
         distance_from_component_edge: distanceFromComponentEdge,
-        display_pin_label: displayPinLabel,
-        pin_number: pinNumber,
+        display_pin_label: showComponentAndPortLabels
+          ? displayPinLabel
+          : undefined,
+        pin_number: showComponentAndPortLabels ? pinNumber : undefined,
       } satisfies SchematicPort)
 
       sourcePortIdByPinId.set(pin.pinId, sourcePortId)

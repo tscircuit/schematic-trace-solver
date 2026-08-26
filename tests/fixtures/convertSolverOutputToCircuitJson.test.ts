@@ -280,3 +280,32 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
   expect(svg).toContain('data-circuit-json-type="schematic_net_label"')
   expect(svg).not.toContain("schematic_port_opaque")
 })
+
+test("solver snapshots can hide component and port labels", () => {
+  const circuitJson = convertSolverOutputToCircuitJson(
+    new SnapshotTestSolver(),
+    { hideComponentAndPortLabels: true },
+  )
+  const svg = convertCircuitJsonToSchematicSvg(circuitJson)
+
+  expect(
+    circuitJson
+      .filter((element) => element.type === "source_component")
+      .every((component) => component.name === ""),
+  ).toBe(true)
+  expect(
+    circuitJson
+      .filter((element) => element.type === "source_port")
+      .every((port) => port.name === ""),
+  ).toBe(true)
+  expect(
+    circuitJson
+      .filter((element) => element.type === "schematic_port")
+      .every(
+        (port) =>
+          port.display_pin_label === undefined && port.pin_number === undefined,
+      ),
+  ).toBe(true)
+  expect(svg).not.toContain(">U1</text>")
+  expect(svg).not.toContain(">VCC</text>")
+})
