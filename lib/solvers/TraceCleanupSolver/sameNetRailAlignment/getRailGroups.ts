@@ -9,6 +9,10 @@ import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
 import { nearlyEqual, rangesTouchOrOverlap } from "./geometry"
 import type { RailSegment } from "./types"
 
+const MIN_UNLABELED_RAIL_CHAIN_TRACE_COUNT = 3
+export const MIN_CROSS_COMPONENT_RAIL_CHAIN_TRACE_COUNT = 5
+export const SINGLE_RAIL_TRACE_POINT_COUNT = 4
+
 const getCorridor = (a: RailSegment, b: RailSegment): [Point, Point] => {
   const overlapMin = Math.max(a.minAlong, b.minAlong)
   const overlapMax = Math.min(a.maxAlong, b.maxAlong)
@@ -48,20 +52,43 @@ const tracesSharePin = (
   return traceMap.get(b.traceId)!.pins.some((pin) => aPinIds.has(pin.pinId))
 }
 
-const canJoinRailGroup = (
-  start: RailSegment,
-  current: RailSegment,
-  candidate: RailSegment,
-  traceMap: Map<string, SolvedTracePath>,
-  obstacles: ObstacleRect[],
-) =>
-  candidate.globalConnNetId === start.globalConnNetId &&
-  candidate.orientation === start.orientation &&
-  candidate.componentId === start.componentId &&
-  candidate.componentFacingDirection === start.componentFacingDirection &&
-  (rangesTouchOrOverlap(current, candidate) ||
-    tracesSharePin(current, candidate, traceMap)) &&
-  corridorIsClear(current, candidate, obstacles)
+const canJoinRailGroup = ({
+  start,
+  current,
+  candidate,
+  traceMap,
+  obstacles,
+  allowCrossComponentTraceBridge,
+}: {
+  start: RailSegment
+  current: RailSegment
+  candidate: RailSegment
+  traceMap: Map<string, SolvedTracePath>
+  obstacles: ObstacleRect[]
+  allowCrossComponentTraceBridge: boolean
+}) => {
+  let componentTransitionIsAllowed =
+    candidate.componentId === start.componentId &&
+    candidate.componentFacingDirection === start.componentFacingDirection
+
+  if (allowCrossComponentTraceBridge) {
+    componentTransitionIsAllowed =
+      (candidate.componentId === current.componentId &&
+        candidate.componentFacingDirection ===
+          current.componentFacingDirection) ||
+      (candidate.traceId === current.traceId &&
+        candidate.segmentIndex === current.segmentIndex)
+  }
+
+  return (
+    candidate.globalConnNetId === start.globalConnNetId &&
+    candidate.orientation === start.orientation &&
+    componentTransitionIsAllowed &&
+    (rangesTouchOrOverlap(current, candidate) ||
+      tracesSharePin(current, candidate, traceMap)) &&
+    corridorIsClear(current, candidate, obstacles)
+  )
+}
 
 export const getRailGroups = (
   traces: SolvedTracePath[],
@@ -76,7 +103,10 @@ export const getRailGroups = (
     eligibleTraceIds.has(trace.mspPairId),
   )
 
-  const collectConnectedGroups = (segments: RailSegment[]) => {
+  const collectConnectedGroups = (
+    segments: RailSegment[],
+    allowCrossComponentTraceBridge = false,
+  ) => {
     const visited = new Set<number>()
     const connectedGroups: RailSegment[][] = []
 
@@ -100,7 +130,14 @@ export const getRailGroups = (
           if (visited.has(candidateIndex)) continue
           const candidate = segments[candidateIndex]!
           if (
-            !canJoinRailGroup(start, current, candidate, traceMap, obstacles)
+            !canJoinRailGroup({
+              start,
+              current,
+              candidate,
+              traceMap,
+              obstacles,
+              allowCrossComponentTraceBridge,
+            })
           ) {
             continue
           }
@@ -172,6 +209,34 @@ export const getRailGroups = (
       maxMspPairDistance: inputProblem.maxMspPairDistance,
     }),
   )
+  const singleRailTiedEndpointSegments = tiedEndpointSegments.filter(
+    (segment) =>
+      traceMap.get(segment.traceId)?.tracePath.length ===
+      SINGLE_RAIL_TRACE_POINT_COUNT,
+  )
+  for (const group of collectConnectedGroups(singleRailTiedEndpointSegments)) {
+    const groupTraceIds = new Set(group.map((segment) => segment.traceId))
+    if (groupTraceIds.size < MIN_UNLABELED_RAIL_CHAIN_TRACE_COUNT) continue
+    addEligibleGroup(group)
+  }
+  for (const group of collectConnectedGroups(
+    singleRailTiedEndpointSegments,
+    true,
+  )) {
+    const groupTraceIds = new Set(group.map((segment) => segment.traceId))
+    if (groupTraceIds.size < MIN_CROSS_COMPONENT_RAIL_CHAIN_TRACE_COUNT)
+      continue
+    for (let index = selectedGroups.length - 1; index >= 0; index--) {
+      if (
+        selectedGroups[index]!.every((segment) =>
+          groupTraceIds.has(segment.traceId),
+        )
+      ) {
+        selectedGroups.splice(index, 1)
+      }
+    }
+    addEligibleGroup(group)
+  }
   for (const group of collectConnectedGroups(tiedEndpointSegments)) {
     addEligibleGroup(group, { requireFixedLabel: true })
   }
