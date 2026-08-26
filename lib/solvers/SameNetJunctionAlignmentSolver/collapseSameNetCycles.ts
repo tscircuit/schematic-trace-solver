@@ -11,13 +11,13 @@ import {
   pointsEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
-import type { PinId } from "lib/types/InputProblem"
+import { getSharedPin } from "./alignSameNetJunctions"
 import {
   pathEntersAnyNetLabel,
   pathIntersectsAnyNetLabel,
 } from "./pathIntersectsAnyNetLabel"
 
-interface CollapseRedundantSameNetDetoursInput {
+interface CollapseSameNetCyclesInput {
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
 }
@@ -28,38 +28,22 @@ interface PathCrossing {
   donorSegmentIndex: number
 }
 
-interface DetourCandidate {
+interface CycleCollapseCandidate {
   tracePath: Point[]
   netLabelPlacements: NetLabelPlacement[]
   visibleLength: number
   visibleSegmentCount: number
 }
 
-const VISIBLE_LENGTH_EPSILON = 1e-6
+const TRACE_LENGTH_EPSILON = 1e-6
 
-const getSharedPinId = (
-  firstTrace: SolvedTracePath,
-  secondTrace: SolvedTracePath,
-): PinId | null => {
-  for (const firstPin of firstTrace.pins) {
-    if (
-      secondTrace.pins.some((secondPin) => secondPin.pinId === firstPin.pinId)
-    ) {
-      return firstPin.pinId
-    }
-  }
-  return null
-}
-
-const getTracePathFromPin = ({
+const getTracePathStartingAtPin = ({
   trace,
-  pinId,
+  pin,
 }: {
   trace: SolvedTracePath
-  pinId: PinId
+  pin: Point
 }): Point[] | null => {
-  const pin = trace.pins.find((candidatePin) => candidatePin.pinId === pinId)
-  if (!pin) return null
   const pathStart = trace.tracePath[0]
   const pathEnd = trace.tracePath.at(-1)
   if (!pathStart || !pathEnd) return null
@@ -115,7 +99,7 @@ const getPerpendicularPathCrossings = ({
   return crossings
 }
 
-const buildCandidatePath = ({
+const buildCollapsedCyclePath = ({
   targetTrace,
   targetPath,
   donorPath,
@@ -137,7 +121,7 @@ const buildCandidatePath = ({
   return pathFromSharedPin.reverse()
 }
 
-const labelsRemainAttached = ({
+const candidatePreservesLabelAttachments = ({
   targetTrace,
   candidateTrace,
   netLabelPlacements,
@@ -189,7 +173,28 @@ const candidateAvoidsNetLabels = ({
   })
 }
 
-const getBestDetourCandidate = ({
+const candidateIsBetter = ({
+  candidate,
+  bestCandidate,
+}: {
+  candidate: CycleCollapseCandidate
+  bestCandidate: CycleCollapseCandidate | null
+}) => {
+  if (!bestCandidate) return true
+  if (
+    candidate.visibleLength <
+    bestCandidate.visibleLength - TRACE_LENGTH_EPSILON
+  ) {
+    return true
+  }
+  return (
+    Math.abs(candidate.visibleLength - bestCandidate.visibleLength) <=
+      TRACE_LENGTH_EPSILON &&
+    candidate.visibleSegmentCount < bestCandidate.visibleSegmentCount
+  )
+}
+
+const getBestCycleCollapseCandidate = ({
   targetTrace,
   traces,
   netLabelPlacements,
@@ -197,31 +202,34 @@ const getBestDetourCandidate = ({
   targetTrace: SolvedTracePath
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
-}): DetourCandidate | null => {
+}): CycleCollapseCandidate | null => {
   const sameNetTraces = traces.filter(
     (trace) => trace.globalConnNetId === targetTrace.globalConnNetId,
   )
   const initialVisibleLength = getVisibleTraceLength(sameNetTraces)
   const initialTargetLength = getVisibleTraceLength([targetTrace])
-  let bestCandidate: DetourCandidate | null = null
+  let bestCandidate: CycleCollapseCandidate | null = null
 
   for (const donorTrace of sameNetTraces) {
     if (donorTrace.mspPairId === targetTrace.mspPairId) continue
-    const sharedPinId = getSharedPinId(targetTrace, donorTrace)
-    if (!sharedPinId) continue
-    const targetPath = getTracePathFromPin({
-      trace: targetTrace,
-      pinId: sharedPinId,
+    const sharedPin = getSharedPin({
+      donorTrace,
+      branchTrace: targetTrace,
     })
-    const donorPath = getTracePathFromPin({
+    if (!sharedPin) continue
+    const targetPath = getTracePathStartingAtPin({
+      trace: targetTrace,
+      pin: sharedPin,
+    })
+    const donorPath = getTracePathStartingAtPin({
       trace: donorTrace,
-      pinId: sharedPinId,
+      pin: sharedPin,
     })
     if (!targetPath || !donorPath) continue
 
     const crossings = getPerpendicularPathCrossings({ targetPath, donorPath })
     for (const crossing of crossings) {
-      const tracePath = buildCandidatePath({
+      const tracePath = buildCollapsedCyclePath({
         targetTrace,
         targetPath,
         donorPath,
@@ -229,10 +237,7 @@ const getBestDetourCandidate = ({
       })
       const candidateTrace = { ...targetTrace, tracePath }
       const candidateTargetLength = getVisibleTraceLength([candidateTrace])
-      if (
-        candidateTargetLength >
-        initialTargetLength + VISIBLE_LENGTH_EPSILON
-      ) {
+      if (candidateTargetLength > initialTargetLength + TRACE_LENGTH_EPSILON) {
         continue
       }
       const candidateNetLabelPlacements = moveAttachedLabelsToReroutedTrace({
@@ -242,7 +247,7 @@ const getBestDetourCandidate = ({
         netLabelPlacements,
       })
       if (
-        !labelsRemainAttached({
+        !candidatePreservesLabelAttachments({
           targetTrace,
           candidateTrace,
           netLabelPlacements,
@@ -261,31 +266,19 @@ const getBestDetourCandidate = ({
         return trace
       })
       const visibleLength = getVisibleTraceLength(candidateNetTraces)
-      if (visibleLength >= initialVisibleLength - VISIBLE_LENGTH_EPSILON) {
+      if (visibleLength >= initialVisibleLength - TRACE_LENGTH_EPSILON) {
         continue
       }
       const visibleSegmentCount =
         getVisibleTraceSegmentCount(candidateNetTraces)
-      if (bestCandidate) {
-        if (
-          visibleLength >
-          bestCandidate.visibleLength + VISIBLE_LENGTH_EPSILON
-        ) {
-          continue
-        }
-        if (
-          Math.abs(visibleLength - bestCandidate.visibleLength) <=
-            VISIBLE_LENGTH_EPSILON &&
-          visibleSegmentCount >= bestCandidate.visibleSegmentCount
-        ) {
-          continue
-        }
-      }
-      bestCandidate = {
+      const candidate = {
         tracePath,
         netLabelPlacements: candidateNetLabelPlacements,
         visibleLength,
         visibleSegmentCount,
+      }
+      if (candidateIsBetter({ candidate, bestCandidate })) {
+        bestCandidate = candidate
       }
     }
   }
@@ -293,18 +286,18 @@ const getBestDetourCandidate = ({
   return bestCandidate
 }
 
-export const collapseRedundantSameNetDetours = ({
+export const collapseSameNetCycles = ({
   traces,
   netLabelPlacements,
-}: CollapseRedundantSameNetDetoursInput) => {
+}: CollapseSameNetCyclesInput) => {
   const outputTraces = [...traces]
   let outputNetLabelPlacements = [...netLabelPlacements]
-  let collapsedDetourCount = 0
+  let collapsedCycleCount = 0
   let traceIndex = 0
 
   while (traceIndex < outputTraces.length) {
     const targetTrace = outputTraces[traceIndex]!
-    const candidate = getBestDetourCandidate({
+    const candidate = getBestCycleCollapseCandidate({
       targetTrace,
       traces: outputTraces,
       netLabelPlacements: outputNetLabelPlacements,
@@ -319,13 +312,13 @@ export const collapseRedundantSameNetDetours = ({
       tracePath: candidate.tracePath,
     }
     outputNetLabelPlacements = candidate.netLabelPlacements
-    collapsedDetourCount++
+    collapsedCycleCount++
     traceIndex = 0
   }
 
   return {
     traces: outputTraces,
     netLabelPlacements: outputNetLabelPlacements,
-    collapsedDetourCount,
+    collapsedCycleCount,
   }
 }

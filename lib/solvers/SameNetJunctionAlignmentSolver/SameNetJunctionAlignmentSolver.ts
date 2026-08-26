@@ -6,7 +6,7 @@ import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/
 import type { InputProblem } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { alignSameNetJunctions } from "./alignSameNetJunctions"
-import { collapseRedundantSameNetDetours } from "./collapseRedundantSameNetDetours"
+import { collapseSameNetCycles } from "./collapseSameNetCycles"
 import { placeGroundRailLabelsAtOuterEnd } from "./placeGroundRailLabelsAtOuterEnd"
 
 interface SameNetJunctionAlignmentSolverInput {
@@ -30,18 +30,18 @@ export class SameNetJunctionAlignmentSolver extends BaseSolver {
 
   override _step() {
     const alignment = alignSameNetJunctions(this.input)
-    const collapsedDetours = collapseRedundantSameNetDetours({
+    const cycleCollapse = collapseSameNetCycles({
       traces: alignment.traces,
       netLabelPlacements: alignment.netLabelPlacements,
     })
-    this.outputTraces = collapsedDetours.traces
+    this.outputTraces = cycleCollapse.traces
     this.outputNetLabelPlacements = placeGroundRailLabelsAtOuterEnd({
       inputProblem: this.input.inputProblem,
-      traces: collapsedDetours.traces,
-      netLabelPlacements: collapsedDetours.netLabelPlacements,
+      traces: cycleCollapse.traces,
+      netLabelPlacements: cycleCollapse.netLabelPlacements,
     })
     this.stats.alignedJunctionCount = alignment.alignedJunctionCount
-    this.stats.collapsedDetourCount = collapsedDetours.collapsedDetourCount
+    this.stats.collapsedCycleCount = cycleCollapse.collapsedCycleCount
     this.solved = true
   }
 

@@ -9,8 +9,8 @@ test("board 648 ESP-12F power and boot section", () => {
 
   solver.solve()
 
-  expect(
-    solver.sameNetJunctionAlignmentSolver?.stats.collapsedDetourCount,
-  ).toBe(0)
+  expect(solver.sameNetJunctionAlignmentSolver?.stats.collapsedCycleCount).toBe(
+    0,
+  )
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

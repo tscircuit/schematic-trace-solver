@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import type { Point } from "@tscircuit/math-utils"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { collapseRedundantSameNetDetours } from "lib/solvers/SameNetJunctionAlignmentSolver/collapseRedundantSameNetDetours"
+import { collapseSameNetCycles } from "lib/solvers/SameNetJunctionAlignmentSolver/collapseSameNetCycles"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import {
   getVisibleTraceLength,
@@ -74,12 +74,12 @@ test("collapses a same-net cycle between a shared pin and crossing", () => {
     center: { x: -0.25, y: 2 },
   }
 
-  const result = collapseRedundantSameNetDetours({
+  const result = collapseSameNetCycles({
     traces,
     netLabelPlacements: [netLabelPlacement],
   })
 
-  expect(result.collapsedDetourCount).toBe(1)
+  expect(result.collapsedCycleCount).toBe(1)
   expect(getVisibleTraceLength(traces)).toBe(22)
   expect(getVisibleTraceLength(result.traces)).toBe(14)
   expect(getVisibleTraceSegmentCount(result.traces)).toBe(4)
@@ -109,12 +109,12 @@ test("keeps a valid shared same-net branch", () => {
     }),
   ]
 
-  const result = collapseRedundantSameNetDetours({
+  const result = collapseSameNetCycles({
     traces,
     netLabelPlacements: [],
   })
 
-  expect(result.collapsedDetourCount).toBe(0)
+  expect(result.collapsedCycleCount).toBe(0)
   expect(result.traces).toEqual(traces)
 })
 
@@ -145,7 +145,7 @@ test("does not lengthen a trace to reuse shared donor geometry", () => {
     }),
   ]
 
-  const result = collapseRedundantSameNetDetours({
+  const result = collapseSameNetCycles({
     traces,
     netLabelPlacements: [],
   })

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-nrf52810-clock-routing.input.json"
 
@@ -14,7 +15,8 @@ const POINT_EPSILON = 1e-6
 // a four-pin 32 MHz crystal and a two-pin 32.768 kHz crystal, each connected
 // to an MCU schematic box, two load capacitors, and section-local GND labels.
 test("repro nRF52810 HF and LF crystal trace/net-label routing", () => {
-  const solver = new SchematicTracePipelineSolver(inputProblem as any)
+  const solverInput: InputProblem = JSON.parse(JSON.stringify(inputProblem))
+  const solver = new SchematicTracePipelineSolver(solverInput)
 
   solver.solve()
 
@@ -31,9 +33,9 @@ test("repro nRF52810 HF and LF crystal trace/net-label routing", () => {
   expect(
     solver.sameNetJunctionAlignmentSolver?.getOutput().netLabelPlacements,
   ).toHaveLength(10)
-  expect(
-    solver.sameNetJunctionAlignmentSolver?.stats.collapsedDetourCount,
-  ).toBe(2)
+  expect(solver.sameNetJunctionAlignmentSolver?.stats.collapsedCycleCount).toBe(
+    2,
+  )
   for (const [traceId, expectedRailY] of EXPECTED_CRYSTAL_RAIL_Y_BY_TRACE_ID) {
     const crystalLoadTrace =
       solver.sameNetJunctionAlignmentSolver?.outputTraces.find(
