@@ -37,20 +37,6 @@ interface CycleCollapseCandidate {
 
 const TRACE_LENGTH_EPSILON = 1e-6
 
-const traceConnectsAlignedSameFacingPins = (trace: SolvedTracePath) => {
-  const [firstPin, secondPin] = trace.pins
-  const facingDirection = firstPin._facingDirection
-  if (!facingDirection || facingDirection !== secondPin._facingDirection) {
-    return false
-  }
-
-  const alignedCoordinate = facingDirection.startsWith("x") ? "y" : "x"
-  return (
-    Math.abs(firstPin[alignedCoordinate] - secondPin[alignedCoordinate]) <=
-    TRACE_LENGTH_EPSILON
-  )
-}
-
 const getTracePathStartingAtPin = (
   trace: SolvedTracePath,
   pin: Point,
@@ -216,10 +202,6 @@ const getBestCycleCollapseCandidate = ({
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
 }): CycleCollapseCandidate | null => {
-  // Keep the local return path between aligned pins. Reusing a remote trace
-  // can shorten the net while turning this compact connection into a long branch.
-  if (traceConnectsAlignedSameFacingPins(targetTrace)) return null
-
   const sameNetTraces = traces.filter(
     (trace) => trace.globalConnNetId === targetTrace.globalConnNetId,
   )
@@ -229,7 +211,6 @@ const getBestCycleCollapseCandidate = ({
 
   for (const donorTrace of sameNetTraces) {
     if (donorTrace.mspPairId === targetTrace.mspPairId) continue
-    if (traceConnectsAlignedSameFacingPins(donorTrace)) continue
     const sharedPin = getSharedPin({
       donorTrace,
       branchTrace: targetTrace,
