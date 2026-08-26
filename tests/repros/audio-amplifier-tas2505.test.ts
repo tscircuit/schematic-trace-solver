@@ -8,5 +8,8 @@ test("repro AudioAmplifier TAS2505 schematic traces", () => {
 
   solver.solve()
 
+  const alignmentStats = solver.traceCleanupSolver2!.stats
+  expect(alignmentStats.alignedRailGroupCount).toBe(2)
+  expect(alignmentStats.alignedTraceCount).toBe(4)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

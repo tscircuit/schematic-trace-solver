@@ -9,6 +9,9 @@ import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
 import { nearlyEqual, rangesTouchOrOverlap } from "./geometry"
 import type { RailSegment } from "./types"
 
+const MIN_UNLABELED_RAIL_CHAIN_TRACE_COUNT = 3
+const SINGLE_RAIL_TRACE_POINT_COUNT = 4
+
 const getCorridor = (a: RailSegment, b: RailSegment): [Point, Point] => {
   const overlapMin = Math.max(a.minAlong, b.minAlong)
   const overlapMax = Math.min(a.maxAlong, b.maxAlong)
@@ -173,6 +176,18 @@ export const getRailGroups = (
     }),
   )
   for (const group of collectConnectedGroups(tiedEndpointSegments)) {
+    const groupTraceIds = new Set(group.map((segment) => segment.traceId))
+    const groupIsUnlabeledRailChain =
+      groupTraceIds.size >= MIN_UNLABELED_RAIL_CHAIN_TRACE_COUNT &&
+      group.every(
+        (segment) =>
+          traceMap.get(segment.traceId)?.tracePath.length ===
+          SINGLE_RAIL_TRACE_POINT_COUNT,
+      )
+    if (groupIsUnlabeledRailChain) {
+      addEligibleGroup(group)
+      continue
+    }
     addEligibleGroup(group, { requireFixedLabel: true })
   }
 
