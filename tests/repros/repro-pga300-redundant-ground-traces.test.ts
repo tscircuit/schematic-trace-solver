@@ -13,7 +13,9 @@ const C3_GND = "schematic_port_32"
 const R1_GND = "schematic_port_38"
 
 test("repro: PGA300 adds redundant ground branches at COMP", async () => {
-  const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
+  const solver = new SchematicTracePipelineSolver(
+    inputProblem as unknown as InputProblem,
+  )
   solver.solve()
 
   expect(solver.solved).toBe(true)
