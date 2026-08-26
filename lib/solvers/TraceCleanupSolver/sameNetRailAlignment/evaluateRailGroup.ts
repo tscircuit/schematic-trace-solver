@@ -10,6 +10,10 @@ import {
 import { getDistinctCoordinates, pointsEqual } from "./geometry"
 import { getRailAlignmentFallbackCoordinates } from "./getRailAlignmentFallbackCoordinates"
 import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
+import {
+  MIN_CROSS_COMPONENT_RAIL_CHAIN_TRACE_COUNT,
+  SINGLE_RAIL_TRACE_POINT_COUNT,
+} from "./getRailGroups"
 import { moveRailSegments } from "./moveRailSegments"
 import { preservesLabelAnchors } from "./preservesLabelAnchors"
 import {
@@ -47,15 +51,27 @@ export const evaluateRailGroup = ({
   const originalGroupTraces = traces.filter((trace) =>
     groupTraceIds.has(trace.mspPairId),
   )
+  const groupIsMultiComponentSingleRailChain =
+    originalGroupTraces.length >= MIN_CROSS_COMPONENT_RAIL_CHAIN_TRACE_COUNT &&
+    originalGroupTraces.every(
+      (trace) => trace.tracePath.length === SINGLE_RAIL_TRACE_POINT_COUNT,
+    ) &&
+    new Set(group.map((segment) => segment.componentId)).size > 1 &&
+    !netLabelPlacements.some((label) =>
+      label.mspConnectionPairIds.some((traceId) => groupTraceIds.has(traceId)),
+    )
   const baseline = getTraceGeometryMetrics(originalGroupTraces, traces)
   const originalCoordinates = getDistinctCoordinates(
     group.map((segment) => segment.coordinate),
   )
-  const fixedLabelCoordinate = getFixedLabelCoordinate(
-    group,
-    netLabelPlacements,
-    traces,
-  )
+  let fixedLabelCoordinate: number | null = null
+  if (!groupIsMultiComponentSingleRailChain) {
+    fixedLabelCoordinate = getFixedLabelCoordinate(
+      group,
+      netLabelPlacements,
+      traces,
+    )
+  }
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
   )
@@ -116,11 +132,12 @@ export const evaluateRailGroup = ({
       // A fixed label anchor determines the rail coordinate. It may lengthen
       // endpoint legs, but it must still preserve turns and every safety gate.
       if (
-        options?.coordinateIsFixedByLabel
-          ? metrics.turnCount > baseline.turnCount
-          : !isReadabilityImprovement(metrics, baseline)
+        options?.coordinateIsFixedByLabel ||
+        groupIsMultiComponentSingleRailChain
       ) {
-        continue
+        if (metrics.turnCount > baseline.turnCount) continue
+      } else {
+        if (!isReadabilityImprovement(metrics, baseline)) continue
       }
 
       const score: AlignmentScore = {
