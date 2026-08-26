@@ -241,15 +241,29 @@ export class InlineNetLabelSolver extends BaseSolver {
   override _step() {
     const queuedConnection = this.queuedConnections.shift()
     if (queuedConnection) {
-      if (queuedConnection.kind === "net_connection") {
+      if (
+        queuedConnection.kind === "net_connection" &&
+        queuedConnection.connection.pinIds.length > 2
+      ) {
         const netConnections = [
           queuedConnection.connection,
           ...this.queuedConnections
-            .filter((queued) => queued.kind === "net_connection")
+            .filter(
+              (
+                queued,
+              ): queued is Extract<
+                QueuedInlineConnection,
+                { kind: "net_connection" }
+              > =>
+                queued.kind === "net_connection" &&
+                queued.connection.pinIds.length > 2,
+            )
             .map((queued) => queued.connection),
         ]
         this.queuedConnections = this.queuedConnections.filter(
-          (queued) => queued.kind !== "net_connection",
+          (queued) =>
+            queued.kind !== "net_connection" ||
+            queued.connection.pinIds.length <= 2,
         )
         for (const conversion of this.computeNetConnectionInlineConversions(
           netConnections,
