@@ -8,6 +8,7 @@ import {
   getDimsForOrientation,
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -48,7 +49,6 @@ import type {
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
 import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
-import { isVerticalRailAnchorCandidateClearAlongChipSide } from "./isVerticalRailAnchorCandidateClearAlongChipSide"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -418,25 +418,19 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.hasTraceContinuingInOrientation(label, requiredOrientation) &&
       (isDistanceSplitVerticalRail || isPairedSameSidePowerRail)
     ) {
-      const alignedTraceAnchorCandidate = this.findValidTraceAnchorCandidate(
+      const hostRailCandidate = this.findValidTraceAnchorCandidate(
         label,
         requiredOrientation,
         labelIndex,
       )
-      if (
-        alignedTraceAnchorCandidate &&
-        isVerticalRailAnchorCandidateClearAlongChipSide({
-          candidate: alignedTraceAnchorCandidate,
+      if (hostRailCandidate) {
+        const canUseHostRail = this.canPlaceVerticalLabelOnHostRail(
+          hostRailCandidate,
           label,
-          traces: this.traces,
-          pinMap: this.pinMap,
-          chips: this.chipObstacleSpatialIndex.chips,
-        })
-      ) {
-        return alignedTraceAnchorCandidate
+        )
+        if (canUseHostRail) return hostRailCandidate
+        hostRailCandidate.selected = false
       }
-      if (alignedTraceAnchorCandidate)
-        alignedTraceAnchorCandidate.selected = false
 
       // Keep the established outward column when the direct rail end is not a
       // clear segment of the connected component side.
@@ -1580,6 +1574,60 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return (
       (chipSide === "left" && label.orientation === "x-") ||
       (chipSide === "right" && label.orientation === "x+")
+    )
+  }
+
+  private canPlaceVerticalLabelOnHostRail(
+    candidate: CandidateLabel,
+    label: NetLabelPlacement,
+  ) {
+    const isOnHostRail = label.mspConnectionPairIds.some((traceId) => {
+      const trace = this.traceMap[traceId]
+      return (
+        trace && tracePathContainsPoint(trace.tracePath, candidate.anchorPoint)
+      )
+    })
+    if (!isOnHostRail) return false
+
+    const hostPin = this.pinMap[label.pinIds[0]!]
+    if (!hostPin) return false
+    if (
+      label.pinIds.some(
+        (pinId) => this.pinMap[pinId]?.chipId !== hostPin.chipId,
+      )
+    ) {
+      return false
+    }
+
+    const chip = this.chipObstacleSpatialIndex.chips.find(
+      (chip) => chip.chipId === hostPin.chipId,
+    )
+    if (!chip) return false
+
+    const labelBounds = getRectBounds(
+      candidate.center,
+      candidate.width,
+      candidate.height,
+    )
+    if (
+      labelBounds.minY < chip.bounds.minY - EPS ||
+      labelBounds.maxY > chip.bounds.maxY + EPS
+    ) {
+      return false
+    }
+
+    if (
+      candidate.anchorPoint.x >= chip.bounds.minX - EPS &&
+      candidate.anchorPoint.x <= chip.bounds.maxX + EPS
+    ) {
+      return false
+    }
+
+    return chip.pins.every(
+      (pin) =>
+        label.pinIds.includes(pin.pinId) ||
+        pin.y <= labelBounds.minY + EPS ||
+        pin.y >= labelBounds.maxY - EPS,
     )
   }
 
