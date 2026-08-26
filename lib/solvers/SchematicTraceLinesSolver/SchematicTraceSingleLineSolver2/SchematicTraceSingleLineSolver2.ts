@@ -426,14 +426,33 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     const isEndpointChipObstacle =
       rect.kind === "chip" &&
       this.pins.some((pin) => pin.chipId === rect.chipId)
+    const oppositeEndpointPin = isFirstSegment ? PB : isLastSegment ? PA : null
+    const isOppositeEndpointChipObstacle =
+      rect.kind === "chip" && rect.chipId === oppositeEndpointPin?.chipId
+    const isExplicitDirectConnection = this.inputProblem.directConnections.some(
+      (directConnection) =>
+        directConnection.pinIds.includes(PA.pinId) &&
+        directConnection.pinIds.includes(PB.pinId),
+    )
+    const connectsTwoTerminalComponents = this.pins.every(
+      (pin) => this.chipMap[pin.chipId]?.pins.length === 2,
+    )
+    const hasSameFacingVerticalPins =
+      PA._facingDirection === PB._facingDirection &&
+      (PA._facingDirection === "y+" || PA._facingDirection === "y-")
     // U-shaped detours are local repairs for fixed MSP pairs obstructed by an
-    // intermediate obstacle. Endpoint-chip and optional long-distance routing
-    // require multi-trace or net-level selection instead.
+    // intermediate obstacle. Explicit source traces between vertically stacked
+    // two-terminal components may also route around the opposite terminal's
+    // chip; net connections can retain their label fallback.
     const canGenerateEndpointDetour =
       path.length === 3 ||
       (path.length === 4 &&
         this.connectionPair !== undefined &&
-        !isEndpointChipObstacle)
+        (!isEndpointChipObstacle ||
+          (isOppositeEndpointChipObstacle &&
+            isExplicitDirectConnection &&
+            connectsTwoTerminalComponents &&
+            hasSameFacingVerticalPins)))
 
     if (canGenerateEndpointDetour && (isFirstSegment || isLastSegment)) {
       // A three-point detour replaces an L elbow, so the shortest valid route

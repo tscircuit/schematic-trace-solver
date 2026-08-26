@@ -71,7 +71,7 @@ const inputProblem: InputProblem = {
   availableNetLabelOrientations: {},
 }
 
-test("PMP11282 same-facing pins fail to detour around the endpoint chip", () => {
+test("PMP11282 same-facing pins detour around the endpoint chip", () => {
   const solver = new SchematicTraceSingleLineSolver2({
     pins,
     connectionPair,
@@ -85,9 +85,12 @@ test("PMP11282 same-facing pins fail to detour around the endpoint chip", () => 
 
   solver.solve()
 
-  expect(solver.solved).toBe(false)
-  expect(solver.failed).toBe(true)
-  expect(solver.error).toBe("No collision-free path found")
-  expect(solver.solvedTracePath).toBeNull()
+  expect(solver.solved).toBe(true)
+  expect(solver.failed).toBe(false)
+  expect(solver.error).toBeNull()
+  expect(solver.solvedTracePath).not.toBeNull()
+  expect(
+    Math.min(...solver.solvedTracePath!.map((point) => point.x)),
+  ).toBeLessThan(lowerCapacitor.center.x - lowerCapacitor.width / 2)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
