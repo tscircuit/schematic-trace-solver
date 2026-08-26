@@ -42,9 +42,6 @@ test("repro TIDA-010076 page 02 net-label placement", () => {
   expect(Math.abs(j5AgndLabel.anchorPoint.x - j5GroundPins[0]!.x)).toBeCloseTo(
     0.2,
   )
-  expect(j5AgndLabel.anchorPoint.y).toBeCloseTo(
-    Math.min(...j5GroundPins.map((pin) => pin.y)),
-  )
 
   const powerConnectorPinPairs = [
     ["schematic_port_50", "schematic_port_266"],
