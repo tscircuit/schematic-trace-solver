@@ -15,7 +15,7 @@ import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCen
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 import { getLabeledConnectionRouteReason } from "./isLabeledPeripheralConnection"
-import { shouldSeparateDownwardNetLabelRails } from "./shouldSeparateDownwardNetLabelRails"
+import { shouldSeparateGroundNetRows } from "./shouldSeparateGroundNetRows"
 
 export type MspConnectionPairId = string
 export const DEFAULT_MAX_MSP_PAIR_DISTANCE = 1
@@ -192,30 +192,28 @@ export class MspConnectionPairSolver extends BaseSolver {
       InputPin & { chipId: string }
     >
     const userNetId = this.userNetIdByPinId[directlyConnectedPins[0]!]
+    const netConnection = this.inputProblem.netConnections.find(
+      (connection) => connection.netId === userNetId,
+    )
     const directlyConnectedPinObjects = directlyConnectedPins.map(
       (pinId) => this.pinMap[pinId]!,
     )
     const msp = getOrthogonalMinimumSpanningTree(directlyConnectedPinObjects, {
       maxDistance: this.maxMspPairDistance,
       forbidEdge: (a, b) =>
-        shouldSeparateDownwardNetLabelRails({
-          inputProblem: this.inputProblem,
-          userNetId,
+        shouldSeparateGroundNetRows({
+          netConnection,
           netPins: directlyConnectedPinObjects,
-          pin1: a as InputPin & { chipId: string },
-          pin2: b as InputPin & { chipId: string },
+          pin1: a,
+          pin2: b,
         }) ||
-        arePinsInDifferentSchematicSections(
-          this.inputProblem,
-          a as InputPin & { chipId: string },
-          b as InputPin & { chipId: string },
-        ) ||
+        arePinsInDifferentSchematicSections(this.inputProblem, a, b) ||
         doesPairCrossRestrictedCenterLines({
           inputProblem: this.inputProblem,
           chipMap: this.chipMap,
           pinIdMap,
-          p1: a as InputPin & { chipId: string },
-          p2: b as InputPin & { chipId: string },
+          p1: a,
+          p2: b,
         }),
     })
 
