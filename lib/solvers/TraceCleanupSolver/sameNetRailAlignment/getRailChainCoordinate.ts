@@ -1,5 +1,5 @@
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 import type { PinId } from "lib/types/InputProblem"
 import type { RailSegment } from "./types"
 
@@ -8,9 +8,7 @@ export const getRailChainCoordinate = (
   traces: SolvedTracePath[],
 ) => {
   if (new Set(group.map((segment) => segment.componentId)).size < 2) return null
-  const groupTraceIds = new Set<MspConnectionPairId>(
-    group.map((segment) => segment.traceId),
-  )
+  const groupTraceIds = new Set(group.map((segment) => segment.traceId))
   const groupTraces = traces.filter((trace) =>
     groupTraceIds.has(trace.mspPairId),
   )
@@ -29,22 +27,11 @@ export const getRailChainCoordinate = (
     .map(([pinId]) => pinId)
   if (terminalPinIds.length !== 2) return null
   if ([...pinDegrees.values()].some((degree) => degree > 2)) return null
-
-  // Walking terminal-to-terminal must consume every trace, rejecting cycles.
-  const remainingTraceIds = new Set(groupTraceIds)
-  let currentPinId = terminalPinIds[0]!
-  while (remainingTraceIds.size > 0) {
-    const nextTraces = groupTraces.filter(
-      (trace) =>
-        remainingTraceIds.has(trace.mspPairId) &&
-        trace.pinIds.includes(currentPinId),
-    )
-    if (nextTraces.length !== 1) return null
-    const nextTrace = nextTraces[0]!
-    remainingTraceIds.delete(nextTrace.mspPairId)
-    currentPinId = nextTrace.pinIds.find((pinId) => pinId !== currentPinId)!
-  }
-  if (currentPinId !== terminalPinIds[1]) return null
+  const connectedPinComponents = getTraceConnectedPinComponents({
+    pinIds: [...pinDegrees.keys()],
+    traces: groupTraces,
+  })
+  if (connectedPinComponents.length !== 1) return null
 
   // The first terminal rail anchors every following rail through the chain.
   const firstTerminalTrace = groupTraces.find((trace) =>

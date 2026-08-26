@@ -52,14 +52,9 @@ export const evaluateRailGroup = ({
   const originalCoordinates = getDistinctCoordinates(
     group.map((segment) => segment.coordinate),
   )
-  let fixedRailCoordinate = getRailChainCoordinate(group, traces)
-  if (fixedRailCoordinate === null) {
-    fixedRailCoordinate = getFixedLabelCoordinate(
-      group,
-      netLabelPlacements,
-      traces,
-    )
-  }
+  const fixedRailCoordinate =
+    getRailChainCoordinate(group, traces) ??
+    getFixedLabelCoordinate(group, netLabelPlacements, traces)
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
   )
@@ -154,13 +149,10 @@ export const evaluateRailGroup = ({
     return best
   }
 
-  let candidateCoordinates = originalCoordinates
-  if (fixedRailCoordinate !== null) {
-    candidateCoordinates = [fixedRailCoordinate]
-  }
-  const originalCandidate = evaluateCoordinates(candidateCoordinates, {
-    coordinateIsFixedByRailAnchor: fixedRailCoordinate !== null,
-  })
+  const originalCandidate = evaluateCoordinates(
+    fixedRailCoordinate === null ? originalCoordinates : [fixedRailCoordinate],
+    { coordinateIsFixedByRailAnchor: fixedRailCoordinate !== null },
+  )
   if (originalCandidate) return originalCandidate
 
   if (fixedRailCoordinate !== null) return null

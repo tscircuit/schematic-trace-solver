@@ -1,5 +1,4 @@
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -31,13 +30,13 @@ export const alignSameNetRails = ({
   traces: SolvedTracePath[]
   alignedRailGroupCount: number
   alignedTraceCount: number
-  alignedRailTraceIds: ReadonlySet<MspConnectionPairId>
+  alignedRailTraceIds: ReadonlySet<string>
 } => {
   let outputTraces = [...traces]
   const seenTraceStates = new Set([getTraceStateKey(outputTraces)])
   const obstacles = getObstacleRects(inputProblem)
-  const alignedRailTraceIds = new Set<MspConnectionPairId>()
-  const changedTraceIds = new Set<MspConnectionPairId>()
+  const alignedRailTraceIds = new Set<string>()
+  const changedTraceIds = new Set<string>()
   let alignedRailGroupCount = 0
   const maximumPasses = Math.max(
     1,
