@@ -639,7 +639,15 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     return cloned
   }
 
-  override _step() {
+  override _step(): void {
+    // Early-return guard for empty input connections
+    const hasDirect = this.inputProblem.directConnections && this.inputProblem.directConnections.length > 0;
+    const hasNet = this.inputProblem.netConnections && this.inputProblem.netConnections.length > 0;
+    if (!hasDirect && !hasNet) {
+      this.solved = true;
+      return;
+    }
+
     const pipelineStepDef = this.pipelineDef[this.currentPipelineStepIndex]
     if (!pipelineStepDef) {
       this.solved = true
