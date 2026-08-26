@@ -1,7 +1,6 @@
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { PinId } from "lib/types/InputProblem"
-import { nearlyEqual } from "./geometry"
 import type { RailSegment } from "./types"
 
 export const getRailChainCoordinate = (
@@ -47,16 +46,11 @@ export const getRailChainCoordinate = (
   }
   if (currentPinId !== terminalPinIds[1]) return null
 
-  // Matching terminal rails provide the alignment coordinate for the chain.
-  const terminalCoordinates = terminalPinIds.map((pinId) => {
-    const terminalTrace = groupTraces.find((trace) =>
-      trace.pinIds.includes(pinId),
-    )!
-    return group.find((segment) => segment.traceId === terminalTrace.mspPairId)!
-      .coordinate
-  })
-  if (!nearlyEqual(terminalCoordinates[0]!, terminalCoordinates[1]!)) {
-    return null
-  }
-  return terminalCoordinates[0]!
+  // The first terminal rail anchors every following rail through the chain.
+  const firstTerminalTrace = groupTraces.find((trace) =>
+    trace.pinIds.includes(terminalPinIds[0]!),
+  )!
+  return group.find(
+    (segment) => segment.traceId === firstTerminalTrace.mspPairId,
+  )!.coordinate
 }
