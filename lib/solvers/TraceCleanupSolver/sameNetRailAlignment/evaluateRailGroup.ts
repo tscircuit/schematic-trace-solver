@@ -1,9 +1,6 @@
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import {
-  findFirstCollision,
-  segmentOverlapsRectBoundary,
-} from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import type { ObstacleRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
 import {
@@ -11,9 +8,9 @@ import {
   doesPathOverlapTraceStrokes,
 } from "lib/utils/doesPathCoincideWithTraces"
 import { getDistinctCoordinates, pointsEqual } from "./geometry"
-import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
 import { getRailAlignmentFallbackCoordinates } from "./getRailAlignmentFallbackCoordinates"
-import { getRailChainAnchor } from "./getRailChainCoordinate"
+import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
+import { getRailChainCoordinate } from "./getRailChainCoordinate"
 import { moveRailSegments } from "./moveRailSegments"
 import { preservesLabelAnchors } from "./preservesLabelAnchors"
 import {
@@ -40,27 +37,6 @@ const tracePathChanged = (
     (point, index) => !pointsEqual(point, original.tracePath[index]!),
   )
 
-const pathCollidesOutsideAnchoredComponentEdge = (
-  path: SolvedTracePath["tracePath"],
-  obstacles: ObstacleRect[],
-  anchorComponentId: string | null,
-) =>
-  findFirstCollision(path, obstacles, {
-    excludeRectsForSegment: (segmentIndex) =>
-      new Set(
-        obstacles.filter(
-          (obstacle) =>
-            obstacle.kind === "chip" &&
-            obstacle.chipId === anchorComponentId &&
-            segmentOverlapsRectBoundary(
-              path[segmentIndex]!,
-              path[segmentIndex + 1]!,
-              obstacle,
-            ),
-        ),
-      ),
-  }) !== null
-
 export const evaluateRailGroup = ({
   group,
   traces,
@@ -76,8 +52,7 @@ export const evaluateRailGroup = ({
   const originalCoordinates = getDistinctCoordinates(
     group.map((segment) => segment.coordinate),
   )
-  const railChainAnchor = getRailChainAnchor(group, traces)
-  let fixedRailCoordinate = railChainAnchor?.coordinate ?? null
+  let fixedRailCoordinate = getRailChainCoordinate(group, traces)
   if (fixedRailCoordinate === null) {
     fixedRailCoordinate = getFixedLabelCoordinate(
       group,
@@ -117,11 +92,7 @@ export const evaluateRailGroup = ({
       )
       const candidatesAreClear = candidateTraces.every(
         (candidate) =>
-          !pathCollidesOutsideAnchoredComponentEdge(
-            candidate.tracePath,
-            obstacles,
-            railChainAnchor?.componentId ?? null,
-          ) &&
+          !isPathCollidingWithObstacles(candidate.tracePath, obstacles) &&
           detectTraceLabelOverlap({
             traces: [candidate],
             netLabels: netLabelPlacements,

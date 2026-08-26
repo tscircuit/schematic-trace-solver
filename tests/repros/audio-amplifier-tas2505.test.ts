@@ -8,21 +8,23 @@ test("repro AudioAmplifier TAS2505 schematic traces", () => {
 
   solver.solve()
 
+  const firstCapacitorRailTraceId = "schematic_port_32-schematic_port_30"
   const capacitorRailTraceIds = new Set([
-    "schematic_port_32-schematic_port_30",
+    firstCapacitorRailTraceId,
     "schematic_port_5-schematic_port_32",
     "schematic_port_7-schematic_port_5",
     "schematic_port_10-schematic_port_7",
     "schematic_port_34-schematic_port_10",
     "schematic_port_36-schematic_port_34",
   ])
-  const firstSharedRailPinY = inputProblem.chips
-    .flatMap((chip) => chip.pins)
-    .find((pin) => pin.pinId === "schematic_port_5")!.y
+  const firstCapacitorRailY = solver
+    .preAlignmentTraceElbowTransitionSimplificationSolver!.getOutput()
+    .traces.find((trace) => trace.mspPairId === firstCapacitorRailTraceId)!
+    .tracePath[1]!.y
   const capacitorRailYs = solver
     .inlineNetLabelSolver!.getOutput()
     .traces.filter((trace) => capacitorRailTraceIds.has(trace.mspPairId))
     .map((trace) => trace.tracePath[1]!.y)
-  expect(new Set(capacitorRailYs)).toEqual(new Set([firstSharedRailPinY]))
+  expect(new Set(capacitorRailYs)).toEqual(new Set([firstCapacitorRailY]))
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
