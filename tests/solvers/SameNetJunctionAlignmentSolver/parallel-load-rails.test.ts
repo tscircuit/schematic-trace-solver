@@ -164,6 +164,24 @@ test("does not route a return column through a component", () => {
   )
 })
 
+test("does not stretch a compact load rail from a short donor stub", () => {
+  const fixture = createFixture()
+  const distantDonorRailY = -0.3
+  const shortDonorStubX = 2.4
+  fixture.traces[1]!.pins[0]!.x = shortDonorStubX
+  fixture.traces[1]!.pins[0]!.y = distantDonorRailY
+  fixture.traces[1]!.tracePath[0]!.x = shortDonorStubX
+  fixture.traces[1]!.tracePath[0]!.y = distantDonorRailY
+  fixture.traces[1]!.tracePath[1]!.y = distantDonorRailY
+  const originalParallelTrace = structuredClone(fixture.traces[0]!)
+
+  const result = alignSameNetJunctions(fixture)
+
+  expect(result.traces.find((trace) => trace.mspPairId === "parallel")).toEqual(
+    originalParallelTrace,
+  )
+})
+
 for (const [name, path] of [
   [
     "perpendicular",

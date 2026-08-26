@@ -34,6 +34,8 @@ interface HorizontalSegment {
 
 // Only near-level load pins should be combined onto one horizontal rail.
 const MAX_ALIGNED_LOAD_PIN_OFFSET = 0.2
+// A short local stub should not pull a longer passive rail away from its pins.
+const MIN_DONOR_TO_BRANCH_RAIL_LENGTH_RATIO = 0.3
 // Limit label-boundary alignment to small corrections that cannot create spikes.
 const MAX_SAME_NET_LABEL_BOUNDARY_RAIL_OFFSET = 0.2
 // A shared vertical pin can anchor an existing rail when the rail is only a
@@ -212,6 +214,14 @@ const getAlignedBranchPath = ({
   if (!donorRail) return null
   const branchRail = getLongestHorizontalSegment(branchTrace)
   if (branchRail && nearlyEqual(branchRail.start.y, donorRail.start.y)) {
+    return null
+  }
+  if (
+    branchRail &&
+    Math.abs(donorRail.end.x - donorRail.start.x) <
+      Math.abs(branchRail.end.x - branchRail.start.x) *
+        MIN_DONOR_TO_BRANCH_RAIL_LENGTH_RATIO
+  ) {
     return null
   }
   const railFacesOtherPin = railIsOnFacingSide({
