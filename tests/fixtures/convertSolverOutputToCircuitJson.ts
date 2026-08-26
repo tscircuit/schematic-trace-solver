@@ -184,14 +184,23 @@ const getSnapshotData = (solver: BaseSolver) => {
   }
 }
 
+const isOpaqueSchematicId = (id: string) =>
+  /^(?:schematic|source)_(?:component|port)(?:_|$)/.test(id)
+
 const getRefdes = (chip: InputChip) => {
-  const pinPrefixes = new Set(
-    chip.pins
-      .map((pin) => pin.pinId.split(".")[0])
-      .filter((prefix): prefix is string => Boolean(prefix)),
-  )
-  if (pinPrefixes.size === 1) return [...pinPrefixes][0]!
-  return chip.chipId
+  const pinPrefixes = chip.pins
+    .map((pin) => {
+      const separatorIndex = pin.pinId.indexOf(".")
+      return separatorIndex > 0 ? pin.pinId.slice(0, separatorIndex) : undefined
+    })
+    .filter((prefix): prefix is string => Boolean(prefix))
+  const uniquePinPrefixes = new Set(pinPrefixes)
+  if (pinPrefixes.length === chip.pins.length && uniquePinPrefixes.size === 1) {
+    const inferredRefdes = pinPrefixes[0]!
+    if (!isOpaqueSchematicId(inferredRefdes)) return inferredRefdes
+  }
+  if (!isOpaqueSchematicId(chip.chipId)) return chip.chipId
+  return ""
 }
 
 const getPinLabel = (pinId: string) =>
@@ -769,7 +778,7 @@ const orientationToAnchorSide = (
  */
 export const convertSolverOutputToCircuitJson = (
   solver: BaseSolver,
-  options: { hideComponentAndPortLabels?: boolean } = {},
+  options: { hidePortLabelsAndPinNumbers?: boolean } = {},
 ): AnyCircuitElement[] => {
   const inputProblem = getInputProblemFromSolver(solver)
   if (!inputProblem) {
@@ -793,7 +802,7 @@ export const convertSolverOutputToCircuitJson = (
     snapshotData.inlineNetLabelPlacements,
   )
   const circuitJson: AnyCircuitElement[] = []
-  const showComponentAndPortLabels = !options.hideComponentAndPortLabels
+  const showPortLabelsAndPinNumbers = !options.hidePortLabelsAndPinNumbers
   const sourcePortIdByPinId = new Map<string, string>()
   const schematicPortIdByPinId = new Map<string, string>()
   const sourcePortIdsByPoint = new Map<string, string[]>()
@@ -813,7 +822,7 @@ export const convertSolverOutputToCircuitJson = (
       type: "source_component",
       ftype: "simple_chip",
       source_component_id: sourceComponentId,
-      name: showComponentAndPortLabels ? refdes : "",
+      name: refdes,
     } satisfies SourceSimpleChip)
 
     circuitJson.push({
@@ -829,7 +838,7 @@ export const convertSolverOutputToCircuitJson = (
       symbol_name: symbolName,
     } satisfies SchematicComponent)
 
-    if (showComponentAndPortLabels && !symbolName) {
+    if (!symbolName && refdes) {
       circuitJson.push({
         type: "schematic_text",
         schematic_text_id: `schematic_component_label_${chipIndex}`,
@@ -876,7 +885,7 @@ export const convertSolverOutputToCircuitJson = (
         type: "source_port",
         source_port_id: sourcePortId,
         source_component_id: sourceComponentId,
-        name: showComponentAndPortLabels
+        name: showPortLabelsAndPinNumbers
           ? (pinDisplayName ?? `pin${pinNumber ?? pinIndex + 1}`)
           : "",
         pin_number: pinNumber,
@@ -894,10 +903,10 @@ export const convertSolverOutputToCircuitJson = (
         facing_direction: facingDirectionToCircuitJson(facingDirection),
         side_of_component: sideOfComponent,
         distance_from_component_edge: distanceFromComponentEdge,
-        display_pin_label: showComponentAndPortLabels
+        display_pin_label: showPortLabelsAndPinNumbers
           ? displayPinLabel
           : undefined,
-        pin_number: showComponentAndPortLabels ? pinNumber : undefined,
+        pin_number: showPortLabelsAndPinNumbers ? pinNumber : undefined,
       } satisfies SchematicPort)
 
       sourcePortIdByPinId.set(pin.pinId, sourcePortId)
