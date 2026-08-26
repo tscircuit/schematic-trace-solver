@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
-import inputProblem from "./assets/repro-isolated-rs485-isow7841.input.json"
+import inputProblemJson from "./assets/repro-isolated-rs485-isow7841.input.json"
 
 const EXPECTED_D_P_RAIL_Y = 2.2
 const REDUNDANT_D_P_RAIL_Y = 2.3
@@ -11,12 +11,18 @@ const COMPACT_GND1_TRACE_ID = "schematic_port_35-schematic_port_33"
 const POINT_EPSILON = 1e-6
 
 test("repro isolated RS-485 ISOW7841 schematic traces", () => {
-  const solver = new SchematicTracePipelineSolver(
-    inputProblem as unknown as InputProblem,
+  const inputProblem: InputProblem = JSON.parse(
+    JSON.stringify(inputProblemJson),
   )
+  const solver = new SchematicTracePipelineSolver(inputProblem)
 
   solver.solve()
 
+  expect(solver.solved).toBe(true)
+  expect(solver.schematicTraceLinesSolver?.solvedTracePaths).toHaveLength(50)
+  expect(solver.schematicTraceLinesSolver?.failedConnectionPairs).toHaveLength(
+    0,
+  )
   expect(
     solver.sameNetJunctionAlignmentSolver?.stats.collapsedDetourCount,
   ).toBe(2)
