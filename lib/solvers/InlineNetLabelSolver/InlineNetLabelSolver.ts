@@ -1,6 +1,8 @@
 import type { Bounds, Point } from "@tscircuit/math-utils"
 import type { GraphicsObject, Rect, Text } from "graphics-debug"
+import type { ConnectivityMap } from "connectivity-map"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
@@ -12,6 +14,7 @@ import type {
   PinId,
 } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
+import { getTraceConnectedPinComponents } from "lib/utils/getTraceConnectedPinComponents"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
 import { alignPortOnlyInlineNetLabelStubs } from "./alignPortOnlyInlineNetLabelStubs"
 import {
@@ -106,12 +109,14 @@ type QueuedInlineConnection =
   | { kind: "net_connection"; connection: InputNetConnection }
 
 interface NetConnectionInlineConversion {
+  globalConnNetId: string
   placements: InlineNetLabelPlacement[]
   supersededTraceIds: Set<string>
 }
 
 interface NetConnectionComponent {
   pinIds: PinId[]
+  labeledPinIds: PinId[]
   traces: SolvedTracePath[]
 }
 
@@ -131,6 +136,28 @@ const getTraceLength = (trace: SolvedTracePath) => {
 const setsEqual = <T>(first: Set<T>, second: Set<T>) =>
   first.size === second.size && [...first].every((value) => second.has(value))
 
+const getInlinePlacementBounds = (
+  placement: InlineNetLabelPlacement,
+): Bounds => {
+  const renderedWidth =
+    placement.axis === "y" ? placement.height : placement.width
+  const renderedHeight =
+    placement.axis === "y" ? placement.width : placement.height
+  return {
+    minX: placement.center.x - renderedWidth / 2,
+    maxX: placement.center.x + renderedWidth / 2,
+    minY: placement.center.y - renderedHeight / 2,
+    maxY: placement.center.y + renderedHeight / 2,
+  }
+}
+
+const getAnchoredPlacementBounds = (placement: NetLabelPlacement): Bounds => ({
+  minX: placement.center.x - placement.width / 2,
+  maxX: placement.center.x + placement.width / 2,
+  minY: placement.center.y - placement.height / 2,
+  maxY: placement.center.y + placement.height / 2,
+})
+
 /**
  * Places "inline net labels" - net names drawn alongside the trace they belong
  * to - for connections that opted in via `allowInlineNetLabel`.
@@ -149,7 +176,8 @@ export class InlineNetLabelSolver extends BaseSolver {
   queuedConnections: QueuedInlineConnection[]
 
   private tracesByPinPairKey: Map<string, SolvedTracePath[]>
-  private supersededTraceIds = new Set<string>()
+  private globalConnMap: ConnectivityMap
+  private supersededTraceIdsByGlobalConnNetId = new Map<string, Set<string>>()
   private hasAlignedPortOnlyStubs = false
   private postProcessedOutput?: {
     traces: SolvedTracePath[]
@@ -162,6 +190,9 @@ export class InlineNetLabelSolver extends BaseSolver {
     this.inputProblem = input.inputProblem
     this.traces = input.traces
     this.inputNetLabelPlacements = input.netLabelPlacements
+    this.globalConnMap = getConnectivityMapsFromInputProblem(
+      this.inputProblem,
+    ).netConnMap
 
     this.queuedConnections = [
       ...this.inputProblem.directConnections
@@ -224,9 +255,17 @@ export class InlineNetLabelSolver extends BaseSolver {
           netConnections,
         )) {
           this.inlineNetLabelPlacements.push(...conversion.placements)
+          const supersededTraceIds =
+            this.supersededTraceIdsByGlobalConnNetId.get(
+              conversion.globalConnNetId,
+            ) ?? new Set<string>()
           for (const traceId of conversion.supersededTraceIds) {
-            this.supersededTraceIds.add(traceId)
+            supersededTraceIds.add(traceId)
           }
+          this.supersededTraceIdsByGlobalConnNetId.set(
+            conversion.globalConnNetId,
+            supersededTraceIds,
+          )
         }
         return
       }
@@ -352,47 +391,56 @@ export class InlineNetLabelSolver extends BaseSolver {
   private getNetConnectionComponents(
     connection: InputNetConnection,
   ): NetConnectionComponent[] {
-    const connectionPinIds = new Set(connection.pinIds)
-    const connectionTraces = this.traces.filter(
-      (trace) =>
-        trace.pins.length === 2 &&
-        trace.pins.every((pin) => connectionPinIds.has(pin.pinId)),
-    )
-    const adjacency = new Map<PinId, Set<PinId>>()
-    for (const pinId of connection.pinIds) adjacency.set(pinId, new Set())
-    for (const trace of connectionTraces) {
-      const [firstPin, secondPin] = trace.pins
-      adjacency.get(firstPin.pinId)?.add(secondPin.pinId)
-      adjacency.get(secondPin.pinId)?.add(firstPin.pinId)
-    }
+    const firstPinId = connection.pinIds[0]
+    if (!firstPinId) return []
+    const canonicalGlobalConnNetId =
+      this.globalConnMap.getNetConnectedToId(firstPinId)
+    if (!canonicalGlobalConnNetId) return []
 
-    const components: NetConnectionComponent[] = []
-    const visited = new Set<PinId>()
-    for (const pinId of connection.pinIds) {
-      if (visited.has(pinId)) continue
-      const componentPinIds: PinId[] = []
-      const pending = [pinId]
-      visited.add(pinId)
-      while (pending.length > 0) {
-        const currentPinId = pending.pop()!
-        componentPinIds.push(currentPinId)
-        for (const adjacentPinId of adjacency.get(currentPinId) ?? []) {
-          if (visited.has(adjacentPinId)) continue
-          visited.add(adjacentPinId)
-          pending.push(adjacentPinId)
-        }
-      }
-      const componentPinIdSet = new Set(componentPinIds)
-      components.push({
-        pinIds: componentPinIds,
-        traces: connectionTraces
-          .filter((trace) =>
-            trace.pins.every((pin) => componentPinIdSet.has(pin.pinId)),
-          )
-          .sort((a, b) => getTraceLength(b) - getTraceLength(a)),
-      })
-    }
-    return components
+    const inputPinIds = new Set(
+      this.inputProblem.chips.flatMap((chip) =>
+        chip.pins.map((pin) => pin.pinId),
+      ),
+    )
+    const pinIdsInGlobalNet = (
+      this.globalConnMap.getIdsConnectedToNet(
+        canonicalGlobalConnNetId,
+      ) as string[]
+    ).filter((id): id is PinId => inputPinIds.has(id))
+    const labeledPinIds = new Set(connection.pinIds)
+
+    return getTraceConnectedPinComponents({
+      pinIds: pinIdsInGlobalNet,
+      traces: this.traces,
+    })
+      .map((component) => ({
+        pinIds: component.pinIds,
+        labeledPinIds: component.pinIds.filter((pinId) =>
+          labeledPinIds.has(pinId),
+        ),
+        traces: component.traces.sort(
+          (a, b) => getTraceLength(b) - getTraceLength(a),
+        ),
+      }))
+      .filter((component) => component.labeledPinIds.length > 0)
+  }
+
+  private getGlobalConnNetId(
+    connection: InputNetConnection,
+  ): string | undefined {
+    const firstPinId = connection.pinIds[0]
+    if (!firstPinId) return undefined
+    const connectionPinIds = new Set(connection.pinIds)
+    return (
+      this.traces.find((trace) =>
+        trace.pins.some((pin) => connectionPinIds.has(pin.pinId)),
+      )?.globalConnNetId ??
+      this.inputNetLabelPlacements.find(
+        (placement) => placement.netId === connection.netId,
+      )?.globalConnNetId ??
+      this.globalConnMap.getNetConnectedToId(firstPinId) ??
+      undefined
+    )
   }
 
   /**
@@ -406,13 +454,8 @@ export class InlineNetLabelSolver extends BaseSolver {
     ignoredTraceIds: Set<string>,
     forcedTerminalTraceIds: Set<string>,
   ): NetConnectionInlineConversion | null {
-    const connectionNetLabelPlacements = this.inputNetLabelPlacements.filter(
-      (placement) => placement.netId === connection.netId,
-    )
     const components = this.getNetConnectionComponents(connection)
-    const globalConnNetId =
-      components.find((component) => component.traces.length > 0)?.traces[0]
-        ?.globalConnNetId ?? connectionNetLabelPlacements[0]?.globalConnNetId
+    const globalConnNetId = this.getGlobalConnNetId(connection)
     if (!globalConnNetId) return null
 
     const inlinePlacements: InlineNetLabelPlacement[] = []
@@ -445,6 +488,12 @@ export class InlineNetLabelSolver extends BaseSolver {
         // allowing the batch plan to oscillate.
         return null
       }
+      if (component.labeledPinIds.length !== component.pinIds.length) {
+        // Removing this component's traces would strand an intermediate pin
+        // that was connected through the global net but was not an endpoint of
+        // this named connection. Retain the original routed representation.
+        return null
+      }
 
       // A routed component may be too short to carry its text. In that case,
       // replace the component atomically with equivalent named terminal stubs
@@ -472,7 +521,7 @@ export class InlineNetLabelSolver extends BaseSolver {
       }
     }
 
-    return { placements: inlinePlacements, supersededTraceIds }
+    return { globalConnNetId, placements: inlinePlacements, supersededTraceIds }
   }
 
   /**
@@ -892,18 +941,23 @@ export class InlineNetLabelSolver extends BaseSolver {
    * Net label placements superseded by an inline label. A net gets one label or
    * the other, never both.
    */
-  private getSupersededNetLabelKeys(): Set<string> {
+  private getSupersededNetLabelKeys(
+    placements = this.inlineNetLabelPlacements,
+  ): Set<string> {
     const keys = new Set<string>()
-    for (const placement of this.inlineNetLabelPlacements) {
+    for (const placement of placements) {
       keys.add(placement.globalConnNetId)
     }
     return keys
   }
 
-  private getOutputTraces(supersededNetLabelKeys: Set<string>) {
+  private getOutputTraces(
+    supersededNetLabelKeys: Set<string>,
+    supersededTraceIds: Set<string>,
+  ) {
     return this.traces.filter(
       (trace) =>
-        !this.supersededTraceIds.has(trace.mspPairId) &&
+        !supersededTraceIds.has(trace.mspPairId) &&
         !(
           supersededNetLabelKeys.has(trace.globalConnNetId) &&
           trace.mspPairId.startsWith("available-net-orientation-")
@@ -911,23 +965,81 @@ export class InlineNetLabelSolver extends BaseSolver {
     )
   }
 
+  private getInlineGlobalsOverlappingAnchoredLabels({
+    inlineNetLabelPlacements,
+    anchoredNetLabelPlacements,
+  }: {
+    inlineNetLabelPlacements: InlineNetLabelPlacement[]
+    anchoredNetLabelPlacements: NetLabelPlacement[]
+  }): Set<string> {
+    const blockedGlobalConnNetIds = new Set<string>()
+    for (const inlinePlacement of inlineNetLabelPlacements) {
+      const inlineBounds = getInlinePlacementBounds(inlinePlacement)
+      for (const anchoredPlacement of anchoredNetLabelPlacements) {
+        if (
+          anchoredPlacement.globalConnNetId === inlinePlacement.globalConnNetId
+        ) {
+          continue
+        }
+        const anchoredBounds = getAnchoredPlacementBounds(anchoredPlacement)
+        if (
+          boundsOverlap(inlineBounds, anchoredBounds) ||
+          (inlinePlacement.stubTracePath &&
+            doesPathIntersectBounds(
+              inlinePlacement.stubTracePath,
+              anchoredBounds,
+            ))
+        ) {
+          blockedGlobalConnNetIds.add(inlinePlacement.globalConnNetId)
+          break
+        }
+      }
+    }
+    return blockedGlobalConnNetIds
+  }
+
   private buildPostProcessedOutput() {
-    const superseded = this.getSupersededNetLabelKeys()
-    const retainedNetLabelPlacements = this.inputNetLabelPlacements.filter(
-      (placement) => !superseded.has(placement.globalConnNetId),
-    )
-    const outputTraces = this.getOutputTraces(superseded)
-    const pushed = pushAnchoredNetLabelsAwayFromInlineLabels({
-      inputProblem: this.inputProblem,
-      traces: outputTraces,
-      netLabelPlacements: retainedNetLabelPlacements,
-      inlineNetLabelPlacements: this.inlineNetLabelPlacements,
-    })
-    this.stats.pushedAnchoredNetLabelCount = pushed.movedLabelCount
-    return {
-      traces: pushed.traces,
-      netLabelPlacements: pushed.netLabelPlacements,
-      inlineNetLabelPlacements: this.inlineNetLabelPlacements,
+    let activeInlinePlacements = this.inlineNetLabelPlacements
+    while (true) {
+      const supersededNetLabelKeys = this.getSupersededNetLabelKeys(
+        activeInlinePlacements,
+      )
+      const supersededTraceIds = new Set(
+        [...supersededNetLabelKeys].flatMap((globalConnNetId) => [
+          ...(this.supersededTraceIdsByGlobalConnNetId.get(globalConnNetId) ??
+            []),
+        ]),
+      )
+      const retainedNetLabelPlacements = this.inputNetLabelPlacements.filter(
+        (placement) => !supersededNetLabelKeys.has(placement.globalConnNetId),
+      )
+      const outputTraces = this.getOutputTraces(
+        supersededNetLabelKeys,
+        supersededTraceIds,
+      )
+      const pushed = pushAnchoredNetLabelsAwayFromInlineLabels({
+        inputProblem: this.inputProblem,
+        traces: outputTraces,
+        netLabelPlacements: retainedNetLabelPlacements,
+        inlineNetLabelPlacements: activeInlinePlacements,
+      })
+      const blockedGlobalConnNetIds =
+        this.getInlineGlobalsOverlappingAnchoredLabels({
+          inlineNetLabelPlacements: activeInlinePlacements,
+          anchoredNetLabelPlacements: pushed.netLabelPlacements,
+        })
+      if (blockedGlobalConnNetIds.size === 0) {
+        this.inlineNetLabelPlacements = activeInlinePlacements
+        this.stats.pushedAnchoredNetLabelCount = pushed.movedLabelCount
+        return {
+          traces: pushed.traces,
+          netLabelPlacements: pushed.netLabelPlacements,
+          inlineNetLabelPlacements: activeInlinePlacements,
+        }
+      }
+      activeInlinePlacements = activeInlinePlacements.filter(
+        (placement) => !blockedGlobalConnNetIds.has(placement.globalConnNetId),
+      )
     }
   }
 

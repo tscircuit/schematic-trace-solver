@@ -37,6 +37,13 @@ test("routes the usb power vbus connection without a label detour", () => {
         label.pinIds.includes("schematic_port_54") &&
         label.pinIds.includes("schematic_port_162"),
     )
+  const inlineOutput = solver.inlineNetLabelSolver!.getOutput()
+  const usbHighSpeedInlineLabels = inlineOutput.inlineNetLabelPlacements.filter(
+    (placement) => placement.netId?.startsWith("USB_HS_"),
+  )
+  const usbHighSpeedAnchoredLabels = inlineOutput.netLabelPlacements.filter(
+    (placement) => placement.netId?.startsWith("USB_HS_"),
+  )
 
   expect(gndLabel?.orientation).toBe("y-")
   expect(gndLabel?.anchorPoint.x).toBeCloseTo(-2.34)
@@ -53,5 +60,12 @@ test("routes the usb power vbus connection without a label detour", () => {
     { x: 12.8, y: -5.8 },
     { x: 13, y: -5.8 },
   ])
+  // The available inline side of USB_HS_DM overlaps the retained USB_HS_DP
+  // tag. Keep both differential-pair nets anchored instead of producing a
+  // mixed, overlapping representation.
+  expect(usbHighSpeedInlineLabels).toHaveLength(0)
+  expect(
+    usbHighSpeedAnchoredLabels.map((placement) => placement.netId).sort(),
+  ).toEqual(["USB_HS_DM", "USB_HS_DM", "USB_HS_DP", "USB_HS_DP"])
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
