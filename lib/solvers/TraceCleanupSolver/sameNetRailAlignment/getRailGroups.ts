@@ -1,4 +1,5 @@
 import type { Point } from "@tscircuit/math-utils"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import type { ObstacleRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
@@ -41,7 +42,7 @@ const corridorIsClear = (
 const tracesSharePin = (
   a: RailSegment,
   b: RailSegment,
-  traceMap: Map<string, SolvedTracePath>,
+  traceMap: Map<MspConnectionPairId, SolvedTracePath>,
 ) => {
   if (a.traceId === b.traceId) return true
 
@@ -60,7 +61,7 @@ const canJoinRailGroup = ({
   start: RailSegment
   current: RailSegment
   candidate: RailSegment
-  traceMap: Map<string, SolvedTracePath>
+  traceMap: Map<MspConnectionPairId, SolvedTracePath>
   obstacles: ObstacleRect[]
   allowCrossComponentTraceBridge: boolean
 }) => {
