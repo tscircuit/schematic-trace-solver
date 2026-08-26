@@ -39,6 +39,7 @@ export type CandidateStatus =
 export type CandidatePhase =
   | "rotate"
   | "trace-anchor"
+  | "connected-rail-shift"
   | "outward-trace-anchor"
   | "shift"
   | "lateral-shift"

@@ -51,6 +51,7 @@ import { visualizeAvailableNetOrientationSolver } from "./visualize"
 import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
+const CONNECTED_PIN_ROW_OVERLAP_TOLERANCE = 0.1
 
 export class AvailableNetOrientationSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -1443,9 +1444,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     })
     if (boundsStatus !== "valid") {
       if (
-        phase !== "trace-anchor" ||
+        (phase !== "trace-anchor" && phase !== "connected-rail-shift") ||
         boundsStatus !== "chip-collision" ||
-        !this.isAcceptableTraceAnchorChipCollision(candidate, label, bounds)
+        !this.isAcceptableTraceAnchorChipCollision(candidate, label, bounds) ||
+        (phase === "connected-rail-shift" &&
+          !this.staysOutsideConnectedPinRow({ candidate, label, bounds }))
       ) {
         return boundsStatus
       }
@@ -1523,6 +1526,20 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         anchorPoint.y > chipBounds.maxY + EPS
       )
     })
+  }
+
+  private staysOutsideConnectedPinRow(params: {
+    candidate: CandidateLabel
+    label: NetLabelPlacement
+    bounds: Bounds
+  }) {
+    const { candidate, label, bounds } = params
+    const pin = this.pinMap[label.pinIds[0]!]
+    if (!pin || !isYOrientation(candidate.orientation)) return false
+    if (candidate.anchorPoint.x < pin.x) {
+      return bounds.maxX <= pin.x + CONNECTED_PIN_ROW_OVERLAP_TOLERANCE + EPS
+    }
+    return bounds.minX >= pin.x - CONNECTED_PIN_ROW_OVERLAP_TOLERANCE - EPS
   }
 
   private getBoundsStatus(candidateBoundsCheck: {
@@ -1756,8 +1773,9 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         orientation,
         direction,
         baseAnchor: connectorSource,
-        maxSearchDistance: this.maxSearchDistance,
+        maxSearchDistance: this.getSearchDistanceLimit(label, orientation),
         outwardDistance: 0,
+        phase: "connected-rail-shift",
         stopOnTraceCollision: false,
         connectorSource,
         startDistance: 0,
