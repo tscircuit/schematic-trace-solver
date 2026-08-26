@@ -34,7 +34,7 @@ export class SameNetJunctionAlignmentSolver extends BaseSolver {
       netLabelPlacements: alignment.netLabelPlacements,
     })
     this.outputTraces = collapsedDetours.traces
-    this.outputNetLabelPlacements = alignment.netLabelPlacements
+    this.outputNetLabelPlacements = collapsedDetours.netLabelPlacements
     this.stats.alignedJunctionCount = alignment.alignedJunctionCount
     this.stats.collapsedDetourCount = collapsedDetours.collapsedDetourCount
     this.solved = true

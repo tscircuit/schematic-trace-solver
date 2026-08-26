@@ -1,6 +1,8 @@
 import type { Point } from "@tscircuit/math-utils"
 import { getSegmentIntersection } from "@tscircuit/math-utils/line-intersections"
+import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import {
   getRailOrientation,
@@ -8,9 +10,12 @@ import {
   getVisibleTraceSegmentCount,
   pointsEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
-import { preservesLabelAnchors } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/preservesLabelAnchors"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import type { PinId } from "lib/types/InputProblem"
+import {
+  pathEntersAnyNetLabel,
+  pathIntersectsAnyNetLabel,
+} from "./pathIntersectsAnyNetLabel"
 
 interface CollapseRedundantSameNetDetoursInput {
   traces: SolvedTracePath[]
@@ -25,6 +30,7 @@ interface PathCrossing {
 
 interface DetourCandidate {
   tracePath: Point[]
+  netLabelPlacements: NetLabelPlacement[]
   visibleLength: number
   visibleSegmentCount: number
 }
@@ -131,6 +137,58 @@ const buildCandidatePath = ({
   return pathFromSharedPin.reverse()
 }
 
+const labelsRemainAttached = ({
+  targetTrace,
+  candidateTrace,
+  netLabelPlacements,
+  candidateNetLabelPlacements,
+}: {
+  targetTrace: SolvedTracePath
+  candidateTrace: SolvedTracePath
+  netLabelPlacements: NetLabelPlacement[]
+  candidateNetLabelPlacements: NetLabelPlacement[]
+}) =>
+  netLabelPlacements.every((label, labelIndex) => {
+    const wasAttached =
+      label.globalConnNetId === targetTrace.globalConnNetId &&
+      tracePathContainsPoint(targetTrace.tracePath, label.anchorPoint)
+    if (!wasAttached) return true
+
+    const candidateLabel = candidateNetLabelPlacements[labelIndex]!
+    return tracePathContainsPoint(
+      candidateTrace.tracePath,
+      candidateLabel.anchorPoint,
+    )
+  })
+
+const candidateAvoidsNetLabels = ({
+  candidateTrace,
+  netLabelPlacements,
+}: {
+  candidateTrace: SolvedTracePath
+  netLabelPlacements: NetLabelPlacement[]
+}) => {
+  const otherNetLabelPlacements = netLabelPlacements.filter(
+    (label) => label.globalConnNetId !== candidateTrace.globalConnNetId,
+  )
+  if (
+    pathIntersectsAnyNetLabel({
+      path: candidateTrace.tracePath,
+      netLabelPlacements: otherNetLabelPlacements,
+    })
+  ) {
+    return false
+  }
+
+  const sameNetLabelPlacements = netLabelPlacements.filter(
+    (label) => label.globalConnNetId === candidateTrace.globalConnNetId,
+  )
+  return !pathEntersAnyNetLabel({
+    path: candidateTrace.tracePath,
+    netLabelPlacements: sameNetLabelPlacements,
+  })
+}
+
 const getBestDetourCandidate = ({
   targetTrace,
   traces,
@@ -169,12 +227,23 @@ const getBestDetourCandidate = ({
         crossing,
       })
       const candidateTrace = { ...targetTrace, tracePath }
+      const candidateNetLabelPlacements = moveAttachedLabelsToReroutedTrace({
+        trace: targetTrace,
+        originalTracePath: targetTrace.tracePath,
+        reroutedTracePath: tracePath,
+        netLabelPlacements,
+      })
       if (
-        !preservesLabelAnchors(
+        !labelsRemainAttached({
+          targetTrace,
+          candidateTrace,
           netLabelPlacements,
-          [targetTrace],
-          [candidateTrace],
-        )
+          candidateNetLabelPlacements,
+        }) ||
+        !candidateAvoidsNetLabels({
+          candidateTrace,
+          netLabelPlacements: candidateNetLabelPlacements,
+        })
       ) {
         continue
       }
@@ -204,7 +273,12 @@ const getBestDetourCandidate = ({
           continue
         }
       }
-      bestCandidate = { tracePath, visibleLength, visibleSegmentCount }
+      bestCandidate = {
+        tracePath,
+        netLabelPlacements: candidateNetLabelPlacements,
+        visibleLength,
+        visibleSegmentCount,
+      }
     }
   }
 
@@ -216,6 +290,7 @@ export const collapseRedundantSameNetDetours = ({
   netLabelPlacements,
 }: CollapseRedundantSameNetDetoursInput) => {
   const outputTraces = [...traces]
+  let outputNetLabelPlacements = [...netLabelPlacements]
   let collapsedDetourCount = 0
   let traceIndex = 0
 
@@ -224,7 +299,7 @@ export const collapseRedundantSameNetDetours = ({
     const candidate = getBestDetourCandidate({
       targetTrace,
       traces: outputTraces,
-      netLabelPlacements,
+      netLabelPlacements: outputNetLabelPlacements,
     })
     if (!candidate) {
       traceIndex++
@@ -235,9 +310,14 @@ export const collapseRedundantSameNetDetours = ({
       ...targetTrace,
       tracePath: candidate.tracePath,
     }
+    outputNetLabelPlacements = candidate.netLabelPlacements
     collapsedDetourCount++
     traceIndex = 0
   }
 
-  return { traces: outputTraces, collapsedDetourCount }
+  return {
+    traces: outputTraces,
+    netLabelPlacements: outputNetLabelPlacements,
+    collapsedDetourCount,
+  }
 }

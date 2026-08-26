@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import type { Point } from "@tscircuit/math-utils"
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { collapseRedundantSameNetDetours } from "lib/solvers/SameNetJunctionAlignmentSolver/collapseRedundantSameNetDetours"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import {
@@ -61,10 +62,21 @@ test("collapses a same-net cycle between a shared pin and crossing", () => {
       ],
     }),
   ]
+  const netLabelPlacement: NetLabelPlacement = {
+    globalConnNetId: "same-net",
+    dcConnNetId: "same-net",
+    mspConnectionPairIds: ["upper-to-shared"],
+    pinIds: ["upper", "shared"],
+    orientation: "x-",
+    anchorPoint: { x: 0, y: 2 },
+    width: 0.5,
+    height: 0.2,
+    center: { x: -0.25, y: 2 },
+  }
 
   const result = collapseRedundantSameNetDetours({
     traces,
-    netLabelPlacements: [],
+    netLabelPlacements: [netLabelPlacement],
   })
 
   expect(result.collapsedDetourCount).toBe(1)
@@ -72,6 +84,7 @@ test("collapses a same-net cycle between a shared pin and crossing", () => {
   expect(getVisibleTraceLength(result.traces)).toBe(14)
   expect(getVisibleTraceSegmentCount(result.traces)).toBe(4)
   expect(result.traces[0]?.tracePath.at(-1)).toEqual({ x: 0, y: 0 })
+  expect(result.netLabelPlacements[0]?.anchorPoint).toEqual({ x: 0, y: 0 })
 })
 
 test("keeps a valid shared same-net branch", () => {

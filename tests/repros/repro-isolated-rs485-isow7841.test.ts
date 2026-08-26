@@ -4,6 +4,10 @@ import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-isolated-rs485-isow7841.input.json"
 
+const EXPECTED_D_P_RAIL_Y = 2.2
+const REDUNDANT_D_P_RAIL_Y = 2.3
+const POINT_EPSILON = 1e-6
+
 test("repro isolated RS-485 ISOW7841 schematic traces", () => {
   const solver = new SchematicTracePipelineSolver(
     inputProblem as unknown as InputProblem,
@@ -14,5 +18,19 @@ test("repro isolated RS-485 ISOW7841 schematic traces", () => {
   expect(
     solver.sameNetJunctionAlignmentSolver?.stats.collapsedDetourCount,
   ).toBe(2)
+  const dPLabel =
+    solver.sameNetJunctionAlignmentSolver?.outputNetLabelPlacements.find(
+      (label) => label.netId === "D_P",
+    )
+  expect(dPLabel?.anchorPoint.y).toBeCloseTo(EXPECTED_D_P_RAIL_Y)
+  const dPLabelHostTrace =
+    solver.sameNetJunctionAlignmentSolver?.outputTraces.find((trace) =>
+      dPLabel?.mspConnectionPairIds.includes(trace.mspPairId),
+    )
+  expect(
+    dPLabelHostTrace?.tracePath.some(
+      (point) => Math.abs(point.y - REDUNDANT_D_P_RAIL_Y) < POINT_EPSILON,
+    ),
+  ).toBe(false)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
