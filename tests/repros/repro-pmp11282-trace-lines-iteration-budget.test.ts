@@ -17,7 +17,7 @@ const expensivePairIds = new Set([
 const cloneInputProblem = (): InputProblem =>
   JSON.parse(JSON.stringify(inputProblemJson))
 
-test("PMP11282 trace-line parent exhausts its fixed budget across six children", () => {
+test("PMP11282 trace-line parent budgets for all six children", () => {
   const pipeline = new SchematicTracePipelineSolver(cloneInputProblem(), {
     hideRatsNet: true,
   })
@@ -39,9 +39,12 @@ test("PMP11282 trace-line parent exhausts its fixed budget across six children",
   solver.solve()
 
   expect(expensivePairs).toHaveLength(6)
-  expect(solver.solved).toBe(false)
-  expect(solver.failed).toBe(true)
-  expect(solver.error).toBe("SchematicTraceLinesSolver ran out of iterations")
-  expect(solver.iterations).toBe(100_001)
+  expect(solver.MAX_ITERATIONS).toBe(600_013)
+  expect(solver.solved).toBe(true)
+  expect(solver.failed).toBe(false)
+  expect(solver.error).toBeNull()
+  expect(solver.failedConnectionPairs).toHaveLength(6)
+  expect(solver.queuedConnectionPairs).toHaveLength(0)
+  expect(solver.iterations).toBeLessThan(solver.MAX_ITERATIONS)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 }, 30_000)

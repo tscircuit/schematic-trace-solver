@@ -30,33 +30,18 @@ test("repro PMP11282 isolated DC/DC traces and endpoint net labels", () => {
   defaultPipeline.solve()
 
   const defaultTraceSolver = defaultPipeline.schematicTraceLinesSolver!
-  expect(defaultPipeline.solved).toBe(false)
-  expect(defaultPipeline.failed).toBe(true)
-  expect(defaultPipeline.error).toBe(
-    "SchematicTraceLinesSolver ran out of iterations",
-  )
-  expect(defaultTraceSolver.solvedTracePaths).toHaveLength(70)
-  expect(defaultTraceSolver.failedConnectionPairs).toHaveLength(37)
-  expect(defaultTraceSolver.queuedConnectionPairs).toHaveLength(95)
+  expect(defaultPipeline.solved).toBe(true)
+  expect(defaultPipeline.failed).toBe(false)
+  expect(defaultPipeline.error).toBeNull()
+  expect(defaultTraceSolver.solvedTracePaths).toHaveLength(143)
+  expect(defaultTraceSolver.failedConnectionPairs).toHaveLength(60)
+  expect(defaultTraceSolver.queuedConnectionPairs).toHaveLength(0)
   expect(defaultPipeline).toMatchSolverSnapshot(
     import.meta.path,
     "repro-pmp11282-isolated-dcdc-default-budget",
   )
 
-  // Let the same unmodified production pipeline reach its downstream stages
-  // by increasing only this test instance's nested-solver budget. This keeps
-  // the reproduction production-code-free while exposing the resulting labels.
-  const diagnosticPipeline = new SchematicTracePipelineSolver(
-    cloneInputProblem(),
-    { hideRatsNet: true },
-  )
-  diagnosticPipeline.solveUntilPhase("schematicTraceLinesSolver")
-  diagnosticPipeline.step()
-  diagnosticPipeline.schematicTraceLinesSolver!.MAX_ITERATIONS *=
-    diagnosticPipeline.mspConnectionPairSolver!.mspConnectionPairs.length
-  diagnosticPipeline.solve()
-
-  const finalOutput = diagnosticPipeline.inlineNetLabelSolver!.getOutput()
+  const finalOutput = defaultPipeline.inlineNetLabelSolver!.getOutput()
   const endpointPairLabels = finalOutput.netLabelPlacements.filter((label) =>
     label.netId?.includes(" to "),
   )
@@ -64,18 +49,10 @@ test("repro PMP11282 isolated DC/DC traces and endpoint net labels", () => {
     endpointPairLabels.map((label) => label.netId!),
   )
 
-  expect(diagnosticPipeline.solved).toBe(true)
-  expect(diagnosticPipeline.failed).toBe(false)
-  expect(
-    diagnosticPipeline.schematicTraceLinesSolver!.solvedTracePaths,
-  ).toHaveLength(143)
-  expect(
-    diagnosticPipeline.schematicTraceLinesSolver!.failedConnectionPairs,
-  ).toHaveLength(60)
   expect(finalOutput.netLabelPlacements).toHaveLength(108)
   expect(endpointPairLabels).toHaveLength(80)
   expect(endpointPairNetIds.size).toBe(62)
   expect(endpointPairNetIds).toContain("U500.pin8 to C501.pin1")
   expect(endpointPairNetIds).toContain("L500.pin1 to L500.pin2")
-  expect(diagnosticPipeline).toMatchSolverSnapshot(import.meta.path)
+  expect(defaultPipeline).toMatchSolverSnapshot(import.meta.path)
 }, 30_000)

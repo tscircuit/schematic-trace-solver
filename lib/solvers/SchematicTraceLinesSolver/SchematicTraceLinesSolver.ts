@@ -83,6 +83,15 @@ export class SchematicTraceLinesSolver extends BaseSolver {
     this.chipMap = params.chipMap
 
     this.queuedConnectionPairs = [...this.mspConnectionPairs]
+
+    // Connection pairs are solved sequentially and each child inherits the
+    // BaseSolver iteration limit. Give the parent enough steps to let every
+    // child reach its own terminal state, including scheduling/finalization.
+    const maxStepsPerConnectionPair = this.MAX_ITERATIONS + 2
+    this.MAX_ITERATIONS = Math.max(
+      this.MAX_ITERATIONS,
+      maxStepsPerConnectionPair * this.mspConnectionPairs.length + 1,
+    )
   }
 
   override getConstructorParams(): ConstructorParameters<
