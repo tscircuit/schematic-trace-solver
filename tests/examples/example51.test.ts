@@ -10,5 +10,29 @@ test("example51", () => {
 
   solver.solve()
 
+  const output = solver.netLabelToTraceSolver!.getOutput()
+  const expectedRecoveredPairs = [
+    ["schematic_port_113", "schematic_port_110"],
+    ["schematic_port_116", "schematic_port_111"],
+    ["schematic_port_60", "schematic_port_72"],
+    ["schematic_port_73", "schematic_port_112"],
+    ["schematic_port_68", "schematic_port_74"],
+    ["schematic_port_75", "schematic_port_12"],
+  ]
+
+  for (const expectedPair of expectedRecoveredPairs) {
+    expect(
+      output.traces.some((trace) =>
+        expectedPair.every((pinId) => trace.pinIds.includes(pinId)),
+      ),
+    ).toBe(true)
+    expect(
+      output.netLabelPlacements.some(
+        (label) =>
+          label.pinIds.length === 1 && expectedPair.includes(label.pinIds[0]!),
+      ),
+    ).toBe(false)
+  }
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
