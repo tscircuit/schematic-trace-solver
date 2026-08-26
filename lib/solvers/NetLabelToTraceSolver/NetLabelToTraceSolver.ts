@@ -415,8 +415,12 @@ export class NetLabelToTraceSolver extends BaseSolver {
     const mspPairId = `${RECOVERED_TRACE_PREFIX}${candidate.key}`
     const recoveredTrace: SolvedTracePath = {
       mspPairId,
-      dcConnNetId: candidate.firstLabel.globalConnNetId,
+      dcConnNetId:
+        candidate.firstLabel.dcConnNetId ??
+        candidate.secondLabel.dcConnNetId ??
+        candidate.firstLabel.globalConnNetId,
       globalConnNetId: candidate.firstLabel.globalConnNetId,
+      userNetId: candidate.firstLabel.netId,
       pins: [firstPin, secondPin],
       tracePath,
       mspConnectionPairIds: [mspPairId],
