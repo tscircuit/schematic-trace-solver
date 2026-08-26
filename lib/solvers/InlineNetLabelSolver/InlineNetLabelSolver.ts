@@ -4,6 +4,7 @@ import type { ConnectivityMap } from "connectivity-map"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
@@ -14,7 +15,6 @@ import type {
   PinId,
 } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
-import { getTraceConnectedPinComponents } from "lib/utils/getTraceConnectedPinComponents"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
 import { alignPortOnlyInlineNetLabelStubs } from "./alignPortOnlyInlineNetLabelStubs"
 import {

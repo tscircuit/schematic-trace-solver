@@ -1,4 +1,4 @@
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { SolvedTracePath } from "./SchematicTraceLinesSolver"
 import type { PinId } from "lib/types/InputProblem"
 
 export interface TraceConnectedPinComponent {

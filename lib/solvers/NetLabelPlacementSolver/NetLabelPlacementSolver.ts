@@ -10,7 +10,7 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
-import { getTraceConnectedPinComponents } from "lib/utils/getTraceConnectedPinComponents"
+import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 
 /**
  * A group of traces that have at least one overlapping segment and
