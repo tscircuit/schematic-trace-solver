@@ -40,6 +40,68 @@ const MAX_SAME_NET_LABEL_BOUNDARY_RAIL_OFFSET = 0.2
 // symbol-stem correction away from the pin itself.
 const MAX_SHARED_PIN_RAIL_OFFSET = 0.05
 const MIN_RETURN_STEM_LENGTH = 0.05
+const MAX_LABEL_CONNECTOR_PIN_SNAP_DISTANCE = 0.25
+
+const restoreNearbyPinAsLabelConnectorSource = ({
+  trace,
+  traces,
+  inputProblem,
+}: {
+  trace: SolvedTracePath
+  traces: SolvedTracePath[]
+  inputProblem: InputProblem
+}) => {
+  if (!trace.mspPairId.startsWith("available-net-orientation-")) return trace
+  if (trace.pinIds.length !== 2) return trace
+  const source = trace.tracePath[0]
+  if (!source) return trace
+  const pinById = new Map(
+    inputProblem.chips.flatMap((chip) =>
+      chip.pins.map((pin) => [pin.pinId, pin] as const),
+    ),
+  )
+  const nearbyPin = trace.pinIds
+    .map((pinId) => pinById.get(pinId))
+    .filter((pin): pin is InputPin => Boolean(pin))
+    .map((pin) => ({
+      pin,
+      distance: Math.abs(pin.x - source.x) + Math.abs(pin.y - source.y),
+    }))
+    .sort((a, b) => a.distance - b.distance)[0]
+  if (
+    !nearbyPin ||
+    nearbyPin.distance > MAX_LABEL_CONNECTOR_PIN_SNAP_DISTANCE
+  ) {
+    return trace
+  }
+  const sourceSharesHostTraceWithPin = traces.some(
+    (hostTrace) =>
+      hostTrace !== trace &&
+      hostTrace.globalConnNetId === trace.globalConnNetId &&
+      tracePathContainsPoint(hostTrace.tracePath, source) &&
+      tracePathContainsPoint(hostTrace.tracePath, nearbyPin.pin),
+  )
+  if (!sourceSharesHostTraceWithPin) return trace
+  const otherPin = trace.pinIds
+    .filter((pinId) => pinId !== nearbyPin.pin.pinId)
+    .map((pinId) => pinById.get(pinId))
+    .find((pin): pin is InputPin => Boolean(pin))
+  if (
+    !otherPin ||
+    nearbyPin.pin.y !== otherPin.y ||
+    nearbyPin.pin._facingDirection !== otherPin._facingDirection ||
+    !["x+", "x-"].includes(nearbyPin.pin._facingDirection ?? "")
+  ) {
+    return trace
+  }
+  return {
+    ...trace,
+    tracePath: simplifyPath([
+      { x: nearbyPin.pin.x, y: nearbyPin.pin.y },
+      ...trace.tracePath,
+    ]),
+  }
+}
 
 const getSharedPin = ({
   donorTrace,
@@ -457,7 +519,9 @@ export const alignSameNetJunctions = ({
   traces,
   netLabelPlacements,
 }: AlignSameNetJunctionsInput) => {
-  let outputTraces = [...traces]
+  let outputTraces = traces.map((trace) =>
+    restoreNearbyPinAsLabelConnectorSource({ trace, traces, inputProblem }),
+  )
   let outputNetLabelPlacements = [...netLabelPlacements]
   let alignedJunctionCount = 0
 
@@ -477,6 +541,9 @@ export const alignSameNetJunctions = ({
         (trace) => trace.mspPairId === donorTraceId,
       )!
       for (const branchTrace of outputTraces) {
+        if (branchTrace.mspPairId.startsWith("available-net-orientation-")) {
+          continue
+        }
         if (alignedBranchTraceIds.has(branchTrace.mspPairId)) continue
         if (donorTrace.mspPairId === branchTrace.mspPairId) continue
         if (donorTrace.globalConnNetId !== branchTrace.globalConnNetId) continue
