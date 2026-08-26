@@ -429,8 +429,13 @@ export class NetLabelToTraceSolver extends BaseSolver {
 
     this.outputTraces = [...retainedTraces, recoveredTrace]
     this.outputNetLabelPlacements = this.outputNetLabelPlacements.filter(
-      (label) =>
-        label !== candidate.firstLabel && label !== candidate.secondLabel,
+      (label) => {
+        if (label === candidate.firstLabel) return false
+        if (!candidate.connectsToExistingTrace) {
+          return label !== candidate.secondLabel
+        }
+        return true
+      },
     )
     this.stats.recoveredTraceCount++
   }
