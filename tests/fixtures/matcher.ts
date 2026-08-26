@@ -66,9 +66,7 @@ async function toMatchSolverSnapshot(
 ): Promise<MatcherResult> {
   const inputProblem = getInputProblemFromSolver(received)
   if (inputProblem) {
-    const circuitJson = convertSolverOutputToCircuitJson(received, {
-      hidePortLabelsAndPinNumbers: true,
-    })
+    const circuitJson = convertSolverOutputToCircuitJson(received)
     const circuitJsonSvg = convertCircuitJsonToSchematicSvg(circuitJson, {
       width: 1200,
       height: 800,

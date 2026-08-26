@@ -203,8 +203,10 @@ const getRefdes = (chip: InputChip) => {
   return ""
 }
 
-const getPinLabel = (pinId: string) =>
-  pinId.includes(".") ? pinId.slice(pinId.indexOf(".") + 1) : pinId
+const getPinLabel = (pinId: string) => {
+  if (isOpaqueSchematicId(pinId)) return undefined
+  return pinId.includes(".") ? pinId.slice(pinId.indexOf(".") + 1) : pinId
+}
 
 const getPinDisplayName = (pin: InputPin) => {
   if (pin.displayName !== undefined) return pin.displayName || undefined
@@ -213,7 +215,7 @@ const getPinDisplayName = (pin: InputPin) => {
 
 const getPinNumber = (pin: InputPin) => {
   const idLabel = getPinLabel(pin.pinId)
-  if (/^\d+$/.test(idLabel)) return Number(idLabel)
+  if (idLabel && /^\d+$/.test(idLabel)) return Number(idLabel)
   return pin.displayName && /^\d+$/.test(pin.displayName)
     ? Number(pin.displayName)
     : undefined
@@ -778,7 +780,6 @@ const orientationToAnchorSide = (
  */
 export const convertSolverOutputToCircuitJson = (
   solver: BaseSolver,
-  options: { hidePortLabelsAndPinNumbers?: boolean } = {},
 ): AnyCircuitElement[] => {
   const inputProblem = getInputProblemFromSolver(solver)
   if (!inputProblem) {
@@ -802,7 +803,6 @@ export const convertSolverOutputToCircuitJson = (
     snapshotData.inlineNetLabelPlacements,
   )
   const circuitJson: AnyCircuitElement[] = []
-  const showPortLabelsAndPinNumbers = !options.hidePortLabelsAndPinNumbers
   const sourcePortIdByPinId = new Map<string, string>()
   const schematicPortIdByPinId = new Map<string, string>()
   const sourcePortIdsByPoint = new Map<string, string[]>()
@@ -885,9 +885,7 @@ export const convertSolverOutputToCircuitJson = (
         type: "source_port",
         source_port_id: sourcePortId,
         source_component_id: sourceComponentId,
-        name: showPortLabelsAndPinNumbers
-          ? (pinDisplayName ?? `pin${pinNumber ?? pinIndex + 1}`)
-          : "",
+        name: pinDisplayName ?? "",
         pin_number: pinNumber,
       } satisfies SourcePort)
 
@@ -903,10 +901,8 @@ export const convertSolverOutputToCircuitJson = (
         facing_direction: facingDirectionToCircuitJson(facingDirection),
         side_of_component: sideOfComponent,
         distance_from_component_edge: distanceFromComponentEdge,
-        display_pin_label: showPortLabelsAndPinNumbers
-          ? displayPinLabel
-          : undefined,
-        pin_number: showPortLabelsAndPinNumbers ? pinNumber : undefined,
+        display_pin_label: displayPinLabel,
+        pin_number: pinNumber,
       } satisfies SchematicPort)
 
       sourcePortIdByPinId.set(pin.pinId, sourcePortId)

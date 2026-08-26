@@ -72,6 +72,12 @@ const inputProblem: InputProblem = {
           y: 0,
           _facingDirection: "x+",
         },
+        {
+          pinId: "schematic_port_hidden",
+          x: 6,
+          y: 0.5,
+          _facingDirection: "y+",
+        },
       ],
     },
   ],
@@ -167,6 +173,11 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
   expect(
     circuitJson.filter((element) => element.type === "schematic_component"),
   ).toHaveLength(4)
+  expect(
+    circuitJson
+      .filter((element) => element.type === "source_component")
+      .map((component) => component.name),
+  ).toEqual(["U1", "C1", "LED1", ""])
   const genericBoxComponent = circuitJson.find(
     (element) =>
       element.type === "schematic_component" &&
@@ -237,7 +248,7 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
           element.source_component_id === "source_component_3",
       )
       .map((sourcePort) => sourcePort.name),
-  ).toEqual(["VIN", "VOUT"])
+  ).toEqual(["VIN", "VOUT", ""])
 
   const capacitorPorts = circuitJson
     .filter(
@@ -278,35 +289,9 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
   expect(svg).toContain('data-circuit-json-type="schematic_component"')
   expect(svg).toContain('data-circuit-json-type="schematic_trace"')
   expect(svg).toContain('data-circuit-json-type="schematic_net_label"')
-  expect(svg).not.toContain("schematic_port_opaque")
-})
-
-test("solver snapshots keep refdes while hiding port labels", () => {
-  const circuitJson = convertSolverOutputToCircuitJson(
-    new SnapshotTestSolver(),
-    { hidePortLabelsAndPinNumbers: true },
-  )
-  const svg = convertCircuitJsonToSchematicSvg(circuitJson)
-
-  expect(
-    circuitJson
-      .filter((element) => element.type === "source_component")
-      .map((component) => component.name),
-  ).toEqual(["U1", "C1", "LED1", ""])
-  expect(
-    circuitJson
-      .filter((element) => element.type === "source_port")
-      .every((port) => port.name === ""),
-  ).toBe(true)
-  expect(
-    circuitJson
-      .filter((element) => element.type === "schematic_port")
-      .every(
-        (port) =>
-          port.display_pin_label === undefined && port.pin_number === undefined,
-      ),
-  ).toBe(true)
   expect(svg).toContain(">U1</text>")
-  expect(svg).not.toContain(">VCC</text>")
+  expect(svg).toContain(">VCC</text>")
   expect(svg).not.toContain(">schematic_component_3</text>")
+  expect(svg).not.toContain(">schematic_port_hidden</text>")
+  expect(svg).not.toContain("schematic_port_opaque")
 })
