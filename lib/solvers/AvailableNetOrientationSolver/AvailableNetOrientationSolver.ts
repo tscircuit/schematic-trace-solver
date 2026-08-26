@@ -48,6 +48,7 @@ import type {
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
 import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
+import { isVerticalRailAnchorCandidateClearAlongChipSide } from "./isVerticalRailAnchorCandidateClearAlongChipSide"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -417,9 +418,28 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.hasTraceContinuingInOrientation(label, requiredOrientation) &&
       (isDistanceSplitVerticalRail || isPairedSameSidePowerRail)
     ) {
-      // Keep the established outward column, but attach at the furthest trace
-      // point in the required vertical direction. This places y+ labels above
-      // a rail and y- labels below it while using a short horizontal connector.
+      const alignedTraceAnchorCandidate = this.findValidTraceAnchorCandidate(
+        label,
+        requiredOrientation,
+        labelIndex,
+      )
+      if (
+        alignedTraceAnchorCandidate &&
+        isVerticalRailAnchorCandidateClearAlongChipSide({
+          candidate: alignedTraceAnchorCandidate,
+          label,
+          traces: this.traces,
+          pinMap: this.pinMap,
+          chips: this.chipObstacleSpatialIndex.chips,
+        })
+      ) {
+        return alignedTraceAnchorCandidate
+      }
+      if (alignedTraceAnchorCandidate)
+        alignedTraceAnchorCandidate.selected = false
+
+      // Keep the established outward column when the direct rail end is not a
+      // clear segment of the connected component side.
       const traceAnchorCandidate = this.findValidOutwardTraceAnchorCandidate(
         label,
         requiredOrientation,
