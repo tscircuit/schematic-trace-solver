@@ -423,6 +423,7 @@ export class NetLabelToSameNetTraceSolver extends BaseSolver {
     for (const labels of labelsByGlobalNetId.values()) {
       labels.sort(
         (first, second) =>
+          second.anchorPoint.y - first.anchorPoint.y ||
           Number(second.orientation === "y+") -
             Number(first.orientation === "y+") ||
           Number(second.mspConnectionPairIds.length > 0) -

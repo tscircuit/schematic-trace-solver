@@ -159,7 +159,9 @@ const createProtectedPortRecoveryFixture = ({
 
   return {
     connectorMspPairId,
+    inputProblem,
     label,
+    traces: [connectorTrace, targetTrace],
     solver: new NetLabelToSameNetTraceSolver({
       inputProblem,
       traces: [connectorTrace, targetTrace],
@@ -185,6 +187,39 @@ test("retains the connector for a protected port-only y+ label", () => {
   expect(
     output.traces.some((trace) => trace.mspPairId === connectorMspPairId),
   ).toBe(true)
+})
+
+test("retains the protected label with the highest y value", () => {
+  const fixture = createProtectedPortRecoveryFixture({
+    labelNetId: "VCC",
+    directNetId: "VCC",
+    labelOrientation: "y+",
+  })
+  const higherLabel: NetLabelPlacement = {
+    ...fixture.label,
+    pinIds: ["target_bottom_pin"],
+    anchorPoint: {
+      ...fixture.label.anchorPoint,
+      y: fixture.label.anchorPoint.y + 5,
+    },
+    center: {
+      ...fixture.label.center,
+      y: fixture.label.center.y + 5,
+    },
+  }
+  const solver = new NetLabelToSameNetTraceSolver({
+    inputProblem: fixture.inputProblem,
+    traces: fixture.traces,
+    netLabelPlacements: [fixture.label, higherLabel],
+    inlineNetLabelPlacements: [],
+  })
+
+  solver.solve()
+  const output = solver.getOutput()
+
+  expect(solver.stats.recoveredTraceCount).toBe(1)
+  expect(output.netLabelPlacements).toContain(higherLabel)
+  expect(output.netLabelPlacements).not.toContain(fixture.label)
 })
 
 test("retains a power label whose net id aliases the marked power net", () => {
