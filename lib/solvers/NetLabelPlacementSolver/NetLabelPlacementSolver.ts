@@ -10,6 +10,7 @@ import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualize
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
+import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 
 /**
  * A group of traces that have at least one overlapping segment and
@@ -164,41 +165,12 @@ export class NetLabelPlacementSolver extends BaseSolver {
       ) as string[]
       const pinsInNet = allIdsInNet.filter((id) => pinIdToPinMap.has(id))
 
-      // Build adjacency from solved traces (edges)
-      const adj: Record<string, Set<string>> = {}
-      for (const pid of pinsInNet) adj[pid] = new Set()
-      for (const t of byGlobal[globalConnNetId] ?? []) {
-        const a = t.pins[0].pinId
-        const b = t.pins[1].pinId
-        if (adj[a] && adj[b]) {
-          adj[a].add(b)
-          adj[b].add(a)
-        }
-      }
-
-      // Find connected components based on trace edges
-      const visited = new Set<string>()
-      for (const pid of pinsInNet) {
-        if (visited.has(pid)) continue
-        const stack = [pid]
-        const component = new Set<string>()
-        visited.add(pid)
-        while (stack.length > 0) {
-          const u = stack.pop()!
-          component.add(u)
-          for (const v of adj[u] ?? []) {
-            if (!visited.has(v)) {
-              visited.add(v)
-              stack.push(v)
-            }
-          }
-        }
-
-        // Collect traces fully inside this component
-        const compTraces = (byGlobal[globalConnNetId] ?? []).filter(
-          (t) =>
-            component.has(t.pins[0].pinId) && component.has(t.pins[1].pinId),
-        )
+      for (const traceConnectedComponent of getTraceConnectedPinComponents({
+        pinIds: pinsInNet,
+        traces: byGlobal[globalConnNetId] ?? [],
+      })) {
+        const component = new Set(traceConnectedComponent.pinIds)
+        const compTraces = traceConnectedComponent.traces
 
         if (compTraces.length > 0) {
           // This routed trace exists specifically because two endpoint labels

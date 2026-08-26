@@ -13,6 +13,7 @@ import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDiffer
 import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCenterLines"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
+import { getGroundConnectionPolicy } from "./getGroundConnectionPolicy"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 import { getLabeledConnectionRouteReason } from "./isLabeledPeripheralConnection"
 
@@ -45,11 +46,13 @@ export class MspConnectionPairSolver extends BaseSolver {
   pinMap: Record<string, InputPin & { chipId: string }>
   userNetIdByPinId: Record<string, string | undefined>
   directConnectionPinPairKeys: Set<string>
+  private canRouteGroundPair: (firstPinId: PinId, secondPinId: PinId) => boolean
 
   constructor({ inputProblem }: { inputProblem: InputProblem }) {
     super()
 
     this.inputProblem = inputProblem
+    this.canRouteGroundPair = getGroundConnectionPolicy(inputProblem)
     this.maxMspPairDistance =
       inputProblem.maxMspPairDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
 
@@ -124,6 +127,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       const [pin1, pin2] = directlyConnectedPins
       const p1 = this.pinMap[pin1!]!
       const p2 = this.pinMap[pin2!]!
+      if (!this.canRouteGroundPair(pin1!, pin2!)) return
       const pinPairKey = getPinPairKey([pin1!, pin2!])
       // Explicit source traces are classified by straight-line distance when
       // their input is created; named nets retain the orthogonal route metric.
@@ -195,6 +199,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       {
         maxDistance: this.maxMspPairDistance,
         forbidEdge: (a, b) =>
+          !this.canRouteGroundPair(a.pinId, b.pinId) ||
           arePinsInDifferentSchematicSections(
             this.inputProblem,
             a as InputPin & { chipId: string },

@@ -485,13 +485,15 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
         inlineBounds.some((bounds) =>
           pathIntersectsBounds(connector.tracePath, bounds),
         ) ||
-        inputProblem.chips.some((chip) =>
-          pathIntersectsBounds(connector.tracePath, {
-            minX: chip.center.x - chip.width / 2,
-            maxX: chip.center.x + chip.width / 2,
-            minY: chip.center.y - chip.height / 2,
-            maxY: chip.center.y + chip.height / 2,
-          }),
+        inputProblem.chips.some(
+          (chip) =>
+            !ownerChipIds.has(chip.chipId) &&
+            pathIntersectsBounds(connector.tracePath, {
+              minX: chip.center.x - chip.width / 2,
+              maxX: chip.center.x + chip.width / 2,
+              minY: chip.center.y - chip.height / 2,
+              maxY: chip.center.y + chip.height / 2,
+            }),
         ) ||
         (inputProblem.textBoxes ?? []).some((textBox) =>
           pathIntersectsBounds(connector.tracePath, getTextBoxBounds(textBox)),

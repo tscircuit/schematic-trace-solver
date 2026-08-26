@@ -7,6 +7,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { alignSameNetJunctions } from "./alignSameNetJunctions"
 import { collapseRedundantSameNetDetours } from "./collapseRedundantSameNetDetours"
+import { placeGroundRailLabelsAtOuterEnd } from "./placeGroundRailLabelsAtOuterEnd"
 
 interface SameNetJunctionAlignmentSolverInput {
   inputProblem: InputProblem
@@ -34,7 +35,11 @@ export class SameNetJunctionAlignmentSolver extends BaseSolver {
       netLabelPlacements: alignment.netLabelPlacements,
     })
     this.outputTraces = collapsedDetours.traces
-    this.outputNetLabelPlacements = collapsedDetours.netLabelPlacements
+    this.outputNetLabelPlacements = placeGroundRailLabelsAtOuterEnd({
+      inputProblem: this.input.inputProblem,
+      traces: collapsedDetours.traces,
+      netLabelPlacements: collapsedDetours.netLabelPlacements,
+    })
     this.stats.alignedJunctionCount = alignment.alignedJunctionCount
     this.stats.collapsedDetourCount = collapsedDetours.collapsedDetourCount
     this.solved = true
