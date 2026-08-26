@@ -56,7 +56,7 @@ const inputProblem: InputProblem = {
   maxMspPairDistance: 100,
 }
 
-test("PMP11282 endpoint trace crosses U503 component text", () => {
+test("PMP11282 endpoint trace avoids U503 component text", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem, {
     hideRatsNet: true,
   })
@@ -77,6 +77,6 @@ test("PMP11282 endpoint trace crosses U503 component text", () => {
     isPathCollidingWithObstacles(trace!.tracePath, [
       getTextBoxBounds(componentTextBox),
     ]),
-  ).toBe(true)
+  ).toBe(false)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
