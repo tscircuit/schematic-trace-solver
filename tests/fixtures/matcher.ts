@@ -4,7 +4,7 @@ import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { colorAvailableNetOrientationLabels } from "lib/solvers/SchematicTracePipelineSolver/colorAvailableNetOrientationLabels"
 import type { InputProblem } from "lib/types/InputProblem"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
-import { stackSvgsHorizontally } from "stack-svgs"
+import { stackSvgsVertically } from "stack-svgs"
 import {
   convertSolverOutputToCircuitJson,
   getInputProblemFromSolver,
@@ -72,14 +72,14 @@ async function toMatchSolverSnapshot(
       height: 800,
     }).replace(/[ \t]+$/gm, "")
     const legacySvg = getLegacySolverSvg(received, inputProblem)
-    const svg = stackSvgsHorizontally([legacySvg, circuitJsonSvg], {
+    const svg = stackSvgsVertically([legacySvg, circuitJsonSvg], {
       gap: 16,
       normalizeSize: true,
       targetSize: 1200,
       rootAttributes: {
         role: "img",
         "aria-label":
-          "Solver debug visualization on the left and Circuit JSON schematic on the right",
+          "Solver debug visualization on top and Circuit JSON schematic on the bottom",
       },
     })
 

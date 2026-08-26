@@ -1,4 +1,4 @@
-<svg width="2416" height="1200" viewBox="0 0 2416 1200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on the left and Circuit JSON schematic on the right">
+<svg width="1200" height="2016" viewBox="0 0 1200 2016" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on top and Circuit JSON schematic on the bottom">
   <g transform="translate(0, 0) scale(1.875, 1.875) translate(0, 0)">
     <rect width="100%" height="100%" fill="white"/><g><polyline data-points="0.30397715550000004,0.5800832909999993 0.31067575550000137,-0.5800832909999993" data-type="line" data-label="" points="376.82474681593334,221.07952010516527 378.69086877497443,544.2832245830261" fill="none" stroke="hsl(73, 100%, 50%, 0.8)" stroke-width="1px" stroke-dasharray="4 2"/></g><g><polyline data-points="0.30397715550000004,0.5800832909999993 0.30397715550000004,0.7800832909999993 0.6467558855000002,0.7800832909999993 0.6467558855000002,-0.7800832909999993 0.31067575550000137,-0.7800832909999993 0.31067575550000137,-0.5800832909999993" data-type="line" data-label="" points="376.82474681593334,221.07952010516527 376.82474681593334,165.36274468819136 472.3173744015611,165.36274468819136 472.3173744015611,600 378.69086877497443,600 378.69086877497443,544.2832245830261" fill="none" stroke="purple" stroke-width="1px"/></g><g><rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="167.68262559843902" y="221.07952010516524" width="248.91797338614813" height="323.20370447786087" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.0035895831821428554"/></g><g><rect data-type="rect" data-label="netId: V3_3
 globalConnNetId: connectivity_net0" data-x="0.30397715550000004" data-y="1.0050832909999994" x="348.96635910744635" y="40.00000000000004" width="55.71677541697392" height="125.36274468819127" fill="#ef444466" stroke="#ef4444" stroke-width="0.0035895831821428554"/></g><g><circle data-type="point" data-label="Q1.1
@@ -50,7 +50,7 @@ orientation: y+" data-x="0.30397715550000004" data-y="0.7800832909999993" cx="37
               });
             ]]></script>
   </g>
-  <g transform="translate(1216, 200)">
+  <g transform="translate(0, 1216)">
     <style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }

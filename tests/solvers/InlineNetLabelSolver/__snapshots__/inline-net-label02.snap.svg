@@ -1,4 +1,4 @@
-<svg width="2416" height="1200" viewBox="0 0 2416 1200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on the left and Circuit JSON schematic on the right">
+<svg width="1200" height="2016" viewBox="0 0 1200 2016" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on top and Circuit JSON schematic on the bottom">
   <g transform="translate(0, 0) scale(1.875, 1.875) translate(0, 0)">
     <rect width="100%" height="100%" fill="white"/><g><polyline data-points="0.6000000000000001,-0.30000000000000004 2.435,0" data-type="line" data-label="" points="201.34453781512605,376.47058823529414 448.06722689075633,336.1344537815126" fill="none" stroke="hsl(48, 100%, 50%, 0.8)" stroke-width="1px"/></g><g><polyline data-points="0.6000000000000001,-0.30000000000000004 1.5175,-0.30000000000000004 1.5175,0 2.435,0" data-type="line" data-label="" points="201.34453781512605,376.47058823529414 324.7058823529412,376.47058823529414 324.7058823529412,336.1344537815126 448.06722689075633,336.1344537815126" fill="none" stroke="purple" stroke-width="1px"/></g><g><rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="40" y="268.9075630252101" width="161.34453781512605" height="134.45378151260502" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.0074375"/></g><g><rect data-type="rect" data-label="schematic_component_1" data-x="3" data-y="0.13249999999999998" x="448.0672268907564" y="256.8067226890756" width="151.93277310924367" height="123.02521008403363" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.0074375"/></g><g><rect data-type="rect" data-label="U1" data-x="-0.08000000000000002" data-y="0.615" x="85.7142857142857" y="236.6386554621849" width="48.40336134453783" height="33.613445378151255" fill="rgba(160, 0, 220, 0.14)" stroke="black" stroke-width="0.0074375"/></g><g><rect data-type="rect" data-label="INLINE netId: USER_LED_ANODE
 axis: x
@@ -58,7 +58,7 @@ USER_LED_ANODE" data-x="1.5175" data-y="0" cx="324.7058823529412" cy="336.134453
               });
             ]]></script>
   </g>
-  <g transform="translate(1216, 200)">
+  <g transform="translate(0, 1216)">
     <style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }

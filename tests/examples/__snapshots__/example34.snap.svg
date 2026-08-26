@@ -1,4 +1,4 @@
-<svg width="2416" height="1200" viewBox="0 0 2416 1200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on the left and Circuit JSON schematic on the right">
+<svg width="1200" height="2016" viewBox="0 0 1200 2016" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on top and Circuit JSON schematic on the bottom">
   <g transform="translate(0, 0) scale(1.875, 1.875) translate(0, 0)">
     <rect width="100%" height="100%" fill="white"/><g><polyline data-points="1.1,-0.10000000000000003 1.601,-0.10000000000000003 1.601,0.4009999999999999" data-type="line" data-label="" points="479.84291324526953,329.9964298464834 580.0071403070332,329.9964298464834 580.0071403070332,229.83220278471975" fill="none" stroke="purple" stroke-width="1px"/></g><g><polyline data-points="1.1,-0.30000000000000004 1.201,-0.30000000000000004 1.201,-0.5010000000000001" data-type="line" data-label="" points="479.84291324526953,369.982149232417 500.035701535166,369.982149232417 500.035701535166,410.1677972152803" fill="none" stroke="purple" stroke-width="1px"/></g><g><rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="40" y="210.03927168868262" width="439.84291324526953" height="199.92859692966795" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.005001785714285715"/></g><g><rect data-type="rect" data-label="netId: SCL
 globalConnNetId: connectivity_net0" data-x="1.326" data-y="0.30000000000000004" x="480.0428418421992" y="230.03213138164938" width="89.96786861835062" height="39.985719385933635" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.005001785714285715"/></g><g><rect data-type="rect" data-label="netId: SDA
@@ -57,7 +57,7 @@ orientation: y-" data-x="1.201" data-y="-0.5010000000000001" cx="500.03570153516
               });
             ]]></script>
   </g>
-  <g transform="translate(1216, 200)">
+  <g transform="translate(0, 1216)">
     <style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
