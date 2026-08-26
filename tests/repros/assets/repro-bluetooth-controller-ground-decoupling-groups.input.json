@@ -159,6 +159,7 @@
   "netConnections": [
     {
       "netId": "VDD_IO",
+      "isGround": false,
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.84,
       "pinIds": [
@@ -185,6 +186,7 @@
     },
     {
       "netId": "MLDO_OUT",
+      "isGround": false,
       "netLabelWidth": 1.08,
       "anchoredNetLabelWidth": 1.08,
       "allowInlineNetLabel": true,
@@ -194,6 +196,7 @@
     },
     {
       "netId": "VBAT",
+      "isGround": false,
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.6,
       "pinIds": ["schematic_port_12"]
