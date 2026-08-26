@@ -113,10 +113,11 @@ export interface InputNetConnection {
   netLabelHeight?: number
 
   /**
-   * When true, a named one- or two-pin net may use inline labels. A single-pin
-   * net gets an outward stub. A routed two-pin net gets one label along its
-   * trace; when that route is intentionally skipped, both endpoints get
-   * outward stubs. Nets with more than two pins retain anchored labels.
+   * When true, a named net may use inline labels. Each routed connected
+   * component gets a label along its representative trace, while each
+   * disconnected endpoint gets an outward inline-label stub. Conversion is
+   * atomic for the whole net so inline and anchored representations are not
+   * mixed when any label cannot be placed.
    */
   allowInlineNetLabel?: boolean
 
