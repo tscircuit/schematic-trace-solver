@@ -72,7 +72,11 @@ test("repro TIDA-010076 J4 ground pins should share one vertical bus", () => {
   )
 
   expect(new Set(verticalRailXs.map((x) => x.toFixed(3))).size).toBe(1)
-  expect(verticalRailXs[0]).toBeCloseTo(1.685)
+  expect(verticalRailXs[0]).toBeCloseTo(0.975)
   expect(groundLabel?.anchorPoint.x).toBeCloseTo(verticalRailXs[0]!)
+  const productTextBox = inputProblem.textBoxes![0]!
+  expect(groundLabel?.anchorPoint.y).toBeLessThan(
+    productTextBox.center.y - productTextBox.height / 2,
+  )
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
