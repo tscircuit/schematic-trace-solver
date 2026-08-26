@@ -1,0 +1,818 @@
+{
+  "chips": [
+    {
+      "chipId": "U2",
+      "center": {
+        "x": -1.9,
+        "y": -1.1999999999999997
+      },
+      "width": 2.2,
+      "height": 5.2,
+      "pins": [
+        {
+          "pinId": "U2.1",
+          "x": -0.3999999999999999,
+          "y": 0.8000000000000005,
+          "_facingDirection": "x+",
+          "displayName": "BAT"
+        },
+        {
+          "pinId": "U2.2",
+          "x": -0.3999999999999999,
+          "y": 0.6000000000000003,
+          "_facingDirection": "x+",
+          "displayName": "PBI"
+        },
+        {
+          "pinId": "U2.3",
+          "x": -3.4,
+          "y": 1.0000000000000007,
+          "_facingDirection": "x-",
+          "displayName": "VC4"
+        },
+        {
+          "pinId": "U2.4",
+          "x": -3.4,
+          "y": 0.8000000000000005,
+          "_facingDirection": "x-",
+          "displayName": "VC3"
+        },
+        {
+          "pinId": "U2.5",
+          "x": -3.4,
+          "y": 0.6000000000000008,
+          "_facingDirection": "x-",
+          "displayName": "VC2"
+        },
+        {
+          "pinId": "U2.6",
+          "x": -3.4,
+          "y": 0.4000000000000006,
+          "_facingDirection": "x-",
+          "displayName": "VC1"
+        },
+        {
+          "pinId": "U2.7",
+          "x": -3.4,
+          "y": -1.199999999999999,
+          "_facingDirection": "x-",
+          "displayName": "SRN"
+        },
+        {
+          "pinId": "U2.8",
+          "x": -3.4,
+          "y": -0.9999999999999991,
+          "_facingDirection": "x-",
+          "displayName": "SRP"
+        },
+        {
+          "pinId": "U2.9",
+          "x": -3.4,
+          "y": -3.2,
+          "_facingDirection": "x-",
+          "displayName": "VSS"
+        },
+        {
+          "pinId": "U2.10",
+          "x": -3.4,
+          "y": -1.7999999999999992,
+          "_facingDirection": "x-",
+          "displayName": "TS1"
+        },
+        {
+          "pinId": "U2.11",
+          "x": -3.4,
+          "y": -1.9999999999999993,
+          "_facingDirection": "x-",
+          "displayName": "TS2"
+        },
+        {
+          "pinId": "U2.12",
+          "x": -3.4,
+          "y": -2.1999999999999993,
+          "_facingDirection": "x-",
+          "displayName": "TS3"
+        },
+        {
+          "pinId": "U2.13",
+          "x": -3.4,
+          "y": -2.3999999999999995,
+          "_facingDirection": "x-",
+          "displayName": "TS4"
+        },
+        {
+          "pinId": "U2.14",
+          "x": -3.4,
+          "y": -0.39999999999999925,
+          "_facingDirection": "x-",
+          "displayName": "GPIO0"
+        },
+        {
+          "pinId": "U2.15",
+          "x": -3.4,
+          "y": -0.5999999999999992,
+          "_facingDirection": "x-",
+          "displayName": "GPIO1"
+        },
+        {
+          "pinId": "U2.16",
+          "x": -0.3999999999999999,
+          "y": -3.2,
+          "_facingDirection": "x+",
+          "displayName": "SMBD"
+        },
+        {
+          "pinId": "U2.17",
+          "x": -0.3999999999999999,
+          "y": -3.4000000000000004,
+          "_facingDirection": "x+",
+          "displayName": "SMBC"
+        },
+        {
+          "pinId": "U2.18",
+          "x": -0.3999999999999999,
+          "y": -1.4000000000000008,
+          "_facingDirection": "x+",
+          "displayName": "VFB"
+        },
+        {
+          "pinId": "U2.19",
+          "x": -0.3999999999999999,
+          "y": -1.2000000000000008,
+          "_facingDirection": "x+",
+          "displayName": "HSRN"
+        },
+        {
+          "pinId": "U2.20",
+          "x": -0.3999999999999999,
+          "y": -1.0000000000000007,
+          "_facingDirection": "x+",
+          "displayName": "HSRP"
+        },
+        {
+          "pinId": "U2.21",
+          "x": -3.4,
+          "y": 6.661338147750939E-16,
+          "_facingDirection": "x-",
+          "displayName": "AFEFUSE"
+        },
+        {
+          "pinId": "U2.22",
+          "x": -0.3999999999999999,
+          "y": -0.6000000000000003,
+          "_facingDirection": "x+",
+          "displayName": "VCC"
+        },
+        {
+          "pinId": "U2.23",
+          "x": -0.3999999999999999,
+          "y": -2.8000000000000007,
+          "_facingDirection": "x+",
+          "displayName": "REGN"
+        },
+        {
+          "pinId": "U2.24",
+          "x": -3.4,
+          "y": -3,
+          "_facingDirection": "x-",
+          "displayName": "PGND"
+        },
+        {
+          "pinId": "U2.25",
+          "x": -0.3999999999999999,
+          "y": -2.4000000000000004,
+          "_facingDirection": "x+",
+          "displayName": "LODRV"
+        },
+        {
+          "pinId": "U2.26",
+          "x": -0.3999999999999999,
+          "y": -2.2000000000000006,
+          "_facingDirection": "x+",
+          "displayName": "PH"
+        },
+        {
+          "pinId": "U2.27",
+          "x": -0.3999999999999999,
+          "y": -1.8000000000000007,
+          "_facingDirection": "x+",
+          "displayName": "HIDRV"
+        },
+        {
+          "pinId": "U2.28",
+          "x": -0.3999999999999999,
+          "y": -2.000000000000001,
+          "_facingDirection": "x+",
+          "displayName": "BTST"
+        },
+        {
+          "pinId": "U2.29",
+          "x": -0.3999999999999999,
+          "y": -0.40000000000000013,
+          "_facingDirection": "x+",
+          "displayName": "ACFET"
+        },
+        {
+          "pinId": "U2.30",
+          "x": -0.3999999999999999,
+          "y": 2.220446049250313E-16,
+          "_facingDirection": "x+",
+          "displayName": "DSG"
+        },
+        {
+          "pinId": "U2.31",
+          "x": -0.3999999999999999,
+          "y": 1.0000000000000007,
+          "_facingDirection": "x+",
+          "displayName": "ACP"
+        },
+        {
+          "pinId": "U2.32",
+          "x": -0.3999999999999999,
+          "y": 0.2000000000000004,
+          "_facingDirection": "x+",
+          "displayName": "CHG"
+        },
+        {
+          "pinId": "U2.33",
+          "x": -3.4,
+          "y": -3.4000000000000004,
+          "_facingDirection": "x-",
+          "displayName": "PAD"
+        }
+      ]
+    },
+    {
+      "chipId": "C20",
+      "center": {
+        "x": 1.4,
+        "y": 0.6
+      },
+      "width": 0.6000000000000001,
+      "height": 0.8400000000000001,
+      "pins": [
+        {
+          "pinId": "C20.2",
+          "x": 1.0999999999999999,
+          "y": 0.6,
+          "_facingDirection": "x-",
+          "displayName": "pin2"
+        },
+        {
+          "pinId": "C20.1",
+          "x": 1.7,
+          "y": 0.6,
+          "_facingDirection": "x+",
+          "displayName": "pin1"
+        }
+      ]
+    },
+    {
+      "chipId": "C27",
+      "center": {
+        "x": 1.1225,
+        "y": -3.9000000000000004
+      },
+      "width": 1.1449999999999998,
+      "height": 0.7600000000000016,
+      "pins": [
+        {
+          "pinId": "C27.1",
+          "x": 1,
+          "y": -4.2,
+          "_facingDirection": "y-",
+          "displayName": "pin1"
+        },
+        {
+          "pinId": "C27.2",
+          "x": 1,
+          "y": -3.6,
+          "_facingDirection": "y+",
+          "displayName": "pin2"
+        }
+      ]
+    },
+    {
+      "chipId": "C18",
+      "center": {
+        "x": 1.4,
+        "y": 1.6
+      },
+      "width": 0.6000000000000001,
+      "height": 0.8399999999999999,
+      "pins": [
+        {
+          "pinId": "C18.2",
+          "x": 1.0999999999999999,
+          "y": 1.6,
+          "_facingDirection": "x-",
+          "displayName": "pin2"
+        },
+        {
+          "pinId": "C18.1",
+          "x": 1.7,
+          "y": 1.6,
+          "_facingDirection": "x+",
+          "displayName": "pin1"
+        }
+      ]
+    },
+    {
+      "chipId": "RT4",
+      "center": {
+        "x": -4.4376361625000005,
+        "y": -3.07
+      },
+      "width": 0.7941830249999988,
+      "height": 0.9400000000000004,
+      "pins": [
+        {
+          "pinId": "RT4.1",
+          "x": -4.7,
+          "y": -2.5999999999999996,
+          "_facingDirection": "y+",
+          "displayName": "pin1"
+        },
+        {
+          "pinId": "RT4.2",
+          "x": -4.7,
+          "y": -3.54,
+          "_facingDirection": "y-",
+          "displayName": "pin2"
+        }
+      ]
+    },
+    {
+      "chipId": "RT1",
+      "center": {
+        "x": -7.7376361625,
+        "y": -2.47
+      },
+      "width": 0.7941830250000006,
+      "height": 0.9400000000000004,
+      "pins": [
+        {
+          "pinId": "RT1.1",
+          "x": -8,
+          "y": -2,
+          "_facingDirection": "y+",
+          "displayName": "pin1"
+        },
+        {
+          "pinId": "RT1.2",
+          "x": -8,
+          "y": -2.9400000000000004,
+          "_facingDirection": "y-",
+          "displayName": "pin2"
+        }
+      ]
+    },
+    {
+      "chipId": "RT2",
+      "center": {
+        "x": -6.6376361625,
+        "y": -2.67
+      },
+      "width": 0.7941830249999997,
+      "height": 0.9399999999999995,
+      "pins": [
+        {
+          "pinId": "RT2.1",
+          "x": -6.9,
+          "y": -2.2,
+          "_facingDirection": "y+",
+          "displayName": "pin1"
+        },
+        {
+          "pinId": "RT2.2",
+          "x": -6.9,
+          "y": -3.14,
+          "_facingDirection": "y-",
+          "displayName": "pin2"
+        }
+      ]
+    },
+    {
+      "chipId": "RT3",
+      "center": {
+        "x": -5.5376361625,
+        "y": -2.87
+      },
+      "width": 0.7941830249999988,
+      "height": 0.9399999999999995,
+      "pins": [
+        {
+          "pinId": "RT3.1",
+          "x": -5.8,
+          "y": -2.4000000000000004,
+          "_facingDirection": "y+",
+          "displayName": "pin1"
+        },
+        {
+          "pinId": "RT3.2",
+          "x": -5.8,
+          "y": -3.3400000000000003,
+          "_facingDirection": "y-",
+          "displayName": "pin2"
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": ".C20 > .pin2 to .U2 > .pin2",
+      "pinIds": [
+        "C20.2",
+        "U2.2"
+      ]
+    },
+    {
+      "netId": ".C27 > .pin2 to .U2 > .pin23",
+      "pinIds": [
+        "C27.2",
+        "U2.23"
+      ]
+    },
+    {
+      "netId": ".C18 > .pin2 to .U2 > .pin1",
+      "pinIds": [
+        "C18.2",
+        "U2.1"
+      ]
+    },
+    {
+      "netId": ".RT1 > .pin1 to .U2 > .pin10",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "RT1.1",
+        "U2.10"
+      ]
+    },
+    {
+      "netId": ".RT2 > .pin1 to .U2 > .pin11",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "RT2.1",
+        "U2.11"
+      ]
+    },
+    {
+      "netId": ".RT3 > .pin1 to .U2 > .pin12",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "RT3.1",
+        "U2.12"
+      ]
+    },
+    {
+      "netId": ".RT4 > .pin1 to .U2 > .pin13",
+      "pinIds": [
+        "RT4.1",
+        "U2.13"
+      ]
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "BAT",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "U2.1",
+        "C18.2"
+      ]
+    },
+    {
+      "netId": "U2_VC4",
+      "netLabelWidth": 0.84,
+      "fallbackNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "U2.3"
+      ]
+    },
+    {
+      "netId": "U2_VC3",
+      "netLabelWidth": 0.84,
+      "fallbackNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "U2.4"
+      ]
+    },
+    {
+      "netId": "U2_VC2",
+      "netLabelWidth": 0.84,
+      "fallbackNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "U2.5"
+      ]
+    },
+    {
+      "netId": "U2_VC1",
+      "netLabelWidth": 0.84,
+      "fallbackNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "U2.6"
+      ]
+    },
+    {
+      "netId": "U2_SRN",
+      "netLabelWidth": 0.84,
+      "fallbackNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "U2.7"
+      ]
+    },
+    {
+      "netId": "U2_SRP",
+      "netLabelWidth": 0.84,
+      "fallbackNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "U2.8"
+      ]
+    },
+    {
+      "netId": "GND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "U2.9",
+        "U2.33",
+        "C20.1",
+        "C27.1",
+        "C18.1",
+        "RT4.2",
+        "RT1.2",
+        "RT2.2",
+        "RT3.2"
+      ]
+    },
+    {
+      "netId": "U2_GPIO0",
+      "netLabelWidth": 1.08,
+      "fallbackNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "U2.14"
+      ]
+    },
+    {
+      "netId": "GPIO1",
+      "netLabelWidth": 0.72,
+      "fallbackNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "U2.15"
+      ]
+    },
+    {
+      "netId": "U2_SMBD",
+      "netLabelWidth": 0.96,
+      "fallbackNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "U2.16"
+      ]
+    },
+    {
+      "netId": "U2_SMBC",
+      "netLabelWidth": 0.96,
+      "fallbackNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "U2.17"
+      ]
+    },
+    {
+      "netId": "U2_VFB",
+      "netLabelWidth": 0.84,
+      "fallbackNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "U2.18"
+      ]
+    },
+    {
+      "netId": "VCC",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "U2.22"
+      ]
+    },
+    {
+      "netId": "REGN",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "U2.23",
+        "C27.2"
+      ]
+    },
+    {
+      "netId": "PGND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "U2.24"
+      ]
+    },
+    {
+      "netId": "LODRV",
+      "netLabelWidth": 0.72,
+      "fallbackNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "U2.25"
+      ]
+    },
+    {
+      "netId": "PH",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.36,
+      "pinIds": [
+        "U2.26"
+      ]
+    },
+    {
+      "netId": "HIDRV",
+      "netLabelWidth": 0.72,
+      "fallbackNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "U2.27"
+      ]
+    },
+    {
+      "netId": "ACFET",
+      "netLabelWidth": 0.72,
+      "fallbackNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "U2.29"
+      ]
+    },
+    {
+      "netId": "U2_DSG",
+      "netLabelWidth": 0.84,
+      "fallbackNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "U2.30"
+      ]
+    },
+    {
+      "netId": "U2_CHG",
+      "netLabelWidth": 0.84,
+      "fallbackNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "U2.32"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -2.4,
+        "y": -3.9299999999999997
+      },
+      "width": 1.2,
+      "height": 0.17999999999999972,
+      "text": "BQ40Z60RHB"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -2.88,
+        "y": 1.5150000000000001
+      },
+      "width": 0.3600000000000003,
+      "height": 0.2500000000000002,
+      "text": "U2"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "PGND": [
+      "y-"
+    ],
+    "BAT": [
+      "y+"
+    ],
+    "VCC": [
+      "y+"
+    ],
+    "REGN": [
+      "y+"
+    ],
+    "PH": [
+      "y+"
+    ],
+    "HIDRV": [
+      "x-",
+      "x+"
+    ],
+    "LODRV": [
+      "x-",
+      "x+"
+    ],
+    "ACFET": [
+      "x-",
+      "x+"
+    ],
+    "GPIO1": [
+      "x-",
+      "x+"
+    ],
+    "U2_VC4": [
+      "x-",
+      "x+"
+    ],
+    "U2_VC3": [
+      "x-",
+      "x+"
+    ],
+    "U2_VC2": [
+      "x-",
+      "x+"
+    ],
+    "U2_VC1": [
+      "x-",
+      "x+"
+    ],
+    "U2_GPIO0": [
+      "x-",
+      "x+"
+    ],
+    "U2_SRP": [
+      "x-",
+      "x+"
+    ],
+    "U2_SRN": [
+      "x-",
+      "x+"
+    ],
+    "U2_CHG": [
+      "x-",
+      "x+"
+    ],
+    "U2_DSG": [
+      "x-",
+      "x+"
+    ],
+    "U2_VFB": [
+      "x-",
+      "x+"
+    ],
+    "U2_SMBD": [
+      "x-",
+      "x+"
+    ],
+    "U2_SMBC": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4
+}
