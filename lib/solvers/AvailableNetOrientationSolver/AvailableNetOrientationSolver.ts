@@ -17,7 +17,10 @@ import type {
 } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
-import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
+import {
+  getTextBoxBounds,
+  rectIntersectsAnyTextBox,
+} from "lib/utils/textBoxBounds"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -1099,6 +1102,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     >,
     labelIndex: number,
   ) {
+    let tracePath: Point[]
+
     if (
       this.crowdedPortOnlyLabelIndices.has(labelIndex) &&
       this.getChipSideForPoint(label.anchorPoint) === "top" &&
@@ -1109,14 +1114,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       // a low horizontal bus that the overlap solver later pushes below the
       // component. It also gives a y- ground label the desired up-then-right
       // connector while preserving its required facing direction.
-      return simplifyOrthogonalPath([
+      tracePath = simplifyOrthogonalPath([
         label.anchorPoint,
         { x: label.anchorPoint.x, y: candidate.anchorPoint.y },
         candidate.anchorPoint,
       ])
-    }
-
-    if (candidate.phase === "lateral-shift") {
+    } else if (candidate.phase === "lateral-shift") {
       const chipOutwardDir = this.crowdedPortOnlyLabelIndices.has(labelIndex)
         ? this.getChipOutwardDirection(label.anchorPoint)
         : (() => {
@@ -1127,7 +1130,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         x: label.anchorPoint.x + chipOutwardDir.x * LABEL_SEARCH_STEP,
         y: label.anchorPoint.y + chipOutwardDir.y * LABEL_SEARCH_STEP,
       }
-      return simplifyOrthogonalPath([
+      tracePath = simplifyOrthogonalPath([
         label.anchorPoint,
         ...getConnectorTracePath(
           kickedSource,
@@ -1135,13 +1138,68 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           candidate.orientation,
         ),
       ])
+    } else {
+      tracePath = getConnectorTracePath(
+        candidate.connectorSource ?? label.anchorPoint,
+        candidate.anchorPoint,
+        candidate.orientation,
+      )
     }
 
-    return getConnectorTracePath(
-      candidate.connectorSource ?? label.anchorPoint,
-      candidate.anchorPoint,
+    return this.routeConnectorOutOfContainingText(
+      tracePath,
       candidate.orientation,
     )
+  }
+
+  private routeConnectorOutOfContainingText(
+    tracePath: Point[],
+    orientation: FacingDirection,
+  ) {
+    const source = tracePath[0]
+    const target = tracePath.at(-1)
+    if (!source || !target) return tracePath
+
+    const containingTextBounds = (this.inputProblem.textBoxes ?? [])
+      .map((textBox) => getTextBoxBounds(textBox))
+      .filter(
+        (bounds) =>
+          source.x > bounds.minX + EPS &&
+          source.x < bounds.maxX - EPS &&
+          source.y > bounds.minY + EPS &&
+          source.y < bounds.maxY - EPS,
+      )
+    if (containingTextBounds.length === 0) return tracePath
+
+    const containingBounds = containingTextBounds.reduce((union, bounds) => ({
+      minX: Math.min(union.minX, bounds.minX),
+      minY: Math.min(union.minY, bounds.minY),
+      maxX: Math.max(union.maxX, bounds.maxX),
+      maxY: Math.max(union.maxY, bounds.maxY),
+    }))
+    const escapePoints = [
+      { x: containingBounds.minX - WICK_CLEARANCE, y: source.y },
+      { x: containingBounds.maxX + WICK_CLEARANCE, y: source.y },
+      { x: source.x, y: containingBounds.minY - WICK_CLEARANCE },
+      { x: source.x, y: containingBounds.maxY + WICK_CLEARANCE },
+    ]
+    escapePoints.sort((a, b) => {
+      const aEscapeDistance =
+        Math.abs(a.x - source.x) + Math.abs(a.y - source.y)
+      const bEscapeDistance =
+        Math.abs(b.x - source.x) + Math.abs(b.y - source.y)
+      return (
+        aEscapeDistance - bEscapeDistance ||
+        Math.abs(a.x - target.x) +
+          Math.abs(a.y - target.y) -
+          (Math.abs(b.x - target.x) + Math.abs(b.y - target.y))
+      )
+    })
+
+    return simplifyOrthogonalPath([
+      source,
+      ...getConnectorTracePath(escapePoints[0]!, target, orientation),
+    ])
   }
 
   private isStandaloneSinglePinNetLabel(label: NetLabelPlacement) {

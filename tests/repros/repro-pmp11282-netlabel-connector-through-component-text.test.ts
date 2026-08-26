@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { AvailableNetOrientationSolver } from "lib/solvers/AvailableNetOrientationSolver/AvailableNetOrientationSolver"
+import { tracePathCrossesAnyBounds } from "lib/solvers/AvailableNetOrientationSolver/geometry"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import type { InputProblem } from "lib/types/InputProblem"
 import { getTextBoxBounds } from "lib/utils/textBoxBounds"
 import "tests/fixtures/matcher"
@@ -70,7 +70,7 @@ const initialNetLabelPlacements: NetLabelPlacement[] = [
   },
 ]
 
-test("PMP11282 GND connector crosses H501 component text", () => {
+test("PMP11282 GND connector exits H501 component text by the nearest edge", () => {
   const solver = new AvailableNetOrientationSolver({
     inputProblem,
     traces: [],
@@ -83,13 +83,18 @@ test("PMP11282 GND connector crosses H501 component text", () => {
     trace.mspPairId.startsWith("available-net-orientation-"),
   )!
   const componentTextBox = inputProblem.textBoxes![0]!
+  const componentTextBounds = getTextBoxBounds(componentTextBox)
+  const [source, escapePoint] = connectorTrace.tracePath
 
   expect(solver.solved).toBe(true)
   expect(connectorTrace).toBeDefined()
+  expect(escapePoint!.x).toBe(source!.x)
+  expect(escapePoint!.y).toBeLessThan(componentTextBounds.minY)
   expect(
-    isPathCollidingWithObstacles(connectorTrace.tracePath, [
-      getTextBoxBounds(componentTextBox),
-    ]),
-  ).toBe(true)
+    tracePathCrossesAnyBounds(
+      connectorTrace.tracePath.slice(1),
+      componentTextBounds,
+    ),
+  ).toBe(false)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
