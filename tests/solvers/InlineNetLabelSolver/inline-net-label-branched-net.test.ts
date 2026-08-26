@@ -56,6 +56,36 @@ test("branched connection whose source pair is replaced by the MSP", () => {
     trace.pins.every((pin) => ["R2.1", "U1.EN"].includes(pin.pinId)),
   )
   expect(exactSourcePairTrace).toBeUndefined()
+  expect(output.inlineNetLabelPlacements).toHaveLength(1)
+
+  const [inlineNetLabelPlacement] = output.inlineNetLabelPlacements
+  expect(inlineNetLabelPlacement).toMatchObject({
+    netLabelText: "U1_EN",
+    mspPairId: "U1.EN-R1.1",
+    axis: "x",
+  })
+  expect(inlineNetLabelPlacement!.anchorPoint.x).toBeCloseTo(-2)
+  expect(inlineNetLabelPlacement!.anchorPoint.y).toBeCloseTo(1)
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
+})
+
+test("places an inline label when netId provides the display text", () => {
+  const inputProblemWithoutNetLabelText = structuredClone(inputProblem)
+  delete inputProblemWithoutNetLabelText.directConnections[1]!.netLabelText
+  const solver = new SchematicTracePipelineSolver(
+    inputProblemWithoutNetLabelText,
+  )
+
+  solver.solve()
+
+  const [inlineNetLabelPlacement] =
+    solver.inlineNetLabelSolver!.getOutput().inlineNetLabelPlacements
+  expect(inlineNetLabelPlacement).toMatchObject({
+    netId: "ENABLE_NET",
+    mspPairId: "U1.EN-R1.1",
+    axis: "x",
+  })
+  expect(inlineNetLabelPlacement!.anchorPoint.x).toBeCloseTo(-2)
+  expect(inlineNetLabelPlacement!.anchorPoint.y).toBeCloseTo(1)
 })

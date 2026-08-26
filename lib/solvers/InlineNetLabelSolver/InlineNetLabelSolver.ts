@@ -18,6 +18,7 @@ import {
   type AxisAlignedSegment,
   getAxisAlignedSegments,
 } from "./getAxisAlignedSegments"
+import { getRoutedEndpointTracesForReplacedMspPair } from "./getRoutedEndpointTracesForReplacedMspPair"
 import { pushAnchoredNetLabelsAwayFromInlineLabels } from "./pushAnchoredNetLabelsAwayFromInlineLabels"
 
 export const DEFAULT_INLINE_NET_LABEL_HEIGHT = 0.18
@@ -174,26 +175,42 @@ export class InlineNetLabelSolver extends BaseSolver {
   override _step() {
     const connection = this.queuedConnections.shift()
     if (connection) {
-      const routedTraces =
-        connection.pinIds.length === 2
-          ? (this.tracesByPinPairKey.get(getPinPairKey(connection.pinIds)) ??
-            [])
-          : []
-
-      if (routedTraces.length > 0) {
-        const placement = this.computeInlinePlacement(connection)
-        if (placement) this.inlineNetLabelPlacements.push(placement)
-      } else {
-        // A one-pin net has one conventional endpoint label, while a skipped
-        // two-pin route has one at each endpoint. Convert a two-pin pair
-        // atomically so a collision at one endpoint cannot leave mixed inline
-        // and anchored representations for the same net.
-        const terminalPlacements = connection.pinIds.map((pinId) =>
-          this.computeTerminalInlinePlacement(connection, pinId),
-        )
-        if (terminalPlacements.every((placement) => placement !== null)) {
-          this.inlineNetLabelPlacements.push(...terminalPlacements)
+      let routedTraces: SolvedTracePath[] = []
+      let hasExactRoutedTrace = false
+      if (connection.pinIds.length === 2) {
+        const exactRoutedTraces =
+          this.tracesByPinPairKey.get(getPinPairKey(connection.pinIds)) ?? []
+        hasExactRoutedTrace = exactRoutedTraces.length > 0
+        routedTraces = exactRoutedTraces.slice(0, 1)
+        // When the MSP replaces the source pair, try its endpoint branches.
+        if (routedTraces.length === 0) {
+          routedTraces = getRoutedEndpointTracesForReplacedMspPair({
+            connection,
+            traces: this.traces,
+          })
         }
+      }
+
+      for (const trace of routedTraces) {
+        const placement = this.computeInlinePlacement({ connection, trace })
+        if (!placement) continue
+        this.inlineNetLabelPlacements.push(placement)
+        return
+      }
+
+      // Preserve the original behavior for existing connections: when their
+      // routed trace cannot carry text, do not replace it with terminal labels.
+      if (hasExactRoutedTrace) return
+
+      // A one-pin net has one conventional endpoint label, while a skipped
+      // two-pin route has one at each endpoint. Convert a two-pin pair
+      // atomically so a collision at one endpoint cannot leave mixed inline
+      // and anchored representations for the same net.
+      const terminalPlacements = connection.pinIds.map((pinId) =>
+        this.computeTerminalInlinePlacement(connection, pinId),
+      )
+      if (terminalPlacements.every((placement) => placement !== null)) {
+        this.inlineNetLabelPlacements.push(...terminalPlacements)
       }
       return
     }
@@ -332,16 +349,13 @@ export class InlineNetLabelSolver extends BaseSolver {
     }
   }
 
-  private computeInlinePlacement(
-    connection: InlineEligibleConnection,
-  ): InlineNetLabelPlacement | null {
-    // Only connections the router actually drew a trace for can carry an inline
-    // label - there's nothing to run parallel to otherwise.
-    const traces =
-      this.tracesByPinPairKey.get(getPinPairKey(connection.pinIds)) ?? []
-    if (traces.length === 0) return null
-
-    const trace = traces[0]!
+  private computeInlinePlacement({
+    connection,
+    trace,
+  }: {
+    connection: InlineEligibleConnection
+    trace: SolvedTracePath
+  }): InlineNetLabelPlacement | null {
     const segments = getAxisAlignedSegments(trace.tracePath)
     if (segments.length === 0) return null
 
