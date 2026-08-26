@@ -212,7 +212,7 @@ const inputProblem: InputProblem = {
   _hideRatsNet: false,
 }
 
-test("repro HDC2080 GND label branches away from its vertical rail", () => {
+test("aligns the HDC2080 GND label with its vertical rail", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
 
   solver.solve()

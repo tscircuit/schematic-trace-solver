@@ -417,9 +417,23 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.hasTraceContinuingInOrientation(label, requiredOrientation) &&
       (isDistanceSplitVerticalRail || isPairedSameSidePowerRail)
     ) {
-      // Keep the established outward column, but attach at the furthest trace
-      // point in the required vertical direction. This places y+ labels above
-      // a rail and y- labels below it while using a short horizontal connector.
+      const isThreePinSplitDownwardRail =
+        isDistanceSplitVerticalRail &&
+        netConnection?.pinIds.length === 3 &&
+        requiredOrientation === "y-"
+      if (isThreePinSplitDownwardRail) {
+        // Prefer placing a downward label directly on a short split rail. This
+        // avoids a tap-like connector when the rail end itself has room.
+        const alignedTraceAnchorCandidate = this.findValidTraceAnchorCandidate(
+          label,
+          requiredOrientation,
+          labelIndex,
+        )
+        if (alignedTraceAnchorCandidate) return alignedTraceAnchorCandidate
+      }
+
+      // Keep the established outward column when the direct rail end is blocked
+      // or when a larger rail bank needs consistent outside-chip placement.
       const traceAnchorCandidate = this.findValidOutwardTraceAnchorCandidate(
         label,
         requiredOrientation,
