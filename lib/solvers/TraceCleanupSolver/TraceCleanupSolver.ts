@@ -25,6 +25,8 @@ export interface TraceCleanupSolverInput {
   paddingBuffer: number
   operations?: readonly TraceCleanupOperation[]
   eligibleTraceIds?: ReadonlySet<string>
+  /** Stop untangling after strict crossings; skip the general L-shape pass. */
+  crossingsOnly?: boolean
 }
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
