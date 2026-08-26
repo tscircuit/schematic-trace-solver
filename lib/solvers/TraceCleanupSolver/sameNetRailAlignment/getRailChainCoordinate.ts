@@ -1,16 +1,15 @@
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { PinId } from "lib/types/InputProblem"
 import { nearlyEqual } from "./geometry"
 import type { RailSegment } from "./types"
-
-type TraceId = SolvedTracePath["mspPairId"]
-type PinId = SolvedTracePath["pinIds"][number]
 
 export const getRailChainCoordinate = (
   group: RailSegment[],
   traces: SolvedTracePath[],
 ) => {
   if (new Set(group.map((segment) => segment.componentId)).size < 2) return null
-  const groupTraceIds = new Set<TraceId>(
+  const groupTraceIds = new Set<MspConnectionPairId>(
     group.map((segment) => segment.traceId),
   )
   const groupTraces = traces.filter((trace) =>
