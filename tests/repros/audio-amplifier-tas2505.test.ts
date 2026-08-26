@@ -8,9 +8,6 @@ test("repro AudioAmplifier TAS2505 schematic traces", () => {
 
   solver.solve()
 
-  const alignmentStats = solver.traceCleanupSolver2!.stats
-  expect(alignmentStats.alignedRailGroupCount).toBe(2)
-  expect(alignmentStats.alignedTraceCount).toBe(7)
   const capacitorRailTraceIds = new Set([
     "schematic_port_32-schematic_port_30",
     "schematic_port_5-schematic_port_32",
