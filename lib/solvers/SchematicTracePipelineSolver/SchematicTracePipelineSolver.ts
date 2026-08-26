@@ -93,6 +93,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
   postLabelTraceOverlapShiftSolver?: TraceOverlapShiftSolver
+  postLabelTraceCleanupSolver?: TraceCleanupSolver
   railNetLabelCornerPlacementSolver?: RailNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   preAlignmentNetLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
@@ -395,15 +396,44 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ],
     ),
     definePipelineStep(
+      "postLabelTraceCleanupSolver",
+      TraceCleanupSolver,
+      (instance) => {
+        const traces = Object.values(
+          instance.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
+        )
+        const labelMergingOutput =
+          instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput()
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            allTraces: traces,
+            allLabelPlacements:
+              instance.availableNetOrientationSolver!.outputNetLabelPlacements,
+            mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
+            paddingBuffer: 0.1,
+            operations: ["untangling_traces"],
+            crossingsOnly: true,
+            eligibleTraceIds: new Set(
+              traces
+                .filter((trace) =>
+                  trace.mspPairId.startsWith("available-net-orientation-"),
+                )
+                .map((trace) => trace.mspPairId),
+            ),
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
       "railNetLabelCornerPlacementSolver",
       RailNetLabelCornerPlacementSolver,
       (instance) => {
         return [
           {
             inputProblem: instance.inputProblem,
-            traces: Object.values(
-              instance.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
-            ),
+            traces: instance.postLabelTraceCleanupSolver!.getOutput().traces,
             netLabelPlacements:
               instance.availableNetOrientationSolver!.outputNetLabelPlacements,
           },

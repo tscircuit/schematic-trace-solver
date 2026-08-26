@@ -55,6 +55,8 @@ export interface UntangleTraceSubsolverInput {
   mergedLabelNetIdMap: Record<string, Set<string>>
   paddingBuffer: number
   eligibleTraceIds?: ReadonlySet<string>
+  /** Stop after resolving strict crossings; skip the general L-shape pass. */
+  crossingsOnly?: boolean
 }
 
 /**
@@ -135,6 +137,10 @@ export class UntangleTraceSubsolver extends BaseSolver {
         if (!this._resolveCrossing(crossing)) {
           this.ignoredCrossings.add(this._crossingKey(crossing))
         }
+        return
+      }
+      if (this.input.crossingsOnly) {
+        this.solved = true
         return
       }
       this.processingCrossings = false

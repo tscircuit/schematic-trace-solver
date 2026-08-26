@@ -58,7 +58,7 @@ const inputProblem: InputProblem = {
   maxMspPairDistance: pmpInput.maxMspPairDistance,
 }
 
-test("PMP11282 V20V2 label connector crosses a different-net trace", () => {
+test("PMP11282 V20V2 label connector avoids a different-net trace", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem, {
     hideRatsNet: true,
   })
@@ -80,6 +80,6 @@ test("PMP11282 V20V2 label connector crosses a different-net trace", () => {
       labelConnector.tracePath,
       crossedTrace.tracePath,
     ),
-  ).toHaveLength(1)
+  ).toHaveLength(0)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
