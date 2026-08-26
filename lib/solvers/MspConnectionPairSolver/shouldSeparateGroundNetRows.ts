@@ -10,6 +10,7 @@ function isGroupedHorizontalRail({
   pin: InputPin & { chipId: string }
   netPins: Array<InputPin & { chipId: string }>
 }) {
+  // Multiple pins from one symbol do not establish a grouped component rail.
   const sameRailPins = netPins.filter(
     (otherPin) => Math.abs(otherPin.y - pin.y) <= SAME_RAIL_Y_TOLERANCE,
   )
@@ -31,7 +32,7 @@ export function shouldSeparateGroundNetRows({
   if (!netConnection?.isGround || pin1.chipId === pin2.chipId) return false
   if (Math.abs(pin1.y - pin2.y) <= SAME_RAIL_Y_TOLERANCE) return false
 
-  // Ground labels preserve connectivity while each grouped rail stays local.
+  // Net labels preserve ground connectivity without a cross-row MSP edge.
   return (
     isGroupedHorizontalRail({ pin: pin1, netPins }) &&
     isGroupedHorizontalRail({ pin: pin2, netPins })

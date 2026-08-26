@@ -1,18 +1,15 @@
 import { expect, test } from "bun:test"
 import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputNetConnection, InputProblem } from "lib/types/InputProblem"
 import inputProblemJson from "../../repros/assets/repro-bluetooth-controller-ground-decoupling-groups.input.json"
 
 function solveNetPairs({
   inputProblem,
-  netId,
+  netConnection,
 }: {
   inputProblem: InputProblem
-  netId: string
+  netConnection: InputNetConnection
 }) {
-  const netConnection = inputProblem.netConnections.find(
-    (connection) => connection.netId === netId,
-  )!
   const netPinIds = new Set(netConnection.pinIds)
   const solver = new MspConnectionPairSolver({ inputProblem })
 
@@ -25,7 +22,13 @@ function solveNetPairs({
 
 test("keeps grouped ground rails in separate rows", () => {
   const inputProblem = inputProblemJson as InputProblem
-  const groundPairs = solveNetPairs({ inputProblem, netId: "GND" })
+  const groundConnection = inputProblem.netConnections.find(
+    (connection) => connection.isGround,
+  )!
+  const groundPairs = solveNetPairs({
+    inputProblem,
+    netConnection: groundConnection,
+  })
   const crossRowPairs = groundPairs.filter(
     (pair) => pair.pins[0].y !== pair.pins[1].y,
   )
@@ -36,12 +39,15 @@ test("keeps grouped ground rails in separate rows", () => {
 
 test("does not separate rows without ground metadata", () => {
   const inputProblem = structuredClone(inputProblemJson) as InputProblem
-  const connection = inputProblem.netConnections.find(
-    (candidate) => candidate.netId === "GND",
+  const groundConnection = inputProblem.netConnections.find(
+    (connection) => connection.isGround,
   )!
-  connection.isGround = false
+  groundConnection.isGround = false
 
-  const netPairs = solveNetPairs({ inputProblem, netId: "GND" })
+  const netPairs = solveNetPairs({
+    inputProblem,
+    netConnection: groundConnection,
+  })
   const crossRowPairs = netPairs.filter(
     (pair) => pair.pins[0].y !== pair.pins[1].y,
   )
