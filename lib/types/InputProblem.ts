@@ -98,6 +98,9 @@ export interface InputNetConnection {
   netId: string
   pinIds: Array<PinId>
 
+  /** True when the authoritative source net is electrical ground. */
+  isGround?: boolean
+
   /**
    * User-facing text to render for this net label. `netId` remains the stable
    * connectivity identifier and may be an internal id. When this is omitted

@@ -15,6 +15,7 @@ import { doesPairCrossRestrictedCenterLines } from "./doesPairCrossRestrictedCen
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 import { getLabeledConnectionRouteReason } from "./isLabeledPeripheralConnection"
+import { shouldSeparateGroundNetRows } from "./shouldSeparateGroundNetRows"
 
 export type MspConnectionPairId = string
 export const DEFAULT_MAX_MSP_PAIR_DISTANCE = 1
@@ -190,25 +191,31 @@ export class MspConnectionPairSolver extends BaseSolver {
       PinId,
       InputPin & { chipId: string }
     >
-    const msp = getOrthogonalMinimumSpanningTree(
-      directlyConnectedPins.map((p) => this.pinMap[p]!).filter(Boolean),
-      {
-        maxDistance: this.maxMspPairDistance,
-        forbidEdge: (a, b) =>
-          arePinsInDifferentSchematicSections(
-            this.inputProblem,
-            a as InputPin & { chipId: string },
-            b as InputPin & { chipId: string },
-          ) ||
-          doesPairCrossRestrictedCenterLines({
-            inputProblem: this.inputProblem,
-            chipMap: this.chipMap,
-            pinIdMap,
-            p1: a as InputPin & { chipId: string },
-            p2: b as InputPin & { chipId: string },
-          }),
-      },
+    const userNetId = this.userNetIdByPinId[directlyConnectedPins[0]!]
+    const netConnection = this.inputProblem.netConnections.find(
+      (connection) => connection.netId === userNetId,
     )
+    const directlyConnectedPinObjects = directlyConnectedPins.map(
+      (pinId) => this.pinMap[pinId]!,
+    )
+    const msp = getOrthogonalMinimumSpanningTree(directlyConnectedPinObjects, {
+      maxDistance: this.maxMspPairDistance,
+      forbidEdge: (a, b) =>
+        shouldSeparateGroundNetRows({
+          netConnection,
+          netPins: directlyConnectedPinObjects,
+          pin1: a,
+          pin2: b,
+        }) ||
+        arePinsInDifferentSchematicSections(this.inputProblem, a, b) ||
+        doesPairCrossRestrictedCenterLines({
+          inputProblem: this.inputProblem,
+          chipMap: this.chipMap,
+          pinIdMap,
+          p1: a,
+          p2: b,
+        }),
+    })
 
     for (const [pin1, pin2] of msp) {
       const p1Obj = this.pinMap[pin1!]!
@@ -232,13 +239,13 @@ export class MspConnectionPairSolver extends BaseSolver {
       }
 
       const globalConnNetId = this.globalConnMap.getNetConnectedToId(pin1!)!
-      const userNetId =
+      const pairUserNetId =
         this.userNetIdByPinId[pin1!] ?? this.userNetIdByPinId[pin2!]
       this.addMspConnectionPair({
         mspPairId: `${pin1}-${pin2}`,
         dcConnNetId: dcNetId,
         globalConnNetId,
-        userNetId,
+        userNetId: pairUserNetId,
         pins: [p1Obj, p2Obj],
       })
     }
