@@ -94,12 +94,22 @@ const restoreNearbyPinAsLabelConnectorSource = ({
   ) {
     return trace
   }
+  const nextPoint = trace.tracePath[1]
+  if (!nextPoint) return trace
+  const correctedPath = [
+    { x: nearbyPin.pin.x, y: nearbyPin.pin.y },
+    ...trace.tracePath.slice(1),
+  ]
+  if (isVertical(source, nextPoint)) {
+    correctedPath[1] = { ...nextPoint, x: nearbyPin.pin.x }
+  } else if (isHorizontal(source, nextPoint)) {
+    correctedPath[1] = { ...nextPoint, y: nearbyPin.pin.y }
+  } else {
+    return trace
+  }
   return {
     ...trace,
-    tracePath: simplifyPath([
-      { x: nearbyPin.pin.x, y: nearbyPin.pin.y },
-      ...trace.tracePath,
-    ]),
+    tracePath: simplifyPath(correctedPath),
   }
 }
 
@@ -522,7 +532,53 @@ export const alignSameNetJunctions = ({
   let outputTraces = traces.map((trace) =>
     restoreNearbyPinAsLabelConnectorSource({ trace, traces, inputProblem }),
   )
-  let outputNetLabelPlacements = [...netLabelPlacements]
+  const restoredConnectorTraceIds = new Set(
+    outputTraces.flatMap((trace, index) =>
+      trace !== traces[index] ? [trace.mspPairId] : [],
+    ),
+  )
+  let outputNetLabelPlacements = netLabelPlacements.map((label) => {
+    const connectorTrace = outputTraces.find(
+      (trace) =>
+        restoredConnectorTraceIds.has(trace.mspPairId) &&
+        trace.mspPairId.startsWith("available-net-orientation-") &&
+        label.globalConnNetId === trace.globalConnNetId &&
+        trace.pinIds.length === 2 &&
+        tracePathContainsPoint(trace.tracePath, label.anchorPoint) &&
+        trace.tracePath[0]?.y !== label.anchorPoint.y,
+    )
+    if (!connectorTrace) return label
+    const source = connectorTrace.tracePath[0]!
+    return {
+      ...label,
+      anchorPoint: { x: source.x, y: label.anchorPoint.y },
+      center: {
+        x: source.x + (label.center.x - label.anchorPoint.x),
+        y: label.center.y,
+      },
+    }
+  })
+  outputTraces = outputTraces.map((trace) => {
+    const attachedLabel = outputNetLabelPlacements.find(
+      (label) =>
+        restoredConnectorTraceIds.has(trace.mspPairId) &&
+        label.globalConnNetId === trace.globalConnNetId &&
+        label.anchorPoint.x === trace.tracePath[0]?.x,
+    )
+    if (
+      !trace.mspPairId.startsWith("available-net-orientation-") ||
+      !attachedLabel ||
+      trace.pinIds.length !== 2
+    ) {
+      return trace
+    }
+    const source = trace.tracePath[0]
+    if (!source || source.y === attachedLabel.anchorPoint.y) return trace
+    return {
+      ...trace,
+      tracePath: simplifyPath([source, attachedLabel.anchorPoint]),
+    }
+  })
   let alignedJunctionCount = 0
 
   // First level the load rails, then attach return branches to those final
