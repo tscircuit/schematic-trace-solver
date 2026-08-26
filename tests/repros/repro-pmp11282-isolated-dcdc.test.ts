@@ -35,8 +35,8 @@ test("repro PMP11282 isolated DC/DC traces and endpoint net labels", () => {
   expect(defaultPipeline.error).toBe(
     "SchematicTraceLinesSolver ran out of iterations",
   )
-  expect(defaultTraceSolver.solvedTracePaths).toHaveLength(72)
-  expect(defaultTraceSolver.failedConnectionPairs).toHaveLength(35)
+  expect(defaultTraceSolver.solvedTracePaths).toHaveLength(70)
+  expect(defaultTraceSolver.failedConnectionPairs).toHaveLength(37)
   expect(defaultTraceSolver.queuedConnectionPairs).toHaveLength(95)
 
   // Let the same unmodified production pipeline reach its downstream stages
@@ -64,11 +64,11 @@ test("repro PMP11282 isolated DC/DC traces and endpoint net labels", () => {
   expect(diagnosticPipeline.failed).toBe(false)
   expect(
     diagnosticPipeline.schematicTraceLinesSolver!.solvedTracePaths,
-  ).toHaveLength(145)
+  ).toHaveLength(143)
   expect(
     diagnosticPipeline.schematicTraceLinesSolver!.failedConnectionPairs,
-  ).toHaveLength(58)
-  expect(finalOutput.netLabelPlacements).toHaveLength(106)
+  ).toHaveLength(60)
+  expect(finalOutput.netLabelPlacements).toHaveLength(108)
   expect(endpointPairLabels).toHaveLength(80)
   expect(endpointPairNetIds.size).toBe(62)
   expect(endpointPairNetIds).toContain("U500.pin8 to C501.pin1")

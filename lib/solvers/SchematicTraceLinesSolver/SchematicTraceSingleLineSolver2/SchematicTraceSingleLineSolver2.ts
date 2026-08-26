@@ -325,15 +325,26 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       excludeRectsForSegment: (segIndex) => {
         const lastSegIndex = path.length - 2
         const excludedRects = new Set<ObstacleRect>()
+        const segmentStart = path[segIndex]!
+        const segmentEnd = path[segIndex + 1]!
 
-        if (segIndex === 0 || segIndex === lastSegIndex) {
+        const oppositeTerminalPin =
+          segIndex === 0 ? PB : segIndex === lastSegIndex ? PA : null
+        if (oppositeTerminalPin) {
           for (const textObstacle of this.textObstacles) {
-            excludedRects.add(textObstacle)
+            // Preserve the existing terminal-segment clearance exception, but
+            // do not let a segment that wraps around the opposite endpoint cut
+            // through that component's actual text.
+            const textBounds = getTextBoxBounds(textObstacle.textBox)
+            if (
+              textObstacle.textBox.chipId !== oppositeTerminalPin.chipId ||
+              !segmentIntersectsRect(segmentStart, segmentEnd, textBounds)
+            ) {
+              excludedRects.add(textObstacle)
+            }
           }
         }
 
-        const segmentStart = path[segIndex]!
-        const segmentEnd = path[segIndex + 1]!
         const endpointEpsilon = 1e-9
         const segmentTouchesPin = (pin: MspConnectionPair["pins"][number]) =>
           [segmentStart, segmentEnd].some(
