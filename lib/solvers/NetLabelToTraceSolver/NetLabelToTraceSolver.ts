@@ -44,8 +44,6 @@ interface CandidatePair {
 
 const AVAILABLE_NET_ORIENTATION_PREFIX = "available-net-orientation-"
 const RECOVERED_TRACE_PREFIX = "net-label-to-trace-"
-// Keep ordinary distant named-net endpoints as labels; only reconnect terminal
-// labels that already read as one nearly straight rail in a multi-pin net.
 const MAX_NAMED_NET_RECOVERY_PERPENDICULAR_OFFSET = 0.05
 const MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET = 0.25
 
