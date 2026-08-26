@@ -1,4 +1,4 @@
-<svg width="2416" height="1200" viewBox="0 0 2416 1200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on the left and Circuit JSON schematic on the right">
+<svg width="1200" height="2016" viewBox="0 0 1200 2016" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on top and Circuit JSON schematic on the bottom">
   <g transform="translate(0, 0) scale(1.875, 1.875) translate(0, 0)">
     <rect width="100%" height="100%" fill="white"/><g><polyline data-points="3.4,0.095 3.61,0.045" data-type="line" data-label="" points="261.78217821782187,306.13861386138615 378.21782178217813,333.86138613861385" fill="none" stroke="hsl(112, 100%, 50%, 0.1)" stroke-width="1px"/></g><g><polyline data-points="3.4,0.095 3.465,0.095 3.505,0.095 3.505,0.045 3.545,0.045 3.61,0.045" data-type="line" data-label="" points="261.78217821782187,306.13861386138615 297.82178217821775,306.13861386138615 320,306.13861386138615 320,333.86138613861385 342.17821782178225,333.86138613861385 378.21782178217813,333.86138613861385" fill="none" stroke="red" stroke-width="1px" stroke-dasharray="4 4"/></g><g><polyline data-points="3.4,0.095 3.61,0.045" data-type="line" data-label="" points="261.78217821782187,306.13861386138615 378.21782178217813,333.86138613861385" fill="none" stroke="blue" stroke-width="1px" stroke-dasharray="5 5"/></g><g><polyline data-points="3.4,0.095 3.465,0.095 3.505,0.095 3.505,0.045 3.545,0.045 3.61,0.045" data-type="line" data-label="" points="261.78217821782187,306.13861386138615 297.82178217821775,306.13861386138615 320,306.13861386138615 320,333.86138613861385 342.17821782178225,333.86138613861385 378.21782178217813,333.86138613861385" fill="none" stroke="green" stroke-width="1px"/></g><g><rect data-type="rect" data-label="D2" data-x="3.2" data-y="0.095" x="40" y="250.69306930693068" width="221.7821782178221" height="110.89108910891093" fill="hsl(358, 100%, 50%, 0.1)" stroke="black" stroke-width="0.0018035714285714283"/></g><g><rect data-type="rect" data-label="SW2" data-x="3.81" data-y="0.045" x="378.21782178217825" y="278.41584158415844" width="221.78217821782187" height="110.89108910891088" fill="hsl(70, 100%, 50%, 0.1)" stroke="black" stroke-width="0.0018035714285714283"/></g><g><circle data-type="point" data-label="D2.cathode
 x+" data-x="3.4" data-y="0.095" cx="261.78217821782187" cy="306.13861386138615" r="3" fill="hsl(22, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="SW2.pin1
@@ -47,7 +47,7 @@ x-" data-x="3.61" data-y="0.045" cx="378.21782178217813" cy="333.86138613861385"
               });
             ]]></script>
   </g>
-  <g transform="translate(1216, 200)">
+  <g transform="translate(0, 1216)">
     <style>
               .boundary { fill: rgb(245, 241, 237); }
               .schematic-boundary { fill: none; stroke: #fff; }
