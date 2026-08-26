@@ -22,6 +22,7 @@ import {
   getAxisAlignedSegments,
 } from "./getAxisAlignedSegments"
 import { pushAnchoredNetLabelsAwayFromInlineLabels } from "./pushAnchoredNetLabelsAwayFromInlineLabels"
+import { pushInlineTerminalLabelsAwayFromAnchoredLabels } from "./pushInlineTerminalLabelsAwayFromAnchoredLabels"
 
 export const DEFAULT_INLINE_NET_LABEL_HEIGHT = 0.18
 
@@ -119,6 +120,11 @@ interface NetConnectionComponent {
   labeledPinIds: PinId[]
   traces: SolvedTracePath[]
 }
+
+const AVAILABLE_NET_ORIENTATION_TRACE_PREFIX = "available-net-orientation-"
+
+const isGeneratedAnchoredLabelConnector = (trace: SolvedTracePath) =>
+  trace.mspPairId.startsWith(AVAILABLE_NET_ORIENTATION_TRACE_PREFIX)
 
 const getPinPairKey = (pinIds: readonly string[]) =>
   [...pinIds].sort().join("::")
@@ -218,6 +224,7 @@ export class InlineNetLabelSolver extends BaseSolver {
 
     this.tracesByPinPairKey = new Map()
     for (const trace of this.traces) {
+      if (isGeneratedAnchoredLabelConnector(trace)) continue
       const key = getPinPairKey(trace.pins.map((p) => p.pinId))
       const existing = this.tracesByPinPairKey.get(key)
       if (existing) {
@@ -425,7 +432,12 @@ export class InlineNetLabelSolver extends BaseSolver {
 
     return getTraceConnectedPinComponents({
       pinIds: pinIdsInGlobalNet,
-      traces: this.traces,
+      // Available-net-orientation traces only connect a pin to its generated
+      // anchored label. They are removed when that label becomes inline, so
+      // treating them as routed circuitry would leave text on a deleted wire.
+      traces: this.traces.filter(
+        (trace) => !isGeneratedAnchoredLabelConnector(trace),
+      ),
     })
       .map((component) => ({
         pinIds: component.pinIds,
@@ -974,7 +986,7 @@ export class InlineNetLabelSolver extends BaseSolver {
         !supersededTraceIds.has(trace.mspPairId) &&
         !(
           supersededNetLabelKeys.has(trace.globalConnNetId) &&
-          trace.mspPairId.startsWith("available-net-orientation-")
+          isGeneratedAnchoredLabelConnector(trace)
         ),
     )
   }
@@ -1042,6 +1054,20 @@ export class InlineNetLabelSolver extends BaseSolver {
           inlineNetLabelPlacements: activeInlinePlacements,
           anchoredNetLabelPlacements: pushed.netLabelPlacements,
         })
+      if (blockedGlobalConnNetIds.size > 0) {
+        const shiftedInlineTerminalLabels =
+          pushInlineTerminalLabelsAwayFromAnchoredLabels({
+            inputProblem: this.inputProblem,
+            traces: pushed.traces,
+            anchoredNetLabelPlacements: pushed.netLabelPlacements,
+            inlineNetLabelPlacements: activeInlinePlacements,
+          })
+        if (shiftedInlineTerminalLabels.movedGroupCount > 0) {
+          activeInlinePlacements =
+            shiftedInlineTerminalLabels.inlineNetLabelPlacements
+          continue
+        }
+      }
       if (blockedGlobalConnNetIds.size === 0) {
         this.inlineNetLabelPlacements = activeInlinePlacements
         this.stats.pushedAnchoredNetLabelCount = pushed.movedLabelCount

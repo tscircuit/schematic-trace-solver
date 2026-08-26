@@ -11,9 +11,15 @@ test("pushes a regular endpoint label and its wick past nearby inline text", () 
       {
         chipId: "U1",
         center: { x: 0, y: 0 },
-        width: 1,
+        // The routing box includes component text, so the real pins can sit
+        // inside it. A generated connector may legitimately cross that
+        // expanded owner box on its way out from the pin.
+        width: 2,
         height: 1,
-        pins: [],
+        pins: [
+          { pinId: "U1.1", x: -0.5, y: 0.2, _facingDirection: "x-" },
+          { pinId: "U1.2", x: -0.5, y: 0, _facingDirection: "x-" },
+        ],
       },
     ],
     directConnections: [],
