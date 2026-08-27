@@ -98,7 +98,11 @@ export interface InputNetConnection {
   netId: string
   pinIds: Array<PinId>
 
-  /** True when the authoritative source net is electrical ground. */
+  /**
+   * Preserve explicitly wired islands on this ground net, joining the islands
+   * electrically through labels instead of routing between them. Nets without
+   * explicit traces, or without this hint, retain automatic bus routing.
+   */
   isGround?: boolean
 
   /**

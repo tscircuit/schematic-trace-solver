@@ -11,12 +11,21 @@ const MAX_LOCAL_GROUND_BRANCH_OFFSET = 1
 export const getGroundConnectionPolicy = (inputProblem: InputProblem) => {
   const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
   const groundNetId = netConnMap.getNetConnectedToId("GND")
-  if (!groundNetId) return () => true
   // Net identifiers do not constitute physical edges: two separate direct
   // connections may have the same netId without requesting a wire between them.
   const physicalConnMap = new ConnectivityMap({})
+  const explicitlyWiredGroundNetIds = new Set<string>()
   for (const connection of inputProblem.directConnections) {
     physicalConnMap.addConnections([connection.pinIds])
+    const globalNetId = netConnMap.getNetConnectedToId(connection.pinIds[0])
+    const isMarkedGround = inputProblem.netConnections.some(
+      (net) =>
+        net.isGround &&
+        netConnMap.getNetConnectedToId(net.netId) === globalNetId,
+    )
+    if (globalNetId && isMarkedGround) {
+      explicitlyWiredGroundNetIds.add(globalNetId)
+    }
   }
   const pins = new Map(
     inputProblem.chips.flatMap((chip) =>
@@ -46,7 +55,29 @@ export const getGroundConnectionPolicy = (inputProblem: InputProblem) => {
       )
     )
   })
-  if (!hasExplicitParallelGroundRail) return () => true
+  const areSeparateExplicitGroundIslands = (
+    firstPinId: PinId,
+    secondPinId: PinId,
+  ) => {
+    const firstGlobalNetId = netConnMap.getNetConnectedToId(firstPinId)
+    const secondGlobalNetId = netConnMap.getNetConnectedToId(secondPinId)
+    if (
+      !firstGlobalNetId ||
+      firstGlobalNetId !== secondGlobalNetId ||
+      !explicitlyWiredGroundNetIds.has(firstGlobalNetId)
+    ) {
+      return false
+    }
+    const firstPhysicalGroup =
+      physicalConnMap.getNetConnectedToId(firstPinId) ?? `pin:${firstPinId}`
+    const secondPhysicalGroup =
+      physicalConnMap.getNetConnectedToId(secondPinId) ?? `pin:${secondPinId}`
+    return firstPhysicalGroup !== secondPhysicalGroup
+  }
+  if (!hasExplicitParallelGroundRail) {
+    return (firstPinId: PinId, secondPinId: PinId) =>
+      !areSeparateExplicitGroundIslands(firstPinId, secondPinId)
+  }
   const isGroundFacingTerminal = (pinId: PinId) => {
     const entry = pins.get(pinId)
     return (
@@ -58,10 +89,13 @@ export const getGroundConnectionPolicy = (inputProblem: InputProblem) => {
   }
 
   return (firstPinId: PinId, secondPinId: PinId): boolean => {
+    const firstGlobalNetId = netConnMap.getNetConnectedToId(firstPinId)
+    const secondGlobalNetId = netConnMap.getNetConnectedToId(secondPinId)
+    if (areSeparateExplicitGroundIslands(firstPinId, secondPinId)) return false
     if (
       !groundNetId ||
-      netConnMap.getNetConnectedToId(firstPinId) !== groundNetId ||
-      netConnMap.getNetConnectedToId(secondPinId) !== groundNetId
+      firstGlobalNetId !== groundNetId ||
+      secondGlobalNetId !== groundNetId
     ) {
       return true
     }
