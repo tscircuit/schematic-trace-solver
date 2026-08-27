@@ -313,7 +313,7 @@
       "y+"
     ]
   },
-  "maxMspPairDistance": 2.4,
+  "maxMspPairDistance": 10,
   "_chipObstacleSpatialIndex": {
     "chips": [
       {
