@@ -1,19 +1,24 @@
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import type { InputProblem } from "lib/types/InputProblem"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { ConnectivityMap } from "connectivity-map"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { InputProblem } from "lib/types/InputProblem"
+import { SCHEMATIC_TRACE_STROKE_WIDTH } from "lib/utils/doesPathCoincideWithTraces"
+import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
 import {
-  TraceOverlapIssueSolver,
   type OverlappingTraceSegmentLocator,
   type TraceInteractionKind,
+  TraceOverlapIssueSolver,
 } from "./TraceOverlapIssueSolver/TraceOverlapIssueSolver"
-import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 
 type ConnNetId = string
 type TraceState = Record<MspConnectionPairId, SolvedTracePath>
 
 const TRACE_STATE_POSITION_EPSILON = 1e-6
+// At half a stroke width or less, antialiasing makes two different-net traces
+// look like one continuous wire and can visually imply a false junction.
+const MAX_VISUALLY_MERGED_CENTERLINE_SEPARATION =
+  SCHEMATIC_TRACE_STROKE_WIDTH / 2 + TRACE_STATE_POSITION_EPSILON
 
 /**
  * This solver finds traces that overlap or meet collinearly and aren't
@@ -211,6 +216,17 @@ export class TraceOverlapShiftSolver extends BaseSolver {
           })
         }
 
+        const pathsTerminateOnSameChip = (
+          pathA: SolvedTracePath,
+          pathB: SolvedTracePath,
+        ) =>
+          pathA.pins.some((pinA) =>
+            pathB.pins.some(
+              (pinB) =>
+                pinA.chipId === pinB.chipId && pinA.pinId !== pinB.pinId,
+            ),
+          )
+
         for (let pa = 0; pa < pathsA.length; pa++) {
           const pathA = pathsA[pa]!
           const ptsA = pathA.tracePath
@@ -238,25 +254,57 @@ export class TraceOverlapShiftSolver extends BaseSolver {
                 const bHorz = Math.abs(b1.y - b2.y) < EPS
                 if (!bVert && !bHorz) continue
 
-                // Only consider collinear, parallel interactions.
+                // Parallel centerlines can still merge visually before they
+                // are mathematically collinear because schematic traces have
+                // a non-zero rendered stroke width.
                 if (aVert && bVert) {
-                  if (Math.abs(a1.x - b1.x) < EPS) {
+                  const centerlineSeparation = Math.abs(a1.x - b1.x)
+                  if (
+                    centerlineSeparation < EPS ||
+                    (centerlineSeparation <
+                      MAX_VISUALLY_MERGED_CENTERLINE_SEPARATION &&
+                      pathsTerminateOnSameChip(pathA, pathB))
+                  ) {
+                    const rangeOverlap = getRangeOverlap1D(
+                      a1.y,
+                      a2.y,
+                      b1.y,
+                      b2.y,
+                    )
+                    if (rangeOverlap <= EPS && centerlineSeparation >= EPS) {
+                      continue
+                    }
                     recordCollinearInteraction({
                       pathAIndex: pa,
                       segmentAIndex: sa,
                       pathBIndex: pb,
                       segmentBIndex: sb,
-                      rangeOverlap: getRangeOverlap1D(a1.y, a2.y, b1.y, b2.y),
+                      rangeOverlap,
                     })
                   }
                 } else if (aHorz && bHorz) {
-                  if (Math.abs(a1.y - b1.y) < EPS) {
+                  const centerlineSeparation = Math.abs(a1.y - b1.y)
+                  if (
+                    centerlineSeparation < EPS ||
+                    (centerlineSeparation <
+                      MAX_VISUALLY_MERGED_CENTERLINE_SEPARATION &&
+                      pathsTerminateOnSameChip(pathA, pathB))
+                  ) {
+                    const rangeOverlap = getRangeOverlap1D(
+                      a1.x,
+                      a2.x,
+                      b1.x,
+                      b2.x,
+                    )
+                    if (rangeOverlap <= EPS && centerlineSeparation >= EPS) {
+                      continue
+                    }
                     recordCollinearInteraction({
                       pathAIndex: pa,
                       segmentAIndex: sa,
                       pathBIndex: pb,
                       segmentBIndex: sb,
-                      rangeOverlap: getRangeOverlap1D(a1.x, a2.x, b1.x, b2.x),
+                      rangeOverlap,
                     })
                   }
                 }
