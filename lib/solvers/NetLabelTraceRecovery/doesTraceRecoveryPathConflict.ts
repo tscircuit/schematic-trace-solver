@@ -74,11 +74,6 @@ const isStrictInteriorPerpendicularCrossing = ({
   )
 }
 
-/**
- * A recovered schematic trace may cross another trace perpendicularly in the
- * interior of both segments. Shared runs, endpoint contacts, and T-junctions
- * remain conflicts because they can imply connectivity or render ambiguously.
- */
 export const doesTraceRecoveryPathConflict = (
   tracePath: Point[],
   collisionTraces: SolvedTracePath[],
