@@ -9,6 +9,7 @@ import inputProblem from "./assets/repro-powerbank-3v-system-power.input.json"
 test("repro PowerBank 3 V System Power schematic", () => {
   const solver = new SchematicTracePipelineSolver(
     inputProblem as unknown as InputProblem,
+    { hideRatsNet: true },
   )
   solver.solve()
 
