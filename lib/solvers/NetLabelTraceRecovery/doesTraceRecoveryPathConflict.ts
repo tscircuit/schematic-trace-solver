@@ -3,40 +3,58 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 
 const EPSILON = 1e-6
 
-const isStrictlyBetween = (value: number, first: number, second: number) =>
-  value > Math.min(first, second) + EPSILON &&
-  value < Math.max(first, second) - EPSILON
+const isStrictlyBetween = ({
+  coordinate,
+  segmentStartCoordinate,
+  segmentEndCoordinate,
+}: {
+  coordinate: number
+  segmentStartCoordinate: number
+  segmentEndCoordinate: number
+}) =>
+  coordinate >
+    Math.min(segmentStartCoordinate, segmentEndCoordinate) + EPSILON &&
+  coordinate < Math.max(segmentStartCoordinate, segmentEndCoordinate) - EPSILON
 
-const isStrictInteriorPerpendicularCrossing = (
-  firstStart: Point,
-  firstEnd: Point,
-  secondStart: Point,
-  secondEnd: Point,
-) => {
-  const firstIsHorizontal = Math.abs(firstStart.y - firstEnd.y) <= EPSILON
-  const firstIsVertical = Math.abs(firstStart.x - firstEnd.x) <= EPSILON
-  const secondIsHorizontal = Math.abs(secondStart.y - secondEnd.y) <= EPSILON
-  const secondIsVertical = Math.abs(secondStart.x - secondEnd.x) <= EPSILON
+const isStrictInteriorPerpendicularCrossing = ({
+  firstSegmentStart,
+  firstSegmentEnd,
+  secondSegmentStart,
+  secondSegmentEnd,
+}: {
+  firstSegmentStart: Point
+  firstSegmentEnd: Point
+  secondSegmentStart: Point
+  secondSegmentEnd: Point
+}) => {
+  const firstIsHorizontal =
+    Math.abs(firstSegmentStart.y - firstSegmentEnd.y) <= EPSILON
+  const firstIsVertical =
+    Math.abs(firstSegmentStart.x - firstSegmentEnd.x) <= EPSILON
+  const secondIsHorizontal =
+    Math.abs(secondSegmentStart.y - secondSegmentEnd.y) <= EPSILON
+  const secondIsVertical =
+    Math.abs(secondSegmentStart.x - secondSegmentEnd.x) <= EPSILON
 
   const horizontalStart = firstIsHorizontal
-    ? firstStart
+    ? firstSegmentStart
     : secondIsHorizontal
-      ? secondStart
+      ? secondSegmentStart
       : null
   const horizontalEnd = firstIsHorizontal
-    ? firstEnd
+    ? firstSegmentEnd
     : secondIsHorizontal
-      ? secondEnd
+      ? secondSegmentEnd
       : null
   const verticalStart = firstIsVertical
-    ? firstStart
+    ? firstSegmentStart
     : secondIsVertical
-      ? secondStart
+      ? secondSegmentStart
       : null
   const verticalEnd = firstIsVertical
-    ? firstEnd
+    ? firstSegmentEnd
     : secondIsVertical
-      ? secondEnd
+      ? secondSegmentEnd
       : null
 
   if (!horizontalStart || !horizontalEnd || !verticalStart || !verticalEnd) {
@@ -44,8 +62,16 @@ const isStrictInteriorPerpendicularCrossing = (
   }
 
   return (
-    isStrictlyBetween(verticalStart.x, horizontalStart.x, horizontalEnd.x) &&
-    isStrictlyBetween(horizontalStart.y, verticalStart.y, verticalEnd.y)
+    isStrictlyBetween({
+      coordinate: verticalStart.x,
+      segmentStartCoordinate: horizontalStart.x,
+      segmentEndCoordinate: horizontalEnd.x,
+    }) &&
+    isStrictlyBetween({
+      coordinate: horizontalStart.y,
+      segmentStartCoordinate: verticalStart.y,
+      segmentEndCoordinate: verticalEnd.y,
+    })
   )
 }
 
@@ -55,14 +81,14 @@ const isStrictInteriorPerpendicularCrossing = (
  * remain conflicts because they can imply connectivity or render ambiguously.
  */
 export const doesTraceRecoveryPathConflict = (
-  path: Point[],
-  traces: SolvedTracePath[],
+  tracePath: Point[],
+  collisionTraces: SolvedTracePath[],
 ) => {
-  for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
-    const pathStart = path[pathIndex]!
-    const pathEnd = path[pathIndex + 1]!
+  for (let pathIndex = 0; pathIndex < tracePath.length - 1; pathIndex++) {
+    const pathStart = tracePath[pathIndex]!
+    const pathEnd = tracePath[pathIndex + 1]!
 
-    for (const trace of traces) {
+    for (const trace of collisionTraces) {
       for (
         let traceIndex = 0;
         traceIndex < trace.tracePath.length - 1;
@@ -74,12 +100,12 @@ export const doesTraceRecoveryPathConflict = (
           continue
         }
         if (
-          isStrictInteriorPerpendicularCrossing(
-            pathStart,
-            pathEnd,
-            traceStart,
-            traceEnd,
-          )
+          isStrictInteriorPerpendicularCrossing({
+            firstSegmentStart: pathStart,
+            firstSegmentEnd: pathEnd,
+            secondSegmentStart: traceStart,
+            secondSegmentEnd: traceEnd,
+          })
         ) {
           continue
         }
