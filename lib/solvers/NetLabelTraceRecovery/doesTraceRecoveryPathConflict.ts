@@ -36,28 +36,27 @@ const isStrictInteriorPerpendicularCrossing = ({
   const secondIsVertical =
     Math.abs(secondSegmentStart.x - secondSegmentEnd.x) <= EPSILON
 
-  const horizontalStart = firstIsHorizontal
-    ? firstSegmentStart
-    : secondIsHorizontal
-      ? secondSegmentStart
-      : null
-  const horizontalEnd = firstIsHorizontal
-    ? firstSegmentEnd
-    : secondIsHorizontal
-      ? secondSegmentEnd
-      : null
-  const verticalStart = firstIsVertical
-    ? firstSegmentStart
-    : secondIsVertical
-      ? secondSegmentStart
-      : null
-  const verticalEnd = firstIsVertical
-    ? firstSegmentEnd
-    : secondIsVertical
-      ? secondSegmentEnd
-      : null
+  let horizontalStart: Point
+  let horizontalEnd: Point
+  if (firstIsHorizontal) {
+    horizontalStart = firstSegmentStart
+    horizontalEnd = firstSegmentEnd
+  } else if (secondIsHorizontal) {
+    horizontalStart = secondSegmentStart
+    horizontalEnd = secondSegmentEnd
+  } else {
+    return false
+  }
 
-  if (!horizontalStart || !horizontalEnd || !verticalStart || !verticalEnd) {
+  let verticalStart: Point
+  let verticalEnd: Point
+  if (firstIsVertical) {
+    verticalStart = firstSegmentStart
+    verticalEnd = firstSegmentEnd
+  } else if (secondIsVertical) {
+    verticalStart = secondSegmentStart
+    verticalEnd = secondSegmentEnd
+  } else {
     return false
   }
 
