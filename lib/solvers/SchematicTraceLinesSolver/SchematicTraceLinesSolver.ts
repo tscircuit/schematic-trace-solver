@@ -49,6 +49,8 @@ export interface SolvedTracePath extends MspConnectionPair {
   tracePath: Point[]
   mspConnectionPairIds: MspConnectionPairId[]
   pinIds: PinId[]
+  /** A connector synthesized by AvailableNetOrientationSolver for a label. */
+  isAvailableNetOrientation?: true
 }
 
 export class SchematicTraceLinesSolver extends BaseSolver {

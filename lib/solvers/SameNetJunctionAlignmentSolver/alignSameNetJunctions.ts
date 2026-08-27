@@ -51,7 +51,7 @@ const restoreNearbyPinAsLabelConnectorSource = ({
   traces: SolvedTracePath[]
   inputProblem: InputProblem
 }) => {
-  if (!trace.mspPairId.startsWith("available-net-orientation-")) return trace
+  if (!trace.isAvailableNetOrientation) return trace
   if (trace.pinIds.length !== 2) return trace
   const source = trace.tracePath[0]
   if (!source) return trace
@@ -539,31 +539,11 @@ export const alignSameNetJunctions = ({
     ),
   )
   let outputNetLabelPlacements = netLabelPlacements
-  outputTraces = outputTraces.map((trace) => {
-    const attachedLabel = outputNetLabelPlacements.find(
-      (label) =>
-        restoredConnectorTraceIds.has(trace.mspPairId) &&
-        label.globalConnNetId === trace.globalConnNetId &&
-        tracePathContainsPoint(trace.tracePath, label.anchorPoint),
-    )
-    if (
-      !trace.mspPairId.startsWith("available-net-orientation-") ||
-      !attachedLabel ||
-      trace.pinIds.length !== 2
-    ) {
-      return trace
-    }
-    const source = trace.tracePath[0]
-    if (!source || source.y === attachedLabel.anchorPoint.y) return trace
-    return {
-      ...trace,
-      tracePath: simplifyPath([
-        source,
-        { x: attachedLabel.anchorPoint.x, y: source.y },
-        attachedLabel.anchorPoint,
-      ]),
-    }
-  })
+  // The label anchor already lies on the same-net rail. Keeping a generated
+  // connector here would turn that rail point into a three-way junction.
+  outputTraces = outputTraces.filter(
+    (trace) => !restoredConnectorTraceIds.has(trace.mspPairId),
+  )
   let alignedJunctionCount = 0
 
   // First level the load rails, then attach return branches to those final
@@ -573,7 +553,7 @@ export const alignSameNetJunctions = ({
     // Reuse each aligned branch as the rail for the next load in the chain. An
     // aligned branch may already have had its donor turn, so queue it again when
     // its geometry changes.
-    const donorTraceIds = traces.map((trace) => trace.mspPairId)
+    const donorTraceIds = outputTraces.map((trace) => trace.mspPairId)
     const pendingDonorTraceIds = new Set(donorTraceIds)
     for (let donorIndex = 0; donorIndex < donorTraceIds.length; donorIndex++) {
       const donorTraceId = donorTraceIds[donorIndex]!
@@ -582,7 +562,7 @@ export const alignSameNetJunctions = ({
         (trace) => trace.mspPairId === donorTraceId,
       )!
       for (const branchTrace of outputTraces) {
-        if (branchTrace.mspPairId.startsWith("available-net-orientation-")) {
+        if (branchTrace.isAvailableNetOrientation) {
           continue
         }
         if (alignedBranchTraceIds.has(branchTrace.mspPairId)) continue

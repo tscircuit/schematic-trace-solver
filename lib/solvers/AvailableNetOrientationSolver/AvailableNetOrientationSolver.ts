@@ -359,6 +359,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const mspPairId = `available-net-orientation-${labelIndex}-${label.netId ?? label.globalConnNetId}`
     const connectorTrace: SolvedTracePath = {
       mspPairId,
+      isAvailableNetOrientation: true,
       dcConnNetId: label.dcConnNetId ?? label.globalConnNetId,
       globalConnNetId: label.globalConnNetId,
       userNetId: label.netId,

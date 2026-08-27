@@ -72,12 +72,9 @@ test("repro: V3V3 net-label branch does not start at the R8 edge", () => {
   const v3v3Connector = solver
     .sameNetJunctionAlignmentSolver!.getOutput()
     .traces.find(
-      (trace) =>
-        trace.userNetId === "V3V3" &&
-        trace.mspPairId.startsWith("available-net-orientation-"),
+      (trace) => trace.userNetId === "V3V3" && trace.isAvailableNetOrientation,
     )
-  expect(v3v3Connector?.tracePath[0]).toEqual({ x: -6.7, y: -19 })
-  expect(v3v3Connector?.tracePath[1]).toEqual({ x: -6.34, y: -19 })
+  expect(v3v3Connector).toBeUndefined()
   expect(
     solver
       .sameNetJunctionAlignmentSolver!.getOutput()
