@@ -40,7 +40,10 @@ interface CandidatePair {
   perpendicularOffset: number
   routeDistance: number
   key: string
-  recoveryMode: "fallback_labels" | "routed_components"
+  recoveryMode:
+    | "fallback_labels"
+    | "routed_components"
+    | "routed_direct_connection"
   netConnectionPinIds?: PinId[]
 }
 
@@ -260,7 +263,9 @@ export class NetLabelToTraceSolver extends BaseSolver {
       }
     }
 
-    candidates.push(...this.buildRoutedComponentCandidates())
+    candidates.push(
+      ...this.buildRoutedComponentCandidates(groundGlobalConnNetIds),
+    )
 
     candidates.sort(
       (first, second) =>
@@ -271,20 +276,42 @@ export class NetLabelToTraceSolver extends BaseSolver {
     return candidates
   }
 
-  private buildRoutedComponentCandidates() {
+  private buildRoutedComponentCandidates(
+    groundGlobalConnNetIds: Set<GlobalConnNetId>,
+  ) {
     const { netConnMap } = getConnectivityMapsFromInputProblem(
       this.inputProblem,
     )
     const candidates: CandidatePair[] = []
+    const directConnections = new Set<object>(
+      this.inputProblem.directConnections,
+    )
 
-    for (const connection of this.inputProblem.netConnections) {
-      if (connection.pinIds.length <= 2 || connection.isGround !== false)
+    for (const connection of [
+      ...this.inputProblem.netConnections.filter(
+        (connection) =>
+          connection.pinIds.length > 2 && connection.isGround === false,
+      ),
+      ...this.inputProblem.directConnections,
+    ]) {
+      const isDirectConnection = directConnections.has(connection)
+      const globalConnNetId = netConnMap.getNetConnectedToId(
+        connection.pinIds[0],
+      )
+      if (
+        !globalConnNetId ||
+        (isDirectConnection && groundGlobalConnNetIds.has(globalConnNetId))
+      )
         continue
-      const globalConnNetId = netConnMap.getNetConnectedToId(connection.netId)
-      if (!globalConnNetId) continue
+      let connectionPinIds: PinId[] = connection.pinIds
+      if (isDirectConnection) {
+        connectionPinIds = [...this.pinMap.keys()].filter(
+          (pinId) => netConnMap.getNetConnectedToId(pinId) === globalConnNetId,
+        )
+      }
 
       const traceConnectedPinComponents = getTraceConnectedPinComponents({
-        pinIds: connection.pinIds,
+        pinIds: connectionPinIds,
         traces: this.outputTraces.filter(
           (trace) => trace.globalConnNetId === globalConnNetId,
         ),
@@ -302,6 +329,16 @@ export class NetLabelToTraceSolver extends BaseSolver {
         ) {
           const firstComponent = traceConnectedPinComponents[firstIndex]!
           const secondComponent = traceConnectedPinComponents[secondIndex]!
+          if (
+            isDirectConnection &&
+            !(
+              (firstComponent.pinIds.includes(connection.pinIds[0]) &&
+                secondComponent.pinIds.includes(connection.pinIds[1])) ||
+              (firstComponent.pinIds.includes(connection.pinIds[1]) &&
+                secondComponent.pinIds.includes(connection.pinIds[0]))
+            )
+          )
+            continue
           const firstLabel = this.input.netLabelPlacements.find(
             (label) =>
               label.globalConnNetId === globalConnNetId &&
@@ -330,11 +367,23 @@ export class NetLabelToTraceSolver extends BaseSolver {
           }
 
           let bestCandidate: CandidatePair | undefined
-          for (const firstPinId of firstComponent.pinIds) {
-            for (const secondPinId of secondComponent.pinIds) {
+          let firstPinIds = firstComponent.pinIds
+          let secondPinIds = secondComponent.pinIds
+          if (isDirectConnection) {
+            firstPinIds = connection.pinIds.filter((pinId) =>
+              firstComponent.pinIds.includes(pinId),
+            )
+            secondPinIds = connection.pinIds.filter((pinId) =>
+              secondComponent.pinIds.includes(pinId),
+            )
+          }
+          for (const firstPinId of firstPinIds) {
+            for (const secondPinId of secondPinIds) {
               const firstPin = this.pinMap.get(firstPinId)
               const secondPin = this.pinMap.get(secondPinId)
               if (!firstPin || !secondPin) continue
+              if (isDirectConnection && firstPin.chipId === secondPin.chipId)
+                continue
               const perpendicularOffset = getPerpendicularOffset(
                 firstPin,
                 secondPin,
@@ -362,6 +411,11 @@ export class NetLabelToTraceSolver extends BaseSolver {
               const routeDistance =
                 Math.abs(firstPin.x - secondPin.x) +
                 Math.abs(firstPin.y - secondPin.y)
+              let recoveryMode: CandidatePair["recoveryMode"] =
+                "routed_components"
+              if (isDirectConnection) {
+                recoveryMode = "routed_direct_connection"
+              }
               const candidate: CandidatePair = {
                 firstLabel,
                 secondLabel,
@@ -369,8 +423,8 @@ export class NetLabelToTraceSolver extends BaseSolver {
                 perpendicularOffset,
                 routeDistance,
                 key: getCanonicalPairKey(firstPin.pinId, secondPin.pinId),
-                recoveryMode: "routed_components",
-                netConnectionPinIds: connection.pinIds,
+                recoveryMode,
+                netConnectionPinIds: connectionPinIds,
               }
               if (
                 !bestCandidate ||
@@ -429,7 +483,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
       (trace) => !this.isSupersededConnectorTrace(trace, candidate),
     )
     let collisionTraces = retainedTraces
-    if (candidate.recoveryMode === "routed_components") {
+    if (candidate.recoveryMode !== "fallback_labels") {
       collisionTraces = retainedTraces.filter(
         (trace) =>
           trace.globalConnNetId !== candidate.firstLabel.globalConnNetId,
@@ -466,7 +520,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
     }
 
     this.outputTraces = [...retainedTraces, recoveredTrace]
-    if (candidate.recoveryMode === "fallback_labels") {
+    if (candidate.recoveryMode !== "routed_components") {
       this.outputNetLabelPlacements = this.outputNetLabelPlacements.filter(
         (label) =>
           label !== candidate.firstLabel && label !== candidate.secondLabel,
