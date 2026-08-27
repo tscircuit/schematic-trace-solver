@@ -539,11 +539,31 @@ export const alignSameNetJunctions = ({
     ),
   )
   let outputNetLabelPlacements = netLabelPlacements
-  // The label anchor already lies on the same-net rail. Keeping a generated
-  // connector here would turn that rail point into a three-way junction.
-  outputTraces = outputTraces.filter(
-    (trace) => !restoredConnectorTraceIds.has(trace.mspPairId),
-  )
+  outputTraces = outputTraces.map((trace) => {
+    const attachedLabel = outputNetLabelPlacements.find(
+      (label) =>
+        restoredConnectorTraceIds.has(trace.mspPairId) &&
+        label.globalConnNetId === trace.globalConnNetId &&
+        tracePathContainsPoint(trace.tracePath, label.anchorPoint),
+    )
+    if (
+      !trace.isAvailableNetOrientation ||
+      !attachedLabel ||
+      trace.pinIds.length !== 2
+    ) {
+      return trace
+    }
+    const source = trace.tracePath[0]
+    if (!source || source.y === attachedLabel.anchorPoint.y) return trace
+    return {
+      ...trace,
+      tracePath: simplifyPath([
+        source,
+        { x: attachedLabel.anchorPoint.x, y: source.y },
+        attachedLabel.anchorPoint,
+      ]),
+    }
+  })
   let alignedJunctionCount = 0
 
   // First level the load rails, then attach return branches to those final
