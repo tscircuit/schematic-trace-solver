@@ -13,5 +13,14 @@ test("repro PowerBank 3 V System Power schematic", () => {
   )
   solver.solve()
 
+  const output = solver.netLabelToTraceSolver!.getOutput()
+  const expectedPinIds = new Set(["schematic_port_394", "schematic_port_386"])
+  const recoveredTrace = output.traces.find(
+    (trace) =>
+      trace.pinIds.length === expectedPinIds.size &&
+      trace.pinIds.every((pinId) => expectedPinIds.has(pinId)),
+  )
+
+  expect(recoveredTrace).toBeDefined()
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

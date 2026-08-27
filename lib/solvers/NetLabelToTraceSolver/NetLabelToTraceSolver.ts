@@ -12,6 +12,7 @@ import {
   getTraceRecoveryConnectivityMaps,
   type TraceRecoveryPin,
 } from "lib/solvers/NetLabelTraceRecovery/getTraceRecoveryConnectivityMaps"
+import { doesTraceRecoveryPathConflict } from "lib/solvers/NetLabelTraceRecovery/doesTraceRecoveryPathConflict"
 import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { SchematicTraceSingleLineSolver2 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
@@ -22,7 +23,6 @@ import type {
   PinId,
 } from "lib/types/InputProblem"
 import { arePinsInDifferentSchematicSections } from "lib/utils/arePinsInDifferentSchematicSections"
-import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
 import {
   type InlineNetLabelPlacement,
   type InlineNetLabelOutput,
@@ -434,7 +434,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
       )
     }
     if (
-      doesTraceOverlapWithExistingTraces(tracePath, collisionTraces) ||
+      doesTraceRecoveryPathConflict(tracePath, collisionTraces) ||
       this.routeIntersectsRemainingLabels(tracePath, candidate)
     ) {
       return
