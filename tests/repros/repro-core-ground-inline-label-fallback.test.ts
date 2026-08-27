@@ -8,9 +8,10 @@ const signalNetIds = new Set(["step", "direction", "enable"])
 
 // Captured from @tscircuit/core's
 // ground-net-label-preserves-solver-orientation test. These three two-pin
-// signal nets opt into inline labels, but the neighboring shared LOGIC_3V3
-// and GND labels cause post-processing to fall them back to anchored labels.
-test("repro: core inline signal labels fall back near shared rail labels", () => {
+// signal nets opt into inline labels. Neighboring shared LOGIC_3V3 and GND
+// labels must not make post-processing mistake their terminal stubs for
+// collisions with vertically encoded rail-label bounds.
+test("keeps core inline signal labels near shared rail labels", () => {
   const inputProblem: InputProblem = JSON.parse(
     JSON.stringify(inputProblemJson),
   )
@@ -26,9 +27,7 @@ test("repro: core inline signal labels fall back near shared rail labels", () =>
     (placement) => signalNetIds.has(placement.netId ?? ""),
   )
 
-  expect(signalInlineLabels).toHaveLength(0)
-  expect(
-    signalAnchoredLabels.map((placement) => placement.netId).sort(),
-  ).toEqual(["direction", "direction", "enable", "enable", "step", "step"])
+  expect(signalInlineLabels).toHaveLength(6)
+  expect(signalAnchoredLabels).toHaveLength(0)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
