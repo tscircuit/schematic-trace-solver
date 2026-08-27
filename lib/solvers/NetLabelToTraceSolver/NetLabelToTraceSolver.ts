@@ -5,16 +5,17 @@ import {
 } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import { doesPairCrossRestrictedCenterLines } from "lib/solvers/MspConnectionPairSolver/doesPairCrossRestrictedCenterLines"
+import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { doesTraceRecoveryPathConflict } from "lib/solvers/NetLabelTraceRecovery/doesTraceRecoveryPathConflict"
 import {
   getTraceRecoveryConnectivityMaps,
   type TraceRecoveryPin,
 } from "lib/solvers/NetLabelTraceRecovery/getTraceRecoveryConnectivityMaps"
-import { doesTraceRecoveryPathConflict } from "lib/solvers/NetLabelTraceRecovery/doesTraceRecoveryPathConflict"
 import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { findFirstCollision } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { SchematicTraceSingleLineSolver2 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
 import type {
   ChipId,
@@ -24,10 +25,11 @@ import type {
 } from "lib/types/InputProblem"
 import { arePinsInDifferentSchematicSections } from "lib/utils/arePinsInDifferentSchematicSections"
 import {
-  type InlineNetLabelPlacement,
   type InlineNetLabelOutput,
+  type InlineNetLabelPlacement,
   visualizeInlineNetLabelOutput,
 } from "../InlineNetLabelSolver/InlineNetLabelSolver"
+import { reduceTraceCrossings } from "./reduceTraceCrossings"
 
 type GlobalConnNetId = NetLabelPlacement["globalConnNetId"]
 
@@ -420,7 +422,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
 
   private tryAcceptCurrentRoute() {
     const candidate = this.currentCandidate
-    const tracePath = this.activeSubSolver?.solvedTracePath
+    let tracePath = this.activeSubSolver?.solvedTracePath
     if (!candidate || !tracePath) return
 
     const retainedTraces = this.outputTraces.filter(
@@ -439,6 +441,17 @@ export class NetLabelToTraceSolver extends BaseSolver {
     ) {
       return
     }
+
+    tracePath = reduceTraceCrossings({
+      tracePath,
+      globalConnNetId: candidate.firstLabel.globalConnNetId,
+      otherTraces: collisionTraces,
+      isCandidateValid: (candidatePath) =>
+        findFirstCollision(candidatePath, this.activeSubSolver!.obstacles) ===
+          null &&
+        !doesTraceRecoveryPathConflict(candidatePath, collisionTraces) &&
+        !this.routeIntersectsRemainingLabels(candidatePath, candidate),
+    })
 
     const [firstPin, secondPin] = candidate.pins
     const mspPairId = `${RECOVERED_TRACE_PREFIX}${candidate.key}`
