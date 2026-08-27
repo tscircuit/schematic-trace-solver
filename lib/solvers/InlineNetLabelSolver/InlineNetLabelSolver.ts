@@ -21,6 +21,7 @@ import {
   type AxisAlignedSegment,
   getAxisAlignedSegments,
 } from "./getAxisAlignedSegments"
+import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
 import { pushAnchoredNetLabelsAwayFromInlineLabels } from "./pushAnchoredNetLabelsAwayFromInlineLabels"
 import { pushInlineTerminalLabelsAwayFromAnchoredLabels } from "./pushInlineTerminalLabelsAwayFromAnchoredLabels"
 
@@ -156,13 +157,6 @@ const getInlinePlacementBounds = (
     maxY: placement.center.y + renderedHeight / 2,
   }
 }
-
-const getAnchoredPlacementBounds = (placement: NetLabelPlacement): Bounds => ({
-  minX: placement.center.x - placement.width / 2,
-  maxX: placement.center.x + placement.width / 2,
-  minY: placement.center.y - placement.height / 2,
-  maxY: placement.center.y + placement.height / 2,
-})
 
 /**
  * Places "inline net labels" - net names drawn alongside the trace they belong
@@ -1007,7 +1001,8 @@ export class InlineNetLabelSolver extends BaseSolver {
         ) {
           continue
         }
-        const anchoredBounds = getAnchoredPlacementBounds(anchoredPlacement)
+        const anchoredBounds =
+          getAnchoredNetLabelRenderedBounds(anchoredPlacement)
         if (
           boundsOverlap(inlineBounds, anchoredBounds) ||
           (inlinePlacement.stubTracePath &&
