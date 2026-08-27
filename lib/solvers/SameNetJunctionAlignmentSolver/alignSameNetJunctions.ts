@@ -101,7 +101,8 @@ const restoreNearbyPinAsLabelConnectorSource = ({
     ...trace.tracePath.slice(1),
   ]
   if (isVertical(source, nextPoint)) {
-    correctedPath[1] = { ...nextPoint, x: nearbyPin.pin.x }
+    // Keep the label stem at its existing horizontal offset. The connector
+    // will be rerouted as an orthogonal edge-to-stem branch below.
   } else if (isHorizontal(source, nextPoint)) {
     correctedPath[1] = { ...nextPoint, y: nearbyPin.pin.y }
   } else {
@@ -537,33 +538,13 @@ export const alignSameNetJunctions = ({
       trace !== traces[index] ? [trace.mspPairId] : [],
     ),
   )
-  let outputNetLabelPlacements = netLabelPlacements.map((label) => {
-    const connectorTrace = outputTraces.find(
-      (trace) =>
-        restoredConnectorTraceIds.has(trace.mspPairId) &&
-        trace.mspPairId.startsWith("available-net-orientation-") &&
-        label.globalConnNetId === trace.globalConnNetId &&
-        trace.pinIds.length === 2 &&
-        tracePathContainsPoint(trace.tracePath, label.anchorPoint) &&
-        trace.tracePath[0]?.y !== label.anchorPoint.y,
-    )
-    if (!connectorTrace) return label
-    const source = connectorTrace.tracePath[0]!
-    return {
-      ...label,
-      anchorPoint: { x: source.x, y: label.anchorPoint.y },
-      center: {
-        x: source.x + (label.center.x - label.anchorPoint.x),
-        y: label.center.y,
-      },
-    }
-  })
+  let outputNetLabelPlacements = netLabelPlacements
   outputTraces = outputTraces.map((trace) => {
     const attachedLabel = outputNetLabelPlacements.find(
       (label) =>
         restoredConnectorTraceIds.has(trace.mspPairId) &&
         label.globalConnNetId === trace.globalConnNetId &&
-        label.anchorPoint.x === trace.tracePath[0]?.x,
+        tracePathContainsPoint(trace.tracePath, label.anchorPoint),
     )
     if (
       !trace.mspPairId.startsWith("available-net-orientation-") ||
@@ -576,7 +557,11 @@ export const alignSameNetJunctions = ({
     if (!source || source.y === attachedLabel.anchorPoint.y) return trace
     return {
       ...trace,
-      tracePath: simplifyPath([source, attachedLabel.anchorPoint]),
+      tracePath: simplifyPath([
+        source,
+        { x: attachedLabel.anchorPoint.x, y: source.y },
+        attachedLabel.anchorPoint,
+      ]),
     }
   })
   let alignedJunctionCount = 0
