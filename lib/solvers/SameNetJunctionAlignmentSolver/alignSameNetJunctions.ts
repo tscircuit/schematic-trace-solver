@@ -564,6 +564,34 @@ export const alignSameNetJunctions = ({
       ]),
     }
   })
+  // Let the return rail enter the label branch along its horizontal segment.
+  // This keeps the R8 pin as a plain continuation instead of rendering a
+  // junction dot where two independent traces share the pin coordinate.
+  outputTraces = outputTraces.map((trace) => {
+    if (trace.isAvailableNetOrientation) return trace
+    const connector = outputTraces.find((candidate) => {
+      if (!restoredConnectorTraceIds.has(candidate.mspPairId)) return false
+      if (candidate.globalConnNetId !== trace.globalConnNetId) return false
+      const source = candidate.tracePath[0]
+      const branchEnd = candidate.tracePath[1]
+      const hostStart = trace.tracePath[0]
+      const hostNext = trace.tracePath[1]
+      return Boolean(
+        source &&
+          branchEnd &&
+          hostStart &&
+          hostNext &&
+          nearlyEqual(hostStart.x, source.x) &&
+          nearlyEqual(hostStart.y, source.y) &&
+          nearlyEqual(branchEnd.y, source.y) &&
+          nearlyEqual(hostNext.y, source.y) &&
+          hostNext.x > Math.min(source.x, branchEnd.x) &&
+          hostNext.x < Math.max(source.x, branchEnd.x),
+      )
+    })
+    if (!connector) return trace
+    return { ...trace, tracePath: trace.tracePath.slice(1) }
+  })
   let alignedJunctionCount = 0
 
   // First level the load rails, then attach return branches to those final
