@@ -129,4 +129,3 @@ test("an inline label uses preferred side when no obstacle is present", () => {
   expect(solver.inlineNetLabelPlacements[0]!.side).toBe("y+")
   expect(solver.inlineNetLabelPlacements[0]!.center.y).toBeGreaterThan(0)
 })
-
