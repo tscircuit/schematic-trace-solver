@@ -116,6 +116,7 @@
     },
     {
       "netId": "VSYS",
+      "isPower": true,
       "netLabelText": "VSYS",
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.6,

@@ -957,8 +957,10 @@ export const convertSolverOutputToCircuitJson = (
 
   const netNames = new Set<string>()
   const groundNetIds = new Set<NetId>()
+  const powerNetIds = new Set<NetId>()
   for (const connection of inputProblem.netConnections) {
     if (connection.isGround) groundNetIds.add(connection.netId)
+    if (connection.isPower) powerNetIds.add(connection.netId)
   }
   for (const connection of [
     ...inputProblem.directConnections,
@@ -987,7 +989,9 @@ export const convertSolverOutputToCircuitJson = (
       name: netName,
       member_source_group_ids: [],
       is_ground: groundNetIds.has(netName),
-      is_power: /(^|[._-])(vcc|vdd|vss|gnd)($|[._-])/i.test(netName),
+      is_power:
+        powerNetIds.has(netName) ||
+        /(^|[._-])(vcc|vdd|vss|gnd)($|[._-])/i.test(netName),
     } satisfies SourceNet)
   }
 
@@ -1072,6 +1076,8 @@ export const convertSolverOutputToCircuitJson = (
     let symbolName: string | undefined
     if (groundNetIds.has(netName) && anchorSide === "top") {
       symbolName = "rail_down"
+    } else if (powerNetIds.has(netName) && anchorSide === "bottom") {
+      symbolName = "rail_up"
     }
     circuitJson.push({
       type: "schematic_net_label",

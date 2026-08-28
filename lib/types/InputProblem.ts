@@ -98,6 +98,9 @@ export interface InputNetConnection {
   netId: string
   pinIds: Array<PinId>
 
+  /** Preserve source-net power metadata for schematic rail rendering. */
+  isPower?: boolean
+
   /**
    * Preserve explicitly wired islands on this ground net, joining the islands
    * electrically through labels instead of routing between them. Nets without
