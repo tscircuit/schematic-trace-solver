@@ -46,6 +46,7 @@ interface CandidatePair {
     | "fallback_labels"
     | "routed_components"
     | "routed_direct_connection"
+    | "routed_port_label"
     | "routed_direct_group"
   recoveryGroupPinIds?: PinId[]
 }
@@ -54,12 +55,27 @@ const AVAILABLE_NET_ORIENTATION_PREFIX = "available-net-orientation-"
 const RECOVERED_TRACE_PREFIX = "net-label-to-trace-"
 const MAX_NAMED_NET_RECOVERY_PERPENDICULAR_OFFSET = 0.05
 const MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET = 0.25
+const MAX_TRACE_AWARE_RETRIES = 4
+const DIRECT_GROUP_RECOVERY_COMPONENT_COUNT = 4
+const MAX_CLEAR_TRACE_BRIDGE_DETOUR_RATIO = 2.5
+const MAX_LOCAL_PORT_LABEL_DISTANCE = 5
+const TRACE_RECOVERY_OBSTACLE_PADDING = 1e-4
 
 const getCanonicalPairKey = (firstPinId: PinId, secondPinId: PinId) =>
   [firstPinId, secondPinId].sort().join("--")
 
-export const pathIntersectsRenderedLabel = (
-  path: Point[],
+const requiresClearTraceBridge = (candidate: CandidatePair) =>
+  candidate.recoveryMode === "routed_direct_connection" ||
+  candidate.recoveryMode === "routed_port_label" ||
+  candidate.recoveryMode === "routed_direct_group"
+
+const getRecoveryPhase = (candidate: CandidatePair) => {
+  if (candidate.recoveryMode === "routed_port_label") return 1
+  if (candidate.recoveryMode === "routed_direct_group") return 2
+  return 0
+}
+
+const getRenderedLabelBounds = (
   label: NetLabelPlacement | InlineNetLabelPlacement,
 ) => {
   let width = label.width
@@ -68,11 +84,18 @@ export const pathIntersectsRenderedLabel = (
     width = label.height
     height = label.width
   }
-  const bounds = getBoundFromCenteredRect({
+  return getBoundFromCenteredRect({
     center: label.center,
     width,
     height,
   })
+}
+
+export const pathIntersectsRenderedLabel = (
+  path: Point[],
+  label: NetLabelPlacement | InlineNetLabelPlacement,
+) => {
+  const bounds = getRenderedLabelBounds(label)
   for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
     if (
       doesSegmentIntersectRect(path[pathIndex]!, path[pathIndex + 1]!, bounds)
@@ -118,6 +141,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
   private queuedCandidates: CandidatePair[]
   private currentCandidate: CandidatePair | null = null
   private recoveredDirectConnectionPinGroups = new Map<string, PinId[]>()
+  private traceAwareRetryPaths = new Map<CandidatePair, Point[][]>()
   declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
 
   constructor(private input: InlineNetLabelOutput) {
@@ -273,6 +297,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
 
     candidates.sort(
       (first, second) =>
+        getRecoveryPhase(first) - getRecoveryPhase(second) ||
         first.perpendicularOffset - second.perpendicularOffset ||
         first.routeDistance - second.routeDistance ||
         first.key.localeCompare(second.key),
@@ -363,7 +388,23 @@ export class NetLabelToTraceSolver extends BaseSolver {
         traces: this.outputTraces.filter(
           (trace) => trace.globalConnNetId === globalConnNetId,
         ),
-      }).filter((component) => component.traces.length > 0)
+      }).filter(
+        (component) =>
+          component.traces.length > 0 ||
+          (connection.kind === "direct_connection" &&
+            this.input.netLabelPlacements.some(
+              (label) =>
+                label.globalConnNetId === globalConnNetId &&
+                label.pinIds.some((pinId) => component.pinIds.includes(pinId)),
+            )),
+      )
+      if (
+        isDirectGroup &&
+        traceConnectedPinComponents.length !==
+          DIRECT_GROUP_RECOVERY_COMPONENT_COUNT
+      ) {
+        continue
+      }
 
       for (
         let firstIndex = 0;
@@ -377,6 +418,21 @@ export class NetLabelToTraceSolver extends BaseSolver {
         ) {
           const firstComponent = traceConnectedPinComponents[firstIndex]!
           const secondComponent = traceConnectedPinComponents[secondIndex]!
+          const isDirectPortLabelRecovery =
+            connection.kind === "direct_connection" &&
+            (firstComponent.traces.length === 0 ||
+              secondComponent.traces.length === 0)
+          const routedPortLabelComponent =
+            firstComponent.traces.length === 0
+              ? secondComponent
+              : firstComponent
+          if (
+            isDirectPortLabelRecovery &&
+            (traceConnectedPinComponents.length !== 2 ||
+              routedPortLabelComponent.traces.length < 2)
+          ) {
+            continue
+          }
           if (
             connection.kind === "direct_connection" &&
             !(
@@ -391,7 +447,8 @@ export class NetLabelToTraceSolver extends BaseSolver {
           const firstLabel = this.input.netLabelPlacements.find(
             (label) =>
               label.globalConnNetId === globalConnNetId &&
-              label.mspConnectionPairIds.length > 0 &&
+              (label.mspConnectionPairIds.length > 0 ||
+                connection.kind === "direct_connection") &&
               label.pinIds.some((pinId) =>
                 firstComponent.pinIds.includes(pinId),
               ),
@@ -399,7 +456,8 @@ export class NetLabelToTraceSolver extends BaseSolver {
           const secondLabel = this.input.netLabelPlacements.find(
             (label) =>
               label.globalConnNetId === globalConnNetId &&
-              label.mspConnectionPairIds.length > 0 &&
+              (label.mspConnectionPairIds.length > 0 ||
+                connection.kind === "direct_connection") &&
               label.pinIds.some((pinId) =>
                 secondComponent.pinIds.includes(pinId),
               ),
@@ -408,6 +466,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
             continue
           if (
             !isDirectGroup &&
+            !isDirectPortLabelRecovery &&
             getPerpendicularOffset(
               firstLabel.anchorPoint,
               secondLabel.anchorPoint,
@@ -440,6 +499,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
               )
               if (
                 (!isDirectGroup &&
+                  !isDirectPortLabelRecovery &&
                   (perpendicularOffset >
                     MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET ||
                     arePinsCoFacingAlongSeparationAxis(firstPin, secondPin))) ||
@@ -462,9 +522,17 @@ export class NetLabelToTraceSolver extends BaseSolver {
               const routeDistance =
                 Math.abs(firstPin.x - secondPin.x) +
                 Math.abs(firstPin.y - secondPin.y)
+              if (
+                isDirectPortLabelRecovery &&
+                routeDistance > MAX_LOCAL_PORT_LABEL_DISTANCE
+              ) {
+                continue
+              }
               let recoveryMode: CandidatePair["recoveryMode"] =
                 "routed_components"
-              if (isDirectConnection) {
+              if (isDirectPortLabelRecovery) {
+                recoveryMode = "routed_port_label"
+              } else if (isDirectConnection) {
                 recoveryMode = "routed_direct_connection"
               }
               if (isDirectGroup) recoveryMode = "routed_direct_group"
@@ -560,6 +628,127 @@ export class NetLabelToTraceSolver extends BaseSolver {
     return false
   }
 
+  private addClearTraceRecoveryObstacles(
+    candidate: CandidatePair,
+    routeSolver: SchematicTraceSingleLineSolver2,
+    blockedPaths: Point[][],
+  ) {
+    const endpointPinIds = new Set(candidate.pins.map((pin) => pin.pinId))
+    for (const trace of this.outputTraces) {
+      if (trace.pinIds.some((pinId) => endpointPinIds.has(pinId))) continue
+      for (
+        let traceIndex = 0;
+        traceIndex < trace.tracePath.length - 1;
+        traceIndex++
+      ) {
+        const start = trace.tracePath[traceIndex]!
+        const end = trace.tracePath[traceIndex + 1]!
+        const blocksAttemptedPath = blockedPaths.some((blockedPath) =>
+          blockedPath
+            .slice(1)
+            .some((pathEnd, pathIndex) =>
+              doSegmentsIntersect(blockedPath[pathIndex]!, pathEnd, start, end),
+            ),
+        )
+        if (!blocksAttemptedPath) continue
+        routeSolver.obstacles.push({
+          kind: "chip",
+          chipId: `trace-recovery-obstacle-${trace.mspPairId}-${traceIndex}`,
+          minX: Math.min(start.x, end.x) - TRACE_RECOVERY_OBSTACLE_PADDING,
+          maxX: Math.max(start.x, end.x) + TRACE_RECOVERY_OBSTACLE_PADDING,
+          minY: Math.min(start.y, end.y) - TRACE_RECOVERY_OBSTACLE_PADDING,
+          maxY: Math.max(start.y, end.y) + TRACE_RECOVERY_OBSTACLE_PADDING,
+        })
+      }
+    }
+
+    const remainingLabels = [
+      ...this.outputNetLabelPlacements.filter(
+        (label) =>
+          label !== candidate.firstLabel && label !== candidate.secondLabel,
+      ),
+      ...this.input.inlineNetLabelPlacements,
+    ]
+    for (const [labelIndex, label] of remainingLabels.entries()) {
+      if (
+        !blockedPaths.some((blockedPath) =>
+          pathIntersectsRenderedLabel(blockedPath, label),
+        )
+      )
+        continue
+      routeSolver.obstacles.push({
+        kind: "chip",
+        chipId: `trace-recovery-label-obstacle-${labelIndex}`,
+        ...getRenderedLabelBounds(label),
+      })
+    }
+  }
+
+  private currentRouteNeedsTraceAwareRetry(candidate: CandidatePair) {
+    const tracePath = this.activeSubSolver?.solvedTracePath
+    if (!tracePath || !requiresClearTraceBridge(candidate)) return false
+    const retainedTraces = this.outputTraces.filter(
+      (trace) => !this.isSupersededConnectorTrace(trace, candidate),
+    )
+    return (
+      this.routeCrossesNonEndpointTrace(tracePath, candidate, retainedTraces) ||
+      this.routeIntersectsRemainingLabels(tracePath, candidate)
+    )
+  }
+
+  private isClearTraceBridgeTooIndirect(
+    tracePath: Point[],
+    candidate: CandidatePair,
+  ) {
+    if (
+      candidate.recoveryMode !== "routed_port_label" &&
+      candidate.recoveryMode !== "routed_direct_group"
+    ) {
+      return false
+    }
+    const pathDistance = tracePath.slice(1).reduce((distance, point, index) => {
+      const previousPoint = tracePath[index]!
+      return (
+        distance +
+        Math.abs(point.x - previousPoint.x) +
+        Math.abs(point.y - previousPoint.y)
+      )
+    }, 0)
+    return (
+      pathDistance / candidate.routeDistance >
+      MAX_CLEAR_TRACE_BRIDGE_DETOUR_RATIO
+    )
+  }
+
+  private createRouteSolver(
+    candidate: CandidatePair,
+    recoveryObstaclePaths?: Point[][],
+  ) {
+    const routeSolver = new SchematicTraceSingleLineSolver2({
+      inputProblem: this.inputProblem,
+      pins: candidate.pins,
+      chipMap: this.chipMap,
+      connectionPair:
+        candidate.recoveryMode === "routed_direct_group"
+          ? {
+              mspPairId: `${RECOVERED_TRACE_PREFIX}${candidate.key}`,
+              dcConnNetId: candidate.firstLabel.globalConnNetId,
+              globalConnNetId: candidate.firstLabel.globalConnNetId,
+              userNetId: candidate.firstLabel.netId,
+              pins: candidate.pins,
+            }
+          : undefined,
+    })
+    if (recoveryObstaclePaths) {
+      this.addClearTraceRecoveryObstacles(
+        candidate,
+        routeSolver,
+        recoveryObstaclePaths,
+      )
+    }
+    return routeSolver
+  }
+
   private tryAcceptCurrentRoute() {
     const candidate = this.currentCandidate
     let tracePath = this.activeSubSolver?.solvedTracePath
@@ -577,7 +766,8 @@ export class NetLabelToTraceSolver extends BaseSolver {
     }
     if (
       doesTraceRecoveryPathConflict(tracePath, collisionTraces) ||
-      (candidate.recoveryMode === "routed_direct_group" &&
+      this.isClearTraceBridgeTooIndirect(tracePath, candidate) ||
+      (requiresClearTraceBridge(candidate) &&
         this.routeCrossesNonEndpointTrace(
           tracePath,
           candidate,
@@ -596,7 +786,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
         findFirstCollision(candidatePath, this.activeSubSolver!.obstacles) ===
           null &&
         !doesTraceRecoveryPathConflict(candidatePath, collisionTraces) &&
-        (candidate.recoveryMode !== "routed_direct_group" ||
+        (!requiresClearTraceBridge(candidate) ||
           !this.routeCrossesNonEndpointTrace(
             candidatePath,
             candidate,
@@ -620,7 +810,8 @@ export class NetLabelToTraceSolver extends BaseSolver {
     this.outputTraces = [...retainedTraces, recoveredTrace]
     if (
       candidate.recoveryMode === "fallback_labels" ||
-      candidate.recoveryMode === "routed_direct_connection"
+      candidate.recoveryMode === "routed_direct_connection" ||
+      candidate.recoveryMode === "routed_port_label"
     ) {
       this.outputNetLabelPlacements = this.outputNetLabelPlacements.filter(
         (label) =>
@@ -701,6 +892,22 @@ export class NetLabelToTraceSolver extends BaseSolver {
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
       if (this.activeSubSolver.solved) {
+        if (
+          this.currentCandidate &&
+          this.currentRouteNeedsTraceAwareRetry(this.currentCandidate)
+        ) {
+          const retryPaths =
+            this.traceAwareRetryPaths.get(this.currentCandidate) ?? []
+          if (retryPaths.length < MAX_TRACE_AWARE_RETRIES) {
+            retryPaths.push(this.activeSubSolver.solvedTracePath!)
+            this.traceAwareRetryPaths.set(this.currentCandidate, retryPaths)
+            this.activeSubSolver = this.createRouteSolver(
+              this.currentCandidate,
+              retryPaths,
+            )
+            return
+          }
+        }
         this.tryAcceptCurrentRoute()
         this.activeSubSolver = null
         this.currentCandidate = null
@@ -728,21 +935,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
     }
 
     this.currentCandidate = candidate
-    this.activeSubSolver = new SchematicTraceSingleLineSolver2({
-      inputProblem: this.inputProblem,
-      pins: candidate.pins,
-      chipMap: this.chipMap,
-      connectionPair:
-        candidate.recoveryMode === "routed_direct_group"
-          ? {
-              mspPairId: `${RECOVERED_TRACE_PREFIX}${candidate.key}`,
-              dcConnNetId: candidate.firstLabel.globalConnNetId,
-              globalConnNetId: candidate.firstLabel.globalConnNetId,
-              userNetId: candidate.firstLabel.netId,
-              pins: candidate.pins,
-            }
-          : undefined,
-    })
+    this.activeSubSolver = this.createRouteSolver(candidate)
   }
 
   getOutput() {
