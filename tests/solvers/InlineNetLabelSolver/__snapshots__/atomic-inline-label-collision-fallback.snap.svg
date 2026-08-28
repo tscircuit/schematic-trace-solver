@@ -1,0 +1,82 @@
+<svg width="1200" height="2016" viewBox="0 0 1200 2016" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on top and Circuit JSON schematic on the bottom">
+  <g transform="translate(0, 0) scale(1.875, 1.875) translate(0, 0)">
+    <rect width="100%" height="100%" fill="white"/><g><polyline data-points="-0.7,0 0.7,0" data-type="line" data-label="" points="169.23076923076923,320 470.7692307692308,320" fill="none" stroke="hsl(296, 100%, 50%, 0.8)" stroke-width="1px" stroke-dasharray="4 2"/></g><g><rect data-type="rect" data-label="U1" data-x="-1" data-y="0" x="40" y="287.6923076923077" width="129.23076923076923" height="64.61538461538464" fill="hsl(164, 100%, 50%, 0.8)" stroke="black" stroke-width="0.004642857142857143"/></g><g><rect data-type="rect" data-label="U2" data-x="1" data-y="0" x="470.7692307692307" y="287.6923076923077" width="129.23076923076923" height="64.61538461538464" fill="hsl(165, 100%, 50%, 0.8)" stroke="black" stroke-width="0.004642857142857143"/></g><g><rect data-type="rect" data-label="netId: SIGNAL
+globalConnNetId: SIGNAL" data-x="-0.1" data-y="0" x="201.53846153846155" y="307.0769230769231" width="193.8461538461538" height="25.84615384615381" fill="hsl(296, 100%, 50%, 0.35)" stroke="black" stroke-width="0.004642857142857143"/></g><g><rect data-type="rect" data-label="netId: SIGNAL
+globalConnNetId: SIGNAL" data-x="0.1" data-y="0" x="244.61538461538464" y="307.0769230769231" width="193.84615384615384" height="25.84615384615381" fill="hsl(296, 100%, 50%, 0.35)" stroke="black" stroke-width="0.004642857142857143"/></g><g><circle data-type="point" data-label="U1.1
+x+" data-x="-0.7" data-y="0" cx="169.23076923076923" cy="320" r="3" fill="hsl(319, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="U2.1
+x-" data-x="0.7" data-y="0" cx="470.7692307692308" cy="320" r="3" fill="hsl(200, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="anchorPoint
+orientation: x+" data-x="-0.7" data-y="0" cx="169.23076923076923" cy="320" r="3" fill="hsl(296, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
+orientation: x-" data-x="0.7" data-y="0" cx="470.7692307692308" cy="320" r="3" fill="hsl(296, 100%, 50%, 0.9)"/></g><g id="crosshair" style="display: none"><line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5"/><line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5"/><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+                const svg = e.currentTarget;
+                const rect = svg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const crosshair = svg.getElementById('crosshair');
+                const h = svg.getElementById('crosshair-h');
+                const v = svg.getElementById('crosshair-v');
+                const coords = svg.getElementById('coordinates');
+
+                crosshair.style.display = 'block';
+                h.setAttribute('x1', '0');
+                h.setAttribute('x2', '640');
+                h.setAttribute('y1', y);
+                h.setAttribute('y2', y);
+                v.setAttribute('x1', x);
+                v.setAttribute('x2', x);
+                v.setAttribute('y1', '0');
+                v.setAttribute('y2', '640');
+
+                // Calculate real coordinates using inverse transformation
+                const matrix = {"a":215.3846153846154,"c":0,"e":320,"b":0,"d":-215.3846153846154,"f":320};
+                // Manually invert and apply the affine transform
+                // Since we only use translate and scale, we can directly compute:
+                // x' = (x - tx) / sx
+                // y' = (y - ty) / sy
+                const sx = matrix.a;
+                const sy = matrix.d;
+                const tx = matrix.e;
+                const ty = matrix.f;
+                const realPoint = {
+                  x: (x - tx) / sx,
+                  y: (y - ty) / sy // Flip y back since we used negative scale
+                }
+
+                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+                coords.setAttribute('x', (x + 5).toString());
+                coords.setAttribute('y', (y - 5).toString());
+              });
+              document.currentScript.parentElement.addEventListener('mouseleave', () => {
+                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+              });
+            ]]></script>
+  </g>
+  <g transform="translate(0, 1216)">
+    <style>
+              .boundary { fill: rgb(245, 241, 237); }
+              .schematic-boundary { fill: none; stroke: #fff; }
+              .component { fill: none; stroke: rgb(132, 0, 0); }
+              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
+              .component-pin { fill: none; stroke: rgb(132, 0, 0); }
+              .text { font-family: sans-serif; fill: rgb(0, 150, 0); }
+              .pin-number { fill: rgb(169, 0, 0); }
+              .port-label { fill: rgb(0, 100, 100); }
+              .component-name { fill: rgb(0, 100, 100); }
+
+            </style><rect class="boundary" x="0" y="0" width="1200" height="800"/><g class="sch-component" data-circuit-json-type="schematic_component" data-schematic-component-id="schematic_component_0__stack1"><rect class="component chip sch-component-body" x="206.25" y="343.75" width="37.5" height="112.5" stroke-width="7.5px" fill="rgb(255, 255, 194)" stroke="rgb(132, 0, 0)"/><rect class="component-overlay sch-component-overlay" x="206.25" y="343.75" width="37.5" height="112.5" fill="transparent"/><text class="sch-text" x="225" y="400" fill="#0f172a" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="37.5px" transform="rotate(0, 225, 400)">U1</text><line class="component-pin sch-component-pin sch-port-line" x1="243.75" y1="400" x2="330" y2="400" stroke-width="7.5px"/><g class="sch-port" data-schematic-port-id="source_port_0_0__stack1"><circle class="component-pin sch-component-pin sch-port-terminal" cx="337.5" cy="400" r="7.5" stroke-width="7.5px"/><rect x="330" y="392.5" width="15" height="15" opacity="0"/></g><text class="pin-number sch-pin-number" x="290.625" y="392.5" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="56.25px" transform="">1</text></g><g class="sch-component" data-circuit-json-type="schematic_component" data-schematic-component-id="schematic_component_1__stack1"><rect class="component chip sch-component-body" x="956.25" y="343.75" width="37.5" height="112.5" stroke-width="7.5px" fill="rgb(255, 255, 194)" stroke="rgb(132, 0, 0)"/><rect class="component-overlay sch-component-overlay" x="956.25" y="343.75" width="37.5" height="112.5" fill="transparent"/><text class="sch-text" x="975" y="400" fill="#0f172a" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="37.5px" transform="rotate(0, 975, 400)">U2</text><line class="component-pin sch-component-pin sch-port-line" x1="956.25" y1="400" x2="870" y2="400" stroke-width="7.5px"/><g class="sch-port" data-schematic-port-id="source_port_1_0__stack1"><circle class="component-pin sch-component-pin sch-port-terminal" cx="862.5" cy="400" r="7.5" stroke-width="7.5px"/><rect x="855" y="392.5" width="15" height="15" opacity="0"/></g><text class="pin-number sch-pin-number" x="909.375" y="392.5" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="56.25px" transform="">1</text></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_0__stack1"><circle cx="337.5" cy="400" r="15" fill="red" opacity="0"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_1_0__stack1"><circle cx="862.5" cy="400" r="15" fill="red" opacity="0"/></g><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0__stack1" d="
+    M 337.5,400
+    L 357.75,362.5
+    L 662.55,362.5
+    L 662.55,437.5
+    L 357.75,437.5
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="7.5px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0__stack1" x="371.25" y="400" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="67.5px" transform="">XXXXXX</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_1__stack1" d="
+    M 862.5,400
+    L 842.25,437.5
+    L 537.45,437.49999999999994
+    L 537.45,362.49999999999994
+    L 842.25,362.5
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="7.5px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_1__stack1" x="828.75" y="400" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="67.5px" transform="">XXXXXX</text>
+  </g>
+</svg>

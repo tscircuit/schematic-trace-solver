@@ -1,6 +1,6 @@
 import type { Bounds, Point } from "@tscircuit/math-utils"
-import type { GraphicsObject, Rect, Text } from "graphics-debug"
 import type { ConnectivityMap } from "connectivity-map"
+import type { GraphicsObject, Rect, Text } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
@@ -17,11 +17,11 @@ import type {
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
 import { alignPortOnlyInlineNetLabelStubs } from "./alignPortOnlyInlineNetLabelStubs"
+import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
 import {
   type AxisAlignedSegment,
   getAxisAlignedSegments,
 } from "./getAxisAlignedSegments"
-import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
 import { pushAnchoredNetLabelsAwayFromInlineLabels } from "./pushAnchoredNetLabelsAwayFromInlineLabels"
 import { pushInlineTerminalLabelsAwayFromAnchoredLabels } from "./pushInlineTerminalLabelsAwayFromAnchoredLabels"
 
@@ -947,6 +947,12 @@ export class InlineNetLabelSolver extends BaseSolver {
       if (boundsOverlap(bounds, getTextBoxBounds(textBox))) return true
     }
 
+    for (const inlinePlacement of this.inlineNetLabelPlacements) {
+      if (boundsOverlap(bounds, getInlinePlacementBounds(inlinePlacement))) {
+        return true
+      }
+    }
+
     for (const trace of this.traces) {
       if (ignoredTraceIds.has(trace.mspPairId)) continue
       if (ownTrace && trace.mspPairId === ownTrace.mspPairId) continue
@@ -1019,9 +1025,53 @@ export class InlineNetLabelSolver extends BaseSolver {
     return blockedGlobalConnNetIds
   }
 
+  private getInlineGlobalsOverlappingInlineLabels(
+    inlineNetLabelPlacements: InlineNetLabelPlacement[],
+  ): Set<string> {
+    const blockedGlobalConnNetIds = new Set<string>()
+    for (
+      let firstIndex = 0;
+      firstIndex < inlineNetLabelPlacements.length;
+      firstIndex++
+    ) {
+      const firstPlacement = inlineNetLabelPlacements[firstIndex]!
+      const firstBounds = getInlinePlacementBounds(firstPlacement)
+      for (
+        let secondIndex = firstIndex + 1;
+        secondIndex < inlineNetLabelPlacements.length;
+        secondIndex++
+      ) {
+        const secondPlacement = inlineNetLabelPlacements[secondIndex]!
+        const secondBounds = getInlinePlacementBounds(secondPlacement)
+        const overlaps =
+          boundsOverlap(firstBounds, secondBounds) ||
+          (firstPlacement.stubTracePath &&
+            doesPathIntersectBounds(
+              firstPlacement.stubTracePath,
+              secondBounds,
+            )) ||
+          (secondPlacement.stubTracePath &&
+            doesPathIntersectBounds(secondPlacement.stubTracePath, firstBounds))
+        if (!overlaps) continue
+        blockedGlobalConnNetIds.add(firstPlacement.globalConnNetId)
+        blockedGlobalConnNetIds.add(secondPlacement.globalConnNetId)
+      }
+    }
+    return blockedGlobalConnNetIds
+  }
+
   private buildPostProcessedOutput() {
     let activeInlinePlacements = this.inlineNetLabelPlacements
     while (true) {
+      const inlineCollisionGlobalConnNetIds =
+        this.getInlineGlobalsOverlappingInlineLabels(activeInlinePlacements)
+      if (inlineCollisionGlobalConnNetIds.size > 0) {
+        activeInlinePlacements = activeInlinePlacements.filter(
+          (placement) =>
+            !inlineCollisionGlobalConnNetIds.has(placement.globalConnNetId),
+        )
+        continue
+      }
       const supersededNetLabelKeys = this.getSupersededNetLabelKeys(
         activeInlinePlacements,
       )
