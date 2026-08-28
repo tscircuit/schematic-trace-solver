@@ -14,5 +14,17 @@ test("repro TMP1075 ground label overlap", () => {
 
   solver.solve()
 
+  const finalOutput = solver.netLabelToTraceSolver!.getOutput()
+  const groundRailLabel = finalOutput.netLabelPlacements.find((label) =>
+    label.pinIds.includes("schematic_port_18"),
+  )
+  const lowerGroundRailTrace = finalOutput.traces.find(
+    (trace) =>
+      trace.pinIds.includes("schematic_port_7") &&
+      trace.pinIds.includes("schematic_port_8"),
+  )
+
+  expect(groundRailLabel?.anchorPoint.y).toBeCloseTo(-1.075)
+  expect(lowerGroundRailTrace?.tracePath[1]?.x).toBeCloseTo(4.25)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

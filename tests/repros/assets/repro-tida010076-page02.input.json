@@ -1567,6 +1567,7 @@
     },
     {
       "netId": "NET_GND",
+      "isGround": true,
       "netLabelWidth": 0.96,
       "pinIds": [
         "schematic_port_119",
@@ -1611,6 +1612,7 @@
     },
     {
       "netId": "NET_AGND",
+      "isGround": true,
       "netLabelWidth": 0.42,
       "netLabelHeight": 1.08,
       "pinIds": [

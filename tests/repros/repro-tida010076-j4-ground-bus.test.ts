@@ -28,6 +28,7 @@ const inputProblem: InputProblem = {
   netConnections: [
     {
       netId: "NET_AGND",
+      isGround: true,
       pinIds: ["J4.3", "J4.4", "J4.5", "J4.6"],
       netLabelWidth: 0.42,
       netLabelHeight: 1.08,

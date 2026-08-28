@@ -118,5 +118,54 @@ export const placeGroundRailLabelsAtOuterEnd = ({
       }
     }
   }
+
+  for (let index = 0; index < output.length; index++) {
+    const label = output[index]!
+    if (label.orientation !== "y-") continue
+    // Use producer metadata so ground aliases do not require name matching.
+    const connection = inputProblem.netConnections.find(
+      (candidate) =>
+        candidate.isGround &&
+        candidate.netId === label.netId &&
+        candidate.pinIds.length > 2,
+    )
+    if (!connection) continue
+
+    // Reuse the lowest point on the existing column without changing the trace.
+    const anchorPoint = traces
+      .filter((trace) => trace.globalConnNetId === label.globalConnNetId)
+      .flatMap((trace) => trace.tracePath)
+      .filter(
+        (point) =>
+          nearlyEqual(point.x, label.anchorPoint.x) &&
+          point.y < label.anchorPoint.y,
+      )
+      .sort((a, b) => a.y - b.y)[0]
+    if (!anchorPoint) continue
+
+    const center = getCenterFromAnchor(
+      anchorPoint,
+      label.orientation,
+      label.width,
+      label.height,
+    )
+    const bounds = getRectBounds(center, label.width, label.height)
+    // Keep the original anchor when the ground symbol would collide.
+    if (
+      obstacles.some((obstacle) => rectsOverlap(bounds, obstacle)) ||
+      traceCrossesBoundsInterior(bounds, traceMap) ||
+      output.some(
+        (other, otherIndex) =>
+          otherIndex !== index &&
+          rectsOverlap(
+            bounds,
+            getRectBounds(other.center, other.width, other.height),
+          ),
+      )
+    )
+      continue
+
+    output[index] = { ...label, anchorPoint, center }
+  }
   return output
 }
