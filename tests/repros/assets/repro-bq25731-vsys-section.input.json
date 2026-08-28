@@ -2,28 +2,27 @@
   "chips": [
     {
       "chipId": "Q2",
-      "symbolName": "n_channel_e_mosfet_transistor_gate_top_drain_right",
       "center": { "x": 8.05, "y": 8.02 },
       "width": 1.14,
       "height": 0.87,
       "pins": [
         {
           "pinId": "Q2.drain",
-          "displayName": "drain",
+          "displayName": "",
           "x": 8.62,
           "y": 7.72,
           "_facingDirection": "x+"
         },
         {
           "pinId": "Q2.source",
-          "displayName": "source",
+          "displayName": "",
           "x": 7.48,
           "y": 7.71,
           "_facingDirection": "x-"
         },
         {
           "pinId": "Q2.gate",
-          "displayName": "gate",
+          "displayName": "",
           "x": 7.93,
           "y": 8.455,
           "_facingDirection": "y+"
