@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { doSegmentsIntersect } from "@tscircuit/math-utils"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
@@ -32,8 +33,38 @@ test("repro PowerBank 3 V System Power schematic", () => {
       (trace) => trace.globalConnNetId === groundGlobalConnNetId,
     ),
   })
+  const groundRecoveredTraces = output.traces.filter(
+    (trace) =>
+      trace.globalConnNetId === groundGlobalConnNetId &&
+      trace.mspPairId.startsWith("net-label-to-trace-"),
+  )
+  const recoveredTraceCrossesNonEndpointTrace = groundRecoveredTraces.some(
+    (recoveredTrace) =>
+      output.traces.some(
+        (otherTrace) =>
+          otherTrace !== recoveredTrace &&
+          !otherTrace.pinIds.some((pinId) =>
+            recoveredTrace.pinIds.includes(pinId),
+          ) &&
+          recoveredTrace.tracePath
+            .slice(1)
+            .some((pathEnd, pathIndex) =>
+              otherTrace.tracePath
+                .slice(1)
+                .some((traceEnd, traceIndex) =>
+                  doSegmentsIntersect(
+                    recoveredTrace.tracePath[pathIndex]!,
+                    pathEnd,
+                    otherTrace.tracePath[traceIndex]!,
+                    traceEnd,
+                  ),
+                ),
+            ),
+      ),
+  )
 
   expect(groundComponents).toHaveLength(1)
+  expect(recoveredTraceCrossesNonEndpointTrace).toBe(false)
   expect(
     output.netLabelPlacements.filter(
       (label) => label.globalConnNetId === groundGlobalConnNetId,

@@ -1,4 +1,5 @@
 import {
+  doSegmentsIntersect,
   doesSegmentIntersectRect,
   getBoundFromCenteredRect,
   type Point,
@@ -522,6 +523,43 @@ export class NetLabelToTraceSolver extends BaseSolver {
     )
   }
 
+  private routeCrossesNonEndpointTrace(
+    tracePath: Point[],
+    candidate: CandidatePair,
+    traces: SolvedTracePath[],
+  ) {
+    for (const trace of traces) {
+      // Traces incident to either endpoint are the intended connection targets
+      // and may share their existing port escape with the recovered path.
+      if (
+        trace.pinIds.some((pinId) =>
+          candidate.pins.some((pin) => pin.pinId === pinId),
+        )
+      ) {
+        continue
+      }
+      for (let pathIndex = 0; pathIndex < tracePath.length - 1; pathIndex++) {
+        for (
+          let traceIndex = 0;
+          traceIndex < trace.tracePath.length - 1;
+          traceIndex++
+        ) {
+          if (
+            doSegmentsIntersect(
+              tracePath[pathIndex]!,
+              tracePath[pathIndex + 1]!,
+              trace.tracePath[traceIndex]!,
+              trace.tracePath[traceIndex + 1]!,
+            )
+          ) {
+            return true
+          }
+        }
+      }
+    }
+    return false
+  }
+
   private tryAcceptCurrentRoute() {
     const candidate = this.currentCandidate
     let tracePath = this.activeSubSolver?.solvedTracePath
@@ -539,6 +577,12 @@ export class NetLabelToTraceSolver extends BaseSolver {
     }
     if (
       doesTraceRecoveryPathConflict(tracePath, collisionTraces) ||
+      (candidate.recoveryMode === "routed_direct_group" &&
+        this.routeCrossesNonEndpointTrace(
+          tracePath,
+          candidate,
+          retainedTraces,
+        )) ||
       this.routeIntersectsRemainingLabels(tracePath, candidate)
     ) {
       return
@@ -552,6 +596,12 @@ export class NetLabelToTraceSolver extends BaseSolver {
         findFirstCollision(candidatePath, this.activeSubSolver!.obstacles) ===
           null &&
         !doesTraceRecoveryPathConflict(candidatePath, collisionTraces) &&
+        (candidate.recoveryMode !== "routed_direct_group" ||
+          !this.routeCrossesNonEndpointTrace(
+            candidatePath,
+            candidate,
+            retainedTraces,
+          )) &&
         !this.routeIntersectsRemainingLabels(candidatePath, candidate),
     })
 
