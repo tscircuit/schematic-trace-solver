@@ -1695,7 +1695,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         changed = true
       }
     }
-    if (connectedPinIds.size <= 3) return null
+    if (
+      connectedPinIds.size < 3 ||
+      (connectedPinIds.size === 3 && !this.hasPortOnlyLabelOnSameNet(label))
+    ) {
+      return null
+    }
 
     const pins = [...connectedPinIds].map((pinId) => this.pinMap[pinId]!)
     const direction = dir(orientation)
