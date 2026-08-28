@@ -14,3 +14,24 @@ export const doTracesConnectToSameChipSide = (
     ),
   )
 }
+
+export const doTracesConnectToExactlyOneSharedChipSide = (
+  firstTrace: SolvedTracePath,
+  secondTrace: SolvedTracePath,
+): boolean => {
+  if (!firstTrace.pins || !secondTrace.pins) return false
+
+  const firstTraceChipSides = new Set(
+    firstTrace.pins
+      .filter((pin) => pin._facingDirection !== undefined)
+      .map((pin) => `${pin.chipId}:${pin._facingDirection}`),
+  )
+  const sharedChipSides = new Set(
+    secondTrace.pins
+      .filter((pin) => pin._facingDirection !== undefined)
+      .map((pin) => `${pin.chipId}:${pin._facingDirection}`)
+      .filter((chipSide) => firstTraceChipSides.has(chipSide)),
+  )
+
+  return sharedChipSides.size === 1
+}

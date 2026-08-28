@@ -7,7 +7,7 @@ import { findFirstCollision } from "lib/solvers/SchematicTraceLinesSolver/Schema
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { InputProblem } from "lib/types/InputProblem"
 import { SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE } from "lib/utils/doesPathCoincideWithTraces"
-import { doTracesConnectToSameChipSide } from "lib/utils/doTracesConnectToSameChipSide"
+import { doTracesConnectToExactlyOneSharedChipSide } from "lib/utils/doTracesConnectToSameChipSide"
 import { applyJogToTerminalSegment } from "./applyJogToTrace"
 
 type ConnNetId = string
@@ -47,7 +47,7 @@ const doOverlappingGroupsConnectToSameChipSide = (
   const firstTrace = getSingleTraceInGroup(groups[0]!, traceNetIslands)
   const secondTrace = getSingleTraceInGroup(groups[1]!, traceNetIslands)
   if (!firstTrace || !secondTrace) return false
-  return doTracesConnectToSameChipSide(firstTrace, secondTrace)
+  return doTracesConnectToExactlyOneSharedChipSide(firstTrace, secondTrace)
 }
 
 export type TraceInteractionKind = "overlap" | "point_contact"
@@ -132,6 +132,13 @@ export class TraceOverlapIssueSolver extends BaseSolver {
     if (isAdjacentPinRailBundle) {
       obstacleEdgeMargin = SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE
     }
+    let separationDistance = this.SHIFT_DISTANCE
+    if (isAdjacentPinRailBundle) {
+      separationDistance = SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE / 2
+      if (groupShouldStayInPlace.some((shouldStay) => shouldStay)) {
+        separationDistance = SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE
+      }
+    }
 
     const getSeparationOffsets = (firstDirection: number) =>
       this.overlappingTraceSegments.map((group, groupIndex) => {
@@ -141,7 +148,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
           groupIndex % 2 === 0 ? firstDirection : -firstDirection
         return this.getObstacleAwareOffset({
           group,
-          offset: direction * n * this.SHIFT_DISTANCE,
+          offset: direction * n * separationDistance,
           obstacleEdgeMargin,
         })
       })

@@ -67,6 +67,8 @@ test("adjacent pin rails keep visible parallel clearance", () => {
   expect(minimumRailDistance).toBeGreaterThanOrEqual(
     SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE - GEOMETRY_EPSILON,
   )
-  expect(minimumRailDistance).toBeCloseTo(0.2)
+  expect(minimumRailDistance).toBeCloseTo(
+    SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE,
+  )
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
