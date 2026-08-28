@@ -37,6 +37,7 @@ import { TraceElbowTransitionSimplificationSolver } from "../TraceElbowTransitio
 import { InlineNetLabelSolver } from "../InlineNetLabelSolver/InlineNetLabelSolver"
 import { NetLabelToTraceSolver } from "../NetLabelToTraceSolver/NetLabelToTraceSolver"
 import { findPerpendicularPathCrossings } from "../TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
+import { EnclosingCycleConnectionPairSolver } from "../EnclosingCycleConnectionPairSolver/EnclosingCycleConnectionPairSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -81,6 +82,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   }
 
   mspConnectionPairSolver?: MspConnectionPairSolver
+  enclosingCycleConnectionPairSolver?: EnclosingCycleConnectionPairSolver
   // guidelinesSolver?: GuidelinesSolver
   schematicTraceLinesSolver?: SchematicTraceLinesSolver
   longDistancePairSolver?: LongDistancePairSolver
@@ -123,6 +125,17 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         onSolved: (mspSolver) => {},
       },
     ),
+    definePipelineStep(
+      "enclosingCycleConnectionPairSolver",
+      EnclosingCycleConnectionPairSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          inputPairs: instance.mspConnectionPairSolver!.mspConnectionPairs,
+          globalConnMap: instance.mspConnectionPairSolver!.globalConnMap,
+        },
+      ],
+    ),
     // definePipelineStep(
     //   "guidelinesSolver",
     //   GuidelinesSolver,
@@ -140,7 +153,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       SchematicTraceLinesSolver,
       () => [
         {
-          mspConnectionPairs: this.mspConnectionPairSolver!.mspConnectionPairs,
+          mspConnectionPairs:
+            this.enclosingCycleConnectionPairSolver!.getOutput()
+              .mspConnectionPairs,
           dcConnMap: this.mspConnectionPairSolver!.dcConnMap,
           globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
           inputProblem: this.inputProblem,
@@ -156,7 +171,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         {
           inputProblem: instance.inputProblem,
           primaryMspConnectionPairs:
-            instance.mspConnectionPairSolver!.mspConnectionPairs,
+            instance.enclosingCycleConnectionPairSolver!.getOutput()
+              .mspConnectionPairs,
           alreadySolvedTraces:
             instance.schematicTraceLinesSolver!.solvedTracePaths,
           failedConnectionPairs:
