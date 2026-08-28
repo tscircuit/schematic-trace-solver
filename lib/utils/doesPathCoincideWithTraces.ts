@@ -71,6 +71,69 @@ export const doesPathCoincideWithTraces = (
   return false
 }
 
+/** Returns true when parallel trace runs keep a visibly distinct gap. */
+export const doesPathHaveVisualClearanceFromTraces = (
+  path: Point[],
+  traces: SolvedTracePath[],
+): boolean => {
+  const rangesOverlap1D = (a1: number, a2: number, b1: number, b2: number) =>
+    Math.min(Math.max(a1, a2), Math.max(b1, b2)) -
+      Math.max(Math.min(a1, a2), Math.min(b1, b2)) >
+    COINCIDENT_EPS
+
+  for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
+    const pathStart = path[pathIndex]!
+    const pathEnd = path[pathIndex + 1]!
+    const isVertical = Math.abs(pathStart.x - pathEnd.x) < COINCIDENT_EPS
+    const isHorizontal = Math.abs(pathStart.y - pathEnd.y) < COINCIDENT_EPS
+    if (!isVertical && !isHorizontal) continue
+
+    let crossAxis: "x" | "y" = "y"
+    let alongAxis: "x" | "y" = "x"
+    if (isVertical) {
+      crossAxis = "x"
+      alongAxis = "y"
+    }
+
+    for (const trace of traces) {
+      for (
+        let traceIndex = 0;
+        traceIndex < trace.tracePath.length - 1;
+        traceIndex++
+      ) {
+        const traceStart = trace.tracePath[traceIndex]!
+        const traceEnd = trace.tracePath[traceIndex + 1]!
+        const isParallel =
+          Math.abs(traceStart[crossAxis] - traceEnd[crossAxis]) < COINCIDENT_EPS
+        if (!isParallel) continue
+
+        const crossAxisDistance = Math.abs(
+          pathStart[crossAxis] - traceStart[crossAxis],
+        )
+        if (
+          crossAxisDistance >=
+          SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE - GEOMETRY_EPS
+        ) {
+          continue
+        }
+
+        if (
+          rangesOverlap1D(
+            pathStart[alongAxis],
+            pathEnd[alongAxis],
+            traceStart[alongAxis],
+            traceEnd[alongAxis],
+          )
+        ) {
+          return false
+        }
+      }
+    }
+  }
+
+  return true
+}
+
 /** Returns true when the rendered strokes of parallel trace runs overlap. */
 export const doesPathOverlapTraceStrokes = (
   path: Point[],

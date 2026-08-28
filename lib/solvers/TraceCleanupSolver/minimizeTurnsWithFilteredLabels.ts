@@ -1,7 +1,8 @@
-import type { InputProblem } from "lib/types/InputProblem"
-import { minimizeTurns } from "./turnMinimization"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import type { InputProblem } from "lib/types/InputProblem"
+import { doesPathHaveVisualClearanceFromTraces } from "lib/utils/doesPathCoincideWithTraces"
+import { doTracesConnectToSameChipSide } from "lib/utils/doTracesConnectToSameChipSide"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { countTurns } from "./countTurns"
 import {
@@ -10,6 +11,7 @@ import {
   RAIL_ALIGNMENT_EPSILON,
 } from "./sameNetRailAlignment/geometry"
 import { shortenExcessiveLabelPaddingDetour } from "./shortenExcessiveLabelPaddingDetour"
+import { minimizeTurns } from "./turnMinimization"
 
 /**
  * Minimizes turns with a strict pass that treats every other trace as an
@@ -115,6 +117,28 @@ export const minimizeTurnsWithFilteredLabels = ({
   const sameNetTraces = otherTraces.filter(
     (trace) => trace.globalConnNetId === targetTrace.globalConnNetId,
   )
+  const adjacentPinTraces = otherTraces.filter(
+    (trace) =>
+      trace.globalConnNetId !== targetTrace.globalConnNetId &&
+      doTracesConnectToSameChipSide(targetTrace, trace),
+  )
+  const originalHasVisualClearance = doesPathHaveVisualClearanceFromTraces(
+    originalPath,
+    adjacentPinTraces,
+  )
+  const preserveVisualClearance = (
+    candidatePath: SolvedTracePath["tracePath"],
+  ) => {
+    if (!originalHasVisualClearance) return candidatePath
+    if (
+      doesPathHaveVisualClearanceFromTraces(candidatePath, adjacentPinTraces)
+    ) {
+      return candidatePath
+    }
+    return originalPath
+  }
+  const strictPathWithClearance = preserveVisualClearance(strictPath)
+  const relaxedPathWithClearance = preserveVisualClearance(relaxedPath)
   const getSameNetReadability = (tracePath: SolvedTracePath["tracePath"]) => {
     const tracesWithCandidate = [
       ...sameNetTraces,
@@ -126,15 +150,15 @@ export const minimizeTurnsWithFilteredLabels = ({
     }
   }
 
-  const strictTurns = countTurns(strictPath)
-  const relaxedTurns = countTurns(relaxedPath)
-  let newPath = strictPath
+  const strictTurns = countTurns(strictPathWithClearance)
+  const relaxedTurns = countTurns(relaxedPathWithClearance)
+  let newPath = strictPathWithClearance
 
   if (relaxedTurns < strictTurns) {
-    newPath = relaxedPath
+    newPath = relaxedPathWithClearance
   } else if (relaxedTurns === strictTurns) {
-    const strictReadability = getSameNetReadability(strictPath)
-    const relaxedReadability = getSameNetReadability(relaxedPath)
+    const strictReadability = getSameNetReadability(strictPathWithClearance)
+    const relaxedReadability = getSameNetReadability(relaxedPathWithClearance)
 
     if (
       relaxedReadability.segmentCount < strictReadability.segmentCount ||
@@ -142,7 +166,7 @@ export const minimizeTurnsWithFilteredLabels = ({
         relaxedReadability.visibleLength <
           strictReadability.visibleLength - RAIL_ALIGNMENT_EPSILON)
     ) {
-      newPath = relaxedPath
+      newPath = relaxedPathWithClearance
     }
   }
 

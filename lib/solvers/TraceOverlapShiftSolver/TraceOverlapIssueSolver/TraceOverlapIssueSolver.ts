@@ -2,10 +2,12 @@ import { doSegmentsIntersect } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { findFirstCollision } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputProblem } from "lib/types/InputProblem"
+import { SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE } from "lib/utils/doesPathCoincideWithTraces"
+import { doTracesConnectToSameChipSide } from "lib/utils/doTracesConnectToSameChipSide"
 import { applyJogToTerminalSegment } from "./applyJogToTrace"
 
 type ConnNetId = string
@@ -18,6 +20,34 @@ export interface OverlappingTraceSegmentLocator {
     solvedTracePathIndex: number
     traceSegmentIndex: number
   }>
+}
+
+const getSingleTraceInGroup = (
+  group: OverlappingTraceSegmentLocator,
+  traceNetIslands: Record<ConnNetId, Array<SolvedTracePath>>,
+) => {
+  const pathIndexes = new Set(
+    group.pathsWithOverlap.map(
+      ({ solvedTracePathIndex }) => solvedTracePathIndex,
+    ),
+  )
+  if (pathIndexes.size !== 1) return null
+  const pathIndex = pathIndexes.values().next().value
+  if (pathIndex === undefined) return null
+  return traceNetIslands[group.connNetId]?.[pathIndex] ?? null
+}
+
+const doOverlappingGroupsConnectToSameChipSide = (
+  groups: OverlappingTraceSegmentLocator[],
+  traceNetIslands: Record<ConnNetId, Array<SolvedTracePath>>,
+) => {
+  if (groups.length !== 2) return false
+  if (groups.some((group) => group.pathsWithOverlap.length < 2)) return false
+
+  const firstTrace = getSingleTraceInGroup(groups[0]!, traceNetIslands)
+  const secondTrace = getSingleTraceInGroup(groups[1]!, traceNetIslands)
+  if (!firstTrace || !secondTrace) return false
+  return doTracesConnectToSameChipSide(firstTrace, secondTrace)
 }
 
 export type TraceInteractionKind = "overlap" | "point_contact"
@@ -92,6 +122,17 @@ export class TraceOverlapIssueSolver extends BaseSolver {
       (shouldStay) => !shouldStay,
     )
 
+    const isAdjacentPinRailBundle =
+      this.interactionKind === "overlap" &&
+      doOverlappingGroupsConnectToSameChipSide(
+        this.overlappingTraceSegments,
+        this.traceNetIslands,
+      )
+    let obstacleEdgeMargin = this.SHIFT_DISTANCE / 10
+    if (isAdjacentPinRailBundle) {
+      obstacleEdgeMargin = SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE
+    }
+
     const getSeparationOffsets = (firstDirection: number) =>
       this.overlappingTraceSegments.map((group, groupIndex) => {
         if (someGroupCanShift && groupShouldStayInPlace[groupIndex]) return 0
@@ -101,6 +142,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
         return this.getObstacleAwareOffset({
           group,
           offset: direction * n * this.SHIFT_DISTANCE,
+          obstacleEdgeMargin,
         })
       })
 
@@ -142,6 +184,7 @@ export class TraceOverlapIssueSolver extends BaseSolver {
           offsets[groupIndex] = this.getObstacleAwareOffset({
             group,
             offset: direction * this.SHIFT_DISTANCE,
+            obstacleEdgeMargin,
           })
           offsetCandidates.push(offsets)
         }
@@ -327,9 +370,11 @@ export class TraceOverlapIssueSolver extends BaseSolver {
   private getObstacleAwareOffset({
     group,
     offset,
+    obstacleEdgeMargin,
   }: {
     group: OverlappingTraceSegmentLocator
     offset: number
+    obstacleEdgeMargin: number
   }) {
     const blockingCollisions = this.getBlockingCollisions({ group, offset })
     if (blockingCollisions.length === 0) return offset
@@ -381,9 +426,10 @@ export class TraceOverlapIssueSolver extends BaseSolver {
         .sort((a, b) => Math.abs(a - offset) - Math.abs(b - offset))[0]
     }
 
-    const EDGE_MARGIN = this.SHIFT_DISTANCE / 10
     return (
-      bestCandidate(this.SHIFT_DISTANCE) ?? bestCandidate(EDGE_MARGIN) ?? offset
+      bestCandidate(this.SHIFT_DISTANCE) ??
+      bestCandidate(obstacleEdgeMargin) ??
+      offset
     )
   }
 

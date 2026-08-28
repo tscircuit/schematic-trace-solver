@@ -52,7 +52,7 @@ const getMinimumVerticalRailDistance = (
   return minimumDistance
 }
 
-test("adjacent pins produce near-parallel FB and GND rails", () => {
+test("adjacent pin rails keep visible parallel clearance", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
 
@@ -64,9 +64,9 @@ test("adjacent pins produce near-parallel FB and GND rails", () => {
     groundTrace,
   )
 
-  expect(minimumRailDistance).toBeLessThan(
-    SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE,
+  expect(minimumRailDistance).toBeGreaterThanOrEqual(
+    SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE - GEOMETRY_EPSILON,
   )
-  expect(minimumRailDistance).toBeCloseTo(0.03)
+  expect(minimumRailDistance).toBeCloseTo(0.2)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
