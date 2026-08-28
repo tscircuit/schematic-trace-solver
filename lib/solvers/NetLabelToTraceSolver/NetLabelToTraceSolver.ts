@@ -26,6 +26,7 @@ import type {
   PinId,
 } from "lib/types/InputProblem"
 import { arePinsInDifferentSchematicSections } from "lib/utils/arePinsInDifferentSchematicSections"
+import { SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE } from "lib/utils/doesPathCoincideWithTraces"
 import {
   type InlineNetLabelOutput,
   type InlineNetLabelPlacement,
@@ -59,10 +60,53 @@ const MAX_TRACE_AWARE_RETRIES = 4
 const DIRECT_GROUP_RECOVERY_COMPONENT_COUNT = 4
 const MAX_CLEAR_TRACE_BRIDGE_DETOUR_RATIO = 2.5
 const MAX_LOCAL_PORT_LABEL_DISTANCE = 5
-const TRACE_RECOVERY_OBSTACLE_PADDING = 1e-4
+const GEOMETRY_EPSILON = 1e-6
 
 const getCanonicalPairKey = (firstPinId: PinId, secondPinId: PinId) =>
   [firstPinId, secondPinId].sort().join("--")
+
+const segmentsHaveInsufficientParallelClearance = (
+  firstStart: Point,
+  firstEnd: Point,
+  secondStart: Point,
+  secondEnd: Point,
+) => {
+  const firstIsVertical =
+    Math.abs(firstStart.x - firstEnd.x) < GEOMETRY_EPSILON
+  const firstIsHorizontal =
+    Math.abs(firstStart.y - firstEnd.y) < GEOMETRY_EPSILON
+  if (!firstIsVertical && !firstIsHorizontal) return false
+  const secondIsParallel = firstIsVertical
+    ? Math.abs(secondStart.x - secondEnd.x) < GEOMETRY_EPSILON
+    : Math.abs(secondStart.y - secondEnd.y) < GEOMETRY_EPSILON
+  if (!secondIsParallel) return false
+
+  const crossAxisSeparation = firstIsVertical
+    ? Math.abs(firstStart.x - secondStart.x)
+    : Math.abs(firstStart.y - secondStart.y)
+  const overlap = firstIsVertical
+    ? Math.min(
+        Math.max(firstStart.y, firstEnd.y),
+        Math.max(secondStart.y, secondEnd.y),
+      ) -
+      Math.max(
+        Math.min(firstStart.y, firstEnd.y),
+        Math.min(secondStart.y, secondEnd.y),
+      )
+    : Math.min(
+        Math.max(firstStart.x, firstEnd.x),
+        Math.max(secondStart.x, secondEnd.x),
+      ) -
+      Math.max(
+        Math.min(firstStart.x, firstEnd.x),
+        Math.min(secondStart.x, secondEnd.x),
+      )
+  return (
+    crossAxisSeparation + GEOMETRY_EPSILON <
+      SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE &&
+    overlap > GEOMETRY_EPSILON
+  )
+}
 
 const requiresClearTraceBridge = (candidate: CandidatePair) =>
   candidate.recoveryMode === "routed_direct_connection" ||
@@ -628,6 +672,41 @@ export class NetLabelToTraceSolver extends BaseSolver {
     return false
   }
 
+  private routeHasInsufficientParallelClearance(
+    tracePath: Point[],
+    candidate: CandidatePair,
+    traces: SolvedTracePath[],
+  ) {
+    for (const trace of traces) {
+      if (
+        trace.pinIds.some((pinId) =>
+          candidate.pins.some((pin) => pin.pinId === pinId),
+        )
+      ) {
+        continue
+      }
+      for (let pathIndex = 0; pathIndex < tracePath.length - 1; pathIndex++) {
+        for (
+          let traceIndex = 0;
+          traceIndex < trace.tracePath.length - 1;
+          traceIndex++
+        ) {
+          if (
+            segmentsHaveInsufficientParallelClearance(
+              tracePath[pathIndex]!,
+              tracePath[pathIndex + 1]!,
+              trace.tracePath[traceIndex]!,
+              trace.tracePath[traceIndex + 1]!,
+            )
+          ) {
+            return true
+          }
+        }
+      }
+    }
+    return false
+  }
+
   private addClearTraceRecoveryObstacles(
     candidate: CandidatePair,
     routeSolver: SchematicTraceSingleLineSolver2,
@@ -646,18 +725,38 @@ export class NetLabelToTraceSolver extends BaseSolver {
         const blocksAttemptedPath = blockedPaths.some((blockedPath) =>
           blockedPath
             .slice(1)
-            .some((pathEnd, pathIndex) =>
-              doSegmentsIntersect(blockedPath[pathIndex]!, pathEnd, start, end),
+            .some(
+              (pathEnd, pathIndex) =>
+                doSegmentsIntersect(
+                  blockedPath[pathIndex]!,
+                  pathEnd,
+                  start,
+                  end,
+                ) ||
+                segmentsHaveInsufficientParallelClearance(
+                  blockedPath[pathIndex]!,
+                  pathEnd,
+                  start,
+                  end,
+                ),
             ),
         )
         if (!blocksAttemptedPath) continue
         routeSolver.obstacles.push({
           kind: "chip",
           chipId: `trace-recovery-obstacle-${trace.mspPairId}-${traceIndex}`,
-          minX: Math.min(start.x, end.x) - TRACE_RECOVERY_OBSTACLE_PADDING,
-          maxX: Math.max(start.x, end.x) + TRACE_RECOVERY_OBSTACLE_PADDING,
-          minY: Math.min(start.y, end.y) - TRACE_RECOVERY_OBSTACLE_PADDING,
-          maxY: Math.max(start.y, end.y) + TRACE_RECOVERY_OBSTACLE_PADDING,
+          minX:
+            Math.min(start.x, end.x) -
+            SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE,
+          maxX:
+            Math.max(start.x, end.x) +
+            SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE,
+          minY:
+            Math.min(start.y, end.y) -
+            SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE,
+          maxY:
+            Math.max(start.y, end.y) +
+            SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE,
         })
       }
     }
@@ -692,6 +791,11 @@ export class NetLabelToTraceSolver extends BaseSolver {
     )
     return (
       this.routeCrossesNonEndpointTrace(tracePath, candidate, retainedTraces) ||
+      this.routeHasInsufficientParallelClearance(
+        tracePath,
+        candidate,
+        retainedTraces,
+      ) ||
       this.routeIntersectsRemainingLabels(tracePath, candidate)
     )
   }
@@ -768,11 +872,16 @@ export class NetLabelToTraceSolver extends BaseSolver {
       doesTraceRecoveryPathConflict(tracePath, collisionTraces) ||
       this.isClearTraceBridgeTooIndirect(tracePath, candidate) ||
       (requiresClearTraceBridge(candidate) &&
-        this.routeCrossesNonEndpointTrace(
+        (this.routeCrossesNonEndpointTrace(
           tracePath,
           candidate,
           retainedTraces,
-        )) ||
+        ) ||
+          this.routeHasInsufficientParallelClearance(
+            tracePath,
+            candidate,
+            retainedTraces,
+          ))) ||
       this.routeIntersectsRemainingLabels(tracePath, candidate)
     ) {
       return
@@ -787,11 +896,16 @@ export class NetLabelToTraceSolver extends BaseSolver {
           null &&
         !doesTraceRecoveryPathConflict(candidatePath, collisionTraces) &&
         (!requiresClearTraceBridge(candidate) ||
-          !this.routeCrossesNonEndpointTrace(
+          (!this.routeCrossesNonEndpointTrace(
             candidatePath,
             candidate,
             retainedTraces,
-          )) &&
+          ) &&
+            !this.routeHasInsufficientParallelClearance(
+              candidatePath,
+              candidate,
+              retainedTraces,
+            ))) &&
         !this.routeIntersectsRemainingLabels(candidatePath, candidate),
     })
 
