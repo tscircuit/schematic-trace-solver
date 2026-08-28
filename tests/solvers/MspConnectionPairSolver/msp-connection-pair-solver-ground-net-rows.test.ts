@@ -1,7 +1,15 @@
 import { expect, test } from "bun:test"
 import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { InputNetConnection, InputProblem } from "lib/types/InputProblem"
+import type {
+  InputNetConnection,
+  InputProblem,
+  PinId,
+} from "lib/types/InputProblem"
 import inputProblemJson from "../../repros/assets/repro-bluetooth-controller-ground-decoupling-groups.input.json"
+
+function cloneInputProblem(): InputProblem {
+  return JSON.parse(JSON.stringify(inputProblemJson))
+}
 
 function solveNetPairs({
   inputProblem,
@@ -20,11 +28,21 @@ function solveNetPairs({
   )
 }
 
-test("keeps grouped ground rails in separate rows", () => {
-  const inputProblem = inputProblemJson as InputProblem
+function expectSeparatedGroundRows({
+  removedPinIds,
+  expectedPairCount,
+}: {
+  removedPinIds: PinId[]
+  expectedPairCount: number
+}) {
+  const inputProblem = cloneInputProblem()
   const groundConnection = inputProblem.netConnections.find(
     (connection) => connection.isGround,
   )!
+  const removedPinIdSet = new Set(removedPinIds)
+  groundConnection.pinIds = groundConnection.pinIds.filter(
+    (pinId) => !removedPinIdSet.has(pinId),
+  )
   const groundPairs = solveNetPairs({
     inputProblem,
     netConnection: groundConnection,
@@ -33,12 +51,30 @@ test("keeps grouped ground rails in separate rows", () => {
     (pair) => pair.pins[0].y !== pair.pins[1].y,
   )
 
-  expect(groundPairs).toHaveLength(5)
+  expect(groundPairs).toHaveLength(expectedPairCount)
   expect(crossRowPairs).toHaveLength(0)
+}
+
+test("keeps grouped ground rails in separate rows", () => {
+  expectSeparatedGroundRows({ removedPinIds: [], expectedPairCount: 5 })
+})
+
+test("keeps a two-component ground rail separate from another row", () => {
+  expectSeparatedGroundRows({
+    removedPinIds: ["schematic_port_13"],
+    expectedPairCount: 4,
+  })
+})
+
+test("does not bridge a grouped ground rail through a singleton", () => {
+  expectSeparatedGroundRows({
+    removedPinIds: ["schematic_port_11", "schematic_port_13"],
+    expectedPairCount: 3,
+  })
 })
 
 test("does not separate rows without ground metadata", () => {
-  const inputProblem = structuredClone(inputProblemJson) as InputProblem
+  const inputProblem = cloneInputProblem()
   const groundConnection = inputProblem.netConnections.find(
     (connection) => connection.isGround,
   )!
