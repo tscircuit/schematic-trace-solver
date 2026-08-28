@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test"
+import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
@@ -13,5 +15,29 @@ test("repro PowerBank 3 V System Power schematic", () => {
   )
   solver.solve()
 
+  const output = solver.netLabelToTraceSolver!.getOutput()
+  const { netConnMap } = getConnectivityMapsFromInputProblem(
+    solver.inputProblem,
+  )
+  const groundGlobalConnNetId = netConnMap.getNetConnectedToId("GND")!
+  const groundPinIds = solver.inputProblem.chips
+    .flatMap((chip) => chip.pins.map((pin) => pin.pinId))
+    .filter(
+      (pinId) =>
+        netConnMap.getNetConnectedToId(pinId) === groundGlobalConnNetId,
+    )
+  const groundComponents = getTraceConnectedPinComponents({
+    pinIds: groundPinIds,
+    traces: output.traces.filter(
+      (trace) => trace.globalConnNetId === groundGlobalConnNetId,
+    ),
+  })
+
+  expect(groundComponents).toHaveLength(1)
+  expect(
+    output.netLabelPlacements.filter(
+      (label) => label.globalConnNetId === groundGlobalConnNetId,
+    ),
+  ).toHaveLength(1)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

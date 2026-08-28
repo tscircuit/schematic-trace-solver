@@ -3,6 +3,7 @@ import {
   getBoundFromCenteredRect,
   type Point,
 } from "@tscircuit/math-utils"
+import { ConnectivityMap } from "connectivity-map"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { doesPairCrossRestrictedCenterLines } from "lib/solvers/MspConnectionPairSolver/doesPairCrossRestrictedCenterLines"
@@ -44,7 +45,8 @@ interface CandidatePair {
     | "fallback_labels"
     | "routed_components"
     | "routed_direct_connection"
-  netConnectionPinIds?: PinId[]
+    | "routed_direct_group"
+  recoveryGroupPinIds?: PinId[]
 }
 
 const AVAILABLE_NET_ORIENTATION_PREFIX = "available-net-orientation-"
@@ -114,6 +116,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
   private pinMap: Map<PinId, TraceRecoveryPin>
   private queuedCandidates: CandidatePair[]
   private currentCandidate: CandidatePair | null = null
+  private recoveredDirectConnectionPinGroups = new Map<string, PinId[]>()
   declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
 
   constructor(private input: InlineNetLabelOutput) {
@@ -283,18 +286,51 @@ export class NetLabelToTraceSolver extends BaseSolver {
       this.inputProblem,
     )
     const candidates: CandidatePair[] = []
-    const directConnections = new Set<object>(
-      this.inputProblem.directConnections,
-    )
-
-    for (const connection of [
-      ...this.inputProblem.netConnections.filter(
+    const connectionGroups: Array<{
+      pinIds: PinId[]
+      kind: "net_connection" | "direct_connection" | "direct_group"
+    }> = this.inputProblem.netConnections
+      .filter(
         (connection) =>
           connection.pinIds.length > 2 && connection.isGround === false,
-      ),
-      ...this.inputProblem.directConnections,
-    ]) {
-      const isDirectConnection = directConnections.has(connection)
+      )
+      .map((connection) => ({
+        pinIds: connection.pinIds,
+        kind: "net_connection" as const,
+      }))
+    connectionGroups.push(
+      ...this.inputProblem.directConnections.map((connection) => ({
+        pinIds: connection.pinIds,
+        kind: "direct_connection" as const,
+      })),
+    )
+    const seenDirectConnNetIds = new Set<string>()
+    const physicalDirectConnMap = new ConnectivityMap({})
+    // Only pin pairs establish physical adjacency. A repeated direct-connection
+    // netId can describe separate islands and must not merge them here.
+    for (const connection of this.inputProblem.directConnections) {
+      physicalDirectConnMap.addConnections([connection.pinIds])
+    }
+    for (const connection of this.inputProblem.directConnections) {
+      const directConnNetId = physicalDirectConnMap.getNetConnectedToId(
+        connection.pinIds[0],
+      )
+      if (!directConnNetId || seenDirectConnNetIds.has(directConnNetId)) {
+        continue
+      }
+      seenDirectConnNetIds.add(directConnNetId)
+      const pinIds = (
+        physicalDirectConnMap.getIdsConnectedToNet(directConnNetId) as string[]
+      ).filter((id): id is PinId => this.pinMap.has(id as PinId))
+      connectionGroups.push({
+        pinIds,
+        kind: "direct_group",
+      })
+    }
+
+    for (const connection of connectionGroups) {
+      const isDirectConnection = connection.kind !== "net_connection"
+      const isDirectGroup = connection.kind === "direct_group"
       const globalConnNetId = netConnMap.getNetConnectedToId(
         connection.pinIds[0],
       )
@@ -303,8 +339,19 @@ export class NetLabelToTraceSolver extends BaseSolver {
         (isDirectConnection && groundGlobalConnNetIds.has(globalConnNetId))
       )
         continue
-      let connectionPinIds: PinId[] = connection.pinIds
-      if (isDirectConnection) {
+      // Anonymous endpoint pairs retain the exact-pair recovery above. Group
+      // recovery is for physical pin graphs represented by named automatic nets.
+      const hasNamedAutomaticNet = this.inputProblem.netConnections.some(
+        (netConnection) =>
+          netConnection.isGround !== false &&
+          netConnMap.getNetConnectedToId(netConnection.netId) ===
+            globalConnNetId,
+      )
+      if (isDirectGroup && !hasNamedAutomaticNet) {
+        continue
+      }
+      let connectionPinIds = connection.pinIds
+      if (connection.kind === "direct_connection") {
         connectionPinIds = [...this.pinMap.keys()].filter(
           (pinId) => netConnMap.getNetConnectedToId(pinId) === globalConnNetId,
         )
@@ -330,15 +377,16 @@ export class NetLabelToTraceSolver extends BaseSolver {
           const firstComponent = traceConnectedPinComponents[firstIndex]!
           const secondComponent = traceConnectedPinComponents[secondIndex]!
           if (
-            isDirectConnection &&
+            connection.kind === "direct_connection" &&
             !(
               (firstComponent.pinIds.includes(connection.pinIds[0]) &&
                 secondComponent.pinIds.includes(connection.pinIds[1])) ||
               (firstComponent.pinIds.includes(connection.pinIds[1]) &&
                 secondComponent.pinIds.includes(connection.pinIds[0]))
             )
-          )
+          ) {
             continue
+          }
           const firstLabel = this.input.netLabelPlacements.find(
             (label) =>
               label.globalConnNetId === globalConnNetId &&
@@ -358,6 +406,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
           if (!firstLabel || !secondLabel || firstLabel === secondLabel)
             continue
           if (
+            !isDirectGroup &&
             getPerpendicularOffset(
               firstLabel.anchorPoint,
               secondLabel.anchorPoint,
@@ -366,10 +415,10 @@ export class NetLabelToTraceSolver extends BaseSolver {
             continue
           }
 
-          let bestCandidate: CandidatePair | undefined
+          const componentCandidates: CandidatePair[] = []
           let firstPinIds = firstComponent.pinIds
           let secondPinIds = secondComponent.pinIds
-          if (isDirectConnection) {
+          if (connection.kind === "direct_connection") {
             firstPinIds = connection.pinIds.filter((pinId) =>
               firstComponent.pinIds.includes(pinId),
             )
@@ -389,9 +438,10 @@ export class NetLabelToTraceSolver extends BaseSolver {
                 secondPin,
               )
               if (
-                perpendicularOffset >
-                  MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET ||
-                arePinsCoFacingAlongSeparationAxis(firstPin, secondPin) ||
+                (!isDirectGroup &&
+                  (perpendicularOffset >
+                    MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET ||
+                    arePinsCoFacingAlongSeparationAxis(firstPin, secondPin))) ||
                 arePinsInDifferentSchematicSections(
                   this.inputProblem,
                   firstPin,
@@ -416,6 +466,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
               if (isDirectConnection) {
                 recoveryMode = "routed_direct_connection"
               }
+              if (isDirectGroup) recoveryMode = "routed_direct_group"
               const candidate: CandidatePair = {
                 firstLabel,
                 secondLabel,
@@ -424,23 +475,20 @@ export class NetLabelToTraceSolver extends BaseSolver {
                 routeDistance,
                 key: getCanonicalPairKey(firstPin.pinId, secondPin.pinId),
                 recoveryMode,
-                netConnectionPinIds: connectionPinIds,
+                recoveryGroupPinIds: connectionPinIds,
               }
-              if (
-                !bestCandidate ||
-                candidate.routeDistance < bestCandidate.routeDistance ||
-                (candidate.routeDistance === bestCandidate.routeDistance &&
-                  (candidate.perpendicularOffset <
-                    bestCandidate.perpendicularOffset ||
-                    (candidate.perpendicularOffset ===
-                      bestCandidate.perpendicularOffset &&
-                      candidate.key.localeCompare(bestCandidate.key) < 0)))
-              ) {
-                bestCandidate = candidate
-              }
+              componentCandidates.push(candidate)
             }
           }
-          if (bestCandidate) candidates.push(bestCandidate)
+          componentCandidates.sort(
+            (first, second) =>
+              first.routeDistance - second.routeDistance ||
+              first.perpendicularOffset - second.perpendicularOffset ||
+              first.key.localeCompare(second.key),
+          )
+          candidates.push(
+            ...componentCandidates.slice(0, isDirectGroup ? 3 : 1),
+          )
         }
       }
     }
@@ -520,19 +568,77 @@ export class NetLabelToTraceSolver extends BaseSolver {
     }
 
     this.outputTraces = [...retainedTraces, recoveredTrace]
-    if (candidate.recoveryMode !== "routed_components") {
+    if (
+      candidate.recoveryMode === "fallback_labels" ||
+      candidate.recoveryMode === "routed_direct_connection"
+    ) {
       this.outputNetLabelPlacements = this.outputNetLabelPlacements.filter(
         (label) =>
           label !== candidate.firstLabel && label !== candidate.secondLabel,
       )
     }
+    if (candidate.recoveryMode === "routed_direct_group") {
+      const pinIds = candidate.recoveryGroupPinIds ?? []
+      this.recoveredDirectConnectionPinGroups.set(
+        [...pinIds].sort().join("--"),
+        pinIds,
+      )
+    }
     this.stats.recoveredTraceCount++
   }
 
+  private consolidateRecoveredDirectConnectionLabels() {
+    const { netConnMap } = getConnectivityMapsFromInputProblem(
+      this.inputProblem,
+    )
+    const namedNetIds = new Set(
+      this.inputProblem.netConnections.map((connection) => connection.netId),
+    )
+    const labelsToRemove = new Set<NetLabelPlacement>()
+    const labelsToKeep = new Set<NetLabelPlacement>()
+
+    for (const pinIds of this.recoveredDirectConnectionPinGroups.values()) {
+      const globalConnNetId = netConnMap.getNetConnectedToId(pinIds[0])
+      if (!globalConnNetId) continue
+      const labels = this.outputNetLabelPlacements.filter(
+        (label) =>
+          label.globalConnNetId === globalConnNetId &&
+          label.pinIds.some((pinId) => pinIds.includes(pinId)),
+      )
+      const components = getTraceConnectedPinComponents({
+        pinIds,
+        traces: this.outputTraces.filter(
+          (trace) => trace.globalConnNetId === globalConnNetId,
+        ),
+      })
+
+      for (const component of components) {
+        const componentLabels = labels.filter((label) =>
+          label.pinIds.some((pinId) => component.pinIds.includes(pinId)),
+        )
+        for (const label of componentLabels) labelsToRemove.add(label)
+
+        const namedLabel = componentLabels.find(
+          (candidate) =>
+            candidate.netId !== undefined && namedNetIds.has(candidate.netId),
+        )
+        if (namedLabel) {
+          labelsToKeep.add(namedLabel)
+        } else if (components.length > 1 && componentLabels[0]) {
+          labelsToKeep.add(componentLabels[0])
+        }
+      }
+    }
+
+    this.outputNetLabelPlacements = this.outputNetLabelPlacements.filter(
+      (label) => !labelsToRemove.has(label) || labelsToKeep.has(label),
+    )
+  }
+
   private areCandidatePinsAlreadyConnected(candidate: CandidatePair) {
-    if (!candidate.netConnectionPinIds) return false
+    if (!candidate.recoveryGroupPinIds) return false
     return getTraceConnectedPinComponents({
-      pinIds: candidate.netConnectionPinIds,
+      pinIds: candidate.recoveryGroupPinIds,
       traces: this.outputTraces,
     }).some(
       (component) =>
@@ -566,6 +672,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
     }
 
     if (!candidate) {
+      this.consolidateRecoveredDirectConnectionLabels()
       this.solved = true
       return
     }
@@ -575,6 +682,16 @@ export class NetLabelToTraceSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       pins: candidate.pins,
       chipMap: this.chipMap,
+      connectionPair:
+        candidate.recoveryMode === "routed_direct_group"
+          ? {
+              mspPairId: `${RECOVERED_TRACE_PREFIX}${candidate.key}`,
+              dcConnNetId: candidate.firstLabel.globalConnNetId,
+              globalConnNetId: candidate.firstLabel.globalConnNetId,
+              userNetId: candidate.firstLabel.netId,
+              pins: candidate.pins,
+            }
+          : undefined,
     })
   }
 
