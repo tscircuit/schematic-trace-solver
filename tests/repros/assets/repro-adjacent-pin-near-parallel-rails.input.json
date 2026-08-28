@@ -1,0 +1,51 @@
+{
+  "chips": [
+    {
+      "chipId": "U1",
+      "center": { "x": 0, "y": 0 },
+      "width": 4.4,
+      "height": 2,
+      "pins": [
+        { "pinId": "U1.1", "displayName": "FB", "x": 2.6, "y": 0.1 },
+        { "pinId": "U1.2", "displayName": "GND", "x": 2.6, "y": -0.1 }
+      ]
+    },
+    {
+      "chipId": "R1",
+      "center": { "x": 3.2, "y": -1.4 },
+      "width": 1.1,
+      "height": 0.78,
+      "pins": [
+        { "pinId": "R1.1", "x": 2.65, "y": -1.4 },
+        { "pinId": "R1.2", "x": 3.75, "y": -1.4 }
+      ]
+    },
+    {
+      "chipId": "R2",
+      "center": { "x": 3.2, "y": -2.4 },
+      "width": 1.1,
+      "height": 0.78,
+      "pins": [
+        { "pinId": "R2.1", "x": 2.65, "y": -2.4 },
+        { "pinId": "R2.2", "x": 3.75, "y": -2.4 }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "FB",
+      "pinIds": ["U1.1", "R1.1"],
+      "netLabelText": "FB",
+      "netLabelWidth": 0.36
+    },
+    {
+      "netId": "GND",
+      "pinIds": ["U1.2", "R2.1"],
+      "netLabelText": "GND",
+      "netLabelWidth": 0.48
+    }
+  ],
+  "maxMspPairDistance": 2.4,
+  "availableNetLabelOrientations": {}
+}
