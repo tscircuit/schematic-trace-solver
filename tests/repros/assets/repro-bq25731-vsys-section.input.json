@@ -1,0 +1,141 @@
+{
+  "chips": [
+    {
+      "chipId": "Q2",
+      "symbolName": "n_channel_e_mosfet_transistor_gate_top_drain_right",
+      "center": { "x": 8.05, "y": 8.02 },
+      "width": 1.14,
+      "height": 0.87,
+      "pins": [
+        {
+          "pinId": "Q2.drain",
+          "displayName": "drain",
+          "x": 8.62,
+          "y": 7.72,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "Q2.source",
+          "displayName": "source",
+          "x": 7.48,
+          "y": 7.71,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "Q2.gate",
+          "displayName": "gate",
+          "x": 7.93,
+          "y": 8.455,
+          "_facingDirection": "y+"
+        }
+      ]
+    },
+    {
+      "chipId": "C3",
+      "symbolName": "capacitor_down",
+      "center": { "x": 9.7025, "y": 7.35 },
+      "width": 1.285,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "C3.1",
+          "displayName": "1",
+          "x": 9.51,
+          "y": 7.73,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C3.2",
+          "displayName": "2",
+          "x": 9.51,
+          "y": 6.97,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "C55",
+      "symbolName": "capacitor_down",
+      "center": { "x": 10.2725, "y": 7.35 },
+      "width": 1.045,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "C55.1",
+          "displayName": "1",
+          "x": 10.2,
+          "y": 7.73,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C55.2",
+          "displayName": "2",
+          "x": 10.2,
+          "y": 6.97,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "C56",
+      "symbolName": "capacitor_down",
+      "center": { "x": 11.0725, "y": 7.35 },
+      "width": 1.045,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "C56.1",
+          "displayName": "1",
+          "x": 11,
+          "y": 7.73,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C56.2",
+          "displayName": "2",
+          "x": 11,
+          "y": 6.97,
+          "_facingDirection": "y-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "U1_HIDRV2",
+      "netLabelText": "U1_HIDRV2",
+      "netLabelWidth": 1.2,
+      "pinIds": ["Q2.gate"]
+    },
+    {
+      "netId": "SW2",
+      "netLabelText": "SW2",
+      "netLabelWidth": 0.42,
+      "pinIds": ["Q2.source"]
+    },
+    {
+      "netId": "VSYS",
+      "netLabelText": "VSYS",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": ["Q2.drain", "C3.1", "C55.1", "C56.1"]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelText": "GND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": ["C3.2", "C55.2", "C56.2"]
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "U1_HIDRV2": ["y+"],
+    "SW2": ["x-"],
+    "VSYS": ["y+"],
+    "GND": ["y-"]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
