@@ -37,5 +37,6 @@ test("core TB67S579FTG inline label routing", () => {
       (connection) => connection.netId === "AGC_OUT",
     )?.anchoredNetLabelWidth,
   ).toBe(0.96)
+  expect(solver.inlineNetLabelSolver!.stats.pushedAnchoredNetLabelCount).toBe(0)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

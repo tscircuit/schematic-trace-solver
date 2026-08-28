@@ -126,6 +126,79 @@ test("leaves a label without a movable connector in place", () => {
   expect(output.netLabelPlacements[0]).toEqual(label)
 })
 
+test("leaves a label in place when its connector would cross another net", () => {
+  const label: NetLabelPlacement = {
+    globalConnNetId: "label-net",
+    netId: "LABEL",
+    mspConnectionPairIds: [],
+    pinIds: ["U1.label"],
+    orientation: "y-",
+    anchorPoint: { x: 0, y: 0 },
+    center: { x: 0, y: -0.2 },
+    width: 0.4,
+    height: 0.4,
+  }
+  const traces: SolvedTracePath[] = [
+    {
+      mspPairId: "label-route",
+      dcConnNetId: "label-net",
+      globalConnNetId: "label-net",
+      pins: [
+        { pinId: "U1.route", chipId: "U1", x: -1, y: 0 },
+        { pinId: "U1.label", chipId: "U1", x: 0, y: 0 },
+      ],
+      tracePath: [
+        { x: -1, y: 0 },
+        { x: 0, y: 0 },
+      ],
+      mspConnectionPairIds: ["label-route"],
+      pinIds: ["U1.route", "U1.label"],
+    },
+    {
+      mspPairId: "crossing-route",
+      dcConnNetId: "crossing-net",
+      globalConnNetId: "crossing-net",
+      pins: [
+        { pinId: "J1.left", chipId: "J1", x: -0.5, y: -0.6 },
+        { pinId: "J1.right", chipId: "J1", x: 0.5, y: -0.6 },
+      ],
+      tracePath: [
+        { x: -0.5, y: -0.6 },
+        { x: 0.5, y: -0.6 },
+      ],
+      mspConnectionPairIds: ["crossing-route"],
+      pinIds: ["J1.left", "J1.right"],
+    },
+  ]
+  const inlineLabel: InlineNetLabelPlacement = {
+    globalConnNetId: "inline-net",
+    netId: "INLINE",
+    pinIds: ["U1.inline"],
+    axis: "x",
+    anchorPoint: { x: 0, y: -1 },
+    center: { x: 0, y: -1 },
+    width: 0.4,
+    height: 0.12,
+    side: "y+",
+  }
+
+  const output = pushAnchoredNetLabelsAwayFromInlineLabels({
+    inputProblem: {
+      chips: [],
+      directConnections: [],
+      netConnections: [],
+      availableNetLabelOrientations: {},
+    },
+    traces,
+    netLabelPlacements: [label],
+    inlineNetLabelPlacements: [inlineLabel],
+  })
+
+  expect(output.movedLabelCount).toBe(0)
+  expect(output.netLabelPlacements[0]).toEqual(label)
+  expect(output.traces).toEqual(traces)
+})
+
 test("moves a contiguous label row together and shoves an anchored obstacle", () => {
   const inputProblem: InputProblem = {
     chips: [

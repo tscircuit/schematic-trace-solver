@@ -57,6 +57,6 @@ test("repro BatteryManagement_BQ24073 schematic traces", () => {
   const solver = new SchematicTracePipelineSolver(solverInput)
   solver.solve()
 
-  expect(solver.inlineNetLabelSolver!.stats.pushedAnchoredNetLabelCount).toBe(1)
+  expect(solver.inlineNetLabelSolver!.stats.pushedAnchoredNetLabelCount).toBe(0)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
