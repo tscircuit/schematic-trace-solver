@@ -1,0 +1,119 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -14,
+        "y": -3
+      },
+      "width": 0.8000000000000007,
+      "height": 0.1200000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "1",
+          "x": -14.4,
+          "y": -3
+        },
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "2",
+          "x": -13.6,
+          "y": -3
+        }
+      ],
+      "sectionId": "power"
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": -12,
+        "y": -6.5
+      },
+      "width": 2,
+      "height": 0.8000000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_8",
+          "displayName": "FB",
+          "x": -13,
+          "y": -6.3
+        },
+        {
+          "pinId": "schematic_port_9",
+          "displayName": "EN",
+          "x": -13,
+          "y": -6.5
+        },
+        {
+          "pinId": "schematic_port_10",
+          "displayName": "VIN",
+          "x": -13,
+          "y": -6.7
+        },
+        {
+          "pinId": "schematic_port_11",
+          "displayName": "GND",
+          "x": -11,
+          "y": -6.7
+        },
+        {
+          "pinId": "schematic_port_12",
+          "displayName": "SW",
+          "x": -11,
+          "y": -6.5
+        },
+        {
+          "pinId": "schematic_port_13",
+          "displayName": "BST",
+          "x": -11,
+          "y": -6.3
+        }
+      ],
+      "sectionId": "power"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "VM",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.36,
+      "pinIds": [
+        "schematic_port_3",
+        "schematic_port_9",
+        "schematic_port_10"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": -11.94,
+        "y": -7.03
+      },
+      "width": 1.3200000000000003,
+      "height": 0.17999999999999972,
+      "text": "AP63203WU-7"
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": -12.239999999999998,
+        "y": -5.984999999999999
+      },
+      "width": 0.8400000000000016,
+      "height": 0.2499999999999991,
+      "text": "U_BUCK"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "VM": [
+      "y+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
