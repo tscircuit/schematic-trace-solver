@@ -36,4 +36,16 @@ test("uses the horizontal renderer envelope for x-facing labels", () => {
   expect(verticalBounds.maxX).toBeCloseTo(2.21)
   expect(verticalBounds.minY).toBeCloseTo(3)
   expect(verticalBounds.maxY).toBeCloseTo(4.2)
+
+  const verticalDownBounds = getAnchoredNetLabelRenderedBounds(
+    createPlacement({
+      orientation: "y-",
+      anchorPoint: { x: 2, y: 3 },
+      center: { x: 2, y: 2.4 },
+    }),
+  )
+  expect(verticalDownBounds.minX).toBeCloseTo(1.79)
+  expect(verticalDownBounds.maxX).toBeCloseTo(2.21)
+  expect(verticalDownBounds.minY).toBeCloseTo(1.8)
+  expect(verticalDownBounds.maxY).toBeCloseTo(3)
 })
