@@ -10,6 +10,11 @@ test("repro: enclosing rectangle collapses into two smaller loops", () => {
   expect(inputProblem.chips).toHaveLength(6)
   expect(inputProblem.directConnections).toHaveLength(8)
   expect(inputProblem.netConnections).toHaveLength(0)
+  expect(
+    inputProblem.directConnections.some((connection) =>
+      Boolean("netLabelText" in connection && connection.netLabelText),
+    ),
+  ).toBe(false)
 
   const solver = new SchematicTracePipelineSolver(
     inputProblem as unknown as InputProblem,
@@ -40,7 +45,8 @@ test("repro: enclosing rectangle collapses into two smaller loops", () => {
     expect(pairKeys.has(pairKey)).toBe(true)
   }
 
-  const finalTraces = solver.netLabelToTraceSolver!.getOutput().traces
+  const finalOutput = solver.netLabelToTraceSolver!.getOutput()
+  const finalTraces = finalOutput.traces
   for (const sideTraceId of [
     "schematic_port_q1b_source-schematic_port_q1a_drain",
     "schematic_port_q2a_source-schematic_port_q2b_drain",
@@ -54,5 +60,9 @@ test("repro: enclosing rectangle collapses into two smaller loops", () => {
   }
 
   expect(solver.solved).toBe(true)
+  // Net labels are unrelated to the enclosing-cycle failure and obscure the
+  // component/trace topology. Remove them only from the visual snapshot after
+  // all routing assertions have run.
+  solver.netLabelToTraceSolver!.outputNetLabelPlacements = []
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

@@ -130,7 +130,6 @@
   "directConnections": [
     {
       "netId": "top rail",
-      "netLabelText": "T",
       "pinIds": [
         "schematic_port_q1b_drain",
         "schematic_port_q2a_drain"
@@ -138,7 +137,6 @@
     },
     {
       "netId": "left rail",
-      "netLabelText": "L",
       "pinIds": [
         "schematic_port_q1b_source",
         "schematic_port_q1a_drain"
@@ -146,7 +144,6 @@
     },
     {
       "netId": "right rail",
-      "netLabelText": "R",
       "pinIds": [
         "schematic_port_q2a_source",
         "schematic_port_q2b_drain"
@@ -154,7 +151,6 @@
     },
     {
       "netId": "bottom rail",
-      "netLabelText": "B",
       "pinIds": [
         "schematic_port_q1a_source",
         "schematic_port_q2b_source"
