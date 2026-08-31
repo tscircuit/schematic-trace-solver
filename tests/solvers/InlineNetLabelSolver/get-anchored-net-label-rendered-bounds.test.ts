@@ -49,4 +49,3 @@ test("uses the horizontal renderer envelope for x-facing labels", () => {
   expect(verticalBounds.minY).toBeCloseTo(3)
   expect(verticalBounds.maxY).toBeCloseTo(4.2)
 })
-
