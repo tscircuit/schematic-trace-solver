@@ -10,6 +10,11 @@ test("repro: enclosing rectangle collapses into two smaller loops", () => {
   expect(inputProblem.chips).toHaveLength(6)
   expect(inputProblem.directConnections).toHaveLength(8)
   expect(inputProblem.netConnections).toHaveLength(0)
+  expect(
+    inputProblem.directConnections.some((connection) =>
+      Boolean("netLabelText" in connection && connection.netLabelText),
+    ),
+  ).toBe(false)
 
   const solver = new SchematicTracePipelineSolver(
     inputProblem as unknown as InputProblem,
@@ -18,27 +23,46 @@ test("repro: enclosing rectangle collapses into two smaller loops", () => {
 
   solver.solve()
 
+  const cyclePairSolver = solver.enclosingCycleConnectionPairSolver!
+  expect(cyclePairSolver.stats.detectedCycleCount).toBe(1)
+  expect(cyclePairSolver.stats.preservedNetCount).toBe(4)
   const pairKeys = new Set(
-    solver.mspConnectionPairSolver!.mspConnectionPairs.map((pair) =>
+    cyclePairSolver.getOutput().mspConnectionPairs.map((pair) =>
       pair.pins
         .map((pin) => pin.pinId)
         .sort()
         .join("::"),
     ),
   )
-  expect(
-    pairKeys.has("schematic_port_q1a_drain::schematic_port_q1b_source"),
-  ).toBe(false)
-  expect(
-    pairKeys.has("schematic_port_q2a_source::schematic_port_q2b_drain"),
-  ).toBe(false)
-  expect(pairKeys.has("schematic_port_c18_1::schematic_port_q1a_drain")).toBe(
-    true,
-  )
-  expect(pairKeys.has("schematic_port_c18_2::schematic_port_q2b_drain")).toBe(
-    true,
-  )
+  for (const pairKey of [
+    "schematic_port_q1b_drain::schematic_port_q2a_drain",
+    "schematic_port_q1a_drain::schematic_port_q1b_source",
+    "schematic_port_q2a_source::schematic_port_q2b_drain",
+    "schematic_port_q1a_source::schematic_port_q2b_source",
+    "schematic_port_c17_1::schematic_port_c18_1",
+    "schematic_port_c17_2::schematic_port_c18_2",
+  ]) {
+    expect(pairKeys.has(pairKey)).toBe(true)
+  }
+
+  const finalOutput = solver.netLabelToTraceSolver!.getOutput()
+  const finalTraces = finalOutput.traces
+  for (const sideTraceId of [
+    "schematic_port_q1b_source-schematic_port_q1a_drain",
+    "schematic_port_q2a_source-schematic_port_q2b_drain",
+  ]) {
+    const sideTrace = finalTraces.find(
+      (trace) => trace.mspPairId === sideTraceId,
+    )
+    expect(sideTrace).toBeDefined()
+    const sideXs = sideTrace!.tracePath.map((point) => point.x)
+    expect(Math.max(...sideXs) - Math.min(...sideXs)).toBeLessThan(0.02)
+  }
 
   expect(solver.solved).toBe(true)
+  // Net labels are unrelated to the enclosing-cycle failure and obscure the
+  // component/trace topology. Remove them only from the visual snapshot after
+  // all routing assertions have run.
+  solver.netLabelToTraceSolver!.outputNetLabelPlacements = []
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
