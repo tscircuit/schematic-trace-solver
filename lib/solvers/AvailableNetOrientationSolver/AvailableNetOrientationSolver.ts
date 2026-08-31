@@ -18,7 +18,10 @@ import type {
 } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
-import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
+import {
+  getTextBoxBounds,
+  rectIntersectsAnyTextBox,
+} from "lib/utils/textBoxBounds"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -1474,6 +1477,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
     if (this.obstacleIndex.doesTracePathCrossChip(connectorTrace)) {
       return "chip-collision"
+    }
+
+    for (const textBox of this.inputProblem.textBoxes ?? []) {
+      if (
+        tracePathIntersectsBounds(connectorTrace, getTextBoxBounds(textBox))
+      ) {
+        return "text-collision"
+      }
     }
 
     for (const i of this.obstacleIndex.getLabelIndicesNearTracePath(
