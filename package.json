@@ -5,7 +5,7 @@
     "url": "https://github.com/tscircuit/schematic-trace-solver.git"
   },
   "main": "dist/index.js",
-  "version": "0.0.175",
+  "version": "0.0.176",
   "type": "module",
   "scripts": {
     "start": "cosmos",
