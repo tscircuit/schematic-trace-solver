@@ -8,13 +8,5 @@ test("bug-report-20260901T055358Z", () => {
 
   solver.solve()
 
-  const dvddV1V1Label = solver
-    .netLabelToTraceSolver!.getOutput()
-    .netLabelPlacements.find(
-      (label) =>
-        label.netId === "V1V1" && label.pinIds.includes("schematic_port_89"),
-    )
-  expect(dvddV1V1Label?.orientation).toBe("y+")
-
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

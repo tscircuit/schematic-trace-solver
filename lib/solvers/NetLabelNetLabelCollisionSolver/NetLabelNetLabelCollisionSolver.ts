@@ -14,7 +14,6 @@ import { rectIntersectsAnyTrace } from "lib/solvers/NetLabelPlacementSolver/Sing
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
-import { getOrientationConstraint } from "lib/utils/getOrientationConstraint"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 type CandidateStatus =
@@ -181,15 +180,6 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     return label.width
   }
 
-  private getCandidateOrientations(
-    label: NetLabelPlacement,
-    fallbackOrientations: FacingDirection[],
-  ) {
-    return (
-      getOrientationConstraint(this.inputProblem, label) ?? fallbackOrientations
-    )
-  }
-
   private buildCandidatesForLabel(label: NetLabelPlacement): Candidate[] {
     const netLabelWidth = this.netLabelWidthOf(label)
     const netLabelHeight = this.netLabelHeightOf(label)
@@ -229,14 +219,10 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
 
     if (isPortOnly) {
       const allOrientations: FacingDirection[] = ["x+", "x-", "y+", "y-"]
-      const allowedOrientations = this.getCandidateOrientations(
-        label,
-        allOrientations,
-      )
       const orderedOrientations = [
         label.orientation,
-        ...allowedOrientations.filter((o) => o !== label.orientation),
-      ].filter((orientation) => allowedOrientations.includes(orientation))
+        ...allOrientations.filter((o) => o !== label.orientation),
+      ]
       for (const orientation of orderedOrientations) {
         candidates.push(buildCandidate(orientation, label.anchorPoint))
       }
@@ -253,15 +239,14 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
           const isVertical =
             Math.abs(segStart.x - segEnd.x) < SEGMENT_PARALLEL_EPS
           if (!isHorizontal && !isVertical) continue
-          const perpendicularOrientations: FacingDirection[] = isHorizontal
-            ? ["y+", "y-"]
-            : ["x+", "x-"]
-          const candidateOrientations = this.getCandidateOrientations(
-            label,
-            perpendicularOrientations,
-          )
+          let perpendicularOrientations: FacingDirection[]
+          if (isHorizontal) {
+            perpendicularOrientations = ["y+", "y-"]
+          } else {
+            perpendicularOrientations = ["x+", "x-"]
+          }
           for (const anchor of sampleAnchorsAlongSegment(segStart, segEnd)) {
-            for (const orientation of candidateOrientations) {
+            for (const orientation of perpendicularOrientations) {
               candidates.push(
                 buildCandidate(
                   orientation,
