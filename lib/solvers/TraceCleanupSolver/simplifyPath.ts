@@ -4,38 +4,30 @@ import {
   isVertical,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
-export const simplifyPath = (path: Point[]): Point[] => {
+const dedupConsecutive = (path: Point[]): Point[] =>
+  path.filter(
+    (p, i) => i === 0 || p.x !== path[i - 1]!.x || p.y !== path[i - 1]!.y,
+  )
+
+const collapseCollinear = (path: Point[]): Point[] => {
   if (path.length < 3) return path
-  const newPath: Point[] = [path[0]]
+  const out: Point[] = [path[0]!]
   for (let i = 1; i < path.length - 1; i++) {
-    const p1 = newPath[newPath.length - 1]
-    const p2 = path[i]
-    const p3 = path[i + 1]
-    if (
-      (isVertical(p1, p2) && isVertical(p2, p3)) ||
-      (isHorizontal(p1, p2) && isHorizontal(p2, p3))
-    ) {
-      continue
-    }
-    newPath.push(p2)
+    const prev = out[out.length - 1]!
+    const cur = path[i]!
+    const next = path[i + 1]!
+    const collinear =
+      (isVertical(prev, cur) && isVertical(cur, next)) ||
+      (isHorizontal(prev, cur) && isHorizontal(cur, next))
+    if (!collinear) out.push(cur)
   }
-  newPath.push(path[path.length - 1])
+  out.push(path[path.length - 1]!)
+  return out
+}
 
-  if (newPath.length < 3) return newPath
-  const finalPath: Point[] = [newPath[0]]
-  for (let i = 1; i < newPath.length - 1; i++) {
-    const p1 = finalPath[finalPath.length - 1]
-    const p2 = newPath[i]
-    const p3 = newPath[i + 1]
-    if (
-      (isVertical(p1, p2) && isVertical(p2, p3)) ||
-      (isHorizontal(p1, p2) && isHorizontal(p2, p3))
-    ) {
-      continue
-    }
-    finalPath.push(p2)
-  }
-  finalPath.push(newPath[newPath.length - 1])
-
-  return finalPath
+export const simplifyPath = (path: Point[]): Point[] => {
+  // Remove zero-length segments before each collinear collapse pass
+  const pass1 = collapseCollinear(dedupConsecutive(path))
+  const pass2 = collapseCollinear(dedupConsecutive(pass1))
+  return dedupConsecutive(pass2)
 }
