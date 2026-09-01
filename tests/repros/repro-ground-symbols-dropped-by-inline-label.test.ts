@@ -1,7 +1,9 @@
 import { expect, test } from "bun:test"
+import type { SchematicText } from "circuit-json"
+import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
-import "tests/fixtures/matcher"
+import { convertSolverOutputToCircuitJson } from "tests/fixtures/convertSolverOutputToCircuitJson"
 
 const inputProblem: InputProblem = {
   chips: [
@@ -13,21 +15,21 @@ const inputProblem: InputProblem = {
       pins: [
         {
           pinId: "U1.GND_LEFT",
-          displayName: "GND_LEFT",
+          displayName: "",
           x: -1,
           y: 1.3,
           _facingDirection: "x-",
         },
         {
           pinId: "U1.GND_RIGHT",
-          displayName: "GND_RIGHT",
+          displayName: "",
           x: 1,
           y: 1.3,
           _facingDirection: "x+",
         },
         {
           pinId: "U1.GND_BOTTOM",
-          displayName: "GND_BOTTOM",
+          displayName: "",
           x: 0,
           y: 0,
           _facingDirection: "y-",
@@ -42,7 +44,7 @@ const inputProblem: InputProblem = {
       pins: [
         {
           pinId: "R1.GND",
-          displayName: "GND",
+          displayName: "",
           x: 0,
           y: -1.5,
           _facingDirection: "y+",
@@ -109,5 +111,57 @@ test("repro: inline GND2 label replaces anchored ground symbols", () => {
     ),
   ).toHaveLength(2)
   expect(outputGroundLabels).toHaveLength(0)
-  expect(solver).toMatchSolverSnapshot(import.meta.path)
+
+  const annotations: SchematicText[] = [
+    {
+      type: "schematic_text",
+      schematic_text_id: "repro_title",
+      text: "BUG: endpoint ground symbols became inline labels",
+      position: { x: 0, y: 2.45 },
+      rotation: 0,
+      anchor: "center",
+      font_size: 0.16,
+      color: "#b91c1c",
+    },
+    {
+      type: "schematic_text",
+      schematic_text_id: "left_expected_ground_symbol",
+      text: "EXPECTED: ground symbol here →",
+      position: { x: -2.05, y: 1.65 },
+      rotation: 0,
+      anchor: "center",
+      font_size: 0.12,
+      color: "#b91c1c",
+    },
+    {
+      type: "schematic_text",
+      schematic_text_id: "right_expected_ground_symbol",
+      text: "← EXPECTED: ground symbol here",
+      position: { x: 2.05, y: 1.65 },
+      rotation: 0,
+      anchor: "center",
+      font_size: 0.12,
+      color: "#b91c1c",
+    },
+    {
+      type: "schematic_text",
+      schematic_text_id: "routed_inline_label_expected",
+      text: "← EXPECTED: inline GND2 only on this routed trace",
+      position: { x: 1.4, y: -0.75 },
+      rotation: 0,
+      anchor: "center",
+      font_size: 0.12,
+      color: "#15803d",
+    },
+  ]
+  const circuitJson = [
+    ...convertSolverOutputToCircuitJson(solver),
+    ...annotations,
+  ]
+  const annotatedSvg = convertCircuitJsonToSchematicSvg(circuitJson, {
+    width: 1200,
+    height: 800,
+  })
+
+  expect(annotatedSvg).toMatchSvgSnapshot(import.meta.path)
 })
