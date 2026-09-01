@@ -1,12 +1,12 @@
 import type { Point } from "@tscircuit/math-utils"
 import { getSegmentIntersection } from "@tscircuit/math-utils/line-intersections"
+import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
-import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
-import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import {
   getVisibleTraceLength,
   getVisibleTraceSegmentCount,
@@ -14,6 +14,7 @@ import {
   isVertical,
   nearlyEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
+import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 import {
@@ -40,6 +41,7 @@ const MAX_SAME_NET_LABEL_BOUNDARY_RAIL_OFFSET = 0.2
 // symbol-stem correction away from the pin itself.
 const MAX_SHARED_PIN_RAIL_OFFSET = 0.05
 const MIN_RETURN_STEM_LENGTH = 0.05
+const MIN_ESTABLISHED_LEVEL_RAIL_TRACE_COUNT = 2
 
 export const getSharedPin = ({
   donorTrace,
@@ -371,6 +373,55 @@ const candidateIsClear = ({
   )
 }
 
+const establishedLevelRailHasBlockedMember = ({
+  donorTrace,
+  branchTrace,
+  traces,
+  inputProblem,
+}: {
+  donorTrace: SolvedTracePath
+  branchTrace: SolvedTracePath
+  traces: SolvedTracePath[]
+  inputProblem: InputProblem
+}) => {
+  const donorRail = getLongestHorizontalSegment(donorTrace)
+  const branchRail = getLongestHorizontalSegment(branchTrace)
+  if (!donorRail || !branchRail) return false
+
+  const sameLevelTraces = traces.filter((trace) => {
+    if (trace.globalConnNetId !== branchTrace.globalConnNetId) return false
+    const rail = getLongestHorizontalSegment(trace)
+    return rail !== null && nearlyEqual(rail.start.y, branchRail.start.y)
+  })
+  const pinIds = [...new Set(sameLevelTraces.flatMap((trace) => trace.pinIds))]
+  const chain = getTraceConnectedPinComponents({
+    pinIds,
+    traces: sameLevelTraces,
+  }).find((component) => component.traces.includes(branchTrace))?.traces
+  if (!chain) return false
+  if (chain.length < MIN_ESTABLISHED_LEVEL_RAIL_TRACE_COUNT) return false
+
+  const obstacles = getObstacleRects(inputProblem)
+  return chain.some((trace) => {
+    const [firstPin, secondPin] = trace.pins
+    if (!firstPin || !secondPin || !nearlyEqual(firstPin.y, secondPin.y)) {
+      return false
+    }
+    const candidatePath = simplifyPath([
+      { x: firstPin.x, y: firstPin.y },
+      { x: firstPin.x, y: donorRail.start.y },
+      { x: secondPin.x, y: donorRail.start.y },
+      { x: secondPin.x, y: secondPin.y },
+    ])
+    const endpointChipIds = new Set(trace.pins.map((pin) => pin.chipId))
+    const unrelatedObstacles = obstacles.filter(
+      (obstacle) =>
+        obstacle.kind !== "chip" || !endpointChipIds.has(obstacle.chipId),
+    )
+    return isPathCollidingWithObstacles(candidatePath, unrelatedObstacles)
+  })
+}
+
 /** Extend the outer load's stem instead of adding a return trunk between loads. */
 const getAlignedReturnBranchPath = ({
   donorTrace,
@@ -495,6 +546,19 @@ export const alignSameNetJunctions = ({
         for (const candidatePath of candidatePaths) {
           if (!candidatePath) continue
           const candidateTrace = { ...branchTrace, tracePath: candidatePath }
+          // Keep an already-level chain intact when one load cannot follow the
+          // proposed alignment because of an unrelated obstacle.
+          if (
+            !alignReturnBranches &&
+            establishedLevelRailHasBlockedMember({
+              donorTrace,
+              branchTrace,
+              traces: outputTraces,
+              inputProblem,
+            })
+          ) {
+            continue
+          }
           const originalPair = [donorTrace, branchTrace]
           const candidatePair = [donorTrace, candidateTrace]
           const removesVisibleSegment =
