@@ -268,7 +268,7 @@ test("does not force an outer return column onto staggered load pins", () => {
   )
 })
 
-test("aligns extra-bend paths only at a junction on the donor trace", () => {
+test("aligns from candidate geometry and requires a donor junction", () => {
   const sharedPin = {
     pinId: "shared",
     chipId: "U1",
@@ -300,10 +300,11 @@ test("aligns extra-bend paths only at a junction on the donor trace", () => {
     pinIds: [sharedPin.pinId, adjacentPin.pinId],
     tracePath: [
       { x: 0, y: 0 },
-      { x: 1, y: 0 },
+      { x: 0.5, y: 0 },
+      { x: 0.5, y: -0.1 },
+      { x: 1, y: -0.1 },
       { x: 1, y: 0.2 },
-      { x: 1.5, y: 0.2 },
-      { x: 1.5, y: 0.1 },
+      { x: 0, y: 0.2 },
       { x: 0, y: 0.1 },
     ],
   } satisfies SolvedTracePath
@@ -315,11 +316,9 @@ test("aligns extra-bend paths only at a junction on the donor trace", () => {
     pinIds: [sharedPin.pinId, targetPin.pinId],
     tracePath: [
       { x: 0, y: 0 },
-      { x: 1, y: 0 },
-      { x: 1, y: 0.4 },
-      { x: 1.2, y: 0.4 },
-      { x: 1.2, y: 0.6 },
-      { x: 2, y: 0.6 },
+      { x: 0.3, y: 0 },
+      { x: 0.3, y: -0.2 },
+      { x: 2, y: -0.2 },
       { x: 2, y: 1 },
     ],
   } satisfies SolvedTracePath

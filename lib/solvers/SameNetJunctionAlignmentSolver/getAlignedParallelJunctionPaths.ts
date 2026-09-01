@@ -43,16 +43,41 @@ export const railIsOnFacingSide = ({
   return false
 }
 
-const isOrthogonalPath = (path: Point[]) => {
+const getFacingSharedEscapeJunctionX = ({
+  path,
+  sharedPin,
+  adjacentPin,
+}: {
+  path: Point[]
+  sharedPin: InputPin
+  adjacentPin: InputPin
+}): number | null => {
+  let nearestJunctionX: number | null = null
   for (let index = 1; index < path.length; index++) {
+    const segment = [path[index - 1]!, path[index]!]
+    if (!isVertical(segment[0]!, segment[1]!)) continue
+    const junctionX = segment[0]!.x
+    if (sharedPin._facingDirection === "x+" && junctionX <= sharedPin.x) {
+      continue
+    }
+    if (sharedPin._facingDirection === "x-" && junctionX >= sharedPin.x) {
+      continue
+    }
     if (
-      !isHorizontal(path[index - 1]!, path[index]!) &&
-      !isVertical(path[index - 1]!, path[index]!)
+      !tracePathContainsPoint(segment, { x: junctionX, y: sharedPin.y }) ||
+      !tracePathContainsPoint(segment, { x: junctionX, y: adjacentPin.y })
     ) {
-      return false
+      continue
+    }
+    if (
+      nearestJunctionX === null ||
+      Math.abs(junctionX - sharedPin.x) <
+        Math.abs(nearestJunctionX - sharedPin.x)
+    ) {
+      nearestJunctionX = junctionX
     }
   }
-  return true
+  return nearestJunctionX
 }
 
 export const getAlignedParallelPinExitPath = ({
@@ -80,41 +105,15 @@ export const getAlignedParallelPinExitPath = ({
     return null
   }
 
-  let sharedToAdjacentPath = simplifyPath(donorTrace.tracePath)
-  if (donorTrace.pins[0].pinId !== sharedPin.pinId) {
-    sharedToAdjacentPath = sharedToAdjacentPath.reverse()
-  }
-  if (
-    sharedToAdjacentPath.length < 3 ||
-    !isOrthogonalPath(sharedToAdjacentPath) ||
-    !isHorizontal(sharedToAdjacentPath[0]!, sharedToAdjacentPath[1]!) ||
-    !isVertical(sharedToAdjacentPath[1]!, sharedToAdjacentPath[2]!)
-  ) {
-    return null
-  }
-  const junctionX = sharedToAdjacentPath[1]!.x
-  if (facingDirection === "x+" && junctionX <= sharedPin.x) return null
-  if (facingDirection === "x-" && junctionX >= sharedPin.x) return null
-  const alignedRailJunction = { x: junctionX, y: adjacentPin.y }
-  if (!tracePathContainsPoint(sharedToAdjacentPath, alignedRailJunction)) {
-    return null
-  }
+  const junctionX = getFacingSharedEscapeJunctionX({
+    path: simplifyPath(donorTrace.tracePath),
+    sharedPin,
+    adjacentPin,
+  })
+  if (junctionX === null) return null
 
   const branchStartsAtSharedPin = branchTrace.pins[0].pinId === sharedPin.pinId
-  let sharedToTargetPath = simplifyPath(branchTrace.tracePath)
-  if (!branchStartsAtSharedPin) {
-    sharedToTargetPath = sharedToTargetPath.reverse()
-  }
-  if (
-    sharedToTargetPath.length < 3 ||
-    !isOrthogonalPath(sharedToTargetPath) ||
-    !isHorizontal(sharedToTargetPath[0]!, sharedToTargetPath[1]!) ||
-    !isVertical(sharedToTargetPath[1]!, sharedToTargetPath[2]!) ||
-    !isVertical(sharedToTargetPath.at(-2)!, sharedToTargetPath.at(-1)!) ||
-    !nearlyEqual(sharedToTargetPath[1]!.x, junctionX) ||
-    !railIsOnFacingSide({ railY: adjacentPin.y, pin: targetPin }) ||
-    nearlyEqual(sharedToTargetPath.at(-2)!.y, adjacentPin.y)
-  ) {
+  if (!railIsOnFacingSide({ railY: adjacentPin.y, pin: targetPin })) {
     return null
   }
 
