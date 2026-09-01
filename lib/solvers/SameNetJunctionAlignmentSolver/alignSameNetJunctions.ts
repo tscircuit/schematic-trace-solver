@@ -26,6 +26,11 @@ import {
   pathEntersAnyNetLabel,
   pathIntersectsAnyNetLabel,
 } from "./pathIntersectsAnyNetLabel"
+import {
+  findNearestSharedPinExitRail,
+  getPinFacingAxis,
+  isCoordinateOnPinFacingSide,
+} from "./findNearestSharedPinExitRail"
 
 interface AlignSameNetJunctionsInput {
   inputProblem: InputProblem
@@ -56,40 +61,6 @@ const getSegmentAxis = (start: Point, end: Point) => {
   if (isHorizontal(start, end)) return "x" as const
   if (isVertical(start, end)) return "y" as const
   return null
-}
-
-const getFacingAxis = (pin: InputPin) => {
-  if (pin._facingDirection === "x+" || pin._facingDirection === "x-") {
-    return "x" as const
-  }
-  if (pin._facingDirection === "y+" || pin._facingDirection === "y-") {
-    return "y" as const
-  }
-  return null
-}
-
-const coordinateIsOnFacingSide = ({
-  coordinate,
-  axis,
-  pin,
-}: {
-  coordinate: number
-  axis: "x" | "y"
-  pin: InputPin
-}) => {
-  if (
-    (axis === "x" && pin._facingDirection === "x+") ||
-    (axis === "y" && pin._facingDirection === "y+")
-  ) {
-    return coordinate > pin[axis]
-  }
-  if (
-    (axis === "x" && pin._facingDirection === "x-") ||
-    (axis === "y" && pin._facingDirection === "y-")
-  ) {
-    return coordinate < pin[axis]
-  }
-  return false
 }
 
 export const getSharedPin = ({
@@ -337,14 +308,14 @@ const getAlignedParallelPinExitPath = ({
   if (!adjacentPin || !targetPin) return null
 
   const facing = sharedPin._facingDirection
-  const departureAxis = getFacingAxis(sharedPin)
+  const departureAxis = getPinFacingAxis(sharedPin)
   if (!facing || !departureAxis) return null
   const stemAxis = departureAxis === "x" ? "y" : "x"
   if (
     adjacentPin.chipId !== sharedPin.chipId ||
     adjacentPin._facingDirection !== facing ||
     !nearlyEqual(adjacentPin[departureAxis], sharedPin[departureAxis]) ||
-    getFacingAxis(targetPin) !== stemAxis
+    getPinFacingAxis(targetPin) !== stemAxis
   ) {
     return null
   }
@@ -362,56 +333,21 @@ const getAlignedParallelPinExitPath = ({
   let sharedToTargetPath = simplifyPath(branchTrace.tracePath)
   if (!branchStartsAtSharedPin) sharedToTargetPath.reverse()
   if (sharedToTargetPath.length < 2) return null
-  const branchDepartureSegment = [
+  const branchDepartureSegment: [Point, Point] = [
     sharedToTargetPath[0]!,
     sharedToTargetPath[1]!,
   ]
-  if (
-    getSegmentAxis(branchDepartureSegment[0], branchDepartureSegment[1]) !==
-    departureAxis
-  ) {
-    return null
-  }
-
-  const outerStem = donorTrace.tracePath
-    .flatMap((start, index, path) => {
-      const end = path[index + 1]
-      if (!end || getSegmentAxis(start, end) !== stemAxis) return []
-      const coordinate = start[departureAxis]
-      const sharedExit = {
-        x: sharedPin.x,
-        y: sharedPin.y,
-        [departureAxis]: coordinate,
-      }
-      const adjacentExit = {
-        x: adjacentPin.x,
-        y: adjacentPin.y,
-        [departureAxis]: coordinate,
-      }
-      if (
-        !coordinateIsOnFacingSide({
-          coordinate,
-          axis: departureAxis,
-          pin: sharedPin,
-        }) ||
-        !tracePathContainsPoint([start, end], sharedExit) ||
-        !tracePathContainsPoint([start, end], adjacentExit) ||
-        !tracePathContainsPoint(branchDepartureSegment, sharedExit)
-      ) {
-        return []
-      }
-      return [{ coordinate, sharedExit }]
-    })
-    .sort(
-      (first, second) =>
-        Math.abs(first.coordinate - sharedPin[departureAxis]) -
-        Math.abs(second.coordinate - sharedPin[departureAxis]),
-    )[0]
-  if (!outerStem) return null
+  const sharedExitRail = findNearestSharedPinExitRail({
+    donorPath: donorTrace.tracePath,
+    branchDepartureSegment,
+    sharedPin,
+    adjacentPin,
+  })
+  if (!sharedExitRail) return null
 
   const alignedRailCoordinate = adjacentPin[stemAxis]
   if (
-    !coordinateIsOnFacingSide({
+    !isCoordinateOnPinFacingSide({
       coordinate: alignedRailCoordinate,
       axis: stemAxis,
       pin: targetPin,
@@ -420,7 +356,7 @@ const getAlignedParallelPinExitPath = ({
     return null
   }
   const alignedStemExit = {
-    ...outerStem.sharedExit,
+    ...sharedExitRail.sharedPinExit,
     [stemAxis]: alignedRailCoordinate,
   }
   const targetApproach = {
@@ -430,7 +366,7 @@ const getAlignedParallelPinExitPath = ({
   }
   const candidate = simplifyPath([
     { x: sharedPin.x, y: sharedPin.y },
-    outerStem.sharedExit,
+    sharedExitRail.sharedPinExit,
     alignedStemExit,
     targetApproach,
     { x: targetPin.x, y: targetPin.y },
