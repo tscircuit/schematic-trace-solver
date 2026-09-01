@@ -78,18 +78,6 @@ const getJunctionPoint = ({
   return segment.end
 }
 
-const railIsOnSharedPinFacingSide = ({
-  railY,
-  pin,
-}: {
-  railY: number
-  pin: InputPin
-}) => {
-  if (pin._facingDirection === "y+") return railY > pin.y
-  if (pin._facingDirection === "y-") return railY < pin.y
-  return false
-}
-
 const getHorizontalPinApproachPoint = ({
   branchTrace,
   sharedPin,
@@ -194,7 +182,7 @@ const getAlignedBranchPath = ({
     pin: otherPin,
   })
   const railFacesSharedPin =
-    railIsOnSharedPinFacingSide({
+    railIsOnFacingSide({
       railY: donorRail.start.y,
       pin: sharedPin,
     }) &&
