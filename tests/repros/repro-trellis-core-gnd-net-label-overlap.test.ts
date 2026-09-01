@@ -26,13 +26,9 @@ const getOverlapArea = (
 
 // Captured from @tscircuit/core repro175. The dense T113 analog-pin column
 // forces Net_U3F_VRA2 to fall back from its requested y+ rail orientation to
-// the pin-facing x+ orientation. The fallback reports a 0.42 x 0.20 label box
-// even though the rendered text is 1.56 wide. The pipeline then finishes with
-// the U3-side GND label overlapping both VRA2 and P1V8.
-//
-// This test pins the current buggy output. A fix should change the two positive
-// overlap assertions to expect 0 and update the visual snapshot.
-test("repro Trellis Core GND label overlaps VRA2 and P1V8", () => {
+// the pin-facing x+ orientation. Its fallback bounds must retain the rendered
+// text width so the collision solver can keep GND clear of VRA2 and P1V8.
+test("keeps Trellis Core GND clear of adjacent analog net labels", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
 
   solver.solve()
@@ -60,14 +56,14 @@ test("repro Trellis Core GND label overlaps VRA2 and P1V8", () => {
   expect(groundLabel).toBeDefined()
   expect(vra2Label).toMatchObject({
     orientation: "x+",
-    width: 0.42,
+    width: 1.56,
     height: 0.2,
   })
   expect(
     getOverlapArea(getLabelBounds(groundLabel), getLabelBounds(vra2Label)),
-  ).toBeGreaterThan(0)
+  ).toBe(0)
   expect(
     getOverlapArea(getLabelBounds(groundLabel), getLabelBounds(p1v8Label)),
-  ).toBeGreaterThan(0)
+  ).toBe(0)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

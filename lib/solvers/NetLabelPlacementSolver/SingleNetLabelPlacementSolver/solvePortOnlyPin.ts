@@ -210,9 +210,23 @@ export function solveNetLabelPlacementForPortOnlyPin(params: {
 
   // If no valid placements found, return placement using pin's facing direction
   const fallbackOrientation = pinFacingDirection
+  const requestedOnlyVerticalOrientations = orientations.every(
+    (orientation) => orientation === "y+" || orientation === "y-",
+  )
+  const usesHorizontalFallback =
+    fallbackOrientation === "x+" || fallbackOrientation === "x-"
+  // Vertical rail inputs store their horizontal text extent in netLabelHeight.
+  // Restore that extent when the only viable fallback is a horizontal label.
   const { width, height } = getDimsForOrientation({
     orientation: fallbackOrientation,
-    netLabelWidth,
+    netLabelWidth:
+      requestedOnlyVerticalOrientations && usesHorizontalFallback
+        ? (netLabelHeight ?? netLabelWidth)
+        : netLabelWidth,
+    netLabelHeight:
+      requestedOnlyVerticalOrientations && usesHorizontalFallback
+        ? undefined
+        : netLabelHeight,
   })
   const baseCenter = getCenterFromAnchor(
     anchor,
