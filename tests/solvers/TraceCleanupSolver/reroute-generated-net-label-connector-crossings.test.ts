@@ -12,16 +12,30 @@ const makeTrace = ({
   globalConnNetId: string
   tracePath: Array<{ x: number; y: number }>
   pinIds: string[]
-}): SolvedTracePath =>
-  ({
+}): SolvedTracePath => {
+  const firstPoint = tracePath[0]!
+  const lastPoint = tracePath.at(-1)!
+  return {
     mspPairId,
     dcConnNetId: globalConnNetId,
     globalConnNetId,
-    pins: [],
+    pins: [
+      {
+        pinId: pinIds[0]!,
+        chipId: `${mspPairId}-start-chip`,
+        ...firstPoint,
+      },
+      {
+        pinId: pinIds[1] ?? pinIds[0]!,
+        chipId: `${mspPairId}-end-chip`,
+        ...lastPoint,
+      },
+    ],
     pinIds,
     mspConnectionPairIds: [mspPairId],
     tracePath,
-  }) as SolvedTracePath
+  }
+}
 
 const signalTrace = makeTrace({
   mspPairId: "signal-trace",
