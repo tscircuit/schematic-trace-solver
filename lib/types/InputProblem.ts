@@ -99,6 +99,13 @@ export interface InputNetConnection {
   pinIds: Array<PinId>
 
   /**
+   * Preserve explicitly wired islands on this ground net, joining the islands
+   * electrically through labels instead of routing between them. Nets without
+   * explicit traces, or without this hint, retain automatic bus routing.
+   */
+  isGround?: boolean
+
+  /**
    * User-facing text to render for this net label. `netId` remains the stable
    * connectivity identifier and may be an internal id. When this is omitted
    * but a label width is provided, renderers should use a width-preserving

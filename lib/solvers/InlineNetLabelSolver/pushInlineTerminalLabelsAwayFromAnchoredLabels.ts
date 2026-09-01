@@ -3,6 +3,7 @@ import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetL
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
+import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
 import type { InlineNetLabelPlacement } from "./InlineNetLabelSolver"
 
 type StubDirection = "x+" | "x-" | "y+" | "y-"
@@ -18,12 +19,7 @@ const getStubDirection = (path: [Point, Point]): StubDirection => {
   return end.y >= start.y ? "y+" : "y-"
 }
 
-const getLabelBounds = (placement: {
-  center: Point
-  width: number
-  height: number
-  axis?: "x" | "y"
-}): Bounds => {
+const getInlineLabelBounds = (placement: InlineNetLabelPlacement): Bounds => {
   const renderedWidth =
     placement.axis === "y" ? placement.height : placement.width
   const renderedHeight =
@@ -178,12 +174,13 @@ export const pushInlineTerminalLabelsAwayFromAnchoredLabels = ({
           direction,
           distance,
         )
-        const shiftedBounds = getLabelBounds(shiftedPlacement)
+        const shiftedBounds = getInlineLabelBounds(shiftedPlacement)
         for (const anchoredPlacement of anchoredNetLabelPlacements) {
           if (anchoredPlacement.globalConnNetId === placement.globalConnNetId) {
             continue
           }
-          const anchoredBounds = getLabelBounds(anchoredPlacement)
+          const anchoredBounds =
+            getAnchoredNetLabelRenderedBounds(anchoredPlacement)
           if (!boundsOverlap(shiftedBounds, anchoredBounds)) continue
           requiredAdditionalDistance = Math.max(
             requiredAdditionalDistance,
@@ -209,7 +206,7 @@ export const pushInlineTerminalLabelsAwayFromAnchoredLabels = ({
       const originalEnd = originalPlacement.stubTracePath![1]
       const shiftedEnd = proposal.stubTracePath![1]
       const addedStubSegment: [Point, Point] = [originalEnd, shiftedEnd]
-      const labelBounds = getLabelBounds(proposal)
+      const labelBounds = getInlineLabelBounds(proposal)
       const ownerChipId = group[proposalIndex]!.ownerChipId
 
       if (
@@ -217,7 +214,8 @@ export const pushInlineTerminalLabelsAwayFromAnchoredLabels = ({
           if (anchoredPlacement.globalConnNetId === proposal.globalConnNetId) {
             return false
           }
-          const anchoredBounds = getLabelBounds(anchoredPlacement)
+          const anchoredBounds =
+            getAnchoredNetLabelRenderedBounds(anchoredPlacement)
           return (
             boundsOverlap(labelBounds, anchoredBounds) ||
             doesPathIntersectBounds(addedStubSegment, anchoredBounds)
@@ -267,7 +265,7 @@ export const pushInlineTerminalLabelsAwayFromAnchoredLabels = ({
       }
 
       for (const fixedPlacement of fixedInlinePlacements) {
-        const fixedBounds = getLabelBounds(fixedPlacement)
+        const fixedBounds = getInlineLabelBounds(fixedPlacement)
         if (
           boundsOverlap(labelBounds, fixedBounds) ||
           doesPathIntersectBounds(addedStubSegment, fixedBounds) ||

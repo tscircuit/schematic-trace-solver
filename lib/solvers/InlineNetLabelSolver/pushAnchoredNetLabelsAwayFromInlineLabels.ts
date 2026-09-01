@@ -8,6 +8,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import type { InputProblem } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
+import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
 import type { InlineNetLabelPlacement } from "./InlineNetLabelSolver"
 
 const LABEL_CLEARANCE = 0.05
@@ -15,12 +16,7 @@ const POINT_EPSILON = 1e-6
 const CONTIGUOUS_LABEL_GAP = 0.01
 const MAX_OUTWARD_DISTANCE = 5
 
-const getBounds = (placement: {
-  center: Point
-  width: number
-  height: number
-  axis?: "x" | "y"
-}): Bounds => {
+const getInlineBounds = (placement: InlineNetLabelPlacement): Bounds => {
   const renderedWidth =
     placement.axis === "y" ? placement.height : placement.width
   const renderedHeight =
@@ -79,7 +75,7 @@ const getRequiredOutwardDistance = (
   label: NetLabelPlacement,
   inlineBounds: Bounds[],
 ) => {
-  const labelBounds = getBounds(label)
+  const labelBounds = getAnchoredNetLabelRenderedBounds(label)
 
   if (label.orientation === "x-" || label.orientation === "x+") {
     const nearby = inlineBounds.filter(
@@ -272,8 +268,8 @@ const getContiguousLabelGroup = ({
         [...group].some(
           (memberIndex) =>
             boundsGapOnPerpendicularAxis(
-              getBounds(labels[memberIndex]!),
-              getBounds(label),
+              getAnchoredNetLabelRenderedBounds(labels[memberIndex]!),
+              getAnchoredNetLabelRenderedBounds(label),
               trigger.orientation,
             ) <= CONTIGUOUS_LABEL_GAP,
         )
@@ -316,7 +312,7 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
     tracePath: trace.tracePath.map((point) => ({ ...point })),
   }))
   const outputLabels = netLabelPlacements.map((label) => ({ ...label }))
-  const inlineBounds = inlineNetLabelPlacements.map(getBounds)
+  const inlineBounds = inlineNetLabelPlacements.map(getInlineBounds)
   const pinMap = getPinMap(inputProblem)
   const chipIdByPinId = new Map<string, string>()
   for (const chip of inputProblem.chips) {
@@ -346,7 +342,7 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
     for (let iteration = 0; iteration < outputLabels.length; iteration++) {
       let adjustedObstacle = false
       for (const [movingIndex, movingDistance] of distances) {
-        const movingBounds = getBounds(
+        const movingBounds = getAnchoredNetLabelRenderedBounds(
           moveLabel(
             outputLabels[movingIndex]!,
             trigger.orientation,
@@ -361,7 +357,7 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
           if (group.has(obstacleIndex)) continue
           const obstacle = outputLabels[obstacleIndex]!
           const existingObstacleDistance = distances.get(obstacleIndex) ?? 0
-          const obstacleBounds = getBounds(
+          const obstacleBounds = getAnchoredNetLabelRenderedBounds(
             moveLabel(obstacle, trigger.orientation, existingObstacleDistance),
           )
           if (!boundsOverlap(movingBounds, obstacleBounds)) continue
@@ -374,7 +370,7 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
             break
           }
           const shoveDistance = getDistanceToShoveBoundsPast(
-            getBounds(obstacle),
+            getAnchoredNetLabelRenderedBounds(obstacle),
             movingBounds,
             trigger.orientation,
           )
@@ -409,7 +405,7 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
     const finalLabelAt = (labelIndex: number) =>
       proposals.get(labelIndex) ?? outputLabels[labelIndex]!
     for (const [labelIndex, movedLabel] of proposals) {
-      const movedBounds = getBounds(movedLabel)
+      const movedBounds = getAnchoredNetLabelRenderedBounds(movedLabel)
       if (inlineBounds.some((bounds) => boundsOverlap(movedBounds, bounds))) {
         failed = true
         break
@@ -434,7 +430,10 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
         outputLabels.some(
           (_, otherIndex) =>
             otherIndex !== labelIndex &&
-            boundsOverlap(movedBounds, getBounds(finalLabelAt(otherIndex))),
+            boundsOverlap(
+              movedBounds,
+              getAnchoredNetLabelRenderedBounds(finalLabelAt(otherIndex)),
+            ),
         )
       ) {
         failed = true
@@ -503,7 +502,7 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
             otherIndex !== labelIndex &&
             pathIntersectsBounds(
               connector.tracePath,
-              getBounds(finalLabelAt(otherIndex)),
+              getAnchoredNetLabelRenderedBounds(finalLabelAt(otherIndex)),
             ),
         )
       if (connectorObstructed) {

@@ -6,6 +6,7 @@ import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/
 import type { InputProblem } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { alignSameNetJunctions } from "./alignSameNetJunctions"
+import { collapseSameNetCycles } from "./collapseSameNetCycles"
 import { placeGroundRailLabelsAtOuterEnd } from "./placeGroundRailLabelsAtOuterEnd"
 
 interface SameNetJunctionAlignmentSolverInput {
@@ -29,14 +30,19 @@ export class SameNetJunctionAlignmentSolver extends BaseSolver {
   }
 
   override _step() {
-    const result = alignSameNetJunctions(this.input)
-    this.outputTraces = result.traces
+    const alignment = alignSameNetJunctions(this.input)
+    const cycleCollapse = collapseSameNetCycles({
+      traces: alignment.traces,
+      netLabelPlacements: alignment.netLabelPlacements,
+    })
+    this.outputTraces = cycleCollapse.traces
     this.outputNetLabelPlacements = placeGroundRailLabelsAtOuterEnd({
       inputProblem: this.input.inputProblem,
-      traces: result.traces,
-      netLabelPlacements: result.netLabelPlacements,
+      traces: cycleCollapse.traces,
+      netLabelPlacements: cycleCollapse.netLabelPlacements,
     })
-    this.stats.alignedJunctionCount = result.alignedJunctionCount
+    this.stats.alignedJunctionCount = alignment.alignedJunctionCount
+    this.stats.collapsedCycleCount = cycleCollapse.collapsedCycleCount
     this.solved = true
   }
 

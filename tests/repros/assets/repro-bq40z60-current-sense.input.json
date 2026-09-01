@@ -1,0 +1,158 @@
+{
+  "chips": [
+    {
+      "chipId": "C26",
+      "symbolName": "capacitor_down",
+      "center": { "x": -9.7675, "y": -7.3 },
+      "width": 1.165,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "C26.1",
+          "displayName": "1",
+          "x": -9.9,
+          "y": -6.92,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C26.2",
+          "displayName": "2",
+          "x": -9.9,
+          "y": -7.68,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "C36",
+      "symbolName": "capacitor_down",
+      "center": { "x": -8.5675, "y": -7.3 },
+      "width": 1.165,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "C36.1",
+          "displayName": "1",
+          "x": -8.7,
+          "y": -6.92,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C36.2",
+          "displayName": "2",
+          "x": -8.7,
+          "y": -7.68,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "R43",
+      "symbolName": "boxresistor_up",
+      "center": { "x": -12.465, "y": -7.4 },
+      "width": 0.97,
+      "height": 0.6,
+      "pins": [
+        {
+          "pinId": "R43.1",
+          "displayName": "1",
+          "x": -12.5,
+          "y": -7.1,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "R43.2",
+          "displayName": "2",
+          "x": -12.5,
+          "y": -7.7,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "R38",
+      "symbolName": "boxresistor_right",
+      "center": { "x": -11.3, "y": -7 },
+      "width": 0.6,
+      "height": 0.68,
+      "pins": [
+        {
+          "pinId": "R38.1",
+          "displayName": "1",
+          "x": -11,
+          "y": -7,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "R38.2",
+          "displayName": "2",
+          "x": -11.6,
+          "y": -7,
+          "_facingDirection": "x-"
+        }
+      ]
+    },
+    {
+      "chipId": "R44",
+      "symbolName": "boxresistor_right",
+      "center": { "x": -11.3, "y": -8 },
+      "width": 0.6,
+      "height": 0.68,
+      "pins": [
+        {
+          "pinId": "R44.1",
+          "displayName": "1",
+          "x": -11,
+          "y": -8,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "R44.2",
+          "displayName": "2",
+          "x": -11.6,
+          "y": -8,
+          "_facingDirection": "x-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelText": "GND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": ["R43.1", "R38.2"]
+    },
+    {
+      "netId": "PGND",
+      "isGround": true,
+      "netLabelText": "PGND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": ["R43.2", "R44.2"]
+    },
+    {
+      "netId": "U2_SRP",
+      "netLabelText": "U2_SRP",
+      "netLabelWidth": 0.84,
+      "pinIds": ["R38.1", "C26.1", "C36.1"]
+    },
+    {
+      "netId": "U2_SRN",
+      "netLabelText": "U2_SRN",
+      "netLabelWidth": 0.84,
+      "pinIds": ["R44.1", "C26.2", "C36.2"]
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": ["y-"],
+    "PGND": ["y-"],
+    "U2_SRP": ["y+"],
+    "U2_SRN": ["x+"]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
