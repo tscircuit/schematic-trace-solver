@@ -14,18 +14,20 @@ import {
   isVertical,
   nearlyEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
+import type { AlignedRailConstraint } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/types"
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 import {
   pathEntersAnyNetLabel,
   pathIntersectsAnyNetLabel,
 } from "./pathIntersectsAnyNetLabel"
+import { preservesAlignedRailConstraints } from "./preservesAlignedRailConstraints"
 
 interface AlignSameNetJunctionsInput {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
-  alignedRailTraceIds?: ReadonlySet<string>
+  alignedRailConstraints?: AlignedRailConstraint[]
 }
 
 interface HorizontalSegment {
@@ -457,7 +459,7 @@ export const alignSameNetJunctions = ({
   inputProblem,
   traces,
   netLabelPlacements,
-  alignedRailTraceIds = new Set<string>(),
+  alignedRailConstraints = [],
 }: AlignSameNetJunctionsInput) => {
   let outputTraces = [...traces]
   let outputNetLabelPlacements = [...netLabelPlacements]
@@ -479,7 +481,6 @@ export const alignSameNetJunctions = ({
         (trace) => trace.mspPairId === donorTraceId,
       )!
       for (const branchTrace of outputTraces) {
-        if (alignedRailTraceIds.has(branchTrace.mspPairId)) continue
         if (alignedBranchTraceIds.has(branchTrace.mspPairId)) continue
         if (donorTrace.mspPairId === branchTrace.mspPairId) continue
         if (donorTrace.globalConnNetId !== branchTrace.globalConnNetId) continue
@@ -498,6 +499,14 @@ export const alignSameNetJunctions = ({
         for (const candidatePath of candidatePaths) {
           if (!candidatePath) continue
           const candidateTrace = { ...branchTrace, tracePath: candidatePath }
+          if (
+            !preservesAlignedRailConstraints({
+              candidateTrace,
+              alignedRailConstraints,
+            })
+          ) {
+            continue
+          }
           const originalPair = [donorTrace, branchTrace]
           const candidatePair = [donorTrace, candidateTrace]
           const removesVisibleSegment =

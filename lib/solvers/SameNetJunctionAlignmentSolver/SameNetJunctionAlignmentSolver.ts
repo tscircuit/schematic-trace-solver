@@ -3,6 +3,7 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type { AlignedRailConstraint } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/types"
 import type { InputProblem } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { alignSameNetJunctions } from "./alignSameNetJunctions"
@@ -13,7 +14,7 @@ interface SameNetJunctionAlignmentSolverInput {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
-  alignedRailTraceIds?: ReadonlySet<string>
+  alignedRailConstraints?: AlignedRailConstraint[]
 }
 
 /** Turns separate same-net load traces into one shared rail with short junction branches. */

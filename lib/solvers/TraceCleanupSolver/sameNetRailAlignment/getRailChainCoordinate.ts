@@ -3,11 +3,13 @@ import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesS
 import type { PinId } from "lib/types/InputProblem"
 import type { RailSegment } from "./types"
 
+// A chain anchor should not create long legs across unrelated rows or columns.
+const MAX_RAIL_CHAIN_PERPENDICULAR_PIN_OFFSET = 2
+
 export const getRailChainCoordinate = (
   group: RailSegment[],
   traces: SolvedTracePath[],
 ) => {
-  if (group[0]?.orientation !== "horizontal") return null
   if (new Set(group.map((segment) => segment.componentId)).size < 2) return null
   const groupTraceIds = new Set(group.map((segment) => segment.traceId))
   const groupTraces = traces.filter((trace) =>
@@ -39,14 +41,26 @@ export const getRailChainCoordinate = (
       trace.pins.map((pin) => [pin.pinId, pin] as const),
     ),
   )
-  const terminalPinIdsFromLeft = terminalPinIds.toSorted(
-    (firstPinId, secondPinId) => {
-      const firstPin = pinMap.get(firstPinId)!
-      const secondPin = pinMap.get(secondPinId)!
-      return firstPin.x - secondPin.x
-    },
-  )
-  const firstTerminalPinId = terminalPinIdsFromLeft[0]!
+  const terminalPins = terminalPinIds.map((pinId) => pinMap.get(pinId)!)
+  let perpendicularPinOffset = Math.abs(terminalPins[0]!.y - terminalPins[1]!.y)
+  if (group[0]!.orientation === "vertical") {
+    perpendicularPinOffset = Math.abs(terminalPins[0]!.x - terminalPins[1]!.x)
+  }
+  if (perpendicularPinOffset > MAX_RAIL_CHAIN_PERPENDICULAR_PIN_OFFSET) {
+    return null
+  }
+
+  let firstTerminalPinId = terminalPinIds[0]!
+  if (group[0]!.orientation === "horizontal") {
+    const terminalPinIdsFromLeft = terminalPinIds.toSorted(
+      (firstPinId, secondPinId) => {
+        const firstPin = pinMap.get(firstPinId)!
+        const secondPin = pinMap.get(secondPinId)!
+        return firstPin.x - secondPin.x
+      },
+    )
+    firstTerminalPinId = terminalPinIdsFromLeft[0]!
+  }
 
   // A horizontal chain carries the leftmost rail coordinate through its end.
   const firstTerminalTrace = groupTraces.find((trace) =>

@@ -5,7 +5,10 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { evaluateRailGroup } from "./sameNetRailAlignment/evaluateRailGroup"
 import { getRailChainCoordinate } from "./sameNetRailAlignment/getRailChainCoordinate"
 import { getRailGroups } from "./sameNetRailAlignment/getRailGroups"
-import type { AlignmentCandidate } from "./sameNetRailAlignment/types"
+import type {
+  AlignedRailConstraint,
+  AlignmentCandidate,
+} from "./sameNetRailAlignment/types"
 
 interface AlignSameNetRailsInput {
   inputProblem: InputProblem
@@ -31,12 +34,12 @@ export const alignSameNetRails = ({
   traces: SolvedTracePath[]
   alignedRailGroupCount: number
   alignedTraceCount: number
-  alignedRailTraceIds: ReadonlySet<string>
+  alignedRailConstraints: AlignedRailConstraint[]
 } => {
   let outputTraces = [...traces]
   const seenTraceStates = new Set([getTraceStateKey(outputTraces)])
   const obstacles = getObstacleRects(inputProblem)
-  const alignedRailTraceIds = new Set<string>()
+  const alignedRailConstraints: AlignedRailConstraint[] = []
   const changedTraceIds = new Set<string>()
   let alignedRailGroupCount = 0
   const maximumPasses = Math.max(
@@ -55,7 +58,6 @@ export const alignSameNetRails = ({
     let applied: AlignmentCandidate | null = null
 
     for (const group of groups) {
-      const railChainCoordinate = getRailChainCoordinate(group, outputTraces)
       applied = evaluateRailGroup({
         group,
         traces: outputTraces,
@@ -63,12 +65,24 @@ export const alignSameNetRails = ({
         obstacles,
         eligibleTraceIds,
       })
-      if (applied && railChainCoordinate !== null) {
-        for (const segment of group) {
-          alignedRailTraceIds.add(segment.traceId)
+      if (!applied) continue
+      const protectsEntireHorizontalChain =
+        group[0]!.orientation === "horizontal" &&
+        getRailChainCoordinate(group, outputTraces) !== null
+      for (const segment of group) {
+        if (
+          !protectsEntireHorizontalChain &&
+          !applied.changedTraceIds.includes(segment.traceId)
+        ) {
+          continue
         }
+        alignedRailConstraints.push({
+          traceId: segment.traceId,
+          orientation: segment.orientation,
+          coordinate: applied.score.coordinate,
+        })
       }
-      if (applied) break
+      break
     }
     if (!applied) break
 
@@ -90,6 +104,6 @@ export const alignSameNetRails = ({
     traces: outputTraces,
     alignedRailGroupCount,
     alignedTraceCount: changedTraceIds.size,
-    alignedRailTraceIds,
+    alignedRailConstraints,
   }
 }

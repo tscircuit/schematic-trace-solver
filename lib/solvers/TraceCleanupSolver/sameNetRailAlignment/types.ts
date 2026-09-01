@@ -15,6 +15,12 @@ export interface RailSegment {
   componentFacingDirection: FacingDirection
 }
 
+export interface AlignedRailConstraint {
+  traceId: string
+  orientation: RailOrientation
+  coordinate: number
+}
+
 export interface TraceGeometryMetrics {
   turnCount: number
   visibleLength: number
