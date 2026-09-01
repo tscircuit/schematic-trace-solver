@@ -3,6 +3,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { InputProblem } from "lib/types/InputProblem"
 import { evaluateRailGroup } from "./sameNetRailAlignment/evaluateRailGroup"
+import { getRailChainCoordinate } from "./sameNetRailAlignment/getRailChainCoordinate"
 import { getRailGroups } from "./sameNetRailAlignment/getRailGroups"
 import type { AlignmentCandidate } from "./sameNetRailAlignment/types"
 
@@ -54,6 +55,7 @@ export const alignSameNetRails = ({
     let applied: AlignmentCandidate | null = null
 
     for (const group of groups) {
+      const railChainCoordinate = getRailChainCoordinate(group, outputTraces)
       applied = evaluateRailGroup({
         group,
         traces: outputTraces,
@@ -61,12 +63,12 @@ export const alignSameNetRails = ({
         obstacles,
         eligibleTraceIds,
       })
-      if (applied) {
+      if (applied && railChainCoordinate !== null) {
         for (const segment of group) {
           alignedRailTraceIds.add(segment.traceId)
         }
-        break
       }
+      if (applied) break
     }
     if (!applied) break
 
