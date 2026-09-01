@@ -23,7 +23,7 @@ import {
 } from "./generateRectangleCandidates"
 
 import type { GraphicsObject } from "graphics-debug"
-import type { Point } from "@tscircuit/math-utils"
+import type { Bounds, Point } from "@tscircuit/math-utils"
 
 import { visualizeLSapes } from "./visualizeLSapes"
 import { visualizeIntersectionPoints } from "./visualizeIntersectionPoints"
@@ -36,6 +36,9 @@ import {
   isPathCollidingWithChipInterior,
 } from "../../Example28Solver/geometry"
 import { getObstacleRects } from "../../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import { getRectBounds } from "../../NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import { tracePathContainsPoint } from "../../RailNetLabelCornerPlacementSolver/geometry"
+import { hasCollisionsWithLabels } from "../hasCollisionsWithLabels"
 
 interface TraceCrossing {
   trace: SolvedTracePath
@@ -55,6 +58,7 @@ export interface UntangleTraceSubsolverInput {
   mergedLabelNetIdMap: Record<string, Set<string>>
   paddingBuffer: number
   eligibleTraceIds?: ReadonlySet<string>
+  includeTerminalSegmentCrossings?: boolean
 }
 
 /**
@@ -224,6 +228,9 @@ export class UntangleTraceSubsolver extends BaseSolver {
         const crossings = findPerpendicularPathCrossings(
           trace.tracePath,
           otherTrace.tracePath,
+          {
+            includeTerminalSegments: this.input.includeTerminalSegmentCrossings,
+          },
         )
         for (const { pathSegmentIndex, otherPathSegmentIndex } of crossings) {
           const crossing = {
@@ -242,6 +249,45 @@ export class UntangleTraceSubsolver extends BaseSolver {
     return null
   }
 
+  private _getTraceObstacleBounds(
+    trace: SolvedTracePath,
+    segmentIndex: number,
+  ): Bounds {
+    const segmentStart = trace.tracePath[segmentIndex]!
+    const segmentEnd = trace.tracePath[segmentIndex + 1]!
+    const bounds: Bounds = {
+      minX: Math.min(segmentStart.x, segmentEnd.x),
+      maxX: Math.max(segmentStart.x, segmentEnd.x),
+      minY: Math.min(segmentStart.y, segmentEnd.y),
+      maxY: Math.max(segmentStart.y, segmentEnd.y),
+    }
+
+    for (const label of this.input.allLabelPlacements) {
+      if (label.globalConnNetId !== trace.globalConnNetId) continue
+      if (!label.pinIds.every((pinId) => trace.pinIds.includes(pinId))) continue
+      if (!tracePathContainsPoint(trace.tracePath, label.anchorPoint)) continue
+
+      const labelBounds = getRectBounds(label.center, label.width, label.height)
+      bounds.minX = Math.min(bounds.minX, labelBounds.minX)
+      bounds.maxX = Math.max(bounds.maxX, labelBounds.maxX)
+      bounds.minY = Math.min(bounds.minY, labelBounds.minY)
+      bounds.maxY = Math.max(bounds.maxY, labelBounds.maxY)
+    }
+
+    return bounds
+  }
+
+  private _getForeignLabelBounds(trace: SolvedTracePath): Bounds[] {
+    return this.input.allLabelPlacements
+      .filter((label) => {
+        const mergedNetIds =
+          this.input.mergedLabelNetIdMap[label.globalConnNetId]
+        if (mergedNetIds) return !mergedNetIds.has(trace.globalConnNetId)
+        return label.globalConnNetId !== trace.globalConnNetId
+      })
+      .map((label) => getRectBounds(label.center, label.width, label.height))
+  }
+
   private _resolveCrossing(crossing: TraceCrossing) {
     const chipBounds = this.chipObstacleSpatialIndex.chips.map(
       (chip) => chip.bounds,
@@ -254,6 +300,10 @@ export class UntangleTraceSubsolver extends BaseSolver {
           crossing.otherTrace.tracePath[crossing.otherSegmentIndex]!,
         obstacleEnd:
           crossing.otherTrace.tracePath[crossing.otherSegmentIndex + 1]!,
+        obstacleBounds: this._getTraceObstacleBounds(
+          crossing.otherTrace,
+          crossing.otherSegmentIndex,
+        ),
         chipBounds,
         clearance: this.input.paddingBuffer,
       }),
@@ -262,6 +312,10 @@ export class UntangleTraceSubsolver extends BaseSolver {
         segmentIndex: crossing.otherSegmentIndex,
         obstacleStart: crossing.trace.tracePath[crossing.segmentIndex]!,
         obstacleEnd: crossing.trace.tracePath[crossing.segmentIndex + 1]!,
+        obstacleBounds: this._getTraceObstacleBounds(
+          crossing.trace,
+          crossing.segmentIndex,
+        ),
         chipBounds,
         clearance: this.input.paddingBuffer,
       }),
@@ -290,17 +344,24 @@ export class UntangleTraceSubsolver extends BaseSolver {
           candidate.traceId,
         ),
       }))
-      .filter(
-        (candidate) =>
+      .filter((candidate) => {
+        const candidateTrace = this.input.allTraces.find(
+          (trace) => trace.mspPairId === candidate.traceId,
+        )!
+        return (
           !isPathCollidingWithChipInterior(candidate.path, chipObstacles) &&
+          !hasCollisionsWithLabels(
+            candidate.path,
+            this._getForeignLabelBounds(candidateTrace),
+          ) &&
           !isPathColliding(
             candidate.path,
             [crossing.trace, crossing.otherTrace],
             candidate.traceId,
           ).isColliding &&
-          (crossing.isInitialBundleCrossing ||
-            !candidate.collision.isColliding),
-      )
+          (crossing.isInitialBundleCrossing || !candidate.collision.isColliding)
+        )
+      })
       .sort(
         (first, second) =>
           Number(first.collision.isColliding) -

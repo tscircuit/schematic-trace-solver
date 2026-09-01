@@ -25,6 +25,8 @@ export interface TraceCleanupSolverInput {
   paddingBuffer: number
   operations?: readonly TraceCleanupOperation[]
   eligibleTraceIds?: ReadonlySet<string>
+  untangleEligibleTraceIds?: ReadonlySet<string>
+  includeTerminalSegmentCrossings?: boolean
 }
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
@@ -120,6 +122,8 @@ export class TraceCleanupSolver extends BaseSolver {
     this.activeSubSolver = new UntangleTraceSubsolver({
       ...this.input,
       allTraces: Array.from(this.tracesMap.values()),
+      eligibleTraceIds:
+        this.input.untangleEligibleTraceIds ?? this.input.eligibleTraceIds,
     })
   }
 

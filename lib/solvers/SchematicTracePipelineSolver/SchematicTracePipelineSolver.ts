@@ -463,6 +463,18 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           instance.preAlignmentTraceElbowTransitionSimplificationSolver!.getOutput()
         const labelMergingOutput =
           instance.traceLabelOverlapAvoidanceSolver!.labelMergingSolver!.getOutput()
+        const initiallyRoutedTraceIds = new Set(
+          instance
+            .traceCleanupSolver!.getOutput()
+            .traces.map((trace) => trace.mspPairId),
+        )
+        const generatedNetLabelConnectorTraceIds = new Set(
+          collisionOutput.traces
+            .filter((trace) =>
+              trace.mspPairId.startsWith("available-net-orientation-"),
+            )
+            .map((trace) => trace.mspPairId),
+        )
 
         return [
           {
@@ -471,12 +483,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             allLabelPlacements: collisionOutput.netLabelPlacements,
             mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
             paddingBuffer: 0.1,
-            operations: ["aligning_same_net_rails"],
-            eligibleTraceIds: new Set(
-              instance
-                .traceCleanupSolver!.getOutput()
-                .traces.map((trace) => trace.mspPairId),
-            ),
+            operations: ["untangling_traces", "aligning_same_net_rails"],
+            eligibleTraceIds: initiallyRoutedTraceIds,
+            untangleEligibleTraceIds: generatedNetLabelConnectorTraceIds,
+            includeTerminalSegmentCrossings: true,
           },
         ]
       },

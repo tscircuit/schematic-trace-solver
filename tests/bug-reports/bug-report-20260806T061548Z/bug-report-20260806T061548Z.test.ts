@@ -3,6 +3,7 @@ import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipeline
 import inputProblem from "./bug-report-20260806T061548Z.json"
 import "tests/fixtures/matcher"
 import { getTraceLabelCollisions } from "tests/fixtures/traceLabelCollisions"
+import { findPerpendicularPathCrossings } from "lib/solvers/TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 
 test("bug-report-20260806T061548Z", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
@@ -23,7 +24,18 @@ test("bug-report-20260806T061548Z", () => {
   )!
 
   expect(v3v3Label.anchorPoint.x).toBeGreaterThan(2.901)
-  expect(pin45Trace.tracePath).toHaveLength(4)
+  for (const otherTrace of finalOutput.traces) {
+    if (otherTrace.mspPairId === pin45Trace.mspPairId) continue
+    if (otherTrace.globalConnNetId === pin45Trace.globalConnNetId) continue
+
+    expect(
+      findPerpendicularPathCrossings(
+        pin45Trace.tracePath,
+        otherTrace.tracePath,
+        { includeTerminalSegments: true },
+      ),
+    ).toEqual([])
+  }
   expect(
     getTraceLabelCollisions(finalOutput.traces, finalOutput.netLabelPlacements),
   ).toEqual([])
