@@ -5,7 +5,7 @@ import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInp
 
 // Keep nearby ground connections, but do not extend the usual 1 mm local
 // routing range vertically just because a sheet allows long signal traces.
-const MAX_LOCAL_GROUND_BRANCH_OFFSET = 1
+export const MAX_LOCAL_GROUND_BRANCH_OFFSET = 1
 
 /** Avoid return wires between staggered, net-only ground-facing branches. */
 export const getGroundConnectionPolicy = (inputProblem: InputProblem) => {
