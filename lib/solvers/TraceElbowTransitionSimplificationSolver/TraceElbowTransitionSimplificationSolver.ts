@@ -1,7 +1,6 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { InlineNetLabelPlacement } from "lib/solvers/InlineNetLabelSolver/InlineNetLabelSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
@@ -11,11 +10,7 @@ import { preservesLabelAnchors } from "lib/solvers/TraceCleanupSolver/sameNetRai
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
 import type { InputProblem } from "lib/types/InputProblem"
-import {
-  doesPathCoincideWithPaths,
-  doesPathCoincideWithTraces,
-} from "lib/utils/doesPathCoincideWithTraces"
-import { pathIntersectsRenderedLabel } from "lib/utils/pathIntersectsRenderedLabel"
+import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 import type { CompletedTraceReroute } from "./types"
 import { generateElbowTransitionSimplificationCandidates } from "./generateElbowTransitionSimplificationCandidates"
 
@@ -24,7 +19,6 @@ interface TraceElbowTransitionSimplificationSolverInput {
   traces: SolvedTracePath[]
   completedReroutes: CompletedTraceReroute[]
   netLabelPlacements: NetLabelPlacement[]
-  inlineNetLabelPlacements?: InlineNetLabelPlacement[]
   paddingBuffer: number
 }
 
@@ -42,10 +36,9 @@ const getPathLength = (points: Point[]) =>
 
 /**
  * Post-processes traces after trace/label overlap avoidance. It removes
- * redundant elbow transitions, restores an original route when its blocking
- * label is gone, and, when needed, shifts a simplified elbow around a rendered
- * label. Every replacement is revalidated against labels, components,
- * other-net traces, and label anchors.
+ * redundant elbow transitions and, when needed, shifts a simplified elbow
+ * around a rendered label. Every replacement is revalidated against labels,
+ * components, other-net traces, and label anchors.
  */
 export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
   private input: TraceElbowTransitionSimplificationSolverInput
@@ -89,12 +82,6 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
         otherTrace.mspPairId !== trace.mspPairId &&
         otherTrace.globalConnNetId !== trace.globalConnNetId,
     )
-    const otherNetInlineLabels = (
-      this.input.inlineNetLabelPlacements ?? []
-    ).filter((label) => label.globalConnNetId !== trace.globalConnNetId)
-    const otherNetInlineStubPaths = otherNetInlineLabels.flatMap((label) =>
-      label.stubTracePath ? [[...label.stubTracePath]] : [],
-    )
     const candidateByPath = new Map<string, Point[]>()
     const completedReroutes = this.input.completedReroutes.filter(
       (completedReroute) =>
@@ -112,11 +99,6 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
         ],
         netLabels: this.input.netLabelPlacements,
       }).length
-
-      candidateByPath.set(
-        initialReroutePath.map((point) => `${point.x},${point.y}`).join(";"),
-        initialReroutePath,
-      )
 
       const candidates = generateElbowTransitionSimplificationCandidates({
         trace: completedReroute.initialTrace,
@@ -193,11 +175,7 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
             [candidateTrace],
           ) &&
           !isPathCollidingWithObstacles(candidatePath, this.obstacles) &&
-          !doesPathCoincideWithTraces(candidatePath, otherNetTraces) &&
-          !otherNetInlineLabels.some((label) =>
-            pathIntersectsRenderedLabel(candidatePath, label),
-          ) &&
-          !doesPathCoincideWithPaths(candidatePath, otherNetInlineStubPaths)
+          !doesPathCoincideWithTraces(candidatePath, otherNetTraces)
         )
       },
     )
