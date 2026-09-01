@@ -1,185 +1,151 @@
 import type { Bounds, Point } from "@tscircuit/math-utils"
-import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getPathLength,
   isPathCollidingWithChipInterior,
 } from "lib/solvers/Example28Solver/geometry"
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import {
   getObstacleRects,
   type TextBoxObstacleRect,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
-import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import type { InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
+import { countTurns } from "./countTurns"
 import { hasCollisionsWithLabels } from "./hasCollisionsWithLabels"
-import { simplifyPath } from "./simplifyPath"
+import {
+  generateConnectorCrossingRerouteCandidates,
+  getTraceObstacleBounds,
+  type ConnectorCrossingRerouteCandidate,
+} from "./sub-solver/generateConnectorCrossingRerouteCandidates"
 import { findPerpendicularPathCrossings } from "./sub-solver/findIntersectionsWithObstacles"
 
 const EPS = 1e-6
 
-const pointsAreEqual = (first: Point, second: Point) =>
-  Math.abs(first.x - second.x) <= EPS && Math.abs(first.y - second.y) <= EPS
+const compareNumbers = (first: number, second: number) =>
+  Math.abs(first - second) <= EPS ? 0 : first - second
 
-const traceContainsPoint = (trace: SolvedTracePath, point: Point) =>
-  trace.tracePath.some((tracePoint) => pointsAreEqual(tracePoint, point))
-
-const getConnectorObstacleBounds = ({
-  connector,
-  segmentIndex,
-  labels,
-}: {
+interface ConnectorCrossing {
   connector: SolvedTracePath
-  segmentIndex: number
-  labels: NetLabelPlacement[]
-}): Bounds => {
-  const segmentStart = connector.tracePath[segmentIndex]!
-  const segmentEnd = connector.tracePath[segmentIndex + 1]!
-  const bounds: Bounds = {
-    minX: Math.min(segmentStart.x, segmentEnd.x),
-    minY: Math.min(segmentStart.y, segmentEnd.y),
-    maxX: Math.max(segmentStart.x, segmentEnd.x),
-    maxY: Math.max(segmentStart.y, segmentEnd.y),
-  }
+  connectorSegmentIndex: number
+  otherTrace: SolvedTracePath
+  otherSegmentIndex: number
+}
 
-  for (const label of labels) {
-    if (label.globalConnNetId !== connector.globalConnNetId) continue
-    if (!label.pinIds.every((pinId) => connector.pinIds.includes(pinId))) {
-      continue
+const getConnectorCrossings = (
+  traces: SolvedTracePath[],
+  connectorTraceIds: ReadonlySet<string>,
+) => {
+  const crossings: ConnectorCrossing[] = []
+  const connectors = traces.filter((trace) =>
+    connectorTraceIds.has(trace.mspPairId),
+  )
+
+  for (const connector of connectors) {
+    for (const otherTrace of traces) {
+      if (otherTrace.mspPairId === connector.mspPairId) continue
+      if (otherTrace.globalConnNetId === connector.globalConnNetId) continue
+      if (
+        connectorTraceIds.has(otherTrace.mspPairId) &&
+        otherTrace.mspPairId < connector.mspPairId
+      ) {
+        continue
+      }
+      for (const crossing of findPerpendicularPathCrossings(
+        connector.tracePath,
+        otherTrace.tracePath,
+        { includeTerminalSegments: true },
+      )) {
+        crossings.push({
+          connector,
+          connectorSegmentIndex: crossing.pathSegmentIndex,
+          otherTrace,
+          otherSegmentIndex: crossing.otherPathSegmentIndex,
+        })
+      }
     }
-    if (!traceContainsPoint(connector, label.anchorPoint)) continue
-
-    const labelBounds = getRectBounds(label.center, label.width, label.height)
-    bounds.minX = Math.min(bounds.minX, labelBounds.minX)
-    bounds.minY = Math.min(bounds.minY, labelBounds.minY)
-    bounds.maxX = Math.max(bounds.maxX, labelBounds.maxX)
-    bounds.maxY = Math.max(bounds.maxY, labelBounds.maxY)
   }
-
-  return bounds
+  return crossings
 }
 
-const getCenteredDetourCoordinate = ({
-  anchorCoordinate,
-  obstacleMin,
-  obstacleMax,
-  clearance,
-}: {
-  anchorCoordinate: number
-  obstacleMin: number
-  obstacleMax: number
-  clearance: number
-}) => {
-  if (anchorCoordinate < obstacleMin - clearance) {
-    return (anchorCoordinate + obstacleMin - clearance) / 2
+const getForeignTraceCrossingCounts = (
+  targetTrace: SolvedTracePath,
+  traces: SolvedTracePath[],
+) => {
+  const crossingCounts = new Map<string, number>()
+  for (const otherTrace of traces) {
+    if (otherTrace.mspPairId === targetTrace.mspPairId) continue
+    if (otherTrace.globalConnNetId === targetTrace.globalConnNetId) continue
+    const crossingCount = findPerpendicularPathCrossings(
+      targetTrace.tracePath,
+      otherTrace.tracePath,
+      { includeTerminalSegments: true },
+    ).length
+    if (crossingCount > 0) {
+      crossingCounts.set(otherTrace.mspPairId, crossingCount)
+    }
   }
-  if (anchorCoordinate > obstacleMax + clearance) {
-    return (anchorCoordinate + obstacleMax + clearance) / 2
-  }
-  return null
+  return crossingCounts
 }
 
-/**
- * Builds a detour through the center of the open corridor between the
- * generated connector's label and the trace's next anchor. A centered route
- * is intentionally the only candidate: if that corridor is blocked, the
- * established trace is preserved instead of being squeezed against a label.
- */
-const generateCenteredDetourCandidates = ({
+const getTotalCrossingCount = (crossingCounts: ReadonlyMap<string, number>) =>
+  [...crossingCounts.values()].reduce((sum, count) => sum + count, 0)
+
+const areCrossingCountsSubset = (
+  candidate: ReadonlyMap<string, number>,
+  baseline: ReadonlyMap<string, number>,
+) =>
+  [...candidate].every(
+    ([traceId, count]) => count <= (baseline.get(traceId) ?? 0),
+  )
+
+const isForeignLabel = ({
+  label,
   trace,
-  segmentIndex,
-  obstacleBounds,
-  clearance,
+  mergedLabelNetIdMap,
 }: {
+  label: NetLabelPlacement
   trace: SolvedTracePath
-  segmentIndex: number
-  obstacleBounds: Bounds
-  clearance: number
-}): Point[][] => {
-  const buildCandidate = (path: Point[], index: number): Point[] | null => {
-    const start = path[index]
-    const end = path[index + 1]
-    const nextAnchor = path[index + 2]
-    if (!start || !end || !nextAnchor) return null
-
-    const movingAxis: "x" | "y" = Math.abs(start.x - end.x) <= EPS ? "y" : "x"
-    const detourAxis = movingAxis === "x" ? "y" : "x"
-    const movingMin =
-      movingAxis === "x" ? obstacleBounds.minX : obstacleBounds.minY
-    const movingMax =
-      movingAxis === "x" ? obstacleBounds.maxX : obstacleBounds.maxY
-    const detourMin =
-      detourAxis === "x" ? obstacleBounds.minX : obstacleBounds.minY
-    const detourMax =
-      detourAxis === "x" ? obstacleBounds.maxX : obstacleBounds.maxY
-    const movingMidpoint = (movingMin + movingMax) / 2
-    const gate =
-      start[movingAxis] < movingMidpoint
-        ? movingMin - clearance
-        : movingMax + clearance
-    const detourCoordinate = getCenteredDetourCoordinate({
-      anchorCoordinate: nextAnchor[detourAxis],
-      obstacleMin: detourMin,
-      obstacleMax: detourMax,
-      clearance,
-    })
-    if (detourCoordinate === null) return null
-
-    return simplifyPath([
-      ...path.slice(0, index + 1),
-      { ...start, [movingAxis]: gate },
-      { ...start, [movingAxis]: gate, [detourAxis]: detourCoordinate },
-      { ...end, [detourAxis]: detourCoordinate },
-      ...path.slice(index + 2),
-    ])
-  }
-
-  const candidates: Point[][] = []
-  const forwardCandidate = buildCandidate(trace.tracePath, segmentIndex)
-  if (forwardCandidate) candidates.push(forwardCandidate)
-
-  const reversedPath = [...trace.tracePath].reverse()
-  const reversedIndex = trace.tracePath.length - 2 - segmentIndex
-  const reversedCandidate = buildCandidate(reversedPath, reversedIndex)
-  if (reversedCandidate) candidates.push(reversedCandidate.reverse())
-
-  return candidates
+  mergedLabelNetIdMap: Record<string, Set<string>>
+}) => {
+  const mergedNetIds = mergedLabelNetIdMap[label.globalConnNetId]
+  return mergedNetIds
+    ? !mergedNetIds.has(trace.globalConnNetId)
+    : label.globalConnNetId !== trace.globalConnNetId
 }
 
 const getForeignLabelBounds = ({
   trace,
   labels,
+  mergedLabelNetIdMap,
 }: {
   trace: SolvedTracePath
   labels: NetLabelPlacement[]
+  mergedLabelNetIdMap: Record<string, Set<string>>
 }) =>
   labels
-    .filter((label) => label.globalConnNetId !== trace.globalConnNetId)
+    .filter((label) => isForeignLabel({ label, trace, mergedLabelNetIdMap }))
     .map((label) => getRectBounds(label.center, label.width, label.height))
 
-const hasStrictForeignTraceCrossing = ({
-  path,
-  trace,
-  allTraces,
-}: {
-  path: Point[]
-  trace: SolvedTracePath
-  allTraces: SolvedTracePath[]
-}) =>
-  allTraces.some(
-    (otherTrace) =>
-      otherTrace.mspPairId !== trace.mspPairId &&
-      otherTrace.globalConnNetId !== trace.globalConnNetId &&
-      findPerpendicularPathCrossings(path, otherTrace.tracePath, {
-        includeTerminalSegments: true,
-      }).length > 0,
+const getCollidingBoundsIndices = (path: Point[], bounds: Bounds[]) =>
+  new Set(
+    bounds.flatMap((obstacleBounds, index) =>
+      hasCollisionsWithLabels(path, [obstacleBounds]) ? [index] : [],
+    ),
   )
+
+const isSubset = (
+  candidate: ReadonlySet<number>,
+  baseline: ReadonlySet<number>,
+) => [...candidate].every((value) => baseline.has(value))
 
 export const rerouteGeneratedNetLabelConnectorCrossings = ({
   inputProblem,
   traces,
   netLabelPlacements,
+  mergedLabelNetIdMap,
   clearance,
   eligibleTraceIds,
   connectorTraceIds,
@@ -187,11 +153,12 @@ export const rerouteGeneratedNetLabelConnectorCrossings = ({
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  mergedLabelNetIdMap: Record<string, Set<string>>
   clearance: number
   eligibleTraceIds?: ReadonlySet<string>
   connectorTraceIds: ReadonlySet<string>
 }) => {
-  const outputTraces = [...traces]
+  let outputTraces = [...traces]
   const chipObstacles = getObstacleRects(inputProblem).filter(
     (obstacle) => obstacle.kind === "chip",
   )
@@ -199,63 +166,156 @@ export const rerouteGeneratedNetLabelConnectorCrossings = ({
     (obstacle): obstacle is TextBoxObstacleRect => obstacle.kind === "text_box",
   )
   let reroutedTraceCount = 0
+  const initialConnectorCrossingCount = getConnectorCrossings(
+    outputTraces,
+    connectorTraceIds,
+  ).length
 
-  for (const connector of outputTraces.filter((trace) =>
-    connectorTraceIds.has(trace.mspPairId),
-  )) {
-    for (let traceIndex = 0; traceIndex < outputTraces.length; traceIndex++) {
-      const trace = outputTraces[traceIndex]!
-      if (connectorTraceIds.has(trace.mspPairId)) continue
-      if (trace.globalConnNetId === connector.globalConnNetId) continue
-      if (eligibleTraceIds && !eligibleTraceIds.has(trace.mspPairId)) continue
+  while (true) {
+    const crossings = getConnectorCrossings(outputTraces, connectorTraceIds)
+    if (crossings.length === 0) break
 
-      const crossing = findPerpendicularPathCrossings(
-        trace.tracePath,
-        connector.tracePath,
-        { includeTerminalSegments: true },
-      )[0]
-      if (!crossing) continue
-
-      const obstacleBounds = getConnectorObstacleBounds({
-        connector,
-        segmentIndex: crossing.otherPathSegmentIndex,
-        labels: netLabelPlacements,
-      })
-      const foreignTraces = outputTraces.filter(
-        (otherTrace) =>
-          otherTrace.mspPairId !== trace.mspPairId &&
-          otherTrace.globalConnNetId !== trace.globalConnNetId,
-      )
-      const foreignLabelBounds = getForeignLabelBounds({
-        trace,
-        labels: netLabelPlacements,
-      })
-      const candidates = generateCenteredDetourCandidates({
-        trace,
-        segmentIndex: crossing.pathSegmentIndex,
-        obstacleBounds,
-        clearance,
-      })
-        .filter(
-          (path) =>
-            !isPathCollidingWithChipInterior(path, chipObstacles) &&
-            !isPathCollidingWithObstacles(path, textObstacles) &&
-            !hasCollisionsWithLabels(path, foreignLabelBounds) &&
-            !doesPathCoincideWithTraces(path, foreignTraces) &&
-            !hasStrictForeignTraceCrossing({
-              path,
-              trace,
-              allTraces: outputTraces,
+    const evaluatedCandidates = crossings.flatMap((crossing) => {
+      const candidates: ConnectorCrossingRerouteCandidate[] = []
+      if (
+        connectorTraceIds.has(crossing.otherTrace.mspPairId) ||
+        !eligibleTraceIds ||
+        eligibleTraceIds.has(crossing.otherTrace.mspPairId)
+      ) {
+        candidates.push(
+          ...generateConnectorCrossingRerouteCandidates({
+            trace: crossing.otherTrace,
+            segmentIndex: crossing.otherSegmentIndex,
+            obstacleBounds: getTraceObstacleBounds({
+              trace: crossing.connector,
+              segmentIndex: crossing.connectorSegmentIndex,
+              labels: netLabelPlacements,
             }),
+            clearance,
+          }),
         )
-        .sort((first, second) => getPathLength(first) - getPathLength(second))
+      }
+      candidates.push(
+        ...generateConnectorCrossingRerouteCandidates({
+          trace: crossing.connector,
+          segmentIndex: crossing.connectorSegmentIndex,
+          obstacleBounds: getTraceObstacleBounds({
+            trace: crossing.otherTrace,
+            segmentIndex: crossing.otherSegmentIndex,
+            labels: netLabelPlacements,
+          }),
+          clearance,
+        }),
+      )
 
-      const bestCandidate = candidates[0]
-      if (!bestCandidate) continue
-      outputTraces[traceIndex] = { ...trace, tracePath: bestCandidate }
-      reroutedTraceCount++
+      return candidates.flatMap((candidate) => {
+        const traceIndex = outputTraces.findIndex(
+          (trace) => trace.mspPairId === candidate.traceId,
+        )
+        const originalTrace = outputTraces[traceIndex]
+        if (!originalTrace) return []
+
+        const foreignTraces = outputTraces.filter(
+          (trace) =>
+            trace.mspPairId !== candidate.traceId &&
+            trace.globalConnNetId !== originalTrace.globalConnNetId,
+        )
+        const foreignLabelBounds = getForeignLabelBounds({
+          trace: originalTrace,
+          labels: netLabelPlacements,
+          mergedLabelNetIdMap,
+        })
+        const originalLabelCollisions = getCollidingBoundsIndices(
+          originalTrace.tracePath,
+          foreignLabelBounds,
+        )
+        const candidateLabelCollisions = getCollidingBoundsIndices(
+          candidate.path,
+          foreignLabelBounds,
+        )
+        if (
+          isPathCollidingWithChipInterior(candidate.path, chipObstacles) ||
+          isPathCollidingWithObstacles(candidate.path, textObstacles) ||
+          !isSubset(candidateLabelCollisions, originalLabelCollisions) ||
+          doesPathCoincideWithTraces(candidate.path, foreignTraces)
+        ) {
+          return []
+        }
+
+        const candidateTrace = { ...originalTrace, tracePath: candidate.path }
+        const candidateTraces = [...outputTraces]
+        candidateTraces[traceIndex] = candidateTrace
+        const remainingConnectorCrossings = getConnectorCrossings(
+          candidateTraces,
+          connectorTraceIds,
+        ).length
+        if (remainingConnectorCrossings >= crossings.length) return []
+
+        const originalForeignCrossingCounts = getForeignTraceCrossingCounts(
+          originalTrace,
+          outputTraces,
+        )
+        const candidateForeignCrossingCounts = getForeignTraceCrossingCounts(
+          candidateTrace,
+          candidateTraces,
+        )
+        if (
+          !areCrossingCountsSubset(
+            candidateForeignCrossingCounts,
+            originalForeignCrossingCounts,
+          )
+        ) {
+          return []
+        }
+
+        return [
+          {
+            ...candidate,
+            remainingConnectorCrossings,
+            candidateForeignCrossings: getTotalCrossingCount(
+              candidateForeignCrossingCounts,
+            ),
+            turnIncrease:
+              countTurns(candidate.path) - countTurns(originalTrace.tracePath),
+            lengthIncrease:
+              getPathLength(candidate.path) -
+              getPathLength(originalTrace.tracePath),
+          },
+        ]
+      })
+    })
+
+    evaluatedCandidates.sort(
+      (first, second) =>
+        first.remainingConnectorCrossings -
+          second.remainingConnectorCrossings ||
+        first.candidateForeignCrossings - second.candidateForeignCrossings ||
+        compareNumbers(first.lengthIncrease, second.lengthIncrease) ||
+        first.turnIncrease - second.turnIncrease ||
+        Number(first.kind !== "balanced") -
+          Number(second.kind !== "balanced") ||
+        compareNumbers(getPathLength(first.path), getPathLength(second.path)),
+    )
+    const bestCandidate = evaluatedCandidates[0]
+    if (!bestCandidate) break
+
+    const traceIndex = outputTraces.findIndex(
+      (trace) => trace.mspPairId === bestCandidate.traceId,
+    )
+    outputTraces[traceIndex] = {
+      ...outputTraces[traceIndex]!,
+      tracePath: bestCandidate.path,
     }
+    reroutedTraceCount++
   }
 
-  return { traces: outputTraces, reroutedTraceCount }
+  return {
+    traces: outputTraces,
+    reroutedTraceCount,
+    initialConnectorCrossingCount,
+    remainingConnectorCrossingCount: getConnectorCrossings(
+      outputTraces,
+      connectorTraceIds,
+    ).length,
+  }
 }

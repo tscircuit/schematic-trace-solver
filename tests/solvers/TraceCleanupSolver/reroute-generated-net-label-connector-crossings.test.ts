@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { rerouteGeneratedNetLabelConnectorCrossings } from "lib/solvers/TraceCleanupSolver/rerouteGeneratedNetLabelConnectorCrossings"
+import { findPerpendicularPathCrossings } from "lib/solvers/TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 
 const makeTrace = ({
   mspPairId,
@@ -71,11 +72,12 @@ const vbatLabel = {
 
 const inputProblem = { chips: [], textBoxes: [] } as any
 
-test("routes a generated connector crossing through the open corridor center", () => {
+test("chooses the shortest clean route around a generated connector", () => {
   const result = rerouteGeneratedNetLabelConnectorCrossings({
     inputProblem,
     traces: [signalTrace, connectorTrace],
     netLabelPlacements: [vbatLabel as any],
+    mergedLabelNetIdMap: {},
     clearance: 0.1,
     eligibleTraceIds: new Set([signalTrace.mspPairId]),
     connectorTraceIds: new Set([connectorTrace.mspPairId]),
@@ -84,15 +86,13 @@ test("routes a generated connector crossing through the open corridor center", (
   expect(result.reroutedTraceCount).toBe(1)
   expect(result.traces[0]!.tracePath).toEqual([
     { x: 1, y: 3 },
-    { x: 2, y: 3 },
-    { x: 2, y: 2 },
-    { x: -2.55, y: 2 },
-    { x: -2.55, y: 0 },
+    { x: 0.9, y: 3 },
+    { x: 0.9, y: 0 },
     { x: -6, y: 0 },
   ])
 })
 
-test("preserves the established trace when the centered corridor is blocked", () => {
+test("uses another clean channel when the balanced corridor is blocked", () => {
   const blockingTrace = makeTrace({
     mspPairId: "blocking-trace",
     globalConnNetId: "blocking-net",
@@ -106,11 +106,63 @@ test("preserves the established trace when the centered corridor is blocked", ()
     inputProblem,
     traces: [signalTrace, connectorTrace, blockingTrace],
     netLabelPlacements: [vbatLabel as any],
+    mergedLabelNetIdMap: {},
     clearance: 0.1,
     eligibleTraceIds: new Set([signalTrace.mspPairId]),
     connectorTraceIds: new Set([connectorTrace.mspPairId]),
   })
 
+  expect(result.reroutedTraceCount).toBe(1)
+  expect(
+    findPerpendicularPathCrossings(
+      result.traces[0]!.tracePath,
+      result.traces[1]!.tracePath,
+      { includeTerminalSegments: true },
+    ),
+  ).toEqual([])
+  expect(
+    findPerpendicularPathCrossings(
+      result.traces[0]!.tracePath,
+      result.traces[2]!.tracePath,
+      { includeTerminalSegments: true },
+    ),
+  ).toEqual([])
+})
+
+test("preserves a connector enclosed by another net when rerouting cannot remove the crossing", () => {
+  const enclosingTrace = makeTrace({
+    mspPairId: "enclosing-trace",
+    globalConnNetId: "enclosing-net",
+    pinIds: ["enclosing-a", "enclosing-b"],
+    tracePath: [
+      { x: -1, y: -1 },
+      { x: 1, y: -1 },
+      { x: 1, y: 1 },
+      { x: -1, y: 1 },
+      { x: -1, y: -1 },
+    ],
+  })
+  const enclosedConnector = makeTrace({
+    mspPairId: "enclosed-label-connector",
+    globalConnNetId: "enclosed-net",
+    pinIds: ["enclosed"],
+    tracePath: [
+      { x: 2, y: 0 },
+      { x: 0, y: 0 },
+    ],
+  })
+
+  const result = rerouteGeneratedNetLabelConnectorCrossings({
+    inputProblem,
+    traces: [enclosingTrace, enclosedConnector],
+    netLabelPlacements: [],
+    mergedLabelNetIdMap: {},
+    clearance: 0.1,
+    eligibleTraceIds: new Set(),
+    connectorTraceIds: new Set([enclosedConnector.mspPairId]),
+  })
+
   expect(result.reroutedTraceCount).toBe(0)
-  expect(result.traces[0]!.tracePath).toEqual(signalTrace.tracePath)
+  expect(result.remainingConnectorCrossingCount).toBe(1)
+  expect(result.traces[1]!.tracePath).toEqual(enclosedConnector.tracePath)
 })

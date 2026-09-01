@@ -134,6 +134,7 @@ export class TraceCleanupSolver extends BaseSolver {
       inputProblem: this.input.inputProblem,
       traces: this.outputTraces,
       netLabelPlacements: this.input.allLabelPlacements,
+      mergedLabelNetIdMap: this.input.mergedLabelNetIdMap,
       clearance: this.input.paddingBuffer,
       eligibleTraceIds: this.input.eligibleTraceIds,
       connectorTraceIds:
@@ -145,6 +146,10 @@ export class TraceCleanupSolver extends BaseSolver {
     )
     this.stats.reroutedGeneratedConnectorCrossingTraceCount =
       result.reroutedTraceCount
+    this.stats.initialGeneratedConnectorCrossingCount =
+      result.initialConnectorCrossingCount
+    this.stats.remainingGeneratedConnectorCrossingCount =
+      result.remainingConnectorCrossingCount
     this._advancePipeline()
   }
 

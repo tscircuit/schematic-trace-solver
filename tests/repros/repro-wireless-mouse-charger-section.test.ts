@@ -17,16 +17,19 @@ test("repro wireless mouse charger section", () => {
   const chargeStatusTrace = traces.find(
     (trace) => trace.mspPairId === "schematic_port_12-schematic_port_0",
   )!
-  const vbatLabelConnector = traces.find((trace) =>
-    trace.mspPairId.startsWith("available-net-orientation-6-VBAT"),
+  const vbatLabelConnector = traces.find(
+    (trace) =>
+      solver.availableNetOrientationSolver!.generatedConnectorTraceIds.has(
+        trace.mspPairId,
+      ) && trace.userNetId === "VBAT",
   )!
 
   expect(chargeStatusTrace.tracePath).toEqual([
     { x: -28.36, y: 3 },
     { x: -28.16, y: 3 },
     { x: -28.16, y: 0.6709999999999999 },
-    { x: -33.26049999999999, y: 0.6709999999999999 },
-    { x: -33.26049999999999, y: -0.1 },
+    { x: -33.2605, y: 0.6709999999999999 },
+    { x: -33.2605, y: -0.1 },
     { x: -37.62, y: -0.1 },
   ])
   expect(
