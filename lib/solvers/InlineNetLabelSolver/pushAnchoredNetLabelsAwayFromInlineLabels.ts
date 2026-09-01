@@ -9,6 +9,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
 import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
+import { doTracePathsIntersect } from "./doTracePathsIntersect"
 import type { InlineNetLabelPlacement } from "./InlineNetLabelSolver"
 
 const LABEL_CLEARANCE = 0.05
@@ -481,6 +482,14 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
               movedLabel.anchorPoint,
             )
       const connectorObstructed =
+        outputTraces.some(
+          (trace) =>
+            trace.globalConnNetId !== movedLabel.globalConnNetId &&
+            doTracePathsIntersect({
+              firstTracePath: connector.tracePath,
+              secondTracePath: trace.tracePath,
+            }),
+        ) ||
         inlineBounds.some((bounds) =>
           pathIntersectsBounds(connector.tracePath, bounds),
         ) ||
