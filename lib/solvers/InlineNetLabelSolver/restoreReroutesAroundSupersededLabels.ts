@@ -75,6 +75,14 @@ const introducesNewCrossings = (
     )
   })
 
+/**
+ * Restores a trace's recorded pre-collision path when the anchored net label
+ * that caused its reroute was later replaced by an inline label.
+ *
+ * A reroute is unwound only when its current geometry still matches the
+ * recorded result and the original path is strictly simpler without creating
+ * collisions, crossings, overlaps, or detached label anchors.
+ */
 export const restoreReroutesAroundSupersededLabels = ({
   inputProblem,
   traces,
