@@ -519,7 +519,16 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       if (alignedCandidate) return alignedCandidate
     }
 
-    if (isDownwardSameChipGroundRail) {
+    const rotatedCandidate = this.findValidRotatedCandidate(
+      label,
+      labelIndex,
+      orientations,
+    )
+    const rotatedCandidateNeedsLateralBranch =
+      rotatedCandidate !== null &&
+      Math.abs(rotatedCandidate.anchorPoint.x - label.anchorPoint.x) > EPS
+
+    if (isDownwardSameChipGroundRail && rotatedCandidateNeedsLateralBranch) {
       const downwardRailCandidate = this.findValidCandidateInShiftColumn({
         label,
         labelIndex,
@@ -535,11 +544,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       if (downwardRailCandidate) return downwardRailCandidate
     }
 
-    const rotatedCandidate = this.findValidRotatedCandidate(
-      label,
-      labelIndex,
-      orientations,
-    )
     if (rotatedCandidate) return rotatedCandidate
 
     const traceAnchorCandidate = this.findValidTraceAnchorCandidate(
