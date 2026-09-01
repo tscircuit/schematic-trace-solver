@@ -1,11 +1,15 @@
 import type { Point } from "@tscircuit/math-utils"
 import { getSegmentIntersection } from "@tscircuit/math-utils/line-intersections"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
-import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import {
+  rectsOverlap,
+  tracePathContainsPoint,
+} from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import {
   getVisibleTraceLength,
@@ -39,7 +43,12 @@ const MAX_SAME_NET_LABEL_BOUNDARY_RAIL_OFFSET = 0.2
 // A shared vertical pin can anchor an existing rail when the rail is only a
 // symbol-stem correction away from the pin itself.
 const MAX_SHARED_PIN_RAIL_OFFSET = 0.05
+// Nearby rails that leave the same junction can be combined even when the
+// shared rail is slightly longer. The visible result has one continuous run
+// instead of two parallel runs joined by a jog.
+const MAX_SHARED_ENDPOINT_RAIL_OFFSET = 0.75
 const MIN_RETURN_STEM_LENGTH = 0.05
+const AVAILABLE_NET_ORIENTATION_TRACE_PREFIX = "available-net-orientation-"
 
 export const getSharedPin = ({
   donorTrace,
@@ -347,6 +356,112 @@ const getAlignedParallelPinExitPath = ({
   return branchStartsAtSharedPin ? candidate : candidate.reverse()
 }
 
+/**
+ * Move the first movable rail of a branch onto the first rail of another
+ * trace leaving the same endpoint. The two perpendicular rail intervals must
+ * touch after the move; the caller then verifies that the combined visible
+ * trace loses a segment and that the reroute is clear.
+ */
+const getAlignedSharedEndpointRailPath = ({
+  donorTrace,
+  branchTrace,
+}: {
+  donorTrace: SolvedTracePath
+  branchTrace: SolvedTracePath
+}): Point[] | null => {
+  if (
+    donorTrace.mspPairId.startsWith(AVAILABLE_NET_ORIENTATION_TRACE_PREFIX) ||
+    branchTrace.mspPairId.startsWith(AVAILABLE_NET_ORIENTATION_TRACE_PREFIX)
+  ) {
+    return null
+  }
+
+  const sharedPin = getSharedPin({ donorTrace, branchTrace })
+  if (!sharedPin) return null
+
+  const pathFromShared = (trace: SolvedTracePath) => {
+    const path = simplifyPath(trace.tracePath)
+    return trace.pins[0]!.pinId === sharedPin.pinId ? path : [...path].reverse()
+  }
+  const donorPath = pathFromShared(donorTrace)
+  const branchPath = pathFromShared(branchTrace)
+  // The branch rail must be internal so moving it cannot move either pin.
+  if (donorPath.length < 3 || branchPath.length < 4) return null
+
+  const getAxis = (start: Point, end: Point) => {
+    if (isHorizontal(start, end)) return "x" as const
+    if (isVertical(start, end)) return "y" as const
+    return null
+  }
+  const donorDepartureAxis = getAxis(donorPath[0]!, donorPath[1]!)
+  const branchDepartureAxis = getAxis(branchPath[0]!, branchPath[1]!)
+  if (!donorDepartureAxis || donorDepartureAxis !== branchDepartureAxis) {
+    return null
+  }
+  const donorDeparture =
+    donorPath[1]![donorDepartureAxis] - donorPath[0]![donorDepartureAxis]
+  const branchDeparture =
+    branchPath[1]![branchDepartureAxis] - branchPath[0]![branchDepartureAxis]
+  if (Math.sign(donorDeparture) !== Math.sign(branchDeparture)) return null
+
+  const donorRailAxis = getAxis(donorPath[1]!, donorPath[2]!)
+  const branchRailAxis = getAxis(branchPath[1]!, branchPath[2]!)
+  if (
+    !donorRailAxis ||
+    donorRailAxis !== branchRailAxis ||
+    donorRailAxis === donorDepartureAxis
+  ) {
+    return null
+  }
+  // A return bus has another rail with this orientation near its far
+  // endpoint. Moving only the first rail would partially rewrite a shape that
+  // must be evaluated as a whole by the endpoint-bus transformation.
+  let branchParallelRailCount = 0
+  for (let index = 1; index < branchPath.length - 2; index++) {
+    if (
+      getAxis(branchPath[index]!, branchPath[index + 1]!) === branchRailAxis
+    ) {
+      branchParallelRailCount++
+    }
+  }
+  if (branchParallelRailCount !== 1) return null
+
+  const railCoordinateAxis = donorRailAxis === "x" ? "y" : "x"
+  const donorCoordinate = donorPath[1]![railCoordinateAxis]
+  const branchCoordinate = branchPath[1]![railCoordinateAxis]
+  const railOffset = Math.abs(donorCoordinate - branchCoordinate)
+  if (
+    nearlyEqual(donorCoordinate, branchCoordinate) ||
+    railOffset > MAX_SHARED_ENDPOINT_RAIL_OFFSET
+  ) {
+    return null
+  }
+
+  const donorRange = [
+    donorPath[1]![donorRailAxis],
+    donorPath[2]![donorRailAxis],
+  ].sort((a, b) => a - b)
+  const branchRange = [
+    branchPath[1]![branchRailAxis],
+    branchPath[2]![branchRailAxis],
+  ].sort((a, b) => a - b)
+  const railsTouchAfterAlignment =
+    Math.min(donorRange[1]!, branchRange[1]!) >=
+    Math.max(donorRange[0]!, branchRange[0]!) - 1e-6
+  if (!railsTouchAfterAlignment) return null
+
+  const candidateFromShared = simplifyPath(
+    branchPath.map((point, index) =>
+      index === 1 || index === 2
+        ? { ...point, [railCoordinateAxis]: donorCoordinate }
+        : point,
+    ),
+  )
+  return branchTrace.pins[0]!.pinId === sharedPin.pinId
+    ? candidateFromShared
+    : candidateFromShared.reverse()
+}
+
 type PerpendicularPinRail = {
   railCoordinate: number
 }
@@ -525,6 +640,7 @@ const candidateIsClear = ({
   originalTrace,
   traces,
   inputProblem,
+  originalNetLabelPlacements,
   candidateNetLabelPlacements,
   attachedLabelIndexes,
 }: {
@@ -532,6 +648,7 @@ const candidateIsClear = ({
   originalTrace: SolvedTracePath
   traces: SolvedTracePath[]
   inputProblem: InputProblem
+  originalNetLabelPlacements: NetLabelPlacement[]
   candidateNetLabelPlacements: NetLabelPlacement[]
   attachedLabelIndexes: number[]
 }) => {
@@ -583,6 +700,71 @@ const candidateIsClear = ({
     )
   ) {
     return false
+  }
+
+  // Moving an attached label is part of the reroute. It must not introduce a
+  // collision with an unchanged trace, component, or neighboring label.
+  const labelHitsTrace = (label: NetLabelPlacement, trace: SolvedTracePath) =>
+    pathIntersectsAnyNetLabel({
+      path: trace.tracePath,
+      netLabelPlacements: [label],
+    })
+  for (const labelIndex of attachedLabelIndexes) {
+    const originalLabel = originalNetLabelPlacements[labelIndex]!
+    const candidateLabel = candidateNetLabelPlacements[labelIndex]!
+    const originalBounds = getRectBounds(
+      originalLabel.center,
+      originalLabel.width,
+      originalLabel.height,
+    )
+    const candidateBounds = getRectBounds(
+      candidateLabel.center,
+      candidateLabel.width,
+      candidateLabel.height,
+    )
+
+    for (const trace of traces) {
+      if (trace.globalConnNetId === candidateLabel.globalConnNetId) continue
+      if (
+        labelHitsTrace(candidateLabel, trace) &&
+        !labelHitsTrace(originalLabel, trace)
+      ) {
+        return false
+      }
+    }
+    for (const obstacle of obstacles) {
+      if (
+        rectsOverlap(candidateBounds, obstacle) &&
+        !rectsOverlap(originalBounds, obstacle)
+      ) {
+        return false
+      }
+    }
+    for (
+      let otherIndex = 0;
+      otherIndex < candidateNetLabelPlacements.length;
+      otherIndex++
+    ) {
+      if (otherIndex === labelIndex) continue
+      const originalOther = originalNetLabelPlacements[otherIndex]!
+      const candidateOther = candidateNetLabelPlacements[otherIndex]!
+      const originalOtherBounds = getRectBounds(
+        originalOther.center,
+        originalOther.width,
+        originalOther.height,
+      )
+      const candidateOtherBounds = getRectBounds(
+        candidateOther.center,
+        candidateOther.width,
+        candidateOther.height,
+      )
+      if (
+        rectsOverlap(candidateBounds, candidateOtherBounds) &&
+        !rectsOverlap(originalBounds, originalOtherBounds)
+      ) {
+        return false
+      }
+    }
   }
 
   const otherNetLabelPlacements = candidateNetLabelPlacements.filter(
@@ -716,11 +898,11 @@ export const alignSameNetJunctions = ({
   let outputTraces = [...traces]
   let outputNetLabelPlacements = [...netLabelPlacements]
   let alignedJunctionCount = 0
+  const alignedBranchTraceIds = new Set<string>()
 
   // First level the load rails, then attach return branches to those final
   // rails. Doing this in one pass could attach a branch to a rail that moves later.
   for (const alignReturnBranches of [false, true]) {
-    const alignedBranchTraceIds = new Set<string>()
     // Reuse each aligned branch as the rail for the next load in the chain. An
     // aligned branch may already have had its donor turn, so queue it again when
     // its geometry changes.
@@ -753,6 +935,7 @@ export const alignSameNetJunctions = ({
                 branchTrace,
                 traces: outputTraces,
               }),
+              getAlignedSharedEndpointRailPath({ donorTrace, branchTrace }),
             ]
           : [
               getAlignedBranchPath({ donorTrace, branchTrace }),
@@ -792,6 +975,7 @@ export const alignSameNetJunctions = ({
               originalTrace: branchTrace,
               traces: outputTraces,
               inputProblem,
+              originalNetLabelPlacements: outputNetLabelPlacements,
               candidateNetLabelPlacements,
               attachedLabelIndexes,
             })
