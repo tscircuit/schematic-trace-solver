@@ -11,6 +11,7 @@ import { getColorFromString } from "lib/utils/getColorFromString"
 import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
+import { normalizeHorizontalFallbackBoundsCollidingWithGroundLabels } from "./normalizeCollidingHorizontalFallbackBounds"
 
 /**
  * A group of traces that have at least one overlapping segment and
@@ -71,6 +72,7 @@ export interface NetLabelPlacement {
 export class NetLabelPlacementSolver extends BaseSolver {
   inputProblem: InputProblem
   inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
+  normalizeHorizontalFallbackBoundsOnCompletion: boolean
 
   overlappingSameNetTraceGroups: Array<OverlappingSameNetTraceGroup>
 
@@ -86,10 +88,13 @@ export class NetLabelPlacementSolver extends BaseSolver {
   constructor(params: {
     inputProblem: InputProblem
     inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
+    normalizeHorizontalFallbackBoundsOnCompletion?: boolean
   }) {
     super()
     this.inputProblem = params.inputProblem
     this.inputTraceMap = params.inputTraceMap
+    this.normalizeHorizontalFallbackBoundsOnCompletion =
+      params.normalizeHorizontalFallbackBoundsOnCompletion ?? false
 
     this.overlappingSameNetTraceGroups =
       this.computeOverlappingSameNetTraceGroups()
@@ -337,6 +342,13 @@ export class NetLabelPlacementSolver extends BaseSolver {
       this.queuedOverlappingSameNetTraceGroups.shift()
 
     if (!nextOverlappingSameNetTraceGroup) {
+      if (this.normalizeHorizontalFallbackBoundsOnCompletion) {
+        this.netLabelPlacements =
+          normalizeHorizontalFallbackBoundsCollidingWithGroundLabels({
+            inputProblem: this.inputProblem,
+            netLabelPlacements: this.netLabelPlacements,
+          })
+      }
       this.solved = true
       return
     }
