@@ -13,5 +13,15 @@ test("smartwatch power sheet", () => {
   )
   solver.solve()
 
+  const connectorGroundPinIds = new Set([
+    "schematic_port_0",
+    "schematic_port_11",
+  ])
+  const connectorGroundLabels = solver
+    .netLabelToTraceSolver!.getOutput()
+    .netLabelPlacements.filter((label) =>
+      label.pinIds.some((pinId) => connectorGroundPinIds.has(pinId)),
+    )
+  expect(connectorGroundLabels).toHaveLength(1)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

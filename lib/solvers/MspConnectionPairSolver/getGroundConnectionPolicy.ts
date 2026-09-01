@@ -59,6 +59,19 @@ export const getGroundConnectionPolicy = (inputProblem: InputProblem) => {
     firstPinId: PinId,
     secondPinId: PinId,
   ) => {
+    const firstChipId = pins.get(firstPinId)?.chip.chipId
+    const secondChipId = pins.get(secondPinId)?.chip.chipId
+    const pinsShareChip =
+      firstChipId !== undefined && firstChipId === secondChipId
+    // Unwired ground terminals on one component can share a local trace
+    // without joining separate physical ground islands.
+    if (
+      pinsShareChip &&
+      !physicalConnMap.getNetConnectedToId(firstPinId) &&
+      !physicalConnMap.getNetConnectedToId(secondPinId)
+    ) {
+      return false
+    }
     const firstGlobalNetId = netConnMap.getNetConnectedToId(firstPinId)
     const secondGlobalNetId = netConnMap.getNetConnectedToId(secondPinId)
     if (
