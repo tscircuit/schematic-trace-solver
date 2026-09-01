@@ -110,6 +110,7 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   private chipIndex: ChipObstacleSpatialIndex
   private traceMap: Record<MspConnectionPairId, SolvedTracePath>
   private skippedCollisionKeys = new Set<string>()
+  private skippedChipCollisionLabels = new Set<string>()
 
   private labelsToTry: NetLabelPlacement[] = []
   private candidateQueue: Candidate[] = []
@@ -163,6 +164,22 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
         if (this.skippedCollisionKeys.has(this.collisionKey(a, b))) continue
         if (boundsOverlap(this.labelBounds(a), this.labelBounds(b)))
           return [a, b]
+      }
+    }
+    return null
+  }
+
+  private findNextChipCollidingLabel(): NetLabelPlacement | null {
+    const labels = this.outputNetLabelPlacements
+    for (let i = 0; i < labels.length; i++) {
+      const label = labels[i]!
+      if (this.skippedChipCollisionLabels.has(label.globalConnNetId)) continue
+      const bounds = this.labelBounds(label)
+      if (
+        this.chipIndex.getChipsInBounds(bounds).length > 0 ||
+        rectIntersectsAnyTextBox(bounds, this.inputProblem)
+      ) {
+        return label
       }
     }
     return null
@@ -309,15 +326,23 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   }
 
   override _step() {
-    if (!this.currentCollision) {
+    if (!this.currentCollision && !this.currentLabelToMove) {
       const pair = this.findNextCollidingPair()
-      if (!pair) {
-        this.solved = true
+      if (pair) {
+        this.currentCollision = pair
+        this.labelsToTry = [pair[1], pair[0]]
+        this.beginSearchForLabel(this.labelsToTry.shift()!)
         return
       }
-      this.currentCollision = pair
-      this.labelsToTry = [pair[1], pair[0]]
-      this.beginSearchForLabel(this.labelsToTry.shift()!)
+
+      const chipCollidingLabel = this.findNextChipCollidingLabel()
+      if (chipCollidingLabel) {
+        this.labelsToTry = [chipCollidingLabel]
+        this.beginSearchForLabel(this.labelsToTry.shift()!)
+        return
+      }
+
+      this.solved = true
       return
     }
 
@@ -325,28 +350,40 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
       if (this.labelsToTry.length > 0) {
         this.beginSearchForLabel(this.labelsToTry.shift()!)
       } else {
-        this.skippedCollisionKeys.add(
-          this.collisionKey(this.currentCollision[0], this.currentCollision[1]),
-        )
+        if (this.currentCollision) {
+          this.skippedCollisionKeys.add(
+            this.collisionKey(this.currentCollision[0], this.currentCollision[1]),
+          )
+        } else if (this.currentLabelToMove) {
+          this.skippedChipCollisionLabels.add(this.currentLabelToMove.globalConnNetId)
+        }
         this.clearActiveSearch()
       }
       return
     }
 
     const candidate = this.candidateQueue[this.candidateIndex++]!
-    const [labelA, labelB] = this.currentCollision
-    let fixedLabel: NetLabelPlacement
-    if (this.currentLabelToMove === labelB) {
-      fixedLabel = labelA
+    
+    let obstacleLabels: NetLabelPlacement[]
+    if (this.currentCollision) {
+      const [labelA, labelB] = this.currentCollision
+      let fixedLabel: NetLabelPlacement
+      if (this.currentLabelToMove === labelB) {
+        fixedLabel = labelA
+      } else {
+        fixedLabel = labelB
+      }
+      obstacleLabels = [
+        ...this.outputNetLabelPlacements.filter(
+          (l) => l !== labelA && l !== labelB,
+        ),
+        fixedLabel,
+      ]
     } else {
-      fixedLabel = labelB
+      obstacleLabels = this.outputNetLabelPlacements.filter(
+        (l) => l !== this.currentLabelToMove,
+      )
     }
-    const obstacleLabels = [
-      ...this.outputNetLabelPlacements.filter(
-        (l) => l !== labelA && l !== labelB,
-      ),
-      fixedLabel,
-    ]
 
     const status = this.checkCandidate(
       candidate,
