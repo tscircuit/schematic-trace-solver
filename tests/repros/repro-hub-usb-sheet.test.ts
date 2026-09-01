@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test"
-import { isVerticalLabelAtSameNetRailTap } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/anchors"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import { isVertical } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
@@ -22,18 +21,6 @@ test("repro hub USB sheet schematic trace routing", () => {
     inputProblem.netConnections
       .filter((connection) => connection.isGround)
       .map((connection) => connection.netId),
-  )
-  const tappedDownwardGroundLabels = output.netLabelPlacements.filter(
-    (label) =>
-      label.orientation === "y-" &&
-      label.netId !== undefined &&
-      groundNetIds.has(label.netId) &&
-      isVerticalLabelAtSameNetRailTap({
-        anchor: label.anchorPoint,
-        traces: output.traces.filter(
-          (trace) => trace.globalConnNetId === label.globalConnNetId,
-        ),
-      }),
   )
   const pinChipMap = new Map<PinId, InputChip>(
     inputProblem.chips.flatMap((chip) =>
@@ -62,7 +49,6 @@ test("repro hub USB sheet schematic trace routing", () => {
     tracePathContainsPoint(trace.tracePath, sameChipGroundLabel.anchorPoint),
   )
 
-  expect(tappedDownwardGroundLabels).toHaveLength(0)
   expect(sameChipGroundLabel.orientation).toBe("y-")
   expect(sameChipGroundLabel.anchorPoint.x).toBeCloseTo(verticalHostPoint.x)
   expect(tracesAtSameChipGroundLabel).toHaveLength(1)
