@@ -10,6 +10,7 @@ import { alignSameNetRails } from "./alignSameNetRails"
 
 export type TraceCleanupOperation =
   | "untangling_traces"
+  | "rerouting_generated_net_label_connector_crossings"
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "aligning_same_net_rails"
@@ -29,6 +30,7 @@ export interface TraceCleanupSolverInput {
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
+import { rerouteGeneratedNetLabelConnectorCrossings } from "./rerouteGeneratedNetLabelConnectorCrossings"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -97,6 +99,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "untangling_traces":
         this._runUntangleTracesStep()
         break
+      case "rerouting_generated_net_label_connector_crossings":
+        this._runGeneratedNetLabelConnectorCrossingRerouteStep()
+        break
       case "minimizing_turns":
         this._runMinimizeTurnsStep()
         break
@@ -121,6 +126,23 @@ export class TraceCleanupSolver extends BaseSolver {
       ...this.input,
       allTraces: Array.from(this.tracesMap.values()),
     })
+  }
+
+  private _runGeneratedNetLabelConnectorCrossingRerouteStep() {
+    const result = rerouteGeneratedNetLabelConnectorCrossings({
+      inputProblem: this.input.inputProblem,
+      traces: this.outputTraces,
+      netLabelPlacements: this.input.allLabelPlacements,
+      clearance: this.input.paddingBuffer,
+      eligibleTraceIds: this.input.eligibleTraceIds,
+    })
+    this.outputTraces = result.traces
+    this.tracesMap = new Map(
+      this.outputTraces.map((trace) => [trace.mspPairId, trace]),
+    )
+    this.stats.reroutedGeneratedConnectorCrossingTraceCount =
+      result.reroutedTraceCount
+    this._advancePipeline()
   }
 
   private _runMinimizeTurnsStep() {

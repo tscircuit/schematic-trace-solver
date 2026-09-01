@@ -471,7 +471,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             allLabelPlacements: collisionOutput.netLabelPlacements,
             mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
             paddingBuffer: 0.1,
-            operations: ["aligning_same_net_rails"],
+            operations: [
+              "rerouting_generated_net_label_connector_crossings",
+              "aligning_same_net_rails",
+            ],
             eligibleTraceIds: new Set(
               instance
                 .traceCleanupSolver!.getOutput()
