@@ -1,4 +1,5 @@
 import type { Point } from "@tscircuit/math-utils"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import type { ObstacleRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
@@ -6,6 +7,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { getComponentSideRailSegments } from "./getComponentSideRailSegments"
 import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
+import { getRailChainCoordinate } from "./getRailChainCoordinate"
 import { nearlyEqual, rangesTouchOrOverlap } from "./geometry"
 import type { RailSegment } from "./types"
 
@@ -40,7 +42,7 @@ const corridorIsClear = (
 const tracesSharePin = (
   a: RailSegment,
   b: RailSegment,
-  traceMap: Map<string, SolvedTracePath>,
+  traceMap: Map<MspConnectionPairId, SolvedTracePath>,
 ) => {
   if (a.traceId === b.traceId) return true
 
@@ -48,20 +50,43 @@ const tracesSharePin = (
   return traceMap.get(b.traceId)!.pins.some((pin) => aPinIds.has(pin.pinId))
 }
 
-const canJoinRailGroup = (
-  start: RailSegment,
-  current: RailSegment,
-  candidate: RailSegment,
-  traceMap: Map<string, SolvedTracePath>,
-  obstacles: ObstacleRect[],
-) =>
-  candidate.globalConnNetId === start.globalConnNetId &&
-  candidate.orientation === start.orientation &&
-  candidate.componentId === start.componentId &&
-  candidate.componentFacingDirection === start.componentFacingDirection &&
-  (rangesTouchOrOverlap(current, candidate) ||
-    tracesSharePin(current, candidate, traceMap)) &&
-  corridorIsClear(current, candidate, obstacles)
+const canJoinRailGroup = ({
+  start,
+  current,
+  candidate,
+  traceMap,
+  obstacles,
+  allowCrossComponentTraceBridge,
+}: {
+  start: RailSegment
+  current: RailSegment
+  candidate: RailSegment
+  traceMap: Map<MspConnectionPairId, SolvedTracePath>
+  obstacles: ObstacleRect[]
+  allowCrossComponentTraceBridge: boolean
+}) => {
+  let componentTransitionIsAllowed =
+    candidate.componentId === start.componentId &&
+    candidate.componentFacingDirection === start.componentFacingDirection
+
+  if (allowCrossComponentTraceBridge) {
+    componentTransitionIsAllowed =
+      (candidate.componentId === current.componentId &&
+        candidate.componentFacingDirection ===
+          current.componentFacingDirection) ||
+      (candidate.traceId === current.traceId &&
+        candidate.segmentIndex === current.segmentIndex)
+  }
+
+  return (
+    candidate.globalConnNetId === start.globalConnNetId &&
+    candidate.orientation === start.orientation &&
+    componentTransitionIsAllowed &&
+    (rangesTouchOrOverlap(current, candidate) ||
+      tracesSharePin(current, candidate, traceMap)) &&
+    corridorIsClear(current, candidate, obstacles)
+  )
+}
 
 export const getRailGroups = (
   traces: SolvedTracePath[],
@@ -76,7 +101,10 @@ export const getRailGroups = (
     eligibleTraceIds.has(trace.mspPairId),
   )
 
-  const collectConnectedGroups = (segments: RailSegment[]) => {
+  const collectConnectedGroups = (
+    segments: RailSegment[],
+    allowCrossComponentTraceBridge = false,
+  ) => {
     const visited = new Set<number>()
     const connectedGroups: RailSegment[][] = []
 
@@ -100,7 +128,14 @@ export const getRailGroups = (
           if (visited.has(candidateIndex)) continue
           const candidate = segments[candidateIndex]!
           if (
-            !canJoinRailGroup(start, current, candidate, traceMap, obstacles)
+            !canJoinRailGroup({
+              start,
+              current,
+              candidate,
+              traceMap,
+              obstacles,
+              allowCrossComponentTraceBridge,
+            })
           ) {
             continue
           }
@@ -172,6 +207,22 @@ export const getRailGroups = (
       maxMspPairDistance: inputProblem.maxMspPairDistance,
     }),
   )
+  // Cross-component chains move one rail segment per trace as a single unit.
+  const singleRailTiedEndpointSegments = tiedEndpointSegments.filter(
+    (segment) =>
+      tiedEndpointSegments.every(
+        (candidate) =>
+          candidate.traceId !== segment.traceId ||
+          candidate.segmentIndex === segment.segmentIndex,
+      ),
+  )
+  for (const group of collectConnectedGroups(
+    singleRailTiedEndpointSegments,
+    true,
+  )) {
+    if (getRailChainCoordinate(group, traces) === null) continue
+    addEligibleGroup(group)
+  }
   for (const group of collectConnectedGroups(tiedEndpointSegments)) {
     addEligibleGroup(group, { requireFixedLabel: true })
   }

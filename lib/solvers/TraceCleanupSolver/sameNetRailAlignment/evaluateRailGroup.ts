@@ -10,6 +10,7 @@ import {
 import { getDistinctCoordinates, pointsEqual } from "./geometry"
 import { getRailAlignmentFallbackCoordinates } from "./getRailAlignmentFallbackCoordinates"
 import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
+import { getRailChainCoordinate } from "./getRailChainCoordinate"
 import { moveRailSegments } from "./moveRailSegments"
 import { preservesLabelAnchors } from "./preservesLabelAnchors"
 import {
@@ -51,11 +52,9 @@ export const evaluateRailGroup = ({
   const originalCoordinates = getDistinctCoordinates(
     group.map((segment) => segment.coordinate),
   )
-  const fixedLabelCoordinate = getFixedLabelCoordinate(
-    group,
-    netLabelPlacements,
-    traces,
-  )
+  const fixedRailCoordinate =
+    getRailChainCoordinate(group, traces) ??
+    getFixedLabelCoordinate(group, netLabelPlacements, traces)
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
   )
@@ -67,7 +66,7 @@ export const evaluateRailGroup = ({
 
   const evaluateCoordinates = (
     coordinates: number[],
-    options?: { coordinateIsFixedByLabel?: boolean },
+    options?: { coordinateIsFixedByRailAnchor?: boolean },
   ) => {
     let best: AlignmentCandidate | null = null
     for (const coordinate of coordinates) {
@@ -113,14 +112,12 @@ export const evaluateRailGroup = ({
         allCandidateTraces,
       )
       if (metrics.otherNetCrossings > baseline.otherNetCrossings) continue
-      // A fixed label anchor determines the rail coordinate. It may lengthen
-      // endpoint legs, but it must still preserve turns and every safety gate.
-      if (
-        options?.coordinateIsFixedByLabel
-          ? metrics.turnCount > baseline.turnCount
-          : !isReadabilityImprovement(metrics, baseline)
-      ) {
-        continue
+      // Terminal rails and fixed labels may lengthen endpoint legs, but they
+      // must still preserve turns and every safety gate.
+      if (options?.coordinateIsFixedByRailAnchor) {
+        if (metrics.turnCount > baseline.turnCount) continue
+      } else {
+        if (!isReadabilityImprovement(metrics, baseline)) continue
       }
 
       const score: AlignmentScore = {
@@ -152,15 +149,16 @@ export const evaluateRailGroup = ({
     return best
   }
 
-  const originalCandidate = evaluateCoordinates(
-    fixedLabelCoordinate === null
-      ? originalCoordinates
-      : [fixedLabelCoordinate],
-    { coordinateIsFixedByLabel: fixedLabelCoordinate !== null },
-  )
+  let candidateCoordinates = originalCoordinates
+  if (fixedRailCoordinate !== null) {
+    candidateCoordinates = [fixedRailCoordinate]
+  }
+  const originalCandidate = evaluateCoordinates(candidateCoordinates, {
+    coordinateIsFixedByRailAnchor: fixedRailCoordinate !== null,
+  })
   if (originalCandidate) return originalCandidate
 
-  if (fixedLabelCoordinate !== null) return null
+  if (fixedRailCoordinate !== null) return null
 
   return evaluateCoordinates(
     getRailAlignmentFallbackCoordinates({

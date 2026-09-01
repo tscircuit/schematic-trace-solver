@@ -571,6 +571,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             inputProblem: instance.inputProblem,
             traces: instance.netLabelNetLabelCollisionSolver!.traces,
             netLabelPlacements: collisionOutput.netLabelPlacements,
+            alignedRailConstraints:
+              instance.traceCleanupSolver2!.getOutput().alignedRailConstraints,
           },
         ]
       },

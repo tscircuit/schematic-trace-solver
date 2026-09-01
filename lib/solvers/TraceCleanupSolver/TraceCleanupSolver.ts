@@ -7,6 +7,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { alignSameNetRails } from "./alignSameNetRails"
+import type { AlignedRailConstraint } from "./sameNetRailAlignment/types"
 
 export type TraceCleanupOperation =
   | "untangling_traces"
@@ -54,6 +55,7 @@ export class TraceCleanupSolver extends BaseSolver {
   private tracesMap: Map<string, SolvedTracePath>
   private operations: readonly TraceCleanupOperation[]
   private operationIndex = 0
+  private alignedRailConstraints: AlignedRailConstraint[] = []
   private pipelineStep: TraceCleanupOperation | null
   private activeTraceId: string | null = null // New property
   override activeSubSolver: BaseSolver | null = null
@@ -182,6 +184,7 @@ export class TraceCleanupSolver extends BaseSolver {
         new Set(this.outputTraces.map((trace) => trace.mspPairId)),
     })
     this.outputTraces = alignment.traces
+    this.alignedRailConstraints = alignment.alignedRailConstraints
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.stats.alignedRailGroupCount = alignment.alignedRailGroupCount
     this.stats.alignedTraceCount = alignment.alignedTraceCount
@@ -191,6 +194,7 @@ export class TraceCleanupSolver extends BaseSolver {
   getOutput() {
     return {
       traces: this.outputTraces,
+      alignedRailConstraints: this.alignedRailConstraints,
     }
   }
 
