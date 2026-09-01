@@ -25,6 +25,8 @@ interface TraceElbowTransitionSimplificationSolverInput {
   completedReroutes: CompletedTraceReroute[]
   netLabelPlacements: NetLabelPlacement[]
   inlineNetLabelPlacements?: InlineNetLabelPlacement[]
+  /** Only restore a prior route when it has strictly simpler geometry. */
+  restoreOnlyWhenSimpler?: boolean
   paddingBuffer: number
 }
 
@@ -118,6 +120,8 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
         initialReroutePath,
       )
 
+      if (this.input.restoreOnlyWhenSimpler) continue
+
       const candidates = generateElbowTransitionSimplificationCandidates({
         trace: completedReroute.initialTrace,
         label: completedReroute.label,
@@ -178,15 +182,21 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
         )
         const reducesCollisions =
           candidateOverlaps.length < initialOverlaps.length
-        const simplifiesGeometry =
-          candidateOverlaps.length === initialOverlaps.length &&
+        const hasSimplerGeometry =
           getPathLength(candidatePath) <=
             initialPathLength + PATH_LENGTH_EPSILON &&
           candidatePath.length < tracePath.length
+        const simplifiesGeometry =
+          candidateOverlaps.length === initialOverlaps.length &&
+          hasSimplerGeometry
+        const isAcceptedImprovement = this.input.restoreOnlyWhenSimpler
+          ? candidateOverlaps.length <= initialOverlaps.length &&
+            hasSimplerGeometry
+          : reducesCollisions || simplifiesGeometry
 
         return (
           candidateOnlyKeepsExistingOverlaps &&
-          (reducesCollisions || simplifiesGeometry) &&
+          isAcceptedImprovement &&
           preservesLabelAnchors(
             this.input.netLabelPlacements,
             [trace],

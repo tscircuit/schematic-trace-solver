@@ -621,6 +621,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             completedReroutes,
             netLabelPlacements: inlineOutput.netLabelPlacements,
             inlineNetLabelPlacements: inlineOutput.inlineNetLabelPlacements,
+            restoreOnlyWhenSimpler: true,
             paddingBuffer: 0.1,
           },
         ]

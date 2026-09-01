@@ -19,5 +19,16 @@ test("bug-report-20260901T055358Z", () => {
     true,
   )
 
+  const v3v3LoopTraceId = "schematic_port_87-schematic_port_83"
+  const v3v3LoopBeforePostInlineCleanup = solver
+    .inlineNetLabelSolver!.getOutput()
+    .traces.find((trace) => trace.mspPairId === v3v3LoopTraceId)
+  const v3v3LoopAfterPostInlineCleanup = solver
+    .netLabelToTraceSolver!.getOutput()
+    .traces.find((trace) => trace.mspPairId === v3v3LoopTraceId)
+  expect(v3v3LoopAfterPostInlineCleanup!.tracePath).toEqual(
+    v3v3LoopBeforePostInlineCleanup!.tracePath,
+  )
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
