@@ -33,9 +33,26 @@ export const getRailChainCoordinate = (
   })
   if (connectedPinComponents.length !== 1) return null
 
-  // The first terminal rail anchors every following rail through the chain.
+  const pinMap = new Map(
+    groupTraces.flatMap((trace) =>
+      trace.pins.map((pin) => [pin.pinId, pin] as const),
+    ),
+  )
+  let firstTerminalPinId = terminalPinIds[0]!
+  if (group[0]!.orientation === "horizontal") {
+    const terminalPinIdsFromLeft = terminalPinIds.toSorted(
+      (firstPinId, secondPinId) => {
+        const firstPin = pinMap.get(firstPinId)!
+        const secondPin = pinMap.get(secondPinId)!
+        return firstPin.x - secondPin.x
+      },
+    )
+    firstTerminalPinId = terminalPinIdsFromLeft[0]!
+  }
+
+  // A horizontal chain carries the leftmost rail coordinate through its end.
   const firstTerminalTrace = groupTraces.find((trace) =>
-    trace.pinIds.includes(terminalPinIds[0]!),
+    trace.pinIds.includes(firstTerminalPinId),
   )!
   return group.find(
     (segment) => segment.traceId === firstTerminalTrace.mspPairId,

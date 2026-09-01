@@ -149,10 +149,13 @@ export const evaluateRailGroup = ({
     return best
   }
 
-  const originalCandidate = evaluateCoordinates(
-    fixedRailCoordinate === null ? originalCoordinates : [fixedRailCoordinate],
-    { coordinateIsFixedByRailAnchor: fixedRailCoordinate !== null },
-  )
+  let candidateCoordinates = originalCoordinates
+  if (fixedRailCoordinate !== null) {
+    candidateCoordinates = [fixedRailCoordinate]
+  }
+  const originalCandidate = evaluateCoordinates(candidateCoordinates, {
+    coordinateIsFixedByRailAnchor: fixedRailCoordinate !== null,
+  })
   if (originalCandidate) return originalCandidate
 
   if (fixedRailCoordinate !== null) return null
