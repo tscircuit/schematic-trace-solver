@@ -1,4 +1,5 @@
 import type { Point } from "@tscircuit/math-utils"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import {
@@ -42,6 +43,18 @@ export const railIsOnFacingSide = ({
   return false
 }
 
+const isOrthogonalPath = (path: Point[]) => {
+  for (let index = 1; index < path.length; index++) {
+    if (
+      !isHorizontal(path[index - 1]!, path[index]!) &&
+      !isVertical(path[index - 1]!, path[index]!)
+    ) {
+      return false
+    }
+  }
+  return true
+}
+
 export const getAlignedParallelPinExitPath = ({
   donorTrace,
   branchTrace,
@@ -72,16 +85,20 @@ export const getAlignedParallelPinExitPath = ({
     sharedToAdjacentPath = sharedToAdjacentPath.reverse()
   }
   if (
-    sharedToAdjacentPath.length !== 4 ||
+    sharedToAdjacentPath.length < 3 ||
+    !isOrthogonalPath(sharedToAdjacentPath) ||
     !isHorizontal(sharedToAdjacentPath[0]!, sharedToAdjacentPath[1]!) ||
-    !isVertical(sharedToAdjacentPath[1]!, sharedToAdjacentPath[2]!) ||
-    !isHorizontal(sharedToAdjacentPath[2]!, sharedToAdjacentPath[3]!)
+    !isVertical(sharedToAdjacentPath[1]!, sharedToAdjacentPath[2]!)
   ) {
     return null
   }
   const junctionX = sharedToAdjacentPath[1]!.x
   if (facingDirection === "x+" && junctionX <= sharedPin.x) return null
   if (facingDirection === "x-" && junctionX >= sharedPin.x) return null
+  const alignedRailJunction = { x: junctionX, y: adjacentPin.y }
+  if (!tracePathContainsPoint(sharedToAdjacentPath, alignedRailJunction)) {
+    return null
+  }
 
   const branchStartsAtSharedPin = branchTrace.pins[0].pinId === sharedPin.pinId
   let sharedToTargetPath = simplifyPath(branchTrace.tracePath)
@@ -89,14 +106,14 @@ export const getAlignedParallelPinExitPath = ({
     sharedToTargetPath = sharedToTargetPath.reverse()
   }
   if (
-    sharedToTargetPath.length !== 5 ||
+    sharedToTargetPath.length < 3 ||
+    !isOrthogonalPath(sharedToTargetPath) ||
     !isHorizontal(sharedToTargetPath[0]!, sharedToTargetPath[1]!) ||
     !isVertical(sharedToTargetPath[1]!, sharedToTargetPath[2]!) ||
-    !isHorizontal(sharedToTargetPath[2]!, sharedToTargetPath[3]!) ||
-    !isVertical(sharedToTargetPath[3]!, sharedToTargetPath[4]!) ||
+    !isVertical(sharedToTargetPath.at(-2)!, sharedToTargetPath.at(-1)!) ||
     !nearlyEqual(sharedToTargetPath[1]!.x, junctionX) ||
     !railIsOnFacingSide({ railY: adjacentPin.y, pin: targetPin }) ||
-    nearlyEqual(sharedToTargetPath[2]!.y, adjacentPin.y)
+    nearlyEqual(sharedToTargetPath.at(-2)!.y, adjacentPin.y)
   ) {
     return null
   }

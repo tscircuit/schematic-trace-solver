@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { alignSameNetJunctions } from "lib/solvers/SameNetJunctionAlignmentSolver/alignSameNetJunctions"
+import { getAlignedParallelPinExitPath } from "lib/solvers/SameNetJunctionAlignmentSolver/getAlignedParallelJunctionPaths"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
@@ -265,6 +266,81 @@ test("does not force an outer return column onto staggered load pins", () => {
   expect(result.traces.find((trace) => trace.mspPairId === "return")).toEqual(
     original,
   )
+})
+
+test("aligns extra-bend paths only at a junction on the donor trace", () => {
+  const sharedPin = {
+    pinId: "shared",
+    chipId: "U1",
+    x: 0,
+    y: 0,
+    _facingDirection: "x+" as const,
+  }
+  const adjacentPin = {
+    pinId: "adjacent",
+    chipId: "U1",
+    x: 0,
+    y: 0.1,
+    _facingDirection: "x+" as const,
+  }
+  const targetPin = {
+    pinId: "target",
+    chipId: "C1",
+    x: 2,
+    y: 1,
+    _facingDirection: "y-" as const,
+  }
+  const donorTrace = {
+    mspPairId: "donor",
+    dcConnNetId: "rail",
+    globalConnNetId: "rail",
+    userNetId: "RAIL",
+    mspConnectionPairIds: ["donor"],
+    pins: [sharedPin, adjacentPin],
+    pinIds: [sharedPin.pinId, adjacentPin.pinId],
+    tracePath: [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 1, y: 0.2 },
+      { x: 1.5, y: 0.2 },
+      { x: 1.5, y: 0.1 },
+      { x: 0, y: 0.1 },
+    ],
+  } satisfies SolvedTracePath
+  const branchTrace = {
+    ...donorTrace,
+    mspPairId: "branch",
+    mspConnectionPairIds: ["branch"],
+    pins: [sharedPin, targetPin],
+    pinIds: [sharedPin.pinId, targetPin.pinId],
+    tracePath: [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 1, y: 0.4 },
+      { x: 1.2, y: 0.4 },
+      { x: 1.2, y: 0.6 },
+      { x: 2, y: 0.6 },
+      { x: 2, y: 1 },
+    ],
+  } satisfies SolvedTracePath
+
+  expect(getAlignedParallelPinExitPath({ donorTrace, branchTrace })).toEqual([
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    { x: 1, y: 0.1 },
+    { x: 2, y: 0.1 },
+    { x: 2, y: 1 },
+  ])
+
+  donorTrace.tracePath = [
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    { x: 1, y: 0.05 },
+    { x: -0.5, y: 0.05 },
+    { x: -0.5, y: 0.1 },
+    { x: 0, y: 0.1 },
+  ]
+  expect(getAlignedParallelPinExitPath({ donorTrace, branchTrace })).toBeNull()
 })
 
 for (const net of ["rail", "foreign"]) {
