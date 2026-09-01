@@ -25,6 +25,34 @@ export const isSimpleFiveSegmentElbow = (path: Point[]): boolean => {
   )
 }
 
+export const generateElbowTransitionCollapseCandidates = (
+  tracePath: Point[],
+): Point[][] => {
+  const path = simplifyPath(tracePath)
+  if (!isSimpleFiveSegmentElbow(path)) return []
+
+  const [start, firstTransitionPoint, , , secondTransitionPoint, end] = path
+  if (!start || !firstTransitionPoint || !secondTransitionPoint || !end) {
+    return []
+  }
+  const firstCorner = {
+    x: firstTransitionPoint.x,
+    y: secondTransitionPoint.y,
+  }
+  const secondCorner = {
+    x: secondTransitionPoint.x,
+    y: firstTransitionPoint.y,
+  }
+
+  return [firstCorner, secondCorner].map((corner) => [
+    start,
+    firstTransitionPoint,
+    corner,
+    secondTransitionPoint,
+    end,
+  ])
+}
+
 const generateSegmentShiftCandidates = ({
   trace,
   label,

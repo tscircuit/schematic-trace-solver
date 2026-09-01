@@ -12,7 +12,10 @@ import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceS
 import type { InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 import type { CompletedTraceReroute } from "./types"
-import { generateElbowTransitionSimplificationCandidates } from "./generateElbowTransitionSimplificationCandidates"
+import {
+  generateElbowTransitionCollapseCandidates,
+  generateElbowTransitionSimplificationCandidates,
+} from "./generateElbowTransitionSimplificationCandidates"
 
 interface TraceElbowTransitionSimplificationSolverInput {
   inputProblem: InputProblem
@@ -100,15 +103,27 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
         netLabels: this.input.netLabelPlacements,
       }).length
 
-      const candidates = generateElbowTransitionSimplificationCandidates({
-        trace: completedReroute.initialTrace,
-        label: completedReroute.label,
-        netLabelPlacements: this.input.netLabelPlacements,
-        paddingBuffer: this.input.paddingBuffer,
-        detourCount: completedReroute.detourCount,
-      })
+      const transitionShiftCandidates =
+        generateElbowTransitionSimplificationCandidates({
+          trace: completedReroute.initialTrace,
+          label: completedReroute.label,
+          netLabelPlacements: this.input.netLabelPlacements,
+          paddingBuffer: this.input.paddingBuffer,
+          detourCount: completedReroute.detourCount,
+        })
+      let collapseCandidates: Point[][] = []
+      if (completedReroute.label.globalConnNetId.startsWith("merged-group-")) {
+        collapseCandidates =
+          generateElbowTransitionCollapseCandidates(reroutedPath)
+      }
+      const candidates = [...transitionShiftCandidates, ...collapseCandidates]
       for (const candidate of candidates) {
-        const simplifiedCandidate = simplifyPath(candidate)
+        let simplifiedCandidate = simplifyPath(candidate)
+        if (collapseCandidates.includes(candidate)) {
+          // Keep the reversal anchor attached until downstream label placement
+          // can move it onto the collapsed rail.
+          simplifiedCandidate = candidate
+        }
         const candidateTrace = {
           ...completedReroute.initialTrace,
           tracePath: simplifiedCandidate,
