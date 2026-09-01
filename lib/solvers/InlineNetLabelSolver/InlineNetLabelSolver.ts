@@ -8,6 +8,7 @@ import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesS
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type { CompletedTraceReroute } from "lib/solvers/TraceElbowTransitionSimplificationSolver/types"
 import type {
   InputDirectConnection,
   InputNetConnection,
@@ -24,6 +25,7 @@ import {
 import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
 import { pushAnchoredNetLabelsAwayFromInlineLabels } from "./pushAnchoredNetLabelsAwayFromInlineLabels"
 import { pushInlineTerminalLabelsAwayFromAnchoredLabels } from "./pushInlineTerminalLabelsAwayFromAnchoredLabels"
+import { restoreReroutesAroundSupersededLabels } from "./restoreReroutesAroundSupersededLabels"
 
 export const DEFAULT_INLINE_NET_LABEL_HEIGHT = 0.18
 
@@ -95,6 +97,7 @@ interface InlineNetLabelSolverInput {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  completedReroutes?: CompletedTraceReroute[]
 }
 
 export interface InlineNetLabelOutput {
@@ -169,6 +172,7 @@ export class InlineNetLabelSolver extends BaseSolver {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   inputNetLabelPlacements: NetLabelPlacement[]
+  completedReroutes: CompletedTraceReroute[]
 
   inlineNetLabelPlacements: InlineNetLabelPlacement[] = []
 
@@ -190,6 +194,7 @@ export class InlineNetLabelSolver extends BaseSolver {
     this.inputProblem = input.inputProblem
     this.traces = input.traces
     this.inputNetLabelPlacements = input.netLabelPlacements
+    this.completedReroutes = input.completedReroutes ?? []
     this.globalConnMap = getConnectivityMapsFromInputProblem(
       this.inputProblem,
     ).netConnMap
@@ -235,6 +240,7 @@ export class InlineNetLabelSolver extends BaseSolver {
         inputProblem: this.inputProblem,
         traces: this.traces,
         netLabelPlacements: this.inputNetLabelPlacements,
+        completedReroutes: this.completedReroutes,
       },
     ]
   }
@@ -1066,8 +1072,17 @@ export class InlineNetLabelSolver extends BaseSolver {
       if (blockedGlobalConnNetIds.size === 0) {
         this.inlineNetLabelPlacements = activeInlinePlacements
         this.stats.pushedAnchoredNetLabelCount = pushed.movedLabelCount
-        return {
+        const restored = restoreReroutesAroundSupersededLabels({
+          inputProblem: this.inputProblem,
           traces: pushed.traces,
+          netLabelPlacements: pushed.netLabelPlacements,
+          inlineNetLabelPlacements: activeInlinePlacements,
+          completedReroutes: this.completedReroutes,
+        })
+        this.stats.restoredSupersededLabelRerouteCount =
+          restored.restoredTraceCount
+        return {
+          traces: restored.traces,
           netLabelPlacements: pushed.netLabelPlacements,
           inlineNetLabelPlacements: activeInlinePlacements,
         }

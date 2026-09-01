@@ -581,11 +581,20 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => {
         const junctionOutput =
           instance.sameNetJunctionAlignmentSolver!.getOutput()
+        const completedReroutes = [
+          ...instance.traceLabelOverlapAvoidanceSolver!.getOutput()
+            .completedReroutes,
+          ...instance.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
+            .completedReroutes,
+          ...instance.netLabelTraceCollisionSolver!.getOutput()
+            .completedReroutes,
+        ]
         return [
           {
             inputProblem: instance.inputProblem,
             traces: junctionOutput.traces,
             netLabelPlacements: junctionOutput.netLabelPlacements,
+            completedReroutes,
           },
         ]
       },
