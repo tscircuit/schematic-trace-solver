@@ -1,7 +1,7 @@
 import type { InputNetConnection, InputPin } from "lib/types/InputProblem"
 
 const SAME_RAIL_Y_TOLERANCE = 1e-6
-const MIN_GROUPED_RAIL_PIN_COUNT = 2
+const MIN_GROUPED_RAIL_PIN_COUNT = 3
 
 function isGroupedHorizontalRail({
   pin,
@@ -34,7 +34,7 @@ export function shouldSeparateGroundNetRows({
 
   // Net labels preserve ground connectivity without a cross-row MSP edge.
   return (
-    isGroupedHorizontalRail({ pin: pin1, netPins }) ||
+    isGroupedHorizontalRail({ pin: pin1, netPins }) &&
     isGroupedHorizontalRail({ pin: pin2, netPins })
   )
 }

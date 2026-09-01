@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
-import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblemJson from "./assets/repro-wireless-mcu-cc3235sf-full.input.json"
@@ -69,6 +69,22 @@ test("repro WirelessMCU CC3235SF full schematic trace routing", () => {
   for (const railY of topRailYs) {
     expect(railY).toBeCloseTo(feederRailY)
   }
+
+  const c1C2GroundTrace = alignedTraces.find(
+    (trace) =>
+      trace.pinIds.includes("schematic_port_66") &&
+      trace.pinIds.includes("schematic_port_68"),
+  )
+  const nearbyGroundFeeder = alignedTraces.find(
+    (trace) =>
+      trace.pinIds.includes("schematic_port_68") &&
+      trace.pinIds.includes("schematic_port_126"),
+  )
+  expect(c1C2GroundTrace).toBeDefined()
+  expect(nearbyGroundFeeder).toBeDefined()
+  const c1C2GroundRailY = getHorizontalRailYs(c1C2GroundTrace!)[0]!
+  const nearbyGroundFeederRailY = getHorizontalRailYs(nearbyGroundFeeder!)[0]!
+  expect(c1C2GroundRailY).toBeCloseTo(nearbyGroundFeederRailY)
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
