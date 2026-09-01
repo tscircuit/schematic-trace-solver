@@ -1,6 +1,7 @@
 import { traceCrossesBoundsInterior } from "lib/solvers/AvailableNetOrientationSolver/geometry"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { isVerticalLabelAtSameNetRailTap } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/anchors"
 import {
   getCenterFromAnchor,
   getRectBounds,
@@ -18,6 +19,7 @@ import {
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import type { InputProblem } from "lib/types/InputProblem"
+import { findDownwardGroundRailCornerCandidates } from "./findDownwardGroundRailCornerCandidates"
 
 /** Put a shared decoupling GND at the load end of its rail, away from the IC. */
 export const placeGroundRailLabelsAtOuterEnd = ({
@@ -130,6 +132,53 @@ export const placeGroundRailLabelsAtOuterEnd = ({
         candidate.pinIds.length > 2,
     )
     if (!connection) continue
+
+    const sameNetTraces = traces.filter(
+      (trace) => trace.globalConnNetId === label.globalConnNetId,
+    )
+    if (
+      isVerticalLabelAtSameNetRailTap({
+        anchor: label.anchorPoint,
+        traces: sameNetTraces,
+      })
+    ) {
+      for (const candidate of findDownwardGroundRailCornerCandidates({
+        label,
+        traces,
+      })) {
+        const center = getCenterFromAnchor(
+          candidate.anchorPoint,
+          label.orientation,
+          label.width,
+          label.height,
+        )
+        const bounds = getRectBounds(center, label.width, label.height)
+        if (
+          obstacles.some((obstacle) => rectsOverlap(bounds, obstacle)) ||
+          traceCrossesBoundsInterior(bounds, traceMap) ||
+          output.some(
+            (other, otherIndex) =>
+              otherIndex !== index &&
+              rectsOverlap(
+                bounds,
+                getRectBounds(other.center, other.width, other.height),
+              ),
+          )
+        ) {
+          continue
+        }
+
+        output[index] = {
+          ...label,
+          anchorPoint: candidate.anchorPoint,
+          center,
+          mspConnectionPairIds: [candidate.trace.mspPairId],
+          pinIds: [...candidate.trace.pinIds],
+        }
+        break
+      }
+      continue
+    }
 
     // Reuse the lowest point on the existing column without changing the trace.
     const anchorPoint = traces
