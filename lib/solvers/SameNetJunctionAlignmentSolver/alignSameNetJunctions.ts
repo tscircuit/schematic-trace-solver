@@ -40,7 +40,6 @@ const MAX_SAME_NET_LABEL_BOUNDARY_RAIL_OFFSET = 0.2
 // symbol-stem correction away from the pin itself.
 const MAX_SHARED_PIN_RAIL_OFFSET = 0.05
 const MIN_RETURN_STEM_LENGTH = 0.05
-const RETURN_TRACE_ENDPOINT_COUNT = 2
 
 export const getSharedPin = ({
   donorTrace,
@@ -540,17 +539,9 @@ const getAlignedReturnStemsPath = ({
   if (!nearlyEqual(branchTrace.pins[0].x, branchTrace.pins[1].x)) return null
 
   let alignedPath = simplifyPath(branchTrace.tracePath)
-  let matchedStemCount = 0
   let changedStemCount = 0
 
   for (const sharedPin of branchTrace.pins) {
-    if (
-      sharedPin._facingDirection !== "y+" &&
-      sharedPin._facingDirection !== "y-"
-    ) {
-      continue
-    }
-
     const donorRailYs: number[] = []
     for (const donorTrace of traces) {
       if (
@@ -580,7 +571,7 @@ const getAlignedReturnStemsPath = ({
         Math.abs(secondRailY - sharedPin.y),
     )
     const donorRailY = donorRailYs[0]
-    if (donorRailY === undefined) continue
+    if (donorRailY === undefined) return null
 
     const branchStartsAtSharedPin =
       branchTrace.pins[0].pinId === sharedPin.pinId
@@ -599,7 +590,6 @@ const getAlignedReturnStemsPath = ({
     ) {
       continue
     }
-    matchedStemCount++
     if (nearlyEqual(sharedToOtherPath[1]!.y, donorRailY)) continue
 
     sharedToOtherPath = simplifyPath([
@@ -615,7 +605,6 @@ const getAlignedReturnStemsPath = ({
     changedStemCount++
   }
 
-  if (matchedStemCount !== RETURN_TRACE_ENDPOINT_COUNT) return null
   if (changedStemCount === 0) return null
   return alignedPath
 }

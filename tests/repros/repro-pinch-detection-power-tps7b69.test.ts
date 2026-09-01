@@ -20,12 +20,12 @@ test("repro PinchDetectionPower TPS7B69 schematic traces", () => {
   )
   solver.solve()
 
-  const pwrReturnTrace = solver
-    .sameNetJunctionAlignmentSolver!.getOutput()
-    .traces.find((trace) => trace.mspPairId === PWR_RETURN_TRACE_ID)!
+  const traces = solver.sameNetJunctionAlignmentSolver!.getOutput().traces
+  const pwrReturnTrace = traces.find(
+    (trace) => trace.mspPairId === PWR_RETURN_TRACE_ID,
+  )!
   expect(pwrReturnTrace.tracePath[1]!.y).toBeCloseTo(LOWER_PWR_RAIL_Y)
   expect(pwrReturnTrace.tracePath.at(-2)!.y).toBeCloseTo(UPPER_PWR_RAIL_Y)
-  const traces = solver.sameNetJunctionAlignmentSolver!.getOutput().traces
   const upperGndExitTrace = traces.find(
     (trace) => trace.mspPairId === UPPER_GND_EXIT_TRACE_ID,
   )!
