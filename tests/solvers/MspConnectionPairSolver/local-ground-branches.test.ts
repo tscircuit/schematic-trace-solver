@@ -103,3 +103,33 @@ test("does not isolate side-facing or multi-pin components", () => {
   inputProblem.chips[2]!.pins.push({ pinId: "C.3", x: 2, y: -1.6 })
   expect(getGroundConnectionPolicy(inputProblem)("B.2", "C.2")).toBe(true)
 })
+
+test("keeps an IC ground pin bank local", () => {
+  const inputProblem = createParallelGroundRailProblem()
+  inputProblem.directConnections = []
+  const chip = inputProblem.chips.find((chip) => chip.chipId === "U")!
+  chip.pins.push(
+    { pinId: "U.GND2", x: 2, y: 0.4, _facingDirection: "x-" },
+    { pinId: "U.IO2", x: 2, y: 2.6, _facingDirection: "x-" },
+  )
+  inputProblem.netConnections[0]!.pinIds.push("U.GND2")
+
+  const canRoute = getGroundConnectionPolicy(inputProblem)
+  expect(canRoute("U.GND", "U.GND2")).toBe(true)
+  expect(canRoute("U.GND", "C.2")).toBe(false)
+})
+
+test("preserves a connector-style ground bus", () => {
+  const inputProblem = createParallelGroundRailProblem()
+  inputProblem.directConnections = []
+  const chip = inputProblem.chips.find((chip) => chip.chipId === "U")!
+  chip.pins.push({
+    pinId: "U.GND2",
+    x: 2,
+    y: 0.4,
+    _facingDirection: "x-",
+  })
+  inputProblem.netConnections[0]!.pinIds.push("U.GND2")
+
+  expect(getGroundConnectionPolicy(inputProblem)("U.GND", "C.2")).toBe(true)
+})

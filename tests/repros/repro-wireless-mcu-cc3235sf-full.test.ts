@@ -23,6 +23,13 @@ const TOP_CAPACITOR_RAIL_PIN_IDS = new Set([
   "schematic_port_81",
 ])
 
+const U2_GROUND_PIN_IDS = new Set([
+  "schematic_port_28",
+  "schematic_port_29",
+  "schematic_port_64",
+])
+const MAX_LOCAL_GROUND_LABEL_SPAN = 0.5
+
 function getHorizontalRailYs(trace: SolvedTracePath): number[] {
   const railYs: number[] = []
   for (let index = 1; index < trace.tracePath.length; index++) {
@@ -85,6 +92,31 @@ test("repro WirelessMCU CC3235SF full schematic trace routing", () => {
   const c1C2GroundRailY = getHorizontalRailYs(c1C2GroundTrace!)[0]!
   const nearbyGroundFeederRailY = getHorizontalRailYs(nearbyGroundFeeder!)[0]!
   expect(c1C2GroundRailY).toBeCloseTo(nearbyGroundFeederRailY)
+
+  const finalOutput = solver.netLabelToTraceSolver!.getOutput()
+  const groundNetId = inputProblem.netConnections.find(
+    (connection) => connection.isGround,
+  )!.netId
+  const u2GroundTraces = finalOutput.traces.filter((trace) =>
+    trace.pinIds?.some((pinId) => U2_GROUND_PIN_IDS.has(pinId)),
+  )
+  expect(
+    u2GroundTraces.every((trace) =>
+      trace.pinIds?.every((pinId) => U2_GROUND_PIN_IDS.has(pinId)),
+    ),
+  ).toBe(true)
+  const u2GroundTraceXs = u2GroundTraces.flatMap((trace) =>
+    trace.tracePath.map((point) => point.x),
+  )
+  const u2GroundTraceSpan =
+    Math.max(...u2GroundTraceXs) - Math.min(...u2GroundTraceXs)
+  expect(u2GroundTraceSpan).toBeLessThanOrEqual(MAX_LOCAL_GROUND_LABEL_SPAN)
+  const u2GroundLabels = finalOutput.netLabelPlacements.filter(
+    (label) =>
+      label.netId === groundNetId &&
+      label.pinIds.some((pinId) => U2_GROUND_PIN_IDS.has(pinId)),
+  )
+  expect(u2GroundLabels).toHaveLength(1)
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
