@@ -11,7 +11,7 @@ import {
   pointsEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
-import { getSharedPin } from "./alignSameNetJunctions"
+import { getSharedPin } from "./getAlignedParallelJunctionPaths"
 import {
   pathEntersAnyNetLabel,
   pathIntersectsAnyNetLabel,
