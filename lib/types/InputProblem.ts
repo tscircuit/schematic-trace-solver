@@ -115,6 +115,8 @@ export interface InputNetConnection {
   netLabelWidth?: number
   anchoredNetLabelWidth?: number
   netLabelHeight?: number
+  /** True when this connection represents an electrical ground rail. */
+  isGround?: boolean
 
   /**
    * When true, a named net may use inline labels. Each routed connected
