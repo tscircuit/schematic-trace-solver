@@ -10,7 +10,10 @@ export interface SpatiallyIndexedChip extends InputChip {
 
 export class ChipObstacleSpatialIndex {
   chips: Array<SpatiallyIndexedChip>
-  spatialIndex: Flatbush
+  // Null when there are no chips to index: Flatbush throws on a zero-item
+  // index ("Unexpected numItems value: 0"), so an empty problem is
+  // represented as the absence of an index rather than an empty one.
+  spatialIndex: Flatbush | null
   spatialIndexIdToChip: Map<number, SpatiallyIndexedChip>
 
   constructor(chips: InputChip[]) {
@@ -21,7 +24,13 @@ export class ChipObstacleSpatialIndex {
     }))
 
     this.spatialIndexIdToChip = new Map()
-    this.spatialIndex = new Flatbush(chips.length)
+
+    if (this.chips.length === 0) {
+      this.spatialIndex = null
+      return
+    }
+
+    this.spatialIndex = new Flatbush(this.chips.length)
 
     for (const chip of this.chips) {
       chip.spatialIndexId = this.spatialIndex.add(
@@ -37,6 +46,8 @@ export class ChipObstacleSpatialIndex {
   }
 
   getChipsInBounds(bounds: Bounds): Array<InputChip & { bounds: Bounds }> {
+    if (!this.spatialIndex) return []
+
     const chipSpatialIndexIds = this.spatialIndex.search(
       bounds.minX,
       bounds.minY,
