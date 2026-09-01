@@ -35,5 +35,26 @@ test("bug-report-20260901T134241Z", () => {
     expect(pathFromShared[0]).toEqual({ x: sharedPin.x, y: sharedPin.y })
   }
 
+  const lowerSupplyPin = solver.inputProblem.chips
+    .flatMap((chip) => chip.pins)
+    .find((pin) => pin.pinId === "schematic_port_5")!
+  const upperSupplyPin = solver.inputProblem.chips
+    .flatMap((chip) => chip.pins)
+    .find((pin) => pin.pinId === "schematic_port_0")!
+  const supplyBus = alignedTraces.find(
+    (trace) =>
+      trace.pinIds.includes("schematic_port_14") &&
+      trace.pinIds.includes("schematic_port_10"),
+  )!
+  const lowerToUpperSupplyPath =
+    supplyBus.pins[0]!.pinId === "schematic_port_14"
+      ? supplyBus.tracePath
+      : [...supplyBus.tracePath].reverse()
+
+  expect(lowerToUpperSupplyPath[1]!.y).toBeCloseTo(lowerSupplyPin.y, 6)
+  expect(lowerToUpperSupplyPath[2]!.y).toBeCloseTo(lowerSupplyPin.y, 6)
+  expect(lowerToUpperSupplyPath[3]!.y).toBeCloseTo(upperSupplyPin.y, 6)
+  expect(lowerToUpperSupplyPath[4]!.y).toBeCloseTo(upperSupplyPin.y, 6)
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

@@ -347,6 +347,179 @@ const getAlignedParallelPinExitPath = ({
   return branchStartsAtSharedPin ? candidate : candidate.reverse()
 }
 
+type PerpendicularPinRail = {
+  railCoordinate: number
+}
+
+const getPerpendicularPinRail = ({
+  trace,
+  endpointPin,
+}: {
+  trace: SolvedTracePath
+  endpointPin: InputPin
+}): PerpendicularPinRail | null => {
+  const otherPin = getOtherPin({ trace, sharedPin: endpointPin })
+  if (!otherPin) return null
+
+  const startsAtEndpoint = trace.pins[0].pinId === endpointPin.pinId
+  let endpointToOtherPath = simplifyPath(trace.tracePath)
+  if (!startsAtEndpoint) endpointToOtherPath.reverse()
+  if (endpointToOtherPath.length !== 3) return null
+
+  const [endpoint, railPoint, other] = endpointToOtherPath
+  const endpointFacing = endpointPin._facingDirection
+  if (endpointFacing === "y+" || endpointFacing === "y-") {
+    if (
+      otherPin._facingDirection !== "x+" &&
+      otherPin._facingDirection !== "x-"
+    ) {
+      return null
+    }
+    if (
+      !isVertical(endpoint!, railPoint!) ||
+      !isHorizontal(railPoint!, other!) ||
+      !railIsOnFacingSide({ railY: railPoint!.y, pin: endpointPin })
+    ) {
+      return null
+    }
+    const approachesOtherFromFacingSide =
+      otherPin._facingDirection === "x-"
+        ? railPoint!.x < otherPin.x
+        : railPoint!.x > otherPin.x
+    return approachesOtherFromFacingSide
+      ? { railCoordinate: railPoint!.y }
+      : null
+  }
+
+  if (endpointFacing !== "x+" && endpointFacing !== "x-") return null
+  if (
+    otherPin._facingDirection !== "y+" &&
+    otherPin._facingDirection !== "y-"
+  ) {
+    return null
+  }
+  if (!isHorizontal(endpoint!, railPoint!) || !isVertical(railPoint!, other!)) {
+    return null
+  }
+  const railIsOnEndpointFacingSide =
+    endpointFacing === "x+"
+      ? railPoint!.x > endpointPin.x
+      : railPoint!.x < endpointPin.x
+  const approachesOtherFromFacingSide =
+    otherPin._facingDirection === "y+"
+      ? railPoint!.y > otherPin.y
+      : railPoint!.y < otherPin.y
+  return railIsOnEndpointFacingSide && approachesOtherFromFacingSide
+    ? { railCoordinate: railPoint!.x }
+    : null
+}
+
+/**
+ * Level a bus between two same-axis pins with the perpendicular rails that
+ * connect those endpoints to their loads. The candidate reuses both existing
+ * endpoint stubs, so a long bus does not meet each stub on a nearby parallel
+ * rail and leave a visible jog.
+ */
+const getAlignedPerpendicularEndpointBusPath = ({
+  donorTrace,
+  branchTrace,
+  traces,
+}: {
+  donorTrace: SolvedTracePath
+  branchTrace: SolvedTracePath
+  traces: SolvedTracePath[]
+}): Point[] | null => {
+  const sharedPin = getSharedPin({ donorTrace, branchTrace })
+  if (!sharedPin) return null
+  const returnPin = getOtherPin({ trace: branchTrace, sharedPin })
+  if (!returnPin) return null
+
+  const getOtherSameNetTracesAtPin = (pin: InputPin) =>
+    traces.filter(
+      (trace) =>
+        trace.mspPairId !== branchTrace.mspPairId &&
+        trace.globalConnNetId === branchTrace.globalConnNetId &&
+        trace.pinIds.includes(pin.pinId),
+    )
+  const sharedDonorTraces = getOtherSameNetTracesAtPin(sharedPin)
+  const returnDonorTraces = getOtherSameNetTracesAtPin(returnPin)
+  if (
+    sharedDonorTraces.length !== 1 ||
+    sharedDonorTraces[0]!.mspPairId !== donorTrace.mspPairId ||
+    returnDonorTraces.length !== 1
+  ) {
+    return null
+  }
+
+  const sharedRail = getPerpendicularPinRail({
+    trace: donorTrace,
+    endpointPin: sharedPin,
+  })
+  if (!sharedRail) return null
+
+  const facing = sharedPin._facingDirection
+  const verticalEndpoints = facing === "y+" || facing === "y-"
+  const horizontalEndpoints = facing === "x+" || facing === "x-"
+  if (!verticalEndpoints && !horizontalEndpoints) return null
+  if (
+    verticalEndpoints !==
+    (returnPin._facingDirection === "y+" || returnPin._facingDirection === "y-")
+  ) {
+    return null
+  }
+
+  const branchStartsAtSharedPin = branchTrace.pins[0].pinId === sharedPin.pinId
+  let sharedToReturnPath = simplifyPath(branchTrace.tracePath)
+  if (!branchStartsAtSharedPin) sharedToReturnPath.reverse()
+  if (sharedToReturnPath.length !== 6) return null
+
+  const expectedSegmentOrientations = verticalEndpoints
+    ? ["V", "H", "V", "H", "V"]
+    : ["H", "V", "H", "V", "H"]
+  const actualSegmentOrientations = sharedToReturnPath
+    .slice(1)
+    .map((point, index) =>
+      isHorizontal(sharedToReturnPath[index]!, point)
+        ? "H"
+        : isVertical(sharedToReturnPath[index]!, point)
+          ? "V"
+          : "D",
+    )
+  if (
+    actualSegmentOrientations.some(
+      (orientation, index) =>
+        orientation !== expectedSegmentOrientations[index],
+    )
+  ) {
+    return null
+  }
+
+  const returnRail = getPerpendicularPinRail({
+    trace: returnDonorTraces[0]!,
+    endpointPin: returnPin,
+  })
+  if (!returnRail) return null
+
+  const candidate = verticalEndpoints
+    ? simplifyPath([
+        { x: sharedPin.x, y: sharedPin.y },
+        { x: sharedPin.x, y: sharedRail.railCoordinate },
+        { x: sharedToReturnPath[2]!.x, y: sharedRail.railCoordinate },
+        { x: sharedToReturnPath[3]!.x, y: returnRail.railCoordinate },
+        { x: returnPin.x, y: returnRail.railCoordinate },
+        { x: returnPin.x, y: returnPin.y },
+      ])
+    : simplifyPath([
+        { x: sharedPin.x, y: sharedPin.y },
+        { x: sharedRail.railCoordinate, y: sharedPin.y },
+        { x: sharedRail.railCoordinate, y: sharedToReturnPath[2]!.y },
+        { x: returnRail.railCoordinate, y: sharedToReturnPath[3]!.y },
+        { x: returnRail.railCoordinate, y: returnPin.y },
+        { x: returnPin.x, y: returnPin.y },
+      ])
+  return branchStartsAtSharedPin ? candidate : candidate.reverse()
+}
+
 const candidateIsClear = ({
   candidateTrace,
   originalTrace,
@@ -567,13 +740,20 @@ export const alignSameNetJunctions = ({
         // Prefer the existing return stem. If extending the outer column
         // meets another net, try shorter escapes without moving any pins.
         const candidatePaths = alignReturnBranches
-          ? [1, 0.5, 0.25].map((returnStemScale) =>
-              getAlignedReturnBranchPath({
+          ? [
+              ...[1, 0.5, 0.25].map((returnStemScale) =>
+                getAlignedReturnBranchPath({
+                  donorTrace,
+                  branchTrace,
+                  returnStemScale,
+                }),
+              ),
+              getAlignedPerpendicularEndpointBusPath({
                 donorTrace,
                 branchTrace,
-                returnStemScale,
+                traces: outputTraces,
               }),
-            )
+            ]
           : [
               getAlignedBranchPath({ donorTrace, branchTrace }),
               getAlignedParallelPinExitPath({ donorTrace, branchTrace }),
