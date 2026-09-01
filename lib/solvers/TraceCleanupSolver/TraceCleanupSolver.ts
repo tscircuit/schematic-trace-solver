@@ -26,6 +26,7 @@ export interface TraceCleanupSolverInput {
   paddingBuffer: number
   operations?: readonly TraceCleanupOperation[]
   eligibleTraceIds?: ReadonlySet<string>
+  generatedNetLabelConnectorTraceIds?: ReadonlySet<string>
 }
 
 import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
@@ -135,6 +136,8 @@ export class TraceCleanupSolver extends BaseSolver {
       netLabelPlacements: this.input.allLabelPlacements,
       clearance: this.input.paddingBuffer,
       eligibleTraceIds: this.input.eligibleTraceIds,
+      connectorTraceIds:
+        this.input.generatedNetLabelConnectorTraceIds ?? new Set(),
     })
     this.outputTraces = result.traces
     this.tracesMap = new Map(

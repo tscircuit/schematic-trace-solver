@@ -50,7 +50,7 @@ const signalTrace = makeTrace({
 })
 
 const connectorTrace = makeTrace({
-  mspPairId: "available-net-orientation-0-VBAT",
+  mspPairId: "vbat-label-connector",
   globalConnNetId: "vbat-net",
   pinIds: ["vbat"],
   tracePath: [
@@ -78,6 +78,7 @@ test("routes a generated connector crossing through the open corridor center", (
     netLabelPlacements: [vbatLabel as any],
     clearance: 0.1,
     eligibleTraceIds: new Set([signalTrace.mspPairId]),
+    connectorTraceIds: new Set([connectorTrace.mspPairId]),
   })
 
   expect(result.reroutedTraceCount).toBe(1)
@@ -107,6 +108,7 @@ test("preserves the established trace when the centered corridor is blocked", ()
     netLabelPlacements: [vbatLabel as any],
     clearance: 0.1,
     eligibleTraceIds: new Set([signalTrace.mspPairId]),
+    connectorTraceIds: new Set([connectorTrace.mspPairId]),
   })
 
   expect(result.reroutedTraceCount).toBe(0)

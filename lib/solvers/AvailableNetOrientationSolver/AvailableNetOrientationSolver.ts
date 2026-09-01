@@ -62,6 +62,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   netLabelPlacements: NetLabelPlacement[]
 
   outputNetLabelPlacements: NetLabelPlacement[]
+  readonly generatedConnectorTraceIds = new Set<string>()
   queuedLabelIndices: number[] = []
   currentLabelIndex: number | null = null
   currentLabel: NetLabelPlacement | null = null
@@ -124,6 +125,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return {
       traces: this.traces,
       netLabelPlacements: this.outputNetLabelPlacements,
+      generatedConnectorTraceIds: this.generatedConnectorTraceIds,
     }
   }
 
@@ -374,6 +376,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
     this.traces.push(connectorTrace)
     this.traceMap[mspPairId] = connectorTrace
+    this.generatedConnectorTraceIds.add(mspPairId)
   }
 
   private finish() {
@@ -829,7 +832,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         foundConnectedTrace = false
         for (const trace of Object.values(this.traceMap)) {
           if (connectedTraceIds.has(trace.mspPairId)) continue
-          if (trace.mspPairId.startsWith("available-net-orientation-")) continue
+          if (this.generatedConnectorTraceIds.has(trace.mspPairId)) continue
           if (trace.globalConnNetId !== label.globalConnNetId) continue
           if (!trace.pinIds.some((pinId) => connectedPinIds.has(pinId)))
             continue

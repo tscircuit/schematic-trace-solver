@@ -17,7 +17,6 @@ import { hasCollisionsWithLabels } from "./hasCollisionsWithLabels"
 import { simplifyPath } from "./simplifyPath"
 import { findPerpendicularPathCrossings } from "./sub-solver/findIntersectionsWithObstacles"
 
-const GENERATED_CONNECTOR_PREFIX = "available-net-orientation-"
 const EPS = 1e-6
 
 const pointsAreEqual = (first: Point, second: Point) =>
@@ -183,12 +182,14 @@ export const rerouteGeneratedNetLabelConnectorCrossings = ({
   netLabelPlacements,
   clearance,
   eligibleTraceIds,
+  connectorTraceIds,
 }: {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   clearance: number
   eligibleTraceIds?: ReadonlySet<string>
+  connectorTraceIds: ReadonlySet<string>
 }) => {
   const outputTraces = [...traces]
   const chipObstacles = getObstacleRects(inputProblem).filter(
@@ -200,11 +201,11 @@ export const rerouteGeneratedNetLabelConnectorCrossings = ({
   let reroutedTraceCount = 0
 
   for (const connector of outputTraces.filter((trace) =>
-    trace.mspPairId.startsWith(GENERATED_CONNECTOR_PREFIX),
+    connectorTraceIds.has(trace.mspPairId),
   )) {
     for (let traceIndex = 0; traceIndex < outputTraces.length; traceIndex++) {
       const trace = outputTraces[traceIndex]!
-      if (trace.mspPairId.startsWith(GENERATED_CONNECTOR_PREFIX)) continue
+      if (connectorTraceIds.has(trace.mspPairId)) continue
       if (trace.globalConnNetId === connector.globalConnNetId) continue
       if (eligibleTraceIds && !eligibleTraceIds.has(trace.mspPairId)) continue
 
