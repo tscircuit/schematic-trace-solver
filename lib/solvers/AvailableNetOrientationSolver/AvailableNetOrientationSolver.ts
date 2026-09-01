@@ -22,6 +22,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -51,7 +52,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const CONNECTED_PIN_ROW_OVERLAP_TOLERANCE = 0.1
@@ -411,6 +411,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       (connection) => connection.netId === label.netId,
     )
     const isTwoPinNet = netConnection?.pinIds.length === 2
+    const firstLabelPin = this.pinMap[label.pinIds[0]!]
+    const secondLabelPin = this.pinMap[label.pinIds[1]!]
+    const isDownwardSameChipGroundRail =
+      netConnection?.isGround &&
+      label.pinIds.length === 2 &&
+      firstLabelPin !== undefined &&
+      secondLabelPin !== undefined &&
+      firstLabelPin.chipId === secondLabelPin.chipId &&
+      isXOrientation(label.orientation) &&
+      orientations.length === 1 &&
+      requiredOrientation === "y-" &&
+      this.hasTraceContinuingInOrientation(label, "y+")
     const isDistanceSplitVerticalRail =
       (netConnection?.pinIds.length ?? 0) > 2 &&
       isYOrientation(requiredOrientation) &&
@@ -483,6 +495,22 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         stopOnTraceCollision: false,
       })
       if (alignedCandidate) return alignedCandidate
+    }
+
+    if (isDownwardSameChipGroundRail) {
+      const downwardRailCandidate = this.findValidCandidateInShiftColumn({
+        label,
+        labelIndex,
+        orientation: requiredOrientation,
+        direction: dir(requiredOrientation),
+        baseAnchor: label.anchorPoint,
+        maxSearchDistance: this.maxSearchDistance,
+        outwardDistance: 0,
+        phase: "connected-rail-shift",
+        stopOnTraceCollision: false,
+        connectorSource: label.anchorPoint,
+      })
+      if (downwardRailCandidate) return downwardRailCandidate
     }
 
     const rotatedCandidate = this.findValidRotatedCandidate(
