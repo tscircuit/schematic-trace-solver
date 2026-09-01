@@ -52,6 +52,18 @@ export class TraceLabelOverlapAvoidanceSolver extends BaseSolver {
     this.netLabelPlacements = solverInput.netLabelPlacements
     this.cleanTraces = []
     this.subSolvers = []
+
+    if (this.unprocessedTraces.length === 0) {
+      // No traces to check for overlaps; run the final label merge
+      // immediately so downstream pipeline stages can read its output.
+      this.labelMergingSolver = new MergedNetLabelObstacleSolver({
+        netLabelPlacements: this.netLabelPlacements,
+        inputProblem: this.inputProblem,
+        traces: [],
+      })
+      this.labelMergingSolver.solve()
+      this.solved = true
+    }
   }
 
   override _step() {

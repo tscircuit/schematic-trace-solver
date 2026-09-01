@@ -73,6 +73,11 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     this.rememberTraceState(this.correctedTraceMap)
 
     this.traceNetIslands = this.computeTraceNetIslands()
+
+    if (this.inputTracePaths.length === 0) {
+      // No traces to shift; solve immediately with an empty result.
+      this.solved = true
+    }
   }
 
   override getConstructorParams(): ConstructorParameters<
