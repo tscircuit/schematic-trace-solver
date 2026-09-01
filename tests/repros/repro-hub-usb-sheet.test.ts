@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { isVerticalLabelAtSameNetRailTap } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/anchors"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import { isVertical } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import type { InputChip, InputProblem, PinId } from "lib/types/InputProblem"
@@ -57,9 +58,13 @@ test("repro hub USB sheet schematic trace routing", () => {
   const verticalHostPoint = sameChipGroundHostTrace.tracePath.find(
     (point, index, path) => index > 0 && isVertical(path[index - 1]!, point),
   )!
+  const tracesAtSameChipGroundLabel = output.traces.filter((trace) =>
+    tracePathContainsPoint(trace.tracePath, sameChipGroundLabel.anchorPoint),
+  )
 
   expect(tappedDownwardGroundLabels).toHaveLength(0)
   expect(sameChipGroundLabel.orientation).toBe("y-")
   expect(sameChipGroundLabel.anchorPoint.x).toBeCloseTo(verticalHostPoint.x)
+  expect(tracesAtSameChipGroundLabel).toHaveLength(1)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

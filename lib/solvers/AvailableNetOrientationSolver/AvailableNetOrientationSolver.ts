@@ -41,7 +41,12 @@ import {
   tracePathIntersectsBounds,
 } from "./geometry"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
-import { getPinMap, getTracePins, toNetLabelPlacementPatch } from "./traces"
+import {
+  extendTracePathAtInteriorPoint,
+  getPinMap,
+  getTracePins,
+  toNetLabelPlacementPatch,
+} from "./traces"
 import type {
   AvailableNetOrientationSolverParams,
   Bounds,
@@ -353,6 +358,23 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   ) {
     if (candidate.phase === "trace-anchor") return
 
+    if (candidate.phase === "downward-ground-rail-extension") {
+      const hostTrace = label.mspConnectionPairIds
+        .map((mspPairId) => this.traceMap[mspPairId])
+        .find((trace) => trace !== undefined)
+      if (hostTrace) {
+        const extendedTracePath = extendTracePathAtInteriorPoint({
+          tracePath: hostTrace.tracePath,
+          sourcePoint: label.anchorPoint,
+          extensionEndPoint: candidate.anchorPoint,
+        })
+        if (extendedTracePath) {
+          hostTrace.tracePath = extendedTracePath
+          return
+        }
+      }
+    }
+
     const tracePath = this.getCandidateConnectorTrace(
       label,
       candidate,
@@ -506,7 +528,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         baseAnchor: label.anchorPoint,
         maxSearchDistance: this.maxSearchDistance,
         outwardDistance: 0,
-        phase: "connected-rail-shift",
+        phase: "downward-ground-rail-extension",
         stopOnTraceCollision: false,
         connectorSource: label.anchorPoint,
       })

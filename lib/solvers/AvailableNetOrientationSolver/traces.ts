@@ -1,7 +1,30 @@
+import type { Point } from "@tscircuit/math-utils"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { pointsEqual } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
 import type { CandidateLabel } from "./types"
+
+export const extendTracePathAtInteriorPoint = ({
+  tracePath,
+  sourcePoint,
+  extensionEndPoint,
+}: {
+  tracePath: Point[]
+  sourcePoint: Point
+  extensionEndPoint: Point
+}) => {
+  const sourceIndex = tracePath.findIndex((point) =>
+    pointsEqual(point, sourcePoint),
+  )
+  if (sourceIndex <= 0 || sourceIndex >= tracePath.length - 1) return null
+
+  return [
+    ...tracePath.slice(0, sourceIndex + 1),
+    extensionEndPoint,
+    ...tracePath.slice(sourceIndex + 1),
+  ]
+}
 
 export const getPinMap = (inputProblem: InputProblem) => {
   const pinMap: Record<string, InputPin & { chipId: string }> = {}
