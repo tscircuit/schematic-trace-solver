@@ -40,6 +40,7 @@ const MAX_SAME_NET_LABEL_BOUNDARY_RAIL_OFFSET = 0.2
 // symbol-stem correction away from the pin itself.
 const MAX_SHARED_PIN_RAIL_OFFSET = 0.05
 const MIN_RETURN_STEM_LENGTH = 0.05
+const RETURN_TRACE_ENDPOINT_COUNT = 2
 
 export const getSharedPin = ({
   donorTrace,
@@ -452,6 +453,103 @@ const getAlignedReturnBranchPath = ({
   return sharedFirst ? candidate : candidate.reverse()
 }
 
+const getAlignedReturnStemsPath = ({
+  branchTrace,
+  traces,
+}: {
+  branchTrace: SolvedTracePath
+  traces: SolvedTracePath[]
+}): Point[] | null => {
+  const endpointFacingDirection = branchTrace.pins[0]._facingDirection
+  if (endpointFacingDirection !== "y+" && endpointFacingDirection !== "y-") {
+    return null
+  }
+  if (branchTrace.pins[1]._facingDirection !== endpointFacingDirection) {
+    return null
+  }
+  if (!nearlyEqual(branchTrace.pins[0].x, branchTrace.pins[1].x)) return null
+
+  let alignedPath = simplifyPath(branchTrace.tracePath)
+  let matchedStemCount = 0
+  let changedStemCount = 0
+
+  for (const sharedPin of branchTrace.pins) {
+    if (
+      sharedPin._facingDirection !== "y+" &&
+      sharedPin._facingDirection !== "y-"
+    ) {
+      continue
+    }
+
+    const donorRailYs: number[] = []
+    for (const donorTrace of traces) {
+      if (
+        donorTrace.mspPairId === branchTrace.mspPairId ||
+        donorTrace.globalConnNetId !== branchTrace.globalConnNetId ||
+        !donorTrace.pins.some((pin) => pin.pinId === sharedPin.pinId)
+      ) {
+        continue
+      }
+
+      let donorPath = simplifyPath(donorTrace.tracePath)
+      if (donorTrace.pins[0].pinId !== sharedPin.pinId) {
+        donorPath = donorPath.reverse()
+      }
+      if (
+        donorPath.length >= 3 &&
+        isVertical(donorPath[0]!, donorPath[1]!) &&
+        isHorizontal(donorPath[1]!, donorPath[2]!) &&
+        railIsOnFacingSide({ railY: donorPath[1]!.y, pin: sharedPin })
+      ) {
+        donorRailYs.push(donorPath[1]!.y)
+      }
+    }
+    donorRailYs.sort(
+      (firstRailY, secondRailY) =>
+        Math.abs(firstRailY - sharedPin.y) -
+        Math.abs(secondRailY - sharedPin.y),
+    )
+    const donorRailY = donorRailYs[0]
+    if (donorRailY === undefined) continue
+
+    const branchStartsAtSharedPin =
+      branchTrace.pins[0].pinId === sharedPin.pinId
+    let sharedToOtherPath = alignedPath
+    if (!branchStartsAtSharedPin) {
+      sharedToOtherPath = [...alignedPath].reverse()
+    }
+    if (
+      sharedToOtherPath.length < 4 ||
+      !isVertical(sharedToOtherPath[0]!, sharedToOtherPath[1]!) ||
+      !isHorizontal(sharedToOtherPath[1]!, sharedToOtherPath[2]!) ||
+      !railIsOnFacingSide({
+        railY: sharedToOtherPath[1]!.y,
+        pin: sharedPin,
+      })
+    ) {
+      continue
+    }
+    matchedStemCount++
+    if (nearlyEqual(sharedToOtherPath[1]!.y, donorRailY)) continue
+
+    sharedToOtherPath = simplifyPath([
+      sharedToOtherPath[0]!,
+      { ...sharedToOtherPath[1]!, y: donorRailY },
+      { ...sharedToOtherPath[2]!, y: donorRailY },
+      ...sharedToOtherPath.slice(3),
+    ])
+    alignedPath = sharedToOtherPath
+    if (!branchStartsAtSharedPin) {
+      alignedPath = sharedToOtherPath.reverse()
+    }
+    changedStemCount++
+  }
+
+  if (matchedStemCount !== RETURN_TRACE_ENDPOINT_COUNT) return null
+  if (changedStemCount === 0) return null
+  return alignedPath
+}
+
 export const alignSameNetJunctions = ({
   inputProblem,
   traces,
@@ -483,15 +581,22 @@ export const alignSameNetJunctions = ({
 
         // Prefer the existing return stem. If extending the outer column
         // meets another net, try shorter escapes without moving any pins.
-        const candidatePaths = alignReturnBranches
-          ? [1, 0.5, 0.25].map((returnStemScale) =>
+        let candidatePaths = [getAlignedBranchPath({ donorTrace, branchTrace })]
+        if (alignReturnBranches) {
+          candidatePaths = [
+            getAlignedReturnStemsPath({
+              branchTrace,
+              traces: outputTraces,
+            }),
+            ...[1, 0.5, 0.25].map((returnStemScale) =>
               getAlignedReturnBranchPath({
                 donorTrace,
                 branchTrace,
                 returnStemScale,
               }),
-            )
-          : [getAlignedBranchPath({ donorTrace, branchTrace })]
+            ),
+          ]
+        }
         for (const candidatePath of candidatePaths) {
           if (!candidatePath) continue
           const candidateTrace = { ...branchTrace, tracePath: candidatePath }
