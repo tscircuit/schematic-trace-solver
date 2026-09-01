@@ -27,6 +27,91 @@ const EPS = 1e-6
 const compareNumbers = (first: number, second: number) =>
   Math.abs(first - second) <= EPS ? 0 : first - second
 
+const getSegmentDirection = (start: Point, end: Point) => {
+  if (Math.abs(start.x - end.x) <= EPS) {
+    return end.y > start.y ? "y+" : "y-"
+  }
+  return end.x > start.x ? "x+" : "x-"
+}
+
+const getSegmentLength = (start: Point, end: Point) =>
+  Math.abs(end.x - start.x) + Math.abs(end.y - start.y)
+
+const preservesTerminalEscapes = (
+  originalPath: Point[],
+  candidatePath: Point[],
+  minimumEscapeLength: number,
+) => {
+  if (originalPath.length < 2 || candidatePath.length < 2) return false
+  const directionsArePreserved =
+    getSegmentDirection(originalPath[0]!, originalPath[1]!) ===
+      getSegmentDirection(candidatePath[0]!, candidatePath[1]!) &&
+    getSegmentDirection(originalPath.at(-2)!, originalPath.at(-1)!) ===
+      getSegmentDirection(candidatePath.at(-2)!, candidatePath.at(-1)!)
+  if (!directionsArePreserved) return false
+
+  const originalStartLength = getSegmentLength(
+    originalPath[0]!,
+    originalPath[1]!,
+  )
+  const originalEndLength = getSegmentLength(
+    originalPath.at(-2)!,
+    originalPath.at(-1)!,
+  )
+  const candidateStartLength = getSegmentLength(
+    candidatePath[0]!,
+    candidatePath[1]!,
+  )
+  const candidateEndLength = getSegmentLength(
+    candidatePath.at(-2)!,
+    candidatePath.at(-1)!,
+  )
+
+  return (
+    candidateStartLength + EPS >=
+      Math.min(originalStartLength, minimumEscapeLength) &&
+    candidateEndLength + EPS >= Math.min(originalEndLength, minimumEscapeLength)
+  )
+}
+
+const getNearChipBoundaryLength = (
+  path: Point[],
+  chipBounds: Bounds[],
+  clearance: number,
+) => {
+  let totalLength = 0
+  for (let pointIndex = 0; pointIndex < path.length - 1; pointIndex++) {
+    const start = path[pointIndex]!
+    const end = path[pointIndex + 1]!
+    const isVertical = Math.abs(start.x - end.x) <= EPS
+
+    for (const bounds of chipBounds) {
+      if (isVertical) {
+        const isNearVerticalEdge =
+          Math.abs(start.x - bounds.minX) <= clearance + EPS ||
+          Math.abs(start.x - bounds.maxX) <= clearance + EPS
+        if (!isNearVerticalEdge) continue
+        totalLength += Math.max(
+          0,
+          Math.min(Math.max(start.y, end.y), bounds.maxY) -
+            Math.max(Math.min(start.y, end.y), bounds.minY),
+        )
+      } else {
+        const isNearHorizontalEdge =
+          Math.abs(start.y - bounds.minY) <= clearance + EPS ||
+          Math.abs(start.y - bounds.maxY) <= clearance + EPS
+        if (!isNearHorizontalEdge) continue
+        totalLength += Math.max(
+          0,
+          Math.min(Math.max(start.x, end.x), bounds.maxX) -
+            Math.max(Math.min(start.x, end.x), bounds.minX),
+        )
+      }
+    }
+  }
+  return totalLength
+}
+
 interface ConnectorCrossing {
   connector: SolvedTracePath
   connectorSegmentIndex: number
@@ -159,6 +244,9 @@ export const rerouteGeneratedNetLabelConnectorCrossings = ({
   connectorTraceIds: ReadonlySet<string>
 }) => {
   let outputTraces = [...traces]
+  const originalTraceMap = new Map(
+    traces.map((trace) => [trace.mspPairId, trace]),
+  )
   const chipObstacles = getObstacleRects(inputProblem).filter(
     (obstacle) => obstacle.kind === "chip",
   )
@@ -176,37 +264,25 @@ export const rerouteGeneratedNetLabelConnectorCrossings = ({
     if (crossings.length === 0) break
 
     const evaluatedCandidates = crossings.flatMap((crossing) => {
-      const candidates: ConnectorCrossingRerouteCandidate[] = []
+      if (connectorTraceIds.has(crossing.otherTrace.mspPairId)) return []
       if (
-        connectorTraceIds.has(crossing.otherTrace.mspPairId) ||
-        !eligibleTraceIds ||
-        eligibleTraceIds.has(crossing.otherTrace.mspPairId)
+        eligibleTraceIds &&
+        !eligibleTraceIds.has(crossing.otherTrace.mspPairId)
       ) {
-        candidates.push(
-          ...generateConnectorCrossingRerouteCandidates({
-            trace: crossing.otherTrace,
-            segmentIndex: crossing.otherSegmentIndex,
-            obstacleBounds: getTraceObstacleBounds({
-              trace: crossing.connector,
-              segmentIndex: crossing.connectorSegmentIndex,
-              labels: netLabelPlacements,
-            }),
-            clearance,
-          }),
-        )
+        return []
       }
-      candidates.push(
-        ...generateConnectorCrossingRerouteCandidates({
-          trace: crossing.connector,
-          segmentIndex: crossing.connectorSegmentIndex,
+
+      const candidates: ConnectorCrossingRerouteCandidate[] =
+        generateConnectorCrossingRerouteCandidates({
+          trace: crossing.otherTrace,
+          segmentIndex: crossing.otherSegmentIndex,
           obstacleBounds: getTraceObstacleBounds({
-            trace: crossing.otherTrace,
-            segmentIndex: crossing.otherSegmentIndex,
+            trace: crossing.connector,
+            segmentIndex: crossing.connectorSegmentIndex,
             labels: netLabelPlacements,
           }),
           clearance,
-        }),
-      )
+        })
 
       return candidates.flatMap((candidate) => {
         const traceIndex = outputTraces.findIndex(
@@ -214,6 +290,39 @@ export const rerouteGeneratedNetLabelConnectorCrossings = ({
         )
         const originalTrace = outputTraces[traceIndex]
         if (!originalTrace) return []
+        const initialTrace = originalTraceMap.get(candidate.traceId)
+        if (!initialTrace) return []
+
+        const turnIncrease =
+          countTurns(candidate.path) - countTurns(initialTrace.tracePath)
+        const lengthIncrease =
+          getPathLength(candidate.path) - getPathLength(initialTrace.tracePath)
+        // A generated connector is a fixed attachment between its source and
+        // label anchor, so cleanup must not send it on a long detour. Move the
+        // established trace only when a shortest-path alternative exists. One
+        // rectangular obstacle can require at most two additional turns; more
+        // than that is a visibly worse route rather than a clean alternative.
+        // Preserve both pin escapes and reject candidates that add a run beside
+        // a component edge, which prevents a local crossing fix from dragging
+        // the route through an unrelated pin bank.
+        if (
+          lengthIncrease > EPS ||
+          turnIncrease > 2 ||
+          !preservesTerminalEscapes(
+            initialTrace.tracePath,
+            candidate.path,
+            clearance * 2,
+          ) ||
+          getNearChipBoundaryLength(candidate.path, chipObstacles, clearance) >
+            getNearChipBoundaryLength(
+              initialTrace.tracePath,
+              chipObstacles,
+              clearance,
+            ) +
+              EPS
+        ) {
+          return []
+        }
 
         const foreignTraces = outputTraces.filter(
           (trace) =>
@@ -275,11 +384,8 @@ export const rerouteGeneratedNetLabelConnectorCrossings = ({
             candidateForeignCrossings: getTotalCrossingCount(
               candidateForeignCrossingCounts,
             ),
-            turnIncrease:
-              countTurns(candidate.path) - countTurns(originalTrace.tracePath),
-            lengthIncrease:
-              getPathLength(candidate.path) -
-              getPathLength(originalTrace.tracePath),
+            turnIncrease,
+            lengthIncrease,
           },
         ]
       })
