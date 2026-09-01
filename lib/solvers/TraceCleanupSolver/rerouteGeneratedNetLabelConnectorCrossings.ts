@@ -302,9 +302,9 @@ export const rerouteGeneratedNetLabelConnectorCrossings = ({
         // established trace only when a shortest-path alternative exists. One
         // rectangular obstacle can require at most two additional turns; more
         // than that is a visibly worse route rather than a clean alternative.
-        // Preserve both pin escapes and reject candidates that add a run beside
-        // a component edge, which prevents a local crossing fix from dragging
-        // the route through an unrelated pin bank.
+        // Preserve each pin direction and at least two clearance widths of its
+        // terminal escape. Also reject candidates that add a run beside a
+        // component edge, preventing a local fix from entering a pin bank.
         if (
           lengthIncrease > EPS ||
           turnIncrease > 2 ||
