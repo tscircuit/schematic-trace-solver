@@ -12,16 +12,15 @@ export const preservesAlignedRailConstraints = ({
   candidateTrace: SolvedTracePath
   alignedRailConstraints: AlignedRailConstraint[]
 }) =>
-  alignedRailConstraints
-    .filter((constraint) => constraint.traceId === candidateTrace.mspPairId)
-    .every((constraint) =>
-      candidateTrace.tracePath.slice(0, -1).some((start, pointIndex) => {
-        const end = candidateTrace.tracePath[pointIndex + 1]!
-        if (getRailOrientation(start, end) !== constraint.orientation) {
-          return false
-        }
-        let coordinate = start.x
-        if (constraint.orientation === "horizontal") coordinate = start.y
-        return nearlyEqual(coordinate, constraint.coordinate)
-      }),
-    )
+  alignedRailConstraints.every((constraint) => {
+    if (constraint.traceId !== candidateTrace.mspPairId) return true
+    return candidateTrace.tracePath.slice(0, -1).some((start, pointIndex) => {
+      const end = candidateTrace.tracePath[pointIndex + 1]!
+      if (getRailOrientation(start, end) !== constraint.orientation) {
+        return false
+      }
+      let coordinate = start.x
+      if (constraint.orientation === "horizontal") coordinate = start.y
+      return nearlyEqual(coordinate, constraint.coordinate)
+    })
+  })

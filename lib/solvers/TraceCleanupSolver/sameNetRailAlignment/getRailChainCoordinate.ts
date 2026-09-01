@@ -1,5 +1,5 @@
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { PinId } from "lib/types/InputProblem"
 import type { RailSegment } from "./types"
 
@@ -50,21 +50,17 @@ export const getRailChainCoordinate = (
     return null
   }
 
-  let firstTerminalPinId = terminalPinIds[0]!
-  if (group[0]!.orientation === "horizontal") {
-    const terminalPinIdsFromLeft = terminalPinIds.toSorted(
-      (firstPinId, secondPinId) => {
-        const firstPin = pinMap.get(firstPinId)!
-        const secondPin = pinMap.get(secondPinId)!
-        return firstPin.x - secondPin.x
-      },
-    )
-    firstTerminalPinId = terminalPinIdsFromLeft[0]!
+  let firstTerminalPin = terminalPins[0]!
+  if (
+    group[0]!.orientation === "horizontal" &&
+    terminalPins[1]!.x < firstTerminalPin.x
+  ) {
+    firstTerminalPin = terminalPins[1]!
   }
 
   // A horizontal chain carries the leftmost rail coordinate through its end.
   const firstTerminalTrace = groupTraces.find((trace) =>
-    trace.pinIds.includes(firstTerminalPinId),
+    trace.pinIds.includes(firstTerminalPin.pinId),
   )!
   return group.find(
     (segment) => segment.traceId === firstTerminalTrace.mspPairId,
