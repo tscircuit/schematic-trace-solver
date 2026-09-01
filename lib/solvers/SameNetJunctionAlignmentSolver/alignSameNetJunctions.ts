@@ -58,6 +58,40 @@ const getSegmentAxis = (start: Point, end: Point) => {
   return null
 }
 
+const getFacingAxis = (pin: InputPin) => {
+  if (pin._facingDirection === "x+" || pin._facingDirection === "x-") {
+    return "x" as const
+  }
+  if (pin._facingDirection === "y+" || pin._facingDirection === "y-") {
+    return "y" as const
+  }
+  return null
+}
+
+const coordinateIsOnFacingSide = ({
+  coordinate,
+  axis,
+  pin,
+}: {
+  coordinate: number
+  axis: "x" | "y"
+  pin: InputPin
+}) => {
+  if (
+    (axis === "x" && pin._facingDirection === "x+") ||
+    (axis === "y" && pin._facingDirection === "y+")
+  ) {
+    return coordinate > pin[axis]
+  }
+  if (
+    (axis === "x" && pin._facingDirection === "x-") ||
+    (axis === "y" && pin._facingDirection === "y-")
+  ) {
+    return coordinate < pin[axis]
+  }
+  return false
+}
+
 export const getSharedPin = ({
   donorTrace,
   branchTrace,
@@ -285,7 +319,9 @@ const getAlignedBranchPath = ({
  * Reuse the row of an adjacent same-side pin for a branch leaving their
  * shared outer stem. This removes the extra parallel jog produced when the
  * branch initially routes beyond both pin rows before approaching a
- * perpendicular target pin.
+ * perpendicular target pin. The topology is detected from pin-facing axes
+ * and shared segments; the number and ordering of intermediate turns do not
+ * define eligibility.
  */
 const getAlignedParallelPinExitPath = ({
   donorTrace,
@@ -301,15 +337,20 @@ const getAlignedParallelPinExitPath = ({
   if (!adjacentPin || !targetPin) return null
 
   const facing = sharedPin._facingDirection
-  if (facing !== "x+" && facing !== "x-") return null
+  const departureAxis = getFacingAxis(sharedPin)
+  if (!facing || !departureAxis) return null
+  const stemAxis = departureAxis === "x" ? "y" : "x"
   if (
     adjacentPin.chipId !== sharedPin.chipId ||
     adjacentPin._facingDirection !== facing ||
-    !nearlyEqual(adjacentPin.x, sharedPin.x)
+    !nearlyEqual(adjacentPin[departureAxis], sharedPin[departureAxis]) ||
+    getFacingAxis(targetPin) !== stemAxis
   ) {
     return null
   }
-  const adjacentPinOffset = Math.abs(adjacentPin.y - sharedPin.y)
+  const adjacentPinOffset = Math.abs(
+    adjacentPin[stemAxis] - sharedPin[stemAxis],
+  )
   if (
     adjacentPinOffset > MAX_ALIGNED_LOAD_PIN_OFFSET &&
     !nearlyEqual(adjacentPinOffset, MAX_ALIGNED_LOAD_PIN_OFFSET)
@@ -317,48 +358,81 @@ const getAlignedParallelPinExitPath = ({
     return null
   }
 
-  let sharedToAdjacentPath = simplifyPath(donorTrace.tracePath)
-  if (donorTrace.pins[0].pinId !== sharedPin.pinId) {
-    sharedToAdjacentPath = sharedToAdjacentPath.reverse()
-  }
-  if (
-    sharedToAdjacentPath.length !== 4 ||
-    !isHorizontal(sharedToAdjacentPath[0]!, sharedToAdjacentPath[1]!) ||
-    !isVertical(sharedToAdjacentPath[1]!, sharedToAdjacentPath[2]!) ||
-    !isHorizontal(sharedToAdjacentPath[2]!, sharedToAdjacentPath[3]!)
-  ) {
-    return null
-  }
-
-  const junctionX = sharedToAdjacentPath[1]!.x
-  if (
-    (facing === "x+" && junctionX <= sharedPin.x) ||
-    (facing === "x-" && junctionX >= sharedPin.x)
-  ) {
-    return null
-  }
-
   const branchStartsAtSharedPin = branchTrace.pins[0].pinId === sharedPin.pinId
   let sharedToTargetPath = simplifyPath(branchTrace.tracePath)
   if (!branchStartsAtSharedPin) sharedToTargetPath.reverse()
+  if (sharedToTargetPath.length < 2) return null
+  const branchDepartureSegment = [
+    sharedToTargetPath[0]!,
+    sharedToTargetPath[1]!,
+  ]
   if (
-    sharedToTargetPath.length !== 5 ||
-    !isHorizontal(sharedToTargetPath[0]!, sharedToTargetPath[1]!) ||
-    !isVertical(sharedToTargetPath[1]!, sharedToTargetPath[2]!) ||
-    !isHorizontal(sharedToTargetPath[2]!, sharedToTargetPath[3]!) ||
-    !isVertical(sharedToTargetPath[3]!, sharedToTargetPath[4]!) ||
-    !nearlyEqual(sharedToTargetPath[1]!.x, junctionX) ||
-    !railIsOnFacingSide({ railY: adjacentPin.y, pin: targetPin }) ||
-    nearlyEqual(sharedToTargetPath[2]!.y, adjacentPin.y)
+    getSegmentAxis(branchDepartureSegment[0], branchDepartureSegment[1]) !==
+    departureAxis
   ) {
     return null
   }
 
+  const outerStem = donorTrace.tracePath
+    .flatMap((start, index, path) => {
+      const end = path[index + 1]
+      if (!end || getSegmentAxis(start, end) !== stemAxis) return []
+      const coordinate = start[departureAxis]
+      const sharedExit = {
+        x: sharedPin.x,
+        y: sharedPin.y,
+        [departureAxis]: coordinate,
+      }
+      const adjacentExit = {
+        x: adjacentPin.x,
+        y: adjacentPin.y,
+        [departureAxis]: coordinate,
+      }
+      if (
+        !coordinateIsOnFacingSide({
+          coordinate,
+          axis: departureAxis,
+          pin: sharedPin,
+        }) ||
+        !tracePathContainsPoint([start, end], sharedExit) ||
+        !tracePathContainsPoint([start, end], adjacentExit) ||
+        !tracePathContainsPoint(branchDepartureSegment, sharedExit)
+      ) {
+        return []
+      }
+      return [{ coordinate, sharedExit }]
+    })
+    .sort(
+      (first, second) =>
+        Math.abs(first.coordinate - sharedPin[departureAxis]) -
+        Math.abs(second.coordinate - sharedPin[departureAxis]),
+    )[0]
+  if (!outerStem) return null
+
+  const alignedRailCoordinate = adjacentPin[stemAxis]
+  if (
+    !coordinateIsOnFacingSide({
+      coordinate: alignedRailCoordinate,
+      axis: stemAxis,
+      pin: targetPin,
+    })
+  ) {
+    return null
+  }
+  const alignedStemExit = {
+    ...outerStem.sharedExit,
+    [stemAxis]: alignedRailCoordinate,
+  }
+  const targetApproach = {
+    x: targetPin.x,
+    y: targetPin.y,
+    [stemAxis]: alignedRailCoordinate,
+  }
   const candidate = simplifyPath([
     { x: sharedPin.x, y: sharedPin.y },
-    { x: junctionX, y: sharedPin.y },
-    { x: junctionX, y: adjacentPin.y },
-    { x: targetPin.x, y: adjacentPin.y },
+    outerStem.sharedExit,
+    alignedStemExit,
+    targetApproach,
     { x: targetPin.x, y: targetPin.y },
   ])
   return branchStartsAtSharedPin ? candidate : candidate.reverse()
