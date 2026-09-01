@@ -1,6 +1,7 @@
 import type { Point } from "@tscircuit/math-utils"
 import { getSegmentIntersection } from "@tscircuit/math-utils/line-intersections"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
@@ -30,6 +31,7 @@ interface AlignSameNetJunctionsInput {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  netLabelConnectorTraceIds: ReadonlySet<MspConnectionPairId>
 }
 
 interface HorizontalSegment {
@@ -49,7 +51,6 @@ const MAX_SHARED_PIN_RAIL_OFFSET = 0.05
 // instead of two parallel runs joined by a jog.
 const MAX_SHARED_ENDPOINT_RAIL_OFFSET = 0.8
 const MIN_RETURN_STEM_LENGTH = 0.05
-const AVAILABLE_NET_ORIENTATION_TRACE_PREFIX = "available-net-orientation-"
 
 const getSegmentAxis = (start: Point, end: Point) => {
   if (isHorizontal(start, end)) return "x" as const
@@ -372,13 +373,15 @@ const getAlignedParallelPinExitPath = ({
 const getAlignedSharedEndpointRailPath = ({
   donorTrace,
   branchTrace,
+  netLabelConnectorTraceIds,
 }: {
   donorTrace: SolvedTracePath
   branchTrace: SolvedTracePath
+  netLabelConnectorTraceIds: ReadonlySet<MspConnectionPairId>
 }): Point[] | null => {
   if (
-    donorTrace.mspPairId.startsWith(AVAILABLE_NET_ORIENTATION_TRACE_PREFIX) ||
-    branchTrace.mspPairId.startsWith(AVAILABLE_NET_ORIENTATION_TRACE_PREFIX)
+    netLabelConnectorTraceIds.has(donorTrace.mspPairId) ||
+    netLabelConnectorTraceIds.has(branchTrace.mspPairId)
   ) {
     return null
   }
@@ -474,13 +477,15 @@ const getAlignedSharedEndpointRailPath = ({
 const getAlignedAttachedLabelConnectorPath = ({
   donorTrace,
   connectorTrace,
+  netLabelConnectorTraceIds,
 }: {
   donorTrace: SolvedTracePath
   connectorTrace: SolvedTracePath
+  netLabelConnectorTraceIds: ReadonlySet<MspConnectionPairId>
 }): Point[] | null => {
   if (
-    donorTrace.mspPairId.startsWith(AVAILABLE_NET_ORIENTATION_TRACE_PREFIX) ||
-    !connectorTrace.mspPairId.startsWith(AVAILABLE_NET_ORIENTATION_TRACE_PREFIX)
+    netLabelConnectorTraceIds.has(donorTrace.mspPairId) ||
+    !netLabelConnectorTraceIds.has(connectorTrace.mspPairId)
   ) {
     return null
   }
@@ -613,10 +618,12 @@ const preserveAttachedLabelConnectorJunctions = ({
   originalTrace,
   candidateTrace,
   traces,
+  netLabelConnectorTraceIds,
 }: {
   originalTrace: SolvedTracePath
   candidateTrace: SolvedTracePath
   traces: SolvedTracePath[]
+  netLabelConnectorTraceIds: ReadonlySet<MspConnectionPairId>
 }): SolvedTracePath[] | null => {
   let outputTraces = traces.map((trace) =>
     trace.mspPairId === originalTrace.mspPairId ? candidateTrace : trace,
@@ -625,7 +632,7 @@ const preserveAttachedLabelConnectorJunctions = ({
   for (const connector of traces) {
     if (
       connector.mspPairId === originalTrace.mspPairId ||
-      !connector.mspPairId.startsWith(AVAILABLE_NET_ORIENTATION_TRACE_PREFIX) ||
+      !netLabelConnectorTraceIds.has(connector.mspPairId) ||
       connector.globalConnNetId !== originalTrace.globalConnNetId ||
       !pathsIntersect(originalTrace.tracePath, connector.tracePath) ||
       pathsIntersect(candidateTrace.tracePath, connector.tracePath)
@@ -1107,6 +1114,7 @@ export const alignSameNetJunctions = ({
   inputProblem,
   traces,
   netLabelPlacements,
+  netLabelConnectorTraceIds,
 }: AlignSameNetJunctionsInput) => {
   let outputTraces = [...traces]
   let outputNetLabelPlacements = [...netLabelPlacements]
@@ -1134,11 +1142,11 @@ export const alignSameNetJunctions = ({
 
         // Prefer the existing return stem. If extending the outer column
         // meets another net, try shorter escapes without moving any pins.
-        const donorIsLabelConnector = donorTrace.mspPairId.startsWith(
-          AVAILABLE_NET_ORIENTATION_TRACE_PREFIX,
+        const donorIsLabelConnector = netLabelConnectorTraceIds.has(
+          donorTrace.mspPairId,
         )
-        const branchIsLabelConnector = branchTrace.mspPairId.startsWith(
-          AVAILABLE_NET_ORIENTATION_TRACE_PREFIX,
+        const branchIsLabelConnector = netLabelConnectorTraceIds.has(
+          branchTrace.mspPairId,
         )
         const candidatePaths = branchIsLabelConnector
           ? alignReturnBranches && !donorIsLabelConnector
@@ -1146,6 +1154,7 @@ export const alignSameNetJunctions = ({
                 getAlignedAttachedLabelConnectorPath({
                   donorTrace,
                   connectorTrace: branchTrace,
+                  netLabelConnectorTraceIds,
                 }),
               ]
             : []
@@ -1165,7 +1174,11 @@ export const alignSameNetJunctions = ({
                     branchTrace,
                     traces: outputTraces,
                   }),
-                  getAlignedSharedEndpointRailPath({ donorTrace, branchTrace }),
+                  getAlignedSharedEndpointRailPath({
+                    donorTrace,
+                    branchTrace,
+                    netLabelConnectorTraceIds,
+                  }),
                 ]
               : [
                   getAlignedBranchPath({ donorTrace, branchTrace }),
@@ -1203,6 +1216,7 @@ export const alignSameNetJunctions = ({
             originalTrace: branchTrace,
             candidateTrace,
             traces: outputTraces,
+            netLabelConnectorTraceIds,
           })
           if (!candidateTraces) continue
           if (
@@ -1222,9 +1236,7 @@ export const alignSameNetJunctions = ({
           const movedConnectorsAreClear = candidateTraces.every((trace) => {
             if (
               trace.mspPairId === branchTrace.mspPairId ||
-              !trace.mspPairId.startsWith(
-                AVAILABLE_NET_ORIENTATION_TRACE_PREFIX,
-              )
+              !netLabelConnectorTraceIds.has(trace.mspPairId)
             ) {
               return true
             }
