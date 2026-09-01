@@ -113,7 +113,6 @@ export interface PerpendicularTraceDetourInput {
   segmentIndex: number
   obstacleStart: Point
   obstacleEnd: Point
-  obstacleBounds?: Bounds
   chipBounds: Bounds[]
   clearance: number
 }
@@ -180,7 +179,6 @@ export const generatePerpendicularTraceDetours = ({
   segmentIndex,
   obstacleStart,
   obstacleEnd,
-  obstacleBounds,
   chipBounds,
   clearance,
 }: PerpendicularTraceDetourInput): TraceDetourCandidate[] => {
@@ -189,29 +187,18 @@ export const generatePerpendicularTraceDetours = ({
     const end = path[index + 1]!
     const movingAxis: "x" | "y" = Math.abs(start.x - end.x) < EPS ? "y" : "x"
     const detourAxis = movingAxis === "x" ? "y" : "x"
-    const bounds = obstacleBounds ?? {
-      minX: Math.min(obstacleStart.x, obstacleEnd.x),
-      maxX: Math.max(obstacleStart.x, obstacleEnd.x),
-      minY: Math.min(obstacleStart.y, obstacleEnd.y),
-      maxY: Math.max(obstacleStart.y, obstacleEnd.y),
-    }
-    const movingLowBound = movingAxis === "x" ? "minX" : "minY"
-    const movingHighBound = movingAxis === "x" ? "maxX" : "maxY"
-    const movingMidpoint =
-      (bounds[movingLowBound] + bounds[movingHighBound]) / 2
-    const startSide = start[movingAxis] < movingMidpoint ? -1 : 1
     const gate =
-      bounds[startSide < 0 ? movingLowBound : movingHighBound] +
-      startSide * clearance
-    const detourLowBound = detourAxis === "x" ? "minX" : "minY"
-    const detourHighBound = detourAxis === "x" ? "maxX" : "maxY"
-    const obstacleRange = [bounds[detourLowBound], bounds[detourHighBound]]
+      obstacleStart[movingAxis] +
+      Math.sign(start[movingAxis] - obstacleStart[movingAxis]) * clearance
+    const obstacleRange = [obstacleStart[detourAxis], obstacleEnd[detourAxis]]
+    const lowBound = detourAxis === "x" ? "minX" : "minY"
+    const highBound = detourAxis === "x" ? "maxX" : "maxY"
     const detourCoordinates = [
       Math.min(...obstacleRange) - clearance,
       Math.max(...obstacleRange) + clearance,
       ...chipBounds.flatMap((bounds) => [
-        bounds[detourLowBound] - clearance,
-        bounds[detourHighBound] + clearance,
+        bounds[lowBound] - clearance,
+        bounds[highBound] + clearance,
       ]),
     ]
 

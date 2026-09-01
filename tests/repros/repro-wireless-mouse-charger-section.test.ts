@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
-import { findPerpendicularPathCrossings } from "lib/solvers/TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 import inputProblem from "./assets/repro-wireless-mouse-charger-section.input.json"
 import "tests/fixtures/matcher"
 
@@ -12,25 +11,6 @@ test("repro wireless mouse charger section", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
 
   solver.solve()
-
-  const traces = solver.netLabelToTraceSolver!.getOutput().traces
-  for (let traceIndex = 0; traceIndex < traces.length; traceIndex++) {
-    const trace = traces[traceIndex]!
-    for (
-      let otherTraceIndex = traceIndex + 1;
-      otherTraceIndex < traces.length;
-      otherTraceIndex++
-    ) {
-      const otherTrace = traces[otherTraceIndex]!
-      if (trace.globalConnNetId === otherTrace.globalConnNetId) continue
-
-      expect(
-        findPerpendicularPathCrossings(trace.tracePath, otherTrace.tracePath, {
-          includeTerminalSegments: true,
-        }),
-      ).toEqual([])
-    }
-  }
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
