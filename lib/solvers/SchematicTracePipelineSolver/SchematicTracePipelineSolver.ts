@@ -104,6 +104,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   finalTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   sameNetJunctionAlignmentSolver?: SameNetJunctionAlignmentSolver
   inlineNetLabelSolver?: InlineNetLabelSolver
+  postInlineTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   netLabelToTraceSolver?: NetLabelToTraceSolver
 
   startTimeOfPhase: Record<string, number>
@@ -591,6 +592,41 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
+      "postInlineTraceElbowTransitionSimplificationSolver",
+      TraceElbowTransitionSimplificationSolver,
+      (instance) => {
+        const inlineOutput = instance.inlineNetLabelSolver!.getOutput()
+        // Collision solvers ran against anchored labels. Revisit only reroutes
+        // whose blocking label was superseded during inline conversion.
+        const supersededLabelNetIds = new Set(
+          inlineOutput.inlineNetLabelPlacements.map(
+            (placement) => placement.globalConnNetId,
+          ),
+        )
+        const completedReroutes = [
+          ...instance.traceLabelOverlapAvoidanceSolver!.getOutput()
+            .completedReroutes,
+          ...instance.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
+            .completedReroutes,
+          ...instance.netLabelTraceCollisionSolver!.getOutput()
+            .completedReroutes,
+        ].filter((reroute) =>
+          supersededLabelNetIds.has(reroute.label.globalConnNetId),
+        )
+
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            traces: inlineOutput.traces,
+            completedReroutes,
+            netLabelPlacements: inlineOutput.netLabelPlacements,
+            inlineNetLabelPlacements: inlineOutput.inlineNetLabelPlacements,
+            paddingBuffer: 0.1,
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
       "netLabelToTraceSolver",
       NetLabelToTraceSolver,
       (instance) => {
@@ -599,6 +635,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           {
             inputProblem: instance.inputProblem,
             ...inlineOutput,
+            traces:
+              instance.postInlineTraceElbowTransitionSimplificationSolver!.getOutput()
+                .traces,
           },
         ]
       },
