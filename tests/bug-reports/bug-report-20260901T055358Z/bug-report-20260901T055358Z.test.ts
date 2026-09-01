@@ -17,17 +17,42 @@ test("bug-report-20260901T055358Z", () => {
   const cc2Label = preAlignmentOutput.netLabelPlacements.find(
     (label) => label.netId === "CC2",
   )
+  const groundReroute = preAlignmentOutput.completedReroutes.find(
+    (reroute) => reroute.initialTrace.mspPairId === groundLabelConnectorId,
+  )
 
-  expect(cc2Label?.orientation).toBe("y-")
-  expect(
-    preAlignmentOutput.completedReroutes.some(
-      (reroute) => reroute.initialTrace.mspPairId === groundLabelConnectorId,
-    ),
-  ).toBe(false)
+  // The anchored CC2 fallback temporarily forces a detour. Once inline
+  // conversion succeeds and supersedes that fallback, its exact reroute is
+  // safely unwound instead of changing CC2's orientation.
+  expect(cc2Label?.orientation).toBe("y+")
+  expect(groundReroute).toBeDefined()
   expect(groundLabelConnector).toBeDefined()
-  expect(groundLabelConnector!.tracePath).toHaveLength(2)
-  expect(groundLabelConnector!.tracePath.every((point) => point.y === 3)).toBe(
-    true,
+  expect(groundLabelConnector!.tracePath.length).toBeGreaterThan(2)
+
+  const inlineOutput = solver.inlineNetLabelSolver!.getOutput()
+  const restoredGroundLabelConnector = inlineOutput.traces.find(
+    (trace) => trace.mspPairId === groundLabelConnectorId,
+  )
+  expect(
+    inlineOutput.netLabelPlacements.some((label) => label.netId === "CC2"),
+  ).toBe(false)
+  expect(
+    inlineOutput.inlineNetLabelPlacements.some(
+      (label) => label.netId === "CC2",
+    ),
+  ).toBe(true)
+  expect(restoredGroundLabelConnector?.tracePath).toEqual(
+    groundReroute!.initialTrace.tracePath,
+  )
+  expect(
+    solver.inlineNetLabelSolver!.stats.restoredSupersededLabelRerouteCount,
+  ).toBe(1)
+
+  const finalGroundLabelConnector = solver
+    .netLabelToTraceSolver!.getOutput()
+    .traces.find((trace) => trace.mspPairId === groundLabelConnectorId)
+  expect(finalGroundLabelConnector?.tracePath).toEqual(
+    restoredGroundLabelConnector?.tracePath,
   )
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)

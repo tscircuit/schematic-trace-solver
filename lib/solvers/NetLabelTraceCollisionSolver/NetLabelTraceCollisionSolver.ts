@@ -13,16 +13,6 @@ import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/Singl
 import { getColorFromString } from "lib/utils/getColorFromString"
 import type { InputProblem } from "lib/types/InputProblem"
 import type { CompletedTraceReroute } from "lib/solvers/TraceElbowTransitionSimplificationSolver/types"
-import {
-  getLabelBounds,
-  getTraceLocationsForPoint,
-  rectsOverlap,
-  rectsTouchOrOverlap,
-  traceCrossesBoundsInterior,
-} from "lib/solvers/TraceAnchoredNetLabelOverlapSolver/geometry"
-import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
-import { getOrientationConstraint } from "lib/utils/getOrientationConstraint"
-import type { FacingDirection } from "lib/utils/dir"
 
 const ON_PATH_EPS = 1e-6
 
@@ -139,21 +129,6 @@ function buildMergedObstacleLabel(
 interface TraceLabelOverlap {
   trace: SolvedTracePath
   label: NetLabelPlacement
-}
-
-const getFlippedOrientation = (
-  orientation: FacingDirection,
-): FacingDirection => {
-  switch (orientation) {
-    case "x+":
-      return "x-"
-    case "x-":
-      return "x+"
-    case "y+":
-      return "y-"
-    case "y-":
-      return "y+"
-  }
 }
 
 /**
@@ -289,14 +264,6 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
 
     const next = actionable[0]
 
-    // An inline-eligible connection's anchored label is only its fallback
-    // representation. Move that fallback across its host trace before adding
-    // four bends to a different net.
-    if (this.tryFlipInlineEligibleLabelAwayFromTrace(next.label)) {
-      this.currentOverlap = null
-      return
-    }
-
     const traceToFix = this.outputTraces.find(
       (t) => t.mspPairId === next.trace.mspPairId,
     )!
@@ -361,83 +328,6 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
         ),
       }
     }
-  }
-
-  private tryFlipInlineEligibleLabelAwayFromTrace(label: NetLabelPlacement) {
-    const labelIndex = this.outputNetLabelPlacements.indexOf(label)
-    if (labelIndex < 0) return false
-    if (!this.isInlineEligibleLabel(label)) return false
-
-    const orientation = getFlippedOrientation(label.orientation)
-    const orientationConstraint = getOrientationConstraint(
-      this.inputProblem,
-      label,
-    )
-    if (orientationConstraint && !orientationConstraint.includes(orientation)) {
-      return false
-    }
-
-    const isAttachedToHostTrace = getTraceLocationsForPoint(
-      label.anchorPoint,
-      this.outputTraces,
-    ).some(({ trace }) => this.isTraceAssociatedWithLabel(trace, label))
-    if (!isAttachedToHostTrace) return false
-
-    const candidate: NetLabelPlacement = {
-      ...label,
-      orientation,
-      center: getCenterFromAnchor(
-        label.anchorPoint,
-        orientation,
-        label.width,
-        label.height,
-      ),
-    }
-    const bounds = getLabelBounds(candidate)
-
-    if (
-      this.inputProblem.chips.some((chip) =>
-        rectsTouchOrOverlap(
-          bounds,
-          getRectBounds(chip.center, chip.width, chip.height),
-        ),
-      ) ||
-      rectIntersectsAnyTextBox(bounds, this.inputProblem) ||
-      traceCrossesBoundsInterior(bounds, this.outputTraces) ||
-      this.outputNetLabelPlacements.some(
-        (otherLabel, otherIndex) =>
-          otherIndex !== labelIndex &&
-          rectsOverlap(bounds, getLabelBounds(otherLabel)),
-      )
-    ) {
-      return false
-    }
-
-    this.outputNetLabelPlacements[labelIndex] = candidate
-    return true
-  }
-
-  private isInlineEligibleLabel(label: NetLabelPlacement) {
-    if (!label.netId) return false
-    return [
-      ...this.inputProblem.directConnections,
-      ...this.inputProblem.netConnections,
-    ].some(
-      (connection) =>
-        connection.allowInlineNetLabel &&
-        connection.netId === label.netId &&
-        label.pinIds.some((pinId) => connection.pinIds.includes(pinId)),
-    )
-  }
-
-  private isTraceAssociatedWithLabel(
-    trace: SolvedTracePath,
-    label: NetLabelPlacement,
-  ) {
-    if (label.mspConnectionPairIds.includes(trace.mspPairId)) return true
-    if (label.netId !== undefined && label.netId === trace.userNetId)
-      return true
-    return label.globalConnNetId === trace.globalConnNetId
   }
 
   getOutput() {
