@@ -453,6 +453,76 @@ const getAlignedReturnBranchPath = ({
   return sharedFirst ? candidate : candidate.reverse()
 }
 
+const getAlignedParallelPinExitPath = ({
+  donorTrace,
+  branchTrace,
+}: {
+  donorTrace: SolvedTracePath
+  branchTrace: SolvedTracePath
+}): Point[] | null => {
+  const sharedPin = getSharedPin({ donorTrace, branchTrace })
+  if (!sharedPin) return null
+  const adjacentPin = getOtherPin({ trace: donorTrace, sharedPin })
+  const targetPin = getOtherPin({ trace: branchTrace, sharedPin })
+  if (!adjacentPin || !targetPin) return null
+
+  const facingDirection = sharedPin._facingDirection
+  if (facingDirection !== "x+" && facingDirection !== "x-") return null
+  if (adjacentPin._facingDirection !== facingDirection) return null
+  if (!nearlyEqual(sharedPin.x, adjacentPin.x)) return null
+  const pinOffset = Math.abs(sharedPin.y - adjacentPin.y)
+  if (
+    pinOffset > MAX_ALIGNED_LOAD_PIN_OFFSET &&
+    !nearlyEqual(pinOffset, MAX_ALIGNED_LOAD_PIN_OFFSET)
+  ) {
+    return null
+  }
+
+  let sharedToAdjacentPath = simplifyPath(donorTrace.tracePath)
+  if (donorTrace.pins[0].pinId !== sharedPin.pinId) {
+    sharedToAdjacentPath = sharedToAdjacentPath.reverse()
+  }
+  if (
+    sharedToAdjacentPath.length !== 4 ||
+    !isHorizontal(sharedToAdjacentPath[0]!, sharedToAdjacentPath[1]!) ||
+    !isVertical(sharedToAdjacentPath[1]!, sharedToAdjacentPath[2]!) ||
+    !isHorizontal(sharedToAdjacentPath[2]!, sharedToAdjacentPath[3]!)
+  ) {
+    return null
+  }
+  const junctionX = sharedToAdjacentPath[1]!.x
+  if (facingDirection === "x+" && junctionX <= sharedPin.x) return null
+  if (facingDirection === "x-" && junctionX >= sharedPin.x) return null
+
+  const branchStartsAtSharedPin = branchTrace.pins[0].pinId === sharedPin.pinId
+  let sharedToTargetPath = simplifyPath(branchTrace.tracePath)
+  if (!branchStartsAtSharedPin) {
+    sharedToTargetPath = sharedToTargetPath.reverse()
+  }
+  if (
+    sharedToTargetPath.length !== 5 ||
+    !isHorizontal(sharedToTargetPath[0]!, sharedToTargetPath[1]!) ||
+    !isVertical(sharedToTargetPath[1]!, sharedToTargetPath[2]!) ||
+    !isHorizontal(sharedToTargetPath[2]!, sharedToTargetPath[3]!) ||
+    !isVertical(sharedToTargetPath[3]!, sharedToTargetPath[4]!) ||
+    !nearlyEqual(sharedToTargetPath[1]!.x, junctionX) ||
+    !railIsOnFacingSide({ railY: adjacentPin.y, pin: targetPin }) ||
+    nearlyEqual(sharedToTargetPath[2]!.y, adjacentPin.y)
+  ) {
+    return null
+  }
+
+  const candidate = simplifyPath([
+    { x: sharedPin.x, y: sharedPin.y },
+    { x: junctionX, y: sharedPin.y },
+    { x: junctionX, y: adjacentPin.y },
+    { x: targetPin.x, y: adjacentPin.y },
+    { x: targetPin.x, y: targetPin.y },
+  ])
+  if (branchStartsAtSharedPin) return candidate
+  return candidate.reverse()
+}
+
 const getAlignedReturnStemsPath = ({
   branchTrace,
   traces,
@@ -581,7 +651,10 @@ export const alignSameNetJunctions = ({
 
         // Prefer the existing return stem. If extending the outer column
         // meets another net, try shorter escapes without moving any pins.
-        let candidatePaths = [getAlignedBranchPath({ donorTrace, branchTrace })]
+        let candidatePaths = [
+          getAlignedBranchPath({ donorTrace, branchTrace }),
+          getAlignedParallelPinExitPath({ donorTrace, branchTrace }),
+        ]
         if (alignReturnBranches) {
           candidatePaths = [
             getAlignedReturnStemsPath({
