@@ -385,11 +385,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           inputTracePaths: instance.availableNetOrientationSolver!.traces,
           globalConnMap: instance.mspConnectionPairSolver!.globalConnMap,
           traceIdsToShift: new Set(
-            instance
-              .availableNetOrientationSolver!.traces.filter((trace) =>
-                trace.mspPairId.startsWith("available-net-orientation-"),
-              )
-              .map((trace) => trace.mspPairId),
+            instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
           ),
         },
       ],
@@ -571,6 +567,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             inputProblem: instance.inputProblem,
             traces: instance.netLabelNetLabelCollisionSolver!.traces,
             netLabelPlacements: collisionOutput.netLabelPlacements,
+            netLabelConnectorTraceIds:
+              instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
           },
         ]
       },
