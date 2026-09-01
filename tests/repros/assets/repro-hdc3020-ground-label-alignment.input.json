@@ -1,0 +1,282 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 4.5,
+        "y": 0
+      },
+      "width": 4,
+      "height": 4.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "VDD",
+          "x": 2.5,
+          "y": 0.525
+        },
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "SCL",
+          "x": 2.5,
+          "y": 0.325
+        },
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "SDA",
+          "x": 2.5,
+          "y": -0.125
+        },
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "GPIO",
+          "x": 2.5,
+          "y": -0.32500000000000007
+        },
+        {
+          "pinId": "schematic_port_4",
+          "displayName": "GND",
+          "x": 2.5,
+          "y": -0.525
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -2.1,
+        "y": 0
+      },
+      "width": 4,
+      "height": 4.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_5",
+          "displayName": "I2C_SDA",
+          "x": -0.10000000000000009,
+          "y": -0.12500000000000022
+        },
+        {
+          "pinId": "schematic_port_6",
+          "displayName": "I2C_ADDR",
+          "x": -0.10000000000000009,
+          "y": -1.4250000000000003
+        },
+        {
+          "pinId": "schematic_port_7",
+          "displayName": "ALERT",
+          "x": -0.10000000000000009,
+          "y": -0.3250000000000002
+        },
+        {
+          "pinId": "schematic_port_8",
+          "displayName": "I2C_SCL",
+          "x": -0.10000000000000009,
+          "y": 0.3250000000000002
+        },
+        {
+          "pinId": "schematic_port_9",
+          "displayName": "VDD",
+          "x": -0.10000000000000009,
+          "y": 0.5250000000000004
+        },
+        {
+          "pinId": "schematic_port_10",
+          "displayName": "RESET",
+          "x": -0.10000000000000009,
+          "y": -0.7750000000000001
+        },
+        {
+          "pinId": "schematic_port_11",
+          "displayName": "I2C_ADDR1",
+          "x": -0.10000000000000009,
+          "y": -1.8750000000000002
+        },
+        {
+          "pinId": "schematic_port_12",
+          "displayName": "GND",
+          "x": -0.10000000000000009,
+          "y": -2.075
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": 0.735,
+        "y": 2.15
+      },
+      "width": 0.97,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_13",
+          "displayName": "anode",
+          "x": 0.7,
+          "y": 2.45
+        },
+        {
+          "pinId": "schematic_port_14",
+          "displayName": "cathode",
+          "x": 0.7,
+          "y": 1.8499999999999999
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": 1.5350000000000001,
+        "y": 2.15
+      },
+      "width": 0.97,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_15",
+          "displayName": "anode",
+          "x": 1.5,
+          "y": 2.45
+        },
+        {
+          "pinId": "schematic_port_16",
+          "displayName": "cathode",
+          "x": 1.5,
+          "y": 1.8499999999999999
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "VDD",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_0",
+        "schematic_port_9",
+        "schematic_port_13",
+        "schematic_port_15"
+      ]
+    },
+    {
+      "netId": "SCL",
+      "isGround": false,
+      "netLabelWidth": 0.48,
+      "anchoredNetLabelWidth": 0.48,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.32,
+      "pinIds": [
+        "schematic_port_1",
+        "schematic_port_8",
+        "schematic_port_14"
+      ]
+    },
+    {
+      "netId": "SDA",
+      "isGround": false,
+      "netLabelWidth": 0.48,
+      "anchoredNetLabelWidth": 0.48,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.32,
+      "pinIds": [
+        "schematic_port_2",
+        "schematic_port_5",
+        "schematic_port_16"
+      ]
+    },
+    {
+      "netId": "ALERT",
+      "isGround": false,
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_3",
+        "schematic_port_7"
+      ]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_4",
+        "schematic_port_6",
+        "schematic_port_11",
+        "schematic_port_12"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 3.08,
+        "y": -2.4299999999999997
+      },
+      "width": 0.3599999999999999,
+      "height": 0.17999999999999972,
+      "text": "MCU"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 3.0199999999999996,
+        "y": 2.415
+      },
+      "width": 0.3599999999999999,
+      "height": 0.24999999999999956,
+      "text": "U2"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -3.04,
+        "y": -2.4299999999999997
+      },
+      "width": 1.3199999999999998,
+      "height": 0.17999999999999972,
+      "text": "HDC3020DEFR"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -3.58,
+        "y": 2.415
+      },
+      "width": 0.3600000000000003,
+      "height": 0.24999999999999956,
+      "text": "U1"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "VDD": [
+      "y+"
+    ],
+    "SCL": [
+      "x-",
+      "x+"
+    ],
+    "SDA": [
+      "x-",
+      "x+"
+    ],
+    "ALERT": [
+      "x-",
+      "x+"
+    ],
+    "GND": [
+      "y-"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}

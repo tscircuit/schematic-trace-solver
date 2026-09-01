@@ -17,7 +17,12 @@ import type { InlineNetLabelPlacement } from "lib/solvers/InlineNetLabelSolver/I
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
-import type { InputChip, InputPin, InputProblem } from "lib/types/InputProblem"
+import type {
+  InputChip,
+  InputPin,
+  InputProblem,
+  NetId,
+} from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
 import { type SchSymbol, symbols } from "schematic-symbols"
 
@@ -63,6 +68,7 @@ type SolverLike = BaseSolver & {
   label?: NetLabelPlacement
   getOutput?: () => SolverOutput
   inlineNetLabelSolver?: { getOutput: () => SolverOutput }
+  netLabelToTraceSolver?: { getOutput: () => SolverOutput }
 }
 
 const isInputProblem = (value: unknown): value is InputProblem => {
@@ -92,6 +98,9 @@ export const getInputProblemFromSolver = (
 
 const safelyGetOutput = (solver: SolverLike): SolverOutput | undefined => {
   try {
+    if (solver.netLabelToTraceSolver?.getOutput) {
+      return solver.netLabelToTraceSolver.getOutput()
+    }
     if (solver.inlineNetLabelSolver?.getOutput) {
       return solver.inlineNetLabelSolver.getOutput()
     }
@@ -184,18 +193,29 @@ const getSnapshotData = (solver: BaseSolver) => {
   }
 }
 
+const isOpaqueSchematicId = (id: string) =>
+  /^(?:schematic|source)_(?:component|port)(?:_|$)/.test(id)
+
 const getRefdes = (chip: InputChip) => {
-  const pinPrefixes = new Set(
-    chip.pins
-      .map((pin) => pin.pinId.split(".")[0])
-      .filter((prefix): prefix is string => Boolean(prefix)),
-  )
-  if (pinPrefixes.size === 1) return [...pinPrefixes][0]!
-  return chip.chipId
+  const pinPrefixes = chip.pins
+    .map((pin) => {
+      const separatorIndex = pin.pinId.indexOf(".")
+      return separatorIndex > 0 ? pin.pinId.slice(0, separatorIndex) : undefined
+    })
+    .filter((prefix): prefix is string => Boolean(prefix))
+  const uniquePinPrefixes = new Set(pinPrefixes)
+  if (pinPrefixes.length === chip.pins.length && uniquePinPrefixes.size === 1) {
+    const inferredRefdes = pinPrefixes[0]!
+    if (!isOpaqueSchematicId(inferredRefdes)) return inferredRefdes
+  }
+  if (!isOpaqueSchematicId(chip.chipId)) return chip.chipId
+  return ""
 }
 
-const getPinLabel = (pinId: string) =>
-  pinId.includes(".") ? pinId.slice(pinId.indexOf(".") + 1) : pinId
+const getPinLabel = (pinId: string) => {
+  if (isOpaqueSchematicId(pinId)) return undefined
+  return pinId.includes(".") ? pinId.slice(pinId.indexOf(".") + 1) : pinId
+}
 
 const getPinDisplayName = (pin: InputPin) => {
   if (pin.displayName !== undefined) return pin.displayName || undefined
@@ -204,7 +224,7 @@ const getPinDisplayName = (pin: InputPin) => {
 
 const getPinNumber = (pin: InputPin) => {
   const idLabel = getPinLabel(pin.pinId)
-  if (/^\d+$/.test(idLabel)) return Number(idLabel)
+  if (idLabel && /^\d+$/.test(idLabel)) return Number(idLabel)
   return pin.displayName && /^\d+$/.test(pin.displayName)
     ? Number(pin.displayName)
     : undefined
@@ -827,7 +847,7 @@ export const convertSolverOutputToCircuitJson = (
       symbol_name: symbolName,
     } satisfies SchematicComponent)
 
-    if (!symbolName) {
+    if (!symbolName && refdes) {
       circuitJson.push({
         type: "schematic_text",
         schematic_text_id: `schematic_component_label_${chipIndex}`,
@@ -874,7 +894,7 @@ export const convertSolverOutputToCircuitJson = (
         type: "source_port",
         source_port_id: sourcePortId,
         source_component_id: sourceComponentId,
-        name: pinDisplayName ?? `pin${pinNumber ?? pinIndex + 1}`,
+        name: pinDisplayName ?? "",
         pin_number: pinNumber,
       } satisfies SourcePort)
 
@@ -936,6 +956,10 @@ export const convertSolverOutputToCircuitJson = (
   }
 
   const netNames = new Set<string>()
+  const groundNetIds = new Set<NetId>()
+  for (const connection of inputProblem.netConnections) {
+    if (connection.isGround) groundNetIds.add(connection.netId)
+  }
   for (const connection of [
     ...inputProblem.directConnections,
     ...inputProblem.netConnections,
@@ -962,7 +986,7 @@ export const convertSolverOutputToCircuitJson = (
       source_net_id: sourceNetId,
       name: netName,
       member_source_group_ids: [],
-      is_ground: /(^|[._-])gnd($|[._-])/i.test(netName),
+      is_ground: groundNetIds.has(netName),
       is_power: /(^|[._-])(vcc|vdd|vss|gnd)($|[._-])/i.test(netName),
     } satisfies SourceNet)
   }
@@ -1044,14 +1068,20 @@ export const convertSolverOutputToCircuitJson = (
 
   for (const [labelIndex, label] of snapshotData.netLabelPlacements.entries()) {
     const netName = getNetLabelNetName(label)
+    const anchorSide = orientationToAnchorSide(label.orientation)
+    let symbolName: string | undefined
+    if (groundNetIds.has(netName) && anchorSide === "top") {
+      symbolName = "rail_down"
+    }
     circuitJson.push({
       type: "schematic_net_label",
       schematic_net_label_id: `schematic_net_label_${labelIndex}`,
       source_net_id: sourceNetIdByName.get(netName)!,
       center: label.center,
       anchor_position: label.anchorPoint,
-      anchor_side: orientationToAnchorSide(label.orientation),
+      anchor_side: anchorSide,
       text: getNetLabelText(label),
+      symbol_name: symbolName,
     } satisfies SchematicNetLabel)
   }
 

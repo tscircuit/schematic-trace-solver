@@ -1,0 +1,190 @@
+{
+  "chips": [
+    {
+      "chipId": "Q1B",
+      "center": { "x": -1.343443, "y": 1.645032 },
+      "width": 0.84,
+      "height": 1.1,
+      "pins": [
+        {
+          "pinId": "schematic_port_q1b_drain",
+          "x": -1.043443,
+          "y": 2.195032,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_q1b_source",
+          "x": -1.033443,
+          "y": 1.095032,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "Q1A",
+      "center": { "x": -1.343443, "y": -0.731126 },
+      "width": 0.84,
+      "height": 1.1,
+      "pins": [
+        {
+          "pinId": "schematic_port_q1a_drain",
+          "x": -1.043443,
+          "y": -0.181126,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_q1a_source",
+          "x": -1.033443,
+          "y": -1.281126,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "Q2A",
+      "center": { "x": 1.343443, "y": 1.645032 },
+      "width": 0.84,
+      "height": 1.1,
+      "pins": [
+        {
+          "pinId": "schematic_port_q2a_drain",
+          "x": 1.043443,
+          "y": 2.195032,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_q2a_source",
+          "x": 1.033443,
+          "y": 1.095032,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "Q2B",
+      "center": { "x": 1.343443, "y": -0.731126 },
+      "width": 0.84,
+      "height": 1.1,
+      "pins": [
+        {
+          "pinId": "schematic_port_q2b_drain",
+          "x": 1.043443,
+          "y": -0.181126,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_q2b_source",
+          "x": 1.033443,
+          "y": -1.281126,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "C17",
+      "symbolName": "capacitor_right",
+      "center": { "x": -0.091391, "y": 0.913907 },
+      "width": 0.6,
+      "height": 0.84,
+      "pins": [
+        {
+          "pinId": "schematic_port_c17_1",
+          "displayName": "1",
+          "x": -0.391391,
+          "y": 0.913907,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_c17_2",
+          "displayName": "2",
+          "x": 0.208609,
+          "y": 0.913907,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "C18",
+      "symbolName": "capacitor_right",
+      "center": { "x": -0.091391, "y": 0 },
+      "width": 0.72,
+      "height": 0.84,
+      "pins": [
+        {
+          "pinId": "schematic_port_c18_1",
+          "displayName": "1",
+          "x": -0.391391,
+          "y": 0,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_c18_2",
+          "displayName": "2",
+          "x": 0.208609,
+          "y": 0,
+          "_facingDirection": "x+"
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "top rail",
+      "netLabelText": "T",
+      "pinIds": [
+        "schematic_port_q1b_drain",
+        "schematic_port_q2a_drain"
+      ]
+    },
+    {
+      "netId": "left rail",
+      "netLabelText": "L",
+      "pinIds": [
+        "schematic_port_q1b_source",
+        "schematic_port_q1a_drain"
+      ]
+    },
+    {
+      "netId": "right rail",
+      "netLabelText": "R",
+      "pinIds": [
+        "schematic_port_q2a_source",
+        "schematic_port_q2b_drain"
+      ]
+    },
+    {
+      "netId": "bottom rail",
+      "netLabelText": "B",
+      "pinIds": [
+        "schematic_port_q1a_source",
+        "schematic_port_q2b_source"
+      ]
+    },
+    {
+      "netId": "left rail to C17",
+      "pinIds": [
+        "schematic_port_q1b_source",
+        "schematic_port_c17_1"
+      ]
+    },
+    {
+      "netId": "left inner branch",
+      "pinIds": ["schematic_port_c17_1", "schematic_port_c18_1"]
+    },
+    {
+      "netId": "right rail to C17",
+      "pinIds": [
+        "schematic_port_q2a_source",
+        "schematic_port_c17_2"
+      ]
+    },
+    {
+      "netId": "right inner branch",
+      "pinIds": ["schematic_port_c17_2", "schematic_port_c18_2"]
+    }
+  ],
+  "netConnections": [],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {},
+  "maxMspPairDistance": 20
+}

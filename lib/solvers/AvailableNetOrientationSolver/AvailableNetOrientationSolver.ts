@@ -8,6 +8,7 @@ import {
   getDimsForOrientation,
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -17,7 +18,10 @@ import type {
 } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
-import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
+import {
+  getTextBoxBounds,
+  rectIntersectsAnyTextBox,
+} from "lib/utils/textBoxBounds"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -50,6 +54,7 @@ import { visualizeAvailableNetOrientationSolver } from "./visualize"
 import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
+const CONNECTED_PIN_ROW_OVERLAP_TOLERANCE = 0.1
 
 export class AvailableNetOrientationSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -250,6 +255,9 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const orientations = this.getAvailableOrientations(label)
     if (orientations.length === 0) return false
     if (!orientations.includes(label.orientation)) return true
+    if (this.getTextBlockedMultiPinRailTraces(label, orientations[0]!)) {
+      return true
+    }
     if (!this.crowdedPortOnlyLabelIndices.has(labelIndex)) return false
 
     const bounds = getRectBounds(label.center, label.width, label.height)
@@ -407,9 +415,22 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       (netConnection?.pinIds.length ?? 0) > 2 &&
       isYOrientation(requiredOrientation) &&
       this.hasPortOnlyLabelOnSameNet(label)
+    const textBlockedMultiPinRailTraces = this.getTextBlockedMultiPinRailTraces(
+      label,
+      requiredOrientation,
+    )
     const isPairedSameSidePowerRail =
       isYOrientation(requiredOrientation) &&
       this.hasOppositeVerticalRailOnSameChipSide(label, requiredOrientation)
+    if (textBlockedMultiPinRailTraces) {
+      const nearbyCandidate = this.findValidNearbyRailCandidate(
+        label,
+        requiredOrientation,
+        labelIndex,
+        textBlockedMultiPinRailTraces,
+      )
+      if (nearbyCandidate) return nearbyCandidate
+    }
     if (
       orientations.length === 1 &&
       isYOrientation(requiredOrientation) &&
@@ -417,9 +438,22 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.hasTraceContinuingInOrientation(label, requiredOrientation) &&
       (isDistanceSplitVerticalRail || isPairedSameSidePowerRail)
     ) {
-      // Keep the established outward column, but attach at the furthest trace
-      // point in the required vertical direction. This places y+ labels above
-      // a rail and y- labels below it while using a short horizontal connector.
+      const hostRailCandidate = this.findValidTraceAnchorCandidate(
+        label,
+        requiredOrientation,
+        labelIndex,
+      )
+      if (hostRailCandidate) {
+        const canUseHostRail = this.canPlaceVerticalLabelOnHostRail(
+          hostRailCandidate,
+          label,
+        )
+        if (canUseHostRail) return hostRailCandidate
+        hostRailCandidate.selected = false
+      }
+
+      // Keep the established outward column when the direct rail end is not a
+      // clear segment of the connected component side.
       const traceAnchorCandidate = this.findValidOutwardTraceAnchorCandidate(
         label,
         requiredOrientation,
@@ -785,7 +819,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           connectedPinIds.add(pinId)
         }
       }
-
       // Multi-pin rails are routed as a chain of pairwise traces. Follow the
       // pairs only when they share both a pin and an aligned vertical rail,
       // which identifies one continuous rail. A shared pin alone can join
@@ -1012,6 +1045,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     outwardDistance: number
     phase?: CandidatePhase
     stopOnTraceCollision?: boolean
+    connectorSource?: Point
+    startDistance?: number
   }) {
     const {
       label,
@@ -1023,10 +1058,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       outwardDistance,
       phase = "shift",
       stopOnTraceCollision = true,
+      connectorSource,
+      startDistance = LABEL_SEARCH_STEP,
     } = params
 
     for (
-      let distance = LABEL_SEARCH_STEP;
+      let distance = startDistance;
       distance <= maxSearchDistance + EPS;
       distance += LABEL_SEARCH_STEP
     ) {
@@ -1034,7 +1071,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         x: baseAnchor.x + direction.x * distance,
         y: baseAnchor.y + direction.y * distance,
       }
-      const candidate = this.createCandidate(label, anchorPoint, orientation)
+      const candidate = this.createCandidate(
+        label,
+        anchorPoint,
+        orientation,
+        connectorSource,
+      )
       const result = this.evaluateCandidate(
         candidate,
         label,
@@ -1405,9 +1447,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     })
     if (boundsStatus !== "valid") {
       if (
-        phase !== "trace-anchor" ||
+        (phase !== "trace-anchor" && phase !== "connected-rail-shift") ||
         boundsStatus !== "chip-collision" ||
-        !this.isAcceptableTraceAnchorChipCollision(candidate, label, bounds)
+        !this.isAcceptableTraceAnchorChipCollision(candidate, label, bounds) ||
+        (phase === "connected-rail-shift" &&
+          !this.staysOutsideConnectedPinRow({ candidate, label, bounds }))
       ) {
         return boundsStatus
       }
@@ -1433,6 +1477,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
     if (this.obstacleIndex.doesTracePathCrossChip(connectorTrace)) {
       return "chip-collision"
+    }
+
+    for (const textBox of this.inputProblem.textBoxes ?? []) {
+      if (
+        tracePathIntersectsBounds(connectorTrace, getTextBoxBounds(textBox))
+      ) {
+        return "text-collision"
+      }
     }
 
     for (const i of this.obstacleIndex.getLabelIndicesNearTracePath(
@@ -1485,6 +1537,20 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         anchorPoint.y > chipBounds.maxY + EPS
       )
     })
+  }
+
+  private staysOutsideConnectedPinRow(params: {
+    candidate: CandidateLabel
+    label: NetLabelPlacement
+    bounds: Bounds
+  }) {
+    const { candidate, label, bounds } = params
+    const pin = this.pinMap[label.pinIds[0]!]
+    if (!pin || !isYOrientation(candidate.orientation)) return false
+    if (candidate.anchorPoint.x < pin.x) {
+      return bounds.maxX <= pin.x + CONNECTED_PIN_ROW_OVERLAP_TOLERANCE + EPS
+    }
+    return bounds.minX >= pin.x - CONNECTED_PIN_ROW_OVERLAP_TOLERANCE - EPS
   }
 
   private getBoundsStatus(candidateBoundsCheck: {
@@ -1561,6 +1627,178 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       (chipSide === "left" && label.orientation === "x-") ||
       (chipSide === "right" && label.orientation === "x+")
     )
+  }
+
+  private canPlaceVerticalLabelOnHostRail(
+    candidate: CandidateLabel,
+    label: NetLabelPlacement,
+  ) {
+    const isOnHostRail = label.mspConnectionPairIds.some((traceId) => {
+      const trace = this.traceMap[traceId]
+      return (
+        trace && tracePathContainsPoint(trace.tracePath, candidate.anchorPoint)
+      )
+    })
+    if (!isOnHostRail) return false
+
+    const hostPin = this.pinMap[label.pinIds[0]!]
+    if (!hostPin) return false
+    if (
+      label.pinIds.some(
+        (pinId) => this.pinMap[pinId]?.chipId !== hostPin.chipId,
+      )
+    ) {
+      return false
+    }
+
+    const chip = this.chipObstacleSpatialIndex.chips.find(
+      (chip) => chip.chipId === hostPin.chipId,
+    )
+    if (!chip) return false
+
+    const labelBounds = getRectBounds(
+      candidate.center,
+      candidate.width,
+      candidate.height,
+    )
+    if (
+      labelBounds.minY < chip.bounds.minY - EPS ||
+      labelBounds.maxY > chip.bounds.maxY + EPS
+    ) {
+      return false
+    }
+
+    if (
+      candidate.anchorPoint.x >= chip.bounds.minX - EPS &&
+      candidate.anchorPoint.x <= chip.bounds.maxX + EPS
+    ) {
+      return false
+    }
+
+    return chip.pins.every(
+      (pin) =>
+        label.pinIds.includes(pin.pinId) ||
+        pin.y <= labelBounds.minY + EPS ||
+        pin.y >= labelBounds.maxY - EPS,
+    )
+  }
+
+  private getTextBlockedMultiPinRailTraces(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+  ) {
+    if (!isYOrientation(orientation)) return null
+    const componentId = this.pinMap[label.pinIds[0]!]?.chipId
+    const localTraces = Object.values(this.traceMap).filter(
+      (trace) =>
+        trace.globalConnNetId === label.globalConnNetId &&
+        trace.pins.every((pin) => pin.chipId === componentId),
+    )
+    const connectedPinIds = new Set(label.pinIds)
+    const connectedTraces = new Set<SolvedTracePath>()
+    for (let changed = true; changed; ) {
+      changed = false
+      for (const trace of localTraces) {
+        if (connectedTraces.has(trace)) continue
+        if (!trace.pinIds.some((pinId) => connectedPinIds.has(pinId))) continue
+        connectedTraces.add(trace)
+        for (const pinId of trace.pinIds) connectedPinIds.add(pinId)
+        changed = true
+      }
+    }
+    if (
+      connectedPinIds.size < 3 ||
+      (connectedPinIds.size === 3 && !this.hasPortOnlyLabelOnSameNet(label))
+    ) {
+      return null
+    }
+
+    const pins = [...connectedPinIds].map((pinId) => this.pinMap[pinId]!)
+    const direction = dir(orientation)
+    const pinX = pins[0]!.x
+    if (pins.some((pin) => Math.abs(pin.x - pinX) > EPS)) return null
+    const sidePins = this.inputProblem.chips
+      .find((chip) => chip.chipId === componentId)!
+      .pins.filter((pin) => Math.abs(pin.x - pinX) <= EPS)
+    const minY = Math.min(...pins.map((pin) => pin.y))
+    const maxY = Math.max(...pins.map((pin) => pin.y))
+    if (
+      sidePins.some(
+        (pin) =>
+          pin.y >= minY - EPS &&
+          pin.y <= maxY + EPS &&
+          !connectedPinIds.has(pin.pinId),
+      ) ||
+      (orientation === "y-" &&
+        minY > Math.min(...sidePins.map((pin) => pin.y)) + EPS) ||
+      (orientation === "y+" &&
+        maxY < Math.max(...sidePins.map((pin) => pin.y)) - EPS)
+    ) {
+      return null
+    }
+    const outerPinPosition = Math.max(
+      ...pins.map((pin) => pin.x * direction.x + pin.y * direction.y),
+    )
+    const blockedByText = (this.inputProblem.textBoxes ?? []).some(
+      (textBox) =>
+        textBox.chipId === componentId &&
+        textBox.center.x * direction.x + textBox.center.y * direction.y >
+          outerPinPosition + EPS,
+    )
+    return blockedByText ? [...connectedTraces] : null
+  }
+
+  private findValidNearbyRailCandidate(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+    labelIndex: number,
+    localTraces: SolvedTracePath[],
+  ) {
+    if (!isYOrientation(orientation)) return null
+    const direction = dir(orientation)
+    const connectorY = [
+      ...new Set(localTraces.flatMap((trace) => trace.pinIds)),
+    ]
+      .map((pinId) => this.pinMap[pinId]!)
+      .sort((a, b) => b.y * direction.y - a.y * direction.y)[0]?.y
+    if (connectorY === undefined) return null
+
+    const pinX = this.pinMap[label.pinIds[0]!]!.x
+    const railXs = [
+      ...new Set(
+        localTraces.flatMap((trace) => trace.tracePath.map((point) => point.x)),
+      ),
+    ]
+      .filter((x) => Math.abs(x - pinX) > EPS)
+      .sort((a, b) => Math.abs(a - pinX) - Math.abs(b - pinX))
+
+    for (const x of railXs) {
+      const connectorSource = { x, y: connectorY }
+      if (
+        !Object.values(this.traceMap).some(
+          (trace) =>
+            trace.globalConnNetId === label.globalConnNetId &&
+            tracePathContainsPoint(trace.tracePath, connectorSource),
+        )
+      ) {
+        continue
+      }
+      const candidate = this.findValidCandidateInShiftColumn({
+        label,
+        labelIndex,
+        orientation,
+        direction,
+        baseAnchor: connectorSource,
+        maxSearchDistance: this.getSearchDistanceLimit(label, orientation),
+        outwardDistance: 0,
+        phase: "connected-rail-shift",
+        stopOnTraceCollision: false,
+        connectorSource,
+        startDistance: 0,
+      })
+      if (candidate) return candidate
+    }
+    return null
   }
 
   private hasPortOnlyLabelOnSameNet(label: NetLabelPlacement) {

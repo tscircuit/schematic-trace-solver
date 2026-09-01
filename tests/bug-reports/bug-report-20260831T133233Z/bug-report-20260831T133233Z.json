@@ -1,0 +1,172 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 1.2000000000000002,
+      "height": 1.4,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "6",
+          "x": 0.6000000000000001,
+          "y": 0.5
+        },
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "5",
+          "x": 0.6000000000000001,
+          "y": 0.30000000000000004
+        },
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "4",
+          "x": 0.6000000000000001,
+          "y": 0.10000000000000009
+        },
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "3",
+          "x": 0.6000000000000001,
+          "y": -0.09999999999999998
+        },
+        {
+          "pinId": "schematic_port_4",
+          "displayName": "2",
+          "x": 0.6000000000000001,
+          "y": -0.3
+        },
+        {
+          "pinId": "schematic_port_5",
+          "displayName": "1",
+          "x": 0.6000000000000001,
+          "y": -0.5
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "SPI1_CS0",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_0"
+      ]
+    },
+    {
+      "netId": "SPI1_MISO",
+      "isGround": false,
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.8,
+      "pinIds": [
+        "schematic_port_1"
+      ]
+    },
+    {
+      "netId": "SPI1_MOSI",
+      "isGround": false,
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.8,
+      "pinIds": [
+        "schematic_port_2"
+      ]
+    },
+    {
+      "netId": "SPI1_CLK",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_3"
+      ]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_4"
+      ]
+    },
+    {
+      "netId": "P3V3",
+      "isGround": false,
+      "netLabelWidth": 0.6,
+      "anchoredNetLabelWidth": 0.6,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.4,
+      "pinIds": [
+        "schematic_port_5"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 1.0599999999999998,
+        "y": -0.83
+      },
+      "width": 2.52,
+      "height": 0.17999999999999994,
+      "text": "SM06B-SRSS-TB(LF)(SN)"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0.52,
+        "y": 0.815
+      },
+      "width": 1.56,
+      "height": 0.25,
+      "text": "SPI1_DISPLAY"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "SPI1_CS0": [
+      "x-",
+      "x+"
+    ],
+    "SPI1_MISO": [
+      "x-",
+      "x+"
+    ],
+    "SPI1_MOSI": [
+      "x-",
+      "x+"
+    ],
+    "SPI1_CLK": [
+      "x-",
+      "x+"
+    ],
+    "GND": [
+      "y-"
+    ],
+    "P3V3": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
