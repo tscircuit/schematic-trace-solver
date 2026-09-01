@@ -1,0 +1,149 @@
+{
+  "chips": [
+    {
+      "chipId": "J_USB",
+      "center": { "x": -12, "y": 6 },
+      "width": 2.1,
+      "height": 1.8,
+      "pins": [
+        { "pinId": "J_USB.DN2", "displayName": "B7", "x": -13.05, "y": 5.5 },
+        { "pinId": "J_USB.DN1", "displayName": "A7", "x": -10.95, "y": 5.3 },
+        { "pinId": "J_USB.CC2", "displayName": "B5", "x": -10.95, "y": 5.9 },
+        { "pinId": "J_USB.GND1", "displayName": "A1B12", "x": -10.95, "y": 6.1 },
+        { "pinId": "J_USB.GND2", "displayName": "B1A12", "x": -10.95, "y": 6.3 },
+        { "pinId": "J_USB.VBUS1", "displayName": "B4A9", "x": -10.95, "y": 6.5 },
+        { "pinId": "J_USB.VBUS2", "displayName": "A4B9", "x": -10.95, "y": 6.7 }
+      ],
+      "sectionId": "USB_INPUT"
+    },
+    {
+      "chipId": "U_USB_ESD",
+      "center": { "x": -8.5, "y": 6 },
+      "width": 2,
+      "height": 0.8,
+      "pins": [
+        { "pinId": "U_USB_ESD.1", "displayName": "1", "x": -9.5, "y": 6.2 },
+        { "pinId": "U_USB_ESD.GND", "displayName": "GND", "x": -9.5, "y": 6 },
+        { "pinId": "U_USB_ESD.6", "displayName": "6", "x": -7.5, "y": 6.2 }
+      ],
+      "sectionId": "USB_INPUT"
+    },
+    {
+      "chipId": "F1",
+      "center": { "x": -12, "y": 9 },
+      "width": 0.8,
+      "height": 0.16,
+      "pins": [
+        { "pinId": "F1.1", "displayName": "1", "x": -12.4, "y": 9 },
+        { "pinId": "F1.2", "displayName": "2", "x": -11.6, "y": 9 }
+      ],
+      "sectionId": "USB_INPUT"
+    },
+    {
+      "chipId": "R_USB_DN",
+      "center": { "x": -4.5, "y": 5.8 },
+      "width": 4.08,
+      "height": 0.68,
+      "pins": [
+        {
+          "pinId": "R_USB_DN.1",
+          "displayName": "anode",
+          "x": -6.54,
+          "y": 5.8,
+          "_facingDirection": "x-"
+        }
+      ],
+      "sectionId": "USB_INPUT"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "USB_DN_CONN",
+      "isGround": false,
+      "netLabelWidth": 1.44,
+      "anchoredNetLabelWidth": 1.44,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.96,
+      "pinIds": ["J_USB.DN2", "J_USB.DN1", "U_USB_ESD.1"]
+    },
+    {
+      "netId": "USB_CC2",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "pinIds": ["J_USB.CC2"]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": ["J_USB.GND1", "J_USB.GND2", "U_USB_ESD.GND"]
+    },
+    {
+      "netId": "USB_VBUS_RAW",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 1.56,
+      "pinIds": ["J_USB.VBUS1", "J_USB.VBUS2", "F1.1"]
+    },
+    {
+      "netId": "VBUS5V",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.84,
+      "pinIds": ["F1.2"]
+    },
+    {
+      "netId": "USB_DN_ESD",
+      "isGround": false,
+      "netLabelWidth": 1.32,
+      "anchoredNetLabelWidth": 1.32,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.88,
+      "pinIds": ["U_USB_ESD.6", "R_USB_DN.1"]
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "USB_DN_CONN": ["x-", "x+"],
+    "USB_CC2": ["x-", "x+"],
+    "GND": ["y-"],
+    "USB_VBUS_RAW": ["y+"],
+    "VBUS5V": ["y+"],
+    "USB_DN_ESD": ["x-", "x+"]
+  },
+  "textBoxes": [
+    {
+      "chipId": "J_USB",
+      "center": { "x": -11.81, "y": 4.97 },
+      "width": 1.68,
+      "height": 0.18,
+      "text": "TYPE-C-31-M-12"
+    },
+    {
+      "chipId": "J_USB",
+      "center": { "x": -11.63, "y": 7.015 },
+      "width": 2.16,
+      "height": 0.25,
+      "text": "USB-C USB2 DEVICE"
+    },
+    {
+      "chipId": "U_USB_ESD",
+      "center": { "x": -8.44, "y": 5.47 },
+      "width": 1.32,
+      "height": 0.18,
+      "text": "USBLC6-2SC6"
+    },
+    {
+      "chipId": "U_USB_ESD",
+      "center": { "x": -7.96, "y": 6.515 },
+      "width": 2.4,
+      "height": 0.25,
+      "text": "USBLC6-2SC6 USB ESD"
+    }
+  ],
+  "maxMspPairDistance": 2.4
+}
