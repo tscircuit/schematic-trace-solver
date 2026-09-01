@@ -14,6 +14,7 @@ import { rectIntersectsAnyTrace } from "lib/solvers/NetLabelPlacementSolver/Sing
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
+import { getOrientationConstraint } from "lib/utils/getOrientationConstraint"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 type CandidateStatus =
@@ -183,7 +184,20 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   private buildCandidatesForLabel(label: NetLabelPlacement): Candidate[] {
     const netLabelWidth = this.netLabelWidthOf(label)
     const netLabelHeight = this.netLabelHeightOf(label)
-    const candidates: Candidate[] = []
+    const preferredCandidates: Candidate[] = []
+    const fallbackCandidates: Candidate[] = []
+    const orientationConstraint = getOrientationConstraint(
+      this.inputProblem,
+      label,
+    )
+
+    const queueCandidate = (candidate: Candidate) => {
+      if (orientationConstraint?.includes(candidate.orientation)) {
+        preferredCandidates.push(candidate)
+      } else {
+        fallbackCandidates.push(candidate)
+      }
+    }
 
     const buildCandidate = (
       orientation: FacingDirection,
@@ -224,7 +238,7 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
         ...allOrientations.filter((o) => o !== label.orientation),
       ]
       for (const orientation of orderedOrientations) {
-        candidates.push(buildCandidate(orientation, label.anchorPoint))
+        queueCandidate(buildCandidate(orientation, label.anchorPoint))
       }
     } else {
       for (const mspPairId of label.mspConnectionPairIds) {
@@ -247,7 +261,7 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
           }
           for (const anchor of sampleAnchorsAlongSegment(segStart, segEnd)) {
             for (const orientation of perpendicularOrientations) {
-              candidates.push(
+              queueCandidate(
                 buildCandidate(
                   orientation,
                   anchor,
@@ -261,7 +275,10 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
       }
     }
 
-    return candidates
+    // Match NetLabelPlacementSolver's policy: honor an explicit orientation
+    // whenever a collision-free placement exists, then fall back to the
+    // normal candidate order rather than leaving two labels overlapping.
+    return [...preferredCandidates, ...fallbackCandidates]
   }
 
   private checkCandidate(
