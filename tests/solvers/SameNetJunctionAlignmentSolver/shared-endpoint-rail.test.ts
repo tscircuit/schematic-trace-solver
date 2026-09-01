@@ -228,3 +228,41 @@ test("keeps a shared-endpoint rail offset when its moved label would hit another
     originalBranch,
   )
 })
+
+test("moves a generated connector junction with its aligned host trace", () => {
+  const fixture = createFixture(0, false)
+  fixture.traces.push({
+    ...structuredClone(
+      fixture.traces.find((trace) => trace.mspPairId === "branch")!,
+    ),
+    mspPairId: "available-net-orientation-0-SIGNAL",
+    mspConnectionPairIds: ["available-net-orientation-0-SIGNAL"],
+    tracePath: [
+      { x: 0.5, y: -0.5 },
+      { x: 0.8, y: -0.5 },
+    ],
+  })
+  fixture.netLabelPlacements.push({
+    globalConnNetId: "signal",
+    dcConnNetId: "signal",
+    netId: "SIGNAL",
+    mspConnectionPairIds: ["branch"],
+    pinIds: ["source.shared", "target.pin"],
+    orientation: "x+",
+    anchorPoint: { x: 0.8, y: -0.5 },
+    center: { x: 0.9, y: -0.5 },
+    width: 0.2,
+    height: 0.2,
+  })
+
+  const result = alignSameNetJunctions(fixture)
+  const branch = result.traces.find((trace) => trace.mspPairId === "branch")!
+  const connector = result.traces.find((trace) =>
+    trace.mspPairId.startsWith("available-net-orientation-"),
+  )!
+
+  expect(branch.tracePath[1]!.x).toBe(0.2)
+  expect(connector.tracePath[0]).toEqual({ x: 0.2, y: -0.5 })
+  expect(connector.tracePath[1]).toEqual({ x: 0.8, y: -0.5 })
+  expect(result.netLabelPlacements[0]!.anchorPoint).toEqual({ x: 0.8, y: -0.5 })
+})
