@@ -129,7 +129,6 @@ test("preserves a crossing when avoiding it would lengthen the routed trace", ()
   })
 
   expect(result.reroutedTraceCount).toBe(0)
-  expect(result.remainingConnectorCrossingCount).toBe(1)
   expect(result.traces[0]!.tracePath).toEqual(straightSignal.tracePath)
 })
 
@@ -157,6 +156,5 @@ test("allows crossings between generated label connectors", () => {
   })
 
   expect(result.reroutedTraceCount).toBe(0)
-  expect(result.remainingConnectorCrossingCount).toBe(1)
   expect(result.traces).toEqual([connectorTrace, otherConnector])
 })

@@ -146,10 +146,6 @@ export class TraceCleanupSolver extends BaseSolver {
     )
     this.stats.reroutedGeneratedConnectorCrossingTraceCount =
       result.reroutedTraceCount
-    this.stats.initialGeneratedConnectorCrossingCount =
-      result.initialConnectorCrossingCount
-    this.stats.remainingGeneratedConnectorCrossingCount =
-      result.remainingConnectorCrossingCount
     this._advancePipeline()
   }
 
