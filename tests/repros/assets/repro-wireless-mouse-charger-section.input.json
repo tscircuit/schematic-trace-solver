@@ -1,0 +1,591 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -39,
+        "y": 0
+      },
+      "width": 2.760000000000005,
+      "height": 0.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "STAT",
+          "x": -37.62,
+          "y": -0.1
+        },
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "VSS",
+          "x": -40.38,
+          "y": 0
+        },
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "VBAT",
+          "x": -37.62,
+          "y": 0.1
+        },
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "VDD",
+          "x": -40.38,
+          "y": 0.2
+        },
+        {
+          "pinId": "schematic_port_4",
+          "displayName": "PROG",
+          "x": -40.38,
+          "y": -0.2
+        }
+      ],
+      "sectionId": "UsbCharging"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -39,
+        "y": -4
+      },
+      "width": 1.5600000000000023,
+      "height": 0.6800000000000002,
+      "pins": [
+        {
+          "pinId": "schematic_port_5",
+          "displayName": "anode",
+          "x": -39.78,
+          "y": -4,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_6",
+          "displayName": "cathode",
+          "x": -38.22,
+          "y": -4,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "UsbCharging"
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -33.447500000000005,
+        "y": -3
+      },
+      "width": 2.0050000000000026,
+      "height": 0.7600000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_7",
+          "displayName": "1",
+          "x": -34,
+          "y": -2.6199999999999997,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_8",
+          "displayName": "2",
+          "x": -34,
+          "y": -3.3800000000000003,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "UsbCharging"
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": -35.04,
+        "y": 3
+      },
+      "width": 1.4399999999999977,
+      "height": 0.6800000000000006,
+      "pins": [
+        {
+          "pinId": "schematic_port_9",
+          "displayName": "anode",
+          "x": -35.76,
+          "y": 3,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_10",
+          "displayName": "cathode",
+          "x": -34.32,
+          "y": 3,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "UsbCharging"
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": -28.96,
+        "y": 3
+      },
+      "width": 1.2000000000000028,
+      "height": 1.1800000000000006,
+      "pins": [
+        {
+          "pinId": "schematic_port_11",
+          "displayName": "anode",
+          "x": -29.560000000000002,
+          "y": 3,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_12",
+          "displayName": "cathode",
+          "x": -28.36,
+          "y": 3,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "UsbCharging"
+    },
+    {
+      "chipId": "schematic_component_5",
+      "center": {
+        "x": -27,
+        "y": 0
+      },
+      "width": 2,
+      "height": 0.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_13",
+          "displayName": "1",
+          "x": -28,
+          "y": 0.1
+        },
+        {
+          "pinId": "schematic_port_14",
+          "displayName": "2",
+          "x": -28,
+          "y": -0.1
+        },
+        {
+          "pinId": "schematic_port_15",
+          "displayName": "3",
+          "x": -26,
+          "y": -0.1
+        },
+        {
+          "pinId": "schematic_port_16",
+          "displayName": "4",
+          "x": -26,
+          "y": 0.1
+        }
+      ],
+      "sectionId": "BatteryPower"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": ".U_CHARGER > .PROG to .R_CHARGE_PROG > .pin1",
+      "netLabelWidth": 1.8,
+      "pinIds": [
+        "schematic_port_4",
+        "schematic_port_5"
+      ]
+    },
+    {
+      "netId": ".R_CHARGE_LED > .pin2 to .LED_CHARGE > .anode",
+      "netLabelWidth": 1.92,
+      "pinIds": [
+        "schematic_port_10",
+        "schematic_port_11"
+      ]
+    },
+    {
+      "netId": ".LED_CHARGE > .cathode to .U_CHARGER > .STAT",
+      "netLabelWidth": 1.8,
+      "pinIds": [
+        "schematic_port_12",
+        "schematic_port_0"
+      ]
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_1",
+        "schematic_port_6",
+        "schematic_port_8",
+        "schematic_port_14"
+      ]
+    },
+    {
+      "netId": "VBAT",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_2",
+        "schematic_port_7",
+        "schematic_port_13"
+      ]
+    },
+    {
+      "netId": "VBUS_USB",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 1.08,
+      "pinIds": [
+        "schematic_port_3",
+        "schematic_port_9"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -38.959999999999994,
+        "y": -0.43
+      },
+      "width": 2.039999999999999,
+      "height": 0.18000000000000005,
+      "text": "MCP73831T-2ACI/OT"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -39.44,
+        "y": 0.41500000000000004
+      },
+      "width": 1.2000000000000028,
+      "height": 0.25000000000000006,
+      "text": "U_CHARGER"
+    },
+    {
+      "chipId": "schematic_component_5",
+      "center": {
+        "x": -26.340000000000003,
+        "y": -0.43
+      },
+      "width": 2.5199999999999996,
+      "height": 0.18000000000000005,
+      "text": "S2B-PH-SM4-TB(LF)(SN)"
+    },
+    {
+      "chipId": "schematic_component_5",
+      "center": {
+        "x": -26.700000000000003,
+        "y": 0.41500000000000004
+      },
+      "width": 1.9199999999999982,
+      "height": 0.25000000000000006,
+      "text": "J_BAT_PROTECTED"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "VBUS_USB": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ],
+    "VBAT": [
+      "y+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_chipObstacleSpatialIndex": {
+    "chips": [
+      {
+        "chipId": "schematic_component_0",
+        "center": {
+          "x": -39,
+          "y": 0
+        },
+        "width": 2.760000000000005,
+        "height": 0.6,
+        "pins": [
+          {
+            "pinId": "schematic_port_0",
+            "displayName": "STAT",
+            "x": -37.62,
+            "y": -0.1
+          },
+          {
+            "pinId": "schematic_port_1",
+            "displayName": "VSS",
+            "x": -40.38,
+            "y": 0
+          },
+          {
+            "pinId": "schematic_port_2",
+            "displayName": "VBAT",
+            "x": -37.62,
+            "y": 0.1
+          },
+          {
+            "pinId": "schematic_port_3",
+            "displayName": "VDD",
+            "x": -40.38,
+            "y": 0.2
+          },
+          {
+            "pinId": "schematic_port_4",
+            "displayName": "PROG",
+            "x": -40.38,
+            "y": -0.2
+          }
+        ],
+        "sectionId": "UsbCharging",
+        "bounds": {
+          "minX": -40.38,
+          "maxX": -37.62,
+          "minY": -0.3,
+          "maxY": 0.3
+        },
+        "spatialIndexId": 0
+      },
+      {
+        "chipId": "schematic_component_1",
+        "center": {
+          "x": -39,
+          "y": -4
+        },
+        "width": 1.5600000000000023,
+        "height": 0.6800000000000002,
+        "pins": [
+          {
+            "pinId": "schematic_port_5",
+            "displayName": "anode",
+            "x": -39.78,
+            "y": -4,
+            "_facingDirection": "x-"
+          },
+          {
+            "pinId": "schematic_port_6",
+            "displayName": "cathode",
+            "x": -38.22,
+            "y": -4,
+            "_facingDirection": "x+"
+          }
+        ],
+        "sectionId": "UsbCharging",
+        "bounds": {
+          "minX": -39.78,
+          "maxX": -38.22,
+          "minY": -4.34,
+          "maxY": -3.66
+        },
+        "spatialIndexId": 1
+      },
+      {
+        "chipId": "schematic_component_2",
+        "center": {
+          "x": -33.447500000000005,
+          "y": -3
+        },
+        "width": 2.0050000000000026,
+        "height": 0.7600000000000007,
+        "pins": [
+          {
+            "pinId": "schematic_port_7",
+            "displayName": "1",
+            "x": -34,
+            "y": -2.6199999999999997,
+            "_facingDirection": "y+"
+          },
+          {
+            "pinId": "schematic_port_8",
+            "displayName": "2",
+            "x": -34,
+            "y": -3.3800000000000003,
+            "_facingDirection": "y-"
+          }
+        ],
+        "sectionId": "UsbCharging",
+        "bounds": {
+          "minX": -34.45,
+          "maxX": -32.44500000000001,
+          "minY": -3.3800000000000003,
+          "maxY": -2.6199999999999997
+        },
+        "spatialIndexId": 2
+      },
+      {
+        "chipId": "schematic_component_3",
+        "center": {
+          "x": -35.04,
+          "y": 3
+        },
+        "width": 1.4399999999999977,
+        "height": 0.6800000000000006,
+        "pins": [
+          {
+            "pinId": "schematic_port_9",
+            "displayName": "anode",
+            "x": -35.76,
+            "y": 3,
+            "_facingDirection": "x-"
+          },
+          {
+            "pinId": "schematic_port_10",
+            "displayName": "cathode",
+            "x": -34.32,
+            "y": 3,
+            "_facingDirection": "x+"
+          }
+        ],
+        "sectionId": "UsbCharging",
+        "bounds": {
+          "minX": -35.76,
+          "maxX": -34.32,
+          "minY": 2.6599999999999997,
+          "maxY": 3.3400000000000003
+        },
+        "spatialIndexId": 3
+      },
+      {
+        "chipId": "schematic_component_4",
+        "center": {
+          "x": -28.96,
+          "y": 3
+        },
+        "width": 1.2000000000000028,
+        "height": 1.1800000000000006,
+        "pins": [
+          {
+            "pinId": "schematic_port_11",
+            "displayName": "anode",
+            "x": -29.560000000000002,
+            "y": 3,
+            "_facingDirection": "x-"
+          },
+          {
+            "pinId": "schematic_port_12",
+            "displayName": "cathode",
+            "x": -28.36,
+            "y": 3,
+            "_facingDirection": "x+"
+          }
+        ],
+        "sectionId": "UsbCharging",
+        "bounds": {
+          "minX": -29.560000000000002,
+          "maxX": -28.36,
+          "minY": 2.4099999999999997,
+          "maxY": 3.5900000000000003
+        },
+        "spatialIndexId": 4
+      },
+      {
+        "chipId": "schematic_component_5",
+        "center": {
+          "x": -27,
+          "y": 0
+        },
+        "width": 2,
+        "height": 0.6,
+        "pins": [
+          {
+            "pinId": "schematic_port_13",
+            "displayName": "1",
+            "x": -28,
+            "y": 0.1
+          },
+          {
+            "pinId": "schematic_port_14",
+            "displayName": "2",
+            "x": -28,
+            "y": -0.1
+          },
+          {
+            "pinId": "schematic_port_15",
+            "displayName": "3",
+            "x": -26,
+            "y": -0.1
+          },
+          {
+            "pinId": "schematic_port_16",
+            "displayName": "4",
+            "x": -26,
+            "y": 0.1
+          }
+        ],
+        "sectionId": "BatteryPower",
+        "bounds": {
+          "minX": -28,
+          "maxX": -26,
+          "minY": -0.3,
+          "maxY": 0.3
+        },
+        "spatialIndexId": 5
+      }
+    ],
+    "spatialIndex": {
+      "numItems": 6,
+      "nodeSize": 16,
+      "byteOffset": 0,
+      "_levelBounds": [
+        24,
+        28
+      ],
+      "data": {},
+      "_boxes": {
+        "0": -40.38,
+        "1": -0.3,
+        "2": -37.62,
+        "3": 0.3,
+        "4": -39.78,
+        "5": -4.34,
+        "6": -38.22,
+        "7": -3.66,
+        "8": -34.45,
+        "9": -3.3800000000000003,
+        "10": -32.44500000000001,
+        "11": -2.6199999999999997,
+        "12": -35.76,
+        "13": 2.6599999999999997,
+        "14": -34.32,
+        "15": 3.3400000000000003,
+        "16": -29.560000000000002,
+        "17": 2.4099999999999997,
+        "18": -28.36,
+        "19": 3.5900000000000003,
+        "20": -28,
+        "21": -0.3,
+        "22": -26,
+        "23": 0.3,
+        "24": -40.38,
+        "25": -4.34,
+        "26": -26,
+        "27": 3.5900000000000003
+      },
+      "_indices": {
+        "0": 0,
+        "1": 1,
+        "2": 2,
+        "3": 3,
+        "4": 4,
+        "5": 5,
+        "6": 0
+      },
+      "_pos": 28,
+      "minX": -40.38,
+      "minY": -4.34,
+      "maxX": -26,
+      "maxY": 3.5900000000000003,
+      "_queue": {
+        "ids": [],
+        "values": [],
+        "capacity": null,
+        "length": 0
+      }
+    },
+    "spatialIndexIdToChip": {}
+  },
+  "_hideRatsNet": false
+}
