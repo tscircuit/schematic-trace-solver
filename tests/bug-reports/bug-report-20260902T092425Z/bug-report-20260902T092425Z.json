@@ -1,0 +1,238 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 3.8,
+      "height": 3,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "PB2",
+          "x": 1.9,
+          "y": -1.0999999999999999
+        },
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "MICIN3P",
+          "x": 1.9,
+          "y": -0.8999999999999999
+        },
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "MICIN3N",
+          "x": 1.9,
+          "y": -0.6999999999999998
+        },
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "AVCC",
+          "x": 1.9,
+          "y": -0.4999999999999998
+        },
+        {
+          "pinId": "schematic_port_4",
+          "displayName": "VRA2",
+          "x": 1.9,
+          "y": -0.2999999999999998
+        },
+        {
+          "pinId": "schematic_port_5",
+          "displayName": "AGND",
+          "x": 1.9,
+          "y": -0.09999999999999987
+        },
+        {
+          "pinId": "schematic_port_6",
+          "displayName": "VRA1",
+          "x": 1.9,
+          "y": 0.10000000000000009
+        },
+        {
+          "pinId": "schematic_port_7",
+          "displayName": "FMINR",
+          "x": 1.9,
+          "y": 0.30000000000000004
+        },
+        {
+          "pinId": "schematic_port_8",
+          "displayName": "FMINL",
+          "x": 1.9,
+          "y": 0.5
+        },
+        {
+          "pinId": "schematic_port_9",
+          "displayName": "LINEINR",
+          "x": 1.9,
+          "y": 0.7
+        },
+        {
+          "pinId": "schematic_port_10",
+          "displayName": "LINEINL",
+          "x": 1.9,
+          "y": 0.8999999999999999
+        },
+        {
+          "pinId": "schematic_port_11",
+          "displayName": "HPVCC",
+          "x": 1.9,
+          "y": 1.0999999999999999
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 5.1325,
+        "y": -0.5
+      },
+      "width": 1.165,
+      "height": 0.7600000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_12",
+          "displayName": "1",
+          "x": 5,
+          "y": -0.11999999999999994,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_13",
+          "displayName": "2",
+          "x": 5,
+          "y": -0.8800000000000001,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": 6.8825,
+        "y": -0.5
+      },
+      "width": 1.165,
+      "height": 0.7600000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_14",
+          "displayName": "1",
+          "x": 6.75,
+          "y": -0.11999999999999994,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_15",
+          "displayName": "2",
+          "x": 6.75,
+          "y": -0.8800000000000001,
+          "_facingDirection": "y-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "capacitor.C38 > port.1 to .U3 > .VRA2",
+      "netLabelWidth": 1.32,
+      "pinIds": [
+        "schematic_port_12",
+        "schematic_port_4"
+      ]
+    },
+    {
+      "netId": "capacitor.C39 > port.1 to .U3 > .VRA1",
+      "netLabelWidth": 1.32,
+      "pinIds": [
+        "schematic_port_14",
+        "schematic_port_6"
+      ]
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "P1V8",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_3",
+        "schematic_port_11"
+      ]
+    },
+    {
+      "netId": "AUDIO_VRA2",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 1.32,
+      "pinIds": [
+        "schematic_port_4",
+        "schematic_port_12"
+      ]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_5",
+        "schematic_port_7",
+        "schematic_port_8",
+        "schematic_port_13",
+        "schematic_port_15"
+      ]
+    },
+    {
+      "netId": "AUDIO_VRA1",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 1.32,
+      "pinIds": [
+        "schematic_port_6",
+        "schematic_port_14"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -1.08,
+        "y": -1.63
+      },
+      "width": 0.84,
+      "height": 0.18000000000000016,
+      "text": "T113-S3"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -1.38,
+        "y": 1.6150000000000002
+      },
+      "width": 0.3600000000000001,
+      "height": 0.2500000000000002,
+      "text": "U3"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "P1V8": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ],
+    "AUDIO_VRA2": [
+      "y+"
+    ],
+    "AUDIO_VRA1": [
+      "y+"
+    ]
+  },
+  "maxMspPairDistance": 0.8,
+  "_hideRatsNet": false
+}

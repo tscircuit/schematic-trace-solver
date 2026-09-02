@@ -13,5 +13,29 @@ test("repro PowerBank 3 V System Power schematic", () => {
   )
   solver.solve()
 
+  const alignedTraces = solver.sameNetJunctionAlignmentSolver!.outputTraces
+  const pathFromPin = (traceId: string, pinId: string) => {
+    const trace = alignedTraces.find((item) => item.mspPairId === traceId)!
+    return trace.pins[0]!.pinId === pinId
+      ? trace.tracePath
+      : [...trace.tracePath].reverse()
+  }
+  for (const [sharedPinId, firstTraceId, secondTraceId] of [
+    [
+      "schematic_port_379",
+      "schematic_port_393-schematic_port_379",
+      "schematic_port_391-schematic_port_379",
+    ],
+    [
+      "schematic_port_372",
+      "schematic_port_372-schematic_port_369",
+      "schematic_port_374-schematic_port_372",
+    ],
+  ]) {
+    const firstPath = pathFromPin(firstTraceId, sharedPinId)
+    const secondPath = pathFromPin(secondTraceId, sharedPinId)
+    expect(firstPath[1]!.y).toBeCloseTo(secondPath[1]!.y, 6)
+  }
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

@@ -9,6 +9,10 @@ export interface PerpendicularPathCrossing {
   otherPathSegmentIndex: number
 }
 
+interface FindPerpendicularPathCrossingsOptions {
+  includeTerminalSegments?: boolean
+}
+
 /**
  * Finds all intersection points between a given line segment (p1-p2) and a list of trace obstacles.
  * It iterates through each segment of every obstacle and checks for intersections with the input segment.
@@ -48,14 +52,24 @@ const isSamePoint = (first: Point, second: Point) =>
 export const findPerpendicularPathCrossings = (
   path: Point[],
   otherPath: Point[],
+  options: FindPerpendicularPathCrossingsOptions = {},
 ): PerpendicularPathCrossing[] => {
   const crossings: PerpendicularPathCrossing[] = []
+  const firstPathSegmentIndex = options.includeTerminalSegments ? 0 : 1
+  const lastPathSegmentIndex = options.includeTerminalSegments
+    ? path.length - 1
+    : path.length - 2
+  const firstOtherPathSegmentIndex = options.includeTerminalSegments ? 0 : 1
+  const lastOtherPathSegmentIndex = options.includeTerminalSegments
+    ? otherPath.length - 1
+    : otherPath.length - 2
 
   // Terminal segments connect to pins and are allowed to meet other traces at
-  // their endpoints. Only internal, strict crossings need to be untangled.
+  // their endpoints. Callers may include them when looking for strict
+  // crossings through a segment's interior after all connector traces exist.
   for (
-    let pathSegmentIndex = 1;
-    pathSegmentIndex < path.length - 2;
+    let pathSegmentIndex = firstPathSegmentIndex;
+    pathSegmentIndex < lastPathSegmentIndex;
     pathSegmentIndex++
   ) {
     const start = path[pathSegmentIndex]!
@@ -63,8 +77,8 @@ export const findPerpendicularPathCrossings = (
     const isVertical = Math.abs(start.x - end.x) < EPS
 
     for (
-      let otherPathSegmentIndex = 1;
-      otherPathSegmentIndex < otherPath.length - 2;
+      let otherPathSegmentIndex = firstOtherPathSegmentIndex;
+      otherPathSegmentIndex < lastOtherPathSegmentIndex;
       otherPathSegmentIndex++
     ) {
       const otherStart = otherPath[otherPathSegmentIndex]!
