@@ -7,12 +7,14 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { alignSameNetRails } from "./alignSameNetRails"
+import { mergeSameNetTraces } from "./mergeSameNetTraces"
 
 export type TraceCleanupOperation =
   | "untangling_traces"
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "aligning_same_net_rails"
+  | "merging_same_net_segments"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -106,6 +108,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "aligning_same_net_rails":
         this._runAlignSameNetRailsStep()
         break
+      case "merging_same_net_segments":
+        this._runMergeSameNetSegmentsStep()
+        break
     }
   }
 
@@ -185,6 +190,19 @@ export class TraceCleanupSolver extends BaseSolver {
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.stats.alignedRailGroupCount = alignment.alignedRailGroupCount
     this.stats.alignedTraceCount = alignment.alignedTraceCount
+    this._advancePipeline()
+  }
+
+  private _runMergeSameNetSegmentsStep() {
+    const { traces, mergedSegmentCount } = mergeSameNetTraces({
+      inputProblem: this.input.inputProblem,
+      traces: Array.from(this.tracesMap.values()),
+      netLabelPlacements: this.input.allLabelPlacements,
+    })
+    if (mergedSegmentCount > 0) {
+      this.outputTraces = traces
+      this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    }
     this._advancePipeline()
   }
 
