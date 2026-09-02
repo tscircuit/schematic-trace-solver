@@ -113,7 +113,6 @@ export interface PerpendicularTraceDetourInput {
   segmentIndex: number
   obstacleStart: Point
   obstacleEnd: Point
-  obstacleBounds?: Bounds
   chipBounds: Bounds[]
   clearance: number
 }
@@ -180,7 +179,6 @@ export const generatePerpendicularTraceDetours = ({
   segmentIndex,
   obstacleStart,
   obstacleEnd,
-  obstacleBounds,
   chipBounds,
   clearance,
 }: PerpendicularTraceDetourInput): TraceDetourCandidate[] => {
@@ -189,48 +187,20 @@ export const generatePerpendicularTraceDetours = ({
     const end = path[index + 1]!
     const movingAxis: "x" | "y" = Math.abs(start.x - end.x) < EPS ? "y" : "x"
     const detourAxis = movingAxis === "x" ? "y" : "x"
-    const bounds = obstacleBounds ?? {
-      minX: Math.min(obstacleStart.x, obstacleEnd.x),
-      minY: Math.min(obstacleStart.y, obstacleEnd.y),
-      maxX: Math.max(obstacleStart.x, obstacleEnd.x),
-      maxY: Math.max(obstacleStart.y, obstacleEnd.y),
-    }
-    const movingLowBound = movingAxis === "x" ? "minX" : "minY"
-    const movingHighBound = movingAxis === "x" ? "maxX" : "maxY"
-    let gate =
+    const gate =
       obstacleStart[movingAxis] +
       Math.sign(start[movingAxis] - obstacleStart[movingAxis]) * clearance
-    if (obstacleBounds) {
-      const startSide =
-        start[movingAxis] <
-        (bounds[movingLowBound] + bounds[movingHighBound]) / 2
-          ? -1
-          : 1
-      gate =
-        bounds[startSide < 0 ? movingLowBound : movingHighBound] +
-        startSide * clearance
-    }
+    const obstacleRange = [obstacleStart[detourAxis], obstacleEnd[detourAxis]]
     const lowBound = detourAxis === "x" ? "minX" : "minY"
     const highBound = detourAxis === "x" ? "maxX" : "maxY"
-    const minDetour = bounds[lowBound] - clearance
-    const maxDetour = bounds[highBound] + clearance
-    const nextAnchor = obstacleBounds ? path[index + 2] : undefined
-    const balancedDetour = nextAnchor
-      ? nextAnchor[detourAxis] < minDetour
-        ? (nextAnchor[detourAxis] + minDetour) / 2
-        : nextAnchor[detourAxis] > maxDetour
-          ? (nextAnchor[detourAxis] + maxDetour) / 2
-          : undefined
-      : undefined
     const detourCoordinates = [
-      balancedDetour,
-      minDetour,
-      maxDetour,
+      Math.min(...obstacleRange) - clearance,
+      Math.max(...obstacleRange) + clearance,
       ...chipBounds.flatMap((bounds) => [
         bounds[lowBound] - clearance,
         bounds[highBound] + clearance,
       ]),
-    ].filter((coordinate): coordinate is number => coordinate !== undefined)
+    ]
 
     return [...new Set(detourCoordinates)].map((detour) =>
       simplifyPath([

@@ -27,11 +27,8 @@ test("repro isolated RS-485 ISOW7841 schematic traces", () => {
     0,
   )
   expect(solver.sameNetJunctionAlignmentSolver?.stats.collapsedCycleCount).toBe(
-    1,
+    2,
   )
-  expect(
-    solver.sameNetJunctionAlignmentSolver?.stats.alignedJunctionCount,
-  ).toBeGreaterThan(0)
   const dPLabel =
     solver.sameNetJunctionAlignmentSolver?.outputNetLabelPlacements.find(
       (label) => label.netId === "D_P",

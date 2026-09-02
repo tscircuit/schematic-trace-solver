@@ -84,7 +84,6 @@ const createFixture = (mirrorX = 1, mirrorY = 1) => {
     traces,
     point,
     netLabelPlacements: [] as NetLabelPlacement[],
-    netLabelConnectorTraceIds: new Set<string>(),
   }
 }
 
