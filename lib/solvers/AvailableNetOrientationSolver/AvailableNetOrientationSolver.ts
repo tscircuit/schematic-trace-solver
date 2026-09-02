@@ -127,6 +127,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return {
       traces: this.traces,
       netLabelPlacements: this.outputNetLabelPlacements,
+      netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
     }
   }
 
