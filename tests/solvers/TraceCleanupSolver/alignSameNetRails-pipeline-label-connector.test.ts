@@ -36,7 +36,7 @@ test("pipeline does not stretch a real loop toward a generated label connector",
   const traces = solver.traceCleanupSolver2!.getOutput().traces
   const realTrace = traces.find((trace) => trace.mspPairId === "U3.3-U3.7")!
   const [labelConnectorTraceId] =
-    solver.availableNetOrientationSolver!.generatedConnectorTraceIds
+    solver.availableNetOrientationSolver!.netLabelConnectorTraceIds
   const labelConnector = traces.find(
     (trace) => trace.mspPairId === labelConnectorTraceId,
   )!

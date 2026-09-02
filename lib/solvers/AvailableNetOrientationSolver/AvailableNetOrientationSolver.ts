@@ -9,6 +9,7 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -60,9 +61,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  /** Exact provenance for connector traces created by this solver. */
+  readonly netLabelConnectorTraceIds = new Set<MspConnectionPairId>()
 
   outputNetLabelPlacements: NetLabelPlacement[]
-  readonly generatedConnectorTraceIds = new Set<string>()
   queuedLabelIndices: number[] = []
   currentLabelIndex: number | null = null
   currentLabel: NetLabelPlacement | null = null
@@ -125,7 +127,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return {
       traces: this.traces,
       netLabelPlacements: this.outputNetLabelPlacements,
-      generatedConnectorTraceIds: this.generatedConnectorTraceIds,
+      netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
     }
   }
 
@@ -376,7 +378,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
     this.traces.push(connectorTrace)
     this.traceMap[mspPairId] = connectorTrace
-    this.generatedConnectorTraceIds.add(mspPairId)
+    this.netLabelConnectorTraceIds.add(mspPairId)
   }
 
   private finish() {
@@ -832,7 +834,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         foundConnectedTrace = false
         for (const trace of Object.values(this.traceMap)) {
           if (connectedTraceIds.has(trace.mspPairId)) continue
-          if (this.generatedConnectorTraceIds.has(trace.mspPairId)) continue
+          if (this.netLabelConnectorTraceIds.has(trace.mspPairId)) continue
           if (trace.globalConnNetId !== label.globalConnNetId) continue
           if (!trace.pinIds.some((pinId) => connectedPinIds.has(pinId)))
             continue

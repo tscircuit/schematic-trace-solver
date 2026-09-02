@@ -384,8 +384,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           inputProblem: instance.inputProblem,
           inputTracePaths: instance.availableNetOrientationSolver!.traces,
           globalConnMap: instance.mspConnectionPairSolver!.globalConnMap,
-          traceIdsToShift:
-            instance.availableNetOrientationSolver!.generatedConnectorTraceIds,
+          traceIdsToShift: new Set(
+            instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
+          ),
         },
       ],
     ),
@@ -475,9 +476,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
                 .traceCleanupSolver!.getOutput()
                 .traces.map((trace) => trace.mspPairId),
             ),
-            generatedNetLabelConnectorTraceIds:
-              instance.availableNetOrientationSolver!
-                .generatedConnectorTraceIds,
+            netLabelConnectorTraceIds:
+              instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
           },
         ]
       },
@@ -572,6 +572,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             inputProblem: instance.inputProblem,
             traces: instance.netLabelNetLabelCollisionSolver!.traces,
             netLabelPlacements: collisionOutput.netLabelPlacements,
+            netLabelConnectorTraceIds:
+              instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
           },
         ]
       },
@@ -582,11 +584,20 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => {
         const junctionOutput =
           instance.sameNetJunctionAlignmentSolver!.getOutput()
+        const completedReroutes = [
+          ...instance.traceLabelOverlapAvoidanceSolver!.getOutput()
+            .completedReroutes,
+          ...instance.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
+            .completedReroutes,
+          ...instance.netLabelTraceCollisionSolver!.getOutput()
+            .completedReroutes,
+        ]
         return [
           {
             inputProblem: instance.inputProblem,
             traces: junctionOutput.traces,
             netLabelPlacements: junctionOutput.netLabelPlacements,
+            completedReroutes,
           },
         ]
       },
