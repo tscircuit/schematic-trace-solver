@@ -60,6 +60,7 @@ import { visualizeAvailableNetOrientationSolver } from "./visualize"
 import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
+const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
 const CONNECTED_PIN_ROW_OVERLAP_TOLERANCE = 0.1
 
 export class AvailableNetOrientationSolver extends BaseSolver {
@@ -540,6 +541,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         phase: "downward-ground-rail-extension",
         stopOnTraceCollision: false,
         connectorSource: label.anchorPoint,
+        startDistance: MIN_DOWNWARD_GROUND_RAIL_EXTENSION,
       })
       if (downwardRailCandidate) return downwardRailCandidate
     }

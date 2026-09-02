@@ -7,6 +7,7 @@ import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-smartwatch-power-sheet.input.json"
 
 const MAX_CONNECTOR_GROUND_LABEL_DISTANCE = 1
+const MIN_CONNECTOR_GROUND_RAIL_EXTENSION = 0.2
 
 test("smartwatch power sheet", () => {
   const solver = new SchematicTracePipelineSolver(
@@ -44,6 +45,10 @@ test("smartwatch power sheet", () => {
   const verticalHostPoint = connectorGroundHostTrace.tracePath.find(
     (point, index, path) => index > 0 && isVertical(path[index - 1]!, point),
   )!
+  const connectorGroundRailExtension = Math.abs(
+    connectorGroundLabel.anchorPoint.y -
+      Math.min(...connectorGroundPins.map((pin) => pin.y)),
+  )
   const tracesAtConnectorGroundLabel = output.traces.filter((trace) =>
     tracePathContainsPoint(trace.tracePath, connectorGroundLabel.anchorPoint),
   )
@@ -51,6 +56,9 @@ test("smartwatch power sheet", () => {
   expect(connectorGroundLabel.anchorPoint.x).toBeCloseTo(verticalHostPoint.x)
   expect(connectorGroundLabelDistance).toBeLessThanOrEqual(
     MAX_CONNECTOR_GROUND_LABEL_DISTANCE,
+  )
+  expect(connectorGroundRailExtension).toBeCloseTo(
+    MIN_CONNECTOR_GROUND_RAIL_EXTENSION,
   )
   expect(tracesAtConnectorGroundLabel).toHaveLength(1)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
