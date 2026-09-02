@@ -532,7 +532,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         orientation: requiredOrientation,
         direction: dir(requiredOrientation),
         baseAnchor: label.anchorPoint,
-        maxSearchDistance: this.maxSearchDistance,
+        maxSearchDistance: this.getSearchDistanceLimit(
+          label,
+          requiredOrientation,
+        ),
         outwardDistance: 0,
         phase: "downward-ground-rail-extension",
         stopOnTraceCollision: false,
