@@ -7,6 +7,11 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { getMovedAnchorPointForReroute } from "lib/solvers/Example28Solver/getMovedAnchorPointForReroute"
+import {
+  findSegmentContainingPoint,
+  getSegments,
+  projectPointToSegment,
+} from "lib/solvers/Example28Solver/geometry"
 import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
 import {
   rectsOverlap,
@@ -202,6 +207,34 @@ const moveAttachedLabels = ({
     reroutedTracePath,
     netLabelPlacements: attachedLabels,
   })
+  for (const [index, label] of attachedLabels.entries()) {
+    if (label.orientation !== "y+" && label.orientation !== "y-") continue
+    const originalSegment = findSegmentContainingPoint(
+      trace.tracePath,
+      label.anchorPoint,
+    )
+    if (originalSegment?.orientation !== "horizontal") continue
+    const sameRowSegment = getSegments(reroutedTracePath).find(
+      (segment) =>
+        segment.orientation === "horizontal" &&
+        nearlyEqual(segment.start.y, label.anchorPoint.y),
+    )
+    if (!sameRowSegment) continue
+
+    const anchorPoint = projectPointToSegment(
+      label.anchorPoint,
+      sameRowSegment.start,
+      sameRowSegment.end,
+    )
+    movedAttachedLabels[index] = {
+      ...label,
+      anchorPoint,
+      center: {
+        x: label.center.x + anchorPoint.x - label.anchorPoint.x,
+        y: label.center.y + anchorPoint.y - label.anchorPoint.y,
+      },
+    }
+  }
   const movedLabelByIndex = new Map(
     attachedLabelIndexes.map((labelIndex, index) => [
       labelIndex,

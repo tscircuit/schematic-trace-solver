@@ -6,6 +6,8 @@ import type { InputChip, InputProblem, PinId } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblemJson from "./assets/repro-hub-usb-sheet.input.json"
 
+const EXPECTED_HUB_XTALI_LABEL_Y = 2.216
+
 // Captured from @tsci/mohan-bee.hub 1.0.12 using @tscircuit/core 0.0.1816.
 // Only opaque schematic component IDs were replaced with unique source names.
 test("repro hub USB sheet schematic trace routing", () => {
@@ -48,9 +50,13 @@ test("repro hub USB sheet schematic trace routing", () => {
   const tracesAtSameChipGroundLabel = output.traces.filter((trace) =>
     tracePathContainsPoint(trace.tracePath, sameChipGroundLabel.anchorPoint),
   )
+  const hubXtaliLabel = output.netLabelPlacements.find(
+    (label) => label.netId === "HUB_XTALI",
+  )!
 
   expect(sameChipGroundLabel.orientation).toBe("y-")
   expect(sameChipGroundLabel.anchorPoint.x).toBeCloseTo(verticalHostPoint.x)
   expect(tracesAtSameChipGroundLabel).toHaveLength(1)
+  expect(hubXtaliLabel.anchorPoint.y).toBeCloseTo(EXPECTED_HUB_XTALI_LABEL_Y)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
