@@ -3,6 +3,7 @@ import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetL
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { pointsEqual } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
+import { EPS } from "./constants"
 import type { CandidateLabel } from "./types"
 
 export const extendTracePathAtInteriorPoint = ({
@@ -18,6 +19,26 @@ export const extendTracePathAtInteriorPoint = ({
     pointsEqual(point, sourcePoint),
   )
   if (sourceIndex <= 0 || sourceIndex >= tracePath.length - 1) return null
+
+  const previousPoint = tracePath[sourceIndex - 1]!
+  const nextPoint = tracePath[sourceIndex + 1]!
+  const extensionDirectionY = extensionEndPoint.y - sourcePoint.y
+  const previousContinuesOppositeExtension =
+    Math.abs(previousPoint.x - sourcePoint.x) <= EPS &&
+    (previousPoint.y - sourcePoint.y) * extensionDirectionY < 0
+
+  if (previousContinuesOppositeExtension) {
+    return [
+      ...tracePath.slice(0, sourceIndex),
+      extensionEndPoint,
+      ...tracePath.slice(sourceIndex),
+    ]
+  }
+
+  const nextContinuesOppositeExtension =
+    Math.abs(nextPoint.x - sourcePoint.x) <= EPS &&
+    (nextPoint.y - sourcePoint.y) * extensionDirectionY < 0
+  if (!nextContinuesOppositeExtension) return null
 
   return [
     ...tracePath.slice(0, sourceIndex + 1),

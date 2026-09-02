@@ -9,6 +9,7 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -65,6 +66,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  /** Exact provenance for connector traces created by this solver. */
+  readonly netLabelConnectorTraceIds = new Set<MspConnectionPairId>()
 
   outputNetLabelPlacements: NetLabelPlacement[]
   queuedLabelIndices: number[] = []
@@ -129,6 +132,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return {
       traces: this.traces,
       netLabelPlacements: this.outputNetLabelPlacements,
+      netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
     }
   }
 
@@ -359,19 +363,17 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     if (candidate.phase === "trace-anchor") return
 
     if (candidate.phase === "downward-ground-rail-extension") {
-      const hostTrace = label.mspConnectionPairIds
-        .map((mspPairId) => this.traceMap[mspPairId])
-        .find((trace) => trace !== undefined)
-      if (hostTrace) {
+      for (const mspPairId of label.mspConnectionPairIds) {
+        const hostTrace = this.traceMap[mspPairId]
+        if (!hostTrace) continue
         const extendedTracePath = extendTracePathAtInteriorPoint({
           tracePath: hostTrace.tracePath,
           sourcePoint: label.anchorPoint,
           extensionEndPoint: candidate.anchorPoint,
         })
-        if (extendedTracePath) {
-          hostTrace.tracePath = extendedTracePath
-          return
-        }
+        if (!extendedTracePath) continue
+        hostTrace.tracePath = extendedTracePath
+        return
       }
     }
 
@@ -396,6 +398,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
     this.traces.push(connectorTrace)
     this.traceMap[mspPairId] = connectorTrace
+    this.netLabelConnectorTraceIds.add(mspPairId)
   }
 
   private finish() {
@@ -433,14 +436,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       (connection) => connection.netId === label.netId,
     )
     const isTwoPinNet = netConnection?.pinIds.length === 2
-    const firstLabelPin = this.pinMap[label.pinIds[0]!]
-    const secondLabelPin = this.pinMap[label.pinIds[1]!]
-    const isDownwardSameChipGroundRail =
+    const isDownwardGroundRail =
       netConnection?.isGround &&
-      label.pinIds.length === 2 &&
-      firstLabelPin !== undefined &&
-      secondLabelPin !== undefined &&
-      firstLabelPin.chipId === secondLabelPin.chipId &&
       isXOrientation(label.orientation) &&
       orientations.length === 1 &&
       requiredOrientation === "y-" &&
@@ -528,7 +525,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       rotatedCandidate !== null &&
       Math.abs(rotatedCandidate.anchorPoint.x - label.anchorPoint.x) > EPS
 
-    if (isDownwardSameChipGroundRail && rotatedCandidateNeedsLateralBranch) {
+    if (isDownwardGroundRail && rotatedCandidateNeedsLateralBranch) {
       const downwardRailCandidate = this.findValidCandidateInShiftColumn({
         label,
         labelIndex,
@@ -883,7 +880,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         foundConnectedTrace = false
         for (const trace of Object.values(this.traceMap)) {
           if (connectedTraceIds.has(trace.mspPairId)) continue
-          if (trace.mspPairId.startsWith("available-net-orientation-")) continue
+          if (this.netLabelConnectorTraceIds.has(trace.mspPairId)) continue
           if (trace.globalConnNetId !== label.globalConnNetId) continue
           if (!trace.pinIds.some((pinId) => connectedPinIds.has(pinId)))
             continue

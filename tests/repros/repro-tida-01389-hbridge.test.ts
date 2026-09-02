@@ -40,5 +40,29 @@ test("repro: enclosing rectangle collapses into two smaller loops", () => {
   )
 
   expect(solver.solved).toBe(true)
+  const alignedTraces = solver.sameNetJunctionAlignmentSolver!.outputTraces
+  const leftBridge = alignedTraces.find(
+    (trace) => trace.mspPairId === "schematic_port_c18_1-schematic_port_c17_1",
+  )!
+  const leftUpperRail = alignedTraces.find(
+    (trace) =>
+      trace.mspPairId === "schematic_port_q1b_source-schematic_port_c17_1",
+  )!
+  const rightBridge = alignedTraces.find(
+    (trace) => trace.mspPairId === "schematic_port_c18_2-schematic_port_c17_2",
+  )!
+  const rightLowerRail = alignedTraces.find(
+    (trace) =>
+      trace.mspPairId === "schematic_port_q2b_drain-schematic_port_c18_2",
+  )!
+  expect(leftBridge.tracePath[1]!.x).toBeCloseTo(
+    leftUpperRail.tracePath[0]!.x,
+    6,
+  )
+  expect(rightBridge.tracePath[1]!.x).toBeCloseTo(
+    rightLowerRail.tracePath[0]!.x,
+    6,
+  )
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
