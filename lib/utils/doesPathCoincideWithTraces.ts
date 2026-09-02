@@ -22,19 +22,6 @@ export const SCHEMATIC_TRACE_MIN_VISUAL_CENTERLINE_CLEARANCE =
 export const doesPathCoincideWithTraces = (
   path: Point[],
   traces: SolvedTracePath[],
-): boolean =>
-  doesPathCoincideWithPaths(
-    path,
-    traces.map((trace) => trace.tracePath),
-  )
-
-/**
- * Path-only form for rendered wire geometry that is not represented by a
- * SolvedTracePath, such as inline-label terminal stubs.
- */
-export const doesPathCoincideWithPaths = (
-  path: Point[],
-  otherPaths: Point[][],
 ): boolean => {
   const rangesOverlap1D = (a1: number, a2: number, b1: number, b2: number) =>
     Math.min(Math.max(a1, a2), Math.max(b1, b2)) -
@@ -52,10 +39,10 @@ export const doesPathCoincideWithPaths = (
     const crossAxis = isVertical ? "x" : "y"
     const alongAxis = isVertical ? "y" : "x"
 
-    for (const otherPath of otherPaths) {
-      for (let j = 0; j < otherPath.length - 1; j++) {
-        const traceSegStart = otherPath[j]!
-        const traceSegEnd = otherPath[j + 1]!
+    for (const trace of traces) {
+      for (let j = 0; j < trace.tracePath.length - 1; j++) {
+        const traceSegStart = trace.tracePath[j]!
+        const traceSegEnd = trace.tracePath[j + 1]!
 
         const isParallel =
           Math.abs(traceSegStart[crossAxis] - traceSegEnd[crossAxis]) <

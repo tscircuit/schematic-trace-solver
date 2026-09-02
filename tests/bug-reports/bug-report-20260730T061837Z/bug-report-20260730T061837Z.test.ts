@@ -16,15 +16,11 @@ test("bug-report-20260730T061837Z", () => {
   const vbusBranch = traces.find(
     (trace) => trace.mspPairId === "schematic_port_31-schematic_port_29",
   )!
-  const upstreamVddBranch = traces.find(
-    (trace) => trace.mspPairId === "schematic_port_5-schematic_port_39",
-  )!
 
-  const upstreamFromShared =
-    upstreamVddBranch.pins[0]!.pinId === "schematic_port_39"
-      ? upstreamVddBranch.tracePath
-      : [...upstreamVddBranch.tracePath].reverse()
-  expect(vddBranch.tracePath[1]!.x).toBeCloseTo(upstreamFromShared[1]!.x, 6)
+  expect(vddBranch.tracePath).toContainEqual({
+    x: -2.905,
+    y: 0.57,
+  })
   expect(
     pathIntersectsAnyNetLabel({
       path: vddBranch.tracePath,

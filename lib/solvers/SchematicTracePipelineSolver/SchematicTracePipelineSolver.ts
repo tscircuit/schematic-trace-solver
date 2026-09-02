@@ -385,7 +385,11 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           inputTracePaths: instance.availableNetOrientationSolver!.traces,
           globalConnMap: instance.mspConnectionPairSolver!.globalConnMap,
           traceIdsToShift: new Set(
-            instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
+            instance
+              .availableNetOrientationSolver!.traces.filter((trace) =>
+                trace.mspPairId.startsWith("available-net-orientation-"),
+              )
+              .map((trace) => trace.mspPairId),
           ),
         },
       ],
@@ -467,17 +471,12 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             allLabelPlacements: collisionOutput.netLabelPlacements,
             mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
             paddingBuffer: 0.1,
-            operations: [
-              "rerouting_generated_net_label_connector_crossings",
-              "aligning_same_net_rails",
-            ],
+            operations: ["aligning_same_net_rails"],
             eligibleTraceIds: new Set(
               instance
                 .traceCleanupSolver!.getOutput()
                 .traces.map((trace) => trace.mspPairId),
             ),
-            netLabelConnectorTraceIds:
-              instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
           },
         ]
       },
@@ -572,8 +571,6 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             inputProblem: instance.inputProblem,
             traces: instance.netLabelNetLabelCollisionSolver!.traces,
             netLabelPlacements: collisionOutput.netLabelPlacements,
-            netLabelConnectorTraceIds:
-              instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
           },
         ]
       },
@@ -584,20 +581,11 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => {
         const junctionOutput =
           instance.sameNetJunctionAlignmentSolver!.getOutput()
-        const completedReroutes = [
-          ...instance.traceLabelOverlapAvoidanceSolver!.getOutput()
-            .completedReroutes,
-          ...instance.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
-            .completedReroutes,
-          ...instance.netLabelTraceCollisionSolver!.getOutput()
-            .completedReroutes,
-        ]
         return [
           {
             inputProblem: instance.inputProblem,
             traces: junctionOutput.traces,
             netLabelPlacements: junctionOutput.netLabelPlacements,
-            completedReroutes,
           },
         ]
       },

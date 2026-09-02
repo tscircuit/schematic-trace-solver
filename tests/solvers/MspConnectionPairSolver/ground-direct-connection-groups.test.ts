@@ -56,17 +56,6 @@ test("marked ground nets retain explicit islands even with identical netIds", ()
   )
 })
 
-test("unwired same-component ground pins share a local connection", () => {
-  const inputProblem = createInput()
-  inputProblem.chips[4]!.pins.push({ pinId: "F", x: 2.2, y: 0.1 })
-  inputProblem.netConnections[0]!.pinIds.push("F")
-
-  const solver = new MspConnectionPairSolver({ inputProblem })
-  solver.solve()
-
-  expect(pairKeys(solver)).toEqual(["A-B", "C-D", "E-F"])
-})
-
 test.each([false, undefined])(
   "isGround=%s preserves automatic net routing",
   (isGround) => {

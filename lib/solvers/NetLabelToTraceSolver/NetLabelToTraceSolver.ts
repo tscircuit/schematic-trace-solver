@@ -1,4 +1,8 @@
-import type { Point } from "@tscircuit/math-utils"
+import {
+  doesSegmentIntersectRect,
+  getBoundFromCenteredRect,
+  type Point,
+} from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { doesPairCrossRestrictedCenterLines } from "lib/solvers/MspConnectionPairSolver/doesPairCrossRestrictedCenterLines"
@@ -20,7 +24,6 @@ import type {
   PinId,
 } from "lib/types/InputProblem"
 import { arePinsInDifferentSchematicSections } from "lib/utils/arePinsInDifferentSchematicSections"
-import { pathIntersectsRenderedLabel } from "lib/utils/pathIntersectsRenderedLabel"
 import {
   type InlineNetLabelOutput,
   type InlineNetLabelPlacement,
@@ -51,6 +54,31 @@ const MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET = 0.25
 
 const getCanonicalPairKey = (firstPinId: PinId, secondPinId: PinId) =>
   [firstPinId, secondPinId].sort().join("--")
+
+export const pathIntersectsRenderedLabel = (
+  path: Point[],
+  label: NetLabelPlacement | InlineNetLabelPlacement,
+) => {
+  let width = label.width
+  let height = label.height
+  if ("axis" in label && label.axis === "y") {
+    width = label.height
+    height = label.width
+  }
+  const bounds = getBoundFromCenteredRect({
+    center: label.center,
+    width,
+    height,
+  })
+  for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
+    if (
+      doesSegmentIntersectRect(path[pathIndex]!, path[pathIndex + 1]!, bounds)
+    ) {
+      return true
+    }
+  }
+  return false
+}
 
 const getPerpendicularOffset = (firstPoint: Point, secondPoint: Point) => {
   const xDistance = Math.abs(firstPoint.x - secondPoint.x)
