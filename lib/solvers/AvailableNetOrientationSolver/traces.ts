@@ -1,12 +1,14 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { pointsEqual } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
+import {
+  isVertical,
+  pointsEqual,
+} from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import type { InputPin, InputProblem } from "lib/types/InputProblem"
-import { EPS } from "./constants"
 import type { CandidateLabel } from "./types"
 
-export const extendTracePathAtInteriorPoint = ({
+export const extendVerticalTracePathAtInteriorPoint = ({
   tracePath,
   sourcePoint,
   extensionEndPoint,
@@ -20,31 +22,21 @@ export const extendTracePathAtInteriorPoint = ({
   )
   if (sourceIndex <= 0 || sourceIndex >= tracePath.length - 1) return null
 
-  const previousPoint = tracePath[sourceIndex - 1]!
-  const nextPoint = tracePath[sourceIndex + 1]!
   const extensionDirectionY = extensionEndPoint.y - sourcePoint.y
-  const previousContinuesOppositeExtension =
-    Math.abs(previousPoint.x - sourcePoint.x) <= EPS &&
-    (previousPoint.y - sourcePoint.y) * extensionDirectionY < 0
+  const adjacentIndex = [sourceIndex - 1, sourceIndex + 1].find((index) => {
+    const point = tracePath[index]!
+    return (
+      isVertical(point, sourcePoint) &&
+      (point.y - sourcePoint.y) * extensionDirectionY < 0
+    )
+  })
+  if (adjacentIndex === undefined) return null
 
-  if (previousContinuesOppositeExtension) {
-    return [
-      ...tracePath.slice(0, sourceIndex),
-      extensionEndPoint,
-      ...tracePath.slice(sourceIndex),
-    ]
-  }
-
-  const nextContinuesOppositeExtension =
-    Math.abs(nextPoint.x - sourcePoint.x) <= EPS &&
-    (nextPoint.y - sourcePoint.y) * extensionDirectionY < 0
-  if (!nextContinuesOppositeExtension) return null
-
-  return [
-    ...tracePath.slice(0, sourceIndex + 1),
+  return tracePath.toSpliced(
+    Math.max(sourceIndex, adjacentIndex),
+    0,
     extensionEndPoint,
-    ...tracePath.slice(sourceIndex + 1),
-  ]
+  )
 }
 
 export const getPinMap = (inputProblem: InputProblem) => {

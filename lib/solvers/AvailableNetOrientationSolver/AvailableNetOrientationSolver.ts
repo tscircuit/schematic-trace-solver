@@ -42,7 +42,7 @@ import {
 } from "./geometry"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
 import {
-  extendTracePathAtInteriorPoint,
+  extendVerticalTracePathAtInteriorPoint,
   getPinMap,
   getTracePins,
   toNetLabelPlacementPatch,
@@ -367,7 +367,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       for (const mspPairId of label.mspConnectionPairIds) {
         const hostTrace = this.traceMap[mspPairId]
         if (!hostTrace) continue
-        const extendedTracePath = extendTracePathAtInteriorPoint({
+        const extendedTracePath = extendVerticalTracePathAtInteriorPoint({
           tracePath: hostTrace.tracePath,
           sourcePoint: label.anchorPoint,
           extensionEndPoint: candidate.anchorPoint,
