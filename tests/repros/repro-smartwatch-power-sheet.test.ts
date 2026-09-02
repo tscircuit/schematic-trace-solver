@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { isVertical } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-smartwatch-power-sheet.input.json"
@@ -19,11 +21,10 @@ test("smartwatch power sheet", () => {
     "schematic_port_0",
     "schematic_port_11",
   ])
-  const connectorGroundLabels = solver
-    .netLabelToTraceSolver!.getOutput()
-    .netLabelPlacements.filter((label) =>
-      label.pinIds.some((pinId) => connectorGroundPinIds.has(pinId)),
-    )
+  const output = solver.netLabelToTraceSolver!.getOutput()
+  const connectorGroundLabels = output.netLabelPlacements.filter((label) =>
+    label.pinIds.some((pinId) => connectorGroundPinIds.has(pinId)),
+  )
   expect(connectorGroundLabels).toHaveLength(1)
   const connectorGroundLabel = connectorGroundLabels[0]!
   const connectorGroundPins = inputProblem.chips.flatMap((chip) =>
@@ -37,9 +38,20 @@ test("smartwatch power sheet", () => {
       ),
     ),
   )
+  const connectorGroundHostTrace = output.traces.find((trace) =>
+    connectorGroundLabel.mspConnectionPairIds.includes(trace.mspPairId),
+  )!
+  const verticalHostPoint = connectorGroundHostTrace.tracePath.find(
+    (point, index, path) => index > 0 && isVertical(path[index - 1]!, point),
+  )!
+  const tracesAtConnectorGroundLabel = output.traces.filter((trace) =>
+    tracePathContainsPoint(trace.tracePath, connectorGroundLabel.anchorPoint),
+  )
 
+  expect(connectorGroundLabel.anchorPoint.x).toBeCloseTo(verticalHostPoint.x)
   expect(connectorGroundLabelDistance).toBeLessThanOrEqual(
     MAX_CONNECTOR_GROUND_LABEL_DISTANCE,
   )
+  expect(tracesAtConnectorGroundLabel).toHaveLength(1)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

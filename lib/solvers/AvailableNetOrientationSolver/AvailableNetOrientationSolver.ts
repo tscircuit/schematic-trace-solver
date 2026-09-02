@@ -1574,10 +1574,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       label,
     })
     if (boundsStatus !== "valid") {
+      const canOverlapConnectedChipBoundary =
+        phase === "trace-anchor" ||
+        phase === "connected-rail-shift" ||
+        phase === "downward-ground-rail-extension"
       if (
-        (phase !== "trace-anchor" && phase !== "connected-rail-shift") ||
+        !canOverlapConnectedChipBoundary ||
         boundsStatus !== "chip-collision" ||
-        !this.isAcceptableTraceAnchorChipCollision(candidate, label, bounds) ||
+        !this.isAcceptableConnectedChipBoundaryOverlap(
+          candidate,
+          label,
+          bounds,
+        ) ||
         (phase === "connected-rail-shift" &&
           !this.staysOutsideConnectedPinRow({ candidate, label, bounds }))
       ) {
@@ -1636,7 +1644,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return "valid"
   }
 
-  private isAcceptableTraceAnchorChipCollision(
+  private isAcceptableConnectedChipBoundaryOverlap(
     candidate: CandidateLabel,
     label: NetLabelPlacement,
     bounds: Bounds,
