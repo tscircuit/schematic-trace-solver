@@ -126,6 +126,7 @@
     },
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "SW3.2",
         "SW2.2"

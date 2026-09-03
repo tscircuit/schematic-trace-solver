@@ -37,6 +37,7 @@
   "netConnections": [
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "J3.1",
         "J4.1"
