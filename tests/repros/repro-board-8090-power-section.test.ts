@@ -11,5 +11,8 @@ test("board 8090 power section routing", () => {
 
   solver.solve()
 
+  expect(
+    solver.sameNetJunctionAlignmentSolver?.stats.alignedJunctionCount,
+  ).toBe(1)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
