@@ -11,5 +11,11 @@ test("repro unnecessary jog in mouse switch ground trunk", () => {
 
   solver.solve()
 
+  const groundTrace = solver
+    .netLabelToTraceSolver!.getOutput()
+    .traces.find((trace) => trace.userNetId === "GND")!
+
+  expect(groundTrace.tracePath).toHaveLength(4)
+  expect(groundTrace.tracePath[1]!.x).toBeCloseTo(groundTrace.tracePath[2]!.x)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

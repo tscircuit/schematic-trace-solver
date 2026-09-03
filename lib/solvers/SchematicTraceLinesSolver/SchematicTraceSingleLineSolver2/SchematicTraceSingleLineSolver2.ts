@@ -113,10 +113,11 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     this.preferExteriorDetours = params.preferExteriorDetours ?? true
 
     // Ensure facing directions are present
-    for (const pin of this.pins) {
+    for (const [pinIndex, pin] of this.pins.entries()) {
       if (!pin._facingDirection) {
         const chip = this.chipMap[pin.chipId]
-        pin._facingDirection = getPinDirection(pin, chip)
+        const connectedPin = this.pins[pinIndex === 0 ? 1 : 0]
+        pin._facingDirection = getPinDirection(pin, chip, connectedPin)
       }
     }
 

@@ -11,5 +11,14 @@ test("repro RF1 unnecessary dogleg between aligned inductors", () => {
 
   solver.solve()
 
+  const rfTrace = solver
+    .netLabelToTraceSolver!.getOutput()
+    .traces.find((trace) => trace.userNetId === "RF1")!
+  const yCoordinates = rfTrace.tracePath.map((point) => point.y)
+
+  expect(rfTrace.pins[0]!._facingDirection).toBe("x+")
+  expect(Math.max(...yCoordinates) - Math.min(...yCoordinates)).toBeLessThan(
+    0.01,
+  )
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
