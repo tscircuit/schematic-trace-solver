@@ -538,6 +538,8 @@ const getSnapshotSymbolGeometry = (
 }
 
 const pointKey = (point: Point) => `${point.x.toFixed(9)},${point.y.toFixed(9)}`
+const SNAPSHOT_POINT_EPSILON = 1e-9
+const BEND_ARM_COUNT = 2
 
 const traceKey = (trace: SnapshotTrace) =>
   trace.mspPairId ?? trace.tracePath.map(pointKey).join(";")
@@ -732,35 +734,77 @@ const getJunctionsByTraceIndex = (
   traces: SnapshotTrace[],
   getTraceNetName: (trace: SnapshotTrace) => string | undefined,
 ) => {
-  const traceIndexesByNetPoint = new Map<
-    string,
-    { point: Point; traceIndexes: Set<number> }
-  >()
+  const pointsMatch = (a: Point, b: Point) =>
+    Math.abs(a.x - b.x) < SNAPSHOT_POINT_EPSILON &&
+    Math.abs(a.y - b.y) < SNAPSHOT_POINT_EPSILON
+  const netPoints: Array<{
+    netId: string
+    point: Point
+    occurrences: Array<{ traceIndex: number; pointIndex: number }>
+  }> = []
 
   for (const [traceIndex, trace] of traces.entries()) {
-    const netKey = trace.globalConnNetId ?? getTraceNetName(trace) ?? "unknown"
-    for (const key of new Set(trace.tracePath.map(pointKey))) {
-      const netPointKey = `${netKey}:${key}`
-      const entry = traceIndexesByNetPoint.get(netPointKey) ?? {
-        point: trace.tracePath.find((point) => pointKey(point) === key)!,
-        traceIndexes: new Set<number>(),
+    const netId = trace.globalConnNetId ?? getTraceNetName(trace) ?? "unknown"
+    for (const [pointIndex, point] of trace.tracePath.entries()) {
+      let netPoint = netPoints.find(
+        (candidate) =>
+          candidate.netId === netId && pointsMatch(candidate.point, point),
+      )
+      if (!netPoint) {
+        netPoint = {
+          netId,
+          point,
+          occurrences: [],
+        }
+        netPoints.push(netPoint)
       }
-      entry.traceIndexes.add(traceIndex)
-      traceIndexesByNetPoint.set(netPointKey, entry)
+      netPoint.occurrences.push({ traceIndex, pointIndex })
     }
   }
 
   const junctionsByTraceIndex = new Map<number, Point[]>()
-  for (const {
-    point: sharedPoint,
-    traceIndexes,
-  } of traceIndexesByNetPoint.values()) {
+  for (const { point: sharedPoint, occurrences } of netPoints) {
+    const traceIndexes = new Set(
+      occurrences.map((occurrence) => occurrence.traceIndex),
+    )
     if (traceIndexes.size < 2) continue
+
+    const directions: Point[] = []
+    const armCounts: number[] = []
+    for (const { traceIndex, pointIndex } of occurrences) {
+      const tracePath = traces[traceIndex]!.tracePath
+      const occurrenceDirections: Point[] = []
+      for (const neighborIndex of [pointIndex - 1, pointIndex + 1]) {
+        const neighbor = tracePath[neighborIndex]
+        if (!neighbor) continue
+        const dx = neighbor.x - sharedPoint.x
+        const dy = neighbor.y - sharedPoint.y
+        const length = Math.hypot(dx, dy)
+        if (length < SNAPSHOT_POINT_EPSILON) continue
+        const direction = { x: dx / length, y: dy / length }
+        if (
+          !directions.some((candidate) => pointsMatch(candidate, direction))
+        ) {
+          directions.push(direction)
+        }
+        if (
+          !occurrenceDirections.some((candidate) =>
+            pointsMatch(candidate, direction),
+          )
+        ) {
+          occurrenceDirections.push(direction)
+        }
+      }
+      armCounts.push(occurrenceDirections.length)
+    }
+    const isDuplicateBend =
+      directions.length === BEND_ARM_COUNT &&
+      armCounts.every((armCount) => armCount === BEND_ARM_COUNT)
+    if (isDuplicateBend) continue
+
     const traceIndex = Math.min(...traceIndexes)
     const junctions = junctionsByTraceIndex.get(traceIndex) ?? []
-    if (!junctions.some((point) => pointKey(point) === pointKey(sharedPoint))) {
-      junctions.push(sharedPoint)
-    }
+    junctions.push(sharedPoint)
     junctionsByTraceIndex.set(traceIndex, junctions)
   }
 

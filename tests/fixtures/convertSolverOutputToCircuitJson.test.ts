@@ -154,6 +154,56 @@ class SnapshotTestSolver extends BaseSolver {
   }
 }
 
+class JunctionSnapshotTestSolver extends BaseSolver {
+  inputProblem = inputProblem
+
+  getOutput() {
+    return {
+      traces: [
+        {
+          mspPairId: "first-junction-trace",
+          globalConnNetId: "junction-test-net",
+          pinIds: ["U1.1", "C1.1"],
+          tracePath: [
+            { x: -1, y: 0 },
+            { x: 0, y: 0 },
+            { x: 0, y: 1 },
+            { x: 1, y: 1 },
+          ],
+        },
+        {
+          mspPairId: "second-junction-trace",
+          globalConnNetId: "junction-test-net",
+          pinIds: ["U1.1", "C1.1"],
+          tracePath: [
+            { x: -2, y: 0 },
+            { x: 0, y: 0 },
+            { x: 0, y: 1 },
+            { x: -1, y: 1 },
+          ],
+        },
+      ],
+      netLabelPlacements: [],
+      inlineNetLabelPlacements: [],
+    }
+  }
+}
+
+test("solver snapshot omits duplicate bends but keeps a three-arm junction", () => {
+  const circuitJson = convertSolverOutputToCircuitJson(
+    new JunctionSnapshotTestSolver(),
+  )
+  const junctions = circuitJson
+    .filter(
+      (element): element is SchematicTrace =>
+        element.type === "schematic_trace",
+    )
+    .flatMap((trace) => trace.junctions ?? [])
+
+  expect(junctions).toHaveLength(1)
+  expect(junctions[0]).toEqual({ x: 0, y: 1 })
+})
+
 test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
   const circuitJson = convertSolverOutputToCircuitJson(new SnapshotTestSolver())
   const inputGraphics = visualizeInputProblem(inputProblem)
