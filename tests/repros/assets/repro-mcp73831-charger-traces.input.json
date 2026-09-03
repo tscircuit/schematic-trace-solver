@@ -1,0 +1,195 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -39,
+        "y": 0
+      },
+      "width": 2.760000000000005,
+      "height": 0.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "STAT",
+          "x": -37.62,
+          "y": -0.1
+        },
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "VSS",
+          "x": -40.38,
+          "y": 0
+        },
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "VBAT",
+          "x": -37.62,
+          "y": 0.1
+        },
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "VDD",
+          "x": -40.38,
+          "y": 0.2
+        },
+        {
+          "pinId": "schematic_port_4",
+          "displayName": "PROG",
+          "x": -40.38,
+          "y": -0.2
+        }
+      ],
+      "sectionId": "UsbCharging"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -39,
+        "y": -4
+      },
+      "width": 1.5600000000000023,
+      "height": 0.6800000000000002,
+      "pins": [
+        {
+          "pinId": "schematic_port_5",
+          "displayName": "anode",
+          "x": -39.78,
+          "y": -4,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_6",
+          "displayName": "cathode",
+          "x": -38.22,
+          "y": -4,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "UsbCharging"
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -33.447500000000005,
+        "y": -3
+      },
+      "width": 2.0050000000000026,
+      "height": 0.7600000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_7",
+          "displayName": "1",
+          "x": -34,
+          "y": -2.6199999999999997,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_8",
+          "displayName": "2",
+          "x": -34,
+          "y": -3.3800000000000003,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "UsbCharging"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "CHG_PROG",
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_4",
+        "schematic_port_5"
+      ]
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "CHG_STAT",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_0"
+      ]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_1",
+        "schematic_port_6",
+        "schematic_port_8"
+      ]
+    },
+    {
+      "netId": "VBAT",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_2",
+        "schematic_port_7"
+      ]
+    },
+    {
+      "netId": "VBUS",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_3"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -38.959999999999994,
+        "y": -0.43
+      },
+      "width": 2.039999999999999,
+      "height": 0.18000000000000005,
+      "text": "MCP73831T-2ACI/OT"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -39.44,
+        "y": 0.41500000000000004
+      },
+      "width": 1.2000000000000028,
+      "height": 0.25000000000000006,
+      "text": "U_CHARGER"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "VBUS": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ],
+    "VBAT": [
+      "y+"
+    ],
+    "CHG_STAT": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
