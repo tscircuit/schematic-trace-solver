@@ -236,6 +236,7 @@
   "netConnections": [
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "RFSET.2",
         "RTEMP.2",

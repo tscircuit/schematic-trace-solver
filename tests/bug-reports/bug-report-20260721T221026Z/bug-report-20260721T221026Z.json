@@ -1231,6 +1231,7 @@
     },
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "J_BAT.2",
         "U_REG.1",

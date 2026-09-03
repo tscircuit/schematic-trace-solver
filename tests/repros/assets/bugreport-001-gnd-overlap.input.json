@@ -152,6 +152,7 @@
   "netConnections": [
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": ["BT1.2", "D1.2", "D2.2"],
       "netLabelWidth": 0.48
     }

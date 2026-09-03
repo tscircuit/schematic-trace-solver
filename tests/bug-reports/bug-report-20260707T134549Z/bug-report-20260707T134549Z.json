@@ -464,6 +464,7 @@
     },
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "U1.4",
         "U1.6",

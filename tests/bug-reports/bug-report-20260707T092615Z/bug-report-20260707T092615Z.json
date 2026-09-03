@@ -1103,6 +1103,7 @@
     },
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "J_BAT_NEG.1",
         "J_BAT_NEG.2",

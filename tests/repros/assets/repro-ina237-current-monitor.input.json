@@ -265,6 +265,7 @@
   "netConnections": [
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "U1.1",
         "U1.2",

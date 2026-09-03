@@ -85,6 +85,7 @@
   "netConnections": [
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "B1.2",
         "C3.2"

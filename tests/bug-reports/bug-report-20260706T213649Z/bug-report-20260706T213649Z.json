@@ -1431,6 +1431,7 @@
     },
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "J1.2",
         "J2.7",

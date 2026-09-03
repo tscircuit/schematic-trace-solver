@@ -1390,6 +1390,7 @@
     },
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "J3.1",
         "SLPWR1.2",

@@ -539,6 +539,7 @@
     },
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "U1.3",
         "C1.2",

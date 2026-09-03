@@ -1548,6 +1548,7 @@
     },
     {
       "netId": "GND",
+      "isGround": true,
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.48,
       "pinIds": [

@@ -134,6 +134,7 @@
   "netConnections": [
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "U1.2",
         "V_IN.2",

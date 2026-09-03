@@ -121,6 +121,7 @@
   "netConnections": [
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": ["U1.3", "U1.13", "U1.18", "U1.29", "J2.3", "J3.3"],
       "netLabelWidth": 0.48
     },
