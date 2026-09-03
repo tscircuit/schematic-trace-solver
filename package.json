@@ -9,6 +9,7 @@
   "type": "module",
   "scripts": {
     "start": "cosmos",
+    "test": "bun test",
     "debug:pipeline": "bun scripts/debug-pipeline-stages.ts",
     "build": "tsup-node lib/index.ts --format esm --dts",
     "format": "biome format --write .",
