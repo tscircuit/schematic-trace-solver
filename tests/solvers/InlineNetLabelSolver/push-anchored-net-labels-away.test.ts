@@ -126,6 +126,68 @@ test("leaves a label without a movable connector in place", () => {
   expect(output.netLabelPlacements[0]).toEqual(label)
 })
 
+test("leaves a label in place when its new connector would cross another net", () => {
+  const inputProblem: InputProblem = {
+    chips: [
+      {
+        chipId: "U1",
+        center: { x: 0, y: 0 },
+        width: 2,
+        height: 1,
+        pins: [{ pinId: "U1.1", x: -0.5, y: 0.2, _facingDirection: "x-" }],
+      },
+    ],
+    directConnections: [],
+    netConnections: [],
+    availableNetLabelOrientations: {},
+  }
+  const label: NetLabelPlacement = {
+    globalConnNetId: "regular-net",
+    netId: "D_PLUS",
+    mspConnectionPairIds: [],
+    pinIds: ["U1.1"],
+    orientation: "x-",
+    anchorPoint: { x: -0.5, y: 0.2 },
+    center: { x: -0.6, y: 0.2 },
+    width: 0.2,
+    height: 0.2,
+  }
+  const crossingTrace: SolvedTracePath = {
+    mspPairId: "crossing-trace",
+    dcConnNetId: "crossing-net",
+    globalConnNetId: "crossing-net",
+    pins: [] as any,
+    tracePath: [
+      { x: -1.2, y: -0.2 },
+      { x: -1.2, y: 0.4 },
+    ],
+    mspConnectionPairIds: ["crossing-trace"],
+    pinIds: [],
+  }
+  const inlineLabel: InlineNetLabelPlacement = {
+    globalConnNetId: "inline-net",
+    netId: "SWCLK",
+    pinIds: ["U1.2"],
+    axis: "x",
+    anchorPoint: { x: -1.1, y: 0 },
+    center: { x: -1.1, y: 0.11 },
+    width: 1.2,
+    height: 0.12,
+    side: "y+",
+  }
+
+  const output = pushAnchoredNetLabelsAwayFromInlineLabels({
+    inputProblem,
+    traces: [crossingTrace],
+    netLabelPlacements: [label],
+    inlineNetLabelPlacements: [inlineLabel],
+  })
+
+  expect(output.movedLabelCount).toBe(0)
+  expect(output.netLabelPlacements[0]).toEqual(label)
+  expect(output.traces).toEqual([crossingTrace])
+})
+
 test("moves a contiguous label row together and shoves an anchored obstacle", () => {
   const inputProblem: InputProblem = {
     chips: [

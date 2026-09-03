@@ -5,6 +5,7 @@ import {
 } from "lib/solvers/AvailableNetOrientationSolver/traces"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { findPerpendicularPathCrossings } from "lib/solvers/TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 import type { InputProblem } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
@@ -481,6 +482,15 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
               movedLabel.anchorPoint,
             )
       const connectorObstructed =
+        outputTraces.some(
+          (trace) =>
+            trace.globalConnNetId !== connector.globalConnNetId &&
+            findPerpendicularPathCrossings(
+              connector.tracePath,
+              trace.tracePath,
+              { includeTerminalSegments: true },
+            ).length > 0,
+        ) ||
         inlineBounds.some((bounds) =>
           pathIntersectsBounds(connector.tracePath, bounds),
         ) ||
