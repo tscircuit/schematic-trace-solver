@@ -43,6 +43,7 @@ interface TraceCrossing {
   otherTrace: SolvedTracePath
   otherSegmentIndex: number
   isInitialBundleCrossing: boolean
+  isComponentWrapCrossing: boolean
 }
 
 /**
@@ -197,6 +198,69 @@ export class UntangleTraceSubsolver extends BaseSolver {
     )
   }
 
+  private _getWrappedFourPinChipId(trace: SolvedTracePath) {
+    const chipId = trace.pins[0]?.chipId
+    if (chipId === undefined || trace.pins.length < 2) return undefined
+    if (!trace.pins.every((pin) => pin.chipId === chipId)) return undefined
+
+    const chip = this.input.inputProblem.chips.find(
+      (candidate) => candidate.chipId === chipId,
+    )
+    if (chip?.pins.length !== 4) return undefined
+    return chipId
+  }
+
+  private _wrapDirectionsArePerpendicularToSharedPin(
+    wrapTrace: SolvedTracePath,
+    otherTrace: SolvedTracePath,
+    chipId: string,
+  ) {
+    const wrapDirections = new Set(
+      wrapTrace.pins.map((pin) => pin._facingDirection),
+    )
+    const sharedPinDirection = otherTrace.pins.find(
+      (pin) => pin.chipId === chipId,
+    )?._facingDirection
+    const wrapsVertically = wrapDirections.has("y+") && wrapDirections.has("y-")
+    if (wrapsVertically) {
+      return sharedPinDirection === "x+" || sharedPinDirection === "x-"
+    }
+
+    const wrapsHorizontally =
+      wrapDirections.has("x+") && wrapDirections.has("x-")
+    return (
+      wrapsHorizontally &&
+      (sharedPinDirection === "y+" || sharedPinDirection === "y-")
+    )
+  }
+
+  private _isComponentWrapPair(
+    first: SolvedTracePath,
+    second: SolvedTracePath,
+  ) {
+    const firstChipId = this._getWrappedFourPinChipId(first)
+    if (
+      firstChipId !== undefined &&
+      this._wrapDirectionsArePerpendicularToSharedPin(
+        first,
+        second,
+        firstChipId,
+      )
+    ) {
+      return true
+    }
+
+    const secondChipId = this._getWrappedFourPinChipId(second)
+    return (
+      secondChipId !== undefined &&
+      this._wrapDirectionsArePerpendicularToSharedPin(
+        second,
+        first,
+        secondChipId,
+      )
+    )
+  }
+
   private _findCrossing(): TraceCrossing | null {
     const traces = this.input.allTraces
     for (let firstIndex = 0; firstIndex < traces.length; firstIndex++) {
@@ -209,11 +273,16 @@ export class UntangleTraceSubsolver extends BaseSolver {
         const otherTrace = traces[secondIndex]!
         if (trace.globalConnNetId === otherTrace.globalConnNetId) continue
         const isInitialBundleCrossing = this._isTraceBundle(trace, otherTrace)
+        const isComponentWrapCrossing = this._isComponentWrapPair(
+          trace,
+          otherTrace,
+        )
         const isEligibleInitialCrossing =
           this.input.eligibleTraceIds?.has(trace.mspPairId) === true ||
           this.input.eligibleTraceIds?.has(otherTrace.mspPairId) === true
         if (
           !isInitialBundleCrossing &&
+          !isComponentWrapCrossing &&
           !isEligibleInitialCrossing &&
           !this.reroutedTraceIds.has(trace.mspPairId) &&
           !this.reroutedTraceIds.has(otherTrace.mspPairId)
@@ -224,6 +293,7 @@ export class UntangleTraceSubsolver extends BaseSolver {
         const crossings = findPerpendicularPathCrossings(
           trace.tracePath,
           otherTrace.tracePath,
+          { includeTerminalSegments: isComponentWrapCrossing },
         )
         for (const { pathSegmentIndex, otherPathSegmentIndex } of crossings) {
           const crossing = {
@@ -232,6 +302,7 @@ export class UntangleTraceSubsolver extends BaseSolver {
             otherTrace,
             otherSegmentIndex: otherPathSegmentIndex,
             isInitialBundleCrossing,
+            isComponentWrapCrossing,
           }
           if (!this.ignoredCrossings.has(this._crossingKey(crossing))) {
             return crossing
@@ -299,6 +370,7 @@ export class UntangleTraceSubsolver extends BaseSolver {
             candidate.traceId,
           ).isColliding &&
           (crossing.isInitialBundleCrossing ||
+            crossing.isComponentWrapCrossing ||
             !candidate.collision.isColliding),
       )
       .sort(
