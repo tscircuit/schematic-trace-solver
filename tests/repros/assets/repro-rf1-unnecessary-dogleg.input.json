@@ -1,0 +1,90 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 2.9979,
+        "y": -6.961574540324975
+      },
+      "width": 0.8041999999999998,
+      "height": 0.07685091935005062,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "2",
+          "x": 3.4,
+          "y": -7
+        },
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "1",
+          "x": 2.6,
+          "y": -7
+        }
+      ],
+      "sectionId": "RadioFrontEnd"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 6,
+        "y": -7
+      },
+      "width": 1.6840291999999977,
+      "height": 0.8677406999999988,
+      "pins": [
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "anode",
+          "x": 5.157985400000001,
+          "y": -6.997375450000001,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "cathode",
+          "x": 6.842014599999999,
+          "y": -7.00262455,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "RadioFrontEnd"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "RF1",
+      "anchoredNetLabelWidth": 0.48,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.32,
+      "pinIds": [
+        "schematic_port_0",
+        "schematic_port_2"
+      ]
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "RF_OUT",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_1"
+      ]
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "RF_OUT": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
