@@ -11,6 +11,7 @@ import { SchematicTraceSingleLineSolver2 } from "./SchematicTraceSingleLineSolve
 import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
 import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
 import type { Point } from "@tscircuit/math-utils"
+import { simplifyPath } from "../TraceCleanupSolver/simplifyPath"
 
 const shouldPreferExteriorDetours = ({
   connectionPair,
@@ -50,7 +51,13 @@ export interface SolvedTracePath extends MspConnectionPair {
   mspConnectionPairIds: MspConnectionPairId[]
   pinIds: PinId[]
 }
-
+const snapToGrid = (path: Point[]): Point[] => {
+  const TOLERANCE = 0.01
+  return path.map((p) => ({
+    x: Math.abs(p.x - Math.round(p.x)) < TOLERANCE ? Math.round(p.x) : p.x,
+    y: Math.abs(p.y - Math.round(p.y)) < TOLERANCE ? Math.round(p.y) : p.y,
+  }))
+}
 export class SchematicTraceLinesSolver extends BaseSolver {
   inputProblem: InputProblem
   mspConnectionPairs: MspConnectionPair[]
@@ -151,6 +158,26 @@ export class SchematicTraceLinesSolver extends BaseSolver {
         inputProblem: this.inputProblem,
       }),
     })
+    if (this.activeSubSolver?.solved) {
+      let finalPath = this.activeSubSolver!.solvedTracePath!
+
+      finalPath = snapToGrid(finalPath)
+
+      finalPath = simplifyPath(finalPath)
+
+      this.solvedTracePaths.push({
+        ...this.currentConnectionPair!,
+        tracePath: finalPath,
+        mspConnectionPairIds: [this.currentConnectionPair!.mspPairId],
+        pinIds: [
+          this.currentConnectionPair!.pins[0].pinId,
+          this.currentConnectionPair!.pins[1].pinId,
+        ],
+      })
+
+      this.activeSubSolver = null
+      this.currentConnectionPair = null
+    }
   }
 
   override visualize(): GraphicsObject {
