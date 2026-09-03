@@ -12,6 +12,12 @@ import {
 import { shortenExcessiveLabelPaddingDetour } from "./shortenExcessiveLabelPaddingDetour"
 
 const PATH_LENGTH_EPSILON = 1e-9
+type ObstacleBounds = {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
 
 const getPathLength = (path: SolvedTracePath["tracePath"]): number =>
   path.slice(1).reduce((length, point, pointIndex) => {
@@ -122,9 +128,7 @@ export const minimizeTurnsWithFilteredLabels = ({
     maxY: nl.center.y + nl.height / 2 + paddingBuffer,
   }))
 
-  const minimizeForObstacles = (
-    obstacles: ReturnType<typeof getTraceObstacles>,
-  ) => {
+  const minimizeForObstacles = (obstacles: ObstacleBounds[]) => {
     const strictPath = minimizeTurns({
       path: originalPath,
       obstacles,
