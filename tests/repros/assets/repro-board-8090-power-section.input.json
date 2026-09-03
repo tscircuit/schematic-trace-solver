@@ -1,0 +1,322 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -18.292666666666666,
+        "y": -2.7755463083333325
+      },
+      "width": 2.700000000000003,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "GND",
+          "x": -16.942666666666664,
+          "y": -2.6755463083333324
+        },
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "BAT_PLUS",
+          "x": -16.942666666666664,
+          "y": -2.8755463083333326
+        }
+      ],
+      "sectionId": "power"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -12.416,
+        "y": -3.352
+      },
+      "width": 2.8999999999999986,
+      "height": 0.6000000000000005,
+      "pins": [
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "GND",
+          "x": -10.966000000000001,
+          "y": -3.252
+        },
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "SOLAR_PLUS",
+          "x": -10.966000000000001,
+          "y": -3.452
+        }
+      ],
+      "sectionId": "power"
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -15.100999999999999,
+        "y": -6.282212974999999
+      },
+      "width": 2,
+      "height": 0.40000000000000036,
+      "pins": [
+        {
+          "pinId": "schematic_port_4",
+          "displayName": "A",
+          "x": -16.101,
+          "y": -6.282212974999999
+        },
+        {
+          "pinId": "schematic_port_5",
+          "displayName": "K",
+          "x": -14.100999999999999,
+          "y": -6.382212974999999
+        },
+        {
+          "pinId": "schematic_port_6",
+          "displayName": "COM",
+          "x": -14.100999999999999,
+          "y": -6.182212975
+        }
+      ],
+      "sectionId": "power"
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": -14.921,
+        "y": -3.882212974999999
+      },
+      "width": 2,
+      "height": 0.3999999999999999,
+      "pins": [
+        {
+          "pinId": "schematic_port_7",
+          "displayName": "GND",
+          "x": -13.921,
+          "y": -3.9822129749999995
+        },
+        {
+          "pinId": "schematic_port_8",
+          "displayName": "VOUT",
+          "x": -13.921,
+          "y": -3.7822129749999993
+        },
+        {
+          "pinId": "schematic_port_9",
+          "displayName": "VIN",
+          "x": -15.921,
+          "y": -3.8822129749999994
+        }
+      ],
+      "sectionId": "power"
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": -12.446,
+        "y": -7.665
+      },
+      "width": 0.8999999999999986,
+      "height": 0.3041464999999999,
+      "pins": [
+        {
+          "pinId": "schematic_port_10",
+          "displayName": "1",
+          "x": -12.895999999999999,
+          "y": -7.662425949999999,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_11",
+          "displayName": "2",
+          "x": -11.996,
+          "y": -7.667574050000001,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "power"
+    },
+    {
+      "chipId": "schematic_component_5",
+      "center": {
+        "x": -15.647666666666666,
+        "y": -2.7755463083333325
+      },
+      "width": 0.7999999999999989,
+      "height": 0.7600000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_12",
+          "displayName": "pos",
+          "x": -15.722666666666665,
+          "y": -2.395546308333332,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_13",
+          "displayName": "neg",
+          "x": -15.722666666666665,
+          "y": -3.155546308333333,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "power"
+    },
+    {
+      "chipId": "schematic_component_6",
+      "center": {
+        "x": -14.407666666666664,
+        "y": -2.7755463083333325
+      },
+      "width": 0.7999999999999989,
+      "height": 0.7600000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_14",
+          "displayName": "pos",
+          "x": -14.482666666666665,
+          "y": -2.395546308333332,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_15",
+          "displayName": "neg",
+          "x": -14.482666666666665,
+          "y": -3.155546308333333,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "power"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_0",
+        "schematic_port_2",
+        "schematic_port_7",
+        "schematic_port_13",
+        "schematic_port_15"
+      ]
+    },
+    {
+      "netId": "VCC",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_1",
+        "schematic_port_6",
+        "schematic_port_9",
+        "schematic_port_10",
+        "schematic_port_12"
+      ]
+    },
+    {
+      "netId": "SOLAR_IN",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_3",
+        "schematic_port_4"
+      ]
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_8",
+        "schematic_port_11",
+        "schematic_port_14"
+      ]
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "VCC": [
+      "y+"
+    ],
+    "SOLAR_IN": [
+      "x-",
+      "x+"
+    ],
+    "V3V3": [
+      "y+"
+    ]
+  },
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -19.002666666666663,
+        "y": -2.3605463083333325
+      },
+      "width": 0.5999999999999979,
+      "height": 0.24999999999999956,
+      "text": "Batt"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -13.166,
+        "y": -2.9369999999999994
+      },
+      "width": 0.7200000000000006,
+      "height": 0.24999999999999956,
+      "text": "Solar"
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -15.340999999999998,
+        "y": -6.612212974999999
+      },
+      "width": 0.7200000000000006,
+      "height": 0.17999999999999972,
+      "text": "BAT54S"
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -15.581,
+        "y": -5.967212974999999
+      },
+      "width": 0.3600000000000012,
+      "height": 0.2499999999999991,
+      "text": "D1"
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": -14.500999999999998,
+        "y": -4.212212974999999
+      },
+      "width": 2.040000000000001,
+      "height": 0.17999999999999972,
+      "text": "MCP1700T-3302E/TT"
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": -15.401,
+        "y": -3.5672129749999995
+      },
+      "width": 0.3600000000000012,
+      "height": 0.24999999999999956,
+      "text": "U1"
+    }
+  ],
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
