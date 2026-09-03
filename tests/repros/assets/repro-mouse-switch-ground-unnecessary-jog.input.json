@@ -1,0 +1,158 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -7.690000000000001,
+        "y": 4
+      },
+      "width": 2.0000000000000018,
+      "height": 0.40000000000000036,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "1",
+          "x": -8.690000000000001,
+          "y": 4.1
+        },
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "2",
+          "x": -8.690000000000001,
+          "y": 3.9
+        },
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "3",
+          "x": -6.69,
+          "y": 4
+        }
+      ],
+      "sectionId": "MouseInputs"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -8.35,
+        "y": -4
+      },
+      "width": 2,
+      "height": 0.40000000000000036,
+      "pins": [
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "1",
+          "x": -9.35,
+          "y": -3.9
+        },
+        {
+          "pinId": "schematic_port_4",
+          "displayName": "2",
+          "x": -9.35,
+          "y": -4.1
+        },
+        {
+          "pinId": "schematic_port_5",
+          "displayName": "3",
+          "x": -7.35,
+          "y": -4
+        }
+      ],
+      "sectionId": "MouseInputs"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_0",
+        "schematic_port_3"
+      ]
+    },
+    {
+      "netId": "LEFT_SW",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_1"
+      ]
+    },
+    {
+      "netId": "RIGHT",
+      "isGround": false,
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_4"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -7.450000000000001,
+        "y": 3.67
+      },
+      "width": 1.6799999999999997,
+      "height": 0.17999999999999972,
+      "text": "D2FC-F-7N(20M)"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -7.870000000000001,
+        "y": 4.3149999999999995
+      },
+      "width": 0.96,
+      "height": 0.2499999999999991,
+      "text": "SW_LEFT"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -8.11,
+        "y": -4.33
+      },
+      "width": 1.6799999999999997,
+      "height": 0.17999999999999972,
+      "text": "D2FC-F-7N(20M)"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -8.469999999999999,
+        "y": -3.6849999999999996
+      },
+      "width": 1.08,
+      "height": 0.24999999999999956,
+      "text": "SW_RIGHT"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "LEFT_SW": [
+      "x-",
+      "x+"
+    ],
+    "RIGHT": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 20,
+  "_hideRatsNet": false
+}
