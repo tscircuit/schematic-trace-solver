@@ -29,7 +29,20 @@ export const getPinDirectionCandidates = (
     xMinusDistance,
   )
 
-  const closestDirections = [
+  // Preserve the established single-direction result as the primary choice.
+  // Candidate routing may treat nearly equal edge distances as an ambiguous
+  // corner, but context-free callers (such as visualization) should not change
+  // direction solely because the candidate comparison uses a tolerance.
+  const primaryDirection: PinDirection =
+    minDistance === yPlusDistance
+      ? "y+"
+      : minDistance === yMinusDistance
+        ? "y-"
+        : minDistance === xPlusDistance
+          ? "x+"
+          : "x-"
+
+  const matchingDirections = [
     { direction: "y+" as const, distance: yPlusDistance },
     { direction: "y-" as const, distance: yMinusDistance },
     { direction: "x+" as const, distance: xPlusDistance },
@@ -37,6 +50,11 @@ export const getPinDirectionCandidates = (
   ]
     .filter(({ distance }) => Math.abs(distance - minDistance) <= 1e-9)
     .map(({ direction }) => direction)
+
+  const closestDirections = [
+    primaryDirection,
+    ...matchingDirections.filter((direction) => direction !== primaryDirection),
+  ]
 
   if (!connectedPin || closestDirections.length <= 1) {
     return closestDirections

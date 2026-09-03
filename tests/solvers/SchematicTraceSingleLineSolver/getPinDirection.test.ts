@@ -35,3 +35,17 @@ test("uses the connected pin to resolve a corner direction on any symbol", () =>
     }),
   ).toEqual(["x+", "y-"])
 })
+
+test("preserves the nearest-edge default for an almost exact corner", () => {
+  const cornerPin = { pinId: "U1.1", x: -1, y: 0.9999999999999994 }
+  const chip: InputChip = {
+    chipId: "U1",
+    center: { x: 0, y: 0 },
+    width: 2,
+    height: 2,
+    pins: [cornerPin],
+  }
+
+  expect(getPinDirection(cornerPin, chip)).toBe("x-")
+  expect(getPinDirectionCandidates(cornerPin, chip)).toEqual(["x-", "y+"])
+})
