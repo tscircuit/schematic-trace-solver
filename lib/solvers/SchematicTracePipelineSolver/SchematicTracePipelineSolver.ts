@@ -37,6 +37,7 @@ import { TraceElbowTransitionSimplificationSolver } from "../TraceElbowTransitio
 import { InlineNetLabelSolver } from "../InlineNetLabelSolver/InlineNetLabelSolver"
 import { NetLabelToTraceSolver } from "../NetLabelToTraceSolver/NetLabelToTraceSolver"
 import { findPerpendicularPathCrossings } from "../TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
+import { GroundTraceCrossingLabelSolver } from "../GroundTraceCrossingLabelSolver/GroundTraceCrossingLabelSolver"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -90,6 +91,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   labelMergingSolver?: MergedNetLabelObstacleSolver
   traceLabelOverlapAvoidanceSolver?: TraceLabelOverlapAvoidanceSolver
   traceCleanupSolver?: TraceCleanupSolver
+  groundTraceCrossingLabelSolver?: GroundTraceCrossingLabelSolver
   example28Solver?: Example28Solver
   availableNetOrientationSolver?: AvailableNetOrientationSolver
   postLabelTraceOverlapShiftSolver?: TraceOverlapShiftSolver
@@ -333,12 +335,21 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       ]
     }),
     definePipelineStep(
+      "groundTraceCrossingLabelSolver",
+      GroundTraceCrossingLabelSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          traces: instance.traceCleanupSolver!.getOutput().traces,
+        },
+      ],
+    ),
+    definePipelineStep(
       "netLabelPlacementSolver",
       NetLabelPlacementSolver,
       (instance) => {
         const traces =
-          instance.traceCleanupSolver?.getOutput().traces ??
-          instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+          instance.groundTraceCrossingLabelSolver!.getOutput().traces
 
         return [
           {
@@ -351,9 +362,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep("example28Solver", Example28Solver, (instance) => {
-      const traces =
-        instance.traceCleanupSolver?.getOutput().traces ??
-        instance.traceLabelOverlapAvoidanceSolver!.getOutput().traces
+      const traces = instance.groundTraceCrossingLabelSolver!.getOutput().traces
 
       return [
         {

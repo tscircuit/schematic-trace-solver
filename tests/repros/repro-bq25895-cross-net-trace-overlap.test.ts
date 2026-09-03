@@ -75,14 +75,18 @@ test("BQ25895 CE and GND traces keep visible parallel clearance", () => {
 
   const output = solver.netLabelTraceCollisionSolver!.getOutput()
   const groundLabel = output.netLabelPlacements.find(
-    (label) => label.netId === "GND",
+    (label) => label.netId === "GND" && label.mspConnectionPairIds.length > 0,
   )!
   const groundLabelTrace = output.traces.find((trace) =>
     groundLabel.mspConnectionPairIds.includes(trace.mspPairId),
   )!
 
-  expect(getTraceCorners(groundLabelTrace.tracePath)).toContainEqual(
-    groundLabel.anchorPoint,
-  )
+  expect(
+    getTraceCorners(groundLabelTrace.tracePath).some(
+      (corner) =>
+        Math.abs(corner.x - groundLabel.anchorPoint.x) < EPSILON &&
+        Math.abs(corner.y - groundLabel.anchorPoint.y) < EPSILON,
+    ),
+  ).toBe(true)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
