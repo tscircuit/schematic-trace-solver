@@ -11,6 +11,33 @@ import {
 } from "./sameNetRailAlignment/geometry"
 import { shortenExcessiveLabelPaddingDetour } from "./shortenExcessiveLabelPaddingDetour"
 
+const PATH_LENGTH_EPSILON = 1e-9
+
+const getPathLength = (path: SolvedTracePath["tracePath"]): number =>
+  path.slice(1).reduce((length, point, pointIndex) => {
+    const previousPoint = path[pointIndex]!
+    return (
+      length +
+      Math.abs(point.x - previousPoint.x) +
+      Math.abs(point.y - previousPoint.y)
+    )
+  }, 0)
+
+const chooseLengthPreservingBoundaryRoute = ({
+  strictPath,
+  boundaryPath,
+}: {
+  strictPath: SolvedTracePath["tracePath"]
+  boundaryPath: SolvedTracePath["tracePath"]
+}) => {
+  const doesNotAddTurns = countTurns(boundaryPath) <= countTurns(strictPath)
+  const preservesLength =
+    Math.abs(getPathLength(boundaryPath) - getPathLength(strictPath)) <=
+    PATH_LENGTH_EPSILON
+
+  return doesNotAddTurns && preservesLength ? boundaryPath : strictPath
+}
+
 /**
  * Minimizes turns with a strict pass that treats every other trace as an
  * obstacle and a relaxed pass that permits joining endpoint-sharing same-net
@@ -95,22 +122,38 @@ export const minimizeTurnsWithFilteredLabels = ({
     maxY: nl.center.y + nl.height / 2 + paddingBuffer,
   }))
 
-  const strictPath = minimizeTurns({
-    path: originalPath,
-    obstacles: [...staticObstacles, ...getTraceObstacles(otherTraces)],
-    labelBounds,
-    originalPath: originalPath,
-  })
+  const minimizeForObstacles = (
+    obstacles: ReturnType<typeof getTraceObstacles>,
+  ) => {
+    const strictPath = minimizeTurns({
+      path: originalPath,
+      obstacles,
+      labelBounds,
+      originalPath,
+    })
+    const boundaryPath = minimizeTurns({
+      path: originalPath,
+      obstacles,
+      labelBounds,
+      originalPath,
+      allowLabelBoundaryExtension: true,
+    })
 
-  const relaxedPath = minimizeTurns({
-    path: originalPath,
-    obstacles: [
-      ...staticObstacles,
-      ...getTraceObstacles(relaxedObstacleTraces),
-    ],
-    labelBounds,
-    originalPath: originalPath,
-  })
+    return chooseLengthPreservingBoundaryRoute({
+      strictPath,
+      boundaryPath,
+    })
+  }
+
+  const strictPath = minimizeForObstacles([
+    ...staticObstacles,
+    ...getTraceObstacles(otherTraces),
+  ])
+
+  const relaxedPath = minimizeForObstacles([
+    ...staticObstacles,
+    ...getTraceObstacles(relaxedObstacleTraces),
+  ])
 
   const sameNetTraces = otherTraces.filter(
     (trace) => trace.globalConnNetId === targetTrace.globalConnNetId,

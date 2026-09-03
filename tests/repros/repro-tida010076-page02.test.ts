@@ -24,6 +24,29 @@ test("repro TIDA-010076 page 02 net-label placement", () => {
 
   expect(solver.solved).toBe(true)
 
+  const cornerPair = solver
+    .inlineNetLabelSolver!.getOutput()
+    .traces.find(
+      (trace) =>
+        trace.pinIds.includes("schematic_port_127") &&
+        trace.pinIds.includes("schematic_port_126"),
+    )!
+  expect(cornerPair.tracePath).toEqual([
+    { x: -12.7, y: 8.208499999999994 },
+    { x: -12.899999999999999, y: 8.208499999999994 },
+    { x: -12.899999999999999, y: 8.408499999999995 },
+    { x: -12.7, y: 8.408499999999995 },
+  ])
+  expect(cornerPair.pins.map((pin) => pin._facingDirection)).toEqual([
+    "x-",
+    "x-",
+  ])
+  expect(
+    solver.schematicTraceLinesSolver!.failedConnectionPairs.some(
+      (pair) => pair.mspPairId === cornerPair.mspPairId,
+    ),
+  ).toBe(false)
+
   const j5ChipId = inputProblem.textBoxes?.find(
     (textBox) => textBox.text === "J5",
   )?.chipId
