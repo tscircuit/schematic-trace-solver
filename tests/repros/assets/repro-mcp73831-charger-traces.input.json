@@ -79,17 +79,69 @@
       "pins": [
         {
           "pinId": "schematic_port_7",
-          "displayName": "1",
+          "displayName": "anode",
           "x": -34,
           "y": -2.6199999999999997,
           "_facingDirection": "y+"
         },
         {
           "pinId": "schematic_port_8",
-          "displayName": "2",
+          "displayName": "cathode",
           "x": -34,
           "y": -3.3800000000000003,
           "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "UsbCharging"
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": -35.04,
+        "y": 3
+      },
+      "width": 1.4399999999999977,
+      "height": 0.6800000000000006,
+      "pins": [
+        {
+          "pinId": "schematic_port_9",
+          "displayName": "anode",
+          "x": -35.76,
+          "y": 3,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_10",
+          "displayName": "cathode",
+          "x": -34.32,
+          "y": 3,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "UsbCharging"
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": -30,
+        "y": 3
+      },
+      "width": 1.2000000000000028,
+      "height": 1.1800000000000006,
+      "pins": [
+        {
+          "pinId": "schematic_port_11",
+          "displayName": "anode",
+          "x": -30.6,
+          "y": 3,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_12",
+          "displayName": "cathode",
+          "x": -29.4,
+          "y": 3,
+          "_facingDirection": "x+"
         }
       ],
       "sectionId": "UsbCharging"
@@ -107,21 +159,33 @@
         "schematic_port_4",
         "schematic_port_5"
       ]
-    }
-  ],
-  "netConnections": [
+    },
+    {
+      "netId": "CHG_LED",
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_10",
+        "schematic_port_11"
+      ]
+    },
     {
       "netId": "CHG_STAT",
-      "isGround": false,
       "netLabelWidth": 1.08,
       "anchoredNetLabelWidth": 1.08,
       "allowInlineNetLabel": true,
       "inlineNetLabelHeight": 0.12,
       "inlineNetLabelWidth": 0.72,
       "pinIds": [
+        "schematic_port_12",
         "schematic_port_0"
       ]
-    },
+    }
+  ],
+  "netConnections": [
     {
       "netId": "GND",
       "isGround": true,
@@ -149,7 +213,8 @@
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.6,
       "pinIds": [
-        "schematic_port_3"
+        "schematic_port_3",
+        "schematic_port_9"
       ]
     }
   ],
@@ -184,10 +249,6 @@
     ],
     "VBAT": [
       "y+"
-    ],
-    "CHG_STAT": [
-      "x-",
-      "x+"
     ]
   },
   "maxMspPairDistance": 2.4,
