@@ -80,7 +80,7 @@ globalConnNetId: connectivity_net60" data-x="12.0235" data-y="6.935" x="541.3034
 globalConnNetId: connectivity_net60" data-x="11.1325" data-y="6.919" x="527.3466731739061" y="200.65267610216364" width="3.6440540100861654" height="8.199121522693986" fill="hsl(80, 100%, 50%, 0.35)" stroke="black" stroke-width="0.05488392857142856"/></g><g><rect data-type="rect" data-label="netId: VD_SR2
 globalConnNetId: connectivity_net38" data-x="-1.4296875" data-y="4.791125000000001" x="292.629738083618" y="239.69643728648117" width="15.305026842362167" height="7.652513421181084" fill="#ef444466" stroke="#ef4444" stroke-width="0.05488392857142856"/></g><g><rect data-type="rect" data-label="netId: R507.pin2 to D502.pin2
 globalConnNetId: connectivity_net33" data-x="-11.5025" data-y="7.02125" x="112.653326826094" y="201.0671872458109" width="8.199121522693986" height="3.644054010086222" fill="hsl(80, 100%, 50%, 0.35)" stroke="black" stroke-width="0.05488392857142856"/></g><g><rect data-type="rect" data-label="netId: R510.pin1 to D503.pin1
-globalConnNetId: connectivity_net1" data-x="-9.266999999999998" data-y="4.1785" x="153.3847405238328" y="252.86285993167397" width="8.199121522693986" height="3.644054010086222" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.05488392857142856"/></g><g><rect data-type="rect" data-label="netId: R510.pin2 to D503.pin2
+globalConnNetId: connectivity_net1" data-x="-9.22" data-y="3.9925" x="156.51862697250687" y="253.97429640475025" width="3.644054010086194" height="8.199121522693986" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.05488392857142856"/></g><g><rect data-type="rect" data-label="netId: R510.pin2 to D503.pin2
 globalConnNetId: connectivity_net2" data-x="-7.1935312499999995" data-y="5.069999999999999" x="193.44143484626647" y="234.34195542541076" width="3.644054010086194" height="8.199121522693986" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.05488392857142856"/></g><g><rect data-type="rect" data-label="netId: R511.pin1 to Q503.pin1
 globalConnNetId: connectivity_net2" data-x="-6.7524999999999995" data-y="4.7235" x="201.47714332194568" y="240.65527899788515" width="3.644054010086194" height="8.199121522693986" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.05488392857142856"/></g><g><rect data-type="rect" data-label="netId: Q502.pin1 to R512.pin1
 globalConnNetId: connectivity_net39" data-x="0.08499999999999994" data-y="4.3068125" x="323.78070603546445" y="250.52497153082805" width="8.199121522693986" height="3.644054010086194" fill="hsl(80, 100%, 50%, 0.35)" stroke="black" stroke-width="0.05488392857142856"/></g><g><rect data-type="rect" data-label="netId: VG_SR2
@@ -464,7 +464,7 @@ orientation: x+" data-x="11.797500000000001" data-y="6.935" cx="541.285179762485
 orientation: y-" data-x="11.1325" data-y="7.145" cx="529.1687001789492" cy="200.63445583211322" r="3" fill="hsl(80, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: y+" data-x="-1.4296875" data-y="4.581125000000001" cx="300.2822515047991" cy="247.34895070766225" r="3" fill="hsl(80, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: x+" data-x="-11.7275" data-y="7.02125" cx="112.653326826094" cy="202.88921425085402" r="3" fill="hsl(80, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
-orientation: x-" data-x="-9.041999999999998" data-y="4.1785" cx="161.58386204652678" cy="254.68488693671708" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
+orientation: y+" data-x="-9.22" data-y="3.7675" cx="158.34065397754998" cy="262.17341792744423" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: y+" data-x="-7.1935312499999995" data-y="4.845" cx="195.26346185130956" cy="242.54107694810475" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: y+" data-x="-6.7524999999999995" data-y="4.4975" cx="203.29917032698876" cy="248.87262079062955" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: x-" data-x="0.30999999999999994" data-y="4.3068125" cx="331.97982755815843" cy="252.34699853587114" r="3" fill="hsl(80, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
@@ -1101,13 +1101,13 @@ orientation: x-" data-x="-3.309375" data-y="3.0025" cx="266.03383764437933" cy="
     L 173.07366106426278,160.11182660560425
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.753887231036px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_78__stack1" x="174.43065808012756" y="156.34239045042426" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="6.784985079324px" transform="">XX</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_79__stack1" d="
-    M 272.2663734878245,263.49803675180374
-    L 270.23087796402734,267.26747290698376
-    L 257.3042249091967,267.26747290698376
-    L 257.3042249091967,259.7286005966237
-    L 270.23087796402734,259.7286005966237
+    M 265.556777131604,278.9904193495935
+    L 261.787340976424,276.9549238257963
+    L 261.787340976424,264.02827077096566
+    L 269.326213286784,264.02827077096566
+    L 269.326213286784,276.9549238257963
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.753887231036px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_79__stack1" x="268.87388094816254" y="263.49803675180374" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="6.784985079324px" transform="">XX</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_80__stack1" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.753887231036px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_79__stack1" x="265.556777131604" y="275.5979268099315" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="6.784985079324px" transform="rotate(-90 265.556777131604 275.5979268099315)">XX</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_80__stack1" d="
     M 341.9432228675283,238.37474477752903
     L 338.17378671234826,236.33924925373182
     L 338.17378671234826,223.4125961989012

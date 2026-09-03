@@ -1,10 +1,12 @@
 import type { InputChip, InputPin } from "lib/types/InputProblem"
 
-export const getPinDirection = (
+export type PinDirection = "x+" | "x-" | "y+" | "y-"
+
+export const getPinDirectionCandidates = (
   pin: InputPin,
   chip: InputChip,
   connectedPin?: InputPin,
-): "x+" | "x-" | "y+" | "y-" => {
+): PinDirection[] => {
   // Determine what edge the pin lies on
   const { x, y } = pin
   const { center, width, height } = chip
@@ -27,47 +29,44 @@ export const getPinDirection = (
     xMinusDistance,
   )
 
-  // A thin two-terminal symbol can put a pin on two obstacle edges at once.
-  // When routing a known pair, use the other endpoint to break only that tie.
-  if (connectedPin && chip.pins.length === 2) {
-    const closestDirections = [
-      { direction: "y+" as const, distance: yPlusDistance },
-      { direction: "y-" as const, distance: yMinusDistance },
-      { direction: "x+" as const, distance: xPlusDistance },
-      { direction: "x-" as const, distance: xMinusDistance },
-    ]
-      .filter(({ distance }) => Math.abs(distance - minDistance) <= 1e-9)
-      .map(({ direction }) => direction)
+  const closestDirections = [
+    { direction: "y+" as const, distance: yPlusDistance },
+    { direction: "y-" as const, distance: yMinusDistance },
+    { direction: "x+" as const, distance: xPlusDistance },
+    { direction: "x-" as const, distance: xMinusDistance },
+  ]
+    .filter(({ distance }) => Math.abs(distance - minDistance) <= 1e-9)
+    .map(({ direction }) => direction)
 
-    if (closestDirections.length > 1) {
-      const xDistance = connectedPin.x - pin.x
-      const yDistance = connectedPin.y - pin.y
-      const directionTowardConnectedPin =
-        Math.abs(xDistance) >= Math.abs(yDistance)
-          ? xDistance >= 0
-            ? "x+"
-            : "x-"
-          : yDistance >= 0
-            ? "y+"
-            : "y-"
-
-      if (closestDirections.includes(directionTowardConnectedPin)) {
-        return directionTowardConnectedPin
-      }
-    }
+  if (!connectedPin || closestDirections.length <= 1) {
+    return closestDirections
   }
 
-  if (minDistance === yPlusDistance) {
-    return "y+"
+  const xDistance = connectedPin.x - pin.x
+  const yDistance = connectedPin.y - pin.y
+  const directionTowardConnectedPin: PinDirection =
+    Math.abs(xDistance) >= Math.abs(yDistance)
+      ? xDistance >= 0
+        ? "x+"
+        : "x-"
+      : yDistance >= 0
+        ? "y+"
+        : "y-"
+
+  if (!closestDirections.includes(directionTowardConnectedPin)) {
+    return closestDirections
   }
 
-  if (minDistance === yMinusDistance) {
-    return "y-"
-  }
-
-  if (minDistance === xPlusDistance) {
-    return "x+"
-  }
-
-  return "x-"
+  return [
+    directionTowardConnectedPin,
+    ...closestDirections.filter(
+      (direction) => direction !== directionTowardConnectedPin,
+    ),
+  ]
 }
+
+export const getPinDirection = (
+  pin: InputPin,
+  chip: InputChip,
+  connectedPin?: InputPin,
+): PinDirection => getPinDirectionCandidates(pin, chip, connectedPin)[0]!

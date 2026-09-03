@@ -20,13 +20,11 @@ export const minimizeTurns = ({
   obstacles,
   labelBounds,
   originalPath,
-  allowLabelBoundaryExtension = false,
 }: {
   path: Point[]
   obstacles: any[]
   labelBounds: any[]
   originalPath: Point[]
-  allowLabelBoundaryExtension?: boolean
 }): Point[] => {
   if (path.length <= 2) {
     return path
@@ -75,11 +73,7 @@ export const minimizeTurns = ({
           const collidesWithLabels = hasCollisionsWithLabels(
             connection,
             labelBounds,
-            {
-              originalPath: allowLabelBoundaryExtension
-                ? originalPath
-                : undefined,
-            },
+            { originalPath },
           )
 
           if (!collidesWithObstacles && !collidesWithLabels) {
@@ -143,11 +137,7 @@ export const minimizeTurns = ({
             const collidesWithLabels = hasCollisionsWithLabels(
               connectionSegments,
               labelBounds,
-              {
-                originalPath: allowLabelBoundaryExtension
-                  ? originalPath
-                  : undefined,
-              },
+              { originalPath },
             )
 
             if (!collidesWithObstacles && !collidesWithLabels) {
@@ -198,11 +188,7 @@ export const minimizeTurns = ({
           const collidesWithLabels = hasCollisionsWithLabels(
             [p1, p3],
             labelBounds,
-            {
-              originalPath: allowLabelBoundaryExtension
-                ? originalPath
-                : undefined,
-            },
+            { originalPath },
           )
 
           if (!collidesWithObstacles && !collidesWithLabels) {

@@ -80,15 +80,6 @@ export const minimizeTurnsWithFilteredLabels = ({
   }))
 
   const originalPath = targetTrace.tracePath
-  const [firstPin, secondPin] = targetTrace.pins
-  // Co-facing pins on different components form a U-shaped route with fixed
-  // terminal stubs. Cleanup may extend one of those stubs along a label's
-  // clearance boundary to collapse a redundant jog; component-local loops and
-  // perpendicular connections retain the stricter collision rule.
-  const allowLabelBoundaryExtension =
-    firstPin?._facingDirection !== undefined &&
-    firstPin._facingDirection === secondPin?._facingDirection &&
-    firstPin.chipId !== secondPin?.chipId
   const filteredLabels = allLabelPlacements.filter((label) => {
     const originalNetIds = mergedLabelNetIdMap[label.globalConnNetId]
     if (originalNetIds) {
@@ -109,7 +100,6 @@ export const minimizeTurnsWithFilteredLabels = ({
     obstacles: [...staticObstacles, ...getTraceObstacles(otherTraces)],
     labelBounds,
     originalPath: originalPath,
-    allowLabelBoundaryExtension,
   })
 
   const relaxedPath = minimizeTurns({
@@ -120,7 +110,6 @@ export const minimizeTurnsWithFilteredLabels = ({
     ],
     labelBounds,
     originalPath: originalPath,
-    allowLabelBoundaryExtension,
   })
 
   const sameNetTraces = otherTraces.filter(

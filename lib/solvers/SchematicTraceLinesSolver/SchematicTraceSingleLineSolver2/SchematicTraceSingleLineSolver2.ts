@@ -9,8 +9,11 @@ import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
 import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 import { getTextBoxBounds, type RectPadding } from "lib/utils/textBoxBounds"
-import { getPinDirection } from "../SchematicTraceSingleLineSolver/getPinDirection"
-import { calculateDirectShortPath } from "./calculateDirectShortPath"
+import { getPinDirectionCandidates } from "../SchematicTraceSingleLineSolver/getPinDirection"
+import {
+  calculateDirectShortPath,
+  segmentDirection,
+} from "./calculateDirectShortPath"
 import {
   findFirstCollision,
   isHorizontal,
@@ -78,6 +81,53 @@ const pinsFaceEachOther = ({
     : pin1._facingDirection === "y-" && pin2._facingDirection === "y+"
 }
 
+const getPathLength = (points: Point[]) => {
+  let length = 0
+  for (let i = 0; i < points.length - 1; i++) {
+    length +=
+      Math.abs(points[i + 1]!.x - points[i]!.x) +
+      Math.abs(points[i + 1]!.y - points[i]!.y)
+  }
+  return length
+}
+
+const getInitialPathForPins = ({
+  pins,
+  obstacles,
+}: {
+  pins: MspConnectionPair["pins"]
+  obstacles: ObstacleRect[]
+}) => {
+  const [pin1, pin2] = pins
+  const directShortPath = calculateDirectShortPath(pin1, pin2)
+  const defaultElbow = calculateElbowForPins({
+    pin1,
+    pin2,
+    overshoot: 0.2,
+  })
+  const routingDistance = Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
+  const adaptiveElbow = calculateElbowForPins({
+    pin1,
+    pin2,
+    overshoot: Math.min(0.2, Math.max(0.02, routingDistance / 4)),
+  })
+  const adaptiveElbowIsShorter =
+    getPathLength(adaptiveElbow) < getPathLength(defaultElbow)
+  const defaultElbowBacktracks =
+    getPathLength(defaultElbow) > routingDistance + 1e-9
+  const shouldUseAdaptiveElbow =
+    findFirstCollision(adaptiveElbow, obstacles) === null &&
+    ((pinsFaceEachOther({ pin1, pin2 }) &&
+      defaultElbowBacktracks &&
+      adaptiveElbowIsShorter) ||
+      findFirstCollision(defaultElbow, obstacles) !== null)
+
+  let baseElbow = shouldUseAdaptiveElbow ? adaptiveElbow : defaultElbow
+  if (directShortPath) baseElbow = directShortPath
+
+  return baseElbow
+}
+
 export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   pins: MspConnectionPair["pins"]
   connectionPair?: MspConnectionPair
@@ -97,6 +147,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   private queue: Array<{ path: Point[]; collisionRects: Set<ObstacleRect> }> =
     []
   private visited: Set<PathKey> = new Set()
+  private inferredPinIndexes = new Set<number>()
 
   constructor(params: {
     pins: MspConnectionPair["pins"]
@@ -111,15 +162,6 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     this.inputProblem = params.inputProblem
     this.chipMap = params.chipMap
     this.preferExteriorDetours = params.preferExteriorDetours ?? true
-
-    // Ensure facing directions are present
-    for (const [pinIndex, pin] of this.pins.entries()) {
-      if (!pin._facingDirection) {
-        const chip = this.chipMap[pin.chipId]
-        const connectedPin = this.pins[pinIndex === 0 ? 1 : 0]
-        pin._facingDirection = getPinDirection(pin, chip, connectedPin)
-      }
-    }
 
     // Build obstacle rects from chips and schematic text boxes. Text boxes are
     // padded by the label footprint for this net so labels have clearance too.
@@ -140,40 +182,56 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         ),
     )
 
-    const [pin1, pin2] = this.pins
-    const directShortPath = calculateDirectShortPath(pin1, pin2)
-    const defaultElbow = calculateElbowForPins({
-      pin1,
-      pin2,
-      overshoot: 0.2,
+    const directionOptions = this.pins.map((pin, pinIndex) => {
+      if (pin._facingDirection) return [pin._facingDirection]
+      this.inferredPinIndexes.add(pinIndex)
+      const connectedPin = this.pins[pinIndex === 0 ? 1 : 0]
+      return getPinDirectionCandidates(
+        pin,
+        this.chipMap[pin.chipId],
+        connectedPin,
+      )
     })
-    const routingDistance =
-      Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
-    const adaptiveElbow = calculateElbowForPins({
-      pin1,
-      pin2,
-      overshoot: Math.min(0.2, Math.max(0.02, routingDistance / 4)),
-    })
-    const adaptiveElbowIsShorter =
-      this.pathLength(adaptiveElbow) < this.pathLength(defaultElbow)
-    const defaultElbowBacktracks =
-      this.pathLength(defaultElbow) > routingDistance + 1e-9
-    const shouldUseAdaptiveElbow =
-      findFirstCollision(adaptiveElbow, this.obstacles) === null &&
-      ((pinsFaceEachOther({ pin1, pin2 }) &&
-        defaultElbowBacktracks &&
-        adaptiveElbowIsShorter) ||
-        findFirstCollision(defaultElbow, this.obstacles) !== null)
+    const directionPairs = directionOptions[0]!.flatMap(
+      (firstDirection, firstIndex) =>
+        directionOptions[1]!.map((secondDirection, secondIndex) => ({
+          directions: [firstDirection, secondDirection] as const,
+          preferenceIndex: firstIndex + secondIndex,
+        })),
+    )
+    const rankedDirectionPairs = directionPairs
+      .map(({ directions, preferenceIndex }) => {
+        const candidatePins = this.pins.map((pin, index) => ({
+          ...pin,
+          _facingDirection: directions[index]!,
+        })) as MspConnectionPair["pins"]
+        const baseElbow = getInitialPathForPins({
+          pins: candidatePins,
+          obstacles: this.obstacles,
+        })
+        return {
+          directions,
+          baseElbow,
+          preferenceIndex,
+          collisionCount:
+            findFirstCollision(baseElbow, this.obstacles) === null ? 0 : 1,
+          pathLength: getPathLength(baseElbow),
+        }
+      })
+      .sort(
+        (first, second) =>
+          first.collisionCount - second.collisionCount ||
+          first.pathLength - second.pathLength ||
+          first.preferenceIndex - second.preferenceIndex,
+      )
 
-    // Build initial elbow path
-    this.baseElbow = defaultElbow
-    if (shouldUseAdaptiveElbow) {
-      this.baseElbow = adaptiveElbow
+    const preferredCandidate = rankedDirectionPairs[0]!
+    for (const [pinIndex, pin] of this.pins.entries()) {
+      pin._facingDirection = preferredCandidate.directions[pinIndex]
     }
-    if (directShortPath) {
-      this.baseElbow = directShortPath
-    }
-    this.solvedTracePath = directShortPath
+
+    const [pin1, pin2] = this.pins
+    this.baseElbow = preferredCandidate.baseElbow
 
     // Bounds defined by PA and PB
     this.aabb = aabbFromPoints(
@@ -181,9 +239,18 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
       { x: pin2.x, y: pin2.y },
     )
 
-    // Seed search
-    this.queue.push({ path: this.baseElbow, collisionRects: new Set() })
-    this.visited.add(pathKey(this.baseElbow))
+    // A corner pin has more than one geometrically valid outward direction.
+    // Seed each distinct elbow so obstacle routing, rather than component type,
+    // decides which direction is usable.
+    for (const candidate of rankedDirectionPairs) {
+      const key = pathKey(candidate.baseElbow)
+      if (this.visited.has(key)) continue
+      this.visited.add(key)
+      this.queue.push({
+        path: candidate.baseElbow,
+        collisionRects: new Set(),
+      })
+    }
   }
 
   override getConstructorParams(): ConstructorParameters<
@@ -269,13 +336,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   }
 
   private pathLength(pts: Point[]): number {
-    let sum = 0
-    for (let i = 0; i < pts.length - 1; i++) {
-      sum +=
-        Math.abs(pts[i + 1]!.x - pts[i]!.x) +
-        Math.abs(pts[i + 1]!.y - pts[i]!.y)
-    }
-    return sum
+    return getPathLength(pts)
   }
 
   private getPinBandPenalty(path: Point[]): number {
@@ -412,6 +473,13 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
         samePoint(first, { x: PA.x, y: PA.y }) &&
         samePoint(last, { x: PB.x, y: PB.y })
       ) {
+        for (const pinIndex of this.inferredPinIndexes) {
+          const direction =
+            pinIndex === 0
+              ? segmentDirection(path[0]!, path[1]!)
+              : segmentDirection(path.at(-1)!, path.at(-2)!)
+          if (direction) this.pins[pinIndex]!._facingDirection = direction
+        }
         this.solvedTracePath = path
         this.solved = true
       }
