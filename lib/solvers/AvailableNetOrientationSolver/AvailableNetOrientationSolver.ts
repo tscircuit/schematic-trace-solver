@@ -262,6 +262,63 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     if (this.getTextBlockedMultiPinRailTraces(label, orientations[0]!)) {
       return true
     }
+
+    const isSingleVerticalOrientation =
+      orientations.length === 1 &&
+      (orientations[0] === "y-" || orientations[0] === "y+")
+    if (isSingleVerticalOrientation) {
+      const isGroundLabel =
+        this.inputProblem.netConnections.find((nc) => nc.netId === label.netId)
+          ?.isGround || label.netId === "GND"
+      if (isGroundLabel) {
+        const bounds = getRectBounds(label.center, label.width, label.height)
+        const overlapsHorizontalFallback = this.outputNetLabelPlacements.some(
+          (otherLabel, otherIndex) => {
+            if (otherIndex === labelIndex) return false
+            if (otherLabel.globalConnNetId === label.globalConnNetId) return false
+            if (
+              otherLabel.orientation !== "x+" &&
+              otherLabel.orientation !== "x-"
+            ) {
+              return false
+            }
+            const otherNetId = otherLabel.netId ?? otherLabel.globalConnNetId
+            const requested =
+              this.inputProblem.availableNetLabelOrientations[otherNetId] ?? []
+            const isFallback =
+              requested.length > 0 &&
+              requested.every((o) => o === "y+" || o === "y-")
+            if (!isFallback) return false
+
+            const netConn = otherLabel.netId
+              ? this.inputProblem.netConnections.find(
+                  (nc) => nc.netId === otherLabel.netId,
+                )
+              : this.inputProblem.netConnections.find((nc) =>
+                  nc.pinIds.some((p) => otherLabel.pinIds.includes(p)),
+                )
+            const renderedHorizontalWidth = netConn?.netLabelHeight
+            if (
+              !renderedHorizontalWidth ||
+              otherLabel.width < renderedHorizontalWidth - 1e-6
+            ) {
+              return false
+            }
+
+            return rectsOverlap(
+              bounds,
+              getRectBounds(
+                otherLabel.center,
+                otherLabel.width,
+                otherLabel.height,
+              ),
+            )
+          },
+        )
+        if (overlapsHorizontalFallback) return true
+      }
+    }
+
     if (!this.crowdedPortOnlyLabelIndices.has(labelIndex)) return false
 
     const bounds = getRectBounds(label.center, label.width, label.height)
@@ -951,6 +1008,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const outwardDirection = this.getPerpendicularOutwardDirection(
       label.anchorPoint,
       orientation,
+      label,
     )
     const maxSearchDistance = this.getSearchDistanceLimit(label, orientation)
     const maxOutwardDistance =
@@ -1984,6 +2042,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private getPerpendicularOutwardDirection(
     point: Point,
     orientation: FacingDirection,
+    label?: NetLabelPlacement,
   ) {
     const chipSide = this.getChipSideForPoint(point)
     if (isYOrientation(orientation) && chipSide === "left") {

@@ -59,6 +59,7 @@ test("keeps Trellis Core GND clear of adjacent analog net labels", () => {
     width: 1.56,
     height: 0.2,
   })
+  expect(groundLabel.orientation).toBe("y-")
   expect(
     getOverlapArea(getLabelBounds(groundLabel), getLabelBounds(vra2Label)),
   ).toBe(0)
