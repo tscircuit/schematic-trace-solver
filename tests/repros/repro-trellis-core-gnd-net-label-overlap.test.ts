@@ -25,9 +25,9 @@ const getOverlapArea = (
 }
 
 // Captured from @tscircuit/core repro175. The dense T113 analog-pin column
-// forces Net_U3F_VRA2 to fall back from its requested y+ rail orientation to
-// the pin-facing x+ orientation. Its fallback bounds must retain the rendered
-// text width so the collision solver can keep GND clear of VRA2 and P1V8.
+// initially leaves Net_U3F_VRA2 in the pin-facing x+ orientation. The
+// orientation solver must restore its y+ rail constraint and keep GND clear of
+// VRA2 and P1V8 without widening the horizontal label placement.
 test("keeps Trellis Core GND clear of adjacent analog net labels", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
 
@@ -55,9 +55,9 @@ test("keeps Trellis Core GND clear of adjacent analog net labels", () => {
   expect(p1v8Label).toBeDefined()
   expect(groundLabel).toBeDefined()
   expect(vra2Label).toMatchObject({
-    orientation: "x+",
+    orientation: "y+",
     width: 1.56,
-    height: 0.2,
+    height: 0.42,
   })
   expect(groundLabel.orientation).toBe("y-")
   expect(

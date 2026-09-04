@@ -18,25 +18,6 @@ import {
   scoreIsBetter,
 } from "./scoreRailAlignment"
 import type { AlignmentCandidate, AlignmentScore, RailSegment } from "./types"
-import { moveNetLabelConnectorsToReroutedTraces } from "lib/solvers/Example28Solver/labelMovement"
-import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import { rectsOverlap } from "lib/solvers/AvailableNetOrientationSolver/geometry"
-
-function countLabelOverlaps(labels: NetLabelPlacement[]): number {
-  let count = 0
-  for (let i = 0; i < labels.length; i++) {
-    const a = labels[i]!
-    const boundsA = getRectBounds(a.center, a.width, a.height)
-    for (let j = i + 1; j < labels.length; j++) {
-      const b = labels[j]!
-      if (a.globalConnNetId === b.globalConnNetId) continue
-      if (rectsOverlap(boundsA, getRectBounds(b.center, b.width, b.height))) {
-        count++
-      }
-    }
-  }
-  return count
-}
 
 interface EvaluateRailGroupInput {
   group: RailSegment[]
@@ -123,17 +104,6 @@ export const evaluateRailGroup = ({
       if (!candidatesAreClear) continue
       if (
         !preservesLabelAnchors(netLabelPlacements, traces, allCandidateTraces)
-      ) {
-        continue
-      }
-      const moved = moveNetLabelConnectorsToReroutedTraces({
-        originalTraces: traces,
-        reroutedTraces: allCandidateTraces,
-        netLabelPlacements,
-      })
-      if (
-        countLabelOverlaps(moved.netLabelPlacements) >
-        countLabelOverlaps(netLabelPlacements)
       ) {
         continue
       }

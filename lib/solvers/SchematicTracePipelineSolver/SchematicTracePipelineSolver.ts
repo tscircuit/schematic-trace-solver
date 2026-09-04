@@ -208,7 +208,6 @@ export class SchematicTracePipelineSolver extends BaseSolver {
                 (p) => [p.mspPairId, p],
               ),
             ),
-          normalizeHorizontalFallbackBoundsOnCompletion: true,
         },
       ],
       {
@@ -347,7 +346,6 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             inputTraceMap: Object.fromEntries(
               traces.map((trace: SolvedTracePath) => [trace.mspPairId, trace]),
             ),
-            normalizeHorizontalFallbackBoundsOnCompletion: true,
           },
         ]
       },

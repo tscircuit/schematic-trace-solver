@@ -29,9 +29,9 @@ test("bug-report-20260902T092425Z", () => {
   expect(vraLabels).toHaveLength(2)
   expect(vraLabels.find((label) => label.netId === "AUDIO_VRA2")).toMatchObject(
     {
-      orientation: "x+",
+      orientation: "y+",
       width: 1.32,
-      height: 0.2,
+      height: 0.42,
     },
   )
   for (const vraLabel of vraLabels) {

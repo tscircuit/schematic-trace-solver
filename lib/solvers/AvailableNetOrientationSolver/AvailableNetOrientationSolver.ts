@@ -263,61 +263,19 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       return true
     }
 
-    const isSingleVerticalOrientation =
-      orientations.length === 1 &&
-      (orientations[0] === "y-" || orientations[0] === "y+")
-    if (isSingleVerticalOrientation) {
-      const isGroundLabel =
-        this.inputProblem.netConnections.find((nc) => nc.netId === label.netId)
-          ?.isGround || label.netId === "GND"
-      if (isGroundLabel) {
-        const bounds = getRectBounds(label.center, label.width, label.height)
-        const overlapsHorizontalFallback = this.outputNetLabelPlacements.some(
-          (otherLabel, otherIndex) => {
-            if (otherIndex === labelIndex) return false
-            if (otherLabel.globalConnNetId === label.globalConnNetId)
-              return false
-            if (
-              otherLabel.orientation !== "x+" &&
-              otherLabel.orientation !== "x-"
-            ) {
-              return false
-            }
-            const otherNetId = otherLabel.netId ?? otherLabel.globalConnNetId
-            const requested =
-              this.inputProblem.availableNetLabelOrientations[otherNetId] ?? []
-            const isFallback =
-              requested.length > 0 &&
-              requested.every((o) => o === "y+" || o === "y-")
-            if (!isFallback) return false
-
-            const netConn = otherLabel.netId
-              ? this.inputProblem.netConnections.find(
-                  (nc) => nc.netId === otherLabel.netId,
-                )
-              : this.inputProblem.netConnections.find((nc) =>
-                  nc.pinIds.some((p) => otherLabel.pinIds.includes(p)),
-                )
-            const renderedHorizontalWidth = netConn?.netLabelHeight
-            if (
-              !renderedHorizontalWidth ||
-              otherLabel.width < renderedHorizontalWidth - 1e-6
-            ) {
-              return false
-            }
-
-            return rectsOverlap(
-              bounds,
-              getRectBounds(
-                otherLabel.center,
-                otherLabel.width,
-                otherLabel.height,
-              ),
-            )
-          },
-        )
-        if (overlapsHorizontalFallback) return true
-      }
+    const hasSingleVerticalOrientation =
+      orientations.length === 1 && isYOrientation(orientations[0]!)
+    if (hasSingleVerticalOrientation && this.isGroundLabel(label)) {
+      const bounds = getRectBounds(label.center, label.width, label.height)
+      const overlapsHorizontalConstraintMismatch =
+        this.outputNetLabelPlacements.some((otherLabel, otherIndex) => {
+          if (otherIndex === labelIndex) return false
+          if (otherLabel.globalConnNetId === label.globalConnNetId) return false
+          const otherBounds =
+            this.getHorizontalConstraintMismatchBounds(otherLabel)
+          return otherBounds ? rectsOverlap(bounds, otherBounds) : false
+        })
+      if (overlapsHorizontalConstraintMismatch) return true
     }
 
     if (!this.crowdedPortOnlyLabelIndices.has(labelIndex)) return false
@@ -1009,7 +967,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const outwardDirection = this.getPerpendicularOutwardDirection(
       label.anchorPoint,
       orientation,
-      label,
     )
     const maxSearchDistance = this.getSearchDistanceLimit(label, orientation)
     const maxOutwardDistance =
@@ -1551,16 +1508,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       }
     }
 
-    for (const i of this.obstacleIndex.getLabelIndicesNearTracePath(
-      connectorTrace,
-    )) {
+    const nearbyLabelIndices = this.includeHorizontalConstraintMismatches(
+      this.obstacleIndex.getLabelIndicesNearTracePath(connectorTrace),
+      this.isGroundLabel(label),
+    )
+    for (const i of nearbyLabelIndices) {
       if (i === labelIndex) continue
       if (this.shouldIgnorePendingCrowdedLabel(labelIndex, i)) continue
       const otherLabel = this.outputNetLabelPlacements[i]!
       if (
         tracePathIntersectsBounds(
           connectorTrace,
-          getRectBounds(otherLabel.center, otherLabel.width, otherLabel.height),
+          this.getLabelBoundsForCollisionWithGround(otherLabel, label),
         )
       ) {
         return "netlabel-collision"
@@ -1643,7 +1602,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     if (this.isTraceTooCloseToLabel(bounds, label)) {
       return "trace-clearance-violation"
     }
-    if (this.intersectsAnyOtherNetLabel(bounds, labelIndex)) {
+    if (this.intersectsAnyOtherNetLabel(bounds, labelIndex, label)) {
       return "netlabel-collision"
     }
     return "valid"
@@ -1944,6 +1903,99 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return label.mspConnectionPairIds.length === 0
   }
 
+  private getNetConnectionForLabel(label: NetLabelPlacement) {
+    return label.netId
+      ? this.inputProblem.netConnections.find(
+          (connection) => connection.netId === label.netId,
+        )
+      : this.inputProblem.netConnections.find((connection) =>
+          connection.pinIds.some((pinId) => label.pinIds.includes(pinId)),
+        )
+  }
+
+  private isGroundLabel(label: NetLabelPlacement) {
+    return this.getNetConnectionForLabel(label)?.isGround === true
+  }
+
+  /**
+   * A vertical-only input stores its text extent in netLabelHeight. If its
+   * initial port-only placement is horizontal, use that extent for collision
+   * checks without changing the placement dimensions returned by the solver.
+   */
+  private getHorizontalConstraintMismatchBounds(label: NetLabelPlacement) {
+    if (!this.isPortOnlyLabel(label)) return null
+    if (label.orientation !== "x+" && label.orientation !== "x-") return null
+
+    const effectiveNetId = label.netId ?? label.globalConnNetId
+    const orientations =
+      this.inputProblem.availableNetLabelOrientations[effectiveNetId] ?? []
+    if (
+      orientations.length === 0 ||
+      orientations.some((orientation) => !isYOrientation(orientation))
+    ) {
+      return null
+    }
+
+    const renderedWidth = this.getNetConnectionForLabel(label)?.netLabelHeight
+    if (
+      renderedWidth === undefined ||
+      renderedWidth <= label.width + label.height + EPS
+    ) {
+      return null
+    }
+
+    const placementBaseCenter = getCenterFromAnchor(
+      label.anchorPoint,
+      label.orientation,
+      label.width,
+      label.height,
+    )
+    const renderedBaseCenter = getCenterFromAnchor(
+      label.anchorPoint,
+      label.orientation,
+      renderedWidth,
+      label.height,
+    )
+    return getRectBounds(
+      {
+        x: renderedBaseCenter.x + label.center.x - placementBaseCenter.x,
+        y: renderedBaseCenter.y + label.center.y - placementBaseCenter.y,
+      },
+      renderedWidth,
+      label.height,
+    )
+  }
+
+  private includeHorizontalConstraintMismatches(
+    labelIndices: number[],
+    include: boolean,
+  ) {
+    if (!include) return [...labelIndices].sort((a, b) => a - b)
+
+    const result = new Set(labelIndices)
+    for (let index = 0; index < this.outputNetLabelPlacements.length; index++) {
+      if (
+        this.getHorizontalConstraintMismatchBounds(
+          this.outputNetLabelPlacements[index]!,
+        )
+      ) {
+        result.add(index)
+      }
+    }
+    return [...result].sort((a, b) => a - b)
+  }
+
+  private getLabelBoundsForCollisionWithGround(
+    label: NetLabelPlacement,
+    currentLabel: NetLabelPlacement,
+  ) {
+    if (this.isGroundLabel(currentLabel)) {
+      const adjustedBounds = this.getHorizontalConstraintMismatchBounds(label)
+      if (adjustedBounds) return adjustedBounds
+    }
+    return getRectBounds(label.center, label.width, label.height)
+  }
+
   private shouldIgnorePendingCrowdedLabel(
     labelIndex: number,
     otherLabelIndex: number,
@@ -1955,22 +2007,30 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
   }
 
-  private intersectsAnyOtherNetLabel(bounds: Bounds, labelIndex: number) {
+  private intersectsAnyOtherNetLabel(
+    bounds: Bounds,
+    labelIndex: number,
+    currentLabel: NetLabelPlacement,
+  ) {
     const searchBounds = {
       minX: bounds.minX - LABEL_SEARCH_STEP,
       minY: bounds.minY - LABEL_SEARCH_STEP,
       maxX: bounds.maxX + LABEL_SEARCH_STEP,
       maxY: bounds.maxY + LABEL_SEARCH_STEP,
     }
-    const nearbyLabelIndices = this.obstacleIndex
-      .getLabelIndicesInBounds(searchBounds)
-      .sort((a, b) => a - b)
+    const nearbyLabelIndices = this.includeHorizontalConstraintMismatches(
+      this.obstacleIndex.getLabelIndicesInBounds(searchBounds),
+      this.isGroundLabel(currentLabel),
+    )
 
     for (const i of nearbyLabelIndices) {
       if (i === labelIndex) continue
       if (this.shouldIgnorePendingCrowdedLabel(labelIndex, i)) continue
       const label = this.outputNetLabelPlacements[i]!
-      const otherBounds = getRectBounds(label.center, label.width, label.height)
+      const otherBounds = this.getLabelBoundsForCollisionWithGround(
+        label,
+        currentLabel,
+      )
       if (
         i === this.blockedStandaloneLabelIndex &&
         isYOrientation(label.orientation)
@@ -2043,7 +2103,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private getPerpendicularOutwardDirection(
     point: Point,
     orientation: FacingDirection,
-    label?: NetLabelPlacement,
   ) {
     const chipSide = this.getChipSideForPoint(point)
     if (isYOrientation(orientation) && chipSide === "left") {
