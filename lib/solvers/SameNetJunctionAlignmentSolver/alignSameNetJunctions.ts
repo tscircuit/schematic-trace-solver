@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import { getSegmentIntersection } from "@tscircuit/math-utils/line-intersections"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
@@ -20,7 +21,7 @@ import {
   isVertical,
   nearlyEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
-import type { InputPin, InputProblem } from "lib/types/InputProblem"
+import type { InputPin, InputProblem, PinId } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 import {
   pathEntersAnyNetLabel,
@@ -31,6 +32,8 @@ import {
   getPinFacingAxis,
   isCoordinateOnPinFacingSide,
 } from "./findNearestSharedPinExitRail"
+import { collapseRedundantSharedEndpointStubs } from "./collapseRedundantSharedEndpointStubs"
+import { getSharedPin } from "./getSharedPin"
 
 interface AlignSameNetJunctionsInput {
   inputProblem: InputProblem
@@ -57,21 +60,28 @@ const MAX_SHARED_PIN_RAIL_OFFSET = 0.05
 const MAX_SHARED_ENDPOINT_RAIL_OFFSET = 0.8
 const MIN_RETURN_STEM_LENGTH = 0.05
 
+const getMultiPinNetPinIds = (inputProblem: InputProblem) => {
+  const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
+  const inputPinIds = new Set<PinId>(
+    inputProblem.chips.flatMap((chip) => chip.pins.map((pin) => pin.pinId)),
+  )
+  return new Set(
+    [...inputPinIds].filter((pinId) => {
+      const globalNetId = netConnMap.getNetConnectedToId(pinId)
+      if (!globalNetId) return false
+      return (
+        netConnMap
+          .getIdsConnectedToNet(globalNetId)
+          .filter((connectedId) => inputPinIds.has(connectedId)).length > 2
+      )
+    }),
+  )
+}
+
 const getSegmentAxis = (start: Point, end: Point) => {
   if (isHorizontal(start, end)) return "x" as const
   if (isVertical(start, end)) return "y" as const
   return null
-}
-
-export const getSharedPin = ({
-  donorTrace,
-  branchTrace,
-}: {
-  donorTrace: SolvedTracePath
-  branchTrace: SolvedTracePath
-}): (InputPin & { chipId: string }) | null => {
-  const branchPinIds = new Set(branchTrace.pins.map((pin) => pin.pinId))
-  return donorTrace.pins.find((pin) => branchPinIds.has(pin.pinId)) ?? null
 }
 
 const getOtherPin = ({
@@ -1300,6 +1310,14 @@ export const alignSameNetJunctions = ({
       }
     }
   }
+
+  const collapsedSharedEndpointStubs = collapseRedundantSharedEndpointStubs({
+    traces: outputTraces,
+    netLabelPlacements: outputNetLabelPlacements,
+    netLabelConnectorTraceIds,
+    multiPinNetPinIds: getMultiPinNetPinIds(inputProblem),
+  })
+  outputTraces = collapsedSharedEndpointStubs
 
   return {
     traces: outputTraces,

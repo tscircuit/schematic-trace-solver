@@ -14,5 +14,7 @@ test("bug-report-20260728T144234Z", () => {
     )!
   expect(leftmostV3v3Trace.tracePath[1]!.y).toBeCloseTo(-2.365)
   expect(leftmostV3v3Trace.tracePath[2]!.y).toBeCloseTo(-2.365)
+  expect(leftmostV3v3Trace.tracePath).toHaveLength(3)
+  expect(leftmostV3v3Trace.tracePath.at(-1)!.y).toBeCloseTo(-2.365)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
