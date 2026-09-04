@@ -275,7 +275,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         const overlapsHorizontalFallback = this.outputNetLabelPlacements.some(
           (otherLabel, otherIndex) => {
             if (otherIndex === labelIndex) return false
-            if (otherLabel.globalConnNetId === label.globalConnNetId) return false
+            if (otherLabel.globalConnNetId === label.globalConnNetId)
+              return false
             if (
               otherLabel.orientation !== "x+" &&
               otherLabel.orientation !== "x-"
