@@ -24,7 +24,7 @@ test("bug-report-20260730T061837Z", () => {
     upstreamVddBranch.pins[0]!.pinId === "schematic_port_39"
       ? upstreamVddBranch.tracePath
       : [...upstreamVddBranch.tracePath].reverse()
-  expect(vddBranch.tracePath[1]!.x).toBeCloseTo(upstreamFromShared[1]!.x, 6)
+  expect(vddBranch.tracePath[0]!.x).toBeCloseTo(upstreamFromShared[1]!.x, 6)
   expect(
     pathIntersectsAnyNetLabel({
       path: vddBranch.tracePath,
