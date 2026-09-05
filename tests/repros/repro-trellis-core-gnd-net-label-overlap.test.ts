@@ -68,3 +68,51 @@ test("keeps Trellis Core GND clear of adjacent analog net labels", () => {
   ).toBe(0)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
+
+test("converts both Trellis Core P1V8 endpoints after clearing label collisions", () => {
+  const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
+
+  solver.solve()
+
+  // The U3-side VRA2 label previously overlapped the inline P1V8 text. That
+  // blocked conversion of both endpoints, including the distant upward pin.
+  const output = solver.netLabelToTraceSolver!.getOutput()
+  const inlineP1v8Labels = output.inlineNetLabelPlacements.filter(
+    (label) => label.netId === "P1V8",
+  )
+  expect(inlineP1v8Labels).toHaveLength(2)
+  expect(inlineP1v8Labels).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ pinIds: ["schematic_port_0"], axis: "x" }),
+      expect.objectContaining({ pinIds: ["schematic_port_10"], axis: "y" }),
+    ]),
+  )
+  expect(
+    output.netLabelPlacements.some((label) => label.netId === "P1V8"),
+  ).toBe(false)
+  for (const label of inlineP1v8Labels) {
+    const pin = inputProblem.chips
+      .flatMap((chip) => chip.pins)
+      .find((pin) => pin.pinId === label.pinIds[0])!
+    expect(label.stubTracePath?.[0]).toEqual({ x: pin.x, y: pin.y })
+  }
+})
+
+test("keeps Trellis Core P1V8 anchored when inline labels are disabled", () => {
+  const problem = structuredClone(inputProblem) as InputProblem
+  problem.netConnections.find(
+    (connection) => connection.netId === "P1V8",
+  )!.allowInlineNetLabel = false
+  const solver = new SchematicTracePipelineSolver(problem)
+
+  solver.solve()
+
+  const output = solver.netLabelToTraceSolver!.getOutput()
+  expect(output.inlineNetLabelPlacements).toHaveLength(0)
+  expect(
+    output.netLabelPlacements
+      .filter((label) => label.netId === "P1V8")
+      .flatMap((label) => label.pinIds)
+      .sort(),
+  ).toEqual(["schematic_port_0", "schematic_port_10"])
+})
