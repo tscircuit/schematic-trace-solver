@@ -80,5 +80,8 @@ test("two-pin terminal stubs fall back atomically when one endpoint is obstructe
   solver.solve()
 
   expect(solver.inlineNetLabelPlacements).toHaveLength(0)
-  expect(solver.getOutput().netLabelPlacements).toHaveLength(2)
+  const outputPlacements = solver.getOutput().netLabelPlacements
+  expect(outputPlacements).toHaveLength(2)
+  expect(outputPlacements[0]!.pinIds).toEqual(["U1.1"])
+  expect(outputPlacements[1]!.pinIds).toEqual(["U2.1"])
 })
