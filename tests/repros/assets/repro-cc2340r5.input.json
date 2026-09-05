@@ -243,6 +243,7 @@
     },
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": ["U1.40", "U1.41", "C105.2", "C106.2", "C107.2"],
       "netLabelWidth": 0.48
     }

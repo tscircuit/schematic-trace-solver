@@ -5,6 +5,8 @@ import type { FacingDirection } from "lib/utils/dir"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-battery-management-bq24073.input.json"
 
+const EXPECTED_BOTTOM_GROUND_LABEL_X = 1.1
+
 const getPinPair = (pinIds: string[]): [string, string] => {
   if (pinIds.length !== 2) {
     throw new Error(`Expected two pin IDs, received ${pinIds.length}`)
@@ -57,6 +59,21 @@ test("repro BatteryManagement_BQ24073 schematic traces", () => {
   const solver = new SchematicTracePipelineSolver(solverInput)
   solver.solve()
 
+  const output = solver.netLabelToTraceSolver!.getOutput()
+  const groundNetIds = new Set(
+    solverInput.netConnections
+      .filter((connection) => connection.isGround)
+      .map((connection) => connection.netId),
+  )
+  const bottomGroundLabel = output.netLabelPlacements
+    .filter(
+      (label) => label.netId !== undefined && groundNetIds.has(label.netId),
+    )
+    .sort((first, second) => first.anchorPoint.y - second.anchorPoint.y)[0]!
+
   expect(solver.inlineNetLabelSolver!.stats.pushedAnchoredNetLabelCount).toBe(1)
+  expect(bottomGroundLabel.anchorPoint.x).toBeCloseTo(
+    EXPECTED_BOTTOM_GROUND_LABEL_X,
+  )
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

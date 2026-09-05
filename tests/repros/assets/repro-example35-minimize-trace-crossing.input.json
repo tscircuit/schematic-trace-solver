@@ -1493,6 +1493,7 @@
   "netConnections": [
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "U1.17"
       ],

@@ -41,7 +41,12 @@ import {
   tracePathIntersectsBounds,
 } from "./geometry"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
-import { getPinMap, getTracePins, toNetLabelPlacementPatch } from "./traces"
+import {
+  extendVerticalTracePathAtInteriorPoint,
+  getPinMap,
+  getTracePins,
+  toNetLabelPlacementPatch,
+} from "./traces"
 import type {
   AvailableNetOrientationSolverParams,
   Bounds,
@@ -55,6 +60,7 @@ import { visualizeAvailableNetOrientationSolver } from "./visualize"
 import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
+const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
 const CONNECTED_PIN_ROW_OVERLAP_TOLERANCE = 0.1
 
 export class AvailableNetOrientationSolver extends BaseSolver {
@@ -373,6 +379,21 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   ) {
     if (candidate.phase === "trace-anchor") return
 
+    if (candidate.phase === "downward-ground-rail-extension") {
+      for (const mspPairId of label.mspConnectionPairIds) {
+        const hostTrace = this.traceMap[mspPairId]
+        if (!hostTrace) continue
+        const extendedTracePath = extendVerticalTracePathAtInteriorPoint({
+          tracePath: hostTrace.tracePath,
+          sourcePoint: label.anchorPoint,
+          extensionEndPoint: candidate.anchorPoint,
+        })
+        if (!extendedTracePath) continue
+        hostTrace.tracePath = extendedTracePath
+        return
+      }
+    }
+
     const tracePath = this.getCandidateConnectorTrace(
       label,
       candidate,
@@ -432,6 +453,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       (connection) => connection.netId === label.netId,
     )
     const isTwoPinNet = netConnection?.pinIds.length === 2
+    const isDownwardGroundRail =
+      netConnection?.isGround &&
+      isXOrientation(label.orientation) &&
+      orientations.length === 1 &&
+      requiredOrientation === "y-" &&
+      this.hasTraceContinuingInOrientation(label, "y+")
     const isDistanceSplitVerticalRail =
       (netConnection?.pinIds.length ?? 0) > 2 &&
       isYOrientation(requiredOrientation) &&
@@ -511,6 +538,30 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       labelIndex,
       orientations,
     )
+    const rotatedCandidateNeedsLateralBranch =
+      rotatedCandidate !== null &&
+      Math.abs(rotatedCandidate.anchorPoint.x - label.anchorPoint.x) > EPS
+
+    if (isDownwardGroundRail && rotatedCandidateNeedsLateralBranch) {
+      const downwardRailCandidate = this.findValidCandidateInShiftColumn({
+        label,
+        labelIndex,
+        orientation: requiredOrientation,
+        direction: dir(requiredOrientation),
+        baseAnchor: label.anchorPoint,
+        maxSearchDistance: this.getSearchDistanceLimit(
+          label,
+          requiredOrientation,
+        ),
+        outwardDistance: 0,
+        phase: "downward-ground-rail-extension",
+        stopOnTraceCollision: false,
+        connectorSource: label.anchorPoint,
+        startDistance: MIN_DOWNWARD_GROUND_RAIL_EXTENSION,
+      })
+      if (downwardRailCandidate) return downwardRailCandidate
+    }
+
     if (rotatedCandidate) return rotatedCandidate
 
     const traceAnchorCandidate = this.findValidTraceAnchorCandidate(
@@ -1092,11 +1143,20 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         x: baseAnchor.x + direction.x * distance,
         y: baseAnchor.y + direction.y * distance,
       }
+      const projectedConnectorSource =
+        connectorSource ??
+        (phase === "lateral-shift"
+          ? this.findProjectedConnectorSourceOnHostTrace(
+              label,
+              anchorPoint,
+              orientation,
+            )
+          : undefined)
       const candidate = this.createCandidate(
         label,
         anchorPoint,
         orientation,
-        connectorSource,
+        projectedConnectorSource,
       )
       const result = this.evaluateCandidate(
         candidate,
@@ -1179,6 +1239,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       ])
     }
 
+    if (candidate.connectorSource) {
+      return getConnectorTracePath(
+        candidate.connectorSource,
+        candidate.anchorPoint,
+        candidate.orientation,
+      )
+    }
+
     if (candidate.phase === "lateral-shift") {
       const chipOutwardDir = this.crowdedPortOnlyLabelIndices.has(labelIndex)
         ? this.getChipOutwardDirection(label.anchorPoint)
@@ -1201,10 +1269,67 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return getConnectorTracePath(
-      candidate.connectorSource ?? label.anchorPoint,
+      label.anchorPoint,
       candidate.anchorPoint,
       candidate.orientation,
     )
+  }
+
+  /**
+   * A laterally shifted label can branch directly from the interior of its
+   * existing host trace. Prefer that tee over running a new connector beside
+   * the host trace from the old label anchor.
+   */
+  private findProjectedConnectorSourceOnHostTrace(
+    label: NetLabelPlacement,
+    targetAnchor: Point,
+    orientation: FacingDirection,
+  ): Point | undefined {
+    const orientationDirection = dir(orientation)
+    const projectedSources: Point[] = []
+
+    for (const traceId of label.mspConnectionPairIds) {
+      const hostTrace = this.traceMap[traceId]
+      if (!hostTrace) continue
+
+      for (
+        let pointIndex = 0;
+        pointIndex < hostTrace.tracePath.length - 1;
+        pointIndex++
+      ) {
+        const start = hostTrace.tracePath[pointIndex]!
+        const end = hostTrace.tracePath[pointIndex + 1]!
+        const segmentIsPerpendicularToLabel = isYOrientation(orientation)
+          ? Math.abs(start.y - end.y) <= EPS
+          : Math.abs(start.x - end.x) <= EPS
+        if (!segmentIsPerpendicularToLabel) continue
+
+        const source = isYOrientation(orientation)
+          ? { x: targetAnchor.x, y: start.y }
+          : { x: start.x, y: targetAnchor.y }
+        if (
+          !tracePathContainsPoint([start, end], label.anchorPoint) ||
+          !tracePathContainsPoint([start, end], source)
+        ) {
+          continue
+        }
+
+        const targetDistanceAlongOrientation =
+          (targetAnchor.x - source.x) * orientationDirection.x +
+          (targetAnchor.y - source.y) * orientationDirection.y
+        if (targetDistanceAlongOrientation >= -EPS) {
+          projectedSources.push(source)
+        }
+      }
+    }
+
+    return projectedSources.sort(
+      (first, second) =>
+        Math.abs(first.x - targetAnchor.x) +
+        Math.abs(first.y - targetAnchor.y) -
+        (Math.abs(second.x - targetAnchor.x) +
+          Math.abs(second.y - targetAnchor.y)),
+    )[0]
   }
 
   private isStandaloneSinglePinNetLabel(label: NetLabelPlacement) {
@@ -1467,10 +1592,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       label,
     })
     if (boundsStatus !== "valid") {
+      const canOverlapConnectedChipBoundary =
+        phase === "trace-anchor" ||
+        phase === "connected-rail-shift" ||
+        phase === "downward-ground-rail-extension"
       if (
-        (phase !== "trace-anchor" && phase !== "connected-rail-shift") ||
+        !canOverlapConnectedChipBoundary ||
         boundsStatus !== "chip-collision" ||
-        !this.isAcceptableTraceAnchorChipCollision(candidate, label, bounds) ||
+        !this.isAcceptableConnectedChipBoundaryOverlap(
+          candidate,
+          label,
+          bounds,
+        ) ||
         (phase === "connected-rail-shift" &&
           !this.staysOutsideConnectedPinRow({ candidate, label, bounds }))
       ) {
@@ -1490,6 +1623,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       label,
       {
         anchorPoint: candidate.anchorPoint,
+        connectorSource:
+          phase === "lateral-shift" ? candidate.connectorSource : undefined,
         orientation: candidate.orientation,
         phase,
       },
@@ -1529,7 +1664,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return "valid"
   }
 
-  private isAcceptableTraceAnchorChipCollision(
+  private isAcceptableConnectedChipBoundaryOverlap(
     candidate: CandidateLabel,
     label: NetLabelPlacement,
     bounds: Bounds,

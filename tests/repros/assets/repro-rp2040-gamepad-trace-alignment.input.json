@@ -186,6 +186,7 @@
     },
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "J2.3",
         "J2.8",

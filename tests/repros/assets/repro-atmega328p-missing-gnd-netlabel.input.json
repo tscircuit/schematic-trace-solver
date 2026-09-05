@@ -264,6 +264,7 @@
   "netConnections": [
     {
       "netId": "GND",
+      "isGround": true,
       "pinIds": [
         "U_MCU.3",
         "U_MCU.5",

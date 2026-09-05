@@ -1,5 +1,6 @@
 import type { Point } from "@tscircuit/math-utils"
 import { distance, doSegmentsIntersect } from "@tscircuit/math-utils"
+import { calculateElbow } from "calculate-elbow"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import {
@@ -86,7 +87,7 @@ const getOuterBounds = (obstacles: ObstacleRect[]) => {
   }
 }
 
-const getPerimeterCandidates = ({
+const getPinConnectionCandidates = ({
   connectionPair,
   obstacles,
 }: {
@@ -111,7 +112,14 @@ const getPerimeterCandidates = ({
     outerBounds.minX - ROUTE_CLEARANCE,
     outerBounds.maxX + ROUTE_CLEARANCE,
   ]
-  const candidates: Point[][] = []
+  // Recovery uses actual text bounds, so try local elbows before the perimeter.
+  const candidates: Point[][] = [
+    calculateElbow(
+      { ...firstPin, facingDirection: firstPin._facingDirection! },
+      { ...secondPin, facingDirection: secondPin._facingDirection! },
+      { overshoot: ROUTE_CLEARANCE },
+    ),
+  ]
 
   for (const channelY of horizontalChannels) {
     candidates.push(
@@ -526,11 +534,11 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
       obstacles,
       maxConnectionDistance: this.maxConnectionDistance,
     })
-    const perimeterCandidates = getPerimeterCandidates({
+    const pinConnectionCandidates = getPinConnectionCandidates({
       connectionPair,
       obstacles,
     })
-    const candidates = [...junctionCandidates, ...perimeterCandidates]
+    const candidates = [...junctionCandidates, ...pinConnectionCandidates]
     const rejectComponentBoundaryTravel = hasParallelFailedConnection({
       connectionPair,
       failedConnectionPairs: this.failedConnectionPairs,

@@ -11,6 +11,7 @@ import { SchematicTraceSingleLineSolver2 } from "./SchematicTraceSingleLineSolve
 import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
 import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
 import type { Point } from "@tscircuit/math-utils"
+import { getPinDirectionCandidates } from "./SchematicTraceSingleLineSolver/getPinDirection"
 
 const shouldPreferExteriorDetours = ({
   connectionPair,
@@ -62,6 +63,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
   chipMap: Record<string, InputChip>
 
   currentConnectionPair: MspConnectionPair | null = null
+  retryingWithoutNetLabelClearance = false
 
   solvedTracePaths: Array<SolvedTracePath> = []
   failedConnectionPairs: Array<MspConnectionPair & { error?: string }> = []
@@ -101,6 +103,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
     if (this.activeSubSolver?.solved) {
       this.solvedTracePaths.push({
         ...this.currentConnectionPair!,
+        pins: this.activeSubSolver.pins,
         tracePath: this.activeSubSolver!.solvedTracePath!,
         mspConnectionPairIds: [this.currentConnectionPair!.mspPairId],
         pinIds: [
@@ -110,8 +113,33 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       })
       this.activeSubSolver = null
       this.currentConnectionPair = null
+      this.retryingWithoutNetLabelClearance = false
     }
     if (this.activeSubSolver?.failed) {
+      if (
+        this.currentConnectionPair &&
+        !this.retryingWithoutNetLabelClearance &&
+        this.activeSubSolver.hasAmbiguousPinDirections
+      ) {
+        const connectionPair = this.currentConnectionPair
+        this.retryingWithoutNetLabelClearance = true
+        this.activeSubSolver = new SchematicTraceSingleLineSolver2({
+          inputProblem: this.inputProblem,
+          pins: connectionPair.pins.map((pin) => ({
+            ...pin,
+          })) as MspConnectionPair["pins"],
+          connectionPair,
+          chipMap: this.chipMap,
+          preferExteriorDetours: shouldPreferExteriorDetours({
+            connectionPair,
+            allConnectionPairs: this.mspConnectionPairs,
+            inputProblem: this.inputProblem,
+          }),
+          reserveNetLabelClearance: false,
+        })
+        return
+      }
+
       // Record the failure for this connection and continue to the next pair
       if (this.currentConnectionPair) {
         this.failedConnectionPairs.push({
@@ -121,6 +149,7 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       }
       this.activeSubSolver = null
       this.currentConnectionPair = null
+      this.retryingWithoutNetLabelClearance = false
       // Do not fail the whole solver; proceed to schedule the next pair
     }
 
@@ -137,8 +166,22 @@ export class SchematicTraceLinesSolver extends BaseSolver {
     }
 
     this.currentConnectionPair = connectionPair
+    this.retryingWithoutNetLabelClearance = false
 
-    const { pins } = connectionPair
+    // Corner pins can legitimately face either adjacent edge. Keep their
+    // inferred direction local to this route so solving one branch cannot
+    // constrain a later branch that shares the same corner pin. Pins with one
+    // geometric direction retain the established shared representation.
+    const hasAmbiguousCornerPin = connectionPair.pins.some((pin) => {
+      if (pin._facingDirection) return false
+      const chip = this.chipMap[pin.chipId]
+      return chip && getPinDirectionCandidates(pin, chip).length > 1
+    })
+    const pins = hasAmbiguousCornerPin
+      ? (connectionPair.pins.map((pin) => ({
+          ...pin,
+        })) as MspConnectionPair["pins"])
+      : connectionPair.pins
 
     this.activeSubSolver = new SchematicTraceSingleLineSolver2({
       inputProblem: this.inputProblem,
