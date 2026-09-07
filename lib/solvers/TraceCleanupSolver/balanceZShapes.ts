@@ -1,3 +1,4 @@
+import { getOtherNetLabelObstacles } from "./getOtherNetLabelObstacles"
 import type { Point } from "graphics-debug"
 import type { InputProblem } from "lib/types/InputProblem"
 import { simplifyPath } from "./simplifyPath"
@@ -11,6 +12,7 @@ export const balanceZShapes = ({
   traces,
   inputProblem,
   allLabelPlacements,
+  unmergedLabelPlacements,
   mergedLabelNetIdMap,
   paddingBuffer,
 }: {
@@ -18,6 +20,7 @@ export const balanceZShapes = ({
   traces: SolvedTracePath[]
   inputProblem: InputProblem
   allLabelPlacements: NetLabelPlacement[]
+  unmergedLabelPlacements?: NetLabelPlacement[]
   mergedLabelNetIdMap: Record<string, Set<string>>
   paddingBuffer: number
 }): SolvedTracePath => {
@@ -78,12 +81,11 @@ export const balanceZShapes = ({
     return false
   }
 
-  const filteredLabels = allLabelPlacements.filter((label) => {
-    const originalNetIds = mergedLabelNetIdMap[label.globalConnNetId]
-    if (originalNetIds) {
-      return !originalNetIds.has(targetTrace.globalConnNetId)
-    }
-    return label.globalConnNetId !== targetTrace.globalConnNetId
+  const filteredLabels = getOtherNetLabelObstacles({
+    globalConnNetId: targetTrace.globalConnNetId,
+    allLabelPlacements,
+    unmergedLabelPlacements,
+    mergedLabelNetIdMap,
   })
 
   const labelBounds = filteredLabels.map((nl) => ({

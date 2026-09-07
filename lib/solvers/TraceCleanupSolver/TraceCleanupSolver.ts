@@ -22,6 +22,7 @@ export interface TraceCleanupSolverInput {
   inputProblem: InputProblem
   allTraces: SolvedTracePath[]
   allLabelPlacements: NetLabelPlacement[]
+  unmergedLabelPlacements?: NetLabelPlacement[]
   mergedLabelNetIdMap: Record<string, Set<string>>
   paddingBuffer: number
   operations?: readonly TraceCleanupOperation[]

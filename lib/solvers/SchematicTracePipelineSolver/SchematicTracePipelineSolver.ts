@@ -326,6 +326,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           inputProblem: instance.inputProblem,
           allTraces: traces,
           allLabelPlacements: labelMergingOutput.netLabelPlacements,
+          unmergedLabelPlacements:
+            instance.traceLabelOverlapAvoidanceSolver!.netLabelPlacements,
           mergedLabelNetIdMap: labelMergingOutput.mergedLabelNetIdMap,
           paddingBuffer: 0.1,
           eligibleTraceIds: traceIdsInNewCrossingsAfterOverlapShift,

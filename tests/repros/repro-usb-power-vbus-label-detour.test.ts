@@ -6,7 +6,7 @@ import inputProblemJson from "./assets/repro-usb-power-vbus-label-detour.input.j
 
 const VBUS_PIN_IDS = new Set(["schematic_port_224", "schematic_port_226"])
 
-test("routes the usb power vbus connection without a label detour", () => {
+test("keeps USB endpoint labels independent while routing VBUS around mixed-net obstacles", () => {
   const inputProblem: InputProblem = JSON.parse(
     JSON.stringify(inputProblemJson),
   )
@@ -14,11 +14,13 @@ test("routes the usb power vbus connection without a label detour", () => {
 
   solver.solve()
 
-  const vbusTrace = solver.sameNetJunctionAlignmentSolver!.outputTraces.find(
-    (trace) =>
-      trace.pins.length === VBUS_PIN_IDS.size &&
-      trace.pins.every((pin) => VBUS_PIN_IDS.has(pin.pinId)),
-  )
+  const vbusTrace = solver
+    .inlineNetLabelSolver!.getOutput()
+    .traces.find(
+      (trace) =>
+        trace.pins.length === VBUS_PIN_IDS.size &&
+        trace.pins.every((pin) => VBUS_PIN_IDS.has(pin.pinId)),
+    )
   const gndLabel =
     solver.availableNetOrientationSolver!.outputNetLabelPlacements.find(
       (label) =>
@@ -57,15 +59,23 @@ test("routes the usb power vbus connection without a label detour", () => {
   expect(vbusTrace?.tracePath).toEqual([
     { x: 13, y: -6.2 },
     { x: 12.8, y: -6.2 },
+    { x: 12.8, y: -6.5 },
+    { x: 12.178999999999998, y: -6.5 },
+    { x: 12.178999999999998, y: -5.5 },
+    { x: 12.8, y: -5.5 },
     { x: 12.8, y: -5.8 },
     { x: 13, y: -5.8 },
   ])
-  // The available inline side of USB_HS_DM overlaps the retained USB_HS_DP
-  // tag. Keep both differential-pair nets anchored instead of producing a
-  // mixed, overlapping representation.
-  expect(usbHighSpeedInlineLabels).toHaveLength(0)
+  // The top sides at the MCU are clear; the connector endpoints retain their
+  // obstructed tags. A blocked connector must not undo the MCU placements.
   expect(
-    usbHighSpeedAnchoredLabels.map((placement) => placement.netId).sort(),
-  ).toEqual(["USB_HS_DM", "USB_HS_DM", "USB_HS_DP", "USB_HS_DP"])
+    usbHighSpeedInlineLabels.map((label) => label.pinIds[0]).sort(),
+  ).toEqual(["schematic_port_83", "schematic_port_84"])
+  expect(usbHighSpeedInlineLabels.every((label) => label.side === "y+")).toBe(
+    true,
+  )
+  expect(
+    usbHighSpeedAnchoredLabels.map((label) => label.pinIds[0]).sort(),
+  ).toEqual(["schematic_port_191", "schematic_port_193"])
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

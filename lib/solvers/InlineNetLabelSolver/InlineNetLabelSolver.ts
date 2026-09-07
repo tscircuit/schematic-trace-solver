@@ -17,13 +17,13 @@ import type {
 } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
+import { isLabelRepresentedInline } from "./isLabelRepresentedInline"
 import { alignPortOnlyInlineNetLabelStubs } from "./alignPortOnlyInlineNetLabelStubs"
 import {
   type AxisAlignedSegment,
   getAxisAlignedSegments,
 } from "./getAxisAlignedSegments"
 import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
-import { flipInlineTerminalLabelsAwayFromAnchoredLabels } from "./flipInlineTerminalLabelsAwayFromAnchoredLabels"
 import { pushAnchoredNetLabelsAwayFromInlineLabels } from "./pushAnchoredNetLabelsAwayFromInlineLabels"
 import { pushInlineTerminalLabelsAwayFromAnchoredLabels } from "./pushInlineTerminalLabelsAwayFromAnchoredLabels"
 import { restoreReroutesAroundSupersededLabels } from "./restoreReroutesAroundSupersededLabels"
@@ -162,12 +162,29 @@ const getInlinePlacementBounds = (
   }
 }
 
+const getInlinePlacementKey = (placement: InlineNetLabelPlacement) =>
+  `${placement.globalConnNetId}::${getPinPairKey(placement.pinIds)}::${placement.mspPairId ?? "terminal"}`
+
+const terminalStubIntersectsTrace = (
+  path: [Point, Point],
+  trace: SolvedTracePath,
+) => {
+  const clearance = INLINE_NET_LABEL_STUB_TRACE_CLEARANCE - GEOMETRY_EPSILON
+  const bounds = {
+    minX: Math.min(path[0].x, path[1].x) - clearance,
+    maxX: Math.max(path[0].x, path[1].x) + clearance,
+    minY: Math.min(path[0].y, path[1].y) - clearance,
+    maxY: Math.max(path[0].y, path[1].y) + clearance,
+  }
+  return doesPathIntersectBounds(trace.tracePath, bounds)
+}
+
 /**
  * Places "inline net labels" - net names drawn alongside the trace they belong
  * to - for connections that opted in via `allowInlineNetLabel`.
  *
- * Any regular (anchored) net label placement for the same net is dropped, so a
- * net is never labeled twice.
+ * Anchored labels are removed only for the connected components represented
+ * inline. A blocked component keeps its label without undoing clear ones.
  */
 export class InlineNetLabelSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -182,7 +199,7 @@ export class InlineNetLabelSolver extends BaseSolver {
 
   private tracesByPinPairKey: Map<string, SolvedTracePath[]>
   private globalConnMap: ConnectivityMap
-  private supersededTraceIdsByGlobalConnNetId = new Map<string, Set<string>>()
+  private inlineConversions: NetConnectionInlineConversion[] = []
   private hasAlignedPortOnlyStubs = false
   private postProcessedOutput?: {
     traces: SolvedTracePath[]
@@ -277,17 +294,7 @@ export class InlineNetLabelSolver extends BaseSolver {
           netConnections,
         )) {
           this.inlineNetLabelPlacements.push(...conversion.placements)
-          const supersededTraceIds =
-            this.supersededTraceIdsByGlobalConnNetId.get(
-              conversion.globalConnNetId,
-            ) ?? new Set<string>()
-          for (const traceId of conversion.supersededTraceIds) {
-            supersededTraceIds.add(traceId)
-          }
-          this.supersededTraceIdsByGlobalConnNetId.set(
-            conversion.globalConnNetId,
-            supersededTraceIds,
-          )
+          this.inlineConversions.push(conversion)
         }
         return
       }
@@ -308,15 +315,15 @@ export class InlineNetLabelSolver extends BaseSolver {
         })
         if (placement) this.inlineNetLabelPlacements.push(placement)
       } else {
-        // A one-pin net has one conventional endpoint label, while a skipped
-        // two-pin route has one at each endpoint. Convert a two-pin pair
-        // atomically so a collision at one endpoint cannot leave mixed inline
-        // and anchored representations for the same net.
-        const terminalPlacements = connection.pinIds.map((pinId) =>
-          this.computeTerminalInlinePlacement(connection, pinId),
-        )
-        if (terminalPlacements.every((placement) => placement !== null)) {
-          this.inlineNetLabelPlacements.push(...terminalPlacements)
+        // Unrouted endpoints are separate connected components. A blocked
+        // endpoint keeps its anchored tag without changing the label style at
+        // clear endpoints of the same named net.
+        for (const pinId of connection.pinIds) {
+          const placement = this.computeTerminalInlinePlacement(
+            connection,
+            pinId,
+          )
+          if (placement) this.inlineNetLabelPlacements.push(placement)
         }
       }
       return
@@ -345,7 +352,7 @@ export class InlineNetLabelSolver extends BaseSolver {
   /**
    * Plans all opted-in multi-pin nets together. Short routed components can
    * mutually block the outward endpoint stubs that replace them, so tentative
-   * replacements are ignored as obstacles only while their owning net still
+   * replacements are ignored as obstacles only while their connected component still
    * converts successfully. Failed conversions retain both their traces and
    * their conventional labels, and the remaining conversions are retried.
    */
@@ -393,13 +400,11 @@ export class InlineNetLabelSolver extends BaseSolver {
       }))
       const nextIgnoredTraceIds = new Set(
         conversions.flatMap(({ conversion }) =>
-          conversion ? [...conversion.supersededTraceIds] : [],
+          conversion.flatMap((component) => [...component.supersededTraceIds]),
         ),
       )
       if (setsEqual(ignoredTraceIds, nextIgnoredTraceIds)) {
-        return conversions.flatMap(({ conversion }) =>
-          conversion ? [conversion] : [],
-        )
+        return conversions.flatMap(({ conversion }) => conversion)
       }
       ignoredTraceIds = nextIgnoredTraceIds
     }
@@ -474,19 +479,19 @@ export class InlineNetLabelSolver extends BaseSolver {
    * Converts every conventional label representation for an opted-in named
    * net. Routed connected components become labels on their representative
    * trace; disconnected pins become outward terminal stubs. The conversion is
-   * atomic so one blocked candidate cannot leave mixed label styles on a net.
+   * atomic within each routed component, so replacing its traces cannot strand
+   * a pin. Disconnected components can keep their own label style.
    */
   private computeNetConnectionInlinePlacements(
     connection: InputNetConnection,
     ignoredTraceIds: Set<string>,
     forcedTerminalTraceIds: Set<string>,
-  ): NetConnectionInlineConversion | null {
+  ): NetConnectionInlineConversion[] {
     const components = this.getNetConnectionComponents(connection)
     const globalConnNetId = this.getGlobalConnNetId(connection)
-    if (!globalConnNetId) return null
+    if (!globalConnNetId) return []
 
-    const inlinePlacements: InlineNetLabelPlacement[] = []
-    const supersededTraceIds = new Set<string>()
+    const conversions: NetConnectionInlineConversion[] = []
     for (const component of components) {
       const shouldUseTerminalStubs = component.traces.some((trace) =>
         forcedTerminalTraceIds.has(trace.mspPairId),
@@ -505,21 +510,25 @@ export class InlineNetLabelSolver extends BaseSolver {
         }
       }
       if (inlinePlacement) {
-        inlinePlacements.push(inlinePlacement)
+        conversions.push({
+          globalConnNetId,
+          placements: [inlinePlacement],
+          supersededTraceIds: new Set(),
+        })
         continue
       }
       if (component.traces.length > 0 && !shouldUseTerminalStubs) {
         // This route originally had a valid inline placement, but a trace from
-        // a conversion that had to be rolled back now blocks it. Roll back
-        // this whole net as well instead of introducing a new replacement and
+        // a conversion that had to be rolled back now blocks it. Retain
+        // this component as well instead of introducing a new replacement and
         // allowing the batch plan to oscillate.
-        return null
+        continue
       }
       if (component.labeledPinIds.length !== component.pinIds.length) {
         // Removing this component's traces would strand an intermediate pin
         // that was connected through the global net but was not an endpoint of
         // this named connection. Retain the original routed representation.
-        return null
+        continue
       }
 
       // A routed component may be too short to carry its text. In that case,
@@ -535,20 +544,18 @@ export class InlineNetLabelSolver extends BaseSolver {
         ),
       )
       if (terminalPlacements.some((placement) => placement === null)) {
-        return null
+        continue
       }
-      inlinePlacements.push(
-        ...terminalPlacements.filter(
-          (placement): placement is InlineNetLabelPlacement =>
-            placement !== null,
+      conversions.push({
+        globalConnNetId,
+        placements: terminalPlacements as InlineNetLabelPlacement[],
+        supersededTraceIds: new Set(
+          component.traces.map((trace) => trace.mspPairId),
         ),
-      )
-      for (const trace of component.traces) {
-        supersededTraceIds.add(trace.mspPairId)
-      }
+      })
     }
 
-    return { globalConnNetId, placements: inlinePlacements, supersededTraceIds }
+    return conversions
   }
 
   /**
@@ -557,11 +564,10 @@ export class InlineNetLabelSolver extends BaseSolver {
    * an anchored label may finish in another direction after an elbow, which is
    * not the direction a terminal stub should leave the pin.
    */
-  private computeTerminalInlinePlacement(
+  private createTerminalInlineCandidate(
     connection: InlineEligibleConnection,
     pinId: PinId,
     knownGlobalConnNetId?: string,
-    ignoredTraceIds = new Set<string>(),
   ): InlineNetLabelPlacement | null {
     if (!connection.netId) return null
 
@@ -599,7 +605,7 @@ export class InlineNetLabelSolver extends BaseSolver {
       inputPin && inputChip
         ? (inputPin._facingDirection ?? getPinDirection(inputPin, inputChip))
         : anchoredPlacement!.orientation
-    const intendedEnd: Point =
+    const end: Point =
       direction === "x+"
         ? { x: start.x + stubLength, y: start.y }
         : direction === "x-"
@@ -608,16 +614,6 @@ export class InlineNetLabelSolver extends BaseSolver {
             ? { x: start.x, y: start.y + stubLength }
             : { x: start.x, y: start.y - stubLength }
 
-    const end = getCollisionLimitedTerminalStubEnd({
-      start,
-      intendedEnd,
-      minimumLength: width + 2 * INLINE_NET_LABEL_TRACE_MARGIN,
-      traces: this.traces,
-      ownGlobalConnNetId: globalConnNetId,
-      ignoredTraceIds,
-    })
-    if (!end) return null
-
     const axis: InlineNetLabelPlacement["axis"] =
       direction === "x+" || direction === "x-" ? "x" : "y"
     const anchorPoint = {
@@ -625,61 +621,72 @@ export class InlineNetLabelSolver extends BaseSolver {
       y: (start.y + end.y) / 2,
     }
     const offset = height / 2 + INLINE_NET_LABEL_TRACE_MARGIN
-    const sides: InlineNetLabelPlacement["side"][] =
-      axis === "x" ? ["y+", "y-"] : ["x-", "x+"]
+    const side = axis === "x" ? "y+" : "x-"
 
-    for (const side of sides) {
-      const center: Point =
-        side === "y+"
-          ? { x: anchorPoint.x, y: anchorPoint.y + offset }
-          : side === "y-"
-            ? { x: anchorPoint.x, y: anchorPoint.y - offset }
-            : side === "x-"
-              ? { x: anchorPoint.x - offset, y: anchorPoint.y }
-              : { x: anchorPoint.x + offset, y: anchorPoint.y }
+    const center: Point =
+      side === "y+"
+        ? { x: anchorPoint.x, y: anchorPoint.y + offset }
+        : { x: anchorPoint.x - offset, y: anchorPoint.y }
 
-      const halfAlong = width / 2
-      const halfAcross = height / 2
-      const bounds: Bounds =
-        axis === "x"
-          ? {
-              minX: center.x - halfAlong,
-              maxX: center.x + halfAlong,
-              minY: center.y - halfAcross,
-              maxY: center.y + halfAcross,
-            }
-          : {
-              minX: center.x - halfAcross,
-              maxX: center.x + halfAcross,
-              minY: center.y - halfAlong,
-              maxY: center.y + halfAlong,
-            }
-
-      if (
-        this.isObstructed(bounds, {
-          ownGlobalConnNetId: globalConnNetId,
-          ignoredTraceIds,
-        })
-      ) {
-        continue
-      }
-
-      return {
-        globalConnNetId,
-        netId: connection.netId,
-        netLabelText,
-        pinIds: [pinId],
-        stubTracePath: [start, end],
-        axis,
-        anchorPoint,
-        center,
-        width,
-        height,
-        side,
-      }
+    return {
+      globalConnNetId,
+      netId: connection.netId,
+      netLabelText,
+      pinIds: [pinId],
+      stubTracePath: [start, end],
+      axis,
+      anchorPoint,
+      center,
+      width,
+      height,
+      side,
     }
+  }
 
-    return null
+  private computeTerminalInlinePlacement(
+    connection: InlineEligibleConnection,
+    pinId: PinId,
+    knownGlobalConnNetId?: string,
+    ignoredTraceIds = new Set<string>(),
+  ): InlineNetLabelPlacement | null {
+    const candidate = this.createTerminalInlineCandidate(
+      connection,
+      pinId,
+      knownGlobalConnNetId,
+    )
+    if (!candidate) return null
+    const [start, intendedEnd] = candidate.stubTracePath!
+    const end = getCollisionLimitedTerminalStubEnd({
+      start,
+      intendedEnd,
+      minimumLength: candidate.width + 2 * INLINE_NET_LABEL_TRACE_MARGIN,
+      traces: this.traces,
+      ownGlobalConnNetId: candidate.globalConnNetId,
+      ignoredTraceIds,
+    })
+    if (!end) return null
+    const delta = {
+      x: (end.x - intendedEnd.x) / 2,
+      y: (end.y - intendedEnd.y) / 2,
+    }
+    const placement: InlineNetLabelPlacement = {
+      ...candidate,
+      stubTracePath: [start, end],
+      anchorPoint: {
+        x: candidate.anchorPoint.x + delta.x,
+        y: candidate.anchorPoint.y + delta.y,
+      },
+      center: {
+        x: candidate.center.x + delta.x,
+        y: candidate.center.y + delta.y,
+      },
+    }
+    return this.isObstructed(getInlinePlacementBounds(placement), {
+      ownGlobalConnNetId: placement.globalConnNetId,
+      ignoredTraceIds,
+    })
+      ? null
+      : placement
   }
 
   private computeInlinePlacement({
@@ -707,8 +714,8 @@ export class InlineNetLabelSolver extends BaseSolver {
     const offset = height / 2 + INLINE_NET_LABEL_TRACE_MARGIN
 
     // First choice: a straight run the label fully fits on, longest first, so
-    // the text hugs the wire it names. Within a run, try the preferred side
-    // before the far side, and positions near the middle before the ends. The
+    // the text hugs the wire it names. Keep the text above the wire, trying
+    // positions near the middle before the ends. The
     // label never extends past the end of a run - a name hanging off its wire
     // reads as floating text.
     const usableSegments = segments
@@ -718,59 +725,52 @@ export class InlineNetLabelSolver extends BaseSolver {
     for (const segment of usableSegments) {
       // "Above" the trace: +y for a horizontal trace, and -x for a vertical one
       // (rotating the text 90deg counter-clockwise maps "above" onto the left).
-      const sides: InlineNetLabelPlacement["side"][] =
-        segment.axis === "x" ? ["y+", "y-"] : ["x-", "x+"]
+      const side = segment.axis === "x" ? "y+" : "x-"
 
-      for (const side of sides) {
-        for (const anchorPoint of getAnchorCandidates(segment, width)) {
-          const center =
-            side === "y+"
-              ? { x: anchorPoint.x, y: anchorPoint.y + offset }
-              : side === "y-"
-                ? { x: anchorPoint.x, y: anchorPoint.y - offset }
-                : side === "x-"
-                  ? { x: anchorPoint.x - offset, y: anchorPoint.y }
-                  : { x: anchorPoint.x + offset, y: anchorPoint.y }
+      for (const anchorPoint of getAnchorCandidates(segment, width)) {
+        const center =
+          side === "y+"
+            ? { x: anchorPoint.x, y: anchorPoint.y + offset }
+            : { x: anchorPoint.x - offset, y: anchorPoint.y }
 
-          const halfAlong = width / 2
-          const halfAcross = height / 2
-          const bounds: Bounds =
-            segment.axis === "x"
-              ? {
-                  minX: center.x - halfAlong,
-                  maxX: center.x + halfAlong,
-                  minY: center.y - halfAcross,
-                  maxY: center.y + halfAcross,
-                }
-              : {
-                  minX: center.x - halfAcross,
-                  maxX: center.x + halfAcross,
-                  minY: center.y - halfAlong,
-                  maxY: center.y + halfAlong,
-                }
+        const halfAlong = width / 2
+        const halfAcross = height / 2
+        const bounds: Bounds =
+          segment.axis === "x"
+            ? {
+                minX: center.x - halfAlong,
+                maxX: center.x + halfAlong,
+                minY: center.y - halfAcross,
+                maxY: center.y + halfAcross,
+              }
+            : {
+                minX: center.x - halfAcross,
+                maxX: center.x + halfAcross,
+                minY: center.y - halfAlong,
+                maxY: center.y + halfAlong,
+              }
 
-          if (
-            this.isObstructed(bounds, {
-              ownTrace: trace,
-              ownGlobalConnNetId: trace.globalConnNetId,
-              ignoredTraceIds,
-            })
-          )
-            continue
+        if (
+          this.isObstructed(bounds, {
+            ownTrace: trace,
+            ownGlobalConnNetId: trace.globalConnNetId,
+            ignoredTraceIds,
+          })
+        )
+          continue
 
-          return {
-            globalConnNetId: trace.globalConnNetId,
-            netId: connection.netId,
-            netLabelText,
-            mspPairId: trace.mspPairId,
-            pinIds: [...pinIds],
-            axis: segment.axis,
-            anchorPoint,
-            center,
-            width,
-            height,
-            side,
-          }
+        return {
+          globalConnNetId: trace.globalConnNetId,
+          netId: connection.netId,
+          netLabelText,
+          mspPairId: trace.mspPairId,
+          pinIds: [...pinIds],
+          axis: segment.axis,
+          anchorPoint,
+          center,
+          width,
+          height,
+          side,
         }
       }
     }
@@ -857,67 +857,58 @@ export class InlineNetLabelSolver extends BaseSolver {
     }
     offsets.push(halfRange, -halfRange)
 
-    const sides: InlineNetLabelPlacement["side"][] =
-      axis === "x" ? ["y+", "y-"] : ["x-", "x+"]
+    const side = axis === "x" ? "y+" : "x-"
 
-    for (const side of sides) {
-      for (const alongOffset of offsets) {
-        const along = mid + alongOffset
-        // The label clears the far side of every jog, not just the run it is
-        // nearest to.
-        const center: Point =
-          side === "y+"
-            ? { x: along, y: maxY + offset }
-            : side === "y-"
-              ? { x: along, y: minY - offset }
-              : side === "x-"
-                ? { x: minX - offset, y: along }
-                : { x: maxX + offset, y: along }
+    for (const alongOffset of offsets) {
+      const along = mid + alongOffset
+      // The label clears the far side of every jog, not just the run it is
+      // nearest to.
+      const center: Point =
+        axis === "x"
+          ? { x: along, y: maxY + offset }
+          : { x: minX - offset, y: along }
 
-        const halfAlong = width / 2
-        const halfAcross = height / 2
-        const bounds: Bounds =
-          axis === "x"
-            ? {
-                minX: center.x - halfAlong,
-                maxX: center.x + halfAlong,
-                minY: center.y - halfAcross,
-                maxY: center.y + halfAcross,
-              }
-            : {
-                minX: center.x - halfAcross,
-                maxX: center.x + halfAcross,
-                minY: center.y - halfAlong,
-                maxY: center.y + halfAlong,
-              }
+      const halfAlong = width / 2
+      const halfAcross = height / 2
+      const bounds: Bounds =
+        axis === "x"
+          ? {
+              minX: center.x - halfAlong,
+              maxX: center.x + halfAlong,
+              minY: center.y - halfAcross,
+              maxY: center.y + halfAcross,
+            }
+          : {
+              minX: center.x - halfAcross,
+              maxX: center.x + halfAcross,
+              minY: center.y - halfAlong,
+              maxY: center.y + halfAlong,
+            }
 
-        if (
-          this.isObstructed(bounds, {
-            ownTrace: trace,
-            ownGlobalConnNetId: trace.globalConnNetId,
-            ignoredTraceIds,
-          })
-        )
-          continue
+      if (
+        this.isObstructed(bounds, {
+          ownTrace: trace,
+          ownGlobalConnNetId: trace.globalConnNetId,
+          ignoredTraceIds,
+        })
+      )
+        continue
 
-        const anchorPoint: Point =
-          axis === "x"
-            ? { x: along, y: side === "y+" ? maxY : minY }
-            : { x: side === "x-" ? minX : maxX, y: along }
+      const anchorPoint: Point =
+        axis === "x" ? { x: along, y: maxY } : { x: minX, y: along }
 
-        return {
-          globalConnNetId: trace.globalConnNetId,
-          netId: connection.netId,
-          netLabelText,
-          mspPairId: trace.mspPairId,
-          pinIds: [...pinIds],
-          axis,
-          anchorPoint,
-          center,
-          width,
-          height,
-          side,
-        }
+      return {
+        globalConnNetId: trace.globalConnNetId,
+        netId: connection.netId,
+        netLabelText,
+        mspPairId: trace.mspPairId,
+        pinIds: [...pinIds],
+        axis,
+        anchorPoint,
+        center,
+        width,
+        height,
+        side,
       }
     }
 
@@ -964,99 +955,92 @@ export class InlineNetLabelSolver extends BaseSolver {
     return false
   }
 
-  /**
-   * Net label placements superseded by an inline label. A net gets one label or
-   * the other, never both.
-   */
-  private getSupersededNetLabelKeys(
-    placements = this.inlineNetLabelPlacements,
-  ): Set<string> {
-    const keys = new Set<string>()
-    for (const placement of placements) {
-      keys.add(placement.globalConnNetId)
-    }
-    return keys
-  }
-
-  private getOutputTraces(
-    supersededNetLabelKeys: Set<string>,
-    supersededTraceIds: Set<string>,
-  ) {
+  private getOutputTraces(placements: InlineNetLabelPlacement[]) {
+    const activeKeys = new Set(placements.map(getInlinePlacementKey))
+    const supersededTraceIds = new Set(
+      this.inlineConversions
+        .filter((conversion) =>
+          conversion.placements.every((placement) =>
+            activeKeys.has(getInlinePlacementKey(placement)),
+          ),
+        )
+        .flatMap((conversion) => [...conversion.supersededTraceIds]),
+    )
     return this.traces.filter(
       (trace) =>
         !supersededTraceIds.has(trace.mspPairId) &&
         !(
-          supersededNetLabelKeys.has(trace.globalConnNetId) &&
-          isGeneratedAnchoredLabelConnector(trace)
+          isGeneratedAnchoredLabelConnector(trace) &&
+          isLabelRepresentedInline(trace, placements)
         ),
     )
   }
 
-  private getInlineGlobalsOverlappingAnchoredLabels({
+  private getBlockedInlinePlacements({
     inlineNetLabelPlacements,
     anchoredNetLabelPlacements,
+    traces,
   }: {
     inlineNetLabelPlacements: InlineNetLabelPlacement[]
     anchoredNetLabelPlacements: NetLabelPlacement[]
+    traces: SolvedTracePath[]
   }): Set<string> {
-    const blockedGlobalConnNetIds = new Set<string>()
-    for (const inlinePlacement of inlineNetLabelPlacements) {
-      const inlineBounds = getInlinePlacementBounds(inlinePlacement)
-      for (const anchoredPlacement of anchoredNetLabelPlacements) {
-        if (
-          anchoredPlacement.globalConnNetId === inlinePlacement.globalConnNetId
-        ) {
-          continue
-        }
-        const anchoredBounds =
-          getAnchoredNetLabelRenderedBounds(anchoredPlacement)
-        if (
-          boundsOverlap(inlineBounds, anchoredBounds) ||
-          (inlinePlacement.stubTracePath &&
-            doesPathIntersectBounds(
-              inlinePlacement.stubTracePath,
-              anchoredBounds,
-            ))
-        ) {
-          blockedGlobalConnNetIds.add(inlinePlacement.globalConnNetId)
-          break
-        }
+    const blockedKeys = new Set<string>()
+    for (const inline of inlineNetLabelPlacements) {
+      const bounds = getInlinePlacementBounds(inline)
+      const blockedByLabel = anchoredNetLabelPlacements.some((anchored) => {
+        const anchoredBounds = getAnchoredNetLabelRenderedBounds(anchored)
+        return (
+          boundsOverlap(bounds, anchoredBounds) ||
+          (inline.stubTracePath &&
+            doesPathIntersectBounds(inline.stubTracePath, anchoredBounds))
+        )
+      })
+      // Rolling back a routed component restores its original wires. Recheck
+      // other inline conversions against those wires before accepting them.
+      const blockedByTrace = traces.some(
+        (trace) =>
+          trace.globalConnNetId !== inline.globalConnNetId &&
+          (doesPathIntersectBounds(trace.tracePath, bounds) ||
+            (inline.stubTracePath &&
+              terminalStubIntersectsTrace(inline.stubTracePath, trace))),
+      )
+      if (blockedByLabel || blockedByTrace)
+        blockedKeys.add(getInlinePlacementKey(inline))
+    }
+    for (const conversion of this.inlineConversions) {
+      if (
+        conversion.placements.some((placement) =>
+          blockedKeys.has(getInlinePlacementKey(placement)),
+        )
+      ) {
+        for (const placement of conversion.placements)
+          blockedKeys.add(getInlinePlacementKey(placement))
       }
     }
-    return blockedGlobalConnNetIds
+    return blockedKeys
   }
 
   private buildPostProcessedOutput() {
     let activeInlinePlacements = this.inlineNetLabelPlacements
     while (true) {
-      const supersededNetLabelKeys = this.getSupersededNetLabelKeys(
-        activeInlinePlacements,
-      )
-      const supersededTraceIds = new Set(
-        [...supersededNetLabelKeys].flatMap((globalConnNetId) => [
-          ...(this.supersededTraceIdsByGlobalConnNetId.get(globalConnNetId) ??
-            []),
-        ]),
-      )
       const retainedNetLabelPlacements = this.inputNetLabelPlacements.filter(
-        (placement) => !supersededNetLabelKeys.has(placement.globalConnNetId),
+        (placement) =>
+          !isLabelRepresentedInline(placement, activeInlinePlacements),
       )
-      const outputTraces = this.getOutputTraces(
-        supersededNetLabelKeys,
-        supersededTraceIds,
-      )
+      const outputTraces = this.getOutputTraces(activeInlinePlacements)
       const pushed = pushAnchoredNetLabelsAwayFromInlineLabels({
         inputProblem: this.inputProblem,
         traces: outputTraces,
         netLabelPlacements: retainedNetLabelPlacements,
         inlineNetLabelPlacements: activeInlinePlacements,
       })
-      let blockedGlobalConnNetIds =
-        this.getInlineGlobalsOverlappingAnchoredLabels({
-          inlineNetLabelPlacements: activeInlinePlacements,
-          anchoredNetLabelPlacements: pushed.netLabelPlacements,
-        })
-      if (blockedGlobalConnNetIds.size > 0) {
+      const blockedPlacementKeys = this.getBlockedInlinePlacements({
+        inlineNetLabelPlacements: activeInlinePlacements,
+        anchoredNetLabelPlacements: pushed.netLabelPlacements,
+        traces: pushed.traces,
+      })
+      if (blockedPlacementKeys.size > 0) {
         const shiftedInlineTerminalLabels =
           pushInlineTerminalLabelsAwayFromAnchoredLabels({
             inputProblem: this.inputProblem,
@@ -1069,21 +1053,8 @@ export class InlineNetLabelSolver extends BaseSolver {
             shiftedInlineTerminalLabels.inlineNetLabelPlacements
           continue
         }
-        activeInlinePlacements = flipInlineTerminalLabelsAwayFromAnchoredLabels(
-          {
-            inputProblem: this.inputProblem,
-            traces: pushed.traces,
-            anchoredNetLabelPlacements: pushed.netLabelPlacements,
-            inlineNetLabelPlacements: activeInlinePlacements,
-          },
-        ).inlineNetLabelPlacements
-        blockedGlobalConnNetIds =
-          this.getInlineGlobalsOverlappingAnchoredLabels({
-            inlineNetLabelPlacements: activeInlinePlacements,
-            anchoredNetLabelPlacements: pushed.netLabelPlacements,
-          })
       }
-      if (blockedGlobalConnNetIds.size === 0) {
+      if (blockedPlacementKeys.size === 0) {
         this.inlineNetLabelPlacements = activeInlinePlacements
         this.stats.pushedAnchoredNetLabelCount = pushed.movedLabelCount
         const restored = restoreReroutesAroundSupersededLabels({
@@ -1095,14 +1066,17 @@ export class InlineNetLabelSolver extends BaseSolver {
         })
         this.stats.restoredSupersededLabelRerouteCount =
           restored.restoredTraceCount
-        return {
+        const output = {
           traces: restored.traces,
           netLabelPlacements: pushed.netLabelPlacements,
           inlineNetLabelPlacements: activeInlinePlacements,
         }
+        this.inlineNetLabelPlacements = output.inlineNetLabelPlacements
+        return output
       }
       activeInlinePlacements = activeInlinePlacements.filter(
-        (placement) => !blockedGlobalConnNetIds.has(placement.globalConnNetId),
+        (placement) =>
+          !blockedPlacementKeys.has(getInlinePlacementKey(placement)),
       )
     }
   }
@@ -1349,7 +1323,10 @@ const getCollisionLimitedTerminalStubEnd = ({
       if (
         isCollinear &&
         maxAlong >= -GEOMETRY_EPSILON &&
-        minAlong <= intendedLength + GEOMETRY_EPSILON
+        minAlong <=
+          intendedLength +
+            INLINE_NET_LABEL_STUB_TRACE_CLEARANCE +
+            GEOMETRY_EPSILON
       ) {
         collisionDistance = Math.max(0, minAlong)
       } else {
@@ -1360,7 +1337,10 @@ const getCollisionLimitedTerminalStubEnd = ({
           crossesStubAxis &&
           Math.abs(startAlong - endAlong) <= GEOMETRY_EPSILON &&
           perpendicularAlong >= -GEOMETRY_EPSILON &&
-          perpendicularAlong <= intendedLength + GEOMETRY_EPSILON
+          perpendicularAlong <=
+            intendedLength +
+              INLINE_NET_LABEL_STUB_TRACE_CLEARANCE +
+              GEOMETRY_EPSILON
         ) {
           collisionDistance = Math.max(0, perpendicularAlong)
         }

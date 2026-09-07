@@ -175,9 +175,11 @@ test("a short routed component is retained when replacing it would strand an int
   solver.solve()
 
   const output = solver.getOutput()
-  expect(output.inlineNetLabelPlacements).toHaveLength(0)
+  expect(output.inlineNetLabelPlacements.map((label) => label.pinIds)).toEqual([
+    ["U1.1"],
+  ])
   expect(output.traces).toEqual([shortTrace])
-  expect(output.netLabelPlacements).toEqual(anchoredLabels)
+  expect(output.netLabelPlacements).toEqual([anchoredLabels[0]!])
 })
 
 test("a generated anchored-label connector becomes an inline terminal stub", () => {
@@ -249,4 +251,107 @@ test("a generated anchored-label connector becomes an inline terminal stub", () 
     ),
   ).toBe(true)
   expect(output.traces).toHaveLength(0)
+})
+
+test("an obstructed routed component keeps its wire while a disconnected endpoint converts", () => {
+  const inputProblem: InputProblem = {
+    chips: [
+      {
+        chipId: "J1",
+        center: { x: 0, y: 0 },
+        width: 1,
+        height: 1,
+        pins: [
+          {
+            pinId: "J1.1",
+            x: -0.5,
+            y: 0.2,
+            _facingDirection: "x-",
+          },
+          {
+            pinId: "J1.2",
+            x: -0.5,
+            y: -0.2,
+            _facingDirection: "x-",
+          },
+        ],
+      },
+      {
+        chipId: "U1",
+        center: { x: 2, y: 0 },
+        width: 1,
+        height: 1,
+        pins: [
+          {
+            pinId: "U1.1",
+            x: 2.5,
+            y: 0,
+            _facingDirection: "x+",
+          },
+        ],
+      },
+    ],
+    directConnections: [],
+    netConnections: [
+      {
+        netId: "MOTOR",
+        pinIds: ["J1.1", "J1.2", "U1.1"],
+        allowInlineNetLabel: true,
+        inlineNetLabelWidth: 0.6,
+        inlineNetLabelHeight: 0.12,
+      },
+    ],
+    availableNetLabelOrientations: { MOTOR: ["x-", "x+"] },
+  }
+  const shortConnectorTrace: SolvedTracePath = {
+    mspPairId: "J1.1-J1.2",
+    mspConnectionPairIds: ["J1.1-J1.2"],
+    dcConnNetId: "MOTOR",
+    globalConnNetId: "MOTOR",
+    userNetId: "MOTOR",
+    pins: [
+      { pinId: "J1.1", chipId: "J1", x: -0.5, y: 0.2 },
+      { pinId: "J1.2", chipId: "J1", x: -0.5, y: -0.2 },
+    ],
+    pinIds: ["J1.1", "J1.2"],
+    tracePath: [
+      { x: -0.5, y: 0.2 },
+      { x: -0.8, y: 0.2 },
+      { x: -0.8, y: -0.2 },
+      { x: -0.5, y: -0.2 },
+    ],
+  }
+
+  inputProblem.textBoxes = [
+    {
+      center: { x: -0.9, y: -0.09 },
+      width: 0.8,
+      height: 0.12,
+      text: "fixed text",
+    },
+  ]
+  const anchor: NetLabelPlacement = {
+    netId: "MOTOR",
+    globalConnNetId: "MOTOR",
+    pinIds: ["J1.1", "J1.2"],
+    mspConnectionPairIds: [shortConnectorTrace.mspPairId],
+    orientation: "x-",
+    anchorPoint: { x: -0.8, y: 0 },
+    center: { x: -1.1, y: 0 },
+    width: 0.6,
+    height: 0.2,
+  }
+  const solver = new InlineNetLabelSolver({
+    inputProblem,
+    traces: [shortConnectorTrace],
+    netLabelPlacements: [anchor],
+  })
+  solver.solve()
+
+  const output = solver.getOutput()
+  expect(output.inlineNetLabelPlacements.map((label) => label.pinIds)).toEqual([
+    ["U1.1"],
+  ])
+  expect(output.netLabelPlacements).toEqual([anchor])
+  expect(output.traces).toEqual([shortConnectorTrace])
 })
