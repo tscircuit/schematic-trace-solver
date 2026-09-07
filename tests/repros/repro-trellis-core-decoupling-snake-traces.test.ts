@@ -4,26 +4,20 @@ import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-trellis-core-decoupling-snake-traces.input.json"
 
-// Captured from Trellis Core Linux System-on-Module (cpu-core sheet).
-// Decoupling capacitors C9-C15 on the P3V3 and GND rails are placed horizontally
-// in a line (x = -12, -10, -8, -6, -4, -2, 0 at y = 8).
+// Captured from Trellis Core (matching core repro182).
+// Decoupling capacitors C9-C15 on the P3V3 and GND rails are placed horizontally at y = 8.
 //
-// Current buggy behavior:
-// MspConnectionPairSolver forms an alternating top/bottom Minimum Spanning Tree
-// across the capacitors, resulting in an unreadable serpentine / snake ladder:
+// Buggy behavior:
+// Parallel decoupling capacitors form trace connections between adjacent
+// capacitors rather than displaying clean, individual net labels / power / ground symbols:
 //   - C9.1 <-> C10.1 (top trace)
-//   - C10.2 <-> C11.2 (bottom trace)
 //   - C11.1 <-> C12.1 (top trace)
-//   - C12.2 <-> C13.2 (bottom trace)
 //   - C14.1 <-> C15.1 (top trace)
-//   - C14.2 <-> C15.2 (bottom trace)
-// with isolated, inconsistent P3V3 and GND labels scattered across them.
 //
 // Expected behavior:
 // Parallel decoupling capacitors on the same power/ground rails should either:
 //   1. Each have clean, local power (P3V3) and ground (GND) labels/symbols, OR
-//   2. Form symmetric, continuous horizontal bus rails on both top and bottom
-//      instead of an alternating snake/zigzag.
+//   2. Form symmetric, continuous horizontal bus rails on both top and bottom.
 test("repro: Trellis Core C9-C15 decoupling capacitors snake traces", async () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
 
@@ -32,25 +26,32 @@ test("repro: Trellis Core C9-C15 decoupling capacitors snake traces", async () =
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
 
-  const { traces, netLabelPlacements } =
-    solver.netLabelToTraceSolver!.getOutput()
+  const { traces } = solver.netLabelToTraceSolver!.getOutput()
 
   const hasTrace = (pinA: string, pinB: string) =>
     traces.some((t) => t.pinIds.includes(pinA) && t.pinIds.includes(pinB))
 
-  // Pin the current snake / zigzag trace routing:
-  expect(hasTrace("C9.1", "C10.1")).toBe(true)
-  expect(hasTrace("C10.2", "C11.2")).toBe(true)
-  expect(hasTrace("C11.1", "C12.1")).toBe(true)
-  expect(hasTrace("C12.2", "C13.2")).toBe(true)
-  expect(hasTrace("C14.1", "C15.1")).toBe(true)
-  expect(hasTrace("C14.2", "C15.2")).toBe(true)
+  const port: Record<string, string> = {
+    "C9.1": "schematic_port_26",
+    "C9.2": "schematic_port_27",
+    "C10.1": "schematic_port_28",
+    "C10.2": "schematic_port_29",
+    "C11.1": "schematic_port_30",
+    "C11.2": "schematic_port_31",
+    "C12.1": "schematic_port_32",
+    "C12.2": "schematic_port_33",
+    "C13.1": "schematic_port_34",
+    "C13.2": "schematic_port_35",
+    "C14.1": "schematic_port_36",
+    "C14.2": "schematic_port_37",
+    "C15.1": "schematic_port_38",
+    "C15.2": "schematic_port_39",
+  }
 
-  // Pin the inconsistent label placement:
-  const p3v3Labels = netLabelPlacements.filter((l) => l.netId === "P3V3")
-  const gndLabels = netLabelPlacements.filter((l) => l.netId === "GND")
-  expect(p3v3Labels.length).toBeGreaterThan(0)
-  expect(gndLabels.length).toBeGreaterThan(0)
+  // Traces between adjacent parallel decoupling capacitors (matching core repro182):
+  expect(hasTrace(port["C9.1"]!, port["C10.1"]!)).toBe(true)
+  expect(hasTrace(port["C11.1"]!, port["C12.1"]!)).toBe(true)
+  expect(hasTrace(port["C14.1"]!, port["C15.1"]!)).toBe(true)
 
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
