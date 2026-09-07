@@ -648,20 +648,18 @@ const pathsIntersect = (firstPath: Point[], secondPath: Point[]) => {
 }
 
 /**
- * Keep generated label connectors joined when their host trace moves. Only a
+ * Keep same-net branches joined when their host trace moves. Only a
  * connector endpoint is projected, and only along its existing first/last
  * segment, so the label and the rest of its route stay fixed.
  */
-const preserveAttachedLabelConnectorJunctions = ({
+const preserveAttachedTraceJunctions = ({
   originalTrace,
   candidateTrace,
   traces,
-  netLabelConnectorTraceIds,
 }: {
   originalTrace: SolvedTracePath
   candidateTrace: SolvedTracePath
   traces: SolvedTracePath[]
-  netLabelConnectorTraceIds: ReadonlySet<MspConnectionPairId>
 }): SolvedTracePath[] | null => {
   let outputTraces = traces.map((trace) =>
     trace.mspPairId === originalTrace.mspPairId ? candidateTrace : trace,
@@ -670,7 +668,6 @@ const preserveAttachedLabelConnectorJunctions = ({
   for (const connector of traces) {
     if (
       connector.mspPairId === originalTrace.mspPairId ||
-      !netLabelConnectorTraceIds.has(connector.mspPairId) ||
       connector.globalConnNetId !== originalTrace.globalConnNetId ||
       !pathsIntersect(originalTrace.tracePath, connector.tracePath) ||
       pathsIntersect(candidateTrace.tracePath, connector.tracePath)
@@ -686,6 +683,16 @@ const preserveAttachedLabelConnectorJunctions = ({
     )
     if (endpointIndex === undefined) return null
     const originalJunction = connector.tracePath[endpointIndex]!
+    // Component pins are fixed; reject a rail move that would detach one.
+    if (
+      connector.pins.some(
+        (pin) =>
+          nearlyEqual(pin.x, originalJunction.x) &&
+          nearlyEqual(pin.y, originalJunction.y),
+      )
+    ) {
+      return null
+    }
     const movedJunction = getMovedAnchorPointForReroute(
       originalJunction,
       originalTrace.tracePath,
@@ -1250,11 +1257,10 @@ export const alignSameNetJunctions = ({
             netLabelPlacements: outputNetLabelPlacements,
             attachedLabelIndexes,
           })
-          const candidateTraces = preserveAttachedLabelConnectorJunctions({
+          const candidateTraces = preserveAttachedTraceJunctions({
             originalTrace: branchTrace,
             candidateTrace,
             traces: outputTraces,
-            netLabelConnectorTraceIds,
           })
           if (!candidateTraces) continue
           if (
@@ -1272,10 +1278,7 @@ export const alignSameNetJunctions = ({
           }
 
           const movedConnectorsAreClear = candidateTraces.every((trace) => {
-            if (
-              trace.mspPairId === branchTrace.mspPairId ||
-              !netLabelConnectorTraceIds.has(trace.mspPairId)
-            ) {
+            if (trace.mspPairId === branchTrace.mspPairId) {
               return true
             }
             const originalConnector = outputTraces.find(
