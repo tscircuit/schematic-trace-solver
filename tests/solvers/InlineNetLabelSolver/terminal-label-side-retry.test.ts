@@ -50,8 +50,8 @@ const createInput = (rotation: Rotation, blocked = false) => {
       inlineNetLabelHeight: 0.12,
     })),
     availableNetLabelOrientations: {},
-    // This text blocks DATA's alternate side, making the whole flip chain
-    // invalid. Neither member may be partially committed in that case.
+    // This text blocks DATA's alternate side. The final candidate selection
+    // must not keep overlapping text when the neighboring label also moves.
     textBoxes: blocked
       ? [
           {

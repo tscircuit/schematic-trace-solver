@@ -333,6 +333,38 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     this.candidateResults = []
   }
 
+  /** Reuse the normal anchor search for a local trace-clearance proposal. */
+  getNearbyValidPlacements(
+    label: NetLabelPlacement,
+    maxDistance: number,
+  ): NetLabelPlacement[] {
+    const distance = (candidate: Candidate) =>
+      Math.hypot(
+        candidate.anchor.x - label.anchorPoint.x,
+        candidate.anchor.y - label.anchorPoint.y,
+      )
+    const obstacles = [
+      ...this.outputNetLabelPlacements.filter((other) => other !== label),
+      ...(this.params.fixedNetLabelPlacements ?? []),
+    ]
+    return this.buildCandidatesForLabel(label)
+      .filter(
+        (candidate) =>
+          distance(candidate) <= maxDistance &&
+          this.checkCandidate(candidate, label.globalConnNetId, obstacles) ===
+            "ok",
+      )
+      .sort((a, b) => distance(a) - distance(b))
+      .map((candidate) => ({
+        ...label,
+        orientation: candidate.orientation,
+        anchorPoint: candidate.anchor,
+        center: candidate.center,
+        width: candidate.width,
+        height: candidate.height,
+      }))
+  }
+
   private clearActiveSearch() {
     this.currentCollision = null
     this.currentLabelToMove = null

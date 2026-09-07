@@ -2,6 +2,7 @@ import { findLabelCollisions } from "tests/fixtures/findLabelCollisions"
 import { expect, test } from "bun:test"
 import { getAnchoredNetLabelRenderedBounds } from "lib/solvers/InlineNetLabelSolver/getAnchoredNetLabelRenderedBounds"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import inputProblem from "./bug-report-20260907T145640Z.json"
 import "tests/fixtures/matcher"
@@ -77,6 +78,19 @@ test("bug-report-20260907T145640Z", async () => {
     .traces.find((trace) => trace.mspPairId === traceId)!
   const finalTrace = output.traces.find((trace) => trace.mspPairId === traceId)!
   expect(finalTrace).toBeDefined()
+  expect(finalTrace.tracePath).toHaveLength(4)
+  const beforeInline = new Map(
+    solver
+      .inlineNetLabelSolver!.getConstructorParams()[0]
+      .traces.map((trace) => [trace.mspPairId, trace]),
+  )
+  for (const trace of output.traces) {
+    const before = beforeInline.get(trace.mspPairId)
+    if (before)
+      expect(simplifyPath(trace.tracePath).length).toBeLessThanOrEqual(
+        simplifyPath(before.tracePath).length,
+      )
+  }
   expect(finalTrace.tracePath[0]).toEqual(clearedTrace.tracePath[0])
   expect(finalTrace.tracePath.at(-1)).toEqual(clearedTrace.tracePath.at(-1))
   for (const label of output.netLabelPlacements) {
