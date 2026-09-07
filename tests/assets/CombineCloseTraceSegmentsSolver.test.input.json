@@ -1,0 +1,101 @@
+{
+  "inputProblem": {
+    "chips": [
+      {
+        "chipId": "U1",
+        "center": { "x": 0, "y": 0 },
+        "width": 2.0,
+        "height": 1.0,
+        "pins": [
+          { "pinId": "U1.1", "x": -1.0, "y": 0.2 },
+          { "pinId": "U1.2", "x": -1.0, "y": -0.2 },
+          { "pinId": "U1.3", "x": 1.0, "y": 0.2 },
+          { "pinId": "U1.4", "x": 1.0, "y": -0.2 }
+        ]
+      },
+      {
+        "chipId": "U2",
+        "center": { "x": 5, "y": 0 },
+        "width": 2.0,
+        "height": 1.0,
+        "pins": [
+          { "pinId": "U2.1", "x": 4.0, "y": 0.2 },
+          { "pinId": "U2.2", "x": 4.0, "y": -0.2 },
+          { "pinId": "U2.3", "x": 6.0, "y": 0.2 },
+          { "pinId": "U2.4", "x": 6.0, "y": -0.2 }
+        ]
+      }
+    ],
+    "directConnections": [],
+    "netConnections": [
+      { "netId": "NET1", "pinIds": ["U1.3", "U2.1"] },
+      { "netId": "NET1", "pinIds": ["U1.4", "U2.2"] }
+    ],
+    "availableNetLabelOrientations": {},
+    "maxMspPairDistance": 5
+  },
+  "allTraces": [
+    {
+      "mspPairId": "U1.3-U2.1",
+      "dcConnNetId": "net1_dc",
+      "globalConnNetId": "net1_global",
+      "userNetId": "NET1",
+      "pins": [
+        {
+          "pinId": "U1.3",
+          "x": 1.0,
+          "y": 0.2,
+          "chipId": "U1",
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U2.1",
+          "x": 4.0,
+          "y": 0.2,
+          "chipId": "U2",
+          "_facingDirection": "x-"
+        }
+      ],
+      "tracePath": [
+        { "x": 1.0, "y": 0.2 },
+        { "x": 2.5, "y": 0.2 },
+        { "x": 2.5, "y": 0.8 },
+        { "x": 4.0, "y": 0.8 },
+        { "x": 4.0, "y": 0.2 }
+      ],
+      "mspConnectionPairIds": ["U1.3-U2.1"],
+      "pinIds": ["U1.3", "U2.1"]
+    },
+    {
+      "mspPairId": "U1.4-U2.2",
+      "dcConnNetId": "net1_dc",
+      "globalConnNetId": "net1_global",
+      "userNetId": "NET1",
+      "pins": [
+        {
+          "pinId": "U1.4",
+          "x": 1.0,
+          "y": -0.2,
+          "chipId": "U1",
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U2.2",
+          "x": 4.0,
+          "y": -0.2,
+          "chipId": "U2",
+          "_facingDirection": "x-"
+        }
+      ],
+      "tracePath": [
+        { "x": 1.0, "y": -0.2 },
+        { "x": 2.6, "y": -0.2 },
+        { "x": 2.6, "y": 0.7 },
+        { "x": 4.0, "y": 0.7 },
+        { "x": 4.0, "y": -0.2 }
+      ],
+      "mspConnectionPairIds": ["U1.4-U2.2"],
+      "pinIds": ["U1.4", "U2.2"]
+    }
+  ]
+}
