@@ -1,18 +1,18 @@
 import type { GraphicsObject } from "graphics-debug"
+import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { InputProblem } from "lib/types/InputProblem"
-import type { FacingDirection } from "lib/utils/dir"
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { rectIntersectsAnyTrace } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import {
-  getDimsForOrientation,
   getCenterFromAnchor,
+  getDimsForOrientation,
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import { rectIntersectsAnyTrace } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
-import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type { InputProblem } from "lib/types/InputProblem"
+import type { FacingDirection } from "lib/utils/dir"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
@@ -147,8 +147,24 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     return getRectBounds(label.center, label.width, label.height)
   }
 
+  /**
+   * Identifies a specific *pair of labels*, not merely the pair of nets they
+   * belong to.
+   *
+   * Keying on `globalConnNetId` alone collapses every label pair drawn from
+   * the same two nets into one key — on the larger boards a single net pair
+   * can account for over a hundred label pairs. Giving up on one of them then
+   * suppressed all the others, so overlaps that were never examined looked
+   * like overlaps the search had rejected.
+   *
+   * `pinIds` identifies the individual label, so this stays stable across
+   * relocations of the same label while still separating distinct pairs.
+   */
   private collisionKey(a: NetLabelPlacement, b: NetLabelPlacement) {
-    return [a.globalConnNetId, b.globalConnNetId].sort().join("::")
+    const labelKey = (label: NetLabelPlacement) =>
+      `${label.globalConnNetId}#${[...label.pinIds].sort().join(",")}`
+
+    return [labelKey(a), labelKey(b)].sort().join("::")
   }
 
   private findNextCollidingPair():
