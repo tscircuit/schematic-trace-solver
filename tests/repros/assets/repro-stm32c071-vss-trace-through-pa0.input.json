@@ -1,0 +1,264 @@
+{
+  "chips": [
+    {
+      "chipId": "U_MCU",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 1.6,
+      "height": 2.2,
+      "pins": [
+        {
+          "pinId": "U_MCU.1",
+          "x": -0.8,
+          "y": 0.9
+        },
+        {
+          "pinId": "U_MCU.2",
+          "x": -0.8,
+          "y": 0.7
+        },
+        {
+          "pinId": "U_MCU.3",
+          "x": -0.8,
+          "y": 0.5
+        },
+        {
+          "pinId": "U_MCU.4",
+          "x": -0.8,
+          "y": 0.3
+        },
+        {
+          "pinId": "U_MCU.5",
+          "x": -0.8,
+          "y": 0.1
+        },
+        {
+          "pinId": "U_MCU.6",
+          "x": -0.8,
+          "y": -0.1
+        },
+        {
+          "pinId": "U_MCU.7",
+          "x": -0.8,
+          "y": -0.3
+        },
+        {
+          "pinId": "U_MCU.8",
+          "x": -0.8,
+          "y": -0.5
+        },
+        {
+          "pinId": "U_MCU.9",
+          "x": -0.8,
+          "y": -0.7
+        },
+        {
+          "pinId": "U_MCU.10",
+          "x": -0.8,
+          "y": -0.9
+        },
+        {
+          "pinId": "U_MCU.11",
+          "x": 0.8,
+          "y": -0.9
+        },
+        {
+          "pinId": "U_MCU.12",
+          "x": 0.8,
+          "y": -0.7
+        },
+        {
+          "pinId": "U_MCU.13",
+          "x": 0.8,
+          "y": -0.5
+        },
+        {
+          "pinId": "U_MCU.14",
+          "x": 0.8,
+          "y": -0.3
+        },
+        {
+          "pinId": "U_MCU.15",
+          "x": 0.8,
+          "y": -0.1
+        },
+        {
+          "pinId": "U_MCU.16",
+          "x": 0.8,
+          "y": 0.1
+        },
+        {
+          "pinId": "U_MCU.17",
+          "x": 0.8,
+          "y": 0.3
+        },
+        {
+          "pinId": "U_MCU.18",
+          "x": 0.8,
+          "y": 0.5
+        },
+        {
+          "pinId": "U_MCU.19",
+          "x": 0.8,
+          "y": 0.7
+        },
+        {
+          "pinId": "U_MCU.20",
+          "x": 0.8,
+          "y": 0.9
+        }
+      ]
+    },
+    {
+      "chipId": "C_MCU",
+      "center": {
+        "x": -2.6,
+        "y": 0.19
+      },
+      "width": 0.53,
+      "height": 1.1,
+      "pins": [
+        {
+          "pinId": "C_MCU.1",
+          "x": -2.6,
+          "y": 0.74
+        },
+        {
+          "pinId": "C_MCU.2",
+          "x": -2.6,
+          "y": -0.36
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": [
+        "C_MCU.1",
+        "U_MCU.4"
+      ],
+      "netId": "C_MCU.pin1 to U_MCU.VDD"
+    },
+    {
+      "pinIds": [
+        "C_MCU.2",
+        "U_MCU.5"
+      ],
+      "netId": "C_MCU.pin2 to U_MCU.VSS"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "V3V3",
+      "pinIds": [
+        "C_MCU.1",
+        "U_MCU.4"
+      ],
+      "netLabelWidth": 0.72
+    },
+    {
+      "netId": "GND",
+      "pinIds": [
+        "C_MCU.2",
+        "U_MCU.5"
+      ],
+      "netLabelWidth": 0.6
+    },
+    {
+      "netId": "SWD_NRST",
+      "pinIds": [
+        "U_MCU.6"
+      ],
+      "netLabelWidth": 1.2
+    },
+    {
+      "netId": "SWDIO",
+      "pinIds": [
+        "U_MCU.18"
+      ],
+      "netLabelWidth": 0.84
+    },
+    {
+      "netId": "SWCLK",
+      "pinIds": [
+        "U_MCU.19"
+      ],
+      "netLabelWidth": 0.84
+    },
+    {
+      "netId": "USER_LED_PA8",
+      "pinIds": [
+        "U_MCU.15"
+      ],
+      "netLabelWidth": 1.68
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "V3V3": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ],
+    "SWD_NRST": [
+      "x-",
+      "x+"
+    ],
+    "SWDIO": [
+      "x-",
+      "x+"
+    ],
+    "SWCLK": [
+      "x-",
+      "x+"
+    ],
+    "USER_LED_PA8": [
+      "x-",
+      "x+"
+    ]
+  },
+  "textBoxes": [
+    {
+      "chipId": "U_MCU",
+      "center": {
+        "x": -0.2,
+        "y": 1.18
+      },
+      "width": 0.55,
+      "height": 0.15,
+      "text": "U_MCU"
+    },
+    {
+      "chipId": "U_MCU",
+      "center": {
+        "x": -0.02,
+        "y": -1.22
+      },
+      "width": 1.36,
+      "height": 0.16,
+      "text": "STM32C071FBP6"
+    },
+    {
+      "chipId": "C_MCU",
+      "center": {
+        "x": -3.05,
+        "y": 0.36
+      },
+      "width": 0.54,
+      "height": 0.14,
+      "text": "C_MCU"
+    },
+    {
+      "chipId": "C_MCU",
+      "center": {
+        "x": -2.28,
+        "y": -0.11
+      },
+      "width": 0.5,
+      "height": 0.15,
+      "text": "100n"
+    }
+  ]
+}
