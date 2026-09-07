@@ -15,6 +15,12 @@ test("repro TIDA-010076 page 02 net-label placement", () => {
   expect(inputProblem.chips).toHaveLength(21)
   expect(inputProblem.directConnections).toHaveLength(13)
   expect(inputProblem.netConnections).toHaveLength(96)
+  expect(
+    inputProblem.netConnections
+      .filter((connection) => connection.isGround)
+      .map((connection) => connection.netId)
+      .sort(),
+  ).toEqual(["NET_AGND", "NET_GND"])
   expect(inputProblem.availableNetLabelOrientations?.NET_AGND).toEqual(["y-"])
 
   const solver = new SchematicTracePipelineSolver(inputProblem, {
