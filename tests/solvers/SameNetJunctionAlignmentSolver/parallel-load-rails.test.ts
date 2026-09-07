@@ -290,3 +290,27 @@ for (const net of ["rail", "foreign"]) {
     )
   })
 }
+
+for (const reversePath of [false, true]) {
+  test(`preserves a recovered branch endpoint when its rail moves (reversed: ${reversePath})`, () => {
+    const fixture = createFixture()
+    const supply = fixture.traces[1]!
+    supply.pins[0].y = 0.9
+    supply.tracePath[0]!.y = 0.9
+    supply.tracePath[1]!.y = 0.9
+    fixture.inputProblem.chips[3]!.center.y = 0.9
+    const recovered = fixture.traces[2]!
+    recovered.tracePath = recovered.tracePath.slice(0, 4)
+    if (reversePath) recovered.tracePath.reverse()
+    const result = alignSameNetJunctions(fixture)
+    const parallel = result.traces.find(
+      (trace) => trace.mspPairId === "parallel",
+    )!
+    const branch = result.traces.find((trace) => trace.mspPairId === "return")!
+    const junction = fixture.point(1.2, 0.9)
+    expect(tracePathContainsPoint(parallel.tracePath, junction)).toBe(true)
+    expect(tracePathContainsPoint(branch.tracePath, junction)).toBe(true)
+    expect(branch.tracePath).toContainEqual(fixture.point(2, -1))
+    expect(branch.tracePath).not.toContainEqual(fixture.point(1.2, 0.8))
+  })
+}
