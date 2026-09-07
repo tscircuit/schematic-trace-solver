@@ -1,6 +1,7 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { getParallelNetLabelPolicy } from "lib/solvers/LongDistancePairSolver/getParallelNetLabelPolicy"
 import { doesPairCrossRestrictedCenterLines } from "lib/solvers/MspConnectionPairSolver/doesPairCrossRestrictedCenterLines"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
@@ -84,6 +85,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
 
   private chipMap: Record<ChipId, InputChip>
   private pinMap: Map<PinId, TraceRecoveryPin>
+  private canRecoverParallelPair: ReturnType<typeof getParallelNetLabelPolicy>
   private queuedCandidates: CandidatePair[]
   private currentCandidate: CandidatePair | null = null
   declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
@@ -99,6 +101,15 @@ export class NetLabelToTraceSolver extends BaseSolver {
     )
     this.chipMap = chipMap
     this.pinMap = pinMap
+    this.canRecoverParallelPair = getParallelNetLabelPolicy(
+      this.inputProblem,
+      getConnectivityMapsFromInputProblem(this.inputProblem).netConnMap,
+      new Set(
+        input.traces
+          .filter((trace) => trace.pinIds.length > 1)
+          .flatMap((trace) => trace.pinIds),
+      ),
+    )
 
     this.queuedCandidates = this.buildCandidatePairs()
     this.stats.candidateCount = this.queuedCandidates.length
@@ -180,6 +191,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
           const firstPin = this.pinMap.get(firstLabel.pinIds[0]!)
           const secondPin = this.pinMap.get(secondLabel.pinIds[0]!)
           if (!firstPin || !secondPin) continue
+          if (!this.canRecoverParallelPair(firstPin, secondPin)) continue
           const perpendicularOffset = getPerpendicularOffset(
             firstPin,
             secondPin,
@@ -354,6 +366,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
               const firstPin = this.pinMap.get(firstPinId)
               const secondPin = this.pinMap.get(secondPinId)
               if (!firstPin || !secondPin) continue
+              if (!this.canRecoverParallelPair(firstPin, secondPin)) continue
               if (isDirectConnection && firstPin.chipId === secondPin.chipId)
                 continue
               const perpendicularOffset = getPerpendicularOffset(
