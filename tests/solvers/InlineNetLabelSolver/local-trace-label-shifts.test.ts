@@ -85,7 +85,13 @@ for (const rotation of [0, 1, 2, 3])
     expect(output).toEqual(saved)
   })
 
-test.each(["chip", "parallel wire", "new crossing", "junction"] as const)(
+test.each([
+  "chip",
+  "parallel wire",
+  "new crossing",
+  "junction",
+  "unconnected pin",
+] as const)(
   "does not force a detour through a blocked corridor: %s",
   (obstacle) => {
     const { input, output } = fixture()
@@ -127,6 +133,14 @@ test.each(["chip", "parallel wire", "new crossing", "junction"] as const)(
         ]),
         globalConnNetId: "wire",
       })
+    if (obstacle === "unconnected pin")
+      input.chips.push({
+        chipId: "ports",
+        center: { x: 10, y: 10 },
+        width: 1,
+        height: 1,
+        pins: [0.79, 1.21].map((x) => ({ pinId: `NC${x}`, x, y: 0 })),
+      })
     expect([...getLocalTraceLabelShifts(input, output)]).toEqual([])
   },
 )
@@ -148,6 +162,7 @@ test("moves a neighboring power label with its short connector to free a side co
     ]),
     pinIds: ["power.1"],
   }
+  power.pins = [power.pins[0], power.pins[0]]
   output.traces.push(power)
   output.netLabelPlacements.push({
     globalConnNetId: "power",
@@ -191,6 +206,7 @@ test("clears a moved rail's own tag and a neighboring power label in one proposa
     ]),
     pinIds: ["power.1"],
   }
+  power.pins = [power.pins[0], power.pins[0]]
   output.traces.push(power)
   output.netLabelPlacements.push(
     {

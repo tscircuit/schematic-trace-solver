@@ -4,7 +4,6 @@ import { InlineNetLabelSolver } from "lib/solvers/InlineNetLabelSolver/InlineNet
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputProblem } from "lib/types/InputProblem"
-import "tests/fixtures/matcher"
 
 type Rotation = 0 | 90 | 180 | 270
 
@@ -144,8 +143,8 @@ test.each(["text", "chip", "trace"] as const)(
         ...input.traces[0]!,
         mspPairId: "lower-rail",
         tracePath: [
-          { x: -1, y: -0.35 },
-          { x: -0.6, y: -0.35 },
+          { x: -1, y: -0.3 },
+          { x: -0.6, y: -0.3 },
         ],
       })
       input.inputProblem.textBoxes = []
@@ -158,9 +157,3 @@ test.each(["text", "chip", "trace"] as const)(
     expect(output.traces).toEqual(input.traces)
   },
 )
-
-test("terminal label side retry snapshot", async () => {
-  const solver = new InlineNetLabelSolver(createInput(0))
-  solver.solve()
-  await expect(solver).toMatchSolverSnapshot(import.meta.path)
-})

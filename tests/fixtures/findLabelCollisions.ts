@@ -49,7 +49,8 @@ export const findLabelCollisions = (output: {
     labels
       .filter(
         (label) =>
-          label.globalConnNetId !== trace.globalConnNetId &&
+          ("axis" in label ||
+            label.globalConnNetId !== trace.globalConnNetId) &&
           trace.tracePath
             .slice(1)
             .some((end, index) =>

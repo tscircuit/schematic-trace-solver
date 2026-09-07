@@ -54,7 +54,7 @@ export const getOutputLabelCollisionKeys = (
   for (const trace of traces)
     for (const { label, key, bounds } of labels) {
       if (
-        label.globalConnNetId !== trace.globalConnNetId &&
+        ("axis" in label || label.globalConnNetId !== trace.globalConnNetId) &&
         trace.tracePath
           .slice(1)
           .some((end, index) =>

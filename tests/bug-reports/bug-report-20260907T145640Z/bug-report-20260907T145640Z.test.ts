@@ -106,7 +106,14 @@ test("bug-report-20260907T145640Z", async () => {
   }
   // Power labels in the supplied input are not opted in. Preserve them rather
   // than overriding the caller's policy to make every label appear inline.
-  for (const netId of ["PMID", "OLED_3V", "V3", "PACK_P", "GAUGE_VDD"]) {
+  for (const netId of [
+    "PMID",
+    "OLED_3V",
+    "V3",
+    "PACK_P",
+    "GAUGE_VDD",
+    "BAT_SYS",
+  ]) {
     expect(
       output.netLabelPlacements.some((label) => label.netId === netId),
     ).toBe(true)

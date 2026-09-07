@@ -9,7 +9,10 @@ import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
 import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
 import { getInlineLabelObstacles } from "./getInlineLabelObstacles"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
-import type { InlineNetLabelOutput } from "./InlineNetLabelSolver"
+import type {
+  InlineNetLabelOutput,
+  InlineNetLabelPlacement,
+} from "./InlineNetLabelSolver"
 
 type Output = Omit<InlineNetLabelOutput, "inputProblem">
 const EPS = 1e-6
@@ -30,7 +33,7 @@ const intersections = (a: Point[], b: Point[]) =>
   )
 
 /**
- * Propose a sideways shift of an existing interior leg. Never add corners,
+ * Propose a sideways shift of an existing leg and its connected rail. Never add corners,
  * route around a component, or search beyond the obstructing label column.
  * A leaf power label may move sideways with its existing short connector.
  * The caller must replan inline labels before committing a proposal.
@@ -38,10 +41,11 @@ const intersections = (a: Point[], b: Point[]) =>
 export function* getLocalTraceLabelShifts(
   inputProblem: InputProblem,
   output: Output,
+  pendingInlinePlacements: InlineNetLabelPlacement[] = [],
 ): Generator<Output> {
   const { fixedLabels, terminalTraces } = getInlineLabelObstacles(
     inputProblem,
-    output.inlineNetLabelPlacements,
+    [...output.inlineNetLabelPlacements, ...pendingInlinePlacements],
   )
   const obstacles = [
     ...inputProblem.chips.map((chip) => ({
@@ -58,54 +62,106 @@ export function* getLocalTraceLabelShifts(
     minY: label.center.y - label.height / 2,
     maxY: label.center.y + label.height / 2,
   }))
-  for (const [traceIndex, trace] of output.traces.entries()) {
+  const pinPositions = [
+    ...inputProblem.chips.flatMap((chip) => chip.pins),
+    ...output.traces.flatMap((trace) => trace.pins),
+  ]
+  for (const trace of output.traces) {
     const path = simplifyPath(trace.tracePath)
-    for (let i = 1; i < path.length - 2; i++) {
+    for (let i = 0; i < path.length - 1; i++) {
       const a = path[i]!,
         b = path[i + 1]!
       const axis = Math.abs(a.x - b.x) < EPS ? "x" : "y"
       const along = axis === "x" ? "y" : "x"
-      if (
-        Math.abs(a[axis] - b[axis]) > EPS ||
-        Math.abs(path[i - 1]![along] - a[along]) > EPS ||
-        Math.abs(path[i + 2]![along] - b[along]) > EPS
-      )
-        continue
+      if (Math.abs(a[axis] - b[axis]) > EPS || same(a, b)) continue
       const blocking = [
         ...output.netLabelPlacements
           .filter((label) => label.globalConnNetId !== trace.globalConnNetId)
           .map(getAnchoredNetLabelRenderedBounds),
-        ...inlineBounds.filter(
-          (_, index) =>
-            fixedLabels[index]!.globalConnNetId !== trace.globalConnNetId,
-        ),
+        ...inlineBounds,
       ].filter((bounds) => segmentIntersectsRect(a, b, bounds))
       if (!blocking.length) continue
+      // Cleanup can split one rail across several trace records, including a
+      // branch that starts at a junction instead of at its pin. Shift the
+      // connected collinear rail and its branch ends together.
+      let low = Math.min(a[along], b[along])
+      let high = Math.max(a[along], b[along])
+      let expanded = true
+      while (expanded) {
+        expanded = false
+        for (const other of output.traces) {
+          if (other.globalConnNetId !== trace.globalConnNetId) continue
+          for (let j = 1; j < other.tracePath.length; j++) {
+            const p = other.tracePath[j - 1]!,
+              q = other.tracePath[j]!
+            if (
+              Math.abs(p[axis] - a[axis]) > EPS ||
+              Math.abs(q[axis] - a[axis]) > EPS
+            )
+              continue
+            const min = Math.min(p[along], q[along]),
+              max = Math.max(p[along], q[along])
+            if (max < low - EPS || min > high + EPS) continue
+            if (min < low || max > high) expanded = true
+            low = Math.min(low, min)
+            high = Math.max(high, max)
+          }
+        }
+      }
+      const onRail = (p: Point) =>
+        Math.abs(p[axis] - a[axis]) < EPS &&
+        p[along] >= low - EPS &&
+        p[along] <= high + EPS
+      if (pinPositions.some(onRail)) continue
       const minKey = axis === "x" ? "minX" : "minY"
       const maxKey = axis === "x" ? "maxX" : "maxY"
       const localWidth = Math.max(
         ...blocking.map((bounds) => bounds[maxKey] - bounds[minKey]),
       )
+      const railLabelBounds = output.netLabelPlacements
+        .filter(
+          (label) =>
+            label.globalConnNetId === trace.globalConnNetId &&
+            onRail(label.anchorPoint),
+        )
+        .map(getAnchoredNetLabelRenderedBounds)
       const coordinates = [
         ...new Set(
           blocking.flatMap((bounds) => [
             bounds[minKey] - CLEARANCE,
             bounds[maxKey] + CLEARANCE,
+            ...railLabelBounds
+              .filter((own) => boundsOverlap(own, bounds))
+              .flatMap((own) => [
+                a[axis] + bounds[minKey] - CLEARANCE - own[maxKey],
+                a[axis] + bounds[maxKey] + CLEARANCE - own[minKey],
+              ]),
           ]),
         ),
       ].sort((x, y) => Math.abs(x - a[axis]) - Math.abs(y - a[axis]))
       for (const coordinate of coordinates) {
         const distance = coordinate - a[axis]
         if (Math.abs(distance) > localWidth + 2 * CLEARANCE) continue
-        const shiftedPath = path.map((p, index) =>
-          index === i || index === i + 1 ? translate(p, axis, distance) : p,
-        )
-        const traces = [...output.traces]
-        traces[traceIndex] = { ...trace, tracePath: shiftedPath }
+        const traces = output.traces.map((other) => {
+          if (
+            other.globalConnNetId !== trace.globalConnNetId ||
+            !other.tracePath.some(onRail)
+          )
+            return other
+          return {
+            ...other,
+            tracePath: other.tracePath.map((p) =>
+              onRail(p) ? translate(p, axis, distance) : p,
+            ),
+          }
+        })
+        const shiftedPaths = traces
+          .filter((other, index) => other !== output.traces[index])
+          .map((other) => other.tracePath)
         let labels = output.netLabelPlacements.map((label) => {
           if (
             label.globalConnNetId !== trace.globalConnNetId ||
-            !tracePathContainsPoint([a, b], label.anchorPoint)
+            !onRail(label.anchorPoint)
           )
             return label
           return {
@@ -129,7 +185,14 @@ export function* getLocalTraceLabelShifts(
           const clearanceEdges = movedOwnLabelBounds
             .filter((own) => boundsOverlap(own, bounds))
             .map((own) => own[distance > 0 ? maxKey : minKey])
-          if (hits(shiftedPath, bounds) && !hits(path, bounds))
+          if (
+            shiftedPaths.some((p) => hits(p, bounds)) &&
+            !output.traces.some(
+              (other) =>
+                other.globalConnNetId === trace.globalConnNetId &&
+                hits(other.tracePath, bounds),
+            )
+          )
             clearanceEdges.push(coordinate)
           if (!clearanceEdges.length) continue
           const connectorIndex = traces.findIndex(
@@ -199,6 +262,18 @@ export function* getLocalTraceLabelShifts(
           if (proposed === original) continue
           const candidate = proposed.tracePath
           const previous = original.tracePath
+          if (
+            candidate
+              .slice(1)
+              .some(
+                (p, index) =>
+                  Math.abs(p.x - candidate[index]!.x) > EPS &&
+                  Math.abs(p.y - candidate[index]!.y) > EPS,
+              )
+          ) {
+            blocked = true
+            break
+          }
           // Keep existing pin exits and all shared junctions. In particular,
           // moving a rail must not disconnect a pin midway along it.
           const dot = (a: Point, b: Point, c: Point, d: Point) =>
@@ -216,23 +291,39 @@ export function* getLocalTraceLabelShifts(
             blocked = true
             break
           }
+          const junctions = output.traces
+            .filter(
+              (other) =>
+                other !== original &&
+                other.globalConnNetId === original.globalConnNetId,
+            )
+            .flatMap((other) => [
+              ...other.tracePath,
+              ...intersections(previous, other.tracePath),
+            ])
+            .filter((p) => tracePathContainsPoint(previous, p))
+            .map((p) =>
+              original.globalConnNetId === trace.globalConnNetId && onRail(p)
+                ? translate(p, axis, distance)
+                : p,
+            )
           const protectedPoints = [
-            ...inputProblem.chips.flatMap((chip) => chip.pins),
-            ...output.traces
-              .filter(
-                (other) =>
-                  other !== original &&
-                  other.globalConnNetId === original.globalConnNetId,
-              )
-              .flatMap((other) => [
-                ...other.tracePath,
-                ...intersections(previous, other.tracePath),
-              ]),
-          ].filter((p) => tracePathContainsPoint(previous, p))
+            ...pinPositions.filter((p) => tracePathContainsPoint(previous, p)),
+            ...junctions,
+          ]
           if (
             protectedPoints.some(
               (p) => !tracePathContainsPoint(candidate, p),
             ) ||
+            pinPositions.some((p) => {
+              const clearance = {
+                minX: p.x - CLEARANCE,
+                maxX: p.x + CLEARANCE,
+                minY: p.y - CLEARANCE,
+                maxY: p.y + CLEARANCE,
+              }
+              return hits(candidate, clearance) && !hits(previous, clearance)
+            }) ||
             obstacles.some(
               (bounds) => hits(candidate, bounds) && !hits(previous, bounds),
             )

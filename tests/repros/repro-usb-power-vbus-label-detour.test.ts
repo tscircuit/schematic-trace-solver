@@ -66,9 +66,36 @@ test("keeps the compact VBUS route and USB labels clear of neighboring wires", (
   expect(
     usbHighSpeedInlineLabels.some(
       (label) =>
-        label.pinIds.includes("schematic_port_191") && label.side === "y-",
+        label.pinIds.includes("schematic_port_191") && label.side === "y+",
     ),
   ).toBe(true)
+  expect(usbHighSpeedAnchoredLabels).toEqual([])
+  expect(usbHighSpeedInlineLabels).toHaveLength(4)
+  expect(usbHighSpeedInlineLabels.every((label) => label.side === "y+")).toBe(
+    true,
+  )
+  const dm = usbHighSpeedInlineLabels.find((label) =>
+    label.pinIds.includes("schematic_port_191"),
+  )!
+  const vbusConnector = inlineOutput.traces.find((trace) =>
+    trace.pinIds.includes("schematic_port_192"),
+  )!
+  expect(dm.center.y - dm.height / 2).toBeGreaterThan(dm.stubTracePath![0].y)
+  expect(dm.center.y + dm.height / 2).toBeLessThan(
+    vbusConnector.tracePath[0]!.y,
+  )
+  for (const pinId of ["schematic_port_188", "schematic_port_190"]) {
+    expect(
+      inputProblem.directConnections
+        .filter((connection) => connection.pinIds.includes(pinId))
+        .every((connection) => !connection.allowInlineNetLabel),
+    ).toBe(true)
+    expect(
+      inlineOutput.netLabelPlacements.some((label) =>
+        label.pinIds.includes(pinId),
+      ),
+    ).toBe(true)
+  }
   const collisions = findLabelCollisions(inlineOutput)
   expect(
     collisions.traceLabels.filter(({ label }) =>

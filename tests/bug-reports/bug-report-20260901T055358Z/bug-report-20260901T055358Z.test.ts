@@ -73,5 +73,20 @@ test("bug-report-20260901T055358Z", () => {
       ),
     ).toBe(true)
   }
+  // IOVDD4 is a power-net anchor, not an opted-in inline signal.
+  const power = inputProblem.netConnections.find((connection) =>
+    connection.pinIds.includes("schematic_port_61"),
+  )!
+  expect(power.allowInlineNetLabel).not.toBe(true)
+  expect(
+    inlineOutput.netLabelPlacements.some((label) =>
+      label.pinIds.includes("schematic_port_61"),
+    ),
+  ).toBe(true)
+  expect(
+    inlineOutput.inlineNetLabelPlacements.some((label) =>
+      label.pinIds.includes("schematic_port_61"),
+    ),
+  ).toBe(false)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
