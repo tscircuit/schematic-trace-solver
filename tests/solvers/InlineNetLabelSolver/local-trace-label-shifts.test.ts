@@ -4,7 +4,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import type { InlineNetLabelOutput } from "lib/solvers/InlineNetLabelSolver/InlineNetLabelSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getLocalTraceLabelShifts } from "lib/solvers/InlineNetLabelSolver/getLocalTraceLabelShifts"
-import { findLabelCollisions } from "tests/fixtures/findLabelCollisions"
+import { getOutputLabelCollisionKeys } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisionKeys"
 
 const trace = (net: string, path: Point[]): SolvedTracePath => ({
   mspPairId: net,
@@ -77,10 +77,7 @@ for (const rotation of [0, 1, 2, 3])
       expect(path).toHaveLength(4)
       expect(path[0]).toEqual(output.traces[0]!.tracePath[0])
       expect(path.at(-1)).toEqual(output.traces[0]!.tracePath.at(-1))
-      expect(findLabelCollisions(proposal)).toEqual({
-        labelPairs: [],
-        traceLabels: [],
-      })
+      expect([...getOutputLabelCollisionKeys(proposal)]).toEqual([])
     }
     expect(output).toEqual(saved)
   })
@@ -182,10 +179,7 @@ test("moves a neighboring power label with its short connector to free a side co
     expect(proposal.traces[1]!.tracePath).toHaveLength(3)
     expect(proposal.traces[1]!.tracePath[0]).toEqual(power.tracePath[0])
     expect(proposal.netLabelPlacements[1]!.anchorPoint.x).toBeGreaterThan(1.4)
-    expect(findLabelCollisions(proposal)).toEqual({
-      labelPairs: [],
-      traceLabels: [],
-    })
+    expect([...getOutputLabelCollisionKeys(proposal)]).toEqual([])
   }
 })
 
@@ -241,10 +235,7 @@ test("clears a moved rail's own tag and a neighboring power label in one proposa
     ])
     expect(proposal.netLabelPlacements[1]!.anchorPoint.x).toBeCloseTo(1.25)
     expect(proposal.netLabelPlacements[2]!.anchorPoint.x).toBeGreaterThan(1.25)
-    expect(findLabelCollisions(proposal)).toEqual({
-      labelPairs: [],
-      traceLabels: [],
-    })
+    expect([...getOutputLabelCollisionKeys(proposal)]).toEqual([])
   }
   expect(output).toEqual(saved)
 })

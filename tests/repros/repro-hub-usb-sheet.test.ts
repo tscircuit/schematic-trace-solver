@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { findLabelCollisions } from "tests/fixtures/findLabelCollisions"
+import { getOutputLabelCollisionKeys } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisionKeys"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import { isVertical } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
@@ -68,10 +68,10 @@ test("repro hub USB sheet schematic trace routing", () => {
       ),
   ).toBe(false)
   expect(
-    findLabelCollisions(
-      solver.inlineNetLabelSolver!.getOutput(),
-    ).traceLabels.filter(
-      ({ traceId }) => traceId === "schematic_port_375-schematic_port_373",
+    [
+      ...getOutputLabelCollisionKeys(solver.inlineNetLabelSolver!.getOutput()),
+    ].filter((key) =>
+      key.startsWith("trace:schematic_port_375-schematic_port_373/"),
     ),
   ).toEqual([])
   expect(solver).toMatchSolverSnapshot(import.meta.path)

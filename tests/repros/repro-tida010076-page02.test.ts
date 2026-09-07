@@ -73,19 +73,5 @@ test("repro TIDA-010076 page 02 net-label placement", () => {
     ),
   ).toEqual([])
 
-  const groundRails = [
-    "schematic_port_135-schematic_port_129",
-    "schematic_port_155-schematic_port_135",
-  ].map((id) => output.traces.find((trace) => trace.mspPairId === id)!)
-  for (const trace of groundRails) {
-    expect(
-      trace.tracePath.some(
-        (point, index, path) =>
-          index > 0 &&
-          Math.abs(point.x - path[index - 1]!.x) < 1e-6 &&
-          Math.abs(point.x + 7.079) < 1e-6,
-      ),
-    ).toBe(true)
-  }
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

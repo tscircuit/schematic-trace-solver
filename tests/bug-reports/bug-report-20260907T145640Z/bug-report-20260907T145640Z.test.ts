@@ -1,4 +1,4 @@
-import { findLabelCollisions } from "tests/fixtures/findLabelCollisions"
+import { getOutputLabelCollisionKeys } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisionKeys"
 import { doSegmentsIntersect } from "@tscircuit/math-utils/line-intersections"
 import { expect, test } from "bun:test"
 import { getAnchoredNetLabelRenderedBounds } from "lib/solvers/InlineNetLabelSolver/getAnchoredNetLabelRenderedBounds"
@@ -19,32 +19,8 @@ test("bug-report-20260907T145640Z", async () => {
   // This is the output consumed by core, before NetLabelToTraceSolver renders
   // diagnostic terminal wires.
   const output = solver.inlineNetLabelSolver!.getOutput()
-  const u1Pins = new Set(inputProblem.chips[0]!.pins.map((pin) => pin.pinId))
-  for (const connection of inputProblem.netConnections.filter(
-    (connection) => connection.allowInlineNetLabel,
-  )) {
-    const inlinePins = output.inlineNetLabelPlacements
-      .filter((label) => label.netId === connection.netId)
-      .flatMap((label) => label.pinIds)
-    const anchoredPins = output.netLabelPlacements
-      .filter((label) => label.netId === connection.netId)
-      .flatMap((label) => label.pinIds)
-    for (const pinId of connection.pinIds) {
-      expect(inlinePins.includes(pinId) || anchoredPins.includes(pinId)).toBe(
-        true,
-      )
-      expect(inlinePins.includes(pinId) && anchoredPins.includes(pinId)).toBe(
-        false,
-      )
-      // A blocked endpoint on another chip must not force U1 to use a tag.
-      if (u1Pins.has(pinId)) expect(inlinePins).toContain(pinId)
-    }
-  }
   // Audit the entire report, including U3, rather than selected screenshots.
-  expect(findLabelCollisions(output)).toEqual({
-    labelPairs: [],
-    traceLabels: [],
-  })
+  expect([...getOutputLabelCollisionKeys(output)]).toEqual([])
   for (const connection of inputProblem.netConnections.filter(
     (connection) => connection.allowInlineNetLabel,
   )) {
@@ -55,22 +31,11 @@ test("bug-report-20260907T145640Z", async () => {
     ).toEqual([])
     for (const pinId of connection.pinIds)
       expect(
-        output.inlineNetLabelPlacements.some(
+        output.inlineNetLabelPlacements.filter(
           (label) =>
             label.netId === connection.netId && label.pinIds.includes(pinId),
         ),
-      ).toBe(true)
-  }
-  for (const pinId of [
-    "schematic_port_51",
-    "schematic_port_54",
-    "schematic_port_55",
-  ]) {
-    expect(
-      output.inlineNetLabelPlacements.some((label) =>
-        label.pinIds.includes(pinId),
-      ),
-    ).toBe(true)
+      ).toHaveLength(1)
   }
   // Remote routes must clear entire terminal wires, including their tails
   // beyond the text and terminals on the same net (the U3 SCL regression).

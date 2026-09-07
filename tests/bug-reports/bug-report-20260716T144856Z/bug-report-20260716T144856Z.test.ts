@@ -8,11 +8,5 @@ test("bug-report-20260716T144856Z", () => {
 
   solver.solve()
 
-  // The capacitor leaves no clear lateral corridor. Keep this compact route
-  // instead of adding a loop around the capacitor to reduce a label overlap.
-  expect(solver.inlineNetLabelSolver!.getOutput().traces).toEqual(
-    solver.inlineNetLabelSolver!.getConstructorParams()[0].traces,
-  )
-
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

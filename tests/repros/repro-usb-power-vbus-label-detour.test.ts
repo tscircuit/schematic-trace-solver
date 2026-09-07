@@ -1,4 +1,4 @@
-import { findLabelCollisions } from "tests/fixtures/findLabelCollisions"
+import { getOutputLabelCollisionKeys } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisionKeys"
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -63,12 +63,6 @@ test("keeps the compact VBUS route and USB labels clear of neighboring wires", (
     { x: 12.8, y: -5.8 },
     { x: 13, y: -5.8 },
   ])
-  expect(
-    usbHighSpeedInlineLabels.some(
-      (label) =>
-        label.pinIds.includes("schematic_port_191") && label.side === "y+",
-    ),
-  ).toBe(true)
   expect(usbHighSpeedAnchoredLabels).toEqual([])
   expect(usbHighSpeedInlineLabels).toHaveLength(4)
   expect(usbHighSpeedInlineLabels.every((label) => label.side === "y+")).toBe(
@@ -96,15 +90,16 @@ test("keeps the compact VBUS route and USB labels clear of neighboring wires", (
       ),
     ).toBe(true)
   }
-  const collisions = findLabelCollisions(inlineOutput)
+  const usbLabelKeys = usbHighSpeedInlineLabels.map(
+    (label) => `${label.globalConnNetId}:${[...label.pinIds].sort().join(",")}`,
+  )
   expect(
-    collisions.traceLabels.filter(({ label }) =>
-      label.netId?.startsWith("USB_HS_"),
-    ),
-  ).toEqual([])
-  expect(
-    collisions.labelPairs.filter((pair) =>
-      pair.some((label) => label.netId?.startsWith("USB_HS_")),
+    [...getOutputLabelCollisionKeys(inlineOutput)].filter((collision) =>
+      usbLabelKeys.some((key) =>
+        collision
+          .split("/")
+          .some((part) => part === key || part === `labels:${key}`),
+      ),
     ),
   ).toEqual([])
   for (const pinId of [
