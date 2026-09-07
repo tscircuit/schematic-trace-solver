@@ -324,9 +324,10 @@ test("an obstructed routed component keeps its wire while a disconnected endpoin
 
   inputProblem.textBoxes = [
     {
-      center: { x: -0.9, y: -0.09 },
+      // Both sides of J1.2 are blocked, including the restored flip fallback.
+      center: { x: -0.9, y: -0.2 },
       width: 0.8,
-      height: 0.12,
+      height: 0.4,
       text: "fixed text",
     },
   ]

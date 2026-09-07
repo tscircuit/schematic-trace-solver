@@ -54,22 +54,12 @@ test("bug-report-20260826T072956Z", () => {
   ).toEqual(new Set(expectedInlineNetIds))
   expect(
     output.netLabelPlacements.filter((placement) =>
-      multiPinSignalNetIds.includes(placement.netId ?? ""),
+      expectedInlineNetIds.includes(placement.netId ?? ""),
     ),
   ).toHaveLength(0)
   expect(
     output.inlineNetLabelPlacements.some(
-      (placement) => placement.netId === "GH_B" && placement.side === "y+",
-    ),
-  ).toBe(true)
-  expect(
-    output.netLabelPlacements
-      .filter((placement) => placement.netId === "GH_B")
-      .map((placement) => placement.pinIds),
-  ).toEqual([["schematic_port_115"]])
-  expect(
-    output.inlineNetLabelPlacements.every(
-      (placement) => placement.side === (placement.axis === "x" ? "y+" : "x-"),
+      (placement) => placement.netId === "GH_B" && placement.side === "y-",
     ),
   ).toBe(true)
   for (const supersededConnectorTraceId of [

@@ -1,0 +1,80 @@
+<svg width="1200" height="2016" viewBox="0 0 1200 2016" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on top and Circuit JSON schematic on the bottom">
+  <g transform="translate(0, 0) scale(1.875, 1.875) translate(0, 0)">
+    <rect width="100%" height="100%" fill="white"/><g><polyline data-points="-1.2,-0.5 -1.2,0.5" data-type="line" data-label="" points="40,484.7058823529412 40,155.2941176470588" fill="none" stroke="purple" stroke-width="1px"/></g><g><polyline data-points="-0.5,0 -1.1,0" data-type="line" data-label="" points="270.5882352941177,320 72.94117647058818,320" fill="none" stroke="purple" stroke-width="1px"/></g><g><polyline data-points="-0.5,-0.2 -1.1,-0.2" data-type="line" data-label="" points="270.5882352941177,385.88235294117646 72.94117647058818,385.88235294117646" fill="none" stroke="purple" stroke-width="1px"/></g><g><rect data-type="rect" data-label="U1" data-x="0" data-y="0" x="270.5882352941177" y="155.29411764705878" width="329.4117647058823" height="329.41176470588243" fill="hsl(164, 100%, 50%, 0.8)" stroke="black" stroke-width="0.0030357142857142857"/></g><g><rect data-type="rect" data-label="netId: A0
+globalConnNetId: A0" data-x="-0.75" data-y="0.2" x="105.88235294117646" y="221.1764705882353" width="164.70588235294122" height="65.88235294117649" fill="hsl(263, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0030357142857142857"/></g><g><rect data-type="rect" data-label="INLINE netId: CLK
+axis: x
+side: y-" data-x="-0.8" data-y="-0.11" x="105.88235294117646" y="336.47058823529414" width="131.76470588235293" height="39.529411764705856" fill="hsl(218, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0030357142857142857"/></g><g><rect data-type="rect" data-label="INLINE netId: DATA
+axis: x
+side: y-" data-x="-0.8" data-y="-0.31" x="105.88235294117646" y="402.3529411764706" width="131.76470588235293" height="39.529411764705856" fill="hsl(42, 100%, 50%, 0.35)" stroke="black" stroke-width="0.0030357142857142857"/></g><text data-type="text" data-label="CLK" data-x="-0.6000000000000001" data-y="-0.11" x="237.6470588235294" y="356.2352941176471" fill="green" font-size="39.529411764705884" font-family="sans-serif" text-anchor="end" dominant-baseline="central">CLK</text><text data-type="text" data-label="DATA" data-x="-0.6000000000000001" data-y="-0.31" x="237.6470588235294" y="422.11764705882354" fill="green" font-size="39.529411764705884" font-family="sans-serif" text-anchor="end" dominant-baseline="central">DATA</text><g><circle data-type="point" data-label="U1.A0
+x-" data-x="-0.5" data-y="0.2" cx="270.5882352941177" cy="254.11764705882354" r="3" fill="hsl(353, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="U1.CLK
+x-" data-x="-0.5" data-y="0" cx="270.5882352941177" cy="320" r="3" fill="hsl(128, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="U1.DATA
+x-" data-x="-0.5" data-y="-0.2" cx="270.5882352941177" cy="385.88235294117646" r="3" fill="hsl(132, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="anchorPoint
+orientation: x-" data-x="-0.5" data-y="0.2" cx="270.5882352941177" cy="254.11764705882354" r="3" fill="hsl(263, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="inline anchor
+CLK" data-x="-0.8" data-y="0" cx="171.76470588235293" cy="320" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
+DATA" data-x="-0.8" data-y="-0.2" cx="171.76470588235293" cy="385.88235294117646" r="3" fill="green"/></g><g id="crosshair" style="display: none"><line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5"/><line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5"/><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+                const svg = e.currentTarget;
+                const rect = svg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const crosshair = svg.getElementById('crosshair');
+                const h = svg.getElementById('crosshair-h');
+                const v = svg.getElementById('crosshair-v');
+                const coords = svg.getElementById('coordinates');
+
+                crosshair.style.display = 'block';
+                h.setAttribute('x1', '0');
+                h.setAttribute('x2', '640');
+                h.setAttribute('y1', y);
+                h.setAttribute('y2', y);
+                v.setAttribute('x1', x);
+                v.setAttribute('x2', x);
+                v.setAttribute('y1', '0');
+                v.setAttribute('y2', '640');
+
+                // Calculate real coordinates using inverse transformation
+                const matrix = {"a":329.4117647058824,"c":0,"e":435.29411764705884,"b":0,"d":-329.4117647058824,"f":320};
+                // Manually invert and apply the affine transform
+                // Since we only use translate and scale, we can directly compute:
+                // x' = (x - tx) / sx
+                // y' = (y - ty) / sy
+                const sx = matrix.a;
+                const sy = matrix.d;
+                const tx = matrix.e;
+                const ty = matrix.f;
+                const realPoint = {
+                  x: (x - tx) / sx,
+                  y: (y - ty) / sy // Flip y back since we used negative scale
+                }
+
+                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+                coords.setAttribute('x', (x + 5).toString());
+                coords.setAttribute('y', (y - 5).toString());
+              });
+              document.currentScript.parentElement.addEventListener('mouseleave', () => {
+                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+              });
+            ]]></script>
+  </g>
+  <g transform="translate(0, 1216)">
+    <style>
+              .boundary { fill: rgb(245, 241, 237); }
+              .schematic-boundary { fill: none; stroke: #fff; }
+              .component { fill: none; stroke: rgb(132, 0, 0); }
+              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
+              .component-pin { fill: none; stroke: rgb(132, 0, 0); }
+              .text { font-family: sans-serif; fill: rgb(0, 150, 0); }
+              .pin-number { fill: rgb(169, 0, 0); }
+              .port-label { fill: rgb(0, 100, 100); }
+              .component-name { fill: rgb(0, 100, 100); }
+
+            </style><rect class="boundary" x="0" y="0" width="1200" height="800"/><g class="trace sch-trace" data-layer="base" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0__stack1"><path d="M 346.66666666661996 590.4761904762 L 346.66666666661996 209.5238095238" class="trace-invisible-hover-outline sch-trace-hitbox" stroke="rgb(0, 150, 0)" fill="none" stroke-width="60.952380952384004px" stroke-linecap="round" opacity="0" stroke-linejoin="round"/><path class="sch-trace-path" d="M 346.66666666661996 590.4761904762 L 346.66666666661996 209.5238095238" stroke="rgb(0, 150, 0)" fill="none" stroke-width="7.6190476190480005px" stroke-linecap="round" stroke-linejoin="round"/></g><g class="trace sch-trace" data-layer="base" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_1__stack1"><path d="M 613.3333333333 400 L 384.76190476185997 400" class="trace-invisible-hover-outline sch-trace-hitbox" stroke="rgb(0, 150, 0)" fill="none" stroke-width="60.952380952384004px" stroke-linecap="round" opacity="0" stroke-linejoin="round"/><path class="sch-trace-path" d="M 613.3333333333 400 L 384.76190476185997 400" stroke="rgb(0, 150, 0)" fill="none" stroke-width="7.6190476190480005px" stroke-linecap="round" stroke-linejoin="round"/></g><g class="trace sch-trace" data-layer="base" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_2__stack1"><path d="M 613.3333333333 476.19047619048 L 384.76190476185997 476.19047619048" class="trace-invisible-hover-outline sch-trace-hitbox" stroke="rgb(0, 150, 0)" fill="none" stroke-width="60.952380952384004px" stroke-linecap="round" opacity="0" stroke-linejoin="round"/><path class="sch-trace-path" d="M 613.3333333333 476.19047619048 L 384.76190476185997 476.19047619048" stroke="rgb(0, 150, 0)" fill="none" stroke-width="7.6190476190480005px" stroke-linecap="round" stroke-linejoin="round"/></g><g class="trace-overlays sch-trace-overlays" data-layer="overlay" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0__stack1"/><g class="trace-overlays sch-trace-overlays" data-layer="overlay" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_1__stack1"/><g class="trace-overlays sch-trace-overlays" data-layer="overlay" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_2__stack1"/><g class="sch-component" data-circuit-json-type="schematic_component" data-schematic-component-id="schematic_component_0__stack1"><rect class="component chip sch-component-body" x="765.71428571426" y="209.5238095238" width="76.19047619048001" height="380.95238095240006" stroke-width="7.6190476190480005px" fill="rgb(255, 255, 194)" stroke="rgb(132, 0, 0)"/><rect class="component-overlay sch-component-overlay" x="765.71428571426" y="209.5238095238" width="76.19047619048001" height="380.95238095240006" fill="transparent"/><text class="sch-text" x="803.8095238095" y="400" fill="#0f172a" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="68.571428571432px" transform="rotate(0, 803.8095238095, 400)">U1</text><line class="component-pin sch-component-pin sch-port-line" x1="765.71428571426" y1="323.80952380952" x2="620.952380952348" y2="323.80952380952" stroke-width="7.6190476190480005px"/><g class="sch-port" data-schematic-port-id="source_port_0_0__stack1"><circle class="component-pin sch-component-pin sch-port-terminal" cx="613.3333333333" cy="323.80952380952" r="7.6190476190480005" stroke-width="7.6190476190480005px"/><rect x="605.7142857142519" y="316.190476190472" width="15.238095238096001" height="15.238095238096001" opacity="0"/></g><text class="pin-number sch-pin-number" x="689.52380952378" y="316.190476190472" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="57.14285714286px" transform=""></text><text class="pin-number sch-pin-label" x="803.8095238095" y="323.80952380952" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="start" dominant-baseline="middle" font-size="57.14285714286px" transform="">A0</text><line class="component-pin sch-component-pin sch-port-line" x1="765.71428571426" y1="400" x2="613.3333333333" y2="400" stroke-width="7.6190476190480005px"/><g class="sch-port" data-schematic-port-id="source_port_0_1__stack1"><rect x="605.7142857142519" y="392.380952380952" width="15.238095238096001" height="15.238095238096001" opacity="0"/></g><text class="pin-number sch-pin-number" x="689.52380952378" y="392.380952380952" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="57.14285714286px" transform=""></text><text class="pin-number sch-pin-label" x="803.8095238095" y="400" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="start" dominant-baseline="middle" font-size="57.14285714286px" transform="">CLK</text><line class="component-pin sch-component-pin sch-port-line" x1="765.71428571426" y1="476.19047619048" x2="613.3333333333" y2="476.19047619048" stroke-width="7.6190476190480005px"/><g class="sch-port" data-schematic-port-id="source_port_0_2__stack1"><rect x="605.7142857142519" y="468.571428571432" width="15.238095238096001" height="15.238095238096001" opacity="0"/></g><text class="pin-number sch-pin-number" x="689.52380952378" y="468.571428571432" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="57.14285714286px" transform=""></text><text class="pin-number sch-pin-label" x="803.8095238095" y="476.19047619048" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="start" dominant-baseline="middle" font-size="57.14285714286px" transform="">DATA</text></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_0__stack1"><circle cx="613.3333333333" cy="323.80952380952" r="15.238095238096001" fill="red" opacity="0"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_1__stack1"><circle cx="613.3333333333" cy="400" r="15.238095238096001" fill="red" opacity="0"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_2__stack1"><circle cx="613.3333333333" cy="476.19047619048" r="15.238095238096001" fill="red" opacity="0"/></g><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0__stack1" d="
+    M 613.3333333333,323.80952380952
+    L 592.7619047618704,361.90476190476
+    L 469.739682539642,361.90476190476
+    L 469.739682539642,285.71428571428
+    L 592.7619047618704,285.71428571428
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="7.6190476190480005px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0__stack1" x="579.0476190475839" y="323.80952380952" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="68.571428571432px" transform="">A0</text><text class="sch-text" x="499.04761904758" y="441.904761904764" fill="#047857" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="45.714285714287996px" transform="rotate(0, 499.04761904758, 441.904761904764)">CLK</text><text class="sch-text" x="499.04761904758" y="518.095238095244" fill="#047857" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="45.714285714287996px" transform="rotate(0, 499.04761904758, 518.095238095244)">DATA</text>
+  </g>
+</svg>

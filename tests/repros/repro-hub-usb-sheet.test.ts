@@ -52,5 +52,19 @@ test("repro hub USB sheet schematic trace routing", () => {
   expect(sameChipGroundLabel.orientation).toBe("y-")
   expect(sameChipGroundLabel.anchorPoint.x).toBeCloseTo(verticalHostPoint.x)
   expect(tracesAtSameChipGroundLabel).toHaveLength(1)
+  const txLabel = solver
+    .inlineNetLabelSolver!.getOutput()
+    .inlineNetLabelPlacements.find((label) =>
+      label.pinIds.includes("schematic_port_434"),
+    )
+  expect(txLabel?.axis).toBe("y")
+  expect(txLabel?.side).toBe("x+")
+  expect(
+    solver
+      .inlineNetLabelSolver!.getOutput()
+      .netLabelPlacements.some((label) =>
+        label.pinIds.includes("schematic_port_434"),
+      ),
+  ).toBe(false)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

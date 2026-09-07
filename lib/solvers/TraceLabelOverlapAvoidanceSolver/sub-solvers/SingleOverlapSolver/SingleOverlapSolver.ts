@@ -1,3 +1,4 @@
+import { TraceObstacleDetourSolver } from "../../TraceObstacleDetourSolver"
 import type { Point } from "@tscircuit/math-utils"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
@@ -14,6 +15,7 @@ import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath
+  resolveInteractingObstacles?: boolean
   label: NetLabelPlacement
   problem: InputProblem
   paddingBuffer: number
@@ -52,7 +54,9 @@ export class SingleOverlapSolver extends BaseSolver {
   detourCount: number
   _tried: number = 0
 
-  constructor(solverInput: SingleOverlapSolverInput) {
+  private fallback?: TraceObstacleDetourSolver
+
+  constructor(private solverInput: SingleOverlapSolverInput) {
     super()
     this.initialTrace = solverInput.trace
     this.problem = solverInput.problem
@@ -108,7 +112,40 @@ export class SingleOverlapSolver extends BaseSolver {
   override _step() {
     // Failure conditions: no more candidates or exceeded max tries
     if (this.queuedCandidatePaths.length === 0 || this._tried >= MAX_TRIES) {
-      this.failed = true
+      if (!this.solverInput.resolveInteractingObstacles) {
+        this.failed = true
+        return
+      }
+      this.fallback ??= new TraceObstacleDetourSolver({
+        trace: this.initialTrace,
+        obstacles: [
+          ...this.obstacles,
+          ...this.netLabelPlacements
+            .filter(
+              (label) =>
+                label.globalConnNetId !== this.initialTrace.globalConnNetId,
+            )
+            .map((label) => ({
+              minX: label.center.x - label.width / 2,
+              maxX: label.center.x + label.width / 2,
+              minY: label.center.y - label.height / 2,
+              maxY: label.center.y + label.height / 2,
+            })),
+        ],
+        otherNetTraces: this.tracesToAvoidOverlapping,
+        sameNetTraces: (this.solverInput.tracesToAvoidOverlapping ?? []).filter(
+          (trace) =>
+            trace.mspPairId !== this.initialTrace.mspPairId &&
+            trace.globalConnNetId === this.initialTrace.globalConnNetId,
+        ),
+        clearance: this.solverInput.paddingBuffer,
+        pinPositions: this.problem.chips.flatMap((chip) => chip.pins),
+      })
+      this.fallback.step()
+      if (this.fallback.solved) {
+        this.solvedTracePath = this.fallback.solvedTracePath
+        this.solved = true
+      } else if (this.fallback.failed) this.failed = true
       return
     }
 

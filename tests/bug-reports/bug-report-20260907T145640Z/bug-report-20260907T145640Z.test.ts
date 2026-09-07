@@ -1,3 +1,4 @@
+import { findLabelCollisions } from "tests/fixtures/findLabelCollisions"
 import { expect, test } from "bun:test"
 import { getAnchoredNetLabelRenderedBounds } from "lib/solvers/InlineNetLabelSolver/getAnchoredNetLabelRenderedBounds"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
@@ -37,8 +38,27 @@ test("bug-report-20260907T145640Z", async () => {
       if (u1Pins.has(pinId)) expect(inlinePins).toContain(pinId)
     }
   }
-  for (const label of output.inlineNetLabelPlacements)
-    expect(label.side).toBe(label.axis === "x" ? "y+" : "x-")
+  // Audit the entire report, including U3, rather than selected screenshots.
+  expect(findLabelCollisions(output)).toEqual({
+    labelPairs: [],
+    traceLabels: [],
+  })
+  for (const connection of inputProblem.netConnections.filter(
+    (connection) => connection.allowInlineNetLabel,
+  )) {
+    expect(
+      output.netLabelPlacements.filter(
+        (label) => label.netId === connection.netId,
+      ),
+    ).toEqual([])
+    for (const pinId of connection.pinIds)
+      expect(
+        output.inlineNetLabelPlacements.some(
+          (label) =>
+            label.netId === connection.netId && label.pinIds.includes(pinId),
+        ),
+      ).toBe(true)
+  }
   for (const pinId of [
     "schematic_port_51",
     "schematic_port_54",
@@ -50,8 +70,7 @@ test("bug-report-20260907T145640Z", async () => {
       ),
     ).toBe(true)
   }
-  // The mixed-net obstacle group contains V3 itself. Cleanup must still respect
-  // the individual CHG_LP/CHG_IRQ/IMAX labels when simplifying U2 pin 17's wire.
+  // U2 pin 17 must remain connected and clear of the final signal labels.
   const traceId = "schematic_port_57-schematic_port_86"
   const clearedTrace = solver
     .traceLabelOverlapAvoidanceSolver!.getOutput()
@@ -73,7 +92,7 @@ test("bug-report-20260907T145640Z", async () => {
   }
   // Power labels in the supplied input are not opted in. Preserve them rather
   // than overriding the caller's policy to make every label appear inline.
-  for (const netId of ["PMID", "OLED_3V", "V3"]) {
+  for (const netId of ["PMID", "OLED_3V", "V3", "PACK_P", "GAUGE_VDD"]) {
     expect(
       output.netLabelPlacements.some((label) => label.netId === netId),
     ).toBe(true)

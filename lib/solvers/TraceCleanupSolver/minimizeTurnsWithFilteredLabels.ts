@@ -1,4 +1,3 @@
-import { getOtherNetLabelObstacles } from "./getOtherNetLabelObstacles"
 import type { InputProblem } from "lib/types/InputProblem"
 import { minimizeTurns } from "./turnMinimization"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
@@ -56,7 +55,6 @@ export const minimizeTurnsWithFilteredLabels = ({
   traces,
   inputProblem,
   allLabelPlacements,
-  unmergedLabelPlacements,
   mergedLabelNetIdMap,
   paddingBuffer,
 }: {
@@ -64,7 +62,6 @@ export const minimizeTurnsWithFilteredLabels = ({
   traces: SolvedTracePath[]
   inputProblem: InputProblem
   allLabelPlacements: NetLabelPlacement[]
-  unmergedLabelPlacements?: NetLabelPlacement[]
   mergedLabelNetIdMap: Record<string, Set<string>>
   paddingBuffer: number
 }): SolvedTracePath => {
@@ -116,11 +113,12 @@ export const minimizeTurnsWithFilteredLabels = ({
   }))
 
   const originalPath = targetTrace.tracePath
-  const filteredLabels = getOtherNetLabelObstacles({
-    globalConnNetId: targetTrace.globalConnNetId,
-    allLabelPlacements,
-    unmergedLabelPlacements,
-    mergedLabelNetIdMap,
+  const filteredLabels = allLabelPlacements.filter((label) => {
+    const originalNetIds = mergedLabelNetIdMap[label.globalConnNetId]
+    if (originalNetIds) {
+      return !originalNetIds.has(targetTrace.globalConnNetId)
+    }
+    return label.globalConnNetId !== targetTrace.globalConnNetId
   })
 
   const labelBounds = filteredLabels.map((nl) => ({

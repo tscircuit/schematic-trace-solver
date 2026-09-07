@@ -1,3 +1,4 @@
+import { getAnchoredNetLabelRenderedBounds } from "../InlineNetLabelSolver/getAnchoredNetLabelRenderedBounds"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
@@ -91,6 +92,10 @@ function sampleAnchorsAlongSegment(
 }
 
 export interface NetLabelNetLabelCollisionSolverParams {
+  /** Use the final horizontal tag envelope after inline conversion. */
+  useRenderedLabelBounds?: boolean
+  /** Already placed labels that are obstacles, but must not be moved. */
+  fixedNetLabelPlacements?: NetLabelPlacement[]
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
@@ -107,7 +112,7 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   currentLabelToMove: NetLabelPlacement | null = null
   candidateResults: Candidate[] = []
 
-  private chipIndex: ChipObstacleSpatialIndex
+  private chipIndex: ChipObstacleSpatialIndex | undefined
   private traceMap: Record<MspConnectionPairId, SolvedTracePath>
   private skippedCollisionKeys = new Set<string>()
 
@@ -115,7 +120,7 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   private candidateQueue: Candidate[] = []
   private candidateIndex = 0
 
-  constructor(params: NetLabelNetLabelCollisionSolverParams) {
+  constructor(private params: NetLabelNetLabelCollisionSolverParams) {
     super()
     this.inputProblem = params.inputProblem
     this.traces = params.traces
@@ -123,7 +128,9 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     this.outputNetLabelPlacements = [...params.netLabelPlacements]
     this.chipIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
-      new ChipObstacleSpatialIndex(params.inputProblem.chips)
+      (params.inputProblem.chips.length > 0
+        ? new ChipObstacleSpatialIndex(params.inputProblem.chips)
+        : undefined)
     this.traceMap = Object.fromEntries(
       params.traces.map((t) => [t.mspPairId, t]),
     ) as Record<MspConnectionPairId, SolvedTracePath>
@@ -136,6 +143,8 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       traces: this.traces,
       netLabelPlacements: this.netLabelPlacements,
+      fixedNetLabelPlacements: this.params.fixedNetLabelPlacements,
+      useRenderedLabelBounds: this.params.useRenderedLabelBounds,
     }
   }
 
@@ -144,7 +153,12 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   }
 
   private labelBounds(label: NetLabelPlacement) {
-    return getRectBounds(label.center, label.width, label.height)
+    if (
+      !this.params.useRenderedLabelBounds ||
+      this.params.fixedNetLabelPlacements?.includes(label)
+    )
+      return getRectBounds(label.center, label.width, label.height)
+    return getAnchoredNetLabelRenderedBounds(label)
   }
 
   private collisionKey(a: NetLabelPlacement, b: NetLabelPlacement) {
@@ -154,12 +168,19 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   private findNextCollidingPair():
     | [NetLabelPlacement, NetLabelPlacement]
     | null {
-    const labels = this.outputNetLabelPlacements
-    for (let i = 0; i < labels.length; i++) {
+    const labels = [
+      ...this.outputNetLabelPlacements,
+      ...(this.params.fixedNetLabelPlacements ?? []),
+    ]
+    for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
       for (let j = i + 1; j < labels.length; j++) {
         const a = labels[i]!
         const b = labels[j]!
-        if (a.globalConnNetId === b.globalConnNetId) continue
+        if (
+          a.globalConnNetId === b.globalConnNetId &&
+          !this.params.fixedNetLabelPlacements?.includes(b)
+        )
+          continue
         if (this.skippedCollisionKeys.has(this.collisionKey(a, b))) continue
         if (boundsOverlap(this.labelBounds(a), this.labelBounds(b)))
           return [a, b]
@@ -208,7 +229,16 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
         center,
         width,
         height,
-        bounds: getRectBounds(center, width, height),
+        bounds: this.params.useRenderedLabelBounds
+          ? getAnchoredNetLabelRenderedBounds({
+              ...label,
+              orientation,
+              anchorPoint: anchor,
+              center,
+              width,
+              height,
+            })
+          : getRectBounds(center, width, height),
         hostPairId,
         hostSegIndex,
         status: null,
@@ -271,7 +301,7 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   ): CandidateStatus {
     const { bounds, hostPairId, hostSegIndex } = candidate
 
-    if (this.chipIndex.getChipsInBounds(bounds).length > 0)
+    if ((this.chipIndex?.getChipsInBounds(bounds).length ?? 0) > 0)
       return "chip-collision"
     if (rectIntersectsAnyTextBox(bounds, this.inputProblem))
       return "text-collision"
@@ -284,7 +314,11 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     }
 
     for (const obstacle of obstacleLabels) {
-      if (obstacle.globalConnNetId === movingLabelNetId) continue
+      if (
+        obstacle.globalConnNetId === movingLabelNetId &&
+        !this.params.fixedNetLabelPlacements?.includes(obstacle)
+      )
+        continue
       if (boundsOverlap(bounds, this.labelBounds(obstacle)))
         return "label-collision"
     }
@@ -316,7 +350,9 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
         return
       }
       this.currentCollision = pair
-      this.labelsToTry = [pair[1], pair[0]]
+      this.labelsToTry = [pair[1], pair[0]].filter(
+        (label) => !(this.params.fixedNetLabelPlacements ?? []).includes(label),
+      )
       this.beginSearchForLabel(this.labelsToTry.shift()!)
       return
     }
@@ -342,9 +378,10 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
       fixedLabel = labelB
     }
     const obstacleLabels = [
-      ...this.outputNetLabelPlacements.filter(
-        (l) => l !== labelA && l !== labelB,
-      ),
+      ...[
+        ...this.outputNetLabelPlacements,
+        ...(this.params.fixedNetLabelPlacements ?? []),
+      ].filter((l) => l !== labelA && l !== labelB),
       fixedLabel,
     ]
 

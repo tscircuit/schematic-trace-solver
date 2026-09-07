@@ -158,6 +158,9 @@ function detectTraceLabelOverlaps(
 }
 
 export interface NetLabelTraceCollisionSolverParams {
+  fixedNetLabelPlacements?: NetLabelPlacement[]
+  obstacleTraces?: SolvedTracePath[]
+  resolveInteractingObstacles?: boolean
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
@@ -184,7 +187,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
     label: NetLabelPlacement
   } | null = null
 
-  constructor(params: NetLabelTraceCollisionSolverParams) {
+  constructor(private params: NetLabelTraceCollisionSolverParams) {
     super()
     this.inputProblem = params.inputProblem
     this.traces = params.traces
@@ -197,6 +200,9 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
     typeof NetLabelTraceCollisionSolver
   >[0] {
     return {
+      resolveInteractingObstacles: this.params.resolveInteractingObstacles,
+      fixedNetLabelPlacements: this.params.fixedNetLabelPlacements,
+      obstacleTraces: this.params.obstacleTraces,
       inputProblem: this.inputProblem,
       traces: this.traces,
       netLabelPlacements: this.netLabelPlacements,
@@ -247,10 +253,11 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
       return
     }
 
-    const overlaps = detectTraceLabelOverlaps(
-      this.outputTraces,
-      this.outputNetLabelPlacements,
-    )
+    const allLabels = [
+      ...this.outputNetLabelPlacements,
+      ...(this.params.fixedNetLabelPlacements ?? []),
+    ]
+    const overlaps = detectTraceLabelOverlaps(this.outputTraces, allLabels)
 
     const actionable = overlaps.filter((o) => {
       const key = this.getOverlapKey(o.trace, o.label)
@@ -274,9 +281,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
     // one collision doesn't immediately create another with an adjacent label.
     const mergedLabel = buildMergedObstacleLabel(
       next.label,
-      this.outputNetLabelPlacements.filter(
-        (l) => l.globalConnNetId !== traceToFix.globalConnNetId,
-      ),
+      allLabels.filter((l) => l.globalConnNetId !== traceToFix.globalConnNetId),
     )
 
     const mergeKey = `${next.trace.mspPairId}::merged::${mergedLabel.center.x},${mergedLabel.center.y},${mergedLabel.width},${mergedLabel.height}`
@@ -289,13 +294,17 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
     this.detourCounts.set(mergeKey, detourCount + 1)
 
     this.activeSubSolver = new SingleOverlapSolver({
+      resolveInteractingObstacles: this.params.resolveInteractingObstacles,
       trace: traceToFix,
       label: mergedLabel,
       problem: this.inputProblem,
       paddingBuffer: PADDING_BUFFER,
       detourCount,
-      tracesToAvoidOverlapping: this.outputTraces,
-      netLabelPlacements: this.outputNetLabelPlacements,
+      tracesToAvoidOverlapping: [
+        ...this.outputTraces,
+        ...(this.params.obstacleTraces ?? []),
+      ],
+      netLabelPlacements: allLabels,
     })
   }
 

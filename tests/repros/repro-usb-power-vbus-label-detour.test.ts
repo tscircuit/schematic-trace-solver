@@ -1,3 +1,4 @@
+import { findLabelCollisions } from "tests/fixtures/findLabelCollisions"
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -6,7 +7,7 @@ import inputProblemJson from "./assets/repro-usb-power-vbus-label-detour.input.j
 
 const VBUS_PIN_IDS = new Set(["schematic_port_224", "schematic_port_226"])
 
-test("keeps USB endpoint labels independent while routing VBUS around mixed-net obstacles", () => {
+test("keeps the compact VBUS route and USB labels clear of neighboring wires", () => {
   const inputProblem: InputProblem = JSON.parse(
     JSON.stringify(inputProblemJson),
   )
@@ -59,23 +60,37 @@ test("keeps USB endpoint labels independent while routing VBUS around mixed-net 
   expect(vbusTrace?.tracePath).toEqual([
     { x: 13, y: -6.2 },
     { x: 12.8, y: -6.2 },
-    { x: 12.8, y: -6.5 },
-    { x: 12.178999999999998, y: -6.5 },
-    { x: 12.178999999999998, y: -5.5 },
-    { x: 12.8, y: -5.5 },
     { x: 12.8, y: -5.8 },
     { x: 13, y: -5.8 },
   ])
-  // The top sides at the MCU are clear; the connector endpoints retain their
-  // obstructed tags. A blocked connector must not undo the MCU placements.
   expect(
-    usbHighSpeedInlineLabels.map((label) => label.pinIds[0]).sort(),
-  ).toEqual(["schematic_port_83", "schematic_port_84"])
-  expect(usbHighSpeedInlineLabels.every((label) => label.side === "y+")).toBe(
-    true,
-  )
+    usbHighSpeedInlineLabels.some(
+      (label) =>
+        label.pinIds.includes("schematic_port_191") && label.side === "y-",
+    ),
+  ).toBe(true)
+  const collisions = findLabelCollisions(inlineOutput)
   expect(
-    usbHighSpeedAnchoredLabels.map((label) => label.pinIds[0]).sort(),
-  ).toEqual(["schematic_port_191", "schematic_port_193"])
+    collisions.traceLabels.filter(({ label }) =>
+      label.netId?.startsWith("USB_HS_"),
+    ),
+  ).toEqual([])
+  expect(
+    collisions.labelPairs.filter((pair) =>
+      pair.some((label) => label.netId?.startsWith("USB_HS_")),
+    ),
+  ).toEqual([])
+  for (const pinId of [
+    "schematic_port_83",
+    "schematic_port_84",
+    "schematic_port_191",
+    "schematic_port_193",
+  ]) {
+    expect(
+      [...usbHighSpeedInlineLabels, ...usbHighSpeedAnchoredLabels].filter(
+        (label) => label.pinIds.includes(pinId),
+      ),
+    ).toHaveLength(1)
+  }
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
