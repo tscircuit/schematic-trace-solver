@@ -5,86 +5,101 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { pushAnchoredNetLabelsAwayFromInlineLabels } from "lib/solvers/InlineNetLabelSolver/pushAnchoredNetLabelsAwayFromInlineLabels"
 import type { InlineNetLabelPlacement } from "lib/solvers/InlineNetLabelSolver/InlineNetLabelSolver"
 
-test("pushes a regular endpoint label and its wick past nearby inline text", () => {
-  const inputProblem: InputProblem = {
-    chips: [
+test.each([false, true])(
+  "pushes a regular endpoint label past nearby inline text (distant label: %s)",
+  (includeDistantLabel) => {
+    const inputProblem: InputProblem = {
+      chips: [
+        {
+          chipId: "U1",
+          center: { x: 0, y: 0 },
+          // The routing box includes component text, so the real pins can sit
+          // inside it. A generated connector may legitimately cross that
+          // expanded owner box on its way out from the pin.
+          width: 2,
+          height: 1,
+          pins: [
+            { pinId: "U1.1", x: -0.5, y: 0.2, _facingDirection: "x-" },
+            { pinId: "U1.2", x: -0.5, y: 0, _facingDirection: "x-" },
+          ],
+        },
+      ],
+      directConnections: [],
+      netConnections: [],
+      availableNetLabelOrientations: {},
+    }
+    const netLabelPlacements: NetLabelPlacement[] = [
       {
-        chipId: "U1",
-        center: { x: 0, y: 0 },
-        // The routing box includes component text, so the real pins can sit
-        // inside it. A generated connector may legitimately cross that
-        // expanded owner box on its way out from the pin.
-        width: 2,
-        height: 1,
-        pins: [
-          { pinId: "U1.1", x: -0.5, y: 0.2, _facingDirection: "x-" },
-          { pinId: "U1.2", x: -0.5, y: 0, _facingDirection: "x-" },
-        ],
+        globalConnNetId: "regular-net",
+        netId: "D_PLUS",
+        mspConnectionPairIds: [],
+        pinIds: ["U1.1"],
+        orientation: "x-",
+        anchorPoint: { x: -0.7, y: 0.2 },
+        center: { x: -1.2, y: 0.2 },
+        width: 1,
+        height: 0.2,
       },
-    ],
-    directConnections: [],
-    netConnections: [],
-    availableNetLabelOrientations: {},
-  }
-  const netLabelPlacements: NetLabelPlacement[] = [
-    {
-      globalConnNetId: "regular-net",
-      netId: "D_PLUS",
-      mspConnectionPairIds: [],
-      pinIds: ["U1.1"],
-      orientation: "x-",
-      anchorPoint: { x: -0.7, y: 0.2 },
-      center: { x: -1.2, y: 0.2 },
-      width: 1,
-      height: 0.2,
-    },
-  ]
-  const traces: SolvedTracePath[] = [
-    {
-      mspPairId: "available-net-orientation-0-D_PLUS",
-      dcConnNetId: "regular-net",
-      globalConnNetId: "regular-net",
-      pins: [] as any,
-      tracePath: [
-        { x: -0.5, y: 0.2 },
-        { x: -0.7, y: 0.2 },
-      ],
-      mspConnectionPairIds: [],
-      pinIds: ["U1.1"],
-    },
-  ]
-  const inlineNetLabelPlacements: InlineNetLabelPlacement[] = [
-    {
-      globalConnNetId: "inline-net",
-      netId: "SWCLK",
-      pinIds: ["U1.2"],
-      stubTracePath: [
-        { x: -0.5, y: 0 },
-        { x: -1.7, y: 0 },
-      ],
-      axis: "x",
-      anchorPoint: { x: -1.1, y: 0 },
-      center: { x: -1.1, y: 0.11 },
-      width: 1.2,
-      height: 0.12,
-      side: "y+",
-    },
-  ]
+    ]
+    const traces: SolvedTracePath[] = [
+      {
+        mspPairId: "available-net-orientation-0-D_PLUS",
+        dcConnNetId: "regular-net",
+        globalConnNetId: "regular-net",
+        pins: [] as any,
+        tracePath: [
+          { x: -0.5, y: 0.2 },
+          { x: -0.7, y: 0.2 },
+        ],
+        mspConnectionPairIds: [],
+        pinIds: ["U1.1"],
+      },
+    ]
+    const inlineNetLabelPlacements: InlineNetLabelPlacement[] = [
+      {
+        globalConnNetId: "inline-net",
+        netId: "SWCLK",
+        pinIds: ["U1.2"],
+        stubTracePath: [
+          { x: -0.5, y: 0 },
+          { x: -1.7, y: 0 },
+        ],
+        axis: "x",
+        anchorPoint: { x: -1.1, y: 0 },
+        center: { x: -1.1, y: 0.11 },
+        width: 1.2,
+        height: 0.12,
+        side: "y+",
+      },
+    ]
 
-  const output = pushAnchoredNetLabelsAwayFromInlineLabels({
-    inputProblem,
-    traces,
-    netLabelPlacements,
-    inlineNetLabelPlacements,
-  })
+    if (includeDistantLabel) {
+      inlineNetLabelPlacements.push({
+        ...inlineNetLabelPlacements[0]!,
+        globalConnNetId: "distant-net",
+        netId: "DISTANT",
+        pinIds: ["U2.1"],
+        stubTracePath: undefined,
+        anchorPoint: { x: -20, y: 0 },
+        center: { x: -20, y: 0.11 },
+      })
+    }
 
-  expect(output.movedLabelCount).toBe(1)
-  expect(output.netLabelPlacements[0]!.anchorPoint.x).toBeCloseTo(-1.75)
-  expect(output.netLabelPlacements[0]!.center.x).toBeCloseTo(-2.25)
-  expect(output.traces[0]!.tracePath[0]).toEqual({ x: -0.5, y: 0.2 })
-  expect(output.traces[0]!.tracePath[1]!.x).toBeCloseTo(-1.75)
-  expect(output.traces[0]!.tracePath[1]!.y).toBeCloseTo(0.2)
-})
+    const output = pushAnchoredNetLabelsAwayFromInlineLabels({
+      inputProblem,
+      traces,
+      netLabelPlacements,
+      inlineNetLabelPlacements,
+    })
+
+    expect(output.movedLabelCount).toBe(1)
+    expect(output.netLabelPlacements[0]!.anchorPoint.x).toBeCloseTo(-1.75)
+    expect(output.netLabelPlacements[0]!.center.x).toBeCloseTo(-2.25)
+    expect(output.traces[0]!.tracePath[0]).toEqual({ x: -0.5, y: 0.2 })
+    expect(output.traces[0]!.tracePath[1]!.x).toBeCloseTo(-1.75)
+    expect(output.traces[0]!.tracePath[1]!.y).toBeCloseTo(0.2)
+  },
+)
 
 test("leaves a label without a movable connector in place", () => {
   const label: NetLabelPlacement = {

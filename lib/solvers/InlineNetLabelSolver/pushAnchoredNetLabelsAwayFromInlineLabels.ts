@@ -76,33 +76,52 @@ const getRequiredOutwardDistance = (
   label: NetLabelPlacement,
   inlineBounds: Bounds[],
 ) => {
-  const labelBounds = getAnchoredNetLabelRenderedBounds(label)
-
-  if (label.orientation === "x-" || label.orientation === "x+") {
-    const nearby = inlineBounds.filter(
-      (bounds) =>
-        labelBounds.minY < bounds.maxY && labelBounds.maxY > bounds.minY,
+  let distance = 0
+  // Only clear obstacles within the current proposal's clearance. A label elsewhere
+  // on the same row must not force this label across the whole schematic.
+  // Moving past one obstacle can encounter another, so continue until clear.
+  for (let iteration = 0; iteration < inlineBounds.length; iteration++) {
+    const labelBounds = getAnchoredNetLabelRenderedBounds(
+      moveLabel(label, label.orientation, distance),
     )
-    if (nearby.length === 0) return 0
-    if (label.orientation === "x-") {
-      const targetMaxX = Math.min(...nearby.map((bounds) => bounds.minX))
-      return Math.max(0, labelBounds.maxX - targetMaxX + LABEL_CLEARANCE)
+    const horizontal = label.orientation === "x-" || label.orientation === "x+"
+    const overlapping = inlineBounds.filter((bounds) =>
+      boundsOverlap(labelBounds, {
+        minX: bounds.minX - (horizontal ? LABEL_CLEARANCE : 0),
+        maxX: bounds.maxX + (horizontal ? LABEL_CLEARANCE : 0),
+        minY: bounds.minY - (horizontal ? 0 : LABEL_CLEARANCE),
+        maxY: bounds.maxY + (horizontal ? 0 : LABEL_CLEARANCE),
+      }),
+    )
+    if (overlapping.length === 0) break
+    switch (label.orientation) {
+      case "x-":
+        distance +=
+          labelBounds.maxX -
+          Math.min(...overlapping.map((b) => b.minX)) +
+          LABEL_CLEARANCE
+        break
+      case "x+":
+        distance +=
+          Math.max(...overlapping.map((b) => b.maxX)) -
+          labelBounds.minX +
+          LABEL_CLEARANCE
+        break
+      case "y-":
+        distance +=
+          labelBounds.maxY -
+          Math.min(...overlapping.map((b) => b.minY)) +
+          LABEL_CLEARANCE
+        break
+      case "y+":
+        distance +=
+          Math.max(...overlapping.map((b) => b.maxY)) -
+          labelBounds.minY +
+          LABEL_CLEARANCE
+        break
     }
-    const targetMinX = Math.max(...nearby.map((bounds) => bounds.maxX))
-    return Math.max(0, targetMinX - labelBounds.minX + LABEL_CLEARANCE)
   }
-
-  const nearby = inlineBounds.filter(
-    (bounds) =>
-      labelBounds.minX < bounds.maxX && labelBounds.maxX > bounds.minX,
-  )
-  if (nearby.length === 0) return 0
-  if (label.orientation === "y-") {
-    const targetMaxY = Math.min(...nearby.map((bounds) => bounds.minY))
-    return Math.max(0, labelBounds.maxY - targetMaxY + LABEL_CLEARANCE)
-  }
-  const targetMinY = Math.max(...nearby.map((bounds) => bounds.maxY))
-  return Math.max(0, targetMinY - labelBounds.minY + LABEL_CLEARANCE)
+  return distance
 }
 
 const moveLabel = (

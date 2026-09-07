@@ -23,6 +23,7 @@ import {
   getAxisAlignedSegments,
 } from "./getAxisAlignedSegments"
 import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
+import { flipInlineTerminalLabelsAwayFromAnchoredLabels } from "./flipInlineTerminalLabelsAwayFromAnchoredLabels"
 import { pushAnchoredNetLabelsAwayFromInlineLabels } from "./pushAnchoredNetLabelsAwayFromInlineLabels"
 import { pushInlineTerminalLabelsAwayFromAnchoredLabels } from "./pushInlineTerminalLabelsAwayFromAnchoredLabels"
 import { restoreReroutesAroundSupersededLabels } from "./restoreReroutesAroundSupersededLabels"
@@ -1050,7 +1051,7 @@ export class InlineNetLabelSolver extends BaseSolver {
         netLabelPlacements: retainedNetLabelPlacements,
         inlineNetLabelPlacements: activeInlinePlacements,
       })
-      const blockedGlobalConnNetIds =
+      let blockedGlobalConnNetIds =
         this.getInlineGlobalsOverlappingAnchoredLabels({
           inlineNetLabelPlacements: activeInlinePlacements,
           anchoredNetLabelPlacements: pushed.netLabelPlacements,
@@ -1068,6 +1069,19 @@ export class InlineNetLabelSolver extends BaseSolver {
             shiftedInlineTerminalLabels.inlineNetLabelPlacements
           continue
         }
+        activeInlinePlacements = flipInlineTerminalLabelsAwayFromAnchoredLabels(
+          {
+            inputProblem: this.inputProblem,
+            traces: pushed.traces,
+            anchoredNetLabelPlacements: pushed.netLabelPlacements,
+            inlineNetLabelPlacements: activeInlinePlacements,
+          },
+        ).inlineNetLabelPlacements
+        blockedGlobalConnNetIds =
+          this.getInlineGlobalsOverlappingAnchoredLabels({
+            inlineNetLabelPlacements: activeInlinePlacements,
+            anchoredNetLabelPlacements: pushed.netLabelPlacements,
+          })
       }
       if (blockedGlobalConnNetIds.size === 0) {
         this.inlineNetLabelPlacements = activeInlinePlacements
