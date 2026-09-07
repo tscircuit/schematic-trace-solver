@@ -226,14 +226,18 @@ export class LongDistancePairSolver extends BaseSolver {
             const targetPin = pinMap.get(otherPinId)
             if (!targetPin) return [] // Gracefully handle missing pins
             if (!canRouteGroundPair(sourcePin.pinId, targetPin.pinId)) return []
-            const isNamedTwoPinConnection = inputProblem.netConnections.some(
-              (connection) =>
-                connection.pinIds.length === 2 &&
-                connection.pinIds.includes(sourcePin.pinId) &&
-                connection.pinIds.includes(targetPin.pinId),
+            const hasAvailableNetLabels = Boolean(
+              inputProblem.availableNetLabelOrientations?.[netId]?.length,
             )
+            const isNamedConnection =
+              inputProblem.netConnections.some(
+                (connection) =>
+                  connection.netId === netId ||
+                  (connection.pinIds.includes(sourcePin.pinId) &&
+                    connection.pinIds.includes(targetPin.pinId)),
+              ) || hasAvailableNetLabels
             if (
-              isNamedTwoPinConnection &&
+              isNamedConnection &&
               manhattanDistance(sourcePin, targetPin) > this.maxMspPairDistance
             ) {
               return []
