@@ -4,7 +4,9 @@ import inputProblem from "./bug-report-20260907T145640Z.json"
 import "tests/fixtures/matcher"
 
 test("bug-report-20260907T145640Z", () => {
-  const solver = new SchematicTracePipelineSolver(inputProblem as any)
+  const solver = new SchematicTracePipelineSolver(inputProblem as any, {
+    hideRatsNet: true,
+  })
 
   solver.solve()
 
