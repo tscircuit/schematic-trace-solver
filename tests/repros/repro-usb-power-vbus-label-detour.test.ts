@@ -1,4 +1,4 @@
-import { getOutputLabelCollisionKeys } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisionKeys"
+import { getOutputLabelCollisions } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisions"
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -30,7 +30,9 @@ test("keeps the compact VBUS route and USB labels clear of neighboring wires", (
     )
   const gndLabelConnector = solver.availableNetOrientationSolver!.traces.find(
     (trace) =>
-      trace.mspPairId.startsWith("available-net-orientation-") &&
+      solver.availableNetOrientationSolver!.netLabelConnectorTraceIds.has(
+        trace.mspPairId,
+      ) &&
       trace.pinIds.includes("schematic_port_37") &&
       trace.pinIds.includes("schematic_port_46"),
   )
@@ -90,17 +92,14 @@ test("keeps the compact VBUS route and USB labels clear of neighboring wires", (
       ),
     ).toBe(true)
   }
-  const usbLabelKeys = usbHighSpeedInlineLabels.map(
-    (label) => `${label.globalConnNetId}:${[...label.pinIds].sort().join(",")}`,
-  )
   expect(
-    [...getOutputLabelCollisionKeys(inlineOutput)].filter((collision) =>
-      usbLabelKeys.some((key) =>
-        collision
-          .split("/")
-          .some((part) => part === key || part === `labels:${key}`),
-      ),
-    ),
+    getOutputLabelCollisions(inlineOutput).filter((collision) => {
+      const labels =
+        collision.kind === "label-label" ? collision.labels : [collision.label]
+      return labels.some((label) =>
+        usbHighSpeedInlineLabels.some((usb) => usb === label),
+      )
+    }),
   ).toEqual([])
   for (const pinId of [
     "schematic_port_83",

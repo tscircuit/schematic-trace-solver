@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { getOutputLabelCollisionKeys } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisionKeys"
+import { getOutputLabelCollisions } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisions"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -30,7 +30,7 @@ test("disconnected netlabel", () => {
   expect(hostTrace.tracePath[1]!.x).toBeCloseTo(expectedAlignedRailX)
   expect(targetLabel.anchorPoint.x).toBeCloseTo(expectedCloserLabelAnchorX)
   expect(labelConnectorTrace.tracePath[0]).toEqual(hostTrace.tracePath[1])
-  expect([...getOutputLabelCollisionKeys(output)]).toEqual([])
+  expect([...getOutputLabelCollisions(output)]).toEqual([])
   // The split left rail moves with its branch junction, without adding bends
   // or moving any of its three pin connections.
   const branch = output.traces.find(

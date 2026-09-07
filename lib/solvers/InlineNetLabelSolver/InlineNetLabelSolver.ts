@@ -1,5 +1,9 @@
 import { getLocalTraceLabelShifts } from "./getLocalTraceLabelShifts"
-import { getOutputLabelCollisionKeys } from "./getOutputLabelCollisionKeys"
+import {
+  getOutputLabelCollisions,
+  sameOutputLabelCollision,
+  type OutputLabelCollision,
+} from "./getOutputLabelCollisions"
 import { getInlineLabelObstacles } from "./getInlineLabelObstacles"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
 import type { Bounds, Point } from "@tscircuit/math-utils"
@@ -100,6 +104,8 @@ export interface InlineNetLabelPlacement {
 }
 
 interface InlineNetLabelSolverInput {
+  /** Exact connector IDs supplied by their producer; IDs are never parsed. */
+  netLabelConnectorTraceIds?: ReadonlySet<string>
   resolveTraceCollisions?: boolean
   inputProblem: InputProblem
   traces: SolvedTracePath[]
@@ -108,11 +114,14 @@ interface InlineNetLabelSolverInput {
 }
 
 export interface InlineNetLabelOutput {
+  netLabelConnectorTraceIds?: ReadonlySet<string>
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   inlineNetLabelPlacements: InlineNetLabelPlacement[]
 }
+
+type InlineOutput = Omit<InlineNetLabelOutput, "inputProblem">
 
 type InlineEligibleConnection = InputDirectConnection | InputNetConnection
 
@@ -132,13 +141,8 @@ interface NetConnectionComponent {
   traces: SolvedTracePath[]
 }
 
-const AVAILABLE_NET_ORIENTATION_TRACE_PREFIX = "available-net-orientation-"
-
-const isGeneratedAnchoredLabelConnector = (trace: SolvedTracePath) =>
-  trace.mspPairId.startsWith(AVAILABLE_NET_ORIENTATION_TRACE_PREFIX)
-
 const getPinPairKey = (pinIds: readonly string[]) =>
-  [...pinIds].sort().join("::")
+  JSON.stringify([...pinIds].sort())
 
 const getTraceLength = (trace: SolvedTracePath) => {
   let length = 0
@@ -169,7 +173,11 @@ const getInlinePlacementBounds = (
 }
 
 const getInlinePlacementKey = (placement: InlineNetLabelPlacement) =>
-  `${placement.globalConnNetId}::${getPinPairKey(placement.pinIds)}::${placement.mspPairId ?? "terminal"}`
+  JSON.stringify([
+    placement.globalConnNetId,
+    [...placement.pinIds].sort(),
+    placement.mspPairId ?? null,
+  ])
 
 const terminalStubIntersectsTrace = (
   path: [Point, Point],
@@ -203,18 +211,29 @@ export class InlineNetLabelSolver extends BaseSolver {
   /** Eligible connections still waiting to be processed. */
   queuedConnections: QueuedInlineConnection[]
 
+  private readonly netLabelConnectorTraceIds: ReadonlySet<string>
   private tracesByPinPairKey: Map<string, SolvedTracePath[]>
   private globalConnMap: ConnectivityMap
   private inlineConversions: NetConnectionInlineConversion[] = []
   private hasAlignedPortOnlyStubs = false
-  private postProcessedOutput?: {
-    traces: SolvedTracePath[]
-    netLabelPlacements: NetLabelPlacement[]
-    inlineNetLabelPlacements: InlineNetLabelPlacement[]
+  private postProcessedOutput?: InlineOutput
+  declare activeSubSolver: InlineNetLabelSolver | null
+  private refinementComplete = false
+  private refinement?: {
+    proposals: Generator<InlineOutput>
+    queue: Array<{
+      output: InlineOutput
+      distance: number
+    }>
+    collecting: boolean
+    before: OutputLabelCollision[]
   }
+  private currentProposal?: InlineOutput
 
   constructor(private readonly input: InlineNetLabelSolverInput) {
     super()
+    this.netLabelConnectorTraceIds =
+      input.netLabelConnectorTraceIds ?? new Set()
     this.inputProblem = input.inputProblem
     this.traces = input.traces
     this.inputNetLabelPlacements = input.netLabelPlacements
@@ -257,7 +276,7 @@ export class InlineNetLabelSolver extends BaseSolver {
 
     this.tracesByPinPairKey = new Map()
     for (const trace of this.traces) {
-      if (isGeneratedAnchoredLabelConnector(trace)) continue
+      if (this.netLabelConnectorTraceIds.has(trace.mspPairId)) continue
       const key = getPinPairKey(trace.pins.map((p) => p.pinId))
       const existing = this.tracesByPinPairKey.get(key)
       if (existing) {
@@ -276,6 +295,7 @@ export class InlineNetLabelSolver extends BaseSolver {
         netLabelPlacements: this.inputNetLabelPlacements,
         completedReroutes: this.completedReroutes,
         resolveTraceCollisions: this.input.resolveTraceCollisions,
+        netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
       },
     ]
   }
@@ -362,6 +382,10 @@ export class InlineNetLabelSolver extends BaseSolver {
       return
     }
 
+    if (this.input.resolveTraceCollisions && !this.refinementComplete) {
+      this.stepTraceRefinement()
+      return
+    }
     this.solved = true
     this.stats.inlineNetLabelCount = this.inlineNetLabelPlacements.length
   }
@@ -459,7 +483,7 @@ export class InlineNetLabelSolver extends BaseSolver {
       // anchored label. They are removed when that label becomes inline, so
       // treating them as routed circuitry would leave text on a deleted wire.
       traces: this.traces.filter(
-        (trace) => !isGeneratedAnchoredLabelConnector(trace),
+        (trace) => !this.netLabelConnectorTraceIds.has(trace.mspPairId),
       ),
     })
       .map((component) => ({
@@ -587,7 +611,7 @@ export class InlineNetLabelSolver extends BaseSolver {
   ): number[] {
     const normal = height / 2 + INLINE_NET_LABEL_TRACE_MARGIN
     const across = axis === "x" ? "y" : "x"
-    const sign = side.endsWith("+") ? 1 : -1
+    const sign = side === "x+" || side === "y+" ? 1 : -1
     let gap = Infinity
     for (const trace of traces) {
       if (ignoredTraceIds.has(trace.mspPairId)) continue
@@ -1082,7 +1106,7 @@ export class InlineNetLabelSolver extends BaseSolver {
       (trace) =>
         !supersededTraceIds.has(trace.mspPairId) &&
         !(
-          isGeneratedAnchoredLabelConnector(trace) &&
+          this.netLabelConnectorTraceIds.has(trace.mspPairId) &&
           isLabelRepresentedInline(trace, placements)
         ),
     )
@@ -1150,10 +1174,7 @@ export class InlineNetLabelSolver extends BaseSolver {
     return blockedKeys
   }
 
-  private buildPostProcessedOutput(): Omit<
-    InlineNetLabelOutput,
-    "inputProblem"
-  > {
+  private buildPostProcessedOutput(): InlineOutput {
     let activeInlinePlacements = this.inlineNetLabelPlacements
     while (true) {
       const retainedNetLabelPlacements = this.inputNetLabelPlacements.filter(
@@ -1178,8 +1199,12 @@ export class InlineNetLabelSolver extends BaseSolver {
       const pushed = pushAnchoredNetLabelsAwayFromInlineLabels({
         inputProblem: this.inputProblem,
         traces: outputTraces,
-        netLabelPlacements: labelCollisionSolver.getOutput().netLabelPlacements,
+        netLabelPlacements:
+          labelCollisionSolver.solved && !labelCollisionSolver.failed
+            ? labelCollisionSolver.getOutput().netLabelPlacements
+            : retainedNetLabelPlacements,
         inlineNetLabelPlacements: activeInlinePlacements,
+        netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
       })
       let blockedPlacementKeys = this.getBlockedInlinePlacements({
         inlineNetLabelPlacements: activeInlinePlacements,
@@ -1266,13 +1291,12 @@ export class InlineNetLabelSolver extends BaseSolver {
           restored.restoredTraceCount
         const output = {
           traces: restored.traces,
+          netLabelConnectorTraceIds: pushed.netLabelConnectorTraceIds,
           netLabelPlacements: pushed.netLabelPlacements,
           inlineNetLabelPlacements: activeInlinePlacements,
         }
         this.inlineNetLabelPlacements = output.inlineNetLabelPlacements
-        return this.input.resolveTraceCollisions
-          ? this.refineTraceCollisions(output)
-          : output
+        return output
       }
       activeInlinePlacements = activeInlinePlacements.filter(
         (placement) =>
@@ -1281,50 +1305,140 @@ export class InlineNetLabelSolver extends BaseSolver {
     }
   }
 
-  private refineTraceCollisions(
-    output: Omit<InlineNetLabelOutput, "inputProblem">,
-  ): Omit<InlineNetLabelOutput, "inputProblem"> {
-    let current = output
-    let improved = true
-    while (improved) {
-      improved = false
-      const before = getOutputLabelCollisionKeys(current)
-      // A blocked terminal may still be anchored, so its shorter tag does not
-      // expose the obstruction to its requested inline text and wire. Consider
-      // that geometry one terminal at a time; only an improvement in the final
-      // output can justify accepting the local trace shift.
-      const pending = current.netLabelPlacements.flatMap((label) => {
-        if (label.pinIds.length !== 1) return []
-        const connection = [
-          ...this.inputProblem.netConnections,
-          ...this.inputProblem.directConnections,
-        ].find(
-          (connection) =>
-            connection.allowInlineNetLabel &&
-            connection.netId === label.netId &&
-            connection.pinIds.includes(label.pinIds[0]!),
+  /** Enumerate nearby moves in the existing order; collect one proposal per step. */
+  private *getTraceRefinementProposals(current: InlineOutput) {
+    yield* getLocalTraceLabelShifts(this.inputProblem, current)
+    // An anchored endpoint can hide the larger footprint of its requested
+    // inline label. Consider that footprint without changing caller opt-ins.
+    for (const label of current.netLabelPlacements) {
+      if (label.pinIds.length !== 1) continue
+      const connection = [
+        ...this.inputProblem.netConnections,
+        ...this.inputProblem.directConnections,
+      ].find(
+        (connection) =>
+          connection.allowInlineNetLabel &&
+          connection.netId === label.netId &&
+          connection.pinIds.includes(label.pinIds[0]!),
+      )
+      if (!connection) continue
+      const placement = this.computeTerminalInlinePlacement(
+        connection,
+        label.pinIds[0]!,
+        label.globalConnNetId,
+        new Set(),
+        { traces: [], anchored: [], inline: [] },
+      )
+      if (placement)
+        yield* getLocalTraceLabelShifts(this.inputProblem, current, [placement])
+    }
+  }
+
+  private createRefinementCandidate(
+    proposal: InlineOutput,
+  ): InlineNetLabelSolver {
+    const traceMap = new Map(
+      proposal.traces.map((trace) => [trace.mspPairId, trace]),
+    )
+    const labelKey = (label: NetLabelPlacement) =>
+      JSON.stringify([label.globalConnNetId, [...label.pinIds].sort()])
+    const labelMap = new Map(
+      proposal.netLabelPlacements.map((label) => [labelKey(label), label]),
+    )
+    const originalTraceIds = new Set(
+      this.traces.map((trace) => trace.mspPairId),
+    )
+    return new InlineNetLabelSolver({
+      inputProblem: this.inputProblem,
+      traces: [
+        ...this.traces.map((trace) => traceMap.get(trace.mspPairId) ?? trace),
+        ...proposal.traces.filter(
+          (trace) => !originalTraceIds.has(trace.mspPairId),
+        ),
+      ],
+      netLabelPlacements: this.inputNetLabelPlacements.map(
+        (label) => labelMap.get(labelKey(label)) ?? label,
+      ),
+      completedReroutes: this.completedReroutes,
+      netLabelConnectorTraceIds: proposal.netLabelConnectorTraceIds,
+    })
+  }
+
+  private acceptRefinementCandidate(
+    proposal: InlineOutput,
+    result: InlineOutput,
+  ): boolean {
+    const current = this.postProcessedOutput!
+    const before = this.refinement!.before
+    const after = getOutputLabelCollisions(result)
+    if (
+      after.some(
+        (collision) =>
+          !before.some((previous) =>
+            sameOutputLabelCollision(collision, previous),
+          ),
+      )
+    )
+      return false
+    const movedTraceIds = new Set(
+      proposal.traces
+        .filter((trace, index) => trace !== current.traces[index])
+        .map((trace) => trace.mspPairId),
+    )
+    // Every moved route must clear its collisions, using its exact identity.
+    if (
+      after.some(
+        (collision) =>
+          collision.kind === "trace-label" &&
+          collision.trace.kind === "routed" &&
+          movedTraceIds.has(collision.trace.id),
+      )
+    )
+      return false
+    if (
+      after.length >= before.length &&
+      result.inlineNetLabelPlacements.length <=
+        current.inlineNetLabelPlacements.length
+    )
+      return false
+    this.postProcessedOutput = result
+    this.inlineNetLabelPlacements = result.inlineNetLabelPlacements
+    return true
+  }
+
+  private stepTraceRefinement() {
+    if (this.activeSubSolver) {
+      this.activeSubSolver.step()
+      if (!this.activeSubSolver.solved && !this.activeSubSolver.failed) return
+      // A failed or exhausted solver cannot replace the last accepted output.
+      if (
+        this.activeSubSolver.solved &&
+        !this.activeSubSolver.failed &&
+        this.acceptRefinementCandidate(
+          this.currentProposal!,
+          this.activeSubSolver.getOutput(),
         )
-        if (!connection) return []
-        const placement = this.computeTerminalInlinePlacement(
-          connection,
-          label.pinIds[0]!,
-          label.globalConnNetId,
-          new Set(),
-          { traces: [], anchored: [], inline: [] },
-        )
-        return placement ? [[placement]] : []
-      })
-      const inputProblem = this.inputProblem
-      function* proposals() {
-        for (const placements of [[], ...pending])
-          yield* getLocalTraceLabelShifts(inputProblem, current, placements)
+      ) {
+        this.refinement = undefined
       }
-      // Resolve the least disruptive moves first. A larger rail shift must
-      // not occupy the small corridor needed to clear a neighboring route.
-      const displacement = (
-        proposal: Omit<InlineNetLabelOutput, "inputProblem">,
-      ) =>
-        proposal.traces.reduce(
+      this.activeSubSolver = null
+      this.currentProposal = undefined
+      return
+    }
+    const current = this.postProcessedOutput!
+    if (!this.refinement) {
+      this.refinement = {
+        proposals: this.getTraceRefinementProposals(current),
+        queue: [],
+        collecting: true,
+        before: getOutputLabelCollisions(current),
+      }
+    }
+    const refinement = this.refinement
+    if (refinement.collecting) {
+      const next = refinement.proposals.next()
+      if (!next.done) {
+        const distance = next.value.traces.reduce(
           (sum, trace, index) =>
             sum +
             trace.tracePath.reduce((distance, point, pointIndex) => {
@@ -1337,66 +1451,24 @@ export class InlineNetLabelSolver extends BaseSolver {
             }, 0),
           0,
         )
-      for (const proposal of [...proposals()].sort(
-        (a, b) => displacement(a) - displacement(b),
-      )) {
-        const traceMap = new Map(
-          proposal.traces.map((trace) => [trace.mspPairId, trace]),
-        )
-        const labelKey = (label: NetLabelPlacement) =>
-          `${label.globalConnNetId}:${getPinPairKey(label.pinIds)}`
-        const labelMap = new Map(
-          proposal.netLabelPlacements.map((label) => [labelKey(label), label]),
-        )
-        const originalTraceIds = new Set(
-          this.traces.map((trace) => trace.mspPairId),
-        )
-        const candidate = new InlineNetLabelSolver({
-          inputProblem: this.inputProblem,
-          traces: [
-            ...this.traces.map(
-              (trace) => traceMap.get(trace.mspPairId) ?? trace,
-            ),
-            ...proposal.traces.filter(
-              (trace) => !originalTraceIds.has(trace.mspPairId),
-            ),
-          ],
-          netLabelPlacements: this.inputNetLabelPlacements.map(
-            (label) => labelMap.get(labelKey(label)) ?? label,
-          ),
-          completedReroutes: this.completedReroutes,
-        })
-        candidate.solve()
-        const result = candidate.getOutput()
-        const after = getOutputLabelCollisionKeys(result)
-        if ([...after].some((key) => !before.has(key))) continue
-        const movedTraceIds = proposal.traces
-          .filter((trace, index) => trace !== current.traces[index])
-          .map((trace) => trace.mspPairId)
-        // A sideways move must clear its route. Do not merely trade several
-        // overlaps for fewer overlaps in a corridor that still cannot fit.
-        if (
-          [...after].some((key) =>
-            movedTraceIds.some((id) => key.startsWith(`trace:${id}/`)),
-          )
-        )
-          continue
-        if (
-          after.size >= before.size &&
-          result.inlineNetLabelPlacements.length <=
-            current.inlineNetLabelPlacements.length
-        )
-          continue
-        current = result
-        improved = true
-        break
+        refinement.queue.push({ output: next.value, distance })
+      } else {
+        // Keep the previous smallest-move-first ordering, including stable ties.
+        refinement.queue.sort((a, b) => a.distance - b.distance)
+        refinement.collecting = false
       }
+      return
     }
-    this.inlineNetLabelPlacements = current.inlineNetLabelPlacements
-    return current
+    const next = refinement.queue.shift()
+    if (!next) {
+      this.refinementComplete = true
+      return
+    }
+    this.currentProposal = next.output
+    this.activeSubSolver = this.createRefinementCandidate(next.output)
   }
 
-  getOutput(): Omit<InlineNetLabelOutput, "inputProblem"> {
+  getOutput(): InlineOutput {
     if (this.postProcessedOutput) return this.postProcessedOutput
     return this.buildPostProcessedOutput()
   }

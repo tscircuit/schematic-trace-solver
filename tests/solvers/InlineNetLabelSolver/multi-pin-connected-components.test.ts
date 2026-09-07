@@ -220,8 +220,8 @@ test("a generated anchored-label connector becomes an inline terminal stub", () 
     availableNetLabelOrientations: { SIGNAL: ["x-"] },
   }
   const generatedLabelConnector: SolvedTracePath = {
-    mspPairId: "available-net-orientation-0-SIGNAL",
-    mspConnectionPairIds: ["available-net-orientation-0-SIGNAL"],
+    mspPairId: "opaque/connector:1",
+    mspConnectionPairIds: ["opaque/connector:1"],
     dcConnNetId: "SIGNAL",
     globalConnNetId: "SIGNAL",
     userNetId: "SIGNAL",
@@ -239,6 +239,7 @@ test("a generated anchored-label connector becomes an inline terminal stub", () 
   const solver = new InlineNetLabelSolver({
     inputProblem,
     traces: [generatedLabelConnector],
+    netLabelConnectorTraceIds: new Set([generatedLabelConnector.mspPairId]),
     netLabelPlacements: [],
   })
   solver.solve()

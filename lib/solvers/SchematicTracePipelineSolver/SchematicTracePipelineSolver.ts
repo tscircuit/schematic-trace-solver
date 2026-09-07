@@ -599,6 +599,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             netLabelPlacements: junctionOutput.netLabelPlacements,
             completedReroutes,
             resolveTraceCollisions: true,
+            netLabelConnectorTraceIds:
+              instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
           },
         ]
       },

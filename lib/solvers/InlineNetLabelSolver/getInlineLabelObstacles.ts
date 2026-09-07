@@ -39,7 +39,11 @@ export const getInlineLabelObstacles = (
     )
     const pin = chip?.pins.find((pin) => label.pinIds.includes(pin.pinId))
     if (!chip || !pin) return []
-    const id = `inline-terminal-${`${label.globalConnNetId}-${label.pinIds.join("-")}`}`
+    const id = JSON.stringify([
+      "inline-terminal",
+      label.globalConnNetId,
+      [...label.pinIds].sort(),
+    ])
     return [
       {
         mspPairId: id,

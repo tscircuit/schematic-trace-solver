@@ -178,17 +178,14 @@ const sharesOwnerChip = (
 ) =>
   label.pinIds.some((pinId) => ownerChipIds.has(chipIdByPinId.get(pinId) ?? ""))
 
-const isGeneratedLabelConnector = (trace: SolvedTracePath) =>
-  trace.mspPairId.startsWith("available-net-orientation-") ||
-  trace.mspPairId.startsWith("inline-net-label-clearance-")
-
 const findConnectorTraceIndex = (
   label: NetLabelPlacement,
   traces: SolvedTracePath[],
+  connectorTraceIds: ReadonlySet<string>,
 ) =>
   traces.findIndex((trace) => {
     if (trace.globalConnNetId !== label.globalConnNetId) return false
-    if (!isGeneratedLabelConnector(trace)) return false
+    if (!connectorTraceIds.has(trace.mspPairId)) return false
     const first = trace.tracePath[0]
     const last = trace.tracePath.at(-1)
     return Boolean(
@@ -317,7 +314,9 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
   traces,
   netLabelPlacements,
   inlineNetLabelPlacements,
+  netLabelConnectorTraceIds = new Set<string>(),
 }: {
+  netLabelConnectorTraceIds?: ReadonlySet<string>
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
@@ -326,7 +325,9 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   movedLabelCount: number
+  netLabelConnectorTraceIds: ReadonlySet<string>
 } => {
+  const connectorTraceIds = new Set(netLabelConnectorTraceIds)
   const outputTraces = traces.map((trace) => ({
     ...trace,
     tracePath: trace.tracePath.map((point) => ({ ...point })),
@@ -383,7 +384,11 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
           if (!boundsOverlap(movingBounds, obstacleBounds)) continue
           if (
             !sharesOwnerChip(obstacle, ownerChipIds, chipIdByPinId) ||
-            (findConnectorTraceIndex(obstacle, outputTraces) === -1 &&
+            (findConnectorTraceIndex(
+              obstacle,
+              outputTraces,
+              connectorTraceIds,
+            ) === -1 &&
               !canAddConnectorAtAnchor(obstacle, outputTraces, pinMap))
           ) {
             failed = true
@@ -479,7 +484,11 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
     }> = []
     for (const [labelIndex, movedLabel] of proposals) {
       const label = outputLabels[labelIndex]!
-      const connectorIndex = findConnectorTraceIndex(label, outputTraces)
+      const connectorIndex = findConnectorTraceIndex(
+        label,
+        outputTraces,
+        connectorTraceIds,
+      )
       if (
         connectorIndex === -1 &&
         !canAddConnectorAtAnchor(label, outputTraces, pinMap)
@@ -547,6 +556,7 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
       movedLabelIndices.add(labelIndex)
     }
     for (const update of connectorUpdates) {
+      connectorTraceIds.add(update.trace.mspPairId)
       if (update.connectorIndex === -1) outputTraces.push(update.trace)
       else outputTraces[update.connectorIndex] = update.trace
     }
@@ -556,5 +566,6 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
     traces: outputTraces,
     netLabelPlacements: outputLabels,
     movedLabelCount: movedLabelIndices.size,
+    netLabelConnectorTraceIds: connectorTraceIds,
   }
 }

@@ -1,4 +1,4 @@
-import { getOutputLabelCollisionKeys } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisionKeys"
+import { getOutputLabelCollisions } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisions"
 import { doSegmentsIntersect } from "@tscircuit/math-utils/line-intersections"
 import { expect, test } from "bun:test"
 import { getAnchoredNetLabelRenderedBounds } from "lib/solvers/InlineNetLabelSolver/getAnchoredNetLabelRenderedBounds"
@@ -20,7 +20,7 @@ test("bug-report-20260907T145640Z", async () => {
   // diagnostic terminal wires.
   const output = solver.inlineNetLabelSolver!.getOutput()
   // Audit the entire report, including U3, rather than selected screenshots.
-  expect([...getOutputLabelCollisionKeys(output)]).toEqual([])
+  expect([...getOutputLabelCollisions(output)]).toEqual([])
   for (const connection of inputProblem.netConnections.filter(
     (connection) => connection.allowInlineNetLabel,
   )) {

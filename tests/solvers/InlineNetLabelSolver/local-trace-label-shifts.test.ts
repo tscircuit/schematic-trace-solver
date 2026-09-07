@@ -1,10 +1,16 @@
 import { expect, test } from "bun:test"
 import type { Point } from "@tscircuit/math-utils"
 import type { InputProblem } from "lib/types/InputProblem"
-import type { InlineNetLabelOutput } from "lib/solvers/InlineNetLabelSolver/InlineNetLabelSolver"
+import {
+  InlineNetLabelSolver,
+  type InlineNetLabelOutput,
+} from "lib/solvers/InlineNetLabelSolver/InlineNetLabelSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getLocalTraceLabelShifts } from "lib/solvers/InlineNetLabelSolver/getLocalTraceLabelShifts"
-import { getOutputLabelCollisionKeys } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisionKeys"
+import {
+  getOutputLabelCollisions,
+  sameOutputLabelCollision,
+} from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisions"
 
 const trace = (net: string, path: Point[]): SolvedTracePath => ({
   mspPairId: net,
@@ -77,7 +83,7 @@ for (const rotation of [0, 1, 2, 3])
       expect(path).toHaveLength(4)
       expect(path[0]).toEqual(output.traces[0]!.tracePath[0])
       expect(path.at(-1)).toEqual(output.traces[0]!.tracePath.at(-1))
-      expect([...getOutputLabelCollisionKeys(proposal)]).toEqual([])
+      expect([...getOutputLabelCollisions(proposal)]).toEqual([])
     }
     expect(output).toEqual(saved)
   })
@@ -179,7 +185,7 @@ test("moves a neighboring power label with its short connector to free a side co
     expect(proposal.traces[1]!.tracePath).toHaveLength(3)
     expect(proposal.traces[1]!.tracePath[0]).toEqual(power.tracePath[0])
     expect(proposal.netLabelPlacements[1]!.anchorPoint.x).toBeGreaterThan(1.4)
-    expect([...getOutputLabelCollisionKeys(proposal)]).toEqual([])
+    expect([...getOutputLabelCollisions(proposal)]).toEqual([])
   }
 })
 
@@ -235,7 +241,56 @@ test("clears a moved rail's own tag and a neighboring power label in one proposa
     ])
     expect(proposal.netLabelPlacements[1]!.anchorPoint.x).toBeCloseTo(1.25)
     expect(proposal.netLabelPlacements[2]!.anchorPoint.x).toBeGreaterThan(1.25)
-    expect([...getOutputLabelCollisionKeys(proposal)]).toEqual([])
+    expect([...getOutputLabelCollisions(proposal)]).toEqual([])
   }
   expect(output).toEqual(saved)
+})
+
+test("collision identity preserves opaque trace, net, and pin IDs", () => {
+  const first = fixture().output
+  first.traces[0]!.mspPairId = "a/b"
+  first.netLabelPlacements[0]!.globalConnNetId = "c"
+  first.netLabelPlacements[0]!.pinIds = ["p,q"]
+  const second = structuredClone(first)
+  second.traces[0]!.mspPairId = "a"
+  second.netLabelPlacements[0]!.globalConnNetId = "b/c"
+  const a = getOutputLabelCollisions(first)[0]!
+  const b = getOutputLabelCollisions(second)[0]!
+  expect(a).toMatchObject({
+    kind: "trace-label",
+    trace: { kind: "routed", id: "a/b" },
+  })
+  expect(sameOutputLabelCollision(a, b)).toBe(false)
+  const splitPins = structuredClone(first)
+  splitPins.netLabelPlacements[0]!.pinIds = ["p", "q"]
+  expect(
+    sameOutputLabelCollision(a, getOutputLabelCollisions(splitPins)[0]!),
+  ).toBe(false)
+  expect(sameOutputLabelCollision(a, structuredClone(a))).toBe(true)
+})
+
+test("refinement steps candidates and retains output when they exhaust their budget", () => {
+  const { input, output } = fixture()
+  const solver = new InlineNetLabelSolver({
+    inputProblem: input,
+    ...output,
+    resolveTraceCollisions: true,
+  })
+  let failedCandidates = 0
+  while (!solver.solved && !solver.failed) {
+    if (solver.activeSubSolver) {
+      const candidate = solver.activeSubSolver
+      expect(candidate.iterations).toBe(0)
+      candidate.MAX_ITERATIONS = 0
+      solver.step()
+      expect(candidate.failed).toBe(true)
+      failedCandidates++
+    } else solver.step()
+  }
+  expect(failedCandidates).toBeGreaterThan(0)
+  expect(solver.solved).toBe(true)
+  expect(solver.getOutput().traces).toEqual(output.traces)
+  expect(solver.getOutput().netLabelPlacements).toEqual(
+    output.netLabelPlacements,
+  )
 })
