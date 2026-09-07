@@ -1,4 +1,5 @@
 import { findLabelCollisions } from "tests/fixtures/findLabelCollisions"
+import { doSegmentsIntersect } from "@tscircuit/math-utils/line-intersections"
 import { expect, test } from "bun:test"
 import { getAnchoredNetLabelRenderedBounds } from "lib/solvers/InlineNetLabelSolver/getAnchoredNetLabelRenderedBounds"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
@@ -71,6 +72,31 @@ test("bug-report-20260907T145640Z", async () => {
       ),
     ).toBe(true)
   }
+  // Remote routes must clear entire terminal wires, including their tails
+  // beyond the text and terminals on the same net (the U3 SCL regression).
+  const terminalWireCrossings = output.inlineNetLabelPlacements.flatMap(
+    (label) => {
+      if (!label.stubTracePath) return []
+      const [start, end] = label.stubTracePath
+      return output.traces
+        .filter(
+          (trace) =>
+            !trace.pinIds.some((pinId) => label.pinIds.includes(pinId)) &&
+            trace.tracePath
+              .slice(1)
+              .some((point, index) =>
+                doSegmentsIntersect(
+                  start!,
+                  end!,
+                  trace.tracePath[index]!,
+                  point,
+                ),
+              ),
+        )
+        .map((trace) => ({ terminal: label.pinIds, trace: trace.mspPairId }))
+    },
+  )
+  expect(terminalWireCrossings).toEqual([])
   // U2 pin 17 must remain connected and clear of the final signal labels.
   const traceId = "schematic_port_57-schematic_port_86"
   const clearedTrace = solver

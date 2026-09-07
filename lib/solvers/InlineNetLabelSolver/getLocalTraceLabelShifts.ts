@@ -7,7 +7,10 @@ import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
 import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
-import { getInlineLabelObstacles } from "./getInlineLabelObstacles"
+import {
+  getInlineLabelObstacles,
+  getInlineTerminalBounds,
+} from "./getInlineLabelObstacles"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
 import type {
   InlineNetLabelOutput,
@@ -43,10 +46,18 @@ export function* getLocalTraceLabelShifts(
   output: Output,
   pendingInlinePlacements: InlineNetLabelPlacement[] = [],
 ): Generator<Output> {
+  const placements = [
+    ...output.inlineNetLabelPlacements,
+    ...pendingInlinePlacements,
+  ]
   const { fixedLabels, terminalTraces } = getInlineLabelObstacles(
     inputProblem,
-    [...output.inlineNetLabelPlacements, ...pendingInlinePlacements],
+    placements,
   )
+  const terminalBounds = placements.flatMap((label) => {
+    const bounds = getInlineTerminalBounds(label)
+    return bounds ? [{ label, bounds }] : []
+  })
   const obstacles = [
     ...inputProblem.chips.map((chip) => ({
       minX: chip.center.x - chip.width / 2,
@@ -79,6 +90,12 @@ export function* getLocalTraceLabelShifts(
           .filter((label) => label.globalConnNetId !== trace.globalConnNetId)
           .map(getAnchoredNetLabelRenderedBounds),
         ...inlineBounds,
+        ...terminalBounds
+          .filter(
+            ({ label }) =>
+              !trace.pinIds.some((pinId) => label.pinIds.includes(pinId)),
+          )
+          .map(({ bounds }) => bounds),
       ].filter((bounds) => segmentIntersectsRect(a, b, bounds))
       if (!blocking.length) continue
       // Cleanup can split one rail across several trace records, including a

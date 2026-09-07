@@ -3,6 +3,19 @@ import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetL
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InlineNetLabelPlacement } from "./InlineNetLabelSolver"
 
+/** A terminal wire is separate from remote routes, even on the same net. */
+export const getInlineTerminalBounds = (label: InlineNetLabelPlacement) => {
+  if (!label.stubTracePath) return null
+  // Give a line a nonzero box for the axis-aligned rectangle intersection test.
+  const epsilon = 1e-6
+  return {
+    minX: Math.min(...label.stubTracePath.map((p) => p.x)) - epsilon,
+    maxX: Math.max(...label.stubTracePath.map((p) => p.x)) + epsilon,
+    minY: Math.min(...label.stubTracePath.map((p) => p.y)) - epsilon,
+    maxY: Math.max(...label.stubTracePath.map((p) => p.y)) + epsilon,
+  }
+}
+
 /** Geometric obstacles for already placed inline text and its terminal wires. */
 export const getInlineLabelObstacles = (
   inputProblem: InputProblem,

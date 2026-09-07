@@ -1,5 +1,6 @@
 import type { InlineNetLabelOutput } from "./InlineNetLabelSolver"
 import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
+import { getInlineTerminalBounds } from "./getInlineLabelObstacles"
 import { boundsOverlap } from "lib/utils/textBoxBounds"
 import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
@@ -63,5 +64,23 @@ export const getOutputLabelCollisionKeys = (
       )
         keys.add(`trace:${trace.mspPairId}/${key}`)
     }
+  for (const label of output.inlineNetLabelPlacements) {
+    const bounds = getInlineTerminalBounds(label)
+    if (!bounds) continue
+    for (const trace of output.traces) {
+      // A route attached to the terminal's own pin is an intentional connection.
+      if (trace.pinIds.some((pinId) => label.pinIds.includes(pinId))) continue
+      if (
+        trace.tracePath
+          .slice(1)
+          .some((end, index) =>
+            segmentIntersectsRect(trace.tracePath[index]!, end, bounds),
+          )
+      )
+        keys.add(
+          `trace:${trace.mspPairId}/terminal:${label.globalConnNetId}:${[...label.pinIds].sort().join(",")}`,
+        )
+    }
+  }
   return keys
 }
