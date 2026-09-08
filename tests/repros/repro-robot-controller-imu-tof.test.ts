@@ -2,6 +2,7 @@ import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { InputProblem } from "lib/types/InputProblem"
+import { convertSolverOutputToCircuitJson } from "tests/fixtures/convertSolverOutputToCircuitJson"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-robot-controller-imu-tof.input.json"
 
@@ -39,5 +40,16 @@ test("repro robot controller IMU and ToF trace routing", async () => {
     ),
   )
   expect(connectedSclPins).toHaveLength(2)
+  const circuitJson = convertSolverOutputToCircuitJson(solver)
+  expect(
+    circuitJson
+      .filter((element) => element.type === "schematic_text")
+      .map((element) => element.text),
+  ).toContain("I2C_SDA")
+  expect(
+    circuitJson
+      .filter((element) => element.type === "schematic_net_label")
+      .map((element) => element.text),
+  ).toContain("V3V3_IMU")
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

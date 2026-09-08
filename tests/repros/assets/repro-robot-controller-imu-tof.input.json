@@ -343,6 +343,7 @@
   "netConnections": [
     {
       "netId": "GND",
+      "netLabelText": "GND",
       "isGround": true,
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.48,
@@ -362,6 +363,7 @@
     },
     {
       "netId": "IMU_INT",
+      "netLabelText": "IMU_INT",
       "isGround": false,
       "netLabelWidth": 0.96,
       "anchoredNetLabelWidth": 0.96,
@@ -374,6 +376,7 @@
     },
     {
       "netId": "V3V3_IMU",
+      "netLabelText": "V3V3_IMU",
       "isGround": false,
       "netLabelWidth": 0.42,
       "netLabelHeight": 1.08,
@@ -387,6 +390,7 @@
     },
     {
       "netId": "I2C_SCL",
+      "netLabelText": "I2C_SCL",
       "isGround": false,
       "netLabelWidth": 0.96,
       "anchoredNetLabelWidth": 0.96,
@@ -401,6 +405,7 @@
     },
     {
       "netId": "I2C_SDA",
+      "netLabelText": "I2C_SDA",
       "isGround": false,
       "netLabelWidth": 0.96,
       "anchoredNetLabelWidth": 0.96,
@@ -415,6 +420,7 @@
     },
     {
       "netId": "V3V3",
+      "netLabelText": "V3V3",
       "isGround": false,
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.6,
@@ -429,6 +435,7 @@
     },
     {
       "netId": "TOF_XSHUT",
+      "netLabelText": "TOF_XSHUT",
       "isGround": false,
       "netLabelWidth": 1.2,
       "anchoredNetLabelWidth": 1.2,
@@ -442,6 +449,7 @@
     },
     {
       "netId": "TOF_INT",
+      "netLabelText": "TOF_INT",
       "isGround": false,
       "netLabelWidth": 0.96,
       "anchoredNetLabelWidth": 0.96,
