@@ -26,6 +26,7 @@ import {
   type InlineNetLabelPlacement,
   visualizeInlineNetLabelOutput,
 } from "../InlineNetLabelSolver/InlineNetLabelSolver"
+import { orthogonalizeTracePathCandidates } from "./orthogonalizeTracePath"
 import { reduceTraceCrossings } from "./reduceTraceCrossings"
 
 type GlobalConnNetId = NetLabelPlacement["globalConnNetId"]
@@ -448,8 +449,8 @@ export class NetLabelToTraceSolver extends BaseSolver {
 
   private tryAcceptCurrentRoute() {
     const candidate = this.currentCandidate
-    let tracePath = this.activeSubSolver?.solvedTracePath
-    if (!candidate || !tracePath) return
+    const originalTracePath = this.activeSubSolver?.solvedTracePath
+    if (!candidate || !originalTracePath) return
 
     const retainedTraces = this.outputTraces.filter(
       (trace) => !this.isSupersededConnectorTrace(trace, candidate),
@@ -461,23 +462,32 @@ export class NetLabelToTraceSolver extends BaseSolver {
           trace.globalConnNetId !== candidate.firstLabel.globalConnNetId,
       )
     }
-    if (
-      doesTraceRecoveryPathConflict(tracePath, collisionTraces) ||
-      this.routeIntersectsRemainingLabels(tracePath, candidate)
-    ) {
-      return
-    }
 
-    tracePath = reduceTraceCrossings({
-      tracePath,
-      globalConnNetId: candidate.firstLabel.globalConnNetId,
-      otherTraces: collisionTraces,
-      isCandidateValid: (candidatePath) =>
-        findFirstCollision(candidatePath, this.activeSubSolver!.obstacles) ===
-          null &&
-        !doesTraceRecoveryPathConflict(candidatePath, collisionTraces) &&
-        !this.routeIntersectsRemainingLabels(candidatePath, candidate),
-    })
+    const isReducedPathValid = (candidatePath: Point[]) =>
+      findFirstCollision(candidatePath, this.activeSubSolver!.obstacles) ===
+        null &&
+      !doesTraceRecoveryPathConflict(candidatePath, collisionTraces) &&
+      !this.routeIntersectsRemainingLabels(candidatePath, candidate)
+
+    let tracePath: Point[] | undefined
+    for (const orthogonalPath of orthogonalizeTracePathCandidates(
+      originalTracePath,
+    )) {
+      if (
+        doesTraceRecoveryPathConflict(orthogonalPath, collisionTraces) ||
+        this.routeIntersectsRemainingLabels(orthogonalPath, candidate)
+      ) {
+        continue
+      }
+      tracePath = reduceTraceCrossings({
+        tracePath: orthogonalPath,
+        globalConnNetId: candidate.firstLabel.globalConnNetId,
+        otherTraces: collisionTraces,
+        isCandidateValid: isReducedPathValid,
+      })
+      break
+    }
+    if (!tracePath) return
 
     const [firstPin, secondPin] = candidate.pins
     const mspPairId = `${RECOVERED_TRACE_PREFIX}${candidate.key}`
