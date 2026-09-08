@@ -3,6 +3,10 @@ import type { InputPin, InputProblem, PinId } from "lib/types/InputProblem"
 import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 
 const EPS = 1e-6
+// Component scale supplies a minimum allowance, including two-capacitor rows
+// with no neighboring pitch to compare against.
+const MAX_RAIL_SPACING_IN_TERMINAL_SPANS = 4
+const MAX_RAIL_SPACING_MULTIPLIER = 2
 
 export const getRailPairKey = (first: PinId, second: PinId) =>
   JSON.stringify([first, second].sort())
@@ -19,7 +23,7 @@ export const getParallelRailPairs = (
   for (const connection of inputProblem.netConnections) {
     for (const pinId of connection.pinIds) namedPinIds.add(pinId)
     const netId = netConnMap.getNetConnectedToId(connection.netId)
-    if (netId && (connection.isGround || connection.netId === "GND")) {
+    if (netId && connection.isGround) {
       groundNetIds.add(netId)
     }
   }
@@ -94,6 +98,7 @@ export const getParallelRailPairs = (
 
   const pairKeys = new Set<string>()
   const extendedRailPinIds = new Set<PinId>()
+  const separatedRailPinIds = new Set<PinId>()
   for (const row of rows) {
     const along = row.axis === "x" ? "y" : "x"
     row.pins.sort(
@@ -102,13 +107,37 @@ export const getParallelRailPairs = (
     for (let index = 1; index < row.pins.length; index++) {
       const first = row.pins[index - 1]!
       const second = row.pins[index]!
+      const spacing = second[along] - first[along]
+      // A regular row may be widely spaced. Split at gaps that are much
+      // larger than the neighboring pitch, rather than imposing a fixed cap.
+      const neighboringSpacings = [
+        first[along] - (row.pins[index - 2]?.[along] ?? first[along]),
+        (row.pins[index + 1]?.[along] ?? second[along]) - second[along],
+      ].filter((gap) => gap > EPS)
+      const maxRailSpacing = Math.max(
+        MAX_RAIL_SPACING_MULTIPLIER * maxMspPairDistance,
+        MAX_RAIL_SPACING_MULTIPLIER *
+          (neighboringSpacings.length ? Math.min(...neighboringSpacings) : 0),
+        MAX_RAIL_SPACING_IN_TERMINAL_SPANS *
+          Math.max(
+            Math.abs(first[row.axis] - first.oppositeCoordinate),
+            Math.abs(second[row.axis] - second.oppositeCoordinate),
+          ),
+      )
       // A different supply in between ends the supply rail; GND can continue.
       if (
-        Math.abs(first[along] - second[along]) <= EPS ||
+        spacing <= EPS ||
         netConnMap.getNetConnectedToId(first.pinId) !==
           netConnMap.getNetConnectedToId(second.pinId)
       )
         continue
+      if (spacing > maxRailSpacing + EPS) {
+        // Recovery must retain this separation even when each capacitor has
+        // a different supply and does not belong to a same-net branch bank.
+        separatedRailPinIds.add(first.pinId)
+        separatedRailPinIds.add(second.pinId)
+        continue
+      }
       // A component between the terminals breaks the row. Leave obstacle
       // detours to ordinary local routing instead of extending this exception.
       const minAcross = Math.min(
@@ -139,11 +168,11 @@ export const getParallelRailPairs = (
       )
         continue
       pairKeys.add(getRailPairKey(first.pinId, second.pinId))
-      if (Math.abs(first[along] - second[along]) > maxMspPairDistance) {
+      if (spacing > maxMspPairDistance) {
         extendedRailPinIds.add(first.pinId)
         extendedRailPinIds.add(second.pinId)
       }
     }
   }
-  return { pairKeys, extendedRailPinIds }
+  return { pairKeys, extendedRailPinIds, separatedRailPinIds }
 }

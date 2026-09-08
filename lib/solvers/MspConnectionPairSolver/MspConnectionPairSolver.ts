@@ -231,7 +231,20 @@ export class MspConnectionPairSolver extends BaseSolver {
         }),
     })
 
-    for (const [pin1, pin2] of msp) {
+    for (let [pin1, pin2] of msp) {
+      // Extended rails replace long-distance recovery, which visits pins in
+      // connectivity order. Preserve that order so an unchanged rail keeps
+      // its label at the same endpoint.
+      if (
+        this.parallelRailPairKeys.has(getRailPairKey(pin1!, pin2!)) &&
+        Math.abs(this.pinMap[pin1!]!.x - this.pinMap[pin2!]!.x) +
+          Math.abs(this.pinMap[pin1!]!.y - this.pinMap[pin2!]!.y) >
+          this.maxMspPairDistance &&
+        directlyConnectedPins.indexOf(pin1!) >
+          directlyConnectedPins.indexOf(pin2!)
+      ) {
+        ;[pin1, pin2] = [pin2, pin1]
+      }
       const p1Obj = this.pinMap[pin1!]!
       const p2Obj = this.pinMap[pin2!]!
       if (

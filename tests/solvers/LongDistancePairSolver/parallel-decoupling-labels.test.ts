@@ -18,7 +18,7 @@ const createBank = (): InputProblem => ({
   directConnections: [],
   netConnections: [
     { netId: "VDD", pinIds: ["C1.1", "C2.1", "C3.1"] },
-    { netId: "GND", pinIds: ["C1.2", "C2.2", "C3.2"] },
+    { netId: "GND", isGround: true, pinIds: ["C1.2", "C2.2", "C3.2"] },
   ],
   availableNetLabelOrientations: { VDD: ["y+"], GND: ["y-"] },
   maxMspPairDistance: 1,
@@ -84,6 +84,21 @@ test("keeps shared rails within the configured routing distance", () => {
   ).toHaveLength(2)
 })
 
+test("uniformly spaced capacitor rows retain shared rails at a wider pitch", () => {
+  const input = createBank()
+  for (const chip of input.chips) {
+    chip.center.x *= 3
+    for (const pin of chip.pins) pin.x *= 3
+  }
+  const solver = solve(input)
+  expect(solver.mspConnectionPairSolver!.mspConnectionPairs).toHaveLength(4)
+  expect(solver.longDistancePairSolver!.getOutput().newTraces).toEqual([])
+  const { traces, netLabelPlacements } =
+    solver.netLabelToTraceSolver!.getOutput()
+  expect(traces).toHaveLength(4)
+  expect(netLabelPlacements).toHaveLength(2)
+})
+
 test("preserves explicitly wired rails while labeling the independent ground pins", () => {
   const input = createBank()
   input.directConnections = [
@@ -125,10 +140,128 @@ test("recognizes a ground alias by its metadata and global connectivity", () => 
 test("preserves long-distance recovery for unrelated signal connections", () => {
   const input = createBank()
   input.netConnections[1]!.netId = "SIGNAL"
+  input.netConnections[1]!.isGround = false
   expect(
     solve(input).longDistancePairSolver!.getOutput().newTraces.length,
   ).toBeGreaterThan(0)
 })
+
+test.each([undefined, false])(
+  "does not infer ground from the net name when isGround=%s",
+  (isGround) => {
+    const input = createBank()
+    input.netConnections[1]!.isGround = isGround
+    const solver = solve(input)
+    expect(solver.mspConnectionPairSolver!.mspConnectionPairs).toHaveLength(0)
+    expect(
+      solver.longDistancePairSolver!.getOutput().newTraces.length,
+    ).toBeGreaterThan(0)
+  },
+)
+
+for (const { rotated, pitch } of [
+  { rotated: false, pitch: 2 },
+  { rotated: true, pitch: 2 },
+  { rotated: false, pitch: 6 },
+  { rotated: true, pitch: 6 },
+]) {
+  test(`large gaps separate aligned capacitor banks (rotated=${rotated}, pitch=${pitch})`, () => {
+    const input = createBank()
+    input.chips = [0, 1, 4.5, 5.5].map((offset, index) => ({
+      ...structuredClone(input.chips[0]!),
+      chipId: `C${index + 1}`,
+      center: rotated
+        ? { x: 0, y: offset * pitch }
+        : { x: offset * pitch, y: 0 },
+      width: rotated ? 0.8 : 0.6,
+      height: rotated ? 0.6 : 0.8,
+      pins: [0.4, -0.4].map((pinOffset, pinIndex) => ({
+        pinId: `C${index + 1}.${pinIndex + 1}`,
+        x: rotated ? pinOffset : offset * pitch,
+        y: rotated ? offset * pitch : pinOffset,
+      })),
+    }))
+    input.netConnections[0]!.isGround = false
+    for (const [index, net] of input.netConnections.entries()) {
+      net.pinIds = input.chips.map((chip) => chip.pins[index]!.pinId)
+    }
+    if (rotated) {
+      input.availableNetLabelOrientations = { VDD: ["x+"], GND: ["x-"] }
+    }
+    const solver = solve(input)
+    expect(solver.mspConnectionPairSolver!.mspConnectionPairs).toHaveLength(4)
+    expect(solver.longDistancePairSolver!.getOutput().newTraces).toEqual([])
+    const { traces, netLabelPlacements } =
+      solver.netLabelToTraceSolver!.getOutput()
+    expect(traces).toHaveLength(4)
+    expect(netLabelPlacements).toHaveLength(4)
+    for (const [index, net] of input.netConnections.entries()) {
+      const components = getTraceConnectedPinComponents({
+        pinIds: net.pinIds,
+        traces,
+      })
+      expect(components.map((component) => component.pinIds.sort())).toEqual([
+        [`C1.${index + 1}`, `C2.${index + 1}`],
+        [`C3.${index + 1}`, `C4.${index + 1}`],
+      ])
+      for (const component of components) {
+        expect(
+          netLabelPlacements.filter((label) =>
+            label.pinIds.some((pinId) => component.pinIds.includes(pinId)),
+          ),
+        ).toHaveLength(1)
+      }
+    }
+  })
+}
+
+test("two isolated capacitors do not form a rail across a large gap", () => {
+  const input = createBank()
+  input.chips.splice(1, 1)
+  for (const net of input.netConnections) net.pinIds.splice(1, 1)
+  const solver = solve(input)
+  expect(solver.mspConnectionPairSolver!.mspConnectionPairs).toHaveLength(0)
+  expect(solver.longDistancePairSolver!.getOutput().newTraces).toEqual([])
+  const { traces, netLabelPlacements } =
+    solver.netLabelToTraceSolver!.getOutput()
+  expect(traces).toHaveLength(0)
+  expect(netLabelPlacements).toHaveLength(4)
+})
+
+test.each([4, 7])(
+  "rail separation survives ground recovery across a gap of %d",
+  (gap) => {
+    const input = createBank()
+    input.chips.splice(1, 1)
+    input.chips[1]!.center.x = gap
+    for (const pin of input.chips[1]!.pins) pin.x = gap
+    input.chips.push({
+      chipId: "U1",
+      center: { x: gap / 2, y: -4 },
+      width: 1,
+      height: 1,
+      pins: [{ pinId: "U1.GND", x: gap / 2, y: -4.5 }],
+    })
+    input.netConnections = [
+      { netId: "VDD1", isGround: false, pinIds: ["C1.1"] },
+      { netId: "VDD2", isGround: false, pinIds: ["C3.1"] },
+      { netId: "GND", isGround: true, pinIds: ["C1.2", "C3.2", "U1.GND"] },
+    ]
+    input.availableNetLabelOrientations = {
+      VDD1: ["y+"],
+      VDD2: ["y+"],
+      GND: ["y-"],
+    }
+
+    const solver = solve(input)
+    expect(solver.mspConnectionPairSolver!.mspConnectionPairs).toHaveLength(0)
+    expect(solver.longDistancePairSolver!.getOutput().newTraces).toEqual([])
+    const { traces, netLabelPlacements } =
+      solver.netLabelToTraceSolver!.getOutput()
+    expect(traces).toHaveLength(0)
+    expect(netLabelPlacements).toHaveLength(5)
+  },
+)
 
 test("keeps distant net-only loads local even when they are staggered", () => {
   const input = createBank()

@@ -11,7 +11,7 @@ export const getParallelNetLabelPolicy = (
 ) => {
   const maxDistance =
     inputProblem.maxMspPairDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
-  const { extendedRailPinIds } = getParallelRailPairs(
+  const { extendedRailPinIds, separatedRailPinIds } = getParallelRailPairs(
     inputProblem,
     netConnMap,
     maxDistance,
@@ -22,7 +22,7 @@ export const getParallelNetLabelPolicy = (
     const netId = netConnMap.getNetConnectedToId(connection.netId)
     if (!netId) continue
     for (const pinId of connection.pinIds) namedPinIds.add(pinId)
-    if (connection.isGround || connection.netId === "GND") {
+    if (connection.isGround) {
       groundNetIds.add(netId)
     }
   }
@@ -65,9 +65,9 @@ export const getParallelNetLabelPolicy = (
   const bankPinIds = new Set(
     [...banks.values()].filter((bank) => bank.length > 1).flat(2),
   )
-  // A shared rail remains local to its row. Do not recover wires from it to
-  // distant IC pins or another row just because its terminals now have traces.
-  for (const pinId of extendedRailPinIds) {
+  // Both shared rails and terminals separated by a large gap stay local.
+  // Do not recover wires between them or to distant IC pins.
+  for (const pinId of [...extendedRailPinIds, ...separatedRailPinIds]) {
     bankPinIds.add(pinId)
   }
 

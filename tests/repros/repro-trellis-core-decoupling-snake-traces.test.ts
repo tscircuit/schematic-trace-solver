@@ -56,7 +56,9 @@ test("Trellis decoupling capacitors share straight rails within each row", () =>
         }
       }
       if (groundPins.has(pin.pinId)) {
-        expect(component.pinIds).toHaveLength(pin.y > 0 ? 13 : 10)
+        expect(component.pinIds).toHaveLength(
+          pin.y > 0 ? 13 : pin.x < 0 ? 6 : 4,
+        )
         expect(pinLabels[0]).toMatchObject({ orientation: "y-" })
       }
     }
