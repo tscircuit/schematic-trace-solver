@@ -2,12 +2,11 @@ import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
-import inputProblem from "./assets/repro-unnecessary-junction-markers.input.json"
+import inputProblem from "./assets/repro-duplicate-ground-segment.input.json"
 
-// Reduced from a Core schematic with several decoupling capacitors on shared
-// power rails. The routed rails show junction dots at non-branching bends and
-// endpoints around the capacitors, where no junction marker is needed.
-test("reproduces unnecessary junction markers on non-branching routes", () => {
+// Reduced from the DS1 section of a Core clock schematic. The route from
+// C_DS2 to GND is emitted twice along the same short vertical segment.
+test("reproduces a duplicate ground segment beside a decoupling capacitor", () => {
   const solver = new SchematicTracePipelineSolver(
     inputProblem as unknown as InputProblem,
   )
