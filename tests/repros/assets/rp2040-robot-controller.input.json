@@ -1,0 +1,349 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_39",
+      "center": {
+        "x": -30,
+        "y": 0
+      },
+      "width": 2.1000000000000014,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "schematic_port_159",
+          "x": -31.05,
+          "y": 0.4
+        },
+        {
+          "pinId": "schematic_port_160",
+          "x": -31.05,
+          "y": 0.2
+        },
+        {
+          "pinId": "schematic_port_161",
+          "x": -31.05,
+          "y": 0
+        },
+        {
+          "pinId": "schematic_port_162",
+          "x": -31.05,
+          "y": -0.20000000000000007
+        },
+        {
+          "pinId": "schematic_port_163",
+          "x": -31.05,
+          "y": -0.4
+        },
+        {
+          "pinId": "schematic_port_164",
+          "x": -28.95,
+          "y": -0.30000000000000004
+        },
+        {
+          "pinId": "schematic_port_165",
+          "x": -28.95,
+          "y": -0.10000000000000003
+        },
+        {
+          "pinId": "schematic_port_166",
+          "x": -28.95,
+          "y": 0.09999999999999998
+        },
+        {
+          "pinId": "schematic_port_167",
+          "x": -28.95,
+          "y": 0.30000000000000004
+        }
+      ],
+      "sectionId": "Motors"
+    },
+    {
+      "chipId": "schematic_component_40",
+      "center": {
+        "x": -30,
+        "y": 4
+      },
+      "width": 1.2000000000000028,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_168",
+          "x": -29.4,
+          "y": 4.1
+        },
+        {
+          "pinId": "schematic_port_169",
+          "x": -29.4,
+          "y": 3.9
+        }
+      ],
+      "sectionId": "Motors"
+    },
+    {
+      "chipId": "schematic_component_41",
+      "center": {
+        "x": -32.8675,
+        "y": -4
+      },
+      "width": 1.1650000000000063,
+      "height": 0.7600000000000011,
+      "pins": [
+        {
+          "pinId": "schematic_port_170",
+          "x": -33,
+          "y": -3.619999999999999,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_171",
+          "x": -33,
+          "y": -4.380000000000001,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "Motors"
+    },
+    {
+      "chipId": "schematic_component_42",
+      "center": {
+        "x": -29.8075,
+        "y": -4
+      },
+      "width": 1.2849999999999966,
+      "height": 0.7600000000000011,
+      "pins": [
+        {
+          "pinId": "schematic_port_172",
+          "x": -30,
+          "y": -3.619999999999999,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_173",
+          "x": -30,
+          "y": -4.380000000000001,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "Motors"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "V3V3",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_166",
+        "schematic_port_172"
+      ]
+    },
+    {
+      "netId": "GND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_162",
+        "schematic_port_167",
+        "schematic_port_171",
+        "schematic_port_173"
+      ]
+    },
+    {
+      "netId": "MA1",
+      "netLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_164"
+      ]
+    },
+    {
+      "netId": "MA2",
+      "netLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_163"
+      ]
+    },
+    {
+      "netId": "MOTOR_EN",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_165"
+      ]
+    },
+    {
+      "netId": "VM",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.36,
+      "pinIds": [
+        "schematic_port_159",
+        "schematic_port_170"
+      ]
+    },
+    {
+      "netId": "OUT0A",
+      "netLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_160",
+        "schematic_port_168"
+      ]
+    },
+    {
+      "netId": "OUT0B",
+      "netLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_161",
+        "schematic_port_169"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_39",
+      "center": {
+        "x": -29.99,
+        "y": -0.63
+      },
+      "width": 1.3200000000000003,
+      "height": 0.17999999999999994,
+      "text": "DRV8837DSGR"
+    },
+    {
+      "chipId": "schematic_component_39",
+      "center": {
+        "x": -30.409999999999997,
+        "y": 0.615
+      },
+      "width": 0.5999999999999979,
+      "height": 0.25,
+      "text": "U_M0"
+    },
+    {
+      "chipId": "schematic_component_40",
+      "center": {
+        "x": -29.96,
+        "y": 4.414999999999999
+      },
+      "width": 0.5999999999999979,
+      "height": 0.2499999999999991,
+      "text": "J_M0"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "VM": [
+      "y+"
+    ],
+    "VSERVO": [
+      "y+"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "VBUS": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ],
+    "MA1": [
+      "x-",
+      "x+"
+    ],
+    "MA2": [
+      "x-",
+      "x+"
+    ],
+    "MB1": [
+      "x-",
+      "x+"
+    ],
+    "MB2": [
+      "x-",
+      "x+"
+    ],
+    "EA": [
+      "x-",
+      "x+"
+    ],
+    "EB": [
+      "x-",
+      "x+"
+    ],
+    "EC": [
+      "x-",
+      "x+"
+    ],
+    "ED": [
+      "x-",
+      "x+"
+    ],
+    "SDA": [
+      "x-",
+      "x+"
+    ],
+    "SCL": [
+      "x-",
+      "x+"
+    ],
+    "SERVO1": [
+      "x-",
+      "x+"
+    ],
+    "SERVO2": [
+      "x-",
+      "x+"
+    ],
+    "SERVO3": [
+      "x-",
+      "x+"
+    ],
+    "MOTOR_EN": [
+      "x-",
+      "x+"
+    ],
+    "IMU_INT": [
+      "x-",
+      "x+"
+    ],
+    "GPIO15": [
+      "x-",
+      "x+"
+    ],
+    "GPIO16": [
+      "x-",
+      "x+"
+    ],
+    "GPIO17": [
+      "x-",
+      "x+"
+    ],
+    "OUT0A": [
+      "x-",
+      "x+"
+    ],
+    "OUT0B": [
+      "x-",
+      "x+"
+    ],
+    "OUT1A": [
+      "x-",
+      "x+"
+    ],
+    "OUT1B": [
+      "x-",
+      "x+"
+    ],
+    "VSYS": [
+      "y+"
+    ],
+    "ADC_VREF": [
+      "x-",
+      "x+"
+    ],
+    "V1V1": [
+      "y+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
