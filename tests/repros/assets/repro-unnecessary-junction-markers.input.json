@@ -1,0 +1,149 @@
+{
+  "chips": [
+    {
+      "chipId": "controller",
+      "center": {
+        "x": 0,
+        "y": -3.8
+      },
+      "width": 3.7,
+      "height": 1.7999999999999994,
+      "pins": [
+        {
+          "pinId": "schematic_port_67",
+          "displayName": "GROUND_CONTROL",
+          "x": -1.85,
+          "y": -3.3
+        },
+        {
+          "pinId": "schematic_port_68",
+          "displayName": "ENABLE",
+          "x": -1.85,
+          "y": -3.5
+        },
+        {
+          "pinId": "schematic_port_73",
+          "displayName": "GROUND_SUPPLY",
+          "x": -1.85,
+          "y": -4.5
+        },
+        {
+          "pinId": "schematic_port_81",
+          "displayName": "POWER",
+          "x": 1.85,
+          "y": -3.0999999999999996
+        }
+      ]
+    },
+    {
+      "chipId": "capacitor_1",
+      "center": {
+        "x": -3.2799999999999994,
+        "y": -0.4849999999999997
+      },
+      "width": 1.0400000000000005,
+      "height": 0.7600000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_82",
+          "displayName": "pos",
+          "x": -3.4749999999999996,
+          "y": -0.10499999999999965,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_83",
+          "displayName": "neg",
+          "x": -3.4749999999999996,
+          "y": -0.8649999999999998,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "capacitor_2",
+      "center": {
+        "x": -3.2799999999999994,
+        "y": -2.295
+      },
+      "width": 1.0400000000000005,
+      "height": 0.7600000000000009,
+      "pins": [
+        {
+          "pinId": "schematic_port_124",
+          "displayName": "pos",
+          "x": -3.4749999999999996,
+          "y": -1.9149999999999996,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_125",
+          "displayName": "neg",
+          "x": -3.4749999999999996,
+          "y": -2.6750000000000003,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "capacitor_3",
+      "center": {
+        "x": -3.2799999999999994,
+        "y": -4.1049999999999995
+      },
+      "width": 1.0400000000000005,
+      "height": 0.7600000000000002,
+      "pins": [
+        {
+          "pinId": "schematic_port_166",
+          "displayName": "pos",
+          "x": -3.4749999999999996,
+          "y": -3.7249999999999996,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_167",
+          "displayName": "neg",
+          "x": -3.4749999999999996,
+          "y": -4.484999999999999,
+          "_facingDirection": "y-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_67",
+        "schematic_port_73",
+        "schematic_port_83",
+        "schematic_port_125",
+        "schematic_port_167"
+      ]
+    },
+    {
+      "netId": "V5",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.36,
+      "pinIds": [
+        "schematic_port_68",
+        "schematic_port_81",
+        "schematic_port_82",
+        "schematic_port_124",
+        "schematic_port_166"
+      ]
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "GND": ["y-"],
+    "V5": ["y+"]
+  },
+  "maxMspPairDistance": 2.4
+}
