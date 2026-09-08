@@ -19,6 +19,19 @@ export const getAnchoredNetLabelRenderedBounds = (
   placement: NetLabelPlacement,
 ): Bounds => {
   if (placement.orientation !== "x-" && placement.orientation !== "x+") {
+    // Named vertical tags render their long text extent along y. Width-only
+    // placeholders retain the supplied envelope instead.
+    if (placement.netLabelText && placement.width > placement.height) {
+      const width = placement.height
+      const height = placement.width
+      const center = getCenterFromAnchor(
+        placement.anchorPoint,
+        placement.orientation,
+        width,
+        height,
+      )
+      return getRectBounds(center, width, height)
+    }
     return getRectBounds(placement.center, placement.width, placement.height)
   }
 

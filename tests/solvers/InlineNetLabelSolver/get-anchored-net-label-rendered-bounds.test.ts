@@ -16,6 +16,30 @@ const createPlacement = (
   ...overrides,
 })
 
+test("orients named vertical tags while preserving width-only placeholders", () => {
+  for (const orientation of ["y+", "y-"] as const) {
+    const placement = createPlacement({
+      orientation,
+      width: 1.2,
+      height: 0.42,
+      center: { x: 2, y: 3 },
+    })
+    const placeholderBounds = getAnchoredNetLabelRenderedBounds(placement)
+    expect(placeholderBounds.maxX - placeholderBounds.minX).toBeCloseTo(1.2)
+    expect(placeholderBounds.maxY - placeholderBounds.minY).toBeCloseTo(0.42)
+
+    const namedBounds = getAnchoredNetLabelRenderedBounds({
+      ...placement,
+      netLabelText: "SUPPLY",
+    })
+    expect(namedBounds.minX).toBeCloseTo(1.79)
+    expect(namedBounds.maxX).toBeCloseTo(2.21)
+    expect(namedBounds.maxY - namedBounds.minY).toBeCloseTo(1.2)
+    if (orientation === "y+") expect(namedBounds.minY).toBeCloseTo(3)
+    else expect(namedBounds.maxY).toBeCloseTo(3)
+  }
+})
+
 test("uses the horizontal renderer envelope for x-facing labels", () => {
   const horizontalBounds = getAnchoredNetLabelRenderedBounds(
     createPlacement({}),

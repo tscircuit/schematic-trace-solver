@@ -232,13 +232,17 @@ export const generatePerpendicularTraceDetours = ({
       ]),
     ].filter((coordinate): coordinate is number => coordinate !== undefined)
 
+    const remainingPath = path.slice(index + 2)
+    // A terminal segment has no following leg to reconnect the detour.
+    if (remainingPath.length === 0) remainingPath.push(end)
+
     return [...new Set(detourCoordinates)].map((detour) =>
       simplifyPath([
         ...path.slice(0, index + 1),
         { ...start, [movingAxis]: gate },
         { ...start, [movingAxis]: gate, [detourAxis]: detour },
         { ...end, [detourAxis]: detour },
-        ...path.slice(index + 2),
+        ...remainingPath,
       ]),
     )
   }
