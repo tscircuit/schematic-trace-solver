@@ -28,7 +28,10 @@ test("rp2040 robot controller reproduces disconnected GND after junction alignme
     label.pinIds.includes("schematic_port_162"),
   )!
   const beforeConnector = before.traces.find(
-    (trace) => trace.mspPairId === "available-net-orientation-42-GND",
+    (trace) =>
+      solver.availableNetOrientationSolver!.netLabelConnectorTraceIds.has(
+        trace.mspPairId,
+      ) && trace.pinIds.includes("schematic_port_162"),
   )!
   const afterConnector = after.traces.find(
     (trace) => trace.mspPairId === beforeConnector.mspPairId,
@@ -43,8 +46,8 @@ test("rp2040 robot controller reproduces disconnected GND after junction alignme
 
   expect(
     convertCircuitJsonToSchematicSvg(convertSolverOutputToCircuitJson(solver), {
-      width: 1800,
-      height: 1200,
+      width: 1000,
+      height: 800,
     }).replace(/[ \t]+$/gm, ""),
   ).toMatchSvgSnapshot(import.meta.path)
 })
