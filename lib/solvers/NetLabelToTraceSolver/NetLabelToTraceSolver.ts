@@ -27,6 +27,7 @@ import {
   visualizeInlineNetLabelOutput,
 } from "../InlineNetLabelSolver/InlineNetLabelSolver"
 import { reduceTraceCrossings } from "./reduceTraceCrossings"
+import { straightenRecoveredTracePath } from "./straightenRecoveredTracePath"
 
 type GlobalConnNetId = NetLabelPlacement["globalConnNetId"]
 
@@ -478,6 +479,16 @@ export class NetLabelToTraceSolver extends BaseSolver {
         !doesTraceRecoveryPathConflict(candidatePath, collisionTraces) &&
         !this.routeIntersectsRemainingLabels(candidatePath, candidate),
     })
+
+    // The candidate filter accepts pins that are only approximately aligned, so
+    // the routed path can end up slightly off-axis. Snap it back to strict
+    // orthogonality before it becomes final output.
+    tracePath = straightenRecoveredTracePath(
+      tracePath,
+      candidate.recoveryMode === "routed_components"
+        ? MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET
+        : MAX_NAMED_NET_RECOVERY_PERPENDICULAR_OFFSET,
+    )
 
     const [firstPin, secondPin] = candidate.pins
     const mspPairId = `${RECOVERED_TRACE_PREFIX}${candidate.key}`
