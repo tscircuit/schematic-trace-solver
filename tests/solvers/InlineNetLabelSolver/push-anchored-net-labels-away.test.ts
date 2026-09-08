@@ -76,6 +76,7 @@ test("pushes a regular endpoint label and its wick past nearby inline text", () 
     traces,
     netLabelPlacements,
     inlineNetLabelPlacements,
+    netLabelConnectorTraceIds: new Set(traces.map((trace) => trace.mspPairId)),
   })
 
   expect(output.movedLabelCount).toBe(1)
@@ -289,7 +290,7 @@ test("moves a contiguous label row together and shoves an anchored obstacle", ()
   expect(output.netLabelPlacements[2]!.center.x).toBeLessThan(-2.5)
   expect(
     output.traces.filter((trace) =>
-      trace.mspPairId.startsWith("inline-net-label-clearance-"),
+      output.netLabelConnectorTraceIds.has(trace.mspPairId),
     ),
   ).toHaveLength(3)
 })

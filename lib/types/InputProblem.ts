@@ -120,8 +120,8 @@ export interface InputNetConnection {
    * When true, a named net may use inline labels. Each routed connected
    * component gets a label along its representative trace, while each
    * disconnected endpoint gets an outward inline-label stub. Conversion is
-   * atomic for the whole net so inline and anchored representations are not
-   * mixed when any label cannot be placed.
+   * atomic within each routed component. An obstructed component retains its
+   * anchored label without preventing inline labels on disconnected components.
    */
   allowInlineNetLabel?: boolean
 

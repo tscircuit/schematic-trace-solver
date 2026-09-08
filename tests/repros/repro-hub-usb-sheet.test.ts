@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getOutputLabelCollisions } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisions"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import { isVertical } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
@@ -52,5 +53,29 @@ test("repro hub USB sheet schematic trace routing", () => {
   expect(sameChipGroundLabel.orientation).toBe("y-")
   expect(sameChipGroundLabel.anchorPoint.x).toBeCloseTo(verticalHostPoint.x)
   expect(tracesAtSameChipGroundLabel).toHaveLength(1)
+  const txLabel = solver
+    .inlineNetLabelSolver!.getOutput()
+    .inlineNetLabelPlacements.find((label) =>
+      label.pinIds.includes("schematic_port_434"),
+    )
+  expect(txLabel?.axis).toBe("y")
+  expect(txLabel?.side).toBe("x+")
+  expect(
+    solver
+      .inlineNetLabelSolver!.getOutput()
+      .netLabelPlacements.some((label) =>
+        label.pinIds.includes("schematic_port_434"),
+      ),
+  ).toBe(false)
+  expect(
+    [
+      ...getOutputLabelCollisions(solver.inlineNetLabelSolver!.getOutput()),
+    ].filter(
+      (collision) =>
+        collision.kind === "trace-label" &&
+        collision.trace.kind === "routed" &&
+        collision.trace.id === "schematic_port_375-schematic_port_373",
+    ),
+  ).toEqual([])
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

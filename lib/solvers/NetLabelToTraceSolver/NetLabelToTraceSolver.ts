@@ -45,7 +45,6 @@ interface CandidatePair {
   netConnectionPinIds?: PinId[]
 }
 
-const AVAILABLE_NET_ORIENTATION_PREFIX = "available-net-orientation-"
 const RECOVERED_TRACE_PREFIX = "net-label-to-trace-"
 const MAX_NAMED_NET_RECOVERY_PERPENDICULAR_OFFSET = 0.05
 const MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET = 0.25
@@ -83,6 +82,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
   outputTraces: SolvedTracePath[]
   outputNetLabelPlacements: NetLabelPlacement[]
 
+  private readonly recoveredTraceIds = new Set<string>()
   private chipMap: Record<ChipId, InputChip>
   private pinMap: Map<PinId, TraceRecoveryPin>
   private canRecoverParallelPair: ReturnType<typeof getParallelNetLabelPolicy>
@@ -437,7 +437,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
     trace: SolvedTracePath,
     candidate: CandidatePair,
   ) {
-    if (!trace.mspPairId.startsWith(AVAILABLE_NET_ORIENTATION_PREFIX)) {
+    if (!this.input.netLabelConnectorTraceIds?.has(trace.mspPairId)) {
       return false
     }
     if (trace.pinIds.length !== 1) return false
@@ -504,6 +504,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
       pinIds: [firstPin.pinId, secondPin.pinId],
     }
 
+    this.recoveredTraceIds.add(mspPairId)
     this.outputTraces = [...retainedTraces, recoveredTrace]
     if (candidate.recoveryMode !== "routed_components") {
       this.outputNetLabelPlacements = this.outputNetLabelPlacements.filter(
@@ -579,7 +580,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
       ...this.getOutput(),
     })
     for (const trace of this.outputTraces) {
-      if (!trace.mspPairId.startsWith(RECOVERED_TRACE_PREFIX)) continue
+      if (!this.recoveredTraceIds.has(trace.mspPairId)) continue
       graphics.lines!.push({
         points: trace.tracePath,
         strokeColor: "green",
