@@ -52,13 +52,13 @@
     L 599.1264880766142,94.32407419146004
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.521356035346px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_5" x="601.864928940237" y="86.71729401473004" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.692204318114px" transform="">XXXXX</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_6" d="
-    M 432.23373099915807,421.4916895926173
-    L 439.8405111758881,425.5993508880515
-    L 439.8405111758881,451.6855357074509
-    L 424.62695082242806,451.6855357074509
-    L 424.62695082242806,425.5993508880515
+    M 384.23494808399164,421.4916895926173
+    L 391.84172826072165,425.5993508880515
+    L 391.84172826072165,451.6855357074509
+    L 376.6281679072616,451.6855357074509
+    L 376.6281679072616,425.5993508880515
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.521356035346px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_6" x="432.23373099915807" y="428.33779175167433" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.692204318114px" transform="rotate(90 432.23373099915807 428.33779175167433)">XX</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_7" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.521356035346px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_6" x="384.23494808399164" y="428.33779175167433" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="13.692204318114px" transform="rotate(90 384.23494808399164 428.33779175167433)">XX</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_7" d="
     M 321.1747404189,731.7722530014344
     L 328.78152059563,735.8799142968686
     L 328.78152059563,761.966099116268
