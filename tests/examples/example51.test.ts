@@ -34,5 +34,15 @@ test("example51", () => {
     ).toBe(false)
   }
 
+  for (const trace of output.traces) {
+    for (let index = 0; index < trace.tracePath.length - 1; index++) {
+      const start = trace.tracePath[index]!
+      const end = trace.tracePath[index + 1]!
+      expect(
+        Math.abs(start.x - end.x) < 1e-9 || Math.abs(start.y - end.y) < 1e-9,
+      ).toBe(true)
+    }
+  }
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
