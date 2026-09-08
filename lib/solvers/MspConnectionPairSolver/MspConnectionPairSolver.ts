@@ -17,6 +17,7 @@ import { getGroundConnectionPolicy } from "./getGroundConnectionPolicy"
 import { getOrthogonalMinimumSpanningTree } from "./getMspConnectionPairsFromPins"
 import { getLabeledConnectionRouteReason } from "./isLabeledPeripheralConnection"
 import { shouldSeparateGroundNetRows } from "./shouldSeparateGroundNetRows"
+import { getParallelRailPairs, getRailPairKey } from "./getParallelRailPairs"
 
 export type MspConnectionPairId = string
 export const DEFAULT_MAX_MSP_PAIR_DISTANCE = 1
@@ -48,6 +49,7 @@ export class MspConnectionPairSolver extends BaseSolver {
   userNetIdByPinId: Record<string, string | undefined>
   directConnectionPinPairKeys: Set<string>
   private canRouteGroundPair: (firstPinId: PinId, secondPinId: PinId) => boolean
+  private parallelRailPairKeys: Set<string>
 
   constructor({ inputProblem }: { inputProblem: InputProblem }) {
     super()
@@ -61,6 +63,11 @@ export class MspConnectionPairSolver extends BaseSolver {
       getConnectivityMapsFromInputProblem(inputProblem)
     this.dcConnMap = directConnMap
     this.globalConnMap = netConnMap
+    this.parallelRailPairKeys = getParallelRailPairs(
+      inputProblem,
+      netConnMap,
+      this.maxMspPairDistance,
+    ).pairKeys
 
     this.pinMap = {}
     for (const chip of inputProblem.chips) {
@@ -145,6 +152,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       })
       if (
         pairDistance > this.maxMspPairDistance &&
+        !this.parallelRailPairKeys.has(getRailPairKey(pin1!, pin2!)) &&
         !labeledConnectionRouteReason
       ) {
         // Too far apart; skip creating an MSP pair for this net
@@ -203,8 +211,9 @@ export class MspConnectionPairSolver extends BaseSolver {
       (pinId) => this.pinMap[pinId]!,
     )
     const msp = getOrthogonalMinimumSpanningTree(directlyConnectedPinObjects, {
-      maxDistance: this.maxMspPairDistance,
       forbidEdge: (a, b) =>
+        (Math.abs(a.x - b.x) + Math.abs(a.y - b.y) > this.maxMspPairDistance &&
+          !this.parallelRailPairKeys.has(getRailPairKey(a.pinId, b.pinId))) ||
         !this.canRouteGroundPair(a.pinId, b.pinId) ||
         shouldSeparateGroundNetRows({
           netConnection,

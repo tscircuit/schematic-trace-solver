@@ -1,6 +1,7 @@
 import { ConnectivityMap } from "connectivity-map"
 import type { InputPin, InputProblem, PinId } from "lib/types/InputProblem"
 import { DEFAULT_MAX_MSP_PAIR_DISTANCE } from "../MspConnectionPairSolver/MspConnectionPairSolver"
+import { getParallelRailPairs } from "../MspConnectionPairSolver/getParallelRailPairs"
 
 /** Keep distant parallel rail/ground branches local during trace recovery. */
 export const getParallelNetLabelPolicy = (
@@ -8,6 +9,13 @@ export const getParallelNetLabelPolicy = (
   netConnMap: ConnectivityMap,
   connectedPinIds: ReadonlySet<PinId>,
 ) => {
+  const maxDistance =
+    inputProblem.maxMspPairDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
+  const { extendedRailPinIds } = getParallelRailPairs(
+    inputProblem,
+    netConnMap,
+    maxDistance,
+  )
   const groundNetIds = new Set<string>()
   const namedPinIds = new Set<PinId>()
   for (const connection of inputProblem.netConnections) {
@@ -29,7 +37,10 @@ export const getParallelNetLabelPolicy = (
     if (
       chip.pins.length !== 2 ||
       !chip.pins.every((pin) => namedPinIds.has(pin.pinId)) ||
-      chip.pins.some((pin) => connectedPinIds.has(pin.pinId))
+      chip.pins.some(
+        (pin) =>
+          connectedPinIds.has(pin.pinId) && !extendedRailPinIds.has(pin.pinId),
+      )
     )
       continue
     const [first, second] = chip.pins.map((pin) =>
@@ -54,6 +65,11 @@ export const getParallelNetLabelPolicy = (
   const bankPinIds = new Set(
     [...banks.values()].filter((bank) => bank.length > 1).flat(2),
   )
+  // A shared rail remains local to its row. Do not recover wires from it to
+  // distant IC pins or another row just because its terminals now have traces.
+  for (const pinId of extendedRailPinIds) {
+    bankPinIds.add(pinId)
+  }
 
   // Explicit source wires may be recovered even beyond the local distance.
   // Sharing a net ID alone does not request a physical wire between branches.
@@ -63,8 +79,6 @@ export const getParallelNetLabelPolicy = (
       physicalConnMap.addConnections([connection.pinIds])
     }
   }
-  const maxDistance =
-    inputProblem.maxMspPairDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
 
   return (first: InputPin, second: InputPin): boolean => {
     if (!bankPinIds.has(first.pinId) && !bankPinIds.has(second.pinId))
