@@ -55,5 +55,38 @@ test("bug-report-20260901T055358Z", () => {
     restoredGroundLabelConnector?.tracePath,
   )
 
+  // A reroute must not trade the USB_DN inline label for a tag over the
+  // neighboring USB wires.
+  expect(
+    inlineOutput.inlineNetLabelPlacements.some((label) =>
+      label.pinIds.includes("schematic_port_85"),
+    ),
+  ).toBe(true)
+  for (const netLabelText of ["XIN", "XOUT"]) {
+    const connection = inputProblem.netConnections.find(
+      (connection) => connection.netLabelText === netLabelText,
+    )!
+    expect(connection.allowInlineNetLabel).toBe(true)
+    expect(
+      inlineOutput.inlineNetLabelPlacements.some(
+        (label) => label.netId === connection.netId,
+      ),
+    ).toBe(true)
+  }
+  // IOVDD4 is a power-net anchor, not an opted-in inline signal.
+  const power = inputProblem.netConnections.find((connection) =>
+    connection.pinIds.includes("schematic_port_61"),
+  )!
+  expect(power.allowInlineNetLabel).not.toBe(true)
+  expect(
+    inlineOutput.netLabelPlacements.some((label) =>
+      label.pinIds.includes("schematic_port_61"),
+    ),
+  ).toBe(true)
+  expect(
+    inlineOutput.inlineNetLabelPlacements.some((label) =>
+      label.pinIds.includes("schematic_port_61"),
+    ),
+  ).toBe(false)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

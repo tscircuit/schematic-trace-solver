@@ -3,7 +3,7 @@ import { InlineNetLabelSolver } from "lib/solvers/InlineNetLabelSolver/InlineNet
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 
-test("two-pin terminal stubs fall back atomically when one endpoint is obstructed", () => {
+test("disconnected endpoints keep independent label styles when one is obstructed", () => {
   const inputProblem: InputProblem = {
     chips: [
       {
@@ -79,6 +79,12 @@ test("two-pin terminal stubs fall back atomically when one endpoint is obstructe
   })
   solver.solve()
 
-  expect(solver.inlineNetLabelPlacements).toHaveLength(0)
-  expect(solver.getOutput().netLabelPlacements).toHaveLength(2)
+  expect(solver.inlineNetLabelPlacements.map((label) => label.pinIds)).toEqual([
+    ["U2.1"],
+  ])
+  expect(solver.getOutput().netLabelPlacements).toEqual([
+    netLabelPlacements[0]!,
+  ])
+  expect(netLabelPlacements).toHaveLength(2)
+  expect(solver.getOutput().traces).toHaveLength(0)
 })

@@ -4,6 +4,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import type { InputProblem } from "lib/types/InputProblem"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
 import type { InlineNetLabelPlacement } from "./InlineNetLabelSolver"
+import { isLabelRepresentedInline } from "./isLabelRepresentedInline"
 
 type StubDirection = "x+" | "x-" | "y+" | "y-"
 
@@ -126,13 +127,8 @@ export const alignPortOnlyInlineNetLabelStubs = ({
   }
 
   const alignedPlacements = [...placements]
-  const supersededGlobalNetIds = new Set(
-    placements.map((placement) => placement.globalConnNetId),
-  )
   const retainedAnchoredLabelBounds = netLabelPlacements
-    .filter(
-      (placement) => !supersededGlobalNetIds.has(placement.globalConnNetId),
-    )
+    .filter((placement) => !isLabelRepresentedInline(placement, placements))
     .map(getLabelBounds)
 
   for (const group of groups.values()) {

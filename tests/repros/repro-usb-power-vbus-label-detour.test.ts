@@ -1,3 +1,4 @@
+import { getOutputLabelCollisions } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisions"
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -6,7 +7,7 @@ import inputProblemJson from "./assets/repro-usb-power-vbus-label-detour.input.j
 
 const VBUS_PIN_IDS = new Set(["schematic_port_224", "schematic_port_226"])
 
-test("routes the usb power vbus connection without a label detour", () => {
+test("keeps the compact VBUS route and USB labels clear of neighboring wires", () => {
   const inputProblem: InputProblem = JSON.parse(
     JSON.stringify(inputProblemJson),
   )
@@ -14,11 +15,13 @@ test("routes the usb power vbus connection without a label detour", () => {
 
   solver.solve()
 
-  const vbusTrace = solver.sameNetJunctionAlignmentSolver!.outputTraces.find(
-    (trace) =>
-      trace.pins.length === VBUS_PIN_IDS.size &&
-      trace.pins.every((pin) => VBUS_PIN_IDS.has(pin.pinId)),
-  )
+  const vbusTrace = solver
+    .inlineNetLabelSolver!.getOutput()
+    .traces.find(
+      (trace) =>
+        trace.pins.length === VBUS_PIN_IDS.size &&
+        trace.pins.every((pin) => VBUS_PIN_IDS.has(pin.pinId)),
+    )
   const gndLabel =
     solver.availableNetOrientationSolver!.outputNetLabelPlacements.find(
       (label) =>
@@ -27,7 +30,9 @@ test("routes the usb power vbus connection without a label detour", () => {
     )
   const gndLabelConnector = solver.availableNetOrientationSolver!.traces.find(
     (trace) =>
-      trace.mspPairId.startsWith("available-net-orientation-") &&
+      solver.availableNetOrientationSolver!.netLabelConnectorTraceIds.has(
+        trace.mspPairId,
+      ) &&
       trace.pinIds.includes("schematic_port_37") &&
       trace.pinIds.includes("schematic_port_46"),
   )
@@ -60,12 +65,53 @@ test("routes the usb power vbus connection without a label detour", () => {
     { x: 12.8, y: -5.8 },
     { x: 13, y: -5.8 },
   ])
-  // The available inline side of USB_HS_DM overlaps the retained USB_HS_DP
-  // tag. Keep both differential-pair nets anchored instead of producing a
-  // mixed, overlapping representation.
-  expect(usbHighSpeedInlineLabels).toHaveLength(0)
+  expect(usbHighSpeedAnchoredLabels).toEqual([])
+  expect(usbHighSpeedInlineLabels).toHaveLength(4)
+  expect(usbHighSpeedInlineLabels.every((label) => label.side === "y+")).toBe(
+    true,
+  )
+  const dm = usbHighSpeedInlineLabels.find((label) =>
+    label.pinIds.includes("schematic_port_191"),
+  )!
+  const vbusConnector = inlineOutput.traces.find((trace) =>
+    trace.pinIds.includes("schematic_port_192"),
+  )!
+  expect(dm.center.y - dm.height / 2).toBeGreaterThan(dm.stubTracePath![0].y)
+  expect(dm.center.y + dm.height / 2).toBeLessThan(
+    vbusConnector.tracePath[0]!.y,
+  )
+  for (const pinId of ["schematic_port_188", "schematic_port_190"]) {
+    expect(
+      inputProblem.directConnections
+        .filter((connection) => connection.pinIds.includes(pinId))
+        .every((connection) => !connection.allowInlineNetLabel),
+    ).toBe(true)
+    expect(
+      inlineOutput.netLabelPlacements.some((label) =>
+        label.pinIds.includes(pinId),
+      ),
+    ).toBe(true)
+  }
   expect(
-    usbHighSpeedAnchoredLabels.map((placement) => placement.netId).sort(),
-  ).toEqual(["USB_HS_DM", "USB_HS_DM", "USB_HS_DP", "USB_HS_DP"])
+    getOutputLabelCollisions(inlineOutput).filter((collision) => {
+      const labels =
+        collision.kind === "label-label" ? collision.labels : [collision.label]
+      return labels.some((label) =>
+        usbHighSpeedInlineLabels.some((usb) => usb === label),
+      )
+    }),
+  ).toEqual([])
+  for (const pinId of [
+    "schematic_port_83",
+    "schematic_port_84",
+    "schematic_port_191",
+    "schematic_port_193",
+  ]) {
+    expect(
+      [...usbHighSpeedInlineLabels, ...usbHighSpeedAnchoredLabels].filter(
+        (label) => label.pinIds.includes(pinId),
+      ),
+    ).toHaveLength(1)
+  }
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

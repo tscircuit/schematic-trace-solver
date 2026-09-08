@@ -76,33 +76,52 @@ const getRequiredOutwardDistance = (
   label: NetLabelPlacement,
   inlineBounds: Bounds[],
 ) => {
-  const labelBounds = getAnchoredNetLabelRenderedBounds(label)
-
-  if (label.orientation === "x-" || label.orientation === "x+") {
-    const nearby = inlineBounds.filter(
-      (bounds) =>
-        labelBounds.minY < bounds.maxY && labelBounds.maxY > bounds.minY,
+  let distance = 0
+  // Only clear obstacles within the current proposal's clearance. A label elsewhere
+  // on the same row must not force this label across the whole schematic.
+  // Moving past one obstacle can encounter another, so continue until clear.
+  for (let iteration = 0; iteration < inlineBounds.length; iteration++) {
+    const labelBounds = getAnchoredNetLabelRenderedBounds(
+      moveLabel(label, label.orientation, distance),
     )
-    if (nearby.length === 0) return 0
-    if (label.orientation === "x-") {
-      const targetMaxX = Math.min(...nearby.map((bounds) => bounds.minX))
-      return Math.max(0, labelBounds.maxX - targetMaxX + LABEL_CLEARANCE)
+    const horizontal = label.orientation === "x-" || label.orientation === "x+"
+    const overlapping = inlineBounds.filter((bounds) =>
+      boundsOverlap(labelBounds, {
+        minX: bounds.minX - (horizontal ? LABEL_CLEARANCE : 0),
+        maxX: bounds.maxX + (horizontal ? LABEL_CLEARANCE : 0),
+        minY: bounds.minY - (horizontal ? 0 : LABEL_CLEARANCE),
+        maxY: bounds.maxY + (horizontal ? 0 : LABEL_CLEARANCE),
+      }),
+    )
+    if (overlapping.length === 0) break
+    switch (label.orientation) {
+      case "x-":
+        distance +=
+          labelBounds.maxX -
+          Math.min(...overlapping.map((b) => b.minX)) +
+          LABEL_CLEARANCE
+        break
+      case "x+":
+        distance +=
+          Math.max(...overlapping.map((b) => b.maxX)) -
+          labelBounds.minX +
+          LABEL_CLEARANCE
+        break
+      case "y-":
+        distance +=
+          labelBounds.maxY -
+          Math.min(...overlapping.map((b) => b.minY)) +
+          LABEL_CLEARANCE
+        break
+      case "y+":
+        distance +=
+          Math.max(...overlapping.map((b) => b.maxY)) -
+          labelBounds.minY +
+          LABEL_CLEARANCE
+        break
     }
-    const targetMinX = Math.max(...nearby.map((bounds) => bounds.maxX))
-    return Math.max(0, targetMinX - labelBounds.minX + LABEL_CLEARANCE)
   }
-
-  const nearby = inlineBounds.filter(
-    (bounds) =>
-      labelBounds.minX < bounds.maxX && labelBounds.maxX > bounds.minX,
-  )
-  if (nearby.length === 0) return 0
-  if (label.orientation === "y-") {
-    const targetMaxY = Math.min(...nearby.map((bounds) => bounds.minY))
-    return Math.max(0, labelBounds.maxY - targetMaxY + LABEL_CLEARANCE)
-  }
-  const targetMinY = Math.max(...nearby.map((bounds) => bounds.maxY))
-  return Math.max(0, targetMinY - labelBounds.minY + LABEL_CLEARANCE)
+  return distance
 }
 
 const moveLabel = (
@@ -159,17 +178,14 @@ const sharesOwnerChip = (
 ) =>
   label.pinIds.some((pinId) => ownerChipIds.has(chipIdByPinId.get(pinId) ?? ""))
 
-const isGeneratedLabelConnector = (trace: SolvedTracePath) =>
-  trace.mspPairId.startsWith("available-net-orientation-") ||
-  trace.mspPairId.startsWith("inline-net-label-clearance-")
-
 const findConnectorTraceIndex = (
   label: NetLabelPlacement,
   traces: SolvedTracePath[],
+  connectorTraceIds: ReadonlySet<string>,
 ) =>
   traces.findIndex((trace) => {
     if (trace.globalConnNetId !== label.globalConnNetId) return false
-    if (!isGeneratedLabelConnector(trace)) return false
+    if (!connectorTraceIds.has(trace.mspPairId)) return false
     const first = trace.tracePath[0]
     const last = trace.tracePath.at(-1)
     return Boolean(
@@ -298,7 +314,9 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
   traces,
   netLabelPlacements,
   inlineNetLabelPlacements,
+  netLabelConnectorTraceIds = new Set<string>(),
 }: {
+  netLabelConnectorTraceIds?: ReadonlySet<string>
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
@@ -307,7 +325,9 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   movedLabelCount: number
+  netLabelConnectorTraceIds: ReadonlySet<string>
 } => {
+  const connectorTraceIds = new Set(netLabelConnectorTraceIds)
   const outputTraces = traces.map((trace) => ({
     ...trace,
     tracePath: trace.tracePath.map((point) => ({ ...point })),
@@ -364,7 +384,11 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
           if (!boundsOverlap(movingBounds, obstacleBounds)) continue
           if (
             !sharesOwnerChip(obstacle, ownerChipIds, chipIdByPinId) ||
-            (findConnectorTraceIndex(obstacle, outputTraces) === -1 &&
+            (findConnectorTraceIndex(
+              obstacle,
+              outputTraces,
+              connectorTraceIds,
+            ) === -1 &&
               !canAddConnectorAtAnchor(obstacle, outputTraces, pinMap))
           ) {
             failed = true
@@ -460,7 +484,11 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
     }> = []
     for (const [labelIndex, movedLabel] of proposals) {
       const label = outputLabels[labelIndex]!
-      const connectorIndex = findConnectorTraceIndex(label, outputTraces)
+      const connectorIndex = findConnectorTraceIndex(
+        label,
+        outputTraces,
+        connectorTraceIds,
+      )
       if (
         connectorIndex === -1 &&
         !canAddConnectorAtAnchor(label, outputTraces, pinMap)
@@ -528,6 +556,7 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
       movedLabelIndices.add(labelIndex)
     }
     for (const update of connectorUpdates) {
+      connectorTraceIds.add(update.trace.mspPairId)
       if (update.connectorIndex === -1) outputTraces.push(update.trace)
       else outputTraces[update.connectorIndex] = update.trace
     }
@@ -537,5 +566,6 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
     traces: outputTraces,
     netLabelPlacements: outputLabels,
     movedLabelCount: movedLabelIndices.size,
+    netLabelConnectorTraceIds: connectorTraceIds,
   }
 }

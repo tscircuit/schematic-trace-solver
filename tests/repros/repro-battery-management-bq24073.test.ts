@@ -71,7 +71,19 @@ test("repro BatteryManagement_BQ24073 schematic traces", () => {
     )
     .sort((first, second) => first.anchorPoint.y - second.anchorPoint.y)[0]!
 
-  expect(solver.inlineNetLabelSolver!.stats.pushedAnchoredNetLabelCount).toBe(1)
+  // An inline label farther down the same column must not pull this ground
+  // label off its existing trace and create an unnecessary dangling branch.
+  const upperGroundLabel = output.netLabelPlacements.find(
+    (label) =>
+      label.pinIds.includes("schematic_port_1") &&
+      label.pinIds.includes("schematic_port_8"),
+  )!
+  expect(upperGroundLabel.anchorPoint.y).toBeCloseTo(0.1)
+  expect(
+    output.traces.some(
+      (trace) => trace.mspPairId === "inline-net-label-clearance-0-GND",
+    ),
+  ).toBe(false)
   expect(bottomGroundLabel.anchorPoint.x).toBeCloseTo(
     EXPECTED_BOTTOM_GROUND_LABEL_X,
   )

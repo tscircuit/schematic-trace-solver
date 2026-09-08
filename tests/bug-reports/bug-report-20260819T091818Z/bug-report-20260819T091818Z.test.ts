@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getOutputLabelCollisions } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisions"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -29,5 +30,25 @@ test("disconnected netlabel", () => {
   expect(hostTrace.tracePath[1]!.x).toBeCloseTo(expectedAlignedRailX)
   expect(targetLabel.anchorPoint.x).toBeCloseTo(expectedCloserLabelAnchorX)
   expect(labelConnectorTrace.tracePath[0]).toEqual(hostTrace.tracePath[1])
+  expect([...getOutputLabelCollisions(output)]).toEqual([])
+  // The split left rail moves with its branch junction, without adding bends
+  // or moving any of its three pin connections.
+  const branch = output.traces.find(
+    (trace) => trace.mspPairId === "schematic_port_144-schematic_port_143",
+  )!
+  const rail = output.traces.find(
+    (trace) => trace.mspPairId === "schematic_port_143-schematic_port_140",
+  )!
+  expect(branch.tracePath).toHaveLength(4)
+  expect(rail.tracePath).toHaveLength(3)
+  expect(tracePathContainsPoint(branch.tracePath, rail.tracePath[0]!)).toBe(
+    true,
+  )
+  for (const pin of [...branch.pins, ...rail.pins])
+    expect(
+      [branch, rail].some((trace) =>
+        tracePathContainsPoint(trace.tracePath, pin),
+      ),
+    ).toBe(true)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
