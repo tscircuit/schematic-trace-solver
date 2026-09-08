@@ -2,6 +2,7 @@ import { ConnectivityMap } from "connectivity-map"
 import type { InputProblem, PinId } from "lib/types/InputProblem"
 import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
+import { getGroundGlobalConnNetIds } from "./getGroundGlobalConnNetIds"
 
 // Keep nearby ground connections, but do not extend the usual 1 mm local
 // routing range vertically just because a sheet allows long signal traces.
@@ -10,7 +11,7 @@ const MAX_LOCAL_GROUND_BRANCH_OFFSET = 1
 /** Avoid return wires between staggered, net-only ground-facing branches. */
 export const getGroundConnectionPolicy = (inputProblem: InputProblem) => {
   const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
-  const groundNetId = netConnMap.getNetConnectedToId("GND")
+  const groundNetIds = getGroundGlobalConnNetIds(inputProblem, netConnMap)
   // Net identifiers do not constitute physical edges: two separate direct
   // connections may have the same netId without requesting a wire between them.
   const physicalConnMap = new ConnectivityMap({})
@@ -35,7 +36,7 @@ export const getGroundConnectionPolicy = (inputProblem: InputProblem) => {
   const groundFacingPins = [...pins.values()].filter(
     ({ pin, chip }) =>
       chip.pins.length === 2 &&
-      netConnMap.getNetConnectedToId(pin.pinId) === groundNetId &&
+      groundNetIds.has(netConnMap.getNetConnectedToId(pin.pinId) ?? "") &&
       (pin._facingDirection ?? getPinDirection(pin, chip)) === "y-",
   )
   // A deliberately wired, level bank of two-pin loads already has its own
@@ -106,9 +107,9 @@ export const getGroundConnectionPolicy = (inputProblem: InputProblem) => {
     const secondGlobalNetId = netConnMap.getNetConnectedToId(secondPinId)
     if (areSeparateExplicitGroundIslands(firstPinId, secondPinId)) return false
     if (
-      !groundNetId ||
-      firstGlobalNetId !== groundNetId ||
-      secondGlobalNetId !== groundNetId
+      !firstGlobalNetId ||
+      firstGlobalNetId !== secondGlobalNetId ||
+      !groundNetIds.has(firstGlobalNetId)
     ) {
       return true
     }

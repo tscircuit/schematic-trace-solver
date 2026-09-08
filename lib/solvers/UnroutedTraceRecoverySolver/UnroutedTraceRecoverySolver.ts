@@ -3,6 +3,7 @@ import { distance, doSegmentsIntersect } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import { getGroundGlobalConnNetIds } from "lib/solvers/MspConnectionPairSolver/getGroundGlobalConnNetIds"
 import {
   DEFAULT_MAX_MSP_PAIR_DISTANCE,
   type MspConnectionPair,
@@ -24,7 +25,6 @@ import type { FacingDirection } from "lib/utils/dir"
 
 const ROUTE_CLEARANCE = 0.2
 const COORDINATE_TOLERANCE = 1e-9
-const GROUND_NET_ID = "GND"
 
 const pointsAreEqual = (firstPoint: Point, secondPoint: Point): boolean => {
   return (
@@ -476,7 +476,7 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
   private failedConnectionPairs: MspConnectionPair[]
   private queuedConnectionPairs: MspConnectionPair[]
   private maxConnectionDistance: number
-  private groundGlobalConnNetId?: string
+  private groundGlobalConnNetIds: Set<string>
   public solvedUnroutedTraces: SolvedTracePath[] = []
 
   constructor(
@@ -496,8 +496,10 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
     const { netConnMap } = getConnectivityMapsFromInputProblem(
       this.inputProblem,
     )
-    this.groundGlobalConnNetId =
-      netConnMap.getNetConnectedToId(GROUND_NET_ID) ?? undefined
+    this.groundGlobalConnNetIds = getGroundGlobalConnNetIds(
+      this.inputProblem,
+      netConnMap,
+    )
   }
 
   override getConstructorParams() {
@@ -510,7 +512,7 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
       this.solved = true
       return
     }
-    if (connectionPair.globalConnNetId === this.groundGlobalConnNetId) {
+    if (this.groundGlobalConnNetIds.has(connectionPair.globalConnNetId)) {
       return
     }
     if (
