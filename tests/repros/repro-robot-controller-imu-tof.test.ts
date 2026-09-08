@@ -43,6 +43,13 @@ test("repro robot controller IMU and ToF trace routing", async () => {
     ),
   )
   expect(connectedSclPins).toHaveLength(2)
+  const sdaLabel = solver
+    .inlineNetLabelSolver!.getOutput()
+    .inlineNetLabelPlacements.find((label) =>
+      label.pinIds.includes("schematic_port_276"),
+    )!
+  expect(sdaLabel.side).toBe("y+")
+  expect(sdaLabel.center.y).toBeGreaterThan(sdaLabel.anchorPoint.y)
   const output = solver.netLabelToTraceSolver!.getOutput()
   const connectorIds =
     solver.inlineNetLabelSolver!.getOutput().netLabelConnectorTraceIds!
