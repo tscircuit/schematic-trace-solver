@@ -14,9 +14,8 @@ const inputProblem: InputProblem = JSON.parse(
 )
 
 // Captured from core rendering https://tscircuit.com/mohan-bee/rp2040-robot-controller.
-// Repro only: U_M0 pin4 (GND) and pin9 (EP) are wired together, but their
-// generated ground connector moves during alignment without its label.
-test("rp2040 robot controller reproduces disconnected GND after junction alignment", () => {
+// U_M0 pin4 (GND) and pin9 (EP) share a generated ground-label connector.
+test("rp2040 robot controller keeps GND connected after junction alignment", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
   expect(solver.solved).toBe(true)
@@ -36,13 +35,20 @@ test("rp2040 robot controller reproduces disconnected GND after junction alignme
   const afterConnector = after.traces.find(
     (trace) => trace.mspPairId === beforeConnector.mspPairId,
   )!
+  const beforeGroundLabel = before
+    .getOutput()
+    .netLabelPlacements.find((label) =>
+      label.pinIds.includes("schematic_port_162"),
+    )!
   expect(
-    tracePathContainsPoint(beforeConnector.tracePath, groundLabel.anchorPoint),
+    tracePathContainsPoint(
+      beforeConnector.tracePath,
+      beforeGroundLabel.anchorPoint,
+    ),
   ).toBe(true)
-  // Known bug: this should become true when label attachment is fixed.
   expect(
     tracePathContainsPoint(afterConnector.tracePath, groundLabel.anchorPoint),
-  ).toBe(false)
+  ).toBe(true)
 
   expect(
     convertCircuitJsonToSchematicSvg(convertSolverOutputToCircuitJson(solver), {

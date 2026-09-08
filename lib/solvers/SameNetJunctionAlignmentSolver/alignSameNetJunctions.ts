@@ -8,6 +8,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { getMovedAnchorPointForReroute } from "lib/solvers/Example28Solver/getMovedAnchorPointForReroute"
+import { isLabelAttachedToTrace } from "lib/solvers/Example28Solver/isLabelAttachedToTrace"
 import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
 import {
   rectsOverlap,
@@ -182,14 +183,13 @@ const getAttachedLabelIndexes = (
   netLabelPlacements: NetLabelPlacement[],
 ) =>
   netLabelPlacements.flatMap((label, index) => {
-    const labelOwnsTrace =
-      label.mspConnectionPairIds.includes(trace.mspPairId) ||
-      (label.mspConnectionPairIds.length === 0 &&
-        label.globalConnNetId === trace.globalConnNetId)
-    return labelOwnsTrace &&
+    if (
+      isLabelAttachedToTrace(label, trace) &&
       tracePathContainsPoint(trace.tracePath, label.anchorPoint)
-      ? [index]
-      : []
+    ) {
+      return [index]
+    }
+    return []
   })
 
 const moveAttachedLabels = ({
