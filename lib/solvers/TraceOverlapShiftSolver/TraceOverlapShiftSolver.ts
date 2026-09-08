@@ -15,6 +15,11 @@ type TraceState = Record<MspConnectionPairId, SolvedTracePath>
 
 const TRACE_STATE_POSITION_EPSILON = 1e-6
 
+const getNetPairKey = (firstNetId: ConnNetId, secondNetId: ConnNetId) =>
+  firstNetId < secondNetId
+    ? `${firstNetId}::${secondNetId}`
+    : `${secondNetId}::${firstNetId}`
+
 /**
  * This solver finds traces that overlap or meet collinearly and aren't
  * connected via the globalConnMap, then shifts them apart in the direction
@@ -50,6 +55,13 @@ export class TraceOverlapShiftSolver extends BaseSolver {
   // Keep only the current and previous layouts to detect a two-state cycle
   // without accumulating routing history for the whole solve.
   recentTraceStates: TraceState[] = []
+
+  /**
+   * Net pairs whose corrections were observed bouncing A -> B -> A. Shifting
+   * them again would re-enter the same cycle, so they are skipped while the
+   * remaining, independent overlaps keep being corrected.
+   */
+  oscillatingNetPairKeys = new Set<string>()
 
   cleanupPhase: "diagonals" | "done" | null = null
 
@@ -114,6 +126,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       for (let j = i + 1; j < netIds.length; j++) {
         const netA = netIds[i]!
         const netB = netIds[j]!
+        if (this.oscillatingNetPairKeys.has(getNetPairKey(netA, netB))) continue
         const pathsA = this.traceNetIslands[netA] || []
         const pathsB = this.traceNetIslands[netB] || []
 
@@ -373,11 +386,21 @@ export class TraceOverlapShiftSolver extends BaseSolver {
         ...this.correctedTraceMap,
         ...this.activeSubSolver.correctedTraceMap,
       }
-      // Returning to the older retained layout means corrections are bouncing
-      // A -> B -> A. Keep B and finish this pass instead of retrying forever.
+      // Returning to the older retained layout means corrections for this net
+      // pair are bouncing A -> B -> A. Keep B and stop revisiting only that
+      // pair; other overlaps are independent and remain correctable.
       if (this.returnsToPreviousTraceState(nextTraceState)) {
+        const oscillatingNetIds = this.activeSubSolver.overlappingTraceSegments
+          .map((segment) => segment.connNetId)
+          .sort()
+        if (oscillatingNetIds.length === 2) {
+          this.oscillatingNetPairKeys.add(
+            getNetPairKey(oscillatingNetIds[0]!, oscillatingNetIds[1]!),
+          )
+        }
         this.activeSubSolver = null
-        this.solved = true
+        this.recentTraceStates = []
+        this.rememberTraceState(this.correctedTraceMap)
         return
       }
       this.correctedTraceMap = nextTraceState
