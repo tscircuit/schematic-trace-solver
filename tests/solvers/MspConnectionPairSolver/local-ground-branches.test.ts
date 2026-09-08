@@ -87,6 +87,14 @@ test("does not apply the ground rule to power or signal nets", () => {
   expect(getGroundConnectionPolicy(inputProblem)("B.2", "C.2")).toBe(true)
 })
 
+test("applies the ground rail rule to a marked alias that is not named GND", () => {
+  const inputProblem = createParallelGroundRailProblem()
+  inputProblem.netConnections[0]!.netId = "AGND"
+  inputProblem.netConnections[0]!.isGround = true
+  inputProblem.availableNetLabelOrientations = { AGND: ["y-"] }
+  expect(getGroundConnectionPolicy(inputProblem)("B.2", "C.2")).toBe(false)
+})
+
 test("infers ground-facing pins when explicit directions are absent", () => {
   const inputProblem = createParallelGroundRailProblem()
   for (const chip of inputProblem.chips) {

@@ -5,10 +5,15 @@ import { placeGroundRailLabelsAtOuterEnd } from "lib/solvers/SameNetJunctionAlig
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { createParallelGroundRailProblem } from "tests/fixtures/parallel-ground-rail"
 
-const createFixture = () => {
+const createFixture = (netId = "GND", isGround = false) => {
   const inputProblem = createParallelGroundRailProblem()
+  if (netId !== "GND" || isGround) {
+    inputProblem.netConnections[0]!.netId = netId
+    inputProblem.netConnections[0]!.isGround = isGround
+    inputProblem.availableNetLabelOrientations = { [netId]: ["y-"] }
+  }
   const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
-  const globalConnNetId = netConnMap.getNetConnectedToId("GND")!
+  const globalConnNetId = netConnMap.getNetConnectedToId(netId)!
   const pins = new Map(
     inputProblem.chips.flatMap((chip) =>
       chip.pins.map(
@@ -25,7 +30,7 @@ const createFixture = () => {
     mspConnectionPairIds: [mspPairId],
     globalConnNetId,
     dcConnNetId: globalConnNetId,
-    userNetId: "GND",
+    userNetId: netId,
     pinIds,
     pins: [pins.get(pinIds[0])!, pins.get(pinIds[1])!],
     tracePath: path.map(([x, y]) => ({ x: x!, y: y! })),
@@ -55,7 +60,7 @@ const createFixture = () => {
     {
       globalConnNetId,
       dcConnNetId: globalConnNetId,
-      netId: "GND",
+      netId,
       mspConnectionPairIds: ["feed"],
       pinIds: ["U.GND", "B.2"],
       orientation: "y-",
@@ -103,6 +108,14 @@ for (const mirror of [1, -1]) {
     ).toEqual(labels)
   })
 }
+
+test("places a marked AGND rail label at the outer column", () => {
+  const fixture = createFixture("AGND", true)
+  const labels = placeGroundRailLabelsAtOuterEnd(fixture)
+  expect(labels[0]!.anchorPoint).toEqual({ x: 0, y: 0.6 })
+  expect(labels[0]!.mspConnectionPairIds).toEqual(["rail"])
+  expect(labels[0]!.netId).toBe("AGND")
+})
 
 test("label placement is independent of trace and endpoint ordering", () => {
   const fixture = createFixture()
