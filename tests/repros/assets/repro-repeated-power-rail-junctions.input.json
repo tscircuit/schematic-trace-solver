@@ -1,0 +1,927 @@
+{
+  "chips": [
+    {
+      "chipId": "U_DS1",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 3.7,
+      "height": 1.7999999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_24",
+          "displayName": "CLOCK",
+          "x": -1.85,
+          "y": 0.7
+        },
+        {
+          "pinId": "schematic_port_25",
+          "displayName": "CLOCK_INHIBIT",
+          "x": -1.85,
+          "y": 0.49999999999999994
+        },
+        {
+          "pinId": "schematic_port_26",
+          "displayName": "DISPLAY_ENABLE_IN",
+          "x": -1.85,
+          "y": 0.29999999999999993
+        },
+        {
+          "pinId": "schematic_port_27",
+          "displayName": "DISPLAY_ENABLE_OUT",
+          "x": -1.85,
+          "y": 0.09999999999999987
+        },
+        {
+          "pinId": "schematic_port_28",
+          "displayName": "CARRY_OUT",
+          "x": -1.85,
+          "y": -0.10000000000000009
+        },
+        {
+          "pinId": "schematic_port_29",
+          "displayName": "F",
+          "x": -1.85,
+          "y": -0.30000000000000004
+        },
+        {
+          "pinId": "schematic_port_30",
+          "displayName": "G",
+          "x": -1.85,
+          "y": -0.5
+        },
+        {
+          "pinId": "schematic_port_31",
+          "displayName": "VSS",
+          "x": -1.85,
+          "y": -0.7
+        },
+        {
+          "pinId": "schematic_port_32",
+          "displayName": "D",
+          "x": 1.85,
+          "y": -0.7
+        },
+        {
+          "pinId": "schematic_port_33",
+          "displayName": "A",
+          "x": 1.85,
+          "y": -0.49999999999999994
+        },
+        {
+          "pinId": "schematic_port_34",
+          "displayName": "E",
+          "x": 1.85,
+          "y": -0.29999999999999993
+        },
+        {
+          "pinId": "schematic_port_35",
+          "displayName": "B",
+          "x": 1.85,
+          "y": -0.09999999999999987
+        },
+        {
+          "pinId": "schematic_port_36",
+          "displayName": "C",
+          "x": 1.85,
+          "y": 0.10000000000000009
+        },
+        {
+          "pinId": "schematic_port_37",
+          "displayName": "UNGATED_C",
+          "x": 1.85,
+          "y": 0.30000000000000004
+        },
+        {
+          "pinId": "schematic_port_38",
+          "displayName": "RESET",
+          "x": 1.85,
+          "y": 0.5
+        },
+        {
+          "pinId": "schematic_port_39",
+          "displayName": "VDD",
+          "x": 1.85,
+          "y": 0.7
+        }
+      ]
+    },
+    {
+      "chipId": "C_DS1",
+      "center": {
+        "x": -3.2799999999999994,
+        "y": 1.3250000000000008
+      },
+      "width": 1.0400000000000005,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_40",
+          "displayName": "pos",
+          "x": -3.4749999999999996,
+          "y": 1.7050000000000007,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_41",
+          "displayName": "neg",
+          "x": -3.4749999999999996,
+          "y": 0.945000000000001,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "U_DS2",
+      "center": {
+        "x": 0,
+        "y": -3.8
+      },
+      "width": 3.7,
+      "height": 1.7999999999999994,
+      "pins": [
+        {
+          "pinId": "schematic_port_66",
+          "displayName": "CLOCK",
+          "x": -1.85,
+          "y": -3.0999999999999996
+        },
+        {
+          "pinId": "schematic_port_67",
+          "displayName": "CLOCK_INHIBIT",
+          "x": -1.85,
+          "y": -3.3
+        },
+        {
+          "pinId": "schematic_port_68",
+          "displayName": "DISPLAY_ENABLE_IN",
+          "x": -1.85,
+          "y": -3.5
+        },
+        {
+          "pinId": "schematic_port_69",
+          "displayName": "DISPLAY_ENABLE_OUT",
+          "x": -1.85,
+          "y": -3.7
+        },
+        {
+          "pinId": "schematic_port_70",
+          "displayName": "CARRY_OUT",
+          "x": -1.85,
+          "y": -3.9
+        },
+        {
+          "pinId": "schematic_port_71",
+          "displayName": "F",
+          "x": -1.85,
+          "y": -4.1
+        },
+        {
+          "pinId": "schematic_port_72",
+          "displayName": "G",
+          "x": -1.85,
+          "y": -4.3
+        },
+        {
+          "pinId": "schematic_port_73",
+          "displayName": "VSS",
+          "x": -1.85,
+          "y": -4.5
+        },
+        {
+          "pinId": "schematic_port_74",
+          "displayName": "D",
+          "x": 1.85,
+          "y": -4.5
+        },
+        {
+          "pinId": "schematic_port_75",
+          "displayName": "A",
+          "x": 1.85,
+          "y": -4.3
+        },
+        {
+          "pinId": "schematic_port_76",
+          "displayName": "E",
+          "x": 1.85,
+          "y": -4.1
+        },
+        {
+          "pinId": "schematic_port_77",
+          "displayName": "B",
+          "x": 1.85,
+          "y": -3.8999999999999995
+        },
+        {
+          "pinId": "schematic_port_78",
+          "displayName": "C",
+          "x": 1.85,
+          "y": -3.6999999999999997
+        },
+        {
+          "pinId": "schematic_port_79",
+          "displayName": "UNGATED_C",
+          "x": 1.85,
+          "y": -3.5
+        },
+        {
+          "pinId": "schematic_port_80",
+          "displayName": "RESET",
+          "x": 1.85,
+          "y": -3.3
+        },
+        {
+          "pinId": "schematic_port_81",
+          "displayName": "VDD",
+          "x": 1.85,
+          "y": -3.0999999999999996
+        }
+      ]
+    },
+    {
+      "chipId": "C_DS2",
+      "center": {
+        "x": -3.2799999999999994,
+        "y": -0.4849999999999997
+      },
+      "width": 1.0400000000000005,
+      "height": 0.7600000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_82",
+          "displayName": "pos",
+          "x": -3.4749999999999996,
+          "y": -0.10499999999999965,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_83",
+          "displayName": "neg",
+          "x": -3.4749999999999996,
+          "y": -0.8649999999999998,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "U_DS3",
+      "center": {
+        "x": 0,
+        "y": 3.8
+      },
+      "width": 3.7,
+      "height": 1.7999999999999994,
+      "pins": [
+        {
+          "pinId": "schematic_port_108",
+          "displayName": "CLOCK",
+          "x": -1.85,
+          "y": 4.5
+        },
+        {
+          "pinId": "schematic_port_109",
+          "displayName": "CLOCK_INHIBIT",
+          "x": -1.85,
+          "y": 4.3
+        },
+        {
+          "pinId": "schematic_port_110",
+          "displayName": "DISPLAY_ENABLE_IN",
+          "x": -1.85,
+          "y": 4.1
+        },
+        {
+          "pinId": "schematic_port_111",
+          "displayName": "DISPLAY_ENABLE_OUT",
+          "x": -1.85,
+          "y": 3.8999999999999995
+        },
+        {
+          "pinId": "schematic_port_112",
+          "displayName": "CARRY_OUT",
+          "x": -1.85,
+          "y": 3.6999999999999997
+        },
+        {
+          "pinId": "schematic_port_113",
+          "displayName": "F",
+          "x": -1.85,
+          "y": 3.5
+        },
+        {
+          "pinId": "schematic_port_114",
+          "displayName": "G",
+          "x": -1.85,
+          "y": 3.3
+        },
+        {
+          "pinId": "schematic_port_115",
+          "displayName": "VSS",
+          "x": -1.85,
+          "y": 3.0999999999999996
+        },
+        {
+          "pinId": "schematic_port_116",
+          "displayName": "D",
+          "x": 1.85,
+          "y": 3.0999999999999996
+        },
+        {
+          "pinId": "schematic_port_117",
+          "displayName": "A",
+          "x": 1.85,
+          "y": 3.3
+        },
+        {
+          "pinId": "schematic_port_118",
+          "displayName": "E",
+          "x": 1.85,
+          "y": 3.5
+        },
+        {
+          "pinId": "schematic_port_119",
+          "displayName": "B",
+          "x": 1.85,
+          "y": 3.7
+        },
+        {
+          "pinId": "schematic_port_120",
+          "displayName": "C",
+          "x": 1.85,
+          "y": 3.9
+        },
+        {
+          "pinId": "schematic_port_121",
+          "displayName": "UNGATED_C",
+          "x": 1.85,
+          "y": 4.1
+        },
+        {
+          "pinId": "schematic_port_122",
+          "displayName": "RESET",
+          "x": 1.85,
+          "y": 4.3
+        },
+        {
+          "pinId": "schematic_port_123",
+          "displayName": "VDD",
+          "x": 1.85,
+          "y": 4.5
+        }
+      ]
+    },
+    {
+      "chipId": "C_DS3",
+      "center": {
+        "x": -3.2799999999999994,
+        "y": -2.295
+      },
+      "width": 1.0400000000000005,
+      "height": 0.7600000000000009,
+      "pins": [
+        {
+          "pinId": "schematic_port_124",
+          "displayName": "pos",
+          "x": -3.4749999999999996,
+          "y": -1.9149999999999996,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_125",
+          "displayName": "neg",
+          "x": -3.4749999999999996,
+          "y": -2.6750000000000003,
+          "_facingDirection": "y-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_25",
+        "schematic_port_31",
+        "schematic_port_41",
+        "schematic_port_67",
+        "schematic_port_73",
+        "schematic_port_83",
+        "schematic_port_109",
+        "schematic_port_115",
+        "schematic_port_125"
+      ]
+    },
+    {
+      "netId": "D1_A_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_33"
+      ]
+    },
+    {
+      "netId": "D1_B_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_35"
+      ]
+    },
+    {
+      "netId": "D1_C_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_36"
+      ]
+    },
+    {
+      "netId": "D1_D_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_32"
+      ]
+    },
+    {
+      "netId": "D1_E_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_34"
+      ]
+    },
+    {
+      "netId": "D1_F_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_29"
+      ]
+    },
+    {
+      "netId": "D1_G_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_30"
+      ]
+    },
+    {
+      "netId": "D1_CLOCK",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_24"
+      ]
+    },
+    {
+      "netId": "V5",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.36,
+      "pinIds": [
+        "schematic_port_26",
+        "schematic_port_39",
+        "schematic_port_40",
+        "schematic_port_68",
+        "schematic_port_81",
+        "schematic_port_82",
+        "schematic_port_110",
+        "schematic_port_123",
+        "schematic_port_124"
+      ]
+    },
+    {
+      "netId": "D1_CARRY",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_28"
+      ]
+    },
+    {
+      "netId": "D1_RESET",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_38"
+      ]
+    },
+    {
+      "netId": "D2_A_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_75"
+      ]
+    },
+    {
+      "netId": "D2_B_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_77"
+      ]
+    },
+    {
+      "netId": "D2_C_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_78"
+      ]
+    },
+    {
+      "netId": "D2_D_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_74"
+      ]
+    },
+    {
+      "netId": "D2_E_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_76"
+      ]
+    },
+    {
+      "netId": "D2_F_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_71"
+      ]
+    },
+    {
+      "netId": "D2_G_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_72"
+      ]
+    },
+    {
+      "netId": "D2_CLOCK",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_66"
+      ]
+    },
+    {
+      "netId": "D2_CARRY",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_70"
+      ]
+    },
+    {
+      "netId": "D2_RESET",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_80"
+      ]
+    },
+    {
+      "netId": "D3_A_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_117"
+      ]
+    },
+    {
+      "netId": "D3_B_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_119"
+      ]
+    },
+    {
+      "netId": "D3_C_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_120"
+      ]
+    },
+    {
+      "netId": "D3_D_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_116"
+      ]
+    },
+    {
+      "netId": "D3_E_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_118"
+      ]
+    },
+    {
+      "netId": "D3_F_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_113"
+      ]
+    },
+    {
+      "netId": "D3_G_RAW",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_114"
+      ]
+    },
+    {
+      "netId": "D3_CLOCK",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_108"
+      ]
+    },
+    {
+      "netId": "D3_CARRY",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_112"
+      ]
+    },
+    {
+      "netId": "D3_RESET",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_122"
+      ]
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "D1_A_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D1_B_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D1_C_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D1_D_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D1_E_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D1_F_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D1_G_RAW": [
+      "x-",
+      "x+"
+    ],
+    "V5": [
+      "y+"
+    ],
+    "D1_CLOCK": [
+      "x-",
+      "x+"
+    ],
+    "D1_CARRY": [
+      "x-",
+      "x+"
+    ],
+    "D1_RESET": [
+      "x-",
+      "x+"
+    ],
+    "D2_A_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D2_B_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D2_C_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D2_D_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D2_E_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D2_F_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D2_G_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D2_CLOCK": [
+      "x-",
+      "x+"
+    ],
+    "D2_CARRY": [
+      "x-",
+      "x+"
+    ],
+    "D2_RESET": [
+      "x-",
+      "x+"
+    ],
+    "D3_A_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D3_B_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D3_C_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D3_D_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D3_E_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D3_F_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D3_G_RAW": [
+      "x-",
+      "x+"
+    ],
+    "D3_CLOCK": [
+      "x-",
+      "x+"
+    ],
+    "D3_CARRY": [
+      "x-",
+      "x+"
+    ],
+    "D3_RESET": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4
+}
