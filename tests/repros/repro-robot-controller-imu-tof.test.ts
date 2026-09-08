@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
-import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import {
+  EPS,
+  tracePathContainsPoint,
+} from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { InputProblem } from "lib/types/InputProblem"
 import { convertSolverOutputToCircuitJson } from "tests/fixtures/convertSolverOutputToCircuitJson"
 import "tests/fixtures/matcher"
@@ -40,6 +43,24 @@ test("repro robot controller IMU and ToF trace routing", async () => {
     ),
   )
   expect(connectedSclPins).toHaveLength(2)
+  const output = solver.netLabelToTraceSolver!.getOutput()
+  const connectorIds =
+    solver.inlineNetLabelSolver!.getOutput().netLabelConnectorTraceIds!
+  const connectorTraces = output.traces.filter((trace) =>
+    connectorIds.has(trace.mspPairId),
+  )
+  expect(connectorTraces).toHaveLength(4)
+  for (const trace of connectorTraces) {
+    const endpoint = trace.tracePath.at(-1)!
+    expect(
+      output.netLabelPlacements.some(
+        (label) =>
+          label.globalConnNetId === trace.globalConnNetId &&
+          Math.abs(label.anchorPoint.x - endpoint.x) < EPS &&
+          Math.abs(label.anchorPoint.y - endpoint.y) < EPS,
+      ),
+    ).toBe(true)
+  }
   const circuitJson = convertSolverOutputToCircuitJson(solver)
   expect(
     circuitJson

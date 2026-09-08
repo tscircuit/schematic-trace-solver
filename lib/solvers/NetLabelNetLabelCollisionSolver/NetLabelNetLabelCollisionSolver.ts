@@ -2,6 +2,7 @@ import { getAnchoredNetLabelRenderedBounds } from "../InlineNetLabelSolver/getAn
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -96,6 +97,8 @@ export interface NetLabelNetLabelCollisionSolverParams {
   useRenderedLabelBounds?: boolean
   /** Already placed labels that are obstacles, but must not be moved. */
   fixedNetLabelPlacements?: NetLabelPlacement[]
+  /** Existing connector identities from AvailableNetOrientationSolver. */
+  netLabelConnectorTraceIds?: ReadonlySet<MspConnectionPairId>
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
@@ -245,9 +248,15 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
       }
     }
 
-    const isPortOnly = label.mspConnectionPairIds.length === 0
+    // A label on an extended connector must keep that attachment point.
+    const isAnchoredOnConnector = this.traces.some(
+      (trace) =>
+        this.params.netLabelConnectorTraceIds?.has(trace.mspPairId) &&
+        trace.globalConnNetId === label.globalConnNetId &&
+        tracePathContainsPoint(trace.tracePath, label.anchorPoint),
+    )
 
-    if (isPortOnly) {
+    if (label.mspConnectionPairIds.length === 0 || isAnchoredOnConnector) {
       const allOrientations: FacingDirection[] = ["x+", "x-", "y+", "y-"]
       const orderedOrientations = [
         label.orientation,

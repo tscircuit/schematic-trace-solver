@@ -1193,6 +1193,7 @@ export class InlineNetLabelSolver extends BaseSolver {
         traces: [...outputTraces, ...terminalTraces],
         netLabelPlacements: retainedNetLabelPlacements,
         fixedNetLabelPlacements: fixedLabels,
+        netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
         useRenderedLabelBounds: activeInlinePlacements.length > 0,
       })
       if (activeInlinePlacements.length > 0) labelCollisionSolver.solve()
