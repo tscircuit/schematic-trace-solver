@@ -1,0 +1,532 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_65",
+      "center": {
+        "x": -15.265000000000002,
+        "y": -10.739999999999998
+      },
+      "width": 2.1000000000000014,
+      "height": 1.6000000000000014,
+      "pins": [
+        {
+          "pinId": "schematic_port_263",
+          "displayName": "SDO_SA0",
+          "x": -16.315000000000005,
+          "y": -10.139999999999999
+        },
+        {
+          "pinId": "schematic_port_264",
+          "displayName": "SDx",
+          "x": -16.315000000000005,
+          "y": -10.339999999999998
+        },
+        {
+          "pinId": "schematic_port_265",
+          "displayName": "SCx",
+          "x": -16.315000000000005,
+          "y": -10.54
+        },
+        {
+          "pinId": "schematic_port_266",
+          "displayName": "INT1",
+          "x": -16.315000000000005,
+          "y": -10.739999999999998
+        },
+        {
+          "pinId": "schematic_port_267",
+          "displayName": "VDDIO",
+          "x": -16.315000000000005,
+          "y": -10.939999999999998
+        },
+        {
+          "pinId": "schematic_port_268",
+          "displayName": "GND1",
+          "x": -16.315000000000005,
+          "y": -11.139999999999999
+        },
+        {
+          "pinId": "schematic_port_269",
+          "displayName": "GND2",
+          "x": -16.315000000000005,
+          "y": -11.339999999999998
+        },
+        {
+          "pinId": "schematic_port_270",
+          "displayName": "VDD",
+          "x": -14.215000000000002,
+          "y": -11.339999999999998
+        },
+        {
+          "pinId": "schematic_port_271",
+          "displayName": "INT2",
+          "x": -14.215000000000002,
+          "y": -11.139999999999999
+        },
+        {
+          "pinId": "schematic_port_272",
+          "displayName": "NC1",
+          "x": -14.215000000000002,
+          "y": -10.939999999999998
+        },
+        {
+          "pinId": "schematic_port_273",
+          "displayName": "NC2",
+          "x": -14.215000000000002,
+          "y": -10.739999999999998
+        },
+        {
+          "pinId": "schematic_port_274",
+          "displayName": "CS",
+          "x": -14.215000000000002,
+          "y": -10.54
+        },
+        {
+          "pinId": "schematic_port_275",
+          "displayName": "SCL",
+          "x": -14.215000000000002,
+          "y": -10.339999999999998
+        },
+        {
+          "pinId": "schematic_port_276",
+          "displayName": "SDA",
+          "x": -14.215000000000002,
+          "y": -10.139999999999999
+        }
+      ],
+      "sectionId": "07_IMU_AND_TOF"
+    },
+    {
+      "chipId": "schematic_component_66",
+      "center": {
+        "x": -9.700000000000003,
+        "y": -11.839999999999998
+      },
+      "width": 1.1649999999999991,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_277",
+          "displayName": "anode",
+          "x": -9.832500000000003,
+          "y": -11.459999999999999,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_278",
+          "displayName": "cathode",
+          "x": -9.832500000000003,
+          "y": -12.219999999999997,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "07_IMU_AND_TOF"
+    },
+    {
+      "chipId": "schematic_component_67",
+      "center": {
+        "x": -7.135000000000003,
+        "y": -11.839999999999998
+      },
+      "width": 1.165,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_279",
+          "displayName": "anode",
+          "x": -7.267500000000003,
+          "y": -11.459999999999999,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_280",
+          "displayName": "cathode",
+          "x": -7.267500000000003,
+          "y": -12.219999999999997,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "07_IMU_AND_TOF"
+    },
+    {
+      "chipId": "schematic_component_68",
+      "center": {
+        "x": -14.464166666666667,
+        "y": -3.039999999999999
+      },
+      "width": 1.084999999999999,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_281",
+          "displayName": "anode",
+          "x": -14.681666666666667,
+          "y": -3.339999999999999,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_282",
+          "displayName": "cathode",
+          "x": -14.681666666666667,
+          "y": -2.7399999999999993,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "07_IMU_AND_TOF"
+    },
+    {
+      "chipId": "schematic_component_69",
+      "center": {
+        "x": -17.344166666666666,
+        "y": -3.039999999999999
+      },
+      "width": 1.0850000000000009,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_283",
+          "displayName": "anode",
+          "x": -17.561666666666667,
+          "y": -3.339999999999999,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_284",
+          "displayName": "cathode",
+          "x": -17.561666666666667,
+          "y": -2.7399999999999993,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "07_IMU_AND_TOF"
+    },
+    {
+      "chipId": "schematic_component_70",
+      "center": {
+        "x": -13.915000000000001,
+        "y": -6.439999999999999
+      },
+      "width": 2,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "schematic_port_285",
+          "displayName": "1",
+          "x": -14.915000000000001,
+          "y": -6.139999999999999
+        },
+        {
+          "pinId": "schematic_port_286",
+          "displayName": "2",
+          "x": -14.915000000000001,
+          "y": -6.339999999999999
+        },
+        {
+          "pinId": "schematic_port_287",
+          "displayName": "3",
+          "x": -14.915000000000001,
+          "y": -6.539999999999998
+        },
+        {
+          "pinId": "schematic_port_288",
+          "displayName": "4",
+          "x": -14.915000000000001,
+          "y": -6.739999999999998
+        },
+        {
+          "pinId": "schematic_port_289",
+          "displayName": "5",
+          "x": -12.915000000000001,
+          "y": -6.739999999999998
+        },
+        {
+          "pinId": "schematic_port_290",
+          "displayName": "6",
+          "x": -12.915000000000001,
+          "y": -6.539999999999998
+        },
+        {
+          "pinId": "schematic_port_291",
+          "displayName": "7",
+          "x": -12.915000000000001,
+          "y": -6.339999999999999
+        },
+        {
+          "pinId": "schematic_port_292",
+          "displayName": "8",
+          "x": -12.915000000000001,
+          "y": -6.139999999999999
+        }
+      ],
+      "sectionId": "07_IMU_AND_TOF"
+    },
+    {
+      "chipId": "schematic_component_71",
+      "center": {
+        "x": -11.644166666666665,
+        "y": -3.039999999999999
+      },
+      "width": 0.9649999999999999,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_293",
+          "displayName": "anode",
+          "x": -11.801666666666666,
+          "y": -3.339999999999999,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_294",
+          "displayName": "cathode",
+          "x": -11.801666666666666,
+          "y": -2.7399999999999993,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "07_IMU_AND_TOF"
+    },
+    {
+      "chipId": "schematic_component_72",
+      "center": {
+        "x": -8.617500000000001,
+        "y": -4.3999999999999995
+      },
+      "width": 0.9649999999999999,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_295",
+          "displayName": "anode",
+          "x": -8.775000000000002,
+          "y": -4.699999999999999,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_296",
+          "displayName": "cathode",
+          "x": -8.775000000000002,
+          "y": -4.1,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "07_IMU_AND_TOF"
+    },
+    {
+      "chipId": "schematic_component_73",
+      "center": {
+        "x": -19.165,
+        "y": -5.919999999999999
+      },
+      "width": 1.1649999999999991,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_297",
+          "displayName": "anode",
+          "x": -19.2975,
+          "y": -5.539999999999999,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_298",
+          "displayName": "cathode",
+          "x": -19.2975,
+          "y": -6.299999999999999,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "07_IMU_AND_TOF"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_263",
+        "schematic_port_264",
+        "schematic_port_265",
+        "schematic_port_268",
+        "schematic_port_269",
+        "schematic_port_278",
+        "schematic_port_280",
+        "schematic_port_285",
+        "schematic_port_291",
+        "schematic_port_292",
+        "schematic_port_298"
+      ]
+    },
+    {
+      "netId": "IMU_INT",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_266"
+      ]
+    },
+    {
+      "netId": "V3V3_IMU",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 1.08,
+      "pinIds": [
+        "schematic_port_267",
+        "schematic_port_270",
+        "schematic_port_274",
+        "schematic_port_277",
+        "schematic_port_279"
+      ]
+    },
+    {
+      "netId": "I2C_SCL",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_275",
+        "schematic_port_281",
+        "schematic_port_288"
+      ]
+    },
+    {
+      "netId": "I2C_SDA",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_276",
+        "schematic_port_283",
+        "schematic_port_287"
+      ]
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_282",
+        "schematic_port_284",
+        "schematic_port_286",
+        "schematic_port_294",
+        "schematic_port_296",
+        "schematic_port_297"
+      ]
+    },
+    {
+      "netId": "TOF_XSHUT",
+      "isGround": false,
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.8,
+      "pinIds": [
+        "schematic_port_289",
+        "schematic_port_293"
+      ]
+    },
+    {
+      "netId": "TOF_INT",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_290",
+        "schematic_port_295"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_65",
+      "center": {
+        "x": -15.255000000000003,
+        "y": -11.669999999999998
+      },
+      "width": 1.3200000000000003,
+      "height": 0.17999999999999972,
+      "text": "LSM6DS3TR-C"
+    },
+    {
+      "chipId": "schematic_component_65",
+      "center": {
+        "x": -15.795000000000002,
+        "y": -9.824999999999998
+      },
+      "width": 0.3600000000000012,
+      "height": 0.25,
+      "text": "U6"
+    },
+    {
+      "chipId": "schematic_component_70",
+      "center": {
+        "x": -13.255,
+        "y": -7.0699999999999985
+      },
+      "width": 2.5199999999999996,
+      "height": 0.17999999999999972,
+      "text": "SM06B-SRSS-TB(LF)(SN)"
+    },
+    {
+      "chipId": "schematic_component_70",
+      "center": {
+        "x": -13.135000000000002,
+        "y": -5.824999999999999
+      },
+      "width": 2.880000000000001,
+      "height": 0.2499999999999991,
+      "text": "ToF module / 3.3V logic"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "V3V3": [
+      "y+"
+    ],
+    "V3V3_IMU": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ],
+    "IMU_INT": [
+      "x-",
+      "x+"
+    ],
+    "TOF_XSHUT": [
+      "x-",
+      "x+"
+    ],
+    "TOF_INT": [
+      "x-",
+      "x+"
+    ],
+    "I2C_SCL": [
+      "x-",
+      "x+"
+    ],
+    "I2C_SDA": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 3,
+  "_hideRatsNet": false
+}
