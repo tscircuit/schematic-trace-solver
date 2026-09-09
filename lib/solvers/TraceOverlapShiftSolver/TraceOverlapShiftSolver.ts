@@ -41,12 +41,15 @@ export class TraceOverlapShiftSolver extends BaseSolver {
 
   declare activeSubSolver: TraceOverlapIssueSolver | null
 
+  correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath> = {}
+  // Net pairs whose corrections oscillated A -> B -> A. They are suspended
+  // for the rest of the pass so independent pairs can still be corrected.
+  suspendedNetPairKeys: Set<string> = new Set()
   /**
    * A traceNetIsland is a set of traces that are connected via the globalConnMap
    */
   traceNetIslands: Record<ConnNetId, Array<SolvedTracePath>> = {}
 
-  correctedTraceMap: Record<MspConnectionPairId, SolvedTracePath> = {}
   // Keep only the current and previous layouts to detect a two-state cycle
   // without accumulating routing history for the whole solve.
   recentTraceStates: TraceState[] = []
@@ -105,7 +108,9 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     overlappingTraceSegments: Array<OverlappingTraceSegmentLocator>
     interactionKind: TraceInteractionKind
   } | null {
-    // Detect the next set of overlapping segments between two different net islands.
+    // Detect the next set of overlapping segments between two different net
+    // islands. Net pairs whose corrections oscillated earlier this pass are
+    // suspended: they are skipped so independent pairs keep being corrected.
     const EPS = 2e-3
 
     const netIds = Object.keys(this.traceNetIslands)
@@ -114,6 +119,13 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       for (let j = i + 1; j < netIds.length; j++) {
         const netA = netIds[i]!
         const netB = netIds[j]!
+        if (
+          this.suspendedNetPairKeys.has(
+            [netA, netB].sort().join("~"),
+          )
+        ) {
+          continue
+        }
         const pathsA = this.traceNetIslands[netA] || []
         const pathsB = this.traceNetIslands[netB] || []
 
@@ -374,16 +386,21 @@ export class TraceOverlapShiftSolver extends BaseSolver {
         ...this.activeSubSolver.correctedTraceMap,
       }
       // Returning to the older retained layout means corrections are bouncing
-      // A -> B -> A. Keep B and finish this pass instead of retrying forever.
+      // A -> B -> A. Keep B and suspend only this net pair — other net pairs
+      // are independent and may still need correction this pass.
       if (this.returnsToPreviousTraceState(nextTraceState)) {
+        const suspendedPairKey = this.activeSubSolver.overlappingTraceSegments
+          .map((locator) => locator.connNetId)
+          .sort()
+          .join("~")
+        this.suspendedNetPairKeys.add(suspendedPairKey)
         this.activeSubSolver = null
-        this.solved = true
-        return
+      } else {
+        this.correctedTraceMap = nextTraceState
+        this.rememberTraceState(nextTraceState)
+        this.activeSubSolver = null
+        this.traceNetIslands = this.computeTraceNetIslands()
       }
-      this.correctedTraceMap = nextTraceState
-      this.rememberTraceState(nextTraceState)
-      this.activeSubSolver = null
-      this.traceNetIslands = this.computeTraceNetIslands()
     }
 
     if (this.activeSubSolver) {
