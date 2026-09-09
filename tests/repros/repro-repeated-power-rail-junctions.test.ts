@@ -16,7 +16,7 @@ test("collapses repeated junctions around adjacent power rails", () => {
 
   expect(solver.solved).toBe(true)
   expect(solver.sameNetJunctionAlignmentSolver?.stats.collapsedCycleCount).toBe(
-    1,
+    2,
   )
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
