@@ -99,3 +99,48 @@ test("collapses a shared stub and partial rail overlap", () => {
     { x: -1, y: -1 },
   ])
 })
+
+test("collapses every duplicate stub at a shared same-net endpoint", () => {
+  const traces = [
+    createTrace({
+      mspPairId: "outer-shared",
+      pinIds: ["outer", "shared"],
+      tracePath: [
+        { x: 2, y: 3 },
+        { x: 0, y: 3 },
+        { x: 0, y: 0 },
+      ],
+    }),
+    createTrace({
+      mspPairId: "inner-shared",
+      pinIds: ["inner", "shared"],
+      tracePath: [
+        { x: 2, y: 1 },
+        { x: 0, y: 1 },
+        { x: 0, y: 0 },
+      ],
+    }),
+    createTrace({
+      mspPairId: "middle-shared",
+      pinIds: ["middle", "shared"],
+      tracePath: [
+        { x: 2, y: 2 },
+        { x: 0, y: 2 },
+        { x: 0, y: 0 },
+      ],
+    }),
+  ]
+
+  const result = collapseRedundantSharedEndpointStubs({
+    traces,
+    netLabelPlacements: [],
+    netLabelConnectorTraceIds: new Set<MspConnectionPairId>(),
+    multiPinNetPinIds: new Set(["shared"]),
+  })
+
+  expect(
+    result.filter((trace) =>
+      trace.tracePath.some((point) => point.x === 0 && point.y === 0),
+    ),
+  ).toHaveLength(1)
+})

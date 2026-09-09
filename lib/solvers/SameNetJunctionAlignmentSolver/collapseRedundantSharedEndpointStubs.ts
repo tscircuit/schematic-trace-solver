@@ -25,8 +25,13 @@ const getPathFromSharedPin = ({
   sharedPinId: PinId
 }) => {
   const tracePath = simplifyPath(trace.tracePath)
-  if (trace.pins[0]?.pinId === sharedPinId) return tracePath
-  return tracePath.reverse()
+  const sharedPin = trace.pins.find((pin) => pin.pinId === sharedPinId)
+  if (!sharedPin) return null
+  const pathFromSharedPin =
+    trace.pins[0]?.pinId === sharedPinId ? tracePath : tracePath.reverse()
+  return pointsEqual(pathFromSharedPin[0]!, sharedPin)
+    ? pathFromSharedPin
+    : null
 }
 
 const traceCanLoseSharedPrefix = ({
@@ -87,13 +92,14 @@ export const collapseRedundantSharedEndpointStubs = ({
   const outputTraces = [...traces]
 
   for (let firstIndex = 0; firstIndex < outputTraces.length; firstIndex++) {
-    const firstTrace = outputTraces[firstIndex]!
-    if (netLabelConnectorTraceIds.has(firstTrace.mspPairId)) continue
+    if (netLabelConnectorTraceIds.has(outputTraces[firstIndex]!.mspPairId))
+      continue
     for (
       let secondIndex = firstIndex + 1;
       secondIndex < outputTraces.length;
       secondIndex++
     ) {
+      const firstTrace = outputTraces[firstIndex]!
       const secondTrace = outputTraces[secondIndex]!
       if (
         netLabelConnectorTraceIds.has(secondTrace.mspPairId) ||
@@ -114,6 +120,7 @@ export const collapseRedundantSharedEndpointStubs = ({
         trace: secondTrace,
         sharedPinId: sharedPin.pinId,
       })
+      if (!firstPath || !secondPath) continue
       if (firstPath.length < 2 || secondPath.length < 2) continue
 
       const departureAxis = getSegmentAxis(firstPath[0]!, firstPath[1]!)
@@ -174,7 +181,7 @@ export const collapseRedundantSharedEndpointStubs = ({
         })
         if (!collapsedTrace) continue
         outputTraces[traceIndexToCollapse] = collapsedTrace
-        break
+        continue
       }
       if (firstPath.length < 3 || secondPath.length < 3) continue
       if (!pointsEqual(firstPath[1]!, secondPath[1]!)) continue
@@ -259,7 +266,6 @@ export const collapseRedundantSharedEndpointStubs = ({
       })
       if (!collapsedTrace) continue
       outputTraces[traceIndexToCollapse] = collapsedTrace
-      break
     }
   }
 
