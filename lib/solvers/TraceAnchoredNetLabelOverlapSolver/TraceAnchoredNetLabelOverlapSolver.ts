@@ -43,6 +43,7 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
 
   private activeSearch: ActiveOverlapSearch | null = null
   private skippedOverlapKeys = new Set<string>()
+  private labelEligibilityByIndex: Array<boolean | undefined> = []
 
   constructor(params: TraceAnchoredNetLabelOverlapSolverParams) {
     super()
@@ -98,7 +99,12 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
   }
 
   private isLabelEligible(labelIndex: number) {
-    return this.getTraceLocationsForLabel(labelIndex).length > 0
+    const existingEligibility = this.labelEligibilityByIndex[labelIndex]
+    if (existingEligibility !== undefined) return existingEligibility
+
+    const isEligible = this.getTraceLocationsForLabel(labelIndex).length > 0
+    this.labelEligibilityByIndex[labelIndex] = isEligible
+    return isEligible
   }
 
   private labelsOverlap(overlap: LabelOverlap) {
