@@ -54,3 +54,18 @@ test("getAxisAlignedSegments returns nothing for degenerate paths", () => {
     ]),
   ).toEqual([])
 })
+
+test("getAxisAlignedSegments handles orthogonal stepped stair path invariant", () => {
+  const segments = getAxisAlignedSegments([
+    { x: 0, y: 0 },
+    { x: 2, y: 0 },
+    { x: 2, y: 4 },
+    { x: 6, y: 4 },
+  ])
+
+  expect(segments.length).toBe(3)
+  expect(segments[0]).toMatchObject({ axis: "x", length: 4 })
+  expect(segments[1]).toMatchObject({ axis: "y", length: 4 })
+  expect(segments[2]).toMatchObject({ axis: "x", length: 2 })
+})
+
