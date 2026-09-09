@@ -54,3 +54,21 @@ test("getAxisAlignedSegments returns nothing for degenerate paths", () => {
     ]),
   ).toEqual([])
 })
+
+test("getAxisAlignedSegments merges multiple contiguous collinear vertical segments", () => {
+  const segments = getAxisAlignedSegments([
+    { x: 5, y: 0 },
+    { x: 5, y: 2 },
+    { x: 5, y: 4 },
+    { x: 5, y: 9 },
+  ])
+
+  expect(segments.length).toBe(1)
+  expect(segments[0]).toMatchObject({
+    axis: "y",
+    length: 9,
+    start: { x: 5, y: 0 },
+    end: { x: 5, y: 9 },
+  })
+})
+
