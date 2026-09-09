@@ -24,7 +24,9 @@ test("board 1273 solves within the trace overlap iteration limit", async () => {
 
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
-  expect(solver.traceOverlapShiftSolver?.iterations).toBe(27)
+  // Issue #1102 fix: oscillating pairs are suspended instead of aborting the
+  // pass, so more independent pairs get corrected before the pass ends.
+  expect(solver.traceOverlapShiftSolver?.iterations).toBe(37)
   expect(solver.postLabelTraceOverlapShiftSolver?.iterations).toBe(1)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
