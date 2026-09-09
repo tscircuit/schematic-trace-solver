@@ -4,6 +4,8 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { minimizeTurnsWithFilteredLabels } from "lib/solvers/TraceCleanupSolver/minimizeTurnsWithFilteredLabels"
+import { preservesLabelAnchors } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/preservesLabelAnchors"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
 import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
@@ -274,6 +276,33 @@ export function* getLocalTraceLabelShifts(
           }
         }
         if (blocked) continue
+        // A shifted leg can coincide with a redundant bend on another net.
+        // Try removing that bend with the existing cleanup, then validate
+        // both changed routes together below before yielding the proposal.
+        for (const [index, other] of traces.entries()) {
+          if (
+            other.globalConnNetId === trace.globalConnNetId ||
+            simplifyPath(other.tracePath).length <= 4 ||
+            !shiftedPaths.some((path) =>
+              doesPathCoincideWithTraces(path, [other]),
+            )
+          )
+            continue
+          const simplified = minimizeTurnsWithFilteredLabels({
+            inputProblem,
+            traces: [...traces, ...terminalTraces],
+            targetMspConnectionPairId: other.mspPairId,
+            allLabelPlacements: [...labels, ...fixedLabels],
+            mergedLabelNetIdMap: {},
+            paddingBuffer: CLEARANCE,
+          })
+          if (
+            simplifyPath(simplified.tracePath).length <
+              simplifyPath(other.tracePath).length &&
+            preservesLabelAnchors(labels, [other], [simplified])
+          )
+            traces[index] = simplified
+        }
         for (const [index, proposed] of traces.entries()) {
           const original = output.traces[index]!
           if (proposed === original) continue

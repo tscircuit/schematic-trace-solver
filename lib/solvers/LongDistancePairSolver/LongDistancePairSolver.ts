@@ -14,6 +14,7 @@ import type {
 import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap-with-existing-traces"
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 import { BaseSolver } from "../BaseSolver/BaseSolver"
+import { getParallelNetLabelPolicy } from "./getParallelNetLabelPolicy"
 import { getGroundConnectionPolicy } from "../MspConnectionPairSolver/getGroundConnectionPolicy"
 import { isLabeledPeripheralConnection } from "../MspConnectionPairSolver/isLabeledPeripheralConnection"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
@@ -180,6 +181,11 @@ export class LongDistancePairSolver extends BaseSolver {
 
     const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
     this.netConnMap = netConnMap
+    const canRecoverParallelPair = getParallelNetLabelPolicy(
+      inputProblem,
+      netConnMap,
+      primaryConnectedPinIds,
+    )
     const pinMap = new Map<PinId, InputPin & { chipId: string }>()
     for (const chip of inputProblem.chips) {
       this.chipMap[chip.chipId] = chip
@@ -226,6 +232,7 @@ export class LongDistancePairSolver extends BaseSolver {
             const targetPin = pinMap.get(otherPinId)
             if (!targetPin) return [] // Gracefully handle missing pins
             if (!canRouteGroundPair(sourcePin.pinId, targetPin.pinId)) return []
+            if (!canRecoverParallelPair(sourcePin, targetPin)) return []
             const isNamedTwoPinConnection = inputProblem.netConnections.some(
               (connection) =>
                 connection.pinIds.length === 2 &&
