@@ -54,3 +54,19 @@ test("getAxisAlignedSegments returns nothing for degenerate paths", () => {
     ]),
   ).toEqual([])
 })
+
+test("getAxisAlignedSegments processes orthogonal U-shaped detour", () => {
+  const segments = getAxisAlignedSegments([
+    { x: 0, y: 0 },
+    { x: 0, y: 10 },
+    { x: 6, y: 10 },
+    { x: 6, y: 0 },
+  ])
+
+  expect(segments.map((s) => [s.axis, s.length])).toEqual([
+    ["y", 10],
+    ["x", 6],
+    ["y", 10],
+  ])
+})
+
