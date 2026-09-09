@@ -175,28 +175,38 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       center,
       width: label.width,
       height: label.height,
-      status: this.getCandidateStatus(bounds, labelIndex, candidate),
+      status: this.getCandidateStatus(bounds, label, labelIndex, candidate),
       selected: false,
     }
   }
 
   private getCandidateStatus(
     bounds: Bounds,
+    label: NetLabelPlacement,
     labelIndex: number,
     candidate: TraceCornerCandidate,
   ): CornerCandidateStatus {
     if (this.intersectsAnyChip(bounds)) return "chip-collision"
     if (rectIntersectsAnyTextBox(bounds, this.inputProblem))
       return "text-collision"
-    const candidateTraceMap = candidate.reroutedTracePath
-      ? {
-          ...this.traceMap,
-          [candidate.traceId]: {
-            ...this.traceMap[candidate.traceId]!,
-            tracePath: candidate.reroutedTracePath,
-          },
-        }
-      : this.traceMap
+    const isGeneratedLabelConnector =
+      candidate.traceId.startsWith("available-net-orientation-") &&
+      Boolean(candidate.reroutedTracePath)
+    const candidateTraceMap = Object.fromEntries(
+      Object.entries(this.traceMap)
+        .filter(
+          ([traceId, trace]) =>
+            !isGeneratedLabelConnector ||
+            traceId === candidate.traceId ||
+            trace.globalConnNetId !== label.globalConnNetId,
+        )
+        .map(([traceId, trace]) => [
+          traceId,
+          traceId === candidate.traceId && candidate.reroutedTracePath
+            ? { ...trace, tracePath: candidate.reroutedTracePath }
+            : trace,
+        ]),
+    )
     if (traceCrossesBoundsInterior(bounds, candidateTraceMap)) {
       return "trace-collision"
     }
@@ -300,12 +310,18 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
         const candidates = anchorAlignedToPin
           ? anchorAlignedCandidates
           : railAlignedCandidates
+        const reroutedTracePath = this.getPathTrimmedToCorner(
+          trace,
+          cornerIndex,
+          label.anchorPoint,
+        )
         candidates.push(
           {
             anchorPoint,
             traceId: trace.mspPairId,
             distance: getDistance(anchorPoint, label.anchorPoint),
             pinAligned,
+            reroutedTracePath,
           },
           ...this.getClearanceShiftedCornerCandidates({
             label,
@@ -328,6 +344,24 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     return this.inputProblem.availableNetLabelOrientations[label.netId]?.some(
       (orientation) => orientation === "y+" || orientation === "y-",
     )
+  }
+
+  private getPathTrimmedToCorner(
+    trace: SolvedTracePath,
+    cornerIndex: number,
+    labelAnchor: Point,
+  ) {
+    if (!trace.mspPairId.startsWith("available-net-orientation-")) {
+      return undefined
+    }
+    const path = trace.tracePath
+    if (this.pointsEqual(path[0]!, labelAnchor)) {
+      return path.slice(cornerIndex)
+    }
+    if (this.pointsEqual(path[path.length - 1]!, labelAnchor)) {
+      return path.slice(0, cornerIndex + 1)
+    }
+    return undefined
   }
 
   private isLabelCrossedByOtherNetTrace(label: NetLabelPlacement) {
@@ -503,8 +537,19 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   }
 
   private getTraceLinesForLabel(label: NetLabelPlacement) {
-    return this.traces.filter(
+    const attachedTraces = this.traces.filter(
       (trace) => isTraceLine(trace) && this.isTraceForLabel(trace, label),
+    )
+    if (attachedTraces.length > 0) return attachedTraces
+
+    // Generated rail connectors are not part of the label's original MSP
+    // pair IDs. Use one only when it visibly terminates at the label anchor.
+    return this.traces.filter(
+      (trace) =>
+        isTraceLine(trace) &&
+        trace.mspPairId.startsWith("available-net-orientation-") &&
+        trace.globalConnNetId === label.globalConnNetId &&
+        tracePathContainsPoint(trace.tracePath, label.anchorPoint),
     )
   }
 
