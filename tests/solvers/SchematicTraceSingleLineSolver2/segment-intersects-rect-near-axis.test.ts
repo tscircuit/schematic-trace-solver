@@ -17,21 +17,13 @@ const rect = {
 test("nearly vertical segment crossing a chip body is a collision", () => {
   // dx = 6.22e-5 (from issue), dy = 4 — passes straight through the rect
   expect(
-    segmentIntersectsRect(
-      { x: 0.5 + 6.22e-5, y: -1 },
-      { x: 0.5, y: 3 },
-      rect,
-    ),
+    segmentIntersectsRect({ x: 0.5 + 6.22e-5, y: -1 }, { x: 0.5, y: 3 }, rect),
   ).toBe(true)
 })
 
 test("nearly horizontal segment crossing a chip body is a collision", () => {
   expect(
-    segmentIntersectsRect(
-      { x: -1, y: 1 + 6.22e-5 },
-      { x: 3, y: 1 },
-      rect,
-    ),
+    segmentIntersectsRect({ x: -1, y: 1 + 6.22e-5 }, { x: 3, y: 1 }, rect),
   ).toBe(true)
 })
 
@@ -48,9 +40,9 @@ test("slanted segment through the rect interior is a collision", () => {
 })
 
 test("slanted segment missing the rect is collision-free", () => {
-  expect(
-    segmentIntersectsRect({ x: -1, y: 2.5 }, { x: 3, y: 6 }, rect),
-  ).toBe(false)
+  expect(segmentIntersectsRect({ x: -1, y: 2.5 }, { x: 3, y: 6 }, rect)).toBe(
+    false,
+  )
 })
 
 test("slanted segment touching only a corner is collision-free", () => {

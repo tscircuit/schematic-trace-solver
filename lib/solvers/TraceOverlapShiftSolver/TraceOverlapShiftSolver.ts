@@ -119,11 +119,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       for (let j = i + 1; j < netIds.length; j++) {
         const netA = netIds[i]!
         const netB = netIds[j]!
-        if (
-          this.suspendedNetPairKeys.has(
-            [netA, netB].sort().join("~"),
-          )
-        ) {
+        if (this.suspendedNetPairKeys.has([netA, netB].sort().join("~"))) {
           continue
         }
         const pathsA = this.traceNetIslands[netA] || []
