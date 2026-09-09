@@ -54,3 +54,21 @@ test("getAxisAlignedSegments returns nothing for degenerate paths", () => {
     ]),
   ).toEqual([])
 })
+
+test("getAxisAlignedSegments decomposes closed rectangular perimeter loop", () => {
+  const segments = getAxisAlignedSegments([
+    { x: 0, y: 0 },
+    { x: 4, y: 0 },
+    { x: 4, y: 4 },
+    { x: 0, y: 4 },
+    { x: 0, y: 0 },
+  ])
+
+  expect(segments.map((s) => [s.axis, s.length])).toEqual([
+    ["x", 4],
+    ["y", 4],
+    ["x", 4],
+    ["y", 4],
+  ])
+})
+
