@@ -54,3 +54,13 @@ test("getAxisAlignedSegments returns nothing for degenerate paths", () => {
     ]),
   ).toEqual([])
 })
+
+test("getAxisAlignedSegments handles stationary repetitive coordinate sequences safely", () => {
+  const result = getAxisAlignedSegments([
+    { x: 2, y: 2 },
+    { x: 2, y: 2 },
+    { x: 2, y: 2 },
+  ])
+  expect(result).toEqual([])
+})
+
