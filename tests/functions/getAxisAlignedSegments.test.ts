@@ -54,3 +54,23 @@ test("getAxisAlignedSegments returns nothing for degenerate paths", () => {
     ]),
   ).toEqual([])
 })
+
+test("getAxisAlignedSegments decomposes multi-turn alternating S-route", () => {
+  const segments = getAxisAlignedSegments([
+    { x: 0, y: 0 },
+    { x: 4, y: 0 },
+    { x: 4, y: 3 },
+    { x: 8, y: 3 },
+    { x: 8, y: 6 },
+    { x: 12, y: 6 },
+  ])
+
+  expect(segments.map((s) => [s.axis, s.length])).toEqual([
+    ["x", 4],
+    ["y", 3],
+    ["x", 4],
+    ["y", 3],
+    ["x", 4],
+  ])
+})
+
