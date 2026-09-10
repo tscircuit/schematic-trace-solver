@@ -8,6 +8,7 @@ export const generateSnipAndReconnectCandidates = ({
   labelBounds,
   paddingBuffer,
   detourCount,
+  includeCornerDetours = false,
 }: {
   initialTrace: SolvedTracePath
   firstInsideIndex: number
@@ -15,6 +16,7 @@ export const generateSnipAndReconnectCandidates = ({
   labelBounds: any
   paddingBuffer: number
   detourCount: number
+  includeCornerDetours?: boolean
 }): Point[][] => {
   if (
     firstInsideIndex <= 0 ||
@@ -89,6 +91,27 @@ export const generateSnipAndReconnectCandidates = ({
       { x: entryPoint.x, y: bottomY },
       { x: exitPoint.x, y: bottomY },
     ])
+  }
+
+  // Local corner detours keep the exit stem on its original line, instead
+  // of shifting it all the way to a component pin along the obstacle edge.
+  if (includeCornerDetours) {
+    for (const x of [leftX, rightX]) {
+      for (const y of [bottomY, topY]) {
+        allCandidateDetours.push(
+          [
+            { x, y: entryPoint.y },
+            { x, y },
+            { x: exitPoint.x, y },
+          ],
+          [
+            { x: entryPoint.x, y },
+            { x, y },
+            { x, y: exitPoint.y },
+          ],
+        )
+      }
+    }
   }
 
   return allCandidateDetours.map((detour) => [

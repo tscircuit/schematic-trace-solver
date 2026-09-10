@@ -11,6 +11,8 @@ import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import { pathEntersAnyNetLabel } from "lib/solvers/SameNetJunctionAlignmentSolver/pathIntersectsAnyNetLabel"
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath
@@ -64,6 +66,21 @@ export class SingleOverlapSolver extends BaseSolver {
     this.netLabelPlacements = solverInput.netLabelPlacements ?? [
       solverInput.label,
     ]
+    // Attached labels move with this trace. Protect the interiors of other
+    // same-net labels that the original route already clears.
+    const sameNetLabelsToAvoid = this.netLabelPlacements.filter(
+      (label) =>
+        label.globalConnNetId === this.initialTrace.globalConnNetId &&
+        !label.mspConnectionPairIds.includes(this.initialTrace.mspPairId) &&
+        !tracePathContainsPoint(
+          this.initialTrace.tracePath,
+          label.anchorPoint,
+        ) &&
+        !pathEntersAnyNetLabel({
+          path: this.initialTrace.tracePath,
+          netLabelPlacements: [label],
+        }),
+    )
     this.obstacles = getObstacleRects(this.problem)
 
     // Calculate an effective padding for this specific run based on the detourCount.
@@ -71,10 +88,27 @@ export class SingleOverlapSolver extends BaseSolver {
       solverInput.paddingBuffer +
       solverInput.detourCount * solverInput.paddingBuffer
 
-    const candidates = generateRerouteCandidates({
+    let candidates = generateRerouteCandidates({
       ...solverInput,
       paddingBuffer: effectivePadding, // Use the calculated, larger padding
     })
+
+    // A full-segment shift can hit a remote label on the same net. In that
+    // case, also try a local turn around the target label's corner.
+    if (
+      candidates.some((path) =>
+        pathEntersAnyNetLabel({
+          path,
+          netLabelPlacements: sameNetLabelsToAvoid,
+        }),
+      )
+    ) {
+      candidates = generateRerouteCandidates({
+        ...solverInput,
+        paddingBuffer: effectivePadding,
+        includeCornerDetours: true,
+      })
+    }
 
     const getLabelOverlapCount = (path: Point[]) =>
       detectTraceLabelOverlap({
@@ -85,6 +119,13 @@ export class SingleOverlapSolver extends BaseSolver {
     const candidateByPath = new Map<string, Point[]>()
     for (const candidate of candidates) {
       const simplifiedCandidate = simplifyPath(candidate)
+      if (
+        pathEntersAnyNetLabel({
+          path: simplifiedCandidate,
+          netLabelPlacements: sameNetLabelsToAvoid,
+        })
+      )
+        continue
       candidateByPath.set(
         simplifiedCandidate.map((point) => `${point.x},${point.y}`).join(";"),
         simplifiedCandidate,
