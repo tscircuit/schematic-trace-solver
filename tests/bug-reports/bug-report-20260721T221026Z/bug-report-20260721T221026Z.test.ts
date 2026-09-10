@@ -22,6 +22,17 @@ test("bug-report-20260721T221026Z", async () => {
     tracePathContainsPoint(alignedTrace.tracePath, attachedLabel.anchorPoint),
   ).toBe(true)
   const output = solver.netLabelToTraceSolver!.getOutput()
+  const corePowerLabel = output.netLabelPlacements.find(
+    (label) => label.netId === "V1V1" && label.pinIds.includes("U_MCU.45"),
+  )!
+  expect(corePowerLabel.orientation).toBe("y+")
+  expect(
+    output.traces.some(
+      (trace) =>
+        trace.globalConnNetId === corePowerLabel.globalConnNetId &&
+        tracePathContainsPoint(trace.tracePath, corePowerLabel.anchorPoint),
+    ),
+  ).toBe(true)
   const powerTrace = output.traces.find(
     (trace) => trace.mspPairId === "U_MCU.48-U_MCU.44",
   )!
