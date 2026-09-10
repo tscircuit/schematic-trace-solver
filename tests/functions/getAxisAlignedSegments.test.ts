@@ -54,3 +54,21 @@ test("getAxisAlignedSegments returns nothing for degenerate paths", () => {
     ]),
   ).toEqual([])
 })
+
+test("getAxisAlignedSegments processes orthogonal perimeter box with connector stub", () => {
+  const segments = getAxisAlignedSegments([
+    { x: 0, y: 0 },
+    { x: 5, y: 0 },
+    { x: 5, y: 5 },
+    { x: 0, y: 5 },
+    { x: 0, y: 8 },
+  ])
+
+  expect(segments.map((s) => [s.axis, s.length])).toEqual([
+    ["x", 5],
+    ["y", 5],
+    ["x", 5],
+    ["y", 3],
+  ])
+})
+
