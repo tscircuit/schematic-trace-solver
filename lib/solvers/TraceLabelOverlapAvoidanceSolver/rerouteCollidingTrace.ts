@@ -25,12 +25,14 @@ export const generateRerouteCandidates = ({
   label,
   paddingBuffer,
   detourCount,
+  includeCornerDetours = false,
 }: {
   trace: SolvedTracePath
   label: NetLabelPlacement
   problem: InputProblem
   paddingBuffer: number
   detourCount: number
+  includeCornerDetours?: boolean
 }): Point[][] => {
   const initialTrace = { ...trace, tracePath: simplifyPath(trace.tracePath) }
 
@@ -73,6 +75,7 @@ export const generateRerouteCandidates = ({
     initialTrace,
     firstInsideIndex,
     lastInsideIndex,
+    includeCornerDetours,
     labelBounds,
     paddingBuffer,
     detourCount,

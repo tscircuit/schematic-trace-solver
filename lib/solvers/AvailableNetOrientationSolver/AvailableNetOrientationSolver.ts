@@ -284,8 +284,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       if (overlapsHorizontalConstraintMismatch) return true
     }
 
-    if (!this.crowdedPortOnlyLabelIndices.has(labelIndex)) return false
-
+    // Even a correctly oriented label may need a connector to clear a neighbor;
+    // later collision resolution must not rotate it outside its constraints.
     const bounds = getRectBounds(label.center, label.width, label.height)
     return this.outputNetLabelPlacements.some((otherLabel, otherIndex) => {
       if (otherIndex === labelIndex) return false
@@ -578,11 +578,88 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (shiftedCandidate) return shiftedCandidate
 
-    return this.findValidLateralShiftedCandidate(
+    const lateralCandidate = this.findValidLateralShiftedCandidate(
       label,
       orientations[0]!,
       labelIndex,
     )
+    if (lateralCandidate) return lateralCandidate
+
+    return this.findValidBranchFromHostTrace(
+      label,
+      orientations[0]!,
+      labelIndex,
+    )
+  }
+
+  /**
+   * Searches connector source points in schematic world coordinates (mm,
+   * +X right, +Y up). Orientation vectors are directions in the same frame.
+   */
+  private findValidBranchFromHostTrace(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+    labelIndex: number,
+  ): EvaluatedCandidate | null {
+    const direction = dir(orientation)
+    const perpendicular = { x: -direction.y, y: direction.x }
+    const maxDistance = this.getSearchDistanceLimit(label, orientation)
+    const sources: Point[] = []
+    for (const traceId of label.mspConnectionPairIds) {
+      const trace = this.traceMap[traceId]
+      if (!trace) continue
+      for (let i = 0; i < trace.tracePath.length - 1; i++) {
+        const start = trace.tracePath[i]!
+        const end = trace.tracePath[i + 1]!
+        const steps = Math.max(
+          1,
+          Math.ceil(
+            Math.hypot(end.x - start.x, end.y - start.y) / LABEL_SEARCH_STEP,
+          ),
+        )
+        for (let step = 0; step <= steps; step++) {
+          sources.push({
+            x: start.x + ((end.x - start.x) * step) / steps,
+            y: start.y + ((end.y - start.y) * step) / steps,
+          })
+        }
+      }
+    }
+    sources.sort(
+      (a, b) =>
+        Math.hypot(a.x - label.anchorPoint.x, a.y - label.anchorPoint.y) -
+        Math.hypot(b.x - label.anchorPoint.x, b.y - label.anchorPoint.y),
+    )
+    // The original anchor can be trapped between labels. Search short branches
+    // from the existing wire while preserving both connectivity and orientation.
+    for (const connectorSource of sources) {
+      for (
+        let offset = 0;
+        offset <= maxDistance + EPS;
+        offset += LABEL_SEARCH_STEP
+      ) {
+        for (const sign of offset === 0 ? [1] : [-1, 1]) {
+          const candidate = this.findValidCandidateInShiftColumn({
+            label,
+            labelIndex,
+            orientation,
+            direction,
+            baseAnchor: {
+              x: connectorSource.x + perpendicular.x * offset * sign,
+              y: connectorSource.y + perpendicular.y * offset * sign,
+            },
+            connectorSource,
+            maxSearchDistance: maxDistance,
+            outwardDistance: offset * sign,
+            phase: "lateral-shift",
+            startDistance: WICK_CLEARANCE,
+            stopOnTraceCollision: false,
+          })
+          if (candidate) return candidate
+        }
+      }
+    }
+    return null
   }
 
   private findValidCrowdedTopVerticalFanoutCandidate(
@@ -1519,14 +1596,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         )
       }
       if (orientation === "x-") {
+        // Labels outside the chip still need room for a short horizontal wick.
         return Math.max(
-          0,
+          this.getSearchDistanceLimit(label, orientation),
           ...labelChips.map((chip) => baseAnchor.x - chip.bounds.minX),
         )
       }
       if (orientation === "x+") {
         return Math.max(
-          0,
+          this.getSearchDistanceLimit(label, orientation),
           ...labelChips.map((chip) => chip.bounds.maxX - baseAnchor.x),
         )
       }

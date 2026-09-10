@@ -17,6 +17,7 @@ import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatia
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
+import { getOrientationConstraint } from "lib/utils/getOrientationConstraint"
 
 type CandidateStatus =
   | "ok"
@@ -208,6 +209,11 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     const netLabelWidth = this.netLabelWidthOf(label)
     const netLabelHeight = this.netLabelHeightOf(label)
     const candidates: Candidate[] = []
+    const alongTraceCandidates: Candidate[] = []
+    const orientationConstraint = getOrientationConstraint(
+      this.inputProblem,
+      label,
+    )
 
     const buildCandidate = (
       orientation: FacingDirection,
@@ -295,12 +301,24 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
                 ),
               )
             }
+            // A constrained label can also extend past a trace endpoint. Keep
+            // its host segment in collision checks so it cannot cover the wire.
+            for (const orientation of orientationConstraint ?? []) {
+              if (perpendicularOrientations.includes(orientation)) continue
+              alongTraceCandidates.push(
+                buildCandidate(orientation, anchor, mspPairId),
+              )
+            }
           }
         }
       }
     }
 
-    return candidates
+    return orientationConstraint === null
+      ? candidates
+      : [...candidates, ...alongTraceCandidates].filter((candidate) =>
+          orientationConstraint.includes(candidate.orientation),
+        )
   }
 
   private checkCandidate(
