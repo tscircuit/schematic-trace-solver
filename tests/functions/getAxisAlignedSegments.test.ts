@@ -54,3 +54,17 @@ test("getAxisAlignedSegments returns nothing for degenerate paths", () => {
     ]),
   ).toEqual([])
 })
+test("getAxisAlignedSegments processes multi-turn S-curves correctly", () => {
+  const segments = getAxisAlignedSegments([
+    { x: 0, y: 0 },
+    { x: 3, y: 0 },
+    { x: 3, y: 6 },
+    { x: 8, y: 6 },
+  ])
+
+  expect(segments.map((s) => [s.axis, s.length])).toEqual([
+    ["y", 6],
+    ["x", 5],
+    ["x", 3],
+  ])
+})
