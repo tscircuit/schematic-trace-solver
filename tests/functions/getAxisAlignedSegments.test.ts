@@ -54,3 +54,14 @@ test("getAxisAlignedSegments returns nothing for degenerate paths", () => {
     ]),
   ).toEqual([])
 })
+test("getAxisAlignedSegments ignores purely non-axis-aligned diagonal steps", () => {
+  const segments = getAxisAlignedSegments([
+    { x: 0, y: 0 },
+    { x: 5, y: 5 },
+    { x: 5, y: 10 },
+  ])
+
+  expect(segments.map((s) => [s.axis, s.length])).toEqual([
+    ["y", 5],
+  ])
+})
