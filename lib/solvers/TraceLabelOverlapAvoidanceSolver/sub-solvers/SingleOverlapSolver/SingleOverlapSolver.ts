@@ -8,6 +8,7 @@ import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSol
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
+import { getCombinedLabelObstacle } from "./getCombinedLabelObstacle"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
@@ -110,45 +111,72 @@ export class SingleOverlapSolver extends BaseSolver {
       })
     }
 
+    // If local detours cannot clear a neighboring same-net label, also
+    // generate routes around both label bodies. Merely rejecting those
+    // detours can leave the trace crossing the original target label.
+    const blockingLabels = sameNetLabelsToAvoid.filter((label) =>
+      candidates.some((path) =>
+        pathEntersAnyNetLabel({ path, netLabelPlacements: [label] }),
+      ),
+    )
+    let fallbackCandidates: Point[][] = []
+    if (blockingLabels.length > 0) {
+      fallbackCandidates = generateRerouteCandidates({
+        ...solverInput,
+        label: getCombinedLabelObstacle(this.label, blockingLabels),
+        paddingBuffer: effectivePadding,
+        includeCornerDetours: true,
+      })
+    }
+
     const getLabelOverlapCount = (path: Point[]) =>
       detectTraceLabelOverlap({
         traces: [{ ...this.initialTrace, tracePath: path }],
         netLabels: this.netLabelPlacements,
       }).length
 
-    const candidateByPath = new Map<string, Point[]>()
-    for (const candidate of candidates) {
-      const simplifiedCandidate = simplifyPath(candidate)
-      if (
-        pathEntersAnyNetLabel({
-          path: simplifiedCandidate,
-          netLabelPlacements: sameNetLabelsToAvoid,
-        })
-      )
-        continue
-      candidateByPath.set(
-        simplifiedCandidate.map((point) => `${point.x},${point.y}`).join(";"),
-        simplifiedCandidate,
-      )
-    }
-
-    this.queuedCandidatePaths = [...candidateByPath.values()].sort((a, b) => {
-      const pathLengthDifference = getPathLength(a) - getPathLength(b)
-      if (Math.abs(pathLengthDifference) >= PATH_LENGTH_EPSILON) {
-        return pathLengthDifference
+    const getQueuedCandidates = (paths: Point[][]) => {
+      const candidateByPath = new Map<string, Point[]>()
+      for (const candidate of paths) {
+        const simplifiedCandidate = simplifyPath(candidate)
+        if (
+          pathEntersAnyNetLabel({
+            path: simplifiedCandidate,
+            netLabelPlacements: sameNetLabelsToAvoid,
+          })
+        )
+          continue
+        candidateByPath.set(
+          simplifiedCandidate.map((point) => `${point.x},${point.y}`).join(";"),
+          simplifiedCandidate,
+        )
       }
 
-      const overlapCountDifference =
-        getLabelOverlapCount(a) - getLabelOverlapCount(b)
-      if (overlapCountDifference !== 0) return overlapCountDifference
+      return [...candidateByPath.values()].sort((a, b) => {
+        const pathLengthDifference = getPathLength(a) - getPathLength(b)
+        if (Math.abs(pathLengthDifference) >= PATH_LENGTH_EPSILON) {
+          return pathLengthDifference
+        }
 
-      return a.length - b.length
-    })
+        const overlapCountDifference =
+          getLabelOverlapCount(a) - getLabelOverlapCount(b)
+        if (overlapCountDifference !== 0) return overlapCountDifference
+
+        return a.length - b.length
+      })
+    }
+    // Preserve the normal search first, then exhaust the finite set of wider
+    // detours. Applying the five-candidate limit to both groups would leave
+    // those fallback routes untried in crowded power-label layouts.
+    this.queuedCandidatePaths = [
+      ...getQueuedCandidates(candidates).slice(0, MAX_TRIES),
+      ...getQueuedCandidates(fallbackCandidates),
+    ]
   }
 
   override _step() {
-    // Failure conditions: no more candidates or exceeded max tries
-    if (this.queuedCandidatePaths.length === 0 || this._tried >= MAX_TRIES) {
+    // Both the local routes and any wider fallback routes have been tried.
+    if (this.queuedCandidatePaths.length === 0) {
       this.failed = true
       return
     }
