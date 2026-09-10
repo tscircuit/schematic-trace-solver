@@ -54,3 +54,17 @@ test("getAxisAlignedSegments returns nothing for degenerate paths", () => {
     ]),
   ).toEqual([])
 })
+test("getAxisAlignedSegments handles 3-step staircase with identical length steps", () => {
+  const segments = getAxisAlignedSegments([
+    { x: 0, y: 0 },
+    { x: 2, y: 0 },
+    { x: 2, y: 2 },
+    { x: 4, y: 2 },
+    { x: 4, y: 4 },
+    { x: 6, y: 4 },
+    { x: 6, y: 6 },
+  ])
+
+  expect(segments.length).toBe(6)
+  expect(segments.map((s) => s.length)).toEqual([2, 2, 2, 2, 2, 2])
+})
