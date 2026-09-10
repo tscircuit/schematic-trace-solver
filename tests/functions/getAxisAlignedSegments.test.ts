@@ -54,3 +54,21 @@ test("getAxisAlignedSegments returns nothing for degenerate paths", () => {
     ]),
   ).toEqual([])
 })
+test("getAxisAlignedSegments handles comb-shaped bus routing patterns", () => {
+  const segments = getAxisAlignedSegments([
+    { x: 0, y: 0 },
+    { x: 0, y: 10 },
+    { x: 2, y: 10 },
+    { x: 2, y: 0 },
+    { x: 4, y: 0 },
+    { x: 4, y: 10 },
+  ])
+
+  expect(segments.map((s) => [s.axis, s.length])).toEqual([
+    ["y", 10],
+    ["y", 10],
+    ["y", 10],
+    ["x", 2],
+    ["x", 2],
+  ])
+})
