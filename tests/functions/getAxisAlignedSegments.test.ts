@@ -54,3 +54,21 @@ test("getAxisAlignedSegments returns nothing for degenerate paths", () => {
     ]),
   ).toEqual([])
 })
+test("getAxisAlignedSegments handles inward concentric square spiral routes", () => {
+  const segments = getAxisAlignedSegments([
+    { x: 0, y: 0 },
+    { x: 10, y: 0 },
+    { x: 10, y: 10 },
+    { x: 2, y: 10 },
+    { x: 2, y: 2 },
+    { x: 8, y: 2 },
+  ])
+
+  expect(segments.map((s) => [s.axis, s.length])).toEqual([
+    ["x", 10],
+    ["y", 10],
+    ["x", 8],
+    ["y", 8],
+    ["x", 6],
+  ])
+})
