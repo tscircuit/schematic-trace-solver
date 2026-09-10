@@ -1,0 +1,865 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -8.1,
+        "y": 3
+      },
+      "width": 2.6000000000000014,
+      "height": 1.7999999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_39",
+          "displayName": "S1",
+          "x": -9.4,
+          "y": 3.3
+        },
+        {
+          "pinId": "schematic_port_40",
+          "displayName": "G1",
+          "x": -9.4,
+          "y": 3.1
+        },
+        {
+          "pinId": "schematic_port_41",
+          "displayName": "S2",
+          "x": -9.4,
+          "y": 2.9
+        },
+        {
+          "pinId": "schematic_port_42",
+          "displayName": "G2",
+          "x": -9.4,
+          "y": 2.7
+        },
+        {
+          "pinId": "schematic_port_43",
+          "displayName": "D21",
+          "x": -6.799999999999999,
+          "y": 2.7
+        },
+        {
+          "pinId": "schematic_port_44",
+          "displayName": "D22",
+          "x": -6.799999999999999,
+          "y": 2.9
+        },
+        {
+          "pinId": "schematic_port_45",
+          "displayName": "D11",
+          "x": -6.799999999999999,
+          "y": 3.1
+        },
+        {
+          "pinId": "schematic_port_46",
+          "displayName": "D12",
+          "x": -6.799999999999999,
+          "y": 3.3
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -2.7,
+        "y": 3
+      },
+      "width": 2.6,
+      "height": 1.7999999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_47",
+          "displayName": "S1",
+          "x": -4,
+          "y": 3.3
+        },
+        {
+          "pinId": "schematic_port_48",
+          "displayName": "G1",
+          "x": -4,
+          "y": 3.1
+        },
+        {
+          "pinId": "schematic_port_49",
+          "displayName": "S2",
+          "x": -4,
+          "y": 2.9
+        },
+        {
+          "pinId": "schematic_port_50",
+          "displayName": "G2",
+          "x": -4,
+          "y": 2.7
+        },
+        {
+          "pinId": "schematic_port_51",
+          "displayName": "D21",
+          "x": -1.4000000000000001,
+          "y": 2.7
+        },
+        {
+          "pinId": "schematic_port_52",
+          "displayName": "D22",
+          "x": -1.4000000000000001,
+          "y": 2.9
+        },
+        {
+          "pinId": "schematic_port_53",
+          "displayName": "D11",
+          "x": -1.4000000000000001,
+          "y": 3.1
+        },
+        {
+          "pinId": "schematic_port_54",
+          "displayName": "D12",
+          "x": -1.4000000000000001,
+          "y": 3.3
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": 2.7,
+        "y": 3
+      },
+      "width": 2.6,
+      "height": 1.7999999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_55",
+          "displayName": "S1",
+          "x": 1.4000000000000001,
+          "y": 3.3
+        },
+        {
+          "pinId": "schematic_port_56",
+          "displayName": "G1",
+          "x": 1.4000000000000001,
+          "y": 3.1
+        },
+        {
+          "pinId": "schematic_port_57",
+          "displayName": "S2",
+          "x": 1.4000000000000001,
+          "y": 2.9
+        },
+        {
+          "pinId": "schematic_port_58",
+          "displayName": "G2",
+          "x": 1.4000000000000001,
+          "y": 2.7
+        },
+        {
+          "pinId": "schematic_port_59",
+          "displayName": "D21",
+          "x": 4,
+          "y": 2.7
+        },
+        {
+          "pinId": "schematic_port_60",
+          "displayName": "D22",
+          "x": 4,
+          "y": 2.9
+        },
+        {
+          "pinId": "schematic_port_61",
+          "displayName": "D11",
+          "x": 4,
+          "y": 3.1
+        },
+        {
+          "pinId": "schematic_port_62",
+          "displayName": "D12",
+          "x": 4,
+          "y": 3.3
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": 8.1,
+        "y": 3
+      },
+      "width": 2.6000000000000014,
+      "height": 1.7999999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_63",
+          "displayName": "S1",
+          "x": 6.799999999999999,
+          "y": 3.3
+        },
+        {
+          "pinId": "schematic_port_64",
+          "displayName": "G1",
+          "x": 6.799999999999999,
+          "y": 3.1
+        },
+        {
+          "pinId": "schematic_port_65",
+          "displayName": "S2",
+          "x": 6.799999999999999,
+          "y": 2.9
+        },
+        {
+          "pinId": "schematic_port_66",
+          "displayName": "G2",
+          "x": 6.799999999999999,
+          "y": 2.7
+        },
+        {
+          "pinId": "schematic_port_67",
+          "displayName": "D21",
+          "x": 9.4,
+          "y": 2.7
+        },
+        {
+          "pinId": "schematic_port_68",
+          "displayName": "D22",
+          "x": 9.4,
+          "y": 2.9
+        },
+        {
+          "pinId": "schematic_port_69",
+          "displayName": "D11",
+          "x": 9.4,
+          "y": 3.1
+        },
+        {
+          "pinId": "schematic_port_70",
+          "displayName": "D12",
+          "x": 9.4,
+          "y": 3.3
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_5",
+      "center": {
+        "x": -7,
+        "y": -3
+      },
+      "width": 2.1999999999999993,
+      "height": 0.40000000000000036,
+      "pins": [
+        {
+          "pinId": "schematic_port_71",
+          "displayName": "GND",
+          "x": -8.1,
+          "y": -3
+        },
+        {
+          "pinId": "schematic_port_72",
+          "displayName": "VM",
+          "x": -5.9,
+          "y": -3
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_6",
+      "center": {
+        "x": 0,
+        "y": 5.5
+      },
+      "width": 3.8,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_73",
+          "displayName": "BOUT2",
+          "x": -1.9,
+          "y": 5.6
+        },
+        {
+          "pinId": "schematic_port_74",
+          "displayName": "BOUT1",
+          "x": -1.9,
+          "y": 5.4
+        },
+        {
+          "pinId": "schematic_port_75",
+          "displayName": "AOUT2",
+          "x": 1.9,
+          "y": 5.6
+        },
+        {
+          "pinId": "schematic_port_76",
+          "displayName": "AOUT1",
+          "x": 1.9,
+          "y": 5.4
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_7",
+      "center": {
+        "x": -4.5,
+        "y": -3
+      },
+      "width": 0.5999999999999996,
+      "height": 0.8400000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_77",
+          "displayName": "pos",
+          "x": -4.8,
+          "y": -3,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_78",
+          "displayName": "neg",
+          "x": -4.2,
+          "y": -3,
+          "_facingDirection": "x+"
+        }
+      ],
+      "symbolName": "capacitor_right"
+    },
+    {
+      "chipId": "schematic_component_8",
+      "center": {
+        "x": -1.4275,
+        "y": -3
+      },
+      "width": 1.045,
+      "height": 0.7600000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_79",
+          "displayName": "1",
+          "x": -1.5,
+          "y": -2.6199999999999997,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_80",
+          "displayName": "2",
+          "x": -1.5,
+          "y": -3.3800000000000003,
+          "_facingDirection": "y-"
+        }
+      ],
+      "symbolName": "capacitor_down"
+    },
+    {
+      "chipId": "schematic_component_9",
+      "center": {
+        "x": 1.5125000000000002,
+        "y": -3
+      },
+      "width": 0.925,
+      "height": 0.7600000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_81",
+          "displayName": "1",
+          "x": 1.5,
+          "y": -2.6199999999999997,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_82",
+          "displayName": "2",
+          "x": 1.5,
+          "y": -3.3800000000000003,
+          "_facingDirection": "y-"
+        }
+      ],
+      "symbolName": "capacitor_down"
+    },
+    {
+      "chipId": "schematic_component_10",
+      "center": {
+        "x": -2.4050000000000002,
+        "y": 0
+      },
+      "width": 1.0900000000000003,
+      "height": 0.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_83",
+          "displayName": "anode",
+          "x": -2.5,
+          "y": -0.3,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_84",
+          "displayName": "cathode",
+          "x": -2.5,
+          "y": 0.3,
+          "_facingDirection": "y+"
+        }
+      ],
+      "symbolName": "boxresistor_up"
+    },
+    {
+      "chipId": "schematic_component_11",
+      "center": {
+        "x": 2.5949999999999998,
+        "y": 0
+      },
+      "width": 1.0900000000000003,
+      "height": 0.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_85",
+          "displayName": "anode",
+          "x": 2.5,
+          "y": -0.3,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_86",
+          "displayName": "cathode",
+          "x": 2.5,
+          "y": 0.3,
+          "_facingDirection": "y+"
+        }
+      ],
+      "symbolName": "boxresistor_up"
+    },
+    {
+      "chipId": "schematic_component_12",
+      "center": {
+        "x": -5,
+        "y": 0
+      },
+      "width": 0.40000000000000036,
+      "height": 0.4,
+      "pins": []
+    },
+    {
+      "chipId": "schematic_component_13",
+      "center": {
+        "x": 5,
+        "y": 0
+      },
+      "width": 0.40000000000000036,
+      "height": 0.4,
+      "pins": []
+    },
+    {
+      "chipId": "schematic_component_14",
+      "center": {
+        "x": -7.5,
+        "y": 0
+      },
+      "width": 0.40000000000000036,
+      "height": 0.4,
+      "pins": []
+    },
+    {
+      "chipId": "schematic_component_15",
+      "center": {
+        "x": 7.5,
+        "y": 0
+      },
+      "width": 0.40000000000000036,
+      "height": 0.4,
+      "pins": []
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_port_35",
+      "netLabelText": "U1_A1HS",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_40"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_34",
+      "netLabelText": "U1_A1LS",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_42"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_31",
+      "netLabelText": "U1_A2LS",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_48"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_30",
+      "netLabelText": "U1_A2HS",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_50"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_26",
+      "netLabelText": "U1_B1HS",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_56"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_25",
+      "netLabelText": "U1_B1LS",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_58"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_22",
+      "netLabelText": "U1_B2LS",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_64"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_21",
+      "netLabelText": "U1_B2HS",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_66"
+      ]
+    },
+    {
+      "netId": "AOUT1",
+      "isGround": false,
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_39",
+        "schematic_port_43",
+        "schematic_port_44",
+        "schematic_port_76"
+      ],
+      "netLabelText": "AOUT1"
+    },
+    {
+      "netId": "GND_A",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.72,
+      "pinIds": [
+        "schematic_port_41",
+        "schematic_port_47",
+        "schematic_port_84"
+      ],
+      "netLabelText": "GND_A"
+    },
+    {
+      "netId": "VM",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.36,
+      "pinIds": [
+        "schematic_port_45",
+        "schematic_port_46",
+        "schematic_port_51",
+        "schematic_port_52",
+        "schematic_port_61",
+        "schematic_port_62",
+        "schematic_port_67",
+        "schematic_port_68",
+        "schematic_port_72",
+        "schematic_port_77",
+        "schematic_port_79",
+        "schematic_port_81"
+      ],
+      "netLabelText": "VM"
+    },
+    {
+      "netId": "AOUT2",
+      "isGround": false,
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_49",
+        "schematic_port_53",
+        "schematic_port_54",
+        "schematic_port_75"
+      ],
+      "netLabelText": "AOUT2"
+    },
+    {
+      "netId": "BOUT1",
+      "isGround": false,
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_55",
+        "schematic_port_59",
+        "schematic_port_60",
+        "schematic_port_74"
+      ],
+      "netLabelText": "BOUT1"
+    },
+    {
+      "netId": "GND_B",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.72,
+      "pinIds": [
+        "schematic_port_57",
+        "schematic_port_63",
+        "schematic_port_86"
+      ],
+      "netLabelText": "GND_B"
+    },
+    {
+      "netId": "BOUT2",
+      "isGround": false,
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_65",
+        "schematic_port_69",
+        "schematic_port_70",
+        "schematic_port_73"
+      ],
+      "netLabelText": "BOUT2"
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_71",
+        "schematic_port_78",
+        "schematic_port_80",
+        "schematic_port_82",
+        "schematic_port_83",
+        "schematic_port_85"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -8.4,
+        "y": 1.9700000000000002
+      },
+      "width": 1.2000000000000002,
+      "height": 0.17999999999999994,
+      "text": "CSD88537ND"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -8.879999999999999,
+        "y": 4.015
+      },
+      "width": 0.3600000000000012,
+      "height": 0.24999999999999956,
+      "text": "Q1"
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -3,
+        "y": 1.9700000000000002
+      },
+      "width": 1.1999999999999997,
+      "height": 0.17999999999999994,
+      "text": "CSD88537ND"
+    },
+    {
+      "chipId": "schematic_component_2",
+      "center": {
+        "x": -3.4800000000000004,
+        "y": 4.015
+      },
+      "width": 0.3599999999999999,
+      "height": 0.24999999999999956,
+      "text": "Q2"
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": 2.4000000000000004,
+        "y": 1.9700000000000002
+      },
+      "width": 1.1999999999999997,
+      "height": 0.17999999999999994,
+      "text": "CSD88537ND"
+    },
+    {
+      "chipId": "schematic_component_3",
+      "center": {
+        "x": 1.9200000000000002,
+        "y": 4.015
+      },
+      "width": 0.3599999999999999,
+      "height": 0.24999999999999956,
+      "text": "Q3"
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": 7.799999999999999,
+        "y": 1.9700000000000002
+      },
+      "width": 1.1999999999999993,
+      "height": 0.17999999999999994,
+      "text": "CSD88537ND"
+    },
+    {
+      "chipId": "schematic_component_4",
+      "center": {
+        "x": 7.319999999999999,
+        "y": 4.015
+      },
+      "width": 0.35999999999999943,
+      "height": 0.24999999999999956,
+      "text": "Q4"
+    },
+    {
+      "chipId": "schematic_component_5",
+      "center": {
+        "x": -7.58,
+        "y": -2.6849999999999996
+      },
+      "width": 0.35999999999999943,
+      "height": 0.24999999999999956,
+      "text": "J5"
+    },
+    {
+      "chipId": "schematic_component_6",
+      "center": {
+        "x": -1.38,
+        "y": 5.914999999999999
+      },
+      "width": 0.3600000000000001,
+      "height": 0.2499999999999991,
+      "text": "J6"
+    },
+    {
+      "chipId": "schematic_component_12",
+      "center": {
+        "x": -5.02,
+        "y": 0.315
+      },
+      "width": 0.47999999999999954,
+      "height": 0.25,
+      "text": "NT1"
+    },
+    {
+      "chipId": "schematic_component_13",
+      "center": {
+        "x": 4.98,
+        "y": 0.315
+      },
+      "width": 0.47999999999999954,
+      "height": 0.25,
+      "text": "NT2"
+    },
+    {
+      "chipId": "schematic_component_14",
+      "center": {
+        "x": -7.52,
+        "y": 0.315
+      },
+      "width": 0.47999999999999954,
+      "height": 0.25,
+      "text": "NT3"
+    },
+    {
+      "chipId": "schematic_component_15",
+      "center": {
+        "x": 7.48,
+        "y": 0.315
+      },
+      "width": 0.47999999999999954,
+      "height": 0.25,
+      "text": "NT4"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "VM": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ],
+    "AOUT1": [
+      "x-",
+      "x+"
+    ],
+    "AOUT2": [
+      "x-",
+      "x+"
+    ],
+    "BOUT1": [
+      "x-",
+      "x+"
+    ],
+    "BOUT2": [
+      "x-",
+      "x+"
+    ],
+    "GND_A": [
+      "y-"
+    ],
+    "GND_B": [
+      "y-"
+    ],
+    "source_connectivity_source_port_35": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_34": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_31": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_30": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_26": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_25": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_22": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_21": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
