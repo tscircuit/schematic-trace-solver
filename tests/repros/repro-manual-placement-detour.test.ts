@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
-import inputJson from "./assets/repro-manual-placement-detour.input.json"
+import inputJson from "./repro-manual-placement-detour.input.json"
 
 // Captured from core/tests/components/primitive-components/schematic-section-manual-placement-5.test.tsx.
 // R2 pin1 and C3 pin1 face upward, with C3 obstructing the initial U-shaped route.
