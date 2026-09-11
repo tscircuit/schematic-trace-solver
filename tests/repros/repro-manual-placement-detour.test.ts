@@ -1,12 +1,14 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { findFirstCollision } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputJson from "./repro-manual-placement-detour.input.json"
 
 // Captured from core/tests/components/primitive-components/schematic-section-manual-placement-5.test.tsx.
 // R2 pin1 and C3 pin1 face upward, with C3 obstructing the initial U-shaped route.
-test("reproduces the R2 to C3 detour in manually placed schematic sections", async () => {
+test("routes R2 to C3 locally in manually placed schematic sections", async () => {
   const inputProblem: InputProblem = JSON.parse(JSON.stringify(inputJson))
   const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
@@ -25,7 +27,13 @@ test("reproduces the R2 to C3 detour in manually placed schematic sections", asy
     routeLength +=
       Math.abs(point.x - previousPoint.x) + Math.abs(point.y - previousPoint.y)
   }
-  expect(routeLength).toBeGreaterThan(26)
-  expect(Math.min(...trace.tracePath.map((point) => point.x))).toBeLessThan(-15)
+  expect(solver.solved).toBe(true)
+  expect(
+    findFirstCollision(trace.tracePath, getObstacleRects(inputProblem)),
+  ).toBeNull()
+  expect(routeLength).toBeCloseTo(3.06)
+  expect(Math.min(...trace.tracePath.map((point) => point.x))).toBeGreaterThan(
+    -3.5,
+  )
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
