@@ -546,7 +546,10 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
       connectionPair,
       obstacles,
     })
-    const candidates = [...junctionCandidates, ...pinConnectionCandidates]
+    const candidates = [...junctionCandidates, ...pinConnectionCandidates].sort(
+      (firstPath, secondPath) =>
+        getPathLength(firstPath) - getPathLength(secondPath),
+    )
     const rejectComponentBoundaryTravel = hasParallelFailedConnection({
       connectionPair,
       failedConnectionPairs: this.failedConnectionPairs,
