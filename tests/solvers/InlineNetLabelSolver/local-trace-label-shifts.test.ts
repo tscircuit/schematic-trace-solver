@@ -88,6 +88,68 @@ for (const rotation of [0, 1, 2, 3])
     expect(output).toEqual(saved)
   })
 
+for (const hasJunction of [false, true])
+  test(`clears a neighboring redundant bend without losing a junction (junction=${hasJunction})`, () => {
+    const { input, output } = fixture()
+    input.chips.push({
+      chipId: "body",
+      center: { x: 2.5, y: 0 },
+      width: 1,
+      height: 2,
+      pins: [],
+    })
+    output.traces = [
+      trace("wire", [
+        { x: 2, y: -0.4 },
+        { x: 1.9, y: -0.4 },
+        { x: 1.9, y: 0.4 },
+        { x: 2, y: 0.4 },
+      ]),
+      trace("neighbor", [
+        { x: 2, y: -0.2 },
+        { x: 0.7, y: -0.2 },
+        { x: 0.7, y: 0.4 },
+        { x: 1.7, y: 0.4 },
+        { x: 1.7, y: 0.6 },
+        { x: 2, y: 0.6 },
+      ]),
+    ]
+    Object.assign(output.netLabelPlacements[0]!, {
+      orientation: "x-",
+      anchorPoint: { x: 2, y: 0 },
+      center: { x: 1.4, y: 0 },
+      width: 1.2,
+    })
+    if (hasJunction)
+      output.traces.push({
+        ...trace("branch", [
+          { x: 1.2, y: 0.4 },
+          { x: 1.2, y: 0.8 },
+        ]),
+        globalConnNetId: "neighbor",
+      })
+    const saved = structuredClone(output)
+    const proposals = [...getLocalTraceLabelShifts(input, output)]
+    if (hasJunction) {
+      expect(proposals).toEqual([])
+    } else {
+      expect(proposals.length).toBeGreaterThan(0)
+      for (const proposal of proposals) {
+        expect(proposal.traces.map((trace) => trace.tracePath.length)).toEqual([
+          4, 4,
+        ])
+        for (const [index, trace] of proposal.traces.entries()) {
+          expect(trace.tracePath[0]).toEqual(output.traces[index]!.tracePath[0])
+          expect(trace.tracePath.at(-1)).toEqual(
+            output.traces[index]!.tracePath.at(-1),
+          )
+        }
+        expect(getOutputLabelCollisions(proposal)).toEqual([])
+      }
+    }
+    expect(output).toEqual(saved)
+  })
+
 test.each([
   "chip",
   "parallel wire",

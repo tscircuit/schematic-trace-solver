@@ -5,7 +5,7 @@ import { boundsOverlap } from "lib/utils/textBoxBounds"
 import inputProblem from "./bug-report-20260902T092425Z.json"
 import "tests/fixtures/matcher"
 
-test("bug-report-20260902T092425Z", () => {
+test("bug-report-20260902T092425Z", async () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
 
   solver.solve()
@@ -47,5 +47,19 @@ test("bug-report-20260902T092425Z", () => {
     ).toBe(false)
   }
 
-  expect(solver).toMatchSolverSnapshot(import.meta.path)
+  const capacitorGroundLabel = solver
+    .netLabelToTraceSolver!.getOutput()
+    .netLabelPlacements.find(
+      (label) =>
+        label.pinIds.includes("schematic_port_13") &&
+        label.pinIds.includes("schematic_port_15"),
+    )!
+  expect(capacitorGroundLabel).toMatchObject({
+    netId: "GND",
+    orientation: "y-",
+  })
+  expect(capacitorGroundLabel.anchorPoint.x).toBeCloseTo(5)
+  expect(capacitorGroundLabel.anchorPoint.y).toBeCloseTo(-1.08)
+
+  await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

@@ -11,6 +11,7 @@ import {
   pointsEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { findPerpendicularPathCrossings } from "lib/solvers/TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 import { getSharedPin } from "./getSharedPin"
 import {
   pathEntersAnyNetLabel,
@@ -98,6 +99,25 @@ const getPerpendicularPathCrossings = (
   }
 
   return crossings
+}
+
+const buildCollapsedSelfCyclePath = (
+  path: Point[],
+  firstSegmentIndex: number,
+  secondSegmentIndex: number,
+) => {
+  const intersectionPoint = getSegmentIntersection(
+    path[firstSegmentIndex]!,
+    path[firstSegmentIndex + 1]!,
+    path[secondSegmentIndex]!,
+    path[secondSegmentIndex + 1]!,
+  )
+  if (!intersectionPoint) return path
+  return simplifyPath([
+    ...path.slice(0, firstSegmentIndex + 1),
+    intersectionPoint,
+    ...path.slice(secondSegmentIndex + 1),
+  ])
 }
 
 const buildCollapsedCyclePath = ({
@@ -209,6 +229,60 @@ const getBestCycleCollapseCandidate = ({
   const baselineTargetVisibleLength = getVisibleTraceLength([targetTrace])
   let bestCandidate: CycleCollapseCandidate | null = null
 
+  const considerTracePath = (tracePath: Point[]) => {
+    const candidateTrace = { ...targetTrace, tracePath }
+    const candidateTargetVisibleLength = getVisibleTraceLength([candidateTrace])
+    if (
+      candidateTargetVisibleLength >
+      baselineTargetVisibleLength + TRACE_LENGTH_EPSILON
+    ) {
+      return
+    }
+    const candidateNetLabelPlacements = getNetLabelPlacementsForCycleCollapse({
+      targetTrace,
+      tracePath,
+      netLabelPlacements,
+    })
+    if (!candidateNetLabelPlacements) return
+
+    const candidateNetTraces = sameNetTraces.map((trace) => {
+      if (trace.mspPairId === targetTrace.mspPairId) return candidateTrace
+      return trace
+    })
+    const netVisibleLength = getVisibleTraceLength(candidateNetTraces)
+    if (netVisibleLength >= baselineNetVisibleLength - TRACE_LENGTH_EPSILON) {
+      return
+    }
+    const candidate: CycleCollapseCandidate = {
+      tracePath,
+      netLabelPlacements: candidateNetLabelPlacements,
+      netVisibleLength,
+      netVisibleSegmentCount: getVisibleTraceSegmentCount(candidateNetTraces),
+    }
+    if (candidateIsBetter(candidate, bestCandidate)) {
+      bestCandidate = candidate
+    }
+  }
+
+  // Comparing a path with itself reports each crossing in both directions.
+  const selfCrossings = findPerpendicularPathCrossings(
+    targetTrace.tracePath,
+    targetTrace.tracePath,
+    { includeTerminalSegments: true },
+  ).filter(
+    ({ pathSegmentIndex, otherPathSegmentIndex }) =>
+      pathSegmentIndex < otherPathSegmentIndex,
+  )
+  for (const crossing of selfCrossings) {
+    considerTracePath(
+      buildCollapsedSelfCyclePath(
+        targetTrace.tracePath,
+        crossing.pathSegmentIndex,
+        crossing.otherPathSegmentIndex,
+      ),
+    )
+  }
+
   for (const donorTrace of sameNetTraces) {
     if (donorTrace.mspPairId === targetTrace.mspPairId) continue
     const sharedPin = getSharedPin({
@@ -228,44 +302,7 @@ const getBestCycleCollapseCandidate = ({
         donorPath,
         crossing,
       })
-      const candidateTrace = { ...targetTrace, tracePath }
-      const candidateTargetVisibleLength = getVisibleTraceLength([
-        candidateTrace,
-      ])
-      if (
-        candidateTargetVisibleLength >
-        baselineTargetVisibleLength + TRACE_LENGTH_EPSILON
-      ) {
-        continue
-      }
-      const candidateNetLabelPlacements = getNetLabelPlacementsForCycleCollapse(
-        {
-          targetTrace,
-          tracePath,
-          netLabelPlacements,
-        },
-      )
-      if (!candidateNetLabelPlacements) continue
-
-      const candidateNetTraces = sameNetTraces.map((trace) => {
-        if (trace.mspPairId === targetTrace.mspPairId) return candidateTrace
-        return trace
-      })
-      const netVisibleLength = getVisibleTraceLength(candidateNetTraces)
-      if (netVisibleLength >= baselineNetVisibleLength - TRACE_LENGTH_EPSILON) {
-        continue
-      }
-      const netVisibleSegmentCount =
-        getVisibleTraceSegmentCount(candidateNetTraces)
-      const candidate = {
-        tracePath,
-        netLabelPlacements: candidateNetLabelPlacements,
-        netVisibleLength,
-        netVisibleSegmentCount,
-      }
-      if (candidateIsBetter(candidate, bestCandidate)) {
-        bestCandidate = candidate
-      }
+      considerTracePath(tracePath)
     }
   }
 

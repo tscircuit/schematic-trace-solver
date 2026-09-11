@@ -87,6 +87,36 @@ test("collapses a same-net cycle between a shared pin and crossing", () => {
   expect(result.netLabelPlacements[0]?.anchorPoint).toEqual({ x: 0, y: 0 })
 })
 
+test("collapses a cycle within one same-net trace", () => {
+  const traces = [
+    createTraceFixture({
+      mspPairId: "self-crossing-trace",
+      pinIds: ["start", "end"],
+      tracePath: [
+        { x: 0, y: 4 },
+        { x: 0, y: 0 },
+        { x: 4, y: 0 },
+        { x: 4, y: 2 },
+        { x: 1, y: 2 },
+        { x: 1, y: -1 },
+      ],
+    }),
+  ]
+
+  const result = collapseSameNetCycles({
+    traces,
+    netLabelPlacements: [],
+  })
+
+  expect(result.collapsedCycleCount).toBe(1)
+  expect(result.traces[0]?.tracePath).toEqual([
+    { x: 0, y: 4 },
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    { x: 1, y: -1 },
+  ])
+})
+
 test("keeps a valid shared same-net branch", () => {
   const traces = [
     createTraceFixture({

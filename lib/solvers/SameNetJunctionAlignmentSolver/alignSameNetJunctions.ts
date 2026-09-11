@@ -34,6 +34,7 @@ import {
   isCoordinateOnPinFacingSide,
 } from "./findNearestSharedPinExitRail"
 import { collapseRedundantSharedEndpointStubs } from "./collapseRedundantSharedEndpointStubs"
+import { collapseSameNetCycles } from "./collapseSameNetCycles"
 import { getSharedPin } from "./getSharedPin"
 
 interface AlignSameNetJunctionsInput {
@@ -1314,17 +1315,24 @@ export const alignSameNetJunctions = ({
     }
   }
 
-  const collapsedSharedEndpointStubs = collapseRedundantSharedEndpointStubs({
+  // Shared-stub collapse can remove the common pin from one trace path, so
+  // collapse cycles while both paths still expose their shared endpoint.
+  const cycleCollapse = collapseSameNetCycles({
     traces: outputTraces,
     netLabelPlacements: outputNetLabelPlacements,
+  })
+  outputTraces = collapseRedundantSharedEndpointStubs({
+    traces: cycleCollapse.traces,
+    netLabelPlacements: cycleCollapse.netLabelPlacements,
     netLabelConnectorTraceIds,
     multiPinNetPinIds: getMultiPinNetPinIds(inputProblem),
   })
-  outputTraces = collapsedSharedEndpointStubs
+  outputNetLabelPlacements = cycleCollapse.netLabelPlacements
 
   return {
     traces: outputTraces,
     netLabelPlacements: outputNetLabelPlacements,
     alignedJunctionCount,
+    collapsedCycleCount: cycleCollapse.collapsedCycleCount,
   }
 }

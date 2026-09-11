@@ -3,10 +3,10 @@ import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipeline
 import inputProblem from "./bug-report-20260907T110144Z.json"
 import "tests/fixtures/matcher"
 
-test("bug-report-20260907T110144Z", () => {
+test("bug-report-20260907T110144Z", async () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as any)
 
   solver.solve()
 
-  expect(solver).toMatchSolverSnapshot(import.meta.path)
+  await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
