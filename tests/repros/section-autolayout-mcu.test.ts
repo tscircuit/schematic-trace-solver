@@ -4,7 +4,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 
 // Captured from core's schematic-section-autolayout.test.tsx at 87d04cc,
-// retaining the four MCU components and their original geometry:
+// retaining the MCU components and neighboring R1, which blocks the outer detour:
 // <capacitor name="C3" capacitance="100nF" schSectionName="mcu"
 //   connections={{ pin1: "net.VCC_3V3", pin2: "net.GND" }} />
 // <resistor name="R2" resistance="10k" schSectionName="mcu"
@@ -17,6 +17,32 @@ import "tests/fixtures/matcher"
 test("section autolayout recovers a detour between stacked upper terminals", () => {
   const problem: InputProblem = {
     chips: [
+      {
+        chipId: "schematic_component_3",
+        center: {
+          x: -5.100000000000001,
+          y: -2.958750000000001,
+        },
+        width: 1.085,
+        height: 0.5999999999999996,
+        pins: [
+          {
+            pinId: "schematic_port_11",
+            displayName: "anode",
+            x: -5.317500000000002,
+            y: -2.6587500000000013,
+            _facingDirection: "y+",
+          },
+          {
+            pinId: "schematic_port_12",
+            displayName: "cathode",
+            x: -5.317500000000002,
+            y: -3.258750000000001,
+            _facingDirection: "y-",
+          },
+        ],
+        sectionId: "power",
+      },
       {
         chipId: "schematic_component_4",
         center: {
@@ -219,6 +245,7 @@ test("section autolayout recovers a detour between stacked upper terminals", () 
         netLabelWidth: 0.42,
         netLabelHeight: 0.96,
         pinIds: [
+          "schematic_port_11",
           "schematic_port_13",
           "schematic_port_29",
           "schematic_port_31",
@@ -233,7 +260,7 @@ test("section autolayout recovers a detour between stacked upper terminals", () 
         allowInlineNetLabel: true,
         inlineNetLabelHeight: 0.12,
         inlineNetLabelWidth: 0.56,
-        pinIds: ["schematic_port_23"],
+        pinIds: ["schematic_port_12", "schematic_port_23"],
       },
       {
         netId: "SDA",
