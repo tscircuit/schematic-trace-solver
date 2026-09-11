@@ -2,6 +2,7 @@ import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import { RailNetLabelCornerPlacementSolver } from "lib/solvers/RailNetLabelCornerPlacementSolver/RailNetLabelCornerPlacementSolver"
 import { getDetachedRailCornerCandidates } from "lib/solvers/RailNetLabelCornerPlacementSolver/getDetachedRailCornerCandidates"
+import { getTraceCorners } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { InputProblem } from "lib/types/InputProblem"
 import { readFileSync } from "node:fs"
 import "tests/fixtures/matcher"
@@ -21,26 +22,31 @@ test("RTC IMU microSD section trace routing", () => {
   const label = output.netLabelPlacements.find((label) =>
     label.pinIds.includes("schematic_port_23"),
   )!
-  const connector = output.traces.find(
+  const originalTraces = Object.values(
+    solver.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
+  )
+  const connector = originalTraces.find(
     (trace) =>
       !label.mspConnectionPairIds.includes(trace.mspPairId) &&
       trace.pinIds.includes("schematic_port_23"),
   )!
-  expect(label.anchorPoint.x).toBeCloseTo(1.425)
-  expect(label.anchorPoint.y).toBeCloseTo(-0.65)
-  expect(connector.tracePath).toHaveLength(3)
-  expect(connector.tracePath.at(-1)).toEqual(label.anchorPoint)
-
-  const originalTraces = Object.values(
-    solver.postLabelTraceOverlapShiftSolver!.correctedTraceMap,
-  )
-  for (const hostTrace of originalTraces.filter((trace) =>
+  const hostTrace = output.traces.find((trace) =>
     label.mspConnectionPairIds.includes(trace.mspPairId),
-  )) {
-    expect(
-      output.traces.find((trace) => trace.mspPairId === hostTrace.mspPairId),
-    ).toEqual(hostTrace)
-  }
+  )!
+  const originalHost = originalTraces.find(
+    (trace) => trace.mspPairId === hostTrace.mspPairId,
+  )!
+  expect(label.anchorPoint.x).toBeCloseTo(1.2975)
+  expect(label.anchorPoint.y).toBeCloseTo(-0.65)
+  expect(getTraceCorners(hostTrace.tracePath)).toContainEqual(label.anchorPoint)
+  expect(hostTrace.tracePath[0]).toEqual(originalHost.tracePath[0])
+  expect(hostTrace.tracePath.at(-1)).toEqual(originalHost.tracePath.at(-1))
+  expect(
+    output.traces.some((trace) => trace.mspPairId === connector.mspPairId),
+  ).toBe(false)
+  expect(
+    output.traces.filter((trace) => trace.pinIds.includes("schematic_port_23")),
+  ).toHaveLength(1)
 
   const originalLabel =
     solver.availableNetOrientationSolver!.outputNetLabelPlacements.find(
@@ -74,6 +80,22 @@ test("RTC IMU microSD section trace routing", () => {
   const blockingTrace = originalTraces.find((trace) =>
     trace.pinIds.includes("schematic_port_32"),
   )!
+  const oldCorner = getTraceCorners(originalHost.tracePath)[0]!
+  expect(
+    getDetachedRailCornerCandidates({
+      label: originalLabel,
+      traces: originalTraces.map((trace) => {
+        if (trace !== blockingTrace) return trace
+        return {
+          ...trace,
+          tracePath: [
+            oldCorner,
+            { x: oldCorner.x + label.width, y: oldCorner.y },
+          ],
+        }
+      }),
+    }),
+  ).toEqual([])
   const blockedSolver = new RailNetLabelCornerPlacementSolver({
     inputProblem: inputProblem,
     netLabelPlacements: [originalLabel],

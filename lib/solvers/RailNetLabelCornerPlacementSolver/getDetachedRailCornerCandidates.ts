@@ -1,3 +1,4 @@
+import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -63,26 +64,64 @@ export const getDetachedRailCornerCandidates = ({
       label.height,
     )
     const bounds = getRectBounds(center, label.width, label.height)
-    // Only close the offset beside an existing host bend; remote label branches
-    // keep the clearance selected by the orientation solver.
-    if (
-      !hostCorners.some(
-        (corner) =>
-          corner.x >= bounds.minX &&
-          corner.x <= bounds.maxX &&
-          corner.y >= bounds.minY &&
-          corner.y <= bounds.maxY,
-      )
-    )
-      continue
-
-    candidates.push({
-      anchorPoint,
-      traceId: trace.mspPairId,
-      distance: getDistance(anchorPoint, label.anchorPoint),
-      pinAligned: true,
-      reroutedTracePath: path.slice(0, -1),
-    })
+    for (const hostTrace of hostTraces) {
+      for (const hostCorner of getTraceCorners(hostTrace.tracePath)) {
+        if (
+          hostCorner.x < bounds.minX ||
+          hostCorner.x > bounds.maxX ||
+          hostCorner.y < bounds.minY ||
+          hostCorner.y > bounds.maxY
+        )
+          continue
+        const cornerIndex = hostTrace.tracePath.indexOf(hostCorner)
+        const previousPoint = hostTrace.tracePath[cornerIndex - 1]!
+        const nextPoint = hostTrace.tracePath[cornerIndex + 1]!
+        if (
+          Math.abs(previousPoint.y - hostCorner.y) > EPS ||
+          Math.abs(nextPoint.x - hostCorner.x) > EPS
+        )
+          continue
+        if (!tracePathContainsPoint([previousPoint, hostCorner], path[0]!))
+          continue
+        const sharedCorner = { x: hostCorner.x, y: anchorPoint.y }
+        if (!tracePathContainsPoint([hostCorner, nextPoint], sharedCorner))
+          continue
+        if (
+          !tracePathContainsPoint(
+            [path[path.length - 3]!, anchorPoint],
+            sharedCorner,
+          )
+        )
+          continue
+        const reroutedTracePath = simplifyPath([
+          ...hostTrace.tracePath.slice(0, cornerIndex),
+          ...path.slice(0, -2),
+          sharedCorner,
+          ...hostTrace.tracePath.slice(cornerIndex + 1),
+        ])
+        const disconnectsBranch = traces.some(
+          (otherTrace) =>
+            otherTrace !== hostTrace &&
+            otherTrace !== trace &&
+            otherTrace.globalConnNetId === label.globalConnNetId &&
+            otherTrace.tracePath.some(
+              (point) =>
+                (tracePathContainsPoint(hostTrace.tracePath, point) ||
+                  tracePathContainsPoint(path, point)) &&
+                !tracePathContainsPoint(reroutedTracePath, point),
+            ),
+        )
+        if (disconnectsBranch) continue
+        candidates.push({
+          anchorPoint: sharedCorner,
+          traceId: hostTrace.mspPairId,
+          distance: getDistance(sharedCorner, label.anchorPoint),
+          pinAligned: true,
+          reroutedTracePath,
+          absorbedConnectorTraceId: trace.mspPairId,
+        })
+      }
+    }
   }
   return candidates.sort((a, b) => a.distance - b.distance)
 }

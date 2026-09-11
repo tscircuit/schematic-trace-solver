@@ -191,12 +191,8 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       return "text-collision"
     const candidateTraceMap = { ...this.traceMap }
     if (candidate.reroutedTracePath) {
-      const label = this.outputNetLabelPlacements[labelIndex]!
-      if (!label.mspConnectionPairIds.includes(candidate.traceId)) {
-        // A detached label may cover its own host bend, but no other trace.
-        for (const traceId of label.mspConnectionPairIds) {
-          delete candidateTraceMap[traceId]
-        }
+      if (candidate.absorbedConnectorTraceId) {
+        delete candidateTraceMap[candidate.absorbedConnectorTraceId]
       }
       candidateTraceMap[candidate.traceId] = {
         ...this.traceMap[candidate.traceId]!,
@@ -240,6 +236,13 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
         reroutedTracePath: candidate.reroutedTracePath,
         netLabelPlacements: this.outputNetLabelPlacements,
       })
+    }
+
+    if (candidate.absorbedConnectorTraceId) {
+      this.traces = this.traces.filter(
+        (trace) => trace.mspPairId !== candidate.absorbedConnectorTraceId,
+      )
+      delete this.traceMap[candidate.absorbedConnectorTraceId]
     }
 
     this.outputNetLabelPlacements[labelIndex] = {
