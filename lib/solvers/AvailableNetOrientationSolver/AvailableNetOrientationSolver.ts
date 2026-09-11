@@ -1,3 +1,4 @@
+import { canKeepLabelOnTraceCorner } from "./canKeepLabelOnTraceCorner"
 import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
@@ -1586,10 +1587,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       candidate.width,
       candidate.height,
     )
+    let traceAnchorLabel: NetLabelPlacement | undefined
+    if (phase === "trace-anchor") {
+      traceAnchorLabel = { ...label, ...candidate }
+    }
     const boundsStatus = this.getBoundsStatus({
       bounds,
       labelIndex,
       label,
+      traceAnchorLabel,
     })
     if (boundsStatus !== "valid") {
       const canOverlapConnectedChipBoundary =
@@ -1615,6 +1621,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         labelIndex,
         label,
         ignoreChipCollisions: true,
+        traceAnchorLabel,
       })
       if (nonChipBoundsStatus !== "valid") return nonChipBoundsStatus
     }
@@ -1716,9 +1723,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number
     label: NetLabelPlacement
     ignoreChipCollisions?: boolean
+    traceAnchorLabel?: NetLabelPlacement
   }): CandidateStatus {
-    const { bounds, labelIndex, label, ignoreChipCollisions } =
-      candidateBoundsCheck
+    const {
+      bounds,
+      labelIndex,
+      label,
+      ignoreChipCollisions,
+      traceAnchorLabel,
+    } = candidateBoundsCheck
 
     if (!ignoreChipCollisions) {
       if (this.chipObstacleSpatialIndex.getChipsInBounds(bounds).length > 0) {
@@ -1732,7 +1745,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       return "text-collision"
     }
     if (this.obstacleIndex.doesTraceCrossBoundsInterior(bounds)) {
-      return "trace-collision"
+      if (
+        !traceAnchorLabel ||
+        !canKeepLabelOnTraceCorner({
+          label: traceAnchorLabel,
+          traces: this.traces,
+          inputProblem: this.inputProblem,
+          netLabelPlacements: this.outputNetLabelPlacements.filter(
+            (_, index) => index !== labelIndex,
+          ),
+        })
+      )
+        return "trace-collision"
     }
     if (this.isTraceTooCloseToLabel(bounds, label)) {
       return "trace-clearance-violation"
