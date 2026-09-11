@@ -1,4 +1,4 @@
-import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { getTracesShiftedClearOfLabel } from "./getTracesShiftedClearOfLabel"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -83,31 +83,33 @@ export const getDetachedRailCornerCandidates = ({
           continue
         if (!tracePathContainsPoint([previousPoint, hostCorner], path[0]!))
           continue
-        const sharedCorner = { x: hostCorner.x, y: anchorPoint.y }
-        if (!tracePathContainsPoint([hostCorner, nextPoint], sharedCorner))
-          continue
-        if (
-          !tracePathContainsPoint(
-            [path[path.length - 3]!, anchorPoint],
+        const sharedCorner = hostCorner
+        const sharedBounds = getRectBounds(
+          getCenterFromAnchor(
             sharedCorner,
-          )
+            label.orientation,
+            label.width,
+            label.height,
+          ),
+          label.width,
+          label.height,
         )
-          continue
-        const reroutedTracePath = simplifyPath([
-          ...hostTrace.tracePath.slice(0, cornerIndex),
-          ...path.slice(0, -2),
-          sharedCorner,
-          ...hostTrace.tracePath.slice(cornerIndex + 1),
-        ])
+        const reroutedNeighborTraces = getTracesShiftedClearOfLabel({
+          bounds: sharedBounds,
+          traces: traces.filter(
+            (otherTrace) => otherTrace !== trace && otherTrace !== hostTrace,
+          ),
+        })
+        if (!reroutedNeighborTraces) continue
+        const reroutedTracePath = hostTrace.tracePath
         const disconnectsBranch = traces.some(
           (otherTrace) =>
-            otherTrace !== hostTrace &&
             otherTrace !== trace &&
+            otherTrace !== hostTrace &&
             otherTrace.globalConnNetId === label.globalConnNetId &&
             otherTrace.tracePath.some(
               (point) =>
-                (tracePathContainsPoint(hostTrace.tracePath, point) ||
-                  tracePathContainsPoint(path, point)) &&
+                tracePathContainsPoint(path, point) &&
                 !tracePathContainsPoint(reroutedTracePath, point),
             ),
         )
@@ -118,6 +120,7 @@ export const getDetachedRailCornerCandidates = ({
           distance: getDistance(sharedCorner, label.anchorPoint),
           pinAligned: true,
           reroutedTracePath,
+          reroutedNeighborTraces,
           absorbedConnectorTraceId: trace.mspPairId,
         })
       }

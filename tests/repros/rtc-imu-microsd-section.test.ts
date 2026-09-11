@@ -37,10 +37,26 @@ test("RTC IMU microSD section trace routing", () => {
     (trace) => trace.mspPairId === hostTrace.mspPairId,
   )!
   expect(label.anchorPoint.x).toBeCloseTo(1.2975)
-  expect(label.anchorPoint.y).toBeCloseTo(-0.65)
+  expect(label.anchorPoint.y).toBeCloseTo(-0.6)
   expect(getTraceCorners(hostTrace.tracePath)).toContainEqual(label.anchorPoint)
+  expect(hostTrace.tracePath).toEqual(originalHost.tracePath)
+  expect(hostTrace.tracePath).toHaveLength(3)
   expect(hostTrace.tracePath[0]).toEqual(originalHost.tracePath[0])
   expect(hostTrace.tracePath.at(-1)).toEqual(originalHost.tracePath.at(-1))
+  const upperTrace = output.traces.find((trace) =>
+    trace.pinIds.includes("schematic_port_27"),
+  )!
+  const originalUpperTrace = originalTraces.find(
+    (trace) => trace.mspPairId === upperTrace.mspPairId,
+  )!
+  expect(upperTrace.tracePath[0]).toEqual(originalUpperTrace.tracePath[0])
+  expect(upperTrace.tracePath.at(-1)).toEqual(
+    originalUpperTrace.tracePath.at(-1),
+  )
+  expect(upperTrace.tracePath).toHaveLength(originalUpperTrace.tracePath.length)
+  expect(upperTrace.tracePath[2]!.y).toBeGreaterThan(
+    label.anchorPoint.y + label.height,
+  )
   expect(
     output.traces.some((trace) => trace.mspPairId === connector.mspPairId),
   ).toBe(false)
@@ -80,7 +96,7 @@ test("RTC IMU microSD section trace routing", () => {
   const blockingTrace = originalTraces.find((trace) =>
     trace.pinIds.includes("schematic_port_32"),
   )!
-  const oldCorner = getTraceCorners(originalHost.tracePath)[0]!
+  const oldCorner = connector.tracePath[1]!
   expect(
     getDetachedRailCornerCandidates({
       label: originalLabel,

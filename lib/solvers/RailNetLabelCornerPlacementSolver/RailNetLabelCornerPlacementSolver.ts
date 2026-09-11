@@ -33,7 +33,10 @@ import type {
   RailNetLabelCornerPlacementSolverParams,
 } from "./types"
 import { visualizeRailNetLabelCornerPlacementSolver } from "./visualize"
-import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
+import {
+  getTextBoxBounds,
+  rectIntersectsAnyTextBox,
+} from "lib/utils/textBoxBounds"
 import { getDetachedRailCornerCandidates } from "./getDetachedRailCornerCandidates"
 
 const LABEL_TRACE_CLEARANCE = 0.1
@@ -199,6 +202,9 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
         tracePath: candidate.reroutedTracePath,
       }
     }
+    for (const trace of candidate.reroutedNeighborTraces ?? []) {
+      candidateTraceMap[trace.mspPairId] = trace
+    }
     if (traceCrossesBoundsInterior(bounds, candidateTraceMap)) {
       return "trace-collision"
     }
@@ -220,20 +226,24 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     label: NetLabelPlacement,
     candidate: EvaluatedCornerCandidate,
   ) {
+    const reroutedTraces = [...(candidate.reroutedNeighborTraces ?? [])]
     if (candidate.reroutedTracePath) {
-      const originalTrace = this.traceMap[candidate.traceId]!
-      const reroutedTrace = {
-        ...originalTrace,
+      reroutedTraces.push({
+        ...this.traceMap[candidate.traceId]!,
         tracePath: candidate.reroutedTracePath,
-      }
-      this.traces = this.traces.map((trace) =>
-        trace.mspPairId === candidate.traceId ? reroutedTrace : trace,
-      )
-      this.traceMap[candidate.traceId] = reroutedTrace
+      })
+    }
+    for (const reroutedTrace of reroutedTraces) {
+      const originalTrace = this.traceMap[reroutedTrace.mspPairId]!
+      this.traces = this.traces.map((trace) => {
+        if (trace.mspPairId === reroutedTrace.mspPairId) return reroutedTrace
+        return trace
+      })
+      this.traceMap[reroutedTrace.mspPairId] = reroutedTrace
       this.outputNetLabelPlacements = moveAttachedLabelsToReroutedTrace({
         trace: originalTrace,
         originalTracePath: originalTrace.tracePath,
-        reroutedTracePath: candidate.reroutedTracePath,
+        reroutedTracePath: reroutedTrace.tracePath,
         netLabelPlacements: this.outputNetLabelPlacements,
       })
     }
@@ -479,31 +489,42 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     candidate: TraceCornerCandidate,
     labelIndex: number,
   ) {
-    const reroutedTracePath = candidate.reroutedTracePath!
-    if (
-      isPathCollidingWithObstacles(
-        reroutedTracePath,
-        getObstacleRects(this.inputProblem),
-      )
-    ) {
-      return false
-    }
-
-    const candidateTrace = this.traceMap[candidate.traceId]!
-    const otherNetTraces = this.traces.filter(
-      (trace) =>
-        trace.mspPairId !== candidate.traceId &&
-        trace.globalConnNetId !== candidateTrace.globalConnNetId,
-    )
-    if (doesPathOverlapTraceStrokes(reroutedTracePath, otherNetTraces)) {
-      return false
-    }
-
-    const reroutedTraceMap = {
-      [candidate.traceId]: {
-        ...candidateTrace,
-        tracePath: reroutedTracePath,
+    const reroutedTraces = [
+      {
+        ...this.traceMap[candidate.traceId]!,
+        tracePath: candidate.reroutedTracePath!,
       },
+      ...(candidate.reroutedNeighborTraces ?? []),
+    ]
+    const reroutedTraceMap = Object.fromEntries(
+      reroutedTraces.map((trace) => [trace.mspPairId, trace]),
+    )
+    const finalTraces = this.traces
+      .filter((trace) => trace.mspPairId !== candidate.absorbedConnectorTraceId)
+      .map((trace) => reroutedTraceMap[trace.mspPairId] ?? trace)
+    for (const trace of reroutedTraces) {
+      if (
+        isPathCollidingWithObstacles(
+          trace.tracePath,
+          getObstacleRects(this.inputProblem),
+        )
+      )
+        return false
+      const otherNetTraces = finalTraces.filter(
+        (otherTrace) => otherTrace.globalConnNetId !== trace.globalConnNetId,
+      )
+      if (doesPathOverlapTraceStrokes(trace.tracePath, otherNetTraces))
+        return false
+    }
+    for (const trace of candidate.reroutedNeighborTraces ?? []) {
+      if (
+        (this.inputProblem.textBoxes ?? []).some((textBox) =>
+          traceCrossesBoundsInterior(getTextBoxBounds(textBox), {
+            [trace.mspPairId]: trace,
+          }),
+        )
+      )
+        return false
     }
     return this.outputNetLabelPlacements.every((label, index) => {
       if (index === labelIndex) return true

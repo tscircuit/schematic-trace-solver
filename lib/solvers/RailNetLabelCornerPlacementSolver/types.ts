@@ -27,6 +27,7 @@ export type TraceCornerCandidate = {
   pinAligned: boolean
   reroutedTracePath?: Point[]
   absorbedConnectorTraceId?: string
+  reroutedNeighborTraces?: SolvedTracePath[]
 }
 
 export type CornerCandidateStatus =
