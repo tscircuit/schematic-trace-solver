@@ -7,7 +7,7 @@ import inputProblem from "./assets/repro-core-vertical-passive-ground-label-over
 
 // Captured via solver:started from @tscircuit/core repro187. Symbol names and
 // display text were added for a readable snapshot; routing geometry is intact.
-test("VREF trace overlaps a vertical passive GND label", async () => {
+test("VREF trace clears a vertical passive GND label", async () => {
   const solver = new SchematicTracePipelineSolver(
     inputProblem as unknown as InputProblem,
     { hideRatsNet: true },
@@ -31,9 +31,9 @@ test("VREF trace overlaps a vertical passive GND label", async () => {
   expect(groundLabel).toBeDefined()
   expect(vrefTrace).toBeDefined()
   expect(vrefTrace.globalConnNetId).not.toBe(groundLabel.globalConnNetId)
-  // Current bug: a different-net trace crosses the rendered GND terminal.
+  // The VREF route must approach the resistor without crossing its GND terminal.
   expect(pathIntersectsRenderedLabel(vrefTrace.tracePath, groundLabel)).toBe(
-    true,
+    false,
   )
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
