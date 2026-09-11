@@ -16,7 +16,7 @@ import "tests/fixtures/matcher"
 //   VCC: "net.VCC_3V3", GND: "net.GND", SCL: "net.SCL", SDA: "net.SDA"
 // }} />
 test("section autolayout recovers a detour between stacked upper terminals", () => {
-  const problem: InputProblem = structuredClone(inputProblem)
+  const problem = structuredClone(inputProblem) as InputProblem
   const solver = new SchematicTracePipelineSolver(problem)
   solver.solve()
 
