@@ -14,7 +14,7 @@ import "tests/fixtures/matcher"
 // <chip name="U2" schSectionName="mcu" connections={{
 //   VCC: "net.VCC_3V3", GND: "net.GND", SCL: "net.SCL", SDA: "net.SDA"
 // }} />
-test("section autolayout recovers a detour between stacked upper terminals", () => {
+test("section autolayout labels blocked stacked upper terminals", () => {
   const problem: InputProblem = {
     chips: [
       {
@@ -358,7 +358,17 @@ test("section autolayout recovers a detour between stacked upper terminals", () 
     .newTraces.filter(
       (trace) => trace.mspPairId === stackedConnection.mspPairId,
     )
-  expect(recoveredTraces).toHaveLength(1)
-  expect(recoveredTraces[0]!.tracePath.length).toBeGreaterThan(3)
+  expect(recoveredTraces).toHaveLength(0)
+  const finalOutput = solver.inlineNetLabelSolver!.getOutput()
+  expect(
+    finalOutput.traces.some((trace) =>
+      trace.mspConnectionPairIds.includes(stackedConnection.mspPairId),
+    ),
+  ).toBe(false)
+  expect(
+    finalOutput.netLabelPlacements.some((label) =>
+      label.pinIds.includes("schematic_port_31"),
+    ),
+  ).toBe(true)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
