@@ -67,7 +67,7 @@ test.each(["chip", "text", "trace"] as const)(
     expect(recovery.solved).toBe(true)
     expect(recovery.solvedUnroutedTraces).toHaveLength(1)
     const recoveredPath = recovery.solvedUnroutedTraces[0]!.tracePath
-    expect(getPathLength(recoveredPath)).toBeGreaterThan(0.8)
+    expect(getPathLength(recoveredPath)).toBeCloseTo(0.8)
     expect(findFirstCollision(recoveredPath, [blockingBounds])).toBeNull()
     expect(countPathIntersections(recoveredPath, blockingPath)).toBe(0)
   },

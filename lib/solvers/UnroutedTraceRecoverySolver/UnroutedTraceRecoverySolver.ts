@@ -107,10 +107,18 @@ const getPinConnectionCandidates = ({
   const horizontalChannels = [
     outerBounds.minY - ROUTE_CLEARANCE,
     outerBounds.maxY + ROUTE_CLEARANCE,
+    ...obstacles.flatMap((obstacle) => [
+      obstacle.minY - ROUTE_CLEARANCE,
+      obstacle.maxY + ROUTE_CLEARANCE,
+    ]),
   ]
   const verticalChannels = [
     outerBounds.minX - ROUTE_CLEARANCE,
     outerBounds.maxX + ROUTE_CLEARANCE,
+    ...obstacles.flatMap((obstacle) => [
+      obstacle.minX - ROUTE_CLEARANCE,
+      obstacle.maxX + ROUTE_CLEARANCE,
+    ]),
   ]
   // Recovery uses actual text bounds, so try local elbows before the perimeter.
   const candidates: Point[][] = [
@@ -121,7 +129,7 @@ const getPinConnectionCandidates = ({
     ),
   ]
 
-  for (const channelY of horizontalChannels) {
+  for (const channelY of new Set(horizontalChannels)) {
     candidates.push(
       removeConsecutiveDuplicatePoints([
         firstPin,
@@ -134,7 +142,7 @@ const getPinConnectionCandidates = ({
     )
   }
 
-  for (const channelX of verticalChannels) {
+  for (const channelX of new Set(verticalChannels)) {
     candidates.push(
       removeConsecutiveDuplicatePoints([
         firstPin,
