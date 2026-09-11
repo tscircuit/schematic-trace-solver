@@ -224,7 +224,9 @@ test("two isolated capacitors do not form a rail across a large gap", () => {
   expect(solver.longDistancePairSolver!.getOutput().newTraces).toEqual([])
   const { traces, netLabelPlacements } =
     solver.netLabelToTraceSolver!.getOutput()
-  expect(traces).toHaveLength(0)
+  // Local ground connectors are allowed; no trace may join the capacitors.
+  expect(traces).toHaveLength(2)
+  expect(traces.every((trace) => trace.pinIds.length === 1)).toBe(true)
   expect(netLabelPlacements).toHaveLength(4)
 })
 
@@ -258,7 +260,8 @@ test.each([4, 7])(
     expect(solver.longDistancePairSolver!.getOutput().newTraces).toEqual([])
     const { traces, netLabelPlacements } =
       solver.netLabelToTraceSolver!.getOutput()
-    expect(traces).toHaveLength(0)
+    expect(traces).toHaveLength(3)
+    expect(traces.every((trace) => trace.pinIds.length === 1)).toBe(true)
     expect(netLabelPlacements).toHaveLength(5)
   },
 )
@@ -378,9 +381,11 @@ test("an intervening component breaks the shared rail", () => {
     pins: [],
   })
   const output = solve(input).netLabelToTraceSolver!.getOutput()
-  expect(output.traces).toHaveLength(2)
+  const rails = output.traces.filter((trace) => trace.pinIds.length > 1)
+  expect(output.traces).toHaveLength(3)
+  expect(rails).toHaveLength(2)
   expect(
-    output.traces.every(
+    rails.every(
       (trace) => !trace.pinIds.some((pinId) => pinId.startsWith("C1.")),
     ),
   ).toBe(true)
@@ -395,9 +400,11 @@ test("shared rails stay within their schematic section", () => {
   const input = createBank()
   input.chips[2]!.sectionId = "separate"
   const output = solve(input).netLabelToTraceSolver!.getOutput()
-  expect(output.traces).toHaveLength(2)
+  const rails = output.traces.filter((trace) => trace.pinIds.length > 1)
+  expect(output.traces).toHaveLength(3)
+  expect(rails).toHaveLength(2)
   expect(
-    output.traces.every(
+    rails.every(
       (trace) => !trace.pinIds.some((pinId) => pinId.startsWith("C3.")),
     ),
   ).toBe(true)

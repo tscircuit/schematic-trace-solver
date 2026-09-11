@@ -11,6 +11,7 @@ import {
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import type {
   ChipId,
   InputNetConnection,
@@ -261,10 +262,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
   }
 
-  private shouldProcessLabel(label: NetLabelPlacement, labelIndex: number) {
+  private shouldProcessLabel(
+    label: NetLabelPlacement,
+    labelIndex: number,
+    includeGroundConnector = true,
+  ) {
     const orientations = this.getAvailableOrientations(label)
     if (orientations.length === 0) return false
     if (!orientations.includes(label.orientation)) return true
+    if (includeGroundConnector && this.needsGroundConnector(label)) return true
     if (this.getTextBlockedMultiPinRailTraces(label, orientations[0]!)) {
       return true
     }
@@ -434,6 +440,36 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private findCorrectedCandidate(label: NetLabelPlacement, labelIndex: number) {
     const orientations = this.getAvailableOrientations(label)
     const requiredOrientation = orientations[0]!
+
+    if (this.needsGroundConnector(label)) {
+      const connectorBounds = {
+        minX: label.anchorPoint.x - EPS,
+        maxX: label.anchorPoint.x + EPS,
+        minY: label.anchorPoint.y - MIN_DOWNWARD_GROUND_RAIL_EXTENSION,
+        maxY: label.anchorPoint.y,
+      }
+      const crossesOtherNet = this.traces.some(
+        (trace) =>
+          trace.globalConnNetId !== label.globalConnNetId &&
+          tracePathIntersectsBounds(trace.tracePath, connectorBounds),
+      )
+      // Add only a short, collision-free wire; do not displace other routing
+      // merely to separate the ground symbol from the component terminal.
+      const candidate = crossesOtherNet
+        ? null
+        : this.findValidCandidateInShiftColumn({
+            label,
+            labelIndex,
+            orientation: "y-",
+            direction: dir("y-"),
+            baseAnchor: label.anchorPoint,
+            maxSearchDistance: MIN_DOWNWARD_GROUND_RAIL_EXTENSION,
+            startDistance: MIN_DOWNWARD_GROUND_RAIL_EXTENSION,
+            outwardDistance: 0,
+          })
+      if (candidate) return candidate
+      if (!this.shouldProcessLabel(label, labelIndex, false)) return null
+    }
 
     if (
       this.crowdedPortOnlyLabelIndices.has(labelIndex) &&
@@ -2046,6 +2082,28 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       : this.inputProblem.netConnections.find((connection) =>
           connection.pinIds.some((pinId) => label.pinIds.includes(pinId)),
         )
+  }
+
+  private needsGroundConnector(label: NetLabelPlacement) {
+    if (
+      !this.isGroundLabel(label) ||
+      label.orientation !== "y-" ||
+      !this.getAvailableOrientations(label).includes("y-") ||
+      label.pinIds.length !== 1 ||
+      !this.isPortOnlyLabel(label)
+    )
+      return false
+    const pin = this.pinMap[label.pinIds[0]!]
+    const chip = this.inputProblem.chips.find(
+      (chip) => chip.chipId === pin?.chipId,
+    )
+    return Boolean(
+      pin &&
+        chip &&
+        (pin._facingDirection ?? getPinDirection(pin, chip)) === "y-" &&
+        Math.abs(pin.x - label.anchorPoint.x) < EPS &&
+        Math.abs(pin.y - label.anchorPoint.y) < EPS,
+    )
   }
 
   private isGroundLabel(label: NetLabelPlacement) {
