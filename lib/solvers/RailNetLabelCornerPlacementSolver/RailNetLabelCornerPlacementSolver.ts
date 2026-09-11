@@ -1,9 +1,14 @@
 import type { GraphicsObject } from "graphics-debug"
 import type { Point } from "@tscircuit/math-utils"
 import {
+  getMaxSearchDistance,
   segmentCrossesBoundsInterior,
   traceCrossesBoundsInterior,
 } from "lib/solvers/AvailableNetOrientationSolver/geometry"
+import {
+  LABEL_SEARCH_STEP,
+  WICK_CLEARANCE,
+} from "lib/solvers/AvailableNetOrientationSolver/constants"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
@@ -51,6 +56,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   private queuedCornerCandidates: TraceCornerCandidate[] = []
   private shouldAdvanceToNextLabel = false
   private traceMap: Record<string, SolvedTracePath>
+  private netLabelConnectorTraceIds: ReadonlySet<string>
 
   constructor(params: RailNetLabelCornerPlacementSolverParams) {
     super()
@@ -61,6 +67,8 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     this.traceMap = Object.fromEntries(
       params.traces.map((trace) => [trace.mspPairId, trace]),
     )
+    this.netLabelConnectorTraceIds =
+      params.netLabelConnectorTraceIds ?? new Set()
     this.queuedLabelIndices = this.getProcessableLabelIndices()
     this.prepareNextLabel()
   }
@@ -72,6 +80,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       inputProblem: this.inputProblem,
       traces: this.traces,
       netLabelPlacements: this.netLabelPlacements,
+      netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
     }
   }
 
@@ -135,7 +144,10 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     this.currentLabelIndex = labelIndex
     this.currentLabel = label
     this.currentCandidateResults = []
-    this.queuedCornerCandidates = this.getCornerCandidatesForLabel(label)
+    this.queuedCornerCandidates = [
+      ...this.getStraightConnectorCandidates(label),
+      ...this.getCornerCandidatesForLabel(label),
+    ]
 
     return true
   }
@@ -250,7 +262,9 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     const isVerticalRailLabel =
       label.orientation === "y+" || label.orientation === "y-"
     return (
-      isVerticalRailLabel && this.getCornerCandidatesForLabel(label).length > 0
+      isVerticalRailLabel &&
+      (this.getStraightConnectorCandidates(label).length > 0 ||
+        this.getCornerCandidatesForLabel(label).length > 0)
     )
   }
 
@@ -321,6 +335,118 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       ...anchorAlignedCandidates.sort((a, b) => a.distance - b.distance),
       ...railAlignedCandidates.sort((a, b) => a.distance - b.distance),
     ]
+  }
+
+  private getStraightConnectorCandidates(
+    label: NetLabelPlacement,
+  ): TraceCornerCandidate[] {
+    if (label.pinIds.length !== 2 || !this.isConfiguredRailLabel(label)) {
+      return []
+    }
+
+    const pins = this.inputProblem.chips
+      .flatMap((chip) => chip.pins)
+      .filter((pin) => label.pinIds.includes(pin.pinId))
+    if (
+      pins.length !== 2 ||
+      pins[0]!._facingDirection !== pins[1]!._facingDirection ||
+      (pins[0]!._facingDirection !== "x+" &&
+        pins[0]!._facingDirection !== "x-") ||
+      Math.abs(pins[0]!.y - pins[1]!.y) > EPS
+    ) {
+      return []
+    }
+
+    const configuredOrientations =
+      this.inputProblem.availableNetLabelOrientations[label.netId!]
+    if (
+      configuredOrientations?.length !== 1 ||
+      configuredOrientations[0] !== label.orientation
+    ) {
+      return []
+    }
+
+    const netConnection = this.inputProblem.netConnections.find(
+      (connection) => connection.netId === label.netId,
+    )
+    if (netConnection?.isGround) return []
+
+    const connector = this.traces.find(
+      (trace) =>
+        this.netLabelConnectorTraceIds.has(trace.mspPairId) &&
+        trace.globalConnNetId === label.globalConnNetId &&
+        label.pinIds.every((pinId) => trace.pinIds.includes(pinId)) &&
+        trace.tracePath.length >= 2 &&
+        (this.pointsEqual(trace.tracePath[0]!, label.anchorPoint) ||
+          this.pointsEqual(trace.tracePath.at(-1)!, label.anchorPoint)),
+    )
+    if (!connector) return []
+
+    const sourcePoint = this.pointsEqual(
+      connector.tracePath[0]!,
+      label.anchorPoint,
+    )
+      ? connector.tracePath.at(-1)!
+      : connector.tracePath[0]!
+    if (!this.isComponentAdjacentCorner(label, sourcePoint)) return []
+
+    const direction = label.orientation === "y+" ? 1 : -1
+    const maxSearchDistance = Math.min(
+      getMaxSearchDistance(this.inputProblem),
+      label.height * 2,
+    )
+    for (
+      let distance = WICK_CLEARANCE + LABEL_SEARCH_STEP;
+      distance <= maxSearchDistance + EPS;
+      distance += LABEL_SEARCH_STEP
+    ) {
+      const anchorPoint = {
+        x: sourcePoint.x,
+        y: sourcePoint.y + direction * distance,
+      }
+      const center = getCenterFromAnchor(
+        anchorPoint,
+        label.orientation,
+        label.width,
+        label.height,
+      )
+      if (
+        this.intersectsAnyChip(getRectBounds(center, label.width, label.height))
+      ) {
+        continue
+      }
+
+      return [
+        {
+          anchorPoint,
+          traceId: connector.mspPairId,
+          distance: getDistance(anchorPoint, label.anchorPoint),
+          pinAligned: true,
+          reroutedTracePath: [sourcePoint, anchorPoint],
+        },
+      ]
+    }
+
+    return []
+  }
+
+  private isComponentAdjacentCorner(label: NetLabelPlacement, corner: Point) {
+    return label.mspConnectionPairIds.some((traceId) => {
+      const trace = this.traceMap[traceId]
+      if (!trace || trace.tracePath.length < 2) return false
+
+      return [
+        { point: trace.tracePath[0]!, neighbor: trace.tracePath[1]! },
+        {
+          point: trace.tracePath.at(-1)!,
+          neighbor: trace.tracePath.at(-2)!,
+        },
+      ].some(
+        ({ point, neighbor }) =>
+          this.pointsEqual(neighbor, corner) &&
+          trace.pins.some((pin) => this.pointsEqual(pin, point)),
+      )
+    })
   }
 
   private isConfiguredRailLabel(label: NetLabelPlacement) {
