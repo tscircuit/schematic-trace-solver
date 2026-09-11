@@ -1068,15 +1068,6 @@ export const convertSolverOutputToCircuitJson = (
 
   for (const [labelIndex, label] of snapshotData.netLabelPlacements.entries()) {
     const netName = getNetLabelNetName(label)
-    // A label connects its pins electrically even without a routed wire.
-    circuitJson.push({
-      type: "source_trace",
-      source_trace_id: `source_trace_net_label_${labelIndex}`,
-      connected_source_port_ids: label.pinIds
-        .map((pinId) => sourcePortIdByPinId.get(pinId))
-        .filter((id): id is string => Boolean(id)),
-      connected_source_net_ids: [sourceNetIdByName.get(netName)!],
-    } satisfies SourceTrace)
     const anchorSide = orientationToAnchorSide(label.orientation)
     let symbolName: string | undefined
     if (groundNetIds.has(netName) && anchorSide === "top") {
