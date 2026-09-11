@@ -284,6 +284,13 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
     from: { x: 0.5, y: -0.2 },
     to: { x: 2, y: -0.3 },
   })
+  expect(circuitJson).toContainEqual(
+    expect.objectContaining({
+      type: "source_trace",
+      source_trace_id: "source_trace_net_label_1",
+      connected_source_port_ids: ["source_port_0_1", "source_port_1_1"],
+    }),
+  )
 
   const svg = convertCircuitJsonToSchematicSvg(circuitJson)
   expect(svg).toContain('data-circuit-json-type="schematic_component"')
