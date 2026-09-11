@@ -411,6 +411,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       tracePath,
       mspConnectionPairIds: [mspPairId],
       pinIds: label.pinIds,
+      foldIntoHostTrace: candidate.foldIntoHostTrace ? true : undefined,
     }
 
     this.traces.push(connectorTrace)
@@ -453,6 +454,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       (connection) => connection.netId === label.netId,
     )
     const isTwoPinNet = netConnection?.pinIds.length === 2
+    const isTwoPinLabel = label.pinIds.length === 2
     const isDownwardGroundRail =
       netConnection?.isGround &&
       isXOrientation(label.orientation) &&
@@ -508,6 +510,20 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         labelIndex,
       )
       if (traceAnchorCandidate) return traceAnchorCandidate
+    }
+
+    if (
+      isTwoPinLabel &&
+      !this.isGroundLabel(label) &&
+      orientations.length === 1 &&
+      isYOrientation(requiredOrientation)
+    ) {
+      const endpointCandidate = this.findValidTwoPinEndpointCandidate(
+        label,
+        requiredOrientation,
+        labelIndex,
+      )
+      if (endpointCandidate) return endpointCandidate
     }
 
     if (
@@ -696,6 +712,77 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
       result.selected = true
       return result
+    }
+
+    return null
+  }
+
+  /**
+   * When a two-pin label was initially attached to the first bend beside a
+   * component, keep a vertical replacement on that component's pin column.
+   * This avoids turning the old bend into a tee when the pin itself provides
+   * the shorter, cleaner branch source.
+   */
+  private findValidTwoPinEndpointCandidate(
+    label: NetLabelPlacement,
+    orientation: "y+" | "y-",
+    labelIndex: number,
+  ) {
+    const pins = label.pinIds.flatMap((pinId) => {
+      const pin = this.pinMap[pinId]
+      return pin ? [pin] : []
+    })
+    if (
+      pins.length !== 2 ||
+      pins[0]!._facingDirection !== pins[1]!._facingDirection ||
+      (pins[0]!._facingDirection !== "x+" && pins[0]!._facingDirection !== "x-")
+    ) {
+      return null
+    }
+
+    const hasComponentEndpointBeforeAnchor = label.mspConnectionPairIds.some(
+      (traceId) => {
+        const trace = this.traceMap[traceId]
+        if (!trace || trace.tracePath.length < 2) return false
+
+        return [
+          { point: trace.tracePath[0]!, neighbor: trace.tracePath[1]! },
+          {
+            point: trace.tracePath.at(-1)!,
+            neighbor: trace.tracePath.at(-2)!,
+          },
+        ].some(
+          ({ point, neighbor }) =>
+            Math.abs(neighbor.x - label.anchorPoint.x) <= EPS &&
+            Math.abs(neighbor.y - label.anchorPoint.y) <= EPS &&
+            (Math.abs(point.x - label.anchorPoint.x) > EPS ||
+              Math.abs(point.y - label.anchorPoint.y) > EPS) &&
+            trace.pins.some(
+              (pin) =>
+                Math.abs(pin.x - point.x) <= EPS &&
+                Math.abs(pin.y - point.y) <= EPS,
+            ),
+        )
+      },
+    )
+
+    if (hasComponentEndpointBeforeAnchor) {
+      const candidate = this.findValidCandidateInShiftColumn({
+        label,
+        labelIndex,
+        orientation,
+        direction: dir(orientation),
+        baseAnchor: this.getWickOffsetAnchor(label.anchorPoint, orientation),
+        maxSearchDistance: this.maxSearchDistance,
+        outwardDistance: 0,
+        phase: "lateral-shift",
+        stopOnTraceCollision: false,
+        connectorSource: label.anchorPoint,
+      })
+      if (candidate) {
+        candidate.foldIntoHostTrace = true
+        return candidate
+      }
     }
 
     return null

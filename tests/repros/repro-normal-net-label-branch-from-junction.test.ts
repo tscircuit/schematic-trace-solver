@@ -69,5 +69,16 @@ test("repro: V3V3 net-label branch does not start at the R8 edge", () => {
   expect(
     solver.inlineNetLabelSolver!.getOutput().inlineNetLabelPlacements,
   ).toHaveLength(0)
+  const connector = solver.netLabelToTraceSolver!.outputTraces.find(
+    (trace) => trace.mspPairId === "available-net-orientation-1-V3V3",
+  )
+  expect(connector).toBeUndefined()
+  const hostTrace = solver.netLabelToTraceSolver!.outputTraces.find((trace) =>
+    trace.pinIds.includes("R8.pin2"),
+  )
+  const labelEnd = hostTrace?.tracePath.find(
+    (point) => point.x === -6.5 && point.y > -19,
+  )
+  expect(labelEnd?.y).toBeCloseTo(-18.649)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

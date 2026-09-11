@@ -27,6 +27,7 @@ import {
   type InlineNetLabelPlacement,
   visualizeInlineNetLabelOutput,
 } from "../InlineNetLabelSolver/InlineNetLabelSolver"
+import { extendVerticalTracePathAtInteriorPoint } from "../AvailableNetOrientationSolver/traces"
 import { reduceTraceCrossings } from "./reduceTraceCrossings"
 
 type GlobalConnNetId = NetLabelPlacement["globalConnNetId"]
@@ -51,6 +52,49 @@ const MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET = 0.25
 
 const getCanonicalPairKey = (firstPinId: PinId, secondPinId: PinId) =>
   [firstPinId, secondPinId].sort().join("--")
+
+const foldVerticalLabelConnectorsIntoHostTraces = (
+  traces: SolvedTracePath[],
+) => {
+  const removedTraceIds = new Set<string>()
+  const output = [...traces]
+
+  for (const connector of output) {
+    if (!connector.foldIntoHostTrace) continue
+    const [sourcePoint, extensionEndPoint] = connector.tracePath
+    if (
+      connector.tracePath.length !== 2 ||
+      !sourcePoint ||
+      !extensionEndPoint ||
+      Math.abs(sourcePoint.x - extensionEndPoint.x) > 1e-6
+    ) {
+      continue
+    }
+
+    const hostTraceIndex = output.findIndex(
+      (trace) =>
+        trace !== connector &&
+        trace.globalConnNetId === connector.globalConnNetId &&
+        extendVerticalTracePathAtInteriorPoint({
+          tracePath: trace.tracePath,
+          sourcePoint,
+          extensionEndPoint,
+        }) !== null,
+    )
+    if (hostTraceIndex === -1) continue
+
+    const hostTrace = output[hostTraceIndex]!
+    const extendedTracePath = extendVerticalTracePathAtInteriorPoint({
+      tracePath: hostTrace.tracePath,
+      sourcePoint,
+      extensionEndPoint,
+    })!
+    output[hostTraceIndex] = { ...hostTrace, tracePath: extendedTracePath }
+    removedTraceIds.add(connector.mspPairId)
+  }
+
+  return output.filter((trace) => !removedTraceIds.has(trace.mspPairId))
+}
 
 const getPerpendicularOffset = (firstPoint: Point, secondPoint: Point) => {
   const xDistance = Math.abs(firstPoint.x - secondPoint.x)
@@ -93,7 +137,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
   constructor(private input: InlineNetLabelOutput) {
     super()
     this.inputProblem = input.inputProblem
-    this.outputTraces = [...input.traces]
+    this.outputTraces = foldVerticalLabelConnectorsIntoHostTraces(input.traces)
     this.outputNetLabelPlacements = [...input.netLabelPlacements]
 
     const { chipMap, pinMap } = getTraceRecoveryConnectivityMaps(
