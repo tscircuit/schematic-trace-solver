@@ -26,6 +26,7 @@ export type CandidateLabel = {
   center: Point
   width: number
   height: number
+  foldIntoHostTrace?: boolean
 }
 
 export type CandidateStatus =
