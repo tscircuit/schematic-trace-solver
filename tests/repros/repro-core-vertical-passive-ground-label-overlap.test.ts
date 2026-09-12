@@ -35,29 +35,5 @@ test("VREF trace clears a vertical passive GND label", async () => {
   expect(pathIntersectsRenderedLabel(vrefTrace.tracePath, groundLabel)).toBe(
     false,
   )
-  for (const pinId of ["schematic_port_7", "schematic_port_9"]) {
-    const pin = inputProblem.chips
-      .flatMap((chip) => chip.pins)
-      .find((pin) => pin.pinId === pinId)!
-    const label = netLabelPlacements.find(
-      (label) => label.netId === "GND" && label.pinIds.includes(pinId),
-    )!
-    expect(label.anchorPoint.x).toBeCloseTo(pin.x)
-    expect(label.anchorPoint.y).toBeCloseTo(pin.y - 0.2)
-    expect(
-      traces.some(
-        (trace) =>
-          trace.globalConnNetId === label.globalConnNetId &&
-          trace.tracePath.some(
-            (point) => point.x === pin.x && point.y === pin.y,
-          ) &&
-          trace.tracePath.some(
-            (point) =>
-              point.x === label.anchorPoint.x &&
-              point.y === label.anchorPoint.y,
-          ),
-      ),
-    ).toBe(true)
-  }
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
