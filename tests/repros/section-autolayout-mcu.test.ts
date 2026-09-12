@@ -1,0 +1,364 @@
+import { expect, test } from "bun:test"
+import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import type { InputProblem } from "lib/types/InputProblem"
+import "tests/fixtures/matcher"
+
+// Captured from core's schematic-section-autolayout.test.tsx at 87d04cc,
+// retaining the MCU components and neighboring R1, which blocks the outer detour:
+// <capacitor name="C3" capacitance="100nF" schSectionName="mcu"
+//   connections={{ pin1: "net.VCC_3V3", pin2: "net.GND" }} />
+// <resistor name="R2" resistance="10k" schSectionName="mcu"
+//   connections={{ pin1: "net.VCC_3V3", pin2: "net.SCL" }} />
+// <resistor name="R3" resistance="10k" schSectionName="mcu"
+//   connections={{ pin1: "net.VCC_3V3", pin2: "net.SDA" }} />
+// <chip name="U2" schSectionName="mcu" connections={{
+//   VCC: "net.VCC_3V3", GND: "net.GND", SCL: "net.SCL", SDA: "net.SDA"
+// }} />
+test("section autolayout recovers a detour between stacked upper terminals", () => {
+  const problem: InputProblem = {
+    chips: [
+      {
+        chipId: "schematic_component_3",
+        center: {
+          x: -5.100000000000001,
+          y: -2.958750000000001,
+        },
+        width: 1.085,
+        height: 0.5999999999999996,
+        pins: [
+          {
+            pinId: "schematic_port_11",
+            displayName: "anode",
+            x: -5.317500000000002,
+            y: -2.6587500000000013,
+            _facingDirection: "y+",
+          },
+          {
+            pinId: "schematic_port_12",
+            displayName: "cathode",
+            x: -5.317500000000002,
+            y: -3.258750000000001,
+            _facingDirection: "y-",
+          },
+        ],
+        sectionId: "power",
+      },
+      {
+        chipId: "schematic_component_4",
+        center: {
+          x: 2.157499999999999,
+          y: -4.21,
+        },
+        width: 2.4000000000000004,
+        height: 1.7999999999999994,
+        pins: [
+          {
+            pinId: "schematic_port_13",
+            displayName: "VCC",
+            x: 0.9574999999999987,
+            y: -3.51,
+          },
+          {
+            pinId: "schematic_port_14",
+            displayName: "GND",
+            x: 0.9574999999999987,
+            y: -3.71,
+          },
+          {
+            pinId: "schematic_port_15",
+            displayName: "PB0",
+            x: 0.9574999999999987,
+            y: -3.91,
+          },
+          {
+            pinId: "schematic_port_16",
+            displayName: "PB1",
+            x: 0.9574999999999987,
+            y: -4.11,
+          },
+          {
+            pinId: "schematic_port_17",
+            displayName: "PB2",
+            x: 0.9574999999999987,
+            y: -4.3100000000000005,
+          },
+          {
+            pinId: "schematic_port_18",
+            displayName: "PB3",
+            x: 0.9574999999999987,
+            y: -4.51,
+          },
+          {
+            pinId: "schematic_port_19",
+            displayName: "SDA",
+            x: 0.9574999999999987,
+            y: -4.71,
+          },
+          {
+            pinId: "schematic_port_20",
+            displayName: "SCL",
+            x: 0.9574999999999987,
+            y: -4.91,
+          },
+          {
+            pinId: "schematic_port_21",
+            displayName: "TX",
+            x: 3.357499999999999,
+            y: -3.51,
+          },
+          {
+            pinId: "schematic_port_22",
+            displayName: "RX",
+            x: 3.357499999999999,
+            y: -3.71,
+          },
+          {
+            pinId: "schematic_port_23",
+            displayName: "ADC0",
+            x: 3.357499999999999,
+            y: -3.91,
+          },
+          {
+            pinId: "schematic_port_24",
+            displayName: "ADC1",
+            x: 3.357499999999999,
+            y: -4.109999999999999,
+          },
+          {
+            pinId: "schematic_port_25",
+            displayName: "LED",
+            x: 3.357499999999999,
+            y: -4.31,
+          },
+          {
+            pinId: "schematic_port_26",
+            displayName: "RST",
+            x: 3.357499999999999,
+            y: -4.51,
+          },
+          {
+            pinId: "schematic_port_27",
+            displayName: "XTAL1",
+            x: 3.357499999999999,
+            y: -4.71,
+          },
+          {
+            pinId: "schematic_port_28",
+            displayName: "XTAL2",
+            x: 3.357499999999999,
+            y: -4.91,
+          },
+        ],
+        sectionId: "mcu",
+      },
+      {
+        chipId: "schematic_component_5",
+        center: {
+          x: -0.4725000000000013,
+          y: -3.6099999999999994,
+        },
+        width: 1.04,
+        height: 0.7600000000000007,
+        pins: [
+          {
+            pinId: "schematic_port_29",
+            displayName: "pos",
+            x: -0.6675000000000013,
+            y: -3.229999999999999,
+            _facingDirection: "y+",
+          },
+          {
+            pinId: "schematic_port_30",
+            displayName: "neg",
+            x: -0.6675000000000013,
+            y: -3.9899999999999998,
+            _facingDirection: "y-",
+          },
+        ],
+        sectionId: "mcu",
+      },
+      {
+        chipId: "schematic_component_6",
+        center: {
+          x: -0.4300000000000012,
+          y: -5.419999999999999,
+        },
+        width: 0.965,
+        height: 0.5999999999999996,
+        pins: [
+          {
+            pinId: "schematic_port_31",
+            displayName: "anode",
+            x: -0.5875000000000012,
+            y: -5.119999999999999,
+            _facingDirection: "y+",
+          },
+          {
+            pinId: "schematic_port_32",
+            displayName: "cathode",
+            x: -0.5875000000000012,
+            y: -5.719999999999999,
+            _facingDirection: "y-",
+          },
+        ],
+        sectionId: "mcu",
+      },
+      {
+        chipId: "schematic_component_7",
+        center: {
+          x: -0.025000000000000966,
+          y: -1.7999999999999998,
+        },
+        width: 0.965,
+        height: 0.5999999999999999,
+        pins: [
+          {
+            pinId: "schematic_port_33",
+            displayName: "anode",
+            x: -0.182500000000001,
+            y: -1.5,
+            _facingDirection: "y+",
+          },
+          {
+            pinId: "schematic_port_34",
+            displayName: "cathode",
+            x: -0.182500000000001,
+            y: -2.0999999999999996,
+            _facingDirection: "y-",
+          },
+        ],
+        sectionId: "mcu",
+      },
+    ],
+    directConnections: [],
+    netConnections: [
+      {
+        netId: "GND",
+        isGround: true,
+        netLabelWidth: 0.42,
+        netLabelHeight: 0.48,
+        pinIds: ["schematic_port_14", "schematic_port_30"],
+      },
+      {
+        netId: "VCC_3V3",
+        isGround: false,
+        netLabelWidth: 0.42,
+        netLabelHeight: 0.96,
+        pinIds: [
+          "schematic_port_11",
+          "schematic_port_13",
+          "schematic_port_29",
+          "schematic_port_31",
+          "schematic_port_33",
+        ],
+      },
+      {
+        netId: "ADC_IN",
+        isGround: false,
+        netLabelWidth: 0.84,
+        anchoredNetLabelWidth: 0.84,
+        allowInlineNetLabel: true,
+        inlineNetLabelHeight: 0.12,
+        inlineNetLabelWidth: 0.56,
+        pinIds: ["schematic_port_12", "schematic_port_23"],
+      },
+      {
+        netId: "SDA",
+        isGround: false,
+        netLabelWidth: 0.48,
+        anchoredNetLabelWidth: 0.48,
+        allowInlineNetLabel: true,
+        inlineNetLabelHeight: 0.12,
+        inlineNetLabelWidth: 0.32,
+        pinIds: ["schematic_port_19", "schematic_port_34"],
+      },
+      {
+        netId: "SCL",
+        isGround: false,
+        netLabelWidth: 0.48,
+        anchoredNetLabelWidth: 0.48,
+        allowInlineNetLabel: true,
+        inlineNetLabelHeight: 0.12,
+        inlineNetLabelWidth: 0.32,
+        pinIds: ["schematic_port_20", "schematic_port_32"],
+      },
+      {
+        netId: "TX",
+        isGround: false,
+        netLabelWidth: 0.36,
+        anchoredNetLabelWidth: 0.36,
+        allowInlineNetLabel: true,
+        inlineNetLabelHeight: 0.12,
+        inlineNetLabelWidth: 0.24,
+        pinIds: ["schematic_port_21"],
+      },
+      {
+        netId: "RX",
+        isGround: false,
+        netLabelWidth: 0.36,
+        anchoredNetLabelWidth: 0.36,
+        allowInlineNetLabel: true,
+        inlineNetLabelHeight: 0.12,
+        inlineNetLabelWidth: 0.24,
+        pinIds: ["schematic_port_22"],
+      },
+      {
+        netId: "LED_OUT",
+        isGround: false,
+        netLabelWidth: 0.96,
+        anchoredNetLabelWidth: 0.96,
+        allowInlineNetLabel: true,
+        inlineNetLabelHeight: 0.12,
+        inlineNetLabelWidth: 0.64,
+        pinIds: ["schematic_port_25"],
+      },
+    ],
+    textBoxes: [
+      {
+        chipId: "schematic_component_4",
+        center: {
+          x: 1.4774999999999987,
+          y: -3.1950000000000003,
+        },
+        width: 0.3600000000000001,
+        height: 0.24999999999999956,
+        text: "U2",
+      },
+    ],
+    availableNetLabelOrientations: {
+      VCC: ["y+"],
+      GND: ["y-"],
+      VCC_3V3: ["y+"],
+      SDA: ["x-", "x+"],
+      SCL: ["x-", "x+"],
+      TX: ["x-", "x+"],
+      RX: ["x-", "x+"],
+      LED_OUT: ["x-", "x+"],
+      ADC_IN: ["x-", "x+"],
+    },
+    maxMspPairDistance: 2.4,
+    _hideRatsNet: false,
+  }
+  const solver = new SchematicTracePipelineSolver(problem)
+  solver.solve()
+
+  const stackedConnection =
+    solver.schematicTraceLinesSolver!.failedConnectionPairs.find(
+      (pair) =>
+        pair.pins.some((pin) => pin.pinId === "schematic_port_31") &&
+        pair.pins.some((pin) => pin.pinId === "schematic_port_29"),
+    )!
+  expect(stackedConnection).toBeDefined()
+  expect(stackedConnection.pins.map((pin) => pin._facingDirection)).toEqual([
+    "y+",
+    "y+",
+  ])
+  const recoveredTraces = solver
+    .unroutedTraceRecoverySolver!.getOutput()
+    .newTraces.filter(
+      (trace) => trace.mspPairId === stackedConnection.mspPairId,
+    )
+  expect(recoveredTraces).toHaveLength(1)
+  expect(recoveredTraces[0]!.tracePath.length).toBeGreaterThan(3)
+  expect(solver).toMatchSolverSnapshot(import.meta.path)
+})
