@@ -585,15 +585,13 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
       ) {
         continue
       }
-      if (recoveredPath || junctionCandidates.includes(tracePath)) {
-        recoveredPath = tracePath
-        break
+      if (!recoveredPath) {
+        // Local channels shorten valid routes without recovering new connections.
+        candidates.push(
+          ...getPinConnectionCandidates({ connectionPair, obstacles }),
+        )
       }
       recoveredPath = tracePath
-      // Local channels shorten valid pin routes without recovering new connections.
-      candidates.push(
-        ...getPinConnectionCandidates({ connectionPair, obstacles }),
-      )
     }
     if (recoveredPath) {
       this.solvedUnroutedTraces.push({
