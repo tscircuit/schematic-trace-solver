@@ -20,7 +20,7 @@ import {
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem, PinId } from "lib/types/InputProblem"
-import type { FacingDirection } from "lib/utils/dir"
+import { dir, type FacingDirection } from "lib/utils/dir"
 
 const ROUTE_CLEARANCE = 0.2
 const COORDINATE_TOLERANCE = 1e-9
@@ -306,6 +306,20 @@ const pathCollidesWithObstacles = ({
   const lastPathPin = connectionPair.pins.find((pin) =>
     pointsAreEqual(pin, lastPathPoint),
   )
+  // Endpoint exemptions must not allow a route through the back of a component.
+  for (const [pin, neighbor] of [
+    [firstPathPin, path[1]!],
+    [lastPathPin, path[path.length - 2]!],
+  ] as const) {
+    if (!pin?._facingDirection) continue
+    const outward = dir(pin._facingDirection)
+    if (
+      (neighbor.x - pin.x) * outward.x + (neighbor.y - pin.y) * outward.y <
+      -COORDINATE_TOLERANCE
+    ) {
+      return true
+    }
+  }
   const pathConnectsPairPins =
     firstPathPin !== undefined && lastPathPin !== undefined
   const firstChipObstacle = obstacles.find(
