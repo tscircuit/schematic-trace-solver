@@ -39,3 +39,25 @@ export const simplifyPath = (path: Point[]): Point[] => {
 
   return finalPath
 }
+
+
+/**
+ * Removes consecutive duplicate points from a trace path.
+ * When a route is spliced into an existing path, the concatenation can
+ * produce consecutive duplicate points (same x,y) which render as
+ * spurious extra trace lines (issue #78).
+ */
+export const removeDuplicateConsecutivePoints = (
+  path: Array<{ x: number; y: number }>,
+): Array<{ x: number; y: number }> => {
+  if (path.length <= 1) return path;
+  const result: Array<{ x: number; y: number }> = [path[0]];
+  for (let i = 1; i < path.length; i++) {
+    const prev = result[result.length - 1];
+    const curr = path[i];
+    if (prev.x !== curr.x || prev.y !== curr.y) {
+      result.push(curr);
+    }
+  }
+  return result;
+};
