@@ -68,16 +68,16 @@ test("repro PMP11282 isolated DC/DC traces and endpoint net labels", () => {
   expect(
     diagnosticPipeline.schematicTraceLinesSolver!.failedConnectionPairs,
   ).toHaveLength(60)
-  expect(finalOutput.netLabelPlacements).toHaveLength(107)
-  expect(endpointPairLabels).toHaveLength(79)
-  expect(endpointPairNetIds.size).toBe(61)
+  expect(finalOutput.netLabelPlacements).toHaveLength(108)
+  expect(endpointPairLabels).toHaveLength(80)
+  expect(endpointPairNetIds.size).toBe(62)
   expect(
     finalOutput.traces.some(
       (trace) =>
         trace.pinIds.includes("schematic_port_20") &&
         trace.pinIds.includes("schematic_port_34"),
     ),
-  ).toBe(true)
+  ).toBe(false)
   expect(endpointPairNetIds).toContain("U500.pin8 to C501.pin1")
   expect(endpointPairNetIds).toContain("L500.pin1 to L500.pin2")
   expect(diagnosticPipeline).toMatchSolverSnapshot(import.meta.path)

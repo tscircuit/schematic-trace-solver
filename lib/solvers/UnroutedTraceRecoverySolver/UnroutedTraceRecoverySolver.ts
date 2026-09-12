@@ -90,9 +90,11 @@ const getOuterBounds = (obstacles: ObstacleRect[]) => {
 const getPinConnectionCandidates = ({
   connectionPair,
   obstacles,
+  channelObstacles = obstacles,
 }: {
   connectionPair: MspConnectionPair
   obstacles: ObstacleRect[]
+  channelObstacles?: ObstacleRect[]
 }): Point[][] => {
   const [firstPin, secondPin] = connectionPair.pins
   const firstEscapePoint = getEscapePoint({
@@ -107,7 +109,7 @@ const getPinConnectionCandidates = ({
   const horizontalChannels = [
     outerBounds.minY - ROUTE_CLEARANCE,
     outerBounds.maxY + ROUTE_CLEARANCE,
-    ...obstacles.flatMap((obstacle) => [
+    ...channelObstacles.flatMap((obstacle) => [
       obstacle.minY - ROUTE_CLEARANCE,
       obstacle.maxY + ROUTE_CLEARANCE,
     ]),
@@ -115,7 +117,7 @@ const getPinConnectionCandidates = ({
   const verticalChannels = [
     outerBounds.minX - ROUTE_CLEARANCE,
     outerBounds.maxX + ROUTE_CLEARANCE,
-    ...obstacles.flatMap((obstacle) => [
+    ...channelObstacles.flatMap((obstacle) => [
       obstacle.minX - ROUTE_CLEARANCE,
       obstacle.maxX + ROUTE_CLEARANCE,
     ]),
@@ -545,6 +547,7 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
     const pinConnectionCandidates = getPinConnectionCandidates({
       connectionPair,
       obstacles,
+      channelObstacles: [],
     })
     const candidates = [...junctionCandidates, ...pinConnectionCandidates].sort(
       (firstPath, secondPath) =>
@@ -555,7 +558,14 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
       failedConnectionPairs: this.failedConnectionPairs,
     })
 
+    let recoveredPath: Point[] | undefined
     for (const tracePath of candidates) {
+      if (
+        recoveredPath &&
+        getPathLength(tracePath) >= getPathLength(recoveredPath)
+      ) {
+        continue
+      }
       if (
         pathCollidesWithObstacles({
           path: tracePath,
@@ -575,13 +585,21 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
       ) {
         continue
       }
+      if (!recoveredPath) {
+        // Local channels shorten valid routes without recovering new connections.
+        candidates.push(
+          ...getPinConnectionCandidates({ connectionPair, obstacles }),
+        )
+      }
+      recoveredPath = tracePath
+    }
+    if (recoveredPath) {
       this.solvedUnroutedTraces.push({
         ...connectionPair,
-        tracePath,
+        tracePath: recoveredPath,
         mspConnectionPairIds: [connectionPair.mspPairId],
         pinIds: connectionPair.pins.map((pin) => pin.pinId),
       })
-      return
     }
   }
 
