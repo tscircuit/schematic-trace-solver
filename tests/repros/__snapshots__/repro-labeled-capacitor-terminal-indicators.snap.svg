@@ -1,0 +1,75 @@
+<svg width="1200" height="2016" viewBox="0 0 1200 2016" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on top and Circuit JSON schematic on the bottom">
+  <g transform="translate(0, 0) scale(1.875, 1.875) translate(0, 0)">
+    <rect width="100%" height="100%" fill="white"/><g><rect data-type="rect" data-label="C1" data-x="0" data-y="0" x="250.08739076154802" y="187.16604244694133" width="139.82521847690393" height="265.66791510611733" fill="hsl(326, 100%, 50%, 0.8)" stroke="black" stroke-width="0.0028607142857142854"/></g><g><rect data-type="rect" data-label="netId: VCC
+globalConnNetId: connectivity_net0" data-x="0" data-y="0.591" x="285.043695380774" y="39.999999999999986" width="69.91260923845198" height="146.81647940074905" fill="#ef444466" stroke="#ef4444" stroke-width="0.0028607142857142854"/></g><g><rect data-type="rect" data-label="netId: GND
+globalConnNetId: connectivity_net1" data-x="0" data-y="-0.591" x="285.043695380774" y="453.18352059925104" width="69.91260923845198" height="146.81647940074902" fill="#00000066" stroke="#000000" stroke-width="0.0028607142857142854"/></g><g><circle data-type="point" data-label="C1.1
+y+" data-x="0" data-y="0.38" cx="320" cy="187.1660424469413" r="3" fill="hsl(121, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="C1.2
+y-" data-x="0" data-y="-0.38" cx="320" cy="452.83395755305867" r="3" fill="hsl(122, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="anchorPoint
+orientation: y+" data-x="0" data-y="0.38" cx="320" cy="187.1660424469413" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
+orientation: y-" data-x="0" data-y="-0.38" cx="320" cy="452.83395755305867" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g id="crosshair" style="display: none"><line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5"/><line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5"/><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+                const svg = e.currentTarget;
+                const rect = svg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const crosshair = svg.getElementById('crosshair');
+                const h = svg.getElementById('crosshair-h');
+                const v = svg.getElementById('crosshair-v');
+                const coords = svg.getElementById('coordinates');
+
+                crosshair.style.display = 'block';
+                h.setAttribute('x1', '0');
+                h.setAttribute('x2', '640');
+                h.setAttribute('y1', y);
+                h.setAttribute('y2', y);
+                v.setAttribute('x1', x);
+                v.setAttribute('x2', x);
+                v.setAttribute('y1', '0');
+                v.setAttribute('y2', '640');
+
+                // Calculate real coordinates using inverse transformation
+                const matrix = {"a":349.5630461922597,"c":0,"e":320,"b":0,"d":-349.5630461922597,"f":320};
+                // Manually invert and apply the affine transform
+                // Since we only use translate and scale, we can directly compute:
+                // x' = (x - tx) / sx
+                // y' = (y - ty) / sy
+                const sx = matrix.a;
+                const sy = matrix.d;
+                const tx = matrix.e;
+                const ty = matrix.f;
+                const realPoint = {
+                  x: (x - tx) / sx,
+                  y: (y - ty) / sy // Flip y back since we used negative scale
+                }
+
+                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+                coords.setAttribute('x', (x + 5).toString());
+                coords.setAttribute('y', (y - 5).toString());
+              });
+              document.currentScript.parentElement.addEventListener('mouseleave', () => {
+                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+              });
+            ]]></script>
+  </g>
+  <g transform="translate(0, 1216)">
+    <style>
+              .boundary { fill: rgb(245, 241, 237); }
+              .schematic-boundary { fill: none; stroke: #fff; }
+              .component { fill: none; stroke: rgb(132, 0, 0); }
+              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
+              .component-pin { fill: none; stroke: rgb(132, 0, 0); }
+              .text { font-family: sans-serif; fill: rgb(0, 150, 0); }
+              .pin-number { fill: rgb(169, 0, 0); }
+              .port-label { fill: rgb(0, 100, 100); }
+              .component-name { fill: rgb(0, 100, 100); }
+
+            </style><rect class="boundary" x="0" y="0" width="1200" height="800"/><g class="sch-component" data-circuit-json-type="schematic_component" data-schematic-component-id="schematic_component_0__stack1"><rect class="component-overlay sch-component-overlay" x="542.8123765635233" y="289.96520267093996" width="114.37524687295331" height="214.42678453872009" fill="transparent"/><path class="sch-component-symbol-path" d="M 600 504.39198720966004 L 600 418.621273394172" stroke="rgb(132, 0, 0)" fill="none" stroke-width="5.642810119440001px" stroke-linecap="round"/><path class="sch-component-symbol-path" d="M 600 375.735916486428 L 600 289.96520267093996" stroke="rgb(132, 0, 0)" fill="none" stroke-width="5.642810119440001px" stroke-linecap="round"/><path class="sch-component-symbol-path" d="M 657.1876234364767 418.621273394172 L 542.8123765635233 418.621273394172" stroke="rgb(132, 0, 0)" fill="none" stroke-width="5.642810119440001px" stroke-linecap="round"/><path class="sch-component-symbol-path" d="M 657.1876234364767 375.735916486428 L 542.8123765635233 375.735916486428" stroke="rgb(132, 0, 0)" fill="none" stroke-width="5.642810119440001px" stroke-linecap="round"/><text class="sch-component-name sch-component-text" x="641.098467036588" y="325.70300009406" stroke="rgb(245, 241, 237)" stroke-width="5.642810119440001px" paint-order="stroke" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="start" dominant-baseline="ideographic" font-size="50.78529107496px">C1</text><text class="sch-component-text" x="641.098467036588" y="468.65418978654003" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="start" dominant-baseline="hanging" font-size="50.78529107496px"></text><circle class="component-pin sch-component-pin" cx="600" cy="289.96520267093996" r="5.642810119440001px" stroke-width="5.642810119440001px" fill="none" stroke="rgb(132, 0, 0)"/><circle class="component-pin sch-component-pin" cx="600" cy="504.39198720966004" r="5.642810119440001px" stroke-width="5.642810119440001px" fill="none" stroke="rgb(132, 0, 0)"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_0__stack1"><circle cx="600" cy="312.5364431487" r="11.285620238880002" fill="red" opacity="0"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_1__stack1"><circle cx="600" cy="526.96322768742" r="11.285620238880002" fill="red" opacity="0"/></g><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0__stack1" d="
+    M 600,289.96520267094
+    L 571.7859494028,274.729615348452
+    L 571.7859494028,141.07025298598322
+    L 628.2140505972,141.07025298598322
+    L 628.2140505972,274.729615348452
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="5.642810119440001px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0__stack1" x="600" y="264.57255713346" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="50.78529107496px" transform="rotate(-90 600 264.57255713346)">VCC</text><rect class="component-overlay sch-component-overlay sch-net-label-overlay" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_1__stack1" x="566.14313928336" y="504.39198720966" width="67.71372143327994" height="50.785291074960014" fill="transparent"/><path class="sch-net-label-symbol-path" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_1__stack1" d="M 566.14313928336 555.17727828462 L 633.85686071664 555.17727828462" stroke="rgb(132, 0, 0)" fill="none" stroke-width="5.642810119440001px" stroke-linecap="round"/><path class="sch-net-label-symbol-path" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_1__stack1" d="M 600 555.17727828462 L 600 504.39198720966" stroke="rgb(132, 0, 0)" fill="none" stroke-width="5.642810119440001px" stroke-linecap="round"/><text class="sch-net-label-symbol-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_1__stack1" x="600" y="569.28430358322" fill="rgb(15, 15, 15)" font-family="sans-serif" text-anchor="middle" dominant-baseline="hanging" font-size="50.78529107496px">GND</text>
+  </g>
+</svg>
