@@ -3,6 +3,7 @@ import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { convertSolverOutputToCircuitJson } from "tests/fixtures/convertSolverOutputToCircuitJson"
+import "tests/fixtures/matcher"
 import input from "./assets/repro-core-vertical-passive-ground-label-overlap.input.json"
 
 // Preserve the complete eight-component MK1/U1 circuit.
@@ -46,7 +47,7 @@ test("ground labels exist alongside genuine junctions and open chip pins", async
     5,
   )
   expect(countClass("trace-junction sch-trace-junction")).toBe(1)
-  await expect(svg).toMatchSvgSnapshot(import.meta.path)
+  await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
 
 // Known failure: the snapshot converter emits the GND labels, but omits their
