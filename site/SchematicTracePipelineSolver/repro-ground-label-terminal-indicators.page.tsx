@@ -24,13 +24,15 @@ export default function GroundLabelTerminalIndicators() {
     <div style={{ padding: 16 }}>
       <h2>Connected net labels show false open-pin indicators</h2>
       <p>
-        Full existing repro circuit, unchanged. The red dots above the two lower
-        GND symbols are incorrectly drawn as open terminals. Genuine open U1
-        pins and the green wire junction must remain visible when this is fixed.
+        Complete eight-component circuit: MK1, U1, four capacitors, and two
+        resistors. The red dots above the two bottom GND symbols are incorrectly
+        drawn as open terminals. Genuine open U1 pins and the green wire junction
+        must remain visible when this is fixed. No routing or placement changes
+        are applied in this repro.
       </p>
       <img
         src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`}
-        alt="Full circuit showing false terminal dots at the resistor and capacitor ground connections"
+        alt="Complete MK1 and U1 circuit with four capacitors and two resistors, showing false terminal dots above the two bottom GND symbols"
         style={{
           display: "block",
           width: "100%",
