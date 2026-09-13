@@ -5,12 +5,15 @@ import {
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
 export const simplifyPath = (path: Point[]): Point[] => {
-  if (path.length < 3) return path
+  if (path.length < 3) return [...path]
+
+  // Pass 1: Remove immediate collinear points
   const newPath: Point[] = [path[0]]
   for (let i = 1; i < path.length - 1; i++) {
     const p1 = newPath[newPath.length - 1]
     const p2 = path[i]
     const p3 = path[i + 1]
+
     if (
       (isVertical(p1, p2) && isVertical(p2, p3)) ||
       (isHorizontal(p1, p2) && isHorizontal(p2, p3))
@@ -21,12 +24,14 @@ export const simplifyPath = (path: Point[]): Point[] => {
   }
   newPath.push(path[path.length - 1])
 
+  // Pass 2: Final cleanup pass to catch any points exposed after the first pass
   if (newPath.length < 3) return newPath
   const finalPath: Point[] = [newPath[0]]
   for (let i = 1; i < newPath.length - 1; i++) {
     const p1 = finalPath[finalPath.length - 1]
     const p2 = newPath[i]
     const p3 = newPath[i + 1]
+
     if (
       (isVertical(p1, p2) && isVertical(p2, p3)) ||
       (isHorizontal(p1, p2) && isHorizontal(p2, p3))
