@@ -5,18 +5,21 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { convertSolverOutputToCircuitJson } from "tests/fixtures/convertSolverOutputToCircuitJson"
 import input from "./assets/repro-core-vertical-passive-ground-label-overlap.input.json"
 
-// Preserve the complete eight-component MK1/U1 circuit and its existing snapshot.
+// Preserve the complete eight-component MK1/U1 circuit.
 // The red terminal circles are not trace-junction dots.
 const solver = new SchematicTracePipelineSolver(
   input as unknown as InputProblem,
 )
 solver.solve()
 const circuitJson = convertSolverOutputToCircuitJson(solver)
-const svg = convertCircuitJsonToSchematicSvg(circuitJson)
+const svg = convertCircuitJsonToSchematicSvg(circuitJson, {
+  width: 1200,
+  height: 1000,
+})
 const countClass = (className: string) =>
   svg.split(`class="${className}"`).length - 1
 
-test("ground labels exist alongside genuine junctions and open chip pins", () => {
+test("ground labels exist alongside genuine junctions and open chip pins", async () => {
   expect(input.chips).toHaveLength(8)
   expect(solver.solved).toBe(true)
   const ground = input.netConnections.find((net) => net.isGround)!
@@ -43,6 +46,7 @@ test("ground labels exist alongside genuine junctions and open chip pins", () =>
     5,
   )
   expect(countClass("trace-junction sch-trace-junction")).toBe(1)
+  await expect(svg).toMatchSvgSnapshot(import.meta.path)
 })
 
 // Known failure: the snapshot converter emits the GND labels, but omits their
