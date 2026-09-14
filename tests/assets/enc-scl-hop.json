@@ -1,0 +1,185 @@
+{
+  "chips": [
+    {
+      "chipId": "R_ENC_SDA",
+      "center": {
+        "x": 0.0,
+        "y": 1.8
+      },
+      "width": 0.16000000000000003,
+      "height": 0.4,
+      "pins": [
+        {
+          "pinId": "R_ENC_SDA.1",
+          "x": 0.0,
+          "y": 2.1,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "R_ENC_SDA.2",
+          "x": 0.0,
+          "y": 1.5,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "R_ENC_SCL",
+      "center": {
+        "x": 2.0,
+        "y": 1.8
+      },
+      "width": 0.16000000000000003,
+      "height": 0.4,
+      "pins": [
+        {
+          "pinId": "R_ENC_SCL.1",
+          "x": 2.0,
+          "y": 2.1,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "R_ENC_SCL.2",
+          "x": 2.0,
+          "y": 1.5,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "U_ENCODER",
+      "center": {
+        "x": 6.0,
+        "y": 0.0
+      },
+      "width": 1.7600000000000002,
+      "height": 1.6,
+      "pins": [
+        {
+          "pinId": "U_ENCODER.6",
+          "displayName": "SDA",
+          "x": 4.720000000000001,
+          "y": 0.1,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U_ENCODER.7",
+          "displayName": "SCL",
+          "x": 4.720000000000001,
+          "y": -0.1,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U_ENCODER.1",
+          "displayName": "VDD5V",
+          "x": 5.9,
+          "y": 1.2000000000000002,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "U_ENCODER.2",
+          "displayName": "VDD3V3",
+          "x": 6.1000000000000005,
+          "y": 1.2000000000000002,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "U_ENCODER.4",
+          "displayName": "GND",
+          "x": 5.9,
+          "y": -1.2000000000000002,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "U_ENCODER.8",
+          "displayName": "DIR",
+          "x": 6.1000000000000005,
+          "y": -1.2000000000000002,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "U_ENCODER.3",
+          "displayName": "OUT",
+          "x": 7.28,
+          "y": 0.1,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U_ENCODER.5",
+          "displayName": "PGO",
+          "x": 7.28,
+          "y": -0.1,
+          "_facingDirection": "x+"
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "ENC_SDA",
+      "netLabelText": "ENC_SDA",
+      "pinIds": [
+        "R_ENC_SDA.2",
+        "U_ENCODER.6"
+      ]
+    },
+    {
+      "pinIds": [
+        "R_ENC_SDA.1",
+        "R_ENC_SCL.1"
+      ],
+      "netId": "V3V3"
+    },
+    {
+      "pinIds": [
+        "U_ENCODER.1",
+        "U_ENCODER.2"
+      ],
+      "netId": "V3V3"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "ENC_SDA",
+      "netLabelText": "ENC_SDA",
+      "pinIds": [
+        "R_ENC_SDA.2",
+        "U_ENCODER.6"
+      ]
+    },
+    {
+      "netId": "ENC_SCL",
+      "netLabelText": "ENC_SCL",
+      "pinIds": [
+        "R_ENC_SCL.2",
+        "U_ENCODER.7"
+      ]
+    },
+    {
+      "netId": "V3V3",
+      "netLabelText": "V3V3",
+      "pinIds": [
+        "R_ENC_SDA.1",
+        "R_ENC_SCL.1",
+        "U_ENCODER.1",
+        "U_ENCODER.2"
+      ]
+    },
+    {
+      "netId": "GND",
+      "netLabelText": "GND",
+      "pinIds": [
+        "U_ENCODER.4",
+        "U_ENCODER.8"
+      ]
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "V3V3": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ]
+  }
+}
