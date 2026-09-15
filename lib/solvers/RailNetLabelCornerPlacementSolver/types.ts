@@ -7,6 +7,7 @@ export interface RailNetLabelCornerPlacementSolverParams {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  netLabelConnectorTraceIds?: ReadonlySet<string>
 }
 
 export type Bounds = {
