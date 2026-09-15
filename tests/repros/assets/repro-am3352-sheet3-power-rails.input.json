@@ -1,0 +1,698 @@
+{
+  "chips": [
+    {
+      "chipId": "J_USB0",
+      "center": {
+        "x": -3.5,
+        "y": 1.25
+      },
+      "width": 1.2000000000000002,
+      "height": 1.2000000000000002,
+      "pins": [
+        {
+          "pinId": "J_USB0.1",
+          "displayName": "VBUS",
+          "x": -4.5,
+          "y": 1.65,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_USB0.2",
+          "displayName": "Data_NEG",
+          "x": -4.5,
+          "y": 1.45,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_USB0.3",
+          "displayName": "Data_POS",
+          "x": -4.5,
+          "y": 1.25,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_USB0.4",
+          "displayName": "ID",
+          "x": -4.5,
+          "y": 1.0499999999999998,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_USB0.5",
+          "displayName": "GND",
+          "x": -4.5,
+          "y": 0.85,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_USB0.6",
+          "displayName": "S1",
+          "x": -2.5,
+          "y": 0.95,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J_USB0.7",
+          "displayName": "S2",
+          "x": -2.5,
+          "y": 1.15,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J_USB0.8",
+          "displayName": "S3",
+          "x": -2.5,
+          "y": 1.35,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J_USB0.9",
+          "displayName": "S4",
+          "x": -2.5,
+          "y": 1.55,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "J_SD",
+      "center": {
+        "x": -3.5,
+        "y": 6
+      },
+      "width": 1.2000000000000002,
+      "height": 1.6,
+      "pins": [
+        {
+          "pinId": "J_SD.1",
+          "displayName": "1",
+          "x": -4.5,
+          "y": 6.6,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_SD.2",
+          "displayName": "2",
+          "x": -4.5,
+          "y": 6.4,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_SD.3",
+          "displayName": "3",
+          "x": -4.5,
+          "y": 6.2,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_SD.4",
+          "displayName": "VDD",
+          "x": -4.5,
+          "y": 6,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_SD.5",
+          "displayName": "5",
+          "x": -4.5,
+          "y": 5.8,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_SD.6",
+          "displayName": "VSS",
+          "x": -4.5,
+          "y": 5.6,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_SD.7",
+          "displayName": "7",
+          "x": -4.5,
+          "y": 5.4,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_SD.8",
+          "displayName": "8",
+          "x": -2.5,
+          "y": 5.5,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J_SD.9",
+          "displayName": "CD",
+          "x": -2.5,
+          "y": 5.7,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J_SD.10",
+          "displayName": "GND1",
+          "x": -2.5,
+          "y": 5.9,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J_SD.11",
+          "displayName": "GND4",
+          "x": -2.5,
+          "y": 6.1,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J_SD.12",
+          "displayName": "GND3",
+          "x": -2.5,
+          "y": 6.3,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J_SD.13",
+          "displayName": "GND2",
+          "x": -2.5,
+          "y": 6.5,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "J_SPI",
+      "center": {
+        "x": 4,
+        "y": 6.25
+      },
+      "width": 1.9000000000000001,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "J_SPI.1",
+          "displayName": "GND",
+          "x": 2.65,
+          "y": 6.55,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_SPI.2",
+          "displayName": "V3V3",
+          "x": 2.65,
+          "y": 6.35,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_SPI.3",
+          "displayName": "SPI0_SCLK",
+          "x": 2.65,
+          "y": 6.15,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_SPI.4",
+          "displayName": "SPI0_D0",
+          "x": 2.65,
+          "y": 5.95,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_SPI.5",
+          "displayName": "SPI0_D1",
+          "x": 5.35,
+          "y": 5.95,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J_SPI.6",
+          "displayName": "SPI0_CS0",
+          "x": 5.35,
+          "y": 6.15,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J_SPI.7",
+          "displayName": "MP1",
+          "x": 5.35,
+          "y": 6.35,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J_SPI.8",
+          "displayName": "MP2",
+          "x": 5.35,
+          "y": 6.55,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "J_I2C",
+      "center": {
+        "x": 4,
+        "y": 2.5
+      },
+      "width": 1.8,
+      "height": 0.8,
+      "pins": [
+        {
+          "pinId": "J_I2C.1",
+          "displayName": "GND",
+          "x": 2.7,
+          "y": 2.7,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_I2C.2",
+          "displayName": "V3V3",
+          "x": 2.7,
+          "y": 2.5,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_I2C.3",
+          "displayName": "I2C0_SDA",
+          "x": 2.7,
+          "y": 2.3,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "J_I2C.4",
+          "displayName": "I2C0_SCL",
+          "x": 5.3,
+          "y": 2.3,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J_I2C.5",
+          "displayName": "MP1",
+          "x": 5.3,
+          "y": 2.5,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "J_I2C.6",
+          "displayName": "MP2",
+          "x": 5.3,
+          "y": 2.7,
+          "_facingDirection": "x+"
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "USB0_VBUS",
+      "netLabelText": "USB0_VBUS",
+      "pinIds": [
+        "J_USB0.1"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 1.2
+    },
+    {
+      "netId": "USB0_DM",
+      "netLabelText": "USB0_DM",
+      "pinIds": [
+        "J_USB0.2"
+      ],
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.64,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "USB0_DP",
+      "netLabelText": "USB0_DP",
+      "pinIds": [
+        "J_USB0.3"
+      ],
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.64,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "USB0_ID",
+      "netLabelText": "USB0_ID",
+      "pinIds": [
+        "J_USB0.4"
+      ],
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.64,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "GND",
+      "netLabelText": "GND",
+      "pinIds": [
+        "J_USB0.5",
+        "J_USB0.6",
+        "J_USB0.7",
+        "J_USB0.8",
+        "J_USB0.9",
+        "J_SD.6",
+        "J_SD.10",
+        "J_SD.11",
+        "J_SD.12",
+        "J_SD.13",
+        "J_SPI.1",
+        "J_SPI.7",
+        "J_SPI.8",
+        "J_I2C.1",
+        "J_I2C.5",
+        "J_I2C.6"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "isGround": true
+    },
+    {
+      "netId": "MMC0_DAT2",
+      "netLabelText": "MMC0_DAT2",
+      "pinIds": [
+        "J_SD.1"
+      ],
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.8,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "SPI0_SCLK",
+      "netLabelText": "SPI0_SCLK",
+      "pinIds": [
+        "J_SPI.3"
+      ],
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.8,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "SPI0_D0",
+      "netLabelText": "SPI0_D0",
+      "pinIds": [
+        "J_SPI.4"
+      ],
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.64,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "I2C0_SDA",
+      "netLabelText": "I2C0_SDA",
+      "pinIds": [
+        "J_I2C.3"
+      ],
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.72,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "MMC0_DAT3",
+      "netLabelText": "MMC0_DAT3",
+      "pinIds": [
+        "J_SD.2"
+      ],
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.8,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "SPI0_CS0",
+      "netLabelText": "SPI0_CS0",
+      "pinIds": [
+        "J_SPI.6"
+      ],
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.72,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "SPI0_D1",
+      "netLabelText": "SPI0_D1",
+      "pinIds": [
+        "J_SPI.5"
+      ],
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.64,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "I2C0_SCL",
+      "netLabelText": "I2C0_SCL",
+      "pinIds": [
+        "J_I2C.4"
+      ],
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.72,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "V3V3",
+      "netLabelText": "V3V3",
+      "pinIds": [
+        "J_SD.4",
+        "J_SPI.2",
+        "J_I2C.2"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6
+    },
+    {
+      "netId": "MMC0_CMD",
+      "netLabelText": "MMC0_CMD",
+      "pinIds": [
+        "J_SD.3"
+      ],
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.72,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "MMC0_CLK",
+      "netLabelText": "MMC0_CLK",
+      "pinIds": [
+        "J_SD.5"
+      ],
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.72,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "MMC0_DAT0",
+      "netLabelText": "MMC0_DAT0",
+      "pinIds": [
+        "J_SD.7"
+      ],
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.8,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "MMC0_DAT1",
+      "netLabelText": "MMC0_DAT1",
+      "pinIds": [
+        "J_SD.8"
+      ],
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.8,
+      "inlineNetLabelHeight": 0.12
+    },
+    {
+      "netId": "SD_CD",
+      "netLabelText": "SD_CD",
+      "pinIds": [
+        "J_SD.9"
+      ],
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.48,
+      "inlineNetLabelHeight": 0.12
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "J_USB0",
+      "center": {
+        "x": -3.1999999999999997,
+        "y": 0.5199999999999999
+      },
+      "width": 1.7999999999999998,
+      "height": 0.17999999999999994,
+      "text": "10118194-0001LF"
+    },
+    {
+      "chipId": "J_USB0",
+      "center": {
+        "x": -3.7399999999999993,
+        "y": 1.9650000000000003
+      },
+      "width": 0.8399999999999994,
+      "height": 0.2500000000000002,
+      "text": "J_USB0"
+    },
+    {
+      "chipId": "J_SD",
+      "center": {
+        "x": -3.7399999999999998,
+        "y": 5.07
+      },
+      "width": 0.7199999999999998,
+      "height": 0.17999999999999972,
+      "text": "TF-01A"
+    },
+    {
+      "chipId": "J_SD",
+      "center": {
+        "x": -3.8599999999999994,
+        "y": 6.914999999999999
+      },
+      "width": 0.5999999999999996,
+      "height": 0.2499999999999991,
+      "text": "J_SD"
+    },
+    {
+      "chipId": "J_SPI",
+      "center": {
+        "x": 3.8299999999999996,
+        "y": 5.62
+      },
+      "width": 1.5599999999999996,
+      "height": 0.17999999999999972,
+      "text": "BM06B-GHS-TBT"
+    },
+    {
+      "chipId": "J_SPI",
+      "center": {
+        "x": 3.3499999999999996,
+        "y": 6.865
+      },
+      "width": 0.7200000000000002,
+      "height": 0.2499999999999991,
+      "text": "J_SPI"
+    },
+    {
+      "chipId": "J_I2C",
+      "center": {
+        "x": 3.88,
+        "y": 1.9700000000000002
+      },
+      "width": 1.56,
+      "height": 0.17999999999999994,
+      "text": "BM04B-GHS-TBT"
+    },
+    {
+      "chipId": "J_I2C",
+      "center": {
+        "x": 3.4000000000000004,
+        "y": 3.015
+      },
+      "width": 0.7200000000000002,
+      "height": 0.25,
+      "text": "J_I2C"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "USB0_VBUS": [
+      "y+"
+    ],
+    "USB0_DM": [
+      "x-",
+      "x+"
+    ],
+    "USB0_DP": [
+      "x-",
+      "x+"
+    ],
+    "USB0_ID": [
+      "x-",
+      "x+"
+    ],
+    "GND": [
+      "y-"
+    ],
+    "MMC0_DAT2": [
+      "x-",
+      "x+"
+    ],
+    "SPI0_SCLK": [
+      "x-",
+      "x+"
+    ],
+    "SPI0_D0": [
+      "x-",
+      "x+"
+    ],
+    "I2C0_SDA": [
+      "x-",
+      "x+"
+    ],
+    "MMC0_DAT3": [
+      "x-",
+      "x+"
+    ],
+    "SPI0_CS0": [
+      "x-",
+      "x+"
+    ],
+    "SPI0_D1": [
+      "x-",
+      "x+"
+    ],
+    "I2C0_SCL": [
+      "x-",
+      "x+"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "MMC0_CMD": [
+      "x-",
+      "x+"
+    ],
+    "MMC0_CLK": [
+      "x-",
+      "x+"
+    ],
+    "MMC0_DAT0": [
+      "x-",
+      "x+"
+    ],
+    "MMC0_DAT1": [
+      "x-",
+      "x+"
+    ],
+    "SD_CD": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4
+}
