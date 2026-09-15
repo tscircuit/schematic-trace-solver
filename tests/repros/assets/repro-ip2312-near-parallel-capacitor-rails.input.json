@@ -1,0 +1,87 @@
+{
+  "chips": [
+    {
+      "chipId": "C4",
+      "center": {
+        "x": -3.77,
+        "y": -7.205
+      },
+      "width": 0.92,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "C4.1",
+          "displayName": "pos",
+          "x": -3.905,
+          "y": -6.905,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C4.2",
+          "displayName": "neg",
+          "x": -3.905,
+          "y": -7.505,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "C5",
+      "center": {
+        "x": -3.765,
+        "y": -9.015
+      },
+      "width": 0.92,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "C5.1",
+          "displayName": "pos",
+          "x": -3.9,
+          "y": -8.715,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C5.2",
+          "displayName": "neg",
+          "x": -3.9,
+          "y": -9.315,
+          "_facingDirection": "y-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "C4.2",
+        "C5.2"
+      ]
+    },
+    {
+      "netId": "VBAT",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "C4.1",
+        "C5.1"
+      ]
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "VBAT": [
+      "y+"
+    ]
+  },
+  "maxMspPairDistance": 2.4
+}
