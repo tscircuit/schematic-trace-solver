@@ -1,10 +1,8 @@
 import { getOutputLabelCollisions } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisions"
 import { doSegmentsIntersect } from "@tscircuit/math-utils/line-intersections"
 import { expect, test } from "bun:test"
-import { getAnchoredNetLabelRenderedBounds } from "lib/solvers/InlineNetLabelSolver/getAnchoredNetLabelRenderedBounds"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
-import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import inputProblem from "./bug-report-20260907T145640Z.json"
 import "tests/fixtures/matcher"
 
@@ -62,14 +60,22 @@ test("bug-report-20260907T145640Z", async () => {
     },
   )
   expect(terminalWireCrossings).toEqual([])
-  // U2 pin 17 must remain connected and clear of the final signal labels.
-  const traceId = "schematic_port_57-schematic_port_86"
-  const clearedTrace = solver
-    .traceLabelOverlapAvoidanceSolver!.getOutput()
-    .traces.find((trace) => trace.mspPairId === traceId)!
-  const finalTrace = output.traces.find((trace) => trace.mspPairId === traceId)!
-  expect(finalTrace).toBeDefined()
-  expect(finalTrace.tracePath).toHaveLength(4)
+  // U2 pin 17 uses its own V3 rail instead of travelling down to the remote
+  // connector; both electrical islands retain V3 labels.
+  expect(
+    output.traces.some(
+      (trace) =>
+        trace.pinIds.includes("schematic_port_57") &&
+        trace.pinIds.includes("schematic_port_86"),
+    ),
+  ).toBe(false)
+  for (const pinId of ["schematic_port_57", "schematic_port_86"]) {
+    const label = output.netLabelPlacements.find((label) =>
+      label.pinIds.includes(pinId),
+    )!
+    expect(label.netId).toBe("V3")
+    expect(label.orientation).toBe("y+")
+  }
   const beforeInline = new Map(
     solver
       .inlineNetLabelSolver!.getConstructorParams()[0]
@@ -81,19 +87,6 @@ test("bug-report-20260907T145640Z", async () => {
       expect(simplifyPath(trace.tracePath).length).toBeLessThanOrEqual(
         simplifyPath(before.tracePath).length,
       )
-  }
-  expect(finalTrace.tracePath[0]).toEqual(clearedTrace.tracePath[0])
-  expect(finalTrace.tracePath.at(-1)).toEqual(clearedTrace.tracePath.at(-1))
-  for (const label of output.netLabelPlacements) {
-    if (label.globalConnNetId === finalTrace.globalConnNetId) continue
-    const bounds = getAnchoredNetLabelRenderedBounds(label)
-    expect(
-      finalTrace.tracePath
-        .slice(1)
-        .some((end, index) =>
-          segmentIntersectsRect(finalTrace.tracePath[index]!, end, bounds),
-        ),
-    ).toBe(false)
   }
   // Power labels in the supplied input are not opted in. Preserve them rather
   // than overriding the caller's policy to make every label appear inline.

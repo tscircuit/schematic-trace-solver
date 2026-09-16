@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import input from "./assets/repro-am3352-sheet3-power-rails.input.json"
@@ -35,5 +36,30 @@ test("repro AM3352 sheet 3 connector power and ground rails", async () => {
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
+  const { traces, netLabelPlacements } =
+    solver.netLabelToTraceSolver!.getOutput()
+  for (const [netId, pinId, orientation, limit] of [
+    ["V3V3", "J_SD.4", "y+", 0.2],
+    ["GND", "J_I2C.1", "y-", 1],
+  ] as const) {
+    const net = problem.netConnections.find((net) => net.netId === netId)!
+    const component = getTraceConnectedPinComponents({
+      pinIds: net.pinIds,
+      traces,
+    }).find((component) => component.pinIds.includes(pinId))!
+    expect(component.pinIds).toEqual([pinId])
+    const label = netLabelPlacements.find((label) =>
+      label.pinIds.includes(pinId),
+    )!
+    const pin = problem.chips
+      .flatMap((chip) => chip.pins)
+      .find((pin) => pin.pinId === pinId)!
+    expect(label.orientation).toBe(orientation)
+    const wrongDirection =
+      orientation === "y+"
+        ? pin.y - label.anchorPoint.y
+        : label.anchorPoint.y - pin.y
+    expect(wrongDirection).toBeLessThanOrEqual(limit)
+  }
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
