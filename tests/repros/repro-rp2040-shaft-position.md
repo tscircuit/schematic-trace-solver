@@ -56,3 +56,35 @@ For interactive investigation, run `bun start` and open
 `SchematicTracePipelineSolver/repro-rp2040-shaft-position` in Cosmos.
 
 ![Current solver snapshot](__snapshots__/repro-rp2040-shaft-position.snap.svg)
+
+## Label-clearance fix (stacked on the original repro)
+
+`repro-rp2040-shaft-position-label-clearance.test.ts` replays the published
+SDA trace and SCL label/connector geometry directly at `InlineNetLabelSolver`.
+It disables fresh inline conversions and represents the existing SDA inline
+text as a fixed obstacle. Supply/ground wires and other labels are omitted to
+isolate the near-contact; this is a stage replay, not a claim that the reduced
+upstream pipeline now produces the historical routing.
+
+The regression fails on the parent commit: the SCL tag extends below the SDA
+wire. The fix shortens the marked pin-to-label connector and pulls its tag
+toward the resistor, retaining its orientation. The tag's bottom moves from
+-0.42 to 0.84, leaving 0.301 clearance above the wire at y=0.539. The SDA route
+and net identities are unchanged.
+
+Only straight, explicitly marked, one-pin label connectors are eligible.
+Candidates must clear other nets, tags, chips, and text. Existing same-net
+branches are preserved. If no shorter placement fits, the stage keeps the
+original placement; it does not change a routed connection to force a fit.
+
+```sh
+bun test tests/repros/repro-rp2040-shaft-position-label-clearance.test.ts
+bun test tests/solvers/InlineNetLabelSolver/shorten-net-label-connectors.test.ts
+```
+
+The interactive stage replay is `InlineNetLabelSolver/shaft-position-label-clearance`
+in Cosmos. The tests cover touching, near-touching and crossing stubs, a rotated
+horizontal case with reversed endpoints, blocked alternatives, unmarked traces,
+and same-net connections/branches.
+
+![SCL label pulled above SDA](__snapshots__/repro-rp2040-shaft-position-label-clearance.snap.svg)

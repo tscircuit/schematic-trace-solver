@@ -1,3 +1,4 @@
+import { shortenNetLabelConnectorsNearTraces } from "./shortenNetLabelConnectorsNearTraces"
 import { getLocalTraceLabelShifts } from "./getLocalTraceLabelShifts"
 import {
   getOutputLabelCollisions,
@@ -1207,6 +1208,15 @@ export class InlineNetLabelSolver extends BaseSolver {
         inlineNetLabelPlacements: activeInlinePlacements,
         netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
       })
+      const shortened = shortenNetLabelConnectorsNearTraces({
+        inputProblem: this.inputProblem,
+        traces: pushed.traces,
+        netLabelPlacements: pushed.netLabelPlacements,
+        inlineNetLabelPlacements: activeInlinePlacements,
+        netLabelConnectorTraceIds: pushed.netLabelConnectorTraceIds,
+      })
+      pushed.traces = shortened.traces
+      pushed.netLabelPlacements = shortened.netLabelPlacements
       let blockedPlacementKeys = this.getBlockedInlinePlacements({
         inlineNetLabelPlacements: activeInlinePlacements,
         anchoredNetLabelPlacements: pushed.netLabelPlacements,
@@ -1281,6 +1291,7 @@ export class InlineNetLabelSolver extends BaseSolver {
       if (blockedPlacementKeys.size === 0) {
         this.inlineNetLabelPlacements = activeInlinePlacements
         this.stats.pushedAnchoredNetLabelCount = pushed.movedLabelCount
+        this.stats.shortenedNetLabelConnectorCount = shortened.movedLabelCount
         const restored = restoreReroutesAroundSupersededLabels({
           inputProblem: this.inputProblem,
           traces: pushed.traces,
