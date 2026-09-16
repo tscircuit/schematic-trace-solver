@@ -1172,7 +1172,16 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         result.selected = true
         return result
       }
-      if (stopOnTraceCollision && result.status === "trace-collision") break
+      // A downward ground branch projected onto its existing trace can reach a
+      // clear position below a crossing trace.
+      if (
+        stopOnTraceCollision &&
+        result.status === "trace-collision" &&
+        (!projectedConnectorSource ||
+          orientation !== "y-" ||
+          !this.isGroundLabel(label))
+      )
+        break
     }
 
     return null
