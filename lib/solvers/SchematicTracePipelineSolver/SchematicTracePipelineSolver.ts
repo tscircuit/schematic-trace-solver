@@ -402,6 +402,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             ),
             netLabelPlacements:
               instance.availableNetOrientationSolver!.outputNetLabelPlacements,
+            netLabelConnectorTraceIds:
+              instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
           },
         ]
       },
