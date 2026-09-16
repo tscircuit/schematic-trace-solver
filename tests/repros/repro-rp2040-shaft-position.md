@@ -57,34 +57,39 @@ For interactive investigation, run `bun start` and open
 
 ![Current solver snapshot](__snapshots__/repro-rp2040-shaft-position.snap.svg)
 
-## Label-clearance fix (stacked on the original repro)
+## Label-placement fix (stacked on the original repro)
 
-`repro-rp2040-shaft-position-label-clearance.test.ts` replays the published
-SDA trace and SCL label/connector geometry directly at `InlineNetLabelSolver`.
-It disables fresh inline conversions and represents the existing SDA inline
-text as a fixed obstacle. Supply/ground wires and other labels are omitted to
-isolate the near-contact; this is a stage replay, not a claim that the reduced
-upstream pipeline now produces the historical routing.
+The existing anchored-label clearance pass now treats the rendered tag and
+proposed connector as one candidate. It rejects endpoint contacts, near contacts,
+parallel overlaps and crossings with unrelated nets using 0.05 clearance.
+Same-net attachment is still allowed. A proposal is committed only after all
+labels and connectors in the group pass validation, including against one another.
 
-The regression fails on the parent commit: the SCL tag extends below the SDA
-wire. The fix shortens the marked pin-to-label connector and pulls its tag
-toward the resistor, retaining its orientation. The tag's bottom moves from
--0.42 to 0.84, leaving 0.301 clearance above the wire at y=0.539. The SDA route
-and net identities are unchanged.
+The usual outward proposal remains first. If it fails for an individual label,
+the same placement search tries alternate anchors and permitted orientations,
+ordered by connector length. Chip/text/label obstacles, connector attachments,
+existing same-net branches and group alignment remain constraints. A rejected
+proposal changes neither labels nor traces. No cleanup/shortening stage is added.
 
-Only straight, explicitly marked, one-pin label connectors are eligible.
-Candidates must clear other nets, tags, chips, and text. Existing same-net
-branches are preserved. If no shorter placement fits, the stage keeps the
-original placement; it does not change a routed connection to force a fit.
+`anchored-label-candidate-clearance.test.ts` starts with a tag at its resistor
+pin, before any connector exists. An inline-text obstacle makes the outward
+proposal unsafe. This test fails on the parent implementation; the candidate
+search instead chooses a horizontal label on a 0.1 connector near the resistor.
+Additional cases cover complete blockage, orientation constraints, endpoint and
+near contacts, parallel overlap, and legitimate same-net attachment.
+
+`repro-rp2040-shaft-position-label-clearance.test.ts` also replays the published
+SDA trace and SCL label/connector at the clearance stage. Fresh inline conversions
+are disabled and existing SDA text is a fixed obstacle. It confirms that the
+search can reconsider the ambiguous retained placement without changing SDA.
+The SCL tag now faces left beside the resistor, above the SDA wire. This remains
+a stage replay, not a captured historical full-pipeline invocation.
 
 ```sh
 bun test tests/repros/repro-rp2040-shaft-position-label-clearance.test.ts
-bun test tests/solvers/InlineNetLabelSolver/shorten-net-label-connectors.test.ts
+bun test tests/solvers/InlineNetLabelSolver/anchored-label-candidate-clearance.test.ts
 ```
 
-The interactive stage replay is `InlineNetLabelSolver/shaft-position-label-clearance`
-in Cosmos. The tests cover touching, near-touching and crossing stubs, a rotated
-horizontal case with reversed endpoints, blocked alternatives, unmarked traces,
-and same-net connections/branches.
+Open `InlineNetLabelSolver/shaft-position-label-clearance` in Cosmos for the replay.
 
-![SCL label pulled above SDA](__snapshots__/repro-rp2040-shaft-position-label-clearance.snap.svg)
+![SCL label selected above SDA](__snapshots__/repro-rp2040-shaft-position-label-clearance.snap.svg)

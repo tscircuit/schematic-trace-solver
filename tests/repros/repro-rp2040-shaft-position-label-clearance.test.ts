@@ -13,6 +13,7 @@ test("shaft-position SCL tag and stub stay above the unrelated SDA wire", async 
   const scl = output.netLabelPlacements.find(
     (label) => label.netId === "ENC_SCL",
   )!
+  expect(scl.orientation).toBe("x-")
   const sdaY = input.traces[0]!.tracePath[1]!.y
   expect(solver.solved).toBe(true)
   expect(getAnchoredNetLabelRenderedBounds(scl).minY).toBeGreaterThan(

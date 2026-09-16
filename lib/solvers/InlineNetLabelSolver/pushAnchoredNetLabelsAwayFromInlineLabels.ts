@@ -5,7 +5,14 @@ import {
 } from "lib/solvers/AvailableNetOrientationSolver/traces"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { findPerpendicularPathCrossings } from "lib/solvers/TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
+import { isLabelAndConnectorClearOfTraces } from "lib/solvers/NetLabelPlacementSolver/isLabelAndConnectorClearOfTraces"
+import {
+  getCenterFromAnchor,
+  getDimsForOrientation,
+} from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import { getOrientationConstraint } from "lib/utils/getOrientationConstraint"
+import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
+import { getInlineLabelObstacles } from "./getInlineLabelObstacles"
 import type { InputProblem } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
@@ -341,6 +348,156 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
   }
   const movedLabelIndices = new Set<number>()
 
+  const { terminalTraces } = getInlineLabelObstacles(
+    inputProblem,
+    inlineNetLabelPlacements,
+  )
+  const tryProposal = (
+    proposals: Map<number, NetLabelPlacement>,
+    ownerChipIds: Set<string>,
+  ): boolean => {
+    const finalLabelAt = (labelIndex: number) =>
+      proposals.get(labelIndex) ?? outputLabels[labelIndex]!
+    for (const [labelIndex, movedLabel] of proposals) {
+      const movedBounds = getAnchoredNetLabelRenderedBounds(movedLabel)
+      if (inlineBounds.some((bounds) => boundsOverlap(movedBounds, bounds))) {
+        return false
+      }
+      if (
+        inputProblem.chips.some((chip) =>
+          boundsOverlap(movedBounds, {
+            minX: chip.center.x - chip.width / 2,
+            maxX: chip.center.x + chip.width / 2,
+            minY: chip.center.y - chip.height / 2,
+            maxY: chip.center.y + chip.height / 2,
+          }),
+        ) ||
+        (inputProblem.textBoxes ?? []).some((textBox) =>
+          boundsOverlap(movedBounds, getTextBoxBounds(textBox)),
+        )
+      ) {
+        return false
+      }
+      if (
+        outputLabels.some(
+          (_, otherIndex) =>
+            otherIndex !== labelIndex &&
+            boundsOverlap(
+              movedBounds,
+              getAnchoredNetLabelRenderedBounds(finalLabelAt(otherIndex)),
+            ),
+        )
+      ) {
+        return false
+      }
+      if (
+        outputTraces.some(
+          (trace) =>
+            trace.globalConnNetId !== movedLabel.globalConnNetId &&
+            pathIntersectsBounds(trace.tracePath, movedBounds),
+        )
+      ) {
+        return false
+      }
+    }
+
+    const connectorUpdates: Array<{
+      labelIndex: number
+      connectorIndex: number
+      trace: SolvedTracePath
+    }> = []
+    for (const [labelIndex, movedLabel] of proposals) {
+      const label = outputLabels[labelIndex]!
+      const connectorIndex = findConnectorTraceIndex(
+        label,
+        outputTraces,
+        connectorTraceIds,
+      )
+      if (
+        connectorIndex === -1 &&
+        !canAddConnectorAtAnchor(label, outputTraces, pinMap)
+      ) {
+        return false
+      }
+      const connector =
+        connectorIndex === -1
+          ? createConnectorTrace({
+              label,
+              labelIndex,
+              newAnchor: movedLabel.anchorPoint,
+              pinMap,
+            })
+          : moveConnectorEndpoint(
+              outputTraces[connectorIndex]!,
+              label.anchorPoint,
+              movedLabel.anchorPoint,
+            )
+      const connectorObstructed =
+        !isLabelAndConnectorClearOfTraces({
+          label: movedLabel,
+          connectorPath: connector.tracePath,
+          traces: [...outputTraces, ...terminalTraces],
+        }) ||
+        inlineBounds.some((bounds) =>
+          pathIntersectsBounds(connector.tracePath, bounds),
+        ) ||
+        inputProblem.chips.some(
+          (chip) =>
+            !ownerChipIds.has(chip.chipId) &&
+            pathIntersectsBounds(connector.tracePath, {
+              minX: chip.center.x - chip.width / 2,
+              maxX: chip.center.x + chip.width / 2,
+              minY: chip.center.y - chip.height / 2,
+              maxY: chip.center.y + chip.height / 2,
+            }),
+        ) ||
+        (inputProblem.textBoxes ?? []).some((textBox) =>
+          pathIntersectsBounds(connector.tracePath, getTextBoxBounds(textBox)),
+        ) ||
+        outputLabels.some(
+          (_, otherIndex) =>
+            otherIndex !== labelIndex &&
+            pathIntersectsBounds(
+              connector.tracePath,
+              getAnchoredNetLabelRenderedBounds(finalLabelAt(otherIndex)),
+            ),
+        )
+      if (connectorObstructed) {
+        return false
+      }
+      if (
+        connectorIndex !== -1 ||
+        !pointsEqual(label.anchorPoint, movedLabel.anchorPoint)
+      ) {
+        connectorUpdates.push({ labelIndex, connectorIndex, trace: connector })
+      }
+    }
+
+    for (const update of connectorUpdates) {
+      if (
+        !isLabelAndConnectorClearOfTraces({
+          label: proposals.get(update.labelIndex)!,
+          connectorPath: update.trace.tracePath,
+          traces: connectorUpdates
+            .filter((other) => other !== update)
+            .map((other) => other.trace),
+        })
+      )
+        return false
+    }
+
+    for (const [labelIndex, movedLabel] of proposals) {
+      outputLabels[labelIndex] = movedLabel
+      movedLabelIndices.add(labelIndex)
+    }
+    for (const update of connectorUpdates) {
+      connectorTraceIds.add(update.trace.mspPairId)
+      if (update.connectorIndex === -1) outputTraces.push(update.trace)
+      else outputTraces[update.connectorIndex] = update.trace
+    }
+    return true
+  }
+
   for (
     let triggerIndex = 0;
     triggerIndex < outputLabels.length;
@@ -348,7 +505,23 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
   ) {
     const trigger = outputLabels[triggerIndex]!
     const distance = getRequiredOutwardDistance(trigger, inlineBounds)
-    if (distance <= POINT_EPSILON || distance > MAX_OUTWARD_DISTANCE) continue
+    const existingConnectorIndex = findConnectorTraceIndex(
+      trigger,
+      outputTraces,
+      connectorTraceIds,
+    )
+    const existingConnector = outputTraces[existingConnectorIndex]
+    const currentPlacementIsClear = isLabelAndConnectorClearOfTraces({
+      label: trigger,
+      connectorPath: existingConnector?.tracePath ?? [trigger.anchorPoint],
+      traces: [...outputTraces, ...terminalTraces],
+    })
+    if (
+      distance <= POINT_EPSILON &&
+      (!existingConnector || currentPlacementIsClear)
+    )
+      continue
+    if (distance > MAX_OUTWARD_DISTANCE) continue
 
     const { group, ownerChipIds } = getContiguousLabelGroup({
       triggerIndex,
@@ -413,8 +586,6 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
       }
       if (failed || !adjustedObstacle) break
     }
-    if (failed) continue
-
     const proposals = new Map<number, NetLabelPlacement>()
     for (const [labelIndex, labelDistance] of distances) {
       proposals.set(
@@ -427,138 +598,18 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
       )
     }
 
-    const finalLabelAt = (labelIndex: number) =>
-      proposals.get(labelIndex) ?? outputLabels[labelIndex]!
-    for (const [labelIndex, movedLabel] of proposals) {
-      const movedBounds = getAnchoredNetLabelRenderedBounds(movedLabel)
-      if (inlineBounds.some((bounds) => boundsOverlap(movedBounds, bounds))) {
-        failed = true
-        break
-      }
-      if (
-        inputProblem.chips.some((chip) =>
-          boundsOverlap(movedBounds, {
-            minX: chip.center.x - chip.width / 2,
-            maxX: chip.center.x + chip.width / 2,
-            minY: chip.center.y - chip.height / 2,
-            maxY: chip.center.y + chip.height / 2,
-          }),
-        ) ||
-        (inputProblem.textBoxes ?? []).some((textBox) =>
-          boundsOverlap(movedBounds, getTextBoxBounds(textBox)),
-        )
-      ) {
-        failed = true
-        break
-      }
-      if (
-        outputLabels.some(
-          (_, otherIndex) =>
-            otherIndex !== labelIndex &&
-            boundsOverlap(
-              movedBounds,
-              getAnchoredNetLabelRenderedBounds(finalLabelAt(otherIndex)),
-            ),
-        )
-      ) {
-        failed = true
-        break
-      }
-      if (
-        outputTraces.some(
-          (trace) =>
-            trace.globalConnNetId !== movedLabel.globalConnNetId &&
-            pathIntersectsBounds(trace.tracePath, movedBounds),
-        )
-      ) {
-        failed = true
-        break
-      }
-    }
-    if (failed) continue
+    if (!failed && tryProposal(proposals, ownerChipIds)) continue
 
-    const connectorUpdates: Array<{
-      labelIndex: number
-      connectorIndex: number
-      trace: SolvedTracePath
-    }> = []
-    for (const [labelIndex, movedLabel] of proposals) {
-      const label = outputLabels[labelIndex]!
-      const connectorIndex = findConnectorTraceIndex(
-        label,
-        outputTraces,
-        connectorTraceIds,
-      )
-      if (
-        connectorIndex === -1 &&
-        !canAddConnectorAtAnchor(label, outputTraces, pinMap)
-      ) {
-        failed = true
-        break
-      }
-      const connector =
-        connectorIndex === -1
-          ? createConnectorTrace({
-              label,
-              labelIndex,
-              newAnchor: movedLabel.anchorPoint,
-              pinMap,
-            })
-          : moveConnectorEndpoint(
-              outputTraces[connectorIndex]!,
-              label.anchorPoint,
-              movedLabel.anchorPoint,
-            )
-      const connectorObstructed =
-        outputTraces.some(
-          (trace) =>
-            trace.globalConnNetId !== connector.globalConnNetId &&
-            findPerpendicularPathCrossings(
-              connector.tracePath,
-              trace.tracePath,
-              { includeTerminalSegments: true },
-            ).length > 0,
-        ) ||
-        inlineBounds.some((bounds) =>
-          pathIntersectsBounds(connector.tracePath, bounds),
-        ) ||
-        inputProblem.chips.some(
-          (chip) =>
-            !ownerChipIds.has(chip.chipId) &&
-            pathIntersectsBounds(connector.tracePath, {
-              minX: chip.center.x - chip.width / 2,
-              maxX: chip.center.x + chip.width / 2,
-              minY: chip.center.y - chip.height / 2,
-              maxY: chip.center.y + chip.height / 2,
-            }),
-        ) ||
-        (inputProblem.textBoxes ?? []).some((textBox) =>
-          pathIntersectsBounds(connector.tracePath, getTextBoxBounds(textBox)),
-        ) ||
-        outputLabels.some(
-          (_, otherIndex) =>
-            otherIndex !== labelIndex &&
-            pathIntersectsBounds(
-              connector.tracePath,
-              getAnchoredNetLabelRenderedBounds(finalLabelAt(otherIndex)),
-            ),
-        )
-      if (connectorObstructed) {
-        failed = true
-        break
-      }
-      connectorUpdates.push({ labelIndex, connectorIndex, trace: connector })
-    }
-    if (failed) continue
-
-    for (const [labelIndex, movedLabel] of proposals) {
-      outputLabels[labelIndex] = movedLabel
-      movedLabelIndices.add(labelIndex)
-    }
-    for (const update of connectorUpdates) {
-      connectorTraceIds.add(update.trace.mspPairId)
-      if (update.connectorIndex === -1) outputTraces.push(update.trace)
-      else outputTraces[update.connectorIndex] = update.trace
+    // If a group cannot move together, retain its alignment. A single endpoint
+    // can try a different orientation/shorter attachment before any write occurs.
+    if (group.size !== 1) continue
+    for (const candidate of getAlternativePlacements(
+      trigger,
+      inputProblem,
+      outputTraces,
+      connectorTraceIds,
+    )) {
+      if (tryProposal(new Map([[triggerIndex, candidate]]), ownerChipIds)) break
     }
   }
 
@@ -567,5 +618,108 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
     netLabelPlacements: outputLabels,
     movedLabelCount: movedLabelIndices.size,
     netLabelConnectorTraceIds: connectorTraceIds,
+  }
+}
+
+function* getAlternativePlacements(
+  label: NetLabelPlacement,
+  inputProblem: InputProblem,
+  traces: SolvedTracePath[],
+  connectorIds: ReadonlySet<string>,
+): Generator<NetLabelPlacement> {
+  const allowed = getOrientationConstraint(inputProblem, label) ?? [
+    "x+",
+    "x-",
+    "y+",
+    "y-",
+  ]
+  const orientations = [...new Set([label.orientation, ...allowed])].filter(
+    (orientation) => allowed.includes(orientation),
+  )
+  const anchors: Point[] = []
+  const connector = traces[findConnectorTraceIndex(label, traces, connectorIds)]
+  let origin = label.anchorPoint
+  let direction = dir(label.orientation)
+  if (connector) {
+    // Moving one end of an elbow could create a diagonal or detach a branch.
+    if (connector.tracePath.length !== 2) return
+    origin = pointsEqual(connector.tracePath[0]!, label.anchorPoint)
+      ? connector.tracePath[1]!
+      : connector.tracePath[0]!
+    const dx = label.anchorPoint.x - origin.x
+    const dy = label.anchorPoint.y - origin.y
+    const length = Math.hypot(dx, dy)
+    if (
+      length < POINT_EPSILON ||
+      (Math.abs(dx) > POINT_EPSILON && Math.abs(dy) > POINT_EPSILON)
+    )
+      return
+    direction = { x: dx / length, y: dy / length }
+  } else {
+    const pin =
+      label.pinIds.length === 1
+        ? getPinMap(inputProblem)[label.pinIds[0]!]
+        : undefined
+    if (pin?._facingDirection && pointsEqual(pin, origin))
+      direction = dir(pin._facingDirection)
+    anchors.push(origin)
+  }
+  // Rank alternate candidates by connector length, then allowed orientation.
+  for (let distance = 0.1; distance <= MAX_OUTWARD_DISTANCE; distance += 0.1) {
+    const anchor = {
+      x: origin.x + direction.x * distance,
+      y: origin.y + direction.y * distance,
+    }
+    if (connector && isPointOnPath(anchor, connector.tracePath)) {
+      const removedBounds = {
+        minX: Math.min(anchor.x, label.anchorPoint.x) - POINT_EPSILON,
+        maxX: Math.max(anchor.x, label.anchorPoint.x) + POINT_EPSILON,
+        minY: Math.min(anchor.y, label.anchorPoint.y) - POINT_EPSILON,
+        maxY: Math.max(anchor.y, label.anchorPoint.y) + POINT_EPSILON,
+      }
+      if (
+        traces.some(
+          (trace) =>
+            trace !== connector &&
+            trace.globalConnNetId === label.globalConnNetId &&
+            trace.tracePath
+              .slice(1)
+              .some((point, index) =>
+                segmentIntersectsRect(
+                  trace.tracePath[index]!,
+                  point,
+                  removedBounds,
+                ),
+              ),
+        )
+      )
+        continue
+    }
+    anchors.push(anchor)
+  }
+  const rendered = getAnchoredNetLabelRenderedBounds(label)
+  const vertical = label.orientation === "y+" || label.orientation === "y-"
+  const netLabelWidth = vertical
+    ? rendered.maxY - rendered.minY
+    : rendered.maxX - rendered.minX
+  const netLabelHeight = vertical
+    ? rendered.maxX - rendered.minX
+    : rendered.maxY - rendered.minY
+  for (const anchorPoint of anchors) {
+    for (const orientation of orientations) {
+      const { width, height } = getDimsForOrientation({
+        orientation,
+        netLabelWidth,
+        netLabelHeight,
+      })
+      yield {
+        ...label,
+        anchorPoint,
+        orientation,
+        width,
+        height,
+        center: getCenterFromAnchor(anchorPoint, orientation, width, height),
+      }
+    }
   }
 }
