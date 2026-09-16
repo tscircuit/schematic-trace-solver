@@ -15,6 +15,7 @@ import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 import { BaseSolver } from "../BaseSolver/BaseSolver"
 import { getParallelNetLabelPolicy } from "./getParallelNetLabelPolicy"
+import { getRailRecoveryPolicy } from "./getRailRecoveryPolicy"
 import { getGroundConnectionPolicy } from "../MspConnectionPairSolver/getGroundConnectionPolicy"
 import { isLabeledPeripheralConnection } from "../MspConnectionPairSolver/isLabeledPeripheralConnection"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
@@ -152,6 +153,7 @@ export class LongDistancePairSolver extends BaseSolver {
   private newlyConnectedPinIds = new Set<PinId>()
   private allSolvedTraces: SolvedTracePath[] = []
   private maxMspPairDistance: number
+  private canRecoverRailPair: ReturnType<typeof getRailRecoveryPolicy>
 
   constructor(
     private params: {
@@ -179,6 +181,10 @@ export class LongDistancePairSolver extends BaseSolver {
       primaryConnectedPinIds.add(pair.pins[1].pinId)
     }
 
+    this.canRecoverRailPair = getRailRecoveryPolicy(
+      inputProblem,
+      new Set(alreadySolvedTraces.flatMap((trace) => trace.pinIds)),
+    )
     const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
     this.netConnMap = netConnMap
     const canRecoverParallelPair = getParallelNetLabelPolicy(
@@ -201,6 +207,7 @@ export class LongDistancePairSolver extends BaseSolver {
           connectionPair.pins[0].pinId,
           connectionPair.pins[1].pinId,
         ) &&
+        this.canRecoverRailPair(...connectionPair.pins) &&
         isLabeledPeripheralConnection({
           inputProblem: this.inputProblem,
           chipMap: this.chipMap,
@@ -233,6 +240,7 @@ export class LongDistancePairSolver extends BaseSolver {
             if (!targetPin) return [] // Gracefully handle missing pins
             if (!canRouteGroundPair(sourcePin.pinId, targetPin.pinId)) return []
             if (!canRecoverParallelPair(sourcePin, targetPin)) return []
+            if (!this.canRecoverRailPair(sourcePin, targetPin)) return []
             const isNamedTwoPinConnection = inputProblem.netConnections.some(
               (connection) =>
                 connection.pinIds.length === 2 &&
@@ -307,7 +315,13 @@ export class LongDistancePairSolver extends BaseSolver {
     // 1. Check if a sub-solver has finished and process its result
     if (this.subSolver?.solved && this.currentFailedConnectionPair) {
       const tracePath = this.subSolver.solvedTracePath
-      if (tracePath) {
+      if (
+        tracePath &&
+        this.canRecoverRailPair(
+          ...this.currentFailedConnectionPair.pins,
+          tracePath,
+        )
+      ) {
         this.acceptFailedConnectionPair(tracePath)
       }
       this.subSolver = null
@@ -351,7 +365,10 @@ export class LongDistancePairSolver extends BaseSolver {
           tracesToCheck,
         )
 
-        if (isTraceClear) {
+        if (
+          isTraceClear &&
+          this.canRecoverRailPair(p1, p2, acceptedTracePath)
+        ) {
           const mspPairId = `${p1.pinId}-${p2.pinId}`
 
           const newSolvedTrace: SolvedTracePath = {

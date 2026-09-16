@@ -14,7 +14,10 @@ test("bug-report-20260902T092101Z", () => {
     (trace) => trace.mspPairId === "schematic_port_3-schematic_port_5",
   )!
   const feedbackLabelConnector = output.traces.find(
-    (trace) => trace.mspPairId === "available-net-orientation-3-BUCK_0V9_FB",
+    (trace) =>
+      trace.mspPairId.startsWith("available-net-orientation-") &&
+      trace.userNetId === "BUCK_0V9_FB" &&
+      trace.pinIds.includes("schematic_port_3"),
   )!
 
   expect(feedbackLabelConnector.tracePath).toHaveLength(2)
