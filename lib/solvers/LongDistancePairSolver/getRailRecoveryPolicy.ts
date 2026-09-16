@@ -10,6 +10,7 @@ import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTrac
 import { getAdverseTravelToRail } from "./getAdverseTravelToRail"
 
 const MAX_ADVERSE_RAIL_TRAVEL = 1
+const MAX_VERTICAL_RAIL_TRAVEL = 4
 const EPS = 1e-6
 
 /** Evaluate recovery toward the shared rail label, not toward the other pin. */
@@ -99,6 +100,7 @@ export const getRailRecoveryPolicy = (inputProblem: InputProblem) => {
           source: pin,
           anchors: labels.map((label) => label.anchorPoint),
           orientation,
+          maxVerticalTravel: MAX_VERTICAL_RAIL_TRAVEL,
         }) <=
         MAX_ADVERSE_RAIL_TRAVEL + EPS,
     )

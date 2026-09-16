@@ -55,7 +55,9 @@ candidate terminal's routed path to a shared label; it stops at that label,
 rather than treating the other terminal's height as the rail height. The label
 preview includes collision relocation so a crowded attachment point is not
 mistaken for a usable rail. Existing retained labels are used directly during
-late recovery.
+late recovery. Total vertical travel to a shared rail is also capped at 4
+schematic units, including travel in the preferred direction. Lateral travel
+does not consume this vertical budget.
 
 J_SD.4 keeps its own upward V3V3 label instead of descending to J_I2C.2.
 Correct-direction joins remain eligible, including terminals with large

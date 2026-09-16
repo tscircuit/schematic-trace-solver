@@ -239,3 +239,75 @@ test("a same-net junction offers the least adverse route to any rail label", () 
     }),
   ).toBe(Infinity)
 })
+
+for (const orientation of ["y+", "y-"] as const) {
+  for (const [distance, allowed] of [
+    [4, true],
+    [4.01, false],
+    [7.42, false],
+  ] as const) {
+    test(`${orientation} limits even preferred-direction vertical travel (${distance})`, () => {
+      const { input, trace, label } = fixture(
+        orientation,
+        orientation === "y+" ? -distance : distance,
+      )
+      expect(
+        getRailRecoveryPolicy(input)({
+          trace,
+          existingTraces: [],
+          retainedLabels: [label],
+        }),
+      ).toBe(allowed)
+    })
+  }
+}
+
+test("vertical limit permits long lateral rails", () => {
+  const { input, trace, label } = fixture("y-", 0)
+  trace.pins[1].x = 20
+  trace.tracePath = [trace.pins[0], trace.pins[1]]
+  label.anchorPoint = { x: 10, y: 0 }
+  expect(
+    getRailRecoveryPolicy(input)({
+      trace,
+      existingTraces: [],
+      retainedLabels: [label],
+    }),
+  ).toBe(true)
+})
+
+test("vertical budget counts bends, not only label displacement", () => {
+  const path = [
+    { x: 0, y: 0 },
+    { x: 0, y: -3 },
+    { x: 1, y: -3 },
+    { x: 1, y: -1 },
+  ]
+  expect(
+    getAdverseTravelToRail({
+      paths: [path],
+      source: path[0]!,
+      anchors: [path.at(-1)!],
+      orientation: "y-",
+      maxVerticalTravel: 4,
+    }),
+  ).toBe(Infinity)
+})
+
+test("keeps an alternative path that fits both vertical and adverse budgets", () => {
+  const source = { x: 0, y: 0 },
+    anchor = { x: 4, y: 0 }
+  const paths = [
+    [source, { x: 0, y: -3 }, { x: 4, y: -3 }, anchor],
+    [source, { x: 0, y: 0.5 }, { x: 4, y: 0.5 }, anchor],
+  ]
+  expect(
+    getAdverseTravelToRail({
+      paths,
+      source,
+      anchors: [anchor],
+      orientation: "y-",
+      maxVerticalTravel: 4,
+    }),
+  ).toBe(0.5)
+})

@@ -18,11 +18,13 @@ export const getAdverseTravelToRail = ({
   source,
   anchors,
   orientation,
+  maxVerticalTravel = Infinity,
 }: {
   paths: ReadonlyArray<ReadonlyArray<Point>>
   source: Point
   anchors: ReadonlyArray<Point>
   orientation: "y+" | "y-"
+  maxVerticalTravel?: number
 }) => {
   const segments = paths.flatMap((path) =>
     path.slice(1).map((b, i) => [path[i]!, b] as const),
@@ -72,25 +74,37 @@ export const getAdverseTravelToRail = ({
       neighbors[second]!.add(first)
     }
   }
-  const costs = points.map(() => Infinity)
-  costs[sourceIndex] = 0
-  const visited = new Set<number>()
-  while (visited.size < points.length) {
-    let next = -1
-    for (let i = 0; i < points.length; i++) {
+  // Keep non-dominated alternatives: a path with less adverse travel may
+  // consume more of the total vertical budget than another path to the node.
+  type State = { node: number; adverse: number; vertical: number }
+  const initial: State = { node: sourceIndex, adverse: 0, vertical: 0 }
+  const best: State[][] = points.map(() => [])
+  best[sourceIndex]!.push(initial)
+  const queue: State[] = [initial]
+  while (queue.length) {
+    queue.sort((a, b) => b.adverse - a.adverse)
+    const current = queue.pop()!
+    if (!best[current.node]!.includes(current)) continue
+    if (targets.has(current.node)) return current.adverse
+    for (const neighbor of neighbors[current.node]!) {
+      const dy = points[neighbor]!.y - points[current.node]!.y
+      const vertical = current.vertical + Math.abs(dy)
+      if (vertical > maxVerticalTravel + EPS) continue
+      const adverse =
+        current.adverse + Math.max(0, orientation === "y+" ? -dy : dy)
+      const previous = best[neighbor]!
       if (
-        !visited.has(i) &&
-        costs[i]! < (next === -1 ? Infinity : costs[next]!)
+        previous.some(
+          (state) => state.adverse <= adverse && state.vertical <= vertical,
+        )
       )
-        next = i
-    }
-    if (next === -1) return Infinity
-    if (targets.has(next)) return costs[next]!
-    visited.add(next)
-    for (const neighbor of neighbors[next]!) {
-      const dy = points[neighbor]!.y - points[next]!.y
-      const adverse = Math.max(0, orientation === "y+" ? -dy : dy)
-      costs[neighbor] = Math.min(costs[neighbor]!, costs[next]! + adverse)
+        continue
+      const next = { node: neighbor, adverse, vertical }
+      best[neighbor] = previous.filter(
+        (state) => !(adverse <= state.adverse && vertical <= state.vertical),
+      )
+      best[neighbor]!.push(next)
+      queue.push(next)
     }
   }
   return Infinity
