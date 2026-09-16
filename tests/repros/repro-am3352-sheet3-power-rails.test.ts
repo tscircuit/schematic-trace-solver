@@ -39,7 +39,7 @@ test("repro AM3352 sheet 3 connector power and ground rails", async () => {
   const { traces, netLabelPlacements } =
     solver.netLabelToTraceSolver!.getOutput()
   for (const [netId, pinId, orientation, limit] of [
-    ["V3V3", "J_SD.4", "y+", 0.2],
+    ["V3V3", "J_SD.4", "y+", 1],
     ["GND", "J_I2C.1", "y-", 1],
   ] as const) {
     const net = problem.netConnections.find((net) => net.netId === netId)!

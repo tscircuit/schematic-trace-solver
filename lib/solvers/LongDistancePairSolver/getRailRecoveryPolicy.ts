@@ -1,96 +1,106 @@
-import type { Point } from "@tscircuit/math-utils"
+import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
 import { ConnectivityMap } from "connectivity-map"
-import type { InputPin, InputProblem, PinId } from "lib/types/InputProblem"
+import type { InputProblem } from "lib/types/InputProblem"
 import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import {
+  NetLabelPlacementSolver,
+  type NetLabelPlacement,
+} from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { getAdverseTravelToRail } from "./getAdverseTravelToRail"
 
-const MAX_POWER_RAIL_VERTICAL_OFFSET = 0.2
-const MAX_GROUND_RAIL_VERTICAL_OFFSET = 1
+const MAX_ADVERSE_RAIL_TRAVEL = 1
 const EPS = 1e-6
 
-/** Prefer local labels to automatic rail joins at substantially different heights. */
-export const getRailRecoveryPolicy = (
-  inputProblem: InputProblem,
-  connectedPinIds: ReadonlySet<PinId>,
-) => {
+/** Evaluate recovery toward the shared rail label, not toward the other pin. */
+export const getRailRecoveryPolicy = (inputProblem: InputProblem) => {
   const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
-  const limits = new Map<string, number>()
-  for (const [netId, orientations] of Object.entries(
+  const orientations = new Map<string, "y+" | "y-">()
+  for (const [netId, available] of Object.entries(
     inputProblem.availableNetLabelOrientations,
   )) {
-    // A vertical rail is identified by its required orientation, not its name.
-    // Leave signals and deliberately rotated rails alone.
-    if (orientations.length !== 1) continue
-    const limit =
-      orientations[0] === "y+"
-        ? MAX_POWER_RAIL_VERTICAL_OFFSET
-        : orientations[0] === "y-"
-          ? MAX_GROUND_RAIL_VERTICAL_OFFSET
-          : undefined
     const globalNetId = netConnMap.getNetConnectedToId(netId)
-    if (limit !== undefined && globalNetId) {
-      limits.set(
-        globalNetId,
-        Math.min(limits.get(globalNetId) ?? Infinity, limit),
-      )
+    if (
+      globalNetId &&
+      available.length === 1 &&
+      (available[0] === "y+" || available[0] === "y-")
+    ) {
+      orientations.set(globalNetId, available[0])
     }
   }
-
-  // Only actual source wires establish an override. Sharing a netId does not
-  // request a wire between otherwise separate components or ground islands.
   const physicalConnMap = new ConnectivityMap({})
   for (const connection of inputProblem.directConnections) {
-    if (connection.netLabelWidth === undefined) {
+    if (connection.netLabelWidth === undefined)
       physicalConnMap.addConnections([connection.pinIds])
-    }
   }
 
-  const chipByPinId = new Map(
-    inputProblem.chips.flatMap((chip) =>
-      chip.pins.map((pin) => [pin.pinId, chip.chipId] as const),
-    ),
-  )
-
-  return (
-    first: InputPin,
-    second: InputPin,
-    tracePath?: ReadonlyArray<Point>,
-  ): boolean => {
-    // A component's own multi-pin bus is not a detour to a remote rail.
-    const firstChipId = chipByPinId.get(first.pinId)
-    if (
-      firstChipId !== undefined &&
-      firstChipId === chipByPinId.get(second.pinId)
-    )
-      return true
-    const globalNetId = netConnMap.getNetConnectedToId(first.pinId)
-    const limit = globalNetId ? limits.get(globalNetId) : undefined
-    if (limit === undefined) return true
+  return ({
+    trace,
+    existingTraces,
+    retainedLabels,
+  }: {
+    trace: SolvedTracePath
+    existingTraces: SolvedTracePath[]
+    retainedLabels?: NetLabelPlacement[]
+  }): boolean => {
+    const [first, second] = trace.pins
+    if (first.chipId === second.chipId) return true
+    const orientation = orientations.get(trace.globalConnNetId)
+    if (!orientation) return true
     const physicalNetId = physicalConnMap.getNetConnectedToId(first.pinId)
     if (
       physicalNetId &&
       physicalNetId === physicalConnMap.getNetConnectedToId(second.pinId)
-    ) {
+    )
       return true
+
+    // Use the same representative trace and label placement as the pipeline.
+    // No endpoint-height prefilter: descending into GND (or ascending into
+    // power) can be correct even when both terminals are initially isolated.
+    const traces = [...existingTraces, trace]
+    const placement = new NetLabelPlacementSolver({
+      inputProblem,
+      inputTraceMap: Object.fromEntries(traces.map((t) => [t.mspPairId, t])),
+    })
+    const group = placement.overlappingSameNetTraceGroups.find((group) =>
+      group.mspConnectionPairIds?.includes(trace.mspPairId),
+    )
+    if (!group) return true
+    const groupTraceIds = new Set(group.mspConnectionPairIds)
+    const groupTraces = traces.filter((t) => groupTraceIds.has(t.mspPairId))
+    const groupPinIds = new Set(groupTraces.flatMap((t) => t.pinIds))
+    let labels: NetLabelPlacement[]
+    if (retainedLabels) {
+      labels = retainedLabels.filter(
+        (label) =>
+          label.globalConnNetId === trace.globalConnNetId &&
+          label.pinIds.some((id) => groupPinIds.has(id)),
+      )
+    } else {
+      placement.solve()
+      // A preliminary anchor may collide with a neighboring terminal label.
+      // Include collision relocation before measuring travel toward it.
+      const collision = new NetLabelNetLabelCollisionSolver({
+        inputProblem,
+        traces,
+        netLabelPlacements: placement.netLabelPlacements,
+      })
+      collision.solve()
+      labels = collision.outputNetLabelPlacements.filter((label) =>
+        label.mspConnectionPairIds.some((id) => groupTraceIds.has(id)),
+      )
     }
-    // When joining an existing rail, measure travel from the isolated pin to
-    // that rail. Upward travel to power and downward travel to ground are fine.
-    const firstConnected = connectedPinIds.has(first.pinId)
-    const secondConnected = connectedPinIds.has(second.pinId)
-    const isPower = limit === MAX_POWER_RAIL_VERTICAL_OFFSET
-    const sourceY =
-      firstConnected !== secondConnected
-        ? (firstConnected ? second : first).y
-        : isPower
-          ? Math.max(first.y, second.y)
-          : Math.min(first.y, second.y)
-    // With two isolated terminals neither endpoint owns an existing rail.
-    // Apply the limit in both orders so reversing recovery cannot bypass it.
-    // Check the routed path too: an obstacle detour can travel the wrong way
-    // even when both endpoints are level.
-    const ys = tracePath?.map((point) => point.y) ?? [first.y, second.y]
-    const adverseTravel = isPower
-      ? sourceY - Math.min(...ys)
-      : Math.max(...ys) - sourceY
-    return adverseTravel <= limit + EPS
+    // If placement fails, leave recovery to the existing fallback mechanisms.
+    if (labels.length === 0) return true
+    return trace.pins.every(
+      (pin) =>
+        getAdverseTravelToRail({
+          paths: groupTraces.map((t) => t.tracePath),
+          source: pin,
+          anchors: labels.map((label) => label.anchorPoint),
+          orientation,
+        }) <=
+        MAX_ADVERSE_RAIL_TRAVEL + EPS,
+    )
   }
 }

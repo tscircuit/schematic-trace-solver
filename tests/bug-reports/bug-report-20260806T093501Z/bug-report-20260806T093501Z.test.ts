@@ -14,7 +14,7 @@ test("bug-report-20260806T093501Z", () => {
     .traces.find(
       (trace) => trace.mspPairId === "schematic_port_41-schematic_port_48",
     )
-  expect(vmRailTrace).toBeUndefined()
+  expect(vmRailTrace).toBeDefined()
   const labels =
     solver.sameNetJunctionAlignmentSolver!.getOutput().netLabelPlacements
   for (const pinId of ["schematic_port_41", "schematic_port_48"]) {

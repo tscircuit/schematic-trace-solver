@@ -49,18 +49,19 @@ pipeline debugger and stage artifacts to inspect actual placement geometry.
 
 ## Direction-aware rail recovery
 
-Automatic recovery now prefers a local rail label when a power connection
-would travel downward by more than 0.2 schematic units or a ground connection
-would travel upward by more than 1 unit. The candidate endpoints and routed
-path are both checked. Correct-direction joins to an established rail remain
-eligible; for two isolated terminals, the height difference must stay within
-the limit so swapping endpoint order cannot bypass the preference.
+Automatic recovery permits up to 1 schematic unit of downward travel toward
+power labels or upward travel toward ground labels. The check follows each
+candidate terminal's routed path to a shared label; it stops at that label,
+rather than treating the other terminal's height as the rail height. The label
+preview includes collision relocation so a crowded attachment point is not
+mistaken for a usable rail. Existing retained labels are used directly during
+late recovery.
 
-On this fixture, J_SD.4 receives its own upward V3V3 label, and J_SPI.1 / J_I2C.1
-receive separate local GND labels. The long detours disappear. Primary routing,
-explicit source-wire groups, and buses within one component retain their
-existing behavior. This is a recovery preference, not a general prohibition on
-all vertical wires in a power net.
+J_SD.4 keeps its own upward V3V3 label instead of descending to J_I2C.2.
+Correct-direction joins remain eligible, including terminals with large
+height differences. Primary routing, explicit source-wire groups, and buses
+within one component retain their existing behavior. This is a recovery
+preference, not a general prohibition on vertical wires in a power net.
 
 ## Run
 

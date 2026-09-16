@@ -181,10 +181,7 @@ export class LongDistancePairSolver extends BaseSolver {
       primaryConnectedPinIds.add(pair.pins[1].pinId)
     }
 
-    this.canRecoverRailPair = getRailRecoveryPolicy(
-      inputProblem,
-      new Set(alreadySolvedTraces.flatMap((trace) => trace.pinIds)),
-    )
+    this.canRecoverRailPair = getRailRecoveryPolicy(inputProblem)
     const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
     this.netConnMap = netConnMap
     const canRecoverParallelPair = getParallelNetLabelPolicy(
@@ -207,7 +204,6 @@ export class LongDistancePairSolver extends BaseSolver {
           connectionPair.pins[0].pinId,
           connectionPair.pins[1].pinId,
         ) &&
-        this.canRecoverRailPair(...connectionPair.pins) &&
         isLabeledPeripheralConnection({
           inputProblem: this.inputProblem,
           chipMap: this.chipMap,
@@ -240,7 +236,6 @@ export class LongDistancePairSolver extends BaseSolver {
             if (!targetPin) return [] // Gracefully handle missing pins
             if (!canRouteGroundPair(sourcePin.pinId, targetPin.pinId)) return []
             if (!canRecoverParallelPair(sourcePin, targetPin)) return []
-            if (!this.canRecoverRailPair(sourcePin, targetPin)) return []
             const isNamedTwoPinConnection = inputProblem.netConnections.some(
               (connection) =>
                 connection.pinIds.length === 2 &&
@@ -315,13 +310,7 @@ export class LongDistancePairSolver extends BaseSolver {
     // 1. Check if a sub-solver has finished and process its result
     if (this.subSolver?.solved && this.currentFailedConnectionPair) {
       const tracePath = this.subSolver.solvedTracePath
-      if (
-        tracePath &&
-        this.canRecoverRailPair(
-          ...this.currentFailedConnectionPair.pins,
-          tracePath,
-        )
-      ) {
+      if (tracePath) {
         this.acceptFailedConnectionPair(tracePath)
       }
       this.subSolver = null
@@ -365,10 +354,7 @@ export class LongDistancePairSolver extends BaseSolver {
           tracesToCheck,
         )
 
-        if (
-          isTraceClear &&
-          this.canRecoverRailPair(p1, p2, acceptedTracePath)
-        ) {
+        if (isTraceClear) {
           const mspPairId = `${p1.pinId}-${p2.pinId}`
 
           const newSolvedTrace: SolvedTracePath = {
@@ -381,6 +367,16 @@ export class LongDistancePairSolver extends BaseSolver {
             pinIds: [p1.pinId, p2.pinId],
           }
 
+          if (
+            !this.canRecoverRailPair({
+              trace: newSolvedTrace,
+              existingTraces: this.allSolvedTraces,
+            })
+          ) {
+            this.subSolver = null
+            this.currentCandidatePair = null
+            return
+          }
           this.solvedLongDistanceTraces.push(newSolvedTrace)
           this.allSolvedTraces.push(newSolvedTrace)
 

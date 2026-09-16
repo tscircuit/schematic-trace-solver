@@ -32,15 +32,20 @@ test("repro173 BOOST-DRV8711 remote ground branch stays clear of the R1 GND labe
       trace.pinIds.includes("schematic_port_85"),
   )!
 
-  // The remote C1 branch gets a local ground label instead of recovering a
-  // long upward rail through the R1 label. R1 and R2 retain their local bus.
+  // The upward C1-to-R2 detour is rejected. C1 may share the lower R1
+  // label, while R2 keeps its own ground label.
   expect(c1ToR2GroundTrace).toBeUndefined()
   const c1GroundLabel = netLabelPlacements.find(
     (label) =>
       label.netId === "GND" && label.pinIds.includes("schematic_port_78"),
   )!
   expect(c1GroundLabel.orientation).toBe("y-")
-  expect(r1GroundLabel.pinIds).toContain("schematic_port_85")
+  expect(r1GroundLabel.pinIds).toContain("schematic_port_78")
+  expect(
+    netLabelPlacements.find((label) =>
+      label.pinIds.includes("schematic_port_85"),
+    )?.netId,
+  ).toBe("GND")
   expect(
     traces
       .filter((trace) => !trace.pinIds.includes("schematic_port_83"))

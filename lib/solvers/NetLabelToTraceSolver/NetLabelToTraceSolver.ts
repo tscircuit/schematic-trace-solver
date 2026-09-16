@@ -109,10 +109,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
         .filter((trace) => trace.pinIds.length > 1)
         .flatMap((trace) => trace.pinIds),
     )
-    this.canRecoverRailPair = getRailRecoveryPolicy(
-      this.inputProblem,
-      connectedPinIds,
-    )
+    this.canRecoverRailPair = getRailRecoveryPolicy(this.inputProblem)
     this.chipMap = chipMap
     this.pinMap = pinMap
     this.canRecoverParallelPair = getParallelNetLabelPolicy(
@@ -213,7 +210,6 @@ export class NetLabelToTraceSolver extends BaseSolver {
           const secondPin = this.pinMap.get(secondLabel.pinIds[0]!)
           if (!firstPin || !secondPin) continue
           if (!this.canRecoverParallelPair(firstPin, secondPin)) continue
-          if (!this.canRecoverRailPair(firstPin, secondPin)) continue
           const perpendicularOffset = getPerpendicularOffset(
             firstPin,
             secondPin,
@@ -399,7 +395,6 @@ export class NetLabelToTraceSolver extends BaseSolver {
               const secondPin = this.pinMap.get(secondPinId)
               if (!firstPin || !secondPin) continue
               if (!this.canRecoverParallelPair(firstPin, secondPin)) continue
-              if (!this.canRecoverRailPair(firstPin, secondPin)) continue
               if (isDirectConnection && firstPin.chipId === secondPin.chipId)
                 continue
               const perpendicularOffset = getPerpendicularOffset(
@@ -543,7 +538,6 @@ export class NetLabelToTraceSolver extends BaseSolver {
     })
 
     const [firstPin, secondPin] = candidate.pins
-    if (!this.canRecoverRailPair(firstPin, secondPin, tracePath)) return
     const mspPairId = `${RECOVERED_TRACE_PREFIX}${candidate.key}`
     const recoveredTrace: SolvedTracePath = {
       mspPairId,
@@ -555,6 +549,17 @@ export class NetLabelToTraceSolver extends BaseSolver {
       pinIds: [firstPin.pinId, secondPin.pinId],
     }
 
+    if (
+      !this.canRecoverRailPair({
+        trace: recoveredTrace,
+        existingTraces: retainedTraces,
+        retainedLabels:
+          candidate.recoveryMode === "routed_components"
+            ? this.outputNetLabelPlacements
+            : undefined,
+      })
+    )
+      return
     this.recoveredTraceIds.add(mspPairId)
     this.outputTraces = [...retainedTraces, recoveredTrace]
     if (candidate.recoveryMode !== "routed_components") {
