@@ -8,6 +8,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { alignSameNetJunctions } from "./alignSameNetJunctions"
 import { placeGroundRailLabelsAtOuterEnd } from "./placeGroundRailLabelsAtOuterEnd"
+import { shortenSameSideRailToLabelAnchor } from "./shortenSameSideRailToLabelAnchor"
 
 interface SameNetJunctionAlignmentSolverInput {
   inputProblem: InputProblem
@@ -31,10 +32,13 @@ export class SameNetJunctionAlignmentSolver extends BaseSolver {
 
   override _step() {
     const alignment = alignSameNetJunctions(this.input)
-    this.outputTraces = alignment.traces
+    this.outputTraces = shortenSameSideRailToLabelAnchor({
+      traces: alignment.traces,
+      netLabelPlacements: alignment.netLabelPlacements,
+    })
     this.outputNetLabelPlacements = placeGroundRailLabelsAtOuterEnd({
       inputProblem: this.input.inputProblem,
-      traces: alignment.traces,
+      traces: this.outputTraces,
       netLabelPlacements: alignment.netLabelPlacements,
     })
     this.stats.alignedJunctionCount = alignment.alignedJunctionCount

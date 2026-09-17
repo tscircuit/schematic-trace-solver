@@ -51,5 +51,4 @@ export type EvaluatedCandidate = CandidateLabel & {
   phase: CandidatePhase
   distance?: number
   outwardDistance?: number
-  continuedPastTraceCollision?: boolean
 }
