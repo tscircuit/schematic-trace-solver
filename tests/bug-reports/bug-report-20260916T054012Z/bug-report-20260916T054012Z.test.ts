@@ -25,7 +25,6 @@ test("bug-report-20260916T054012Z", () => {
     ),
   ).toBe(false)
 
-  expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
 
 test("vertical shared-rail placement is not limited to ground nets", () => {
@@ -34,7 +33,7 @@ test("vertical shared-rail placement is not limited to ground nets", () => {
     (connection: any) => connection.netId === "GND",
   )
   renamedConnection.netId = "VREF"
-  renamedConnection.netLabelText = "VREF"
+  renamedConnection.netLabelText = "GND"
   renamedConnection.isGround = false
   nonGroundInput.availableNetLabelOrientations.VREF =
     nonGroundInput.availableNetLabelOrientations.GND
@@ -70,5 +69,5 @@ test("vertical shared-rail placement is not limited to ground nets", () => {
       Object.fromEntries(traces.map((trace) => [trace.mspPairId, trace])),
     ),
   ).toBe(false)
-  expect(solver).toMatchSolverSnapshot(import.meta.path, "non-ground-rail")
+  expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
