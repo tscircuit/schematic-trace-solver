@@ -53,15 +53,14 @@ const getMinimumParallelVerticalRailDistance = (
   return minimumDistance
 }
 
-// Reduced from the solver input emitted by
-// krishnax12/ip2312-fast-charging-module v0.1.3. Matchpack placed C4 and C5
-// 0.005 schematic units apart on x. Their separate VBAT and GND return rails
-// render as one wire because the trace stroke is wider than the centerline
-// separation.
-test("IP2312 C4/C5 produce visually merged VBAT and GND rails", async () => {
+// Exact InputProblem emitted by @tscircuit/core 0.0.1816 while building the
+// complete krishnax12/ip2312-fast-charging-module v0.1.3 board. Matchpack
+// placed C4 and C5 0.005 schematic units apart on x. Their separate VBAT and
+// GND return rails render as one wire because the trace stroke is wider than
+// the centerline separation.
+test("IP2312 board produces visually merged C4/C5 VBAT and GND rails", async () => {
   const solver = new SchematicTracePipelineSolver(
     inputProblem as unknown as InputProblem,
-    { hideRatsNet: true },
   )
   solver.solve()
 
@@ -70,10 +69,14 @@ test("IP2312 C4/C5 produce visually merged VBAT and GND rails", async () => {
 
   const traces = solver.netLabelToTraceSolver!.getOutput().traces
   const vbatTrace = traces.find((trace) =>
-    ["C4.1", "C5.1"].every((pinId) => trace.pinIds.includes(pinId)),
+    ["schematic_port_33", "schematic_port_35"].every((pinId) =>
+      trace.pinIds.includes(pinId),
+    ),
   )
   const groundTrace = traces.find((trace) =>
-    ["C4.2", "C5.2"].every((pinId) => trace.pinIds.includes(pinId)),
+    ["schematic_port_34", "schematic_port_36"].every((pinId) =>
+      trace.pinIds.includes(pinId),
+    ),
   )
   expect(vbatTrace).toBeDefined()
   expect(groundTrace).toBeDefined()
