@@ -23,15 +23,10 @@ test("bug-report-20260916T054012Z", () => {
       Object.fromEntries(traces.map((trace) => [trace.mspPairId, trace])),
     ),
   ).toBe(false)
-
-  const v3v3 = labels.find(
-    (label) =>
-      label.netId === "V3V3" && label.pinIds.includes("schematic_port_114"),
+  const ad0FsyncTrace = traces.find(
+    (trace) => trace.mspPairId === "schematic_port_117-schematic_port_115",
   )!
-  const v3v3Trace = traces.find(
-    (trace) => trace.mspPairId === "schematic_port_119-schematic_port_114",
-  )!
-  expect(v3v3Trace.tracePath[1]!.x).toBeCloseTo(v3v3.anchorPoint.x)
-  expect(v3v3Trace.tracePath[2]!.x).toBeCloseTo(v3v3.anchorPoint.x)
+  expect(ad0FsyncTrace.tracePath[1]!.x).toBeCloseTo(ground.anchorPoint.x)
+  expect(ad0FsyncTrace.tracePath[2]!.x).toBeCloseTo(ground.anchorPoint.x)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

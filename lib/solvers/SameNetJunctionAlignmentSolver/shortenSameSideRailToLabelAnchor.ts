@@ -20,9 +20,9 @@ const isBetween = (value: number, first: number, second: number) =>
   value <= Math.max(first, second) + EPS
 
 /**
- * Shortens a same-side U-shaped connection when its vertical net label already
- * marks a safe rail column on one horizontal leg. Perpendicular trace crossings
- * remain crossings; the rail does not create junctions with those nets.
+ * Shortens a same-side U-shaped connection when its vertical net label extends
+ * outward from the U on a nearby column. Perpendicular trace crossings remain
+ * crossings; the rail does not create junctions with those nets.
  */
 export const shortenSameSideRailToLabelAnchor = ({
   traces,
@@ -59,11 +59,12 @@ export const shortenSameSideRailToLabelAnchor = ({
     }
 
     const label = (labelsByTraceId.get(trace.mspPairId) ?? []).find(
-      ({ anchorPoint }) =>
-        ((Math.abs(anchorPoint.y - firstPin.y) <= EPS &&
-          isBetween(anchorPoint.x, firstPin.x, firstRail.x)) ||
-          (Math.abs(anchorPoint.y - secondPin.y) <= EPS &&
-            isBetween(anchorPoint.x, secondRail.x, secondPin.x))) &&
+      ({ anchorPoint, orientation }) =>
+        ((orientation === "y-" &&
+          anchorPoint.y < Math.min(firstPin.y, secondPin.y) - EPS) ||
+          (orientation === "y+" &&
+            anchorPoint.y > Math.max(firstPin.y, secondPin.y) + EPS)) &&
+        isBetween(anchorPoint.x, firstPin.x, firstRail.x) &&
         Math.abs(anchorPoint.x - firstPin.x) <
           Math.abs(firstRail.x - firstPin.x) - EPS &&
         Math.abs(anchorPoint.x - firstRail.x) <= MAX_LOCAL_RAIL_SHIFT + EPS &&
