@@ -459,6 +459,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       orientations.length === 1 &&
       requiredOrientation === "y-" &&
       this.hasTraceContinuingInOrientation(label, "y+")
+    const isVerticalSameSideRail =
+      this.isSameSidePinPair(label) &&
+      isXOrientation(label.orientation) &&
+      orientations.length === 1 &&
+      isYOrientation(requiredOrientation) &&
+      this.hasTraceContinuingInOrientation(
+        label,
+        requiredOrientation === "y-" ? "y+" : "y-",
+      )
     const isDistanceSplitVerticalRail =
       (netConnection?.pinIds.length ?? 0) > 2 &&
       isYOrientation(requiredOrientation) &&
@@ -542,8 +551,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       rotatedCandidate !== null &&
       Math.abs(rotatedCandidate.anchorPoint.x - label.anchorPoint.x) > EPS
 
-    if (isDownwardGroundRail && rotatedCandidateNeedsLateralBranch) {
-      const downwardRailCandidate = this.findValidCandidateInShiftColumn({
+    if (
+      (isDownwardGroundRail ||
+        (isVerticalSameSideRail &&
+          rotatedCandidate?.continuedPastTraceCollision)) &&
+      rotatedCandidateNeedsLateralBranch
+    ) {
+      const verticalRailCandidate = this.findValidCandidateInShiftColumn({
         label,
         labelIndex,
         orientation: requiredOrientation,
@@ -559,7 +573,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         connectorSource: label.anchorPoint,
         startDistance: MIN_DOWNWARD_GROUND_RAIL_EXTENSION,
       })
-      if (downwardRailCandidate) return downwardRailCandidate
+      if (verticalRailCandidate) return verticalRailCandidate
     }
 
     if (rotatedCandidate) return rotatedCandidate
@@ -1134,6 +1148,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       startDistance = LABEL_SEARCH_STEP,
     } = params
 
+    let continuedPastTraceCollision = false
     for (
       let distance = startDistance;
       distance <= maxSearchDistance + EPS;
@@ -1169,22 +1184,45 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.recordCandidateResult(result)
 
       if (result.status === "valid") {
+        result.continuedPastTraceCollision = continuedPastTraceCollision
         result.selected = true
         return result
       }
-      // A downward ground branch projected onto its existing trace can reach a
-      // clear position below a crossing trace.
+      // A vertical rail extension can reach a clear label position beyond a
+      // crossing trace without changing to a separate lateral branch.
       if (
         stopOnTraceCollision &&
         result.status === "trace-collision" &&
         (!projectedConnectorSource ||
-          orientation !== "y-" ||
-          !this.isGroundLabel(label))
+          (!(orientation === "y-" && this.isGroundLabel(label)) &&
+            !(isYOrientation(orientation) && this.isSameSidePinPair(label))))
       )
         break
+      if (
+        stopOnTraceCollision &&
+        result.status === "trace-collision" &&
+        projectedConnectorSource &&
+        isYOrientation(orientation) &&
+        this.isSameSidePinPair(label) &&
+        !this.isGroundLabel(label)
+      ) {
+        continuedPastTraceCollision = true
+      }
     }
 
     return null
+  }
+
+  private isSameSidePinPair(label: NetLabelPlacement) {
+    if (label.pinIds.length !== 2) return false
+    const [firstPin, secondPin] = label.pinIds.map(
+      (pinId) => this.pinMap[pinId],
+    )
+    if (!firstPin || !secondPin) return false
+    return (
+      firstPin.chipId === secondPin.chipId &&
+      Math.abs(firstPin.x - secondPin.x) <= EPS
+    )
   }
 
   private evaluateCandidate(
