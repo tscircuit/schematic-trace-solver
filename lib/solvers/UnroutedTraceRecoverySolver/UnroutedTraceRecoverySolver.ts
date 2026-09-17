@@ -204,6 +204,67 @@ const getUnconnectedPins = ({
   return connectionPair.pins.filter((pin) => !connectedPinIds.has(pin.pinId))
 }
 
+const pathsIntersect = (firstPath: Point[], secondPath: Point[]): boolean => {
+  for (let firstIndex = 0; firstIndex < firstPath.length - 1; firstIndex++) {
+    for (
+      let secondIndex = 0;
+      secondIndex < secondPath.length - 1;
+      secondIndex++
+    ) {
+      if (
+        doSegmentsIntersect(
+          firstPath[firstIndex]!,
+          firstPath[firstIndex + 1]!,
+          secondPath[secondIndex]!,
+          secondPath[secondIndex + 1]!,
+        )
+      ) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+const connectionPairPinsAreAlreadyConnected = ({
+  connectionPair,
+  sameNetTraces,
+}: {
+  connectionPair: MspConnectionPair
+  sameNetTraces: SolvedTracePath[]
+}): boolean => {
+  const [firstPin, secondPin] = connectionPair.pins
+  const connectedTraceIndexes = new Set(
+    sameNetTraces.flatMap((trace, index) =>
+      trace.pinIds.includes(firstPin.pinId) ? [index] : [],
+    ),
+  )
+
+  let previousSize = -1
+  while (connectedTraceIndexes.size !== previousSize) {
+    previousSize = connectedTraceIndexes.size
+    for (let traceIndex = 0; traceIndex < sameNetTraces.length; traceIndex++) {
+      if (connectedTraceIndexes.has(traceIndex)) continue
+      const trace = sameNetTraces[traceIndex]!
+      const connectsToComponent = [...connectedTraceIndexes].some(
+        (connectedTraceIndex) => {
+          const connectedTrace = sameNetTraces[connectedTraceIndex]!
+          return (
+            trace.pinIds.some((pinId) =>
+              connectedTrace.pinIds.includes(pinId),
+            ) || pathsIntersect(trace.tracePath, connectedTrace.tracePath)
+          )
+        },
+      )
+      if (connectsToComponent) connectedTraceIndexes.add(traceIndex)
+    }
+  }
+
+  return [...connectedTraceIndexes].some((traceIndex) =>
+    sameNetTraces[traceIndex]!.pinIds.includes(secondPin.pinId),
+  )
+}
+
 const getJunctionCandidates = ({
   connectionPair,
   sameNetTraces,
@@ -552,6 +613,14 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
     const sameNetTraces = existingTraces.filter(
       (trace) => trace.globalConnNetId === connectionPair.globalConnNetId,
     )
+    if (
+      connectionPairPinsAreAlreadyConnected({
+        connectionPair,
+        sameNetTraces,
+      })
+    ) {
+      return
+    }
     const junctionCandidates = getJunctionCandidates({
       connectionPair,
       sameNetTraces,
