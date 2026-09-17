@@ -70,4 +70,5 @@ test("vertical shared-rail placement is not limited to ground nets", () => {
       Object.fromEntries(traces.map((trace) => [trace.mspPairId, trace])),
     ),
   ).toBe(false)
+  expect(solver).toMatchSolverSnapshot(import.meta.path, "non-ground-rail")
 })
