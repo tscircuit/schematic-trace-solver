@@ -1,47 +1,22 @@
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import {
+  isHorizontal,
+  isVertical,
+  nearlyEqual,
+} from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 
-const EPS = 1e-9
 const MAX_LOCAL_RAIL_SHIFT = 0.5
 const MIN_ESCAPE_LENGTH = 1
 
-const isHorizontal = (
-  start: SolvedTracePath["tracePath"][number],
-  end: SolvedTracePath["tracePath"][number],
-) => Math.abs(start.y - end.y) <= EPS
-
-const isVertical = (
-  start: SolvedTracePath["tracePath"][number],
-  end: SolvedTracePath["tracePath"][number],
-) => Math.abs(start.x - end.x) <= EPS
-
-const isBetween = (value: number, first: number, second: number) =>
-  value >= Math.min(first, second) - EPS &&
-  value <= Math.max(first, second) + EPS
-
-/**
- * Shortens a same-side U-shaped connection when its vertical net label extends
- * outward from the U on a nearby column. Perpendicular trace crossings remain
- * crossings; the rail does not create junctions with those nets.
- */
 export const shortenSameSideRailToLabelAnchor = ({
   traces,
   netLabelPlacements,
 }: {
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
-}) => {
-  const labelsByTraceId = new Map<string, NetLabelPlacement[]>()
-  for (const label of netLabelPlacements) {
-    if (label.orientation !== "y+" && label.orientation !== "y-") continue
-    for (const traceId of label.mspConnectionPairIds) {
-      const labels = labelsByTraceId.get(traceId) ?? []
-      labels.push(label)
-      labelsByTraceId.set(traceId, labels)
-    }
-  }
-
-  return traces.map((trace) => {
+}) =>
+  traces.map((trace) => {
     const path = trace.tracePath
     if (path.length !== 4) return trace
     const [firstPin, firstRail, secondRail, secondPin] = path
@@ -53,22 +28,24 @@ export const shortenSameSideRailToLabelAnchor = ({
       !isHorizontal(firstPin, firstRail) ||
       !isVertical(firstRail, secondRail) ||
       !isHorizontal(secondRail, secondPin) ||
-      Math.abs(firstPin.x - secondPin.x) > EPS
+      !nearlyEqual(firstPin.x, secondPin.x)
     ) {
       return trace
     }
 
-    const label = (labelsByTraceId.get(trace.mspPairId) ?? []).find(
-      ({ anchorPoint, orientation }) =>
+    const escapeLength = Math.abs(firstRail.x - firstPin.x)
+    const label = netLabelPlacements.find(
+      ({ anchorPoint, orientation, mspConnectionPairIds }) =>
+        mspConnectionPairIds.includes(trace.mspPairId) &&
         ((orientation === "y-" &&
-          anchorPoint.y < Math.min(firstPin.y, secondPin.y) - EPS) ||
+          anchorPoint.y < Math.min(firstPin.y, secondPin.y)) ||
           (orientation === "y+" &&
-            anchorPoint.y > Math.max(firstPin.y, secondPin.y) + EPS)) &&
-        isBetween(anchorPoint.x, firstPin.x, firstRail.x) &&
-        Math.abs(anchorPoint.x - firstPin.x) <
-          Math.abs(firstRail.x - firstPin.x) - EPS &&
-        Math.abs(anchorPoint.x - firstRail.x) <= MAX_LOCAL_RAIL_SHIFT + EPS &&
-        Math.abs(firstRail.x - firstPin.x) >= MIN_ESCAPE_LENGTH - EPS,
+            anchorPoint.y > Math.max(firstPin.y, secondPin.y))) &&
+        anchorPoint.x >= Math.min(firstPin.x, firstRail.x) &&
+        anchorPoint.x <= Math.max(firstPin.x, firstRail.x) &&
+        Math.abs(anchorPoint.x - firstPin.x) < escapeLength &&
+        Math.abs(anchorPoint.x - firstRail.x) <= MAX_LOCAL_RAIL_SHIFT &&
+        escapeLength >= MIN_ESCAPE_LENGTH,
     )
     if (!label) return trace
 
@@ -82,4 +59,3 @@ export const shortenSameSideRailToLabelAnchor = ({
       ],
     }
   })
-}
