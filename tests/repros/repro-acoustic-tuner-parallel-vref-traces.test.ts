@@ -45,6 +45,6 @@ test("repro acoustic tuner near-parallel VREF traces", () => {
     }),
   )
 
-  expect(hasNearParallelOverlap).toBe(true)
+  expect(hasNearParallelOverlap).toBe(false)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
