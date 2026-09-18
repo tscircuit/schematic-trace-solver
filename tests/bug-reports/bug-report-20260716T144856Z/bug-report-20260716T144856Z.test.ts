@@ -8,5 +8,19 @@ test("bug-report-20260716T144856Z", () => {
 
   solver.solve()
 
+  const { traces, netLabelPlacements } =
+    solver.netLabelToTraceSolver!.getOutput()
+  expect(
+    traces.some(
+      (trace) =>
+        trace.pinIds.includes("C1.2") && trace.pinIds.includes("JP7.1"),
+    ),
+  ).toBe(false)
+  const ground = netLabelPlacements.find((label) =>
+    label.pinIds.includes("C1.2"),
+  )!
+  expect(ground.netId).toBe("GND")
+  expect(ground.orientation).toBe("y-")
+  expect(Math.abs(ground.anchorPoint.y - -0.88)).toBeLessThanOrEqual(4)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

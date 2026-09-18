@@ -8,9 +8,14 @@ test("bug-report-20260901T055358Z", () => {
 
   solver.solve()
 
-  const groundLabelConnectorId = "available-net-orientation-19-GND"
   const preAlignmentOutput =
     solver.preAlignmentNetLabelTraceCollisionSolver!.getOutput()
+  const groundLabelConnectorId = preAlignmentOutput.traces.find(
+    (trace) =>
+      trace.mspPairId.startsWith("available-net-orientation-") &&
+      trace.pinIds.includes("schematic_port_27") &&
+      trace.pinIds.includes("schematic_port_25"),
+  )!.mspPairId
   const groundLabelConnector = preAlignmentOutput.traces.find(
     (trace) => trace.mspPairId === groundLabelConnectorId,
   )

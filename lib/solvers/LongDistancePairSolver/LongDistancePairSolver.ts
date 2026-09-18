@@ -15,6 +15,7 @@ import { doesTraceOverlapWithExistingTraces } from "lib/utils/does-trace-overlap
 import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDifferentSchematicSections"
 import { BaseSolver } from "../BaseSolver/BaseSolver"
 import { getParallelNetLabelPolicy } from "./getParallelNetLabelPolicy"
+import { getRailRecoveryPolicy } from "./getRailRecoveryPolicy"
 import { getGroundConnectionPolicy } from "../MspConnectionPairSolver/getGroundConnectionPolicy"
 import { isLabeledPeripheralConnection } from "../MspConnectionPairSolver/isLabeledPeripheralConnection"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
@@ -152,6 +153,7 @@ export class LongDistancePairSolver extends BaseSolver {
   private newlyConnectedPinIds = new Set<PinId>()
   private allSolvedTraces: SolvedTracePath[] = []
   private maxMspPairDistance: number
+  private canRecoverRailPair: ReturnType<typeof getRailRecoveryPolicy>
 
   constructor(
     private params: {
@@ -179,6 +181,7 @@ export class LongDistancePairSolver extends BaseSolver {
       primaryConnectedPinIds.add(pair.pins[1].pinId)
     }
 
+    this.canRecoverRailPair = getRailRecoveryPolicy(inputProblem)
     const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
     this.netConnMap = netConnMap
     const canRecoverParallelPair = getParallelNetLabelPolicy(
@@ -364,6 +367,16 @@ export class LongDistancePairSolver extends BaseSolver {
             pinIds: [p1.pinId, p2.pinId],
           }
 
+          if (
+            !this.canRecoverRailPair({
+              trace: newSolvedTrace,
+              existingTraces: this.allSolvedTraces,
+            })
+          ) {
+            this.subSolver = null
+            this.currentCandidatePair = null
+            return
+          }
           this.solvedLongDistanceTraces.push(newSolvedTrace)
           this.allSolvedTraces.push(newSolvedTrace)
 

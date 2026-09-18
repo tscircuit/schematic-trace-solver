@@ -1,6 +1,7 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { getRailRecoveryPolicy } from "lib/solvers/LongDistancePairSolver/getRailRecoveryPolicy"
 import { getParallelNetLabelPolicy } from "lib/solvers/LongDistancePairSolver/getParallelNetLabelPolicy"
 import { doesPairCrossRestrictedCenterLines } from "lib/solvers/MspConnectionPairSolver/doesPairCrossRestrictedCenterLines"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
@@ -88,6 +89,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
   private readonly recoveredTraceIds = new Set<string>()
   private chipMap: Record<ChipId, InputChip>
   private pinMap: Map<PinId, TraceRecoveryPin>
+  private canRecoverRailPair: ReturnType<typeof getRailRecoveryPolicy>
   private canRecoverParallelPair: ReturnType<typeof getParallelNetLabelPolicy>
   private queuedCandidates: CandidatePair[]
   private currentCandidate: CandidatePair | null = null
@@ -102,16 +104,18 @@ export class NetLabelToTraceSolver extends BaseSolver {
     const { chipMap, pinMap } = getTraceRecoveryConnectivityMaps(
       this.inputProblem,
     )
+    const connectedPinIds = new Set(
+      input.traces
+        .filter((trace) => trace.pinIds.length > 1)
+        .flatMap((trace) => trace.pinIds),
+    )
+    this.canRecoverRailPair = getRailRecoveryPolicy(this.inputProblem)
     this.chipMap = chipMap
     this.pinMap = pinMap
     this.canRecoverParallelPair = getParallelNetLabelPolicy(
       this.inputProblem,
       getConnectivityMapsFromInputProblem(this.inputProblem).netConnMap,
-      new Set(
-        input.traces
-          .filter((trace) => trace.pinIds.length > 1)
-          .flatMap((trace) => trace.pinIds),
-      ),
+      connectedPinIds,
     )
 
     this.queuedCandidates = this.buildCandidatePairs()
@@ -545,6 +549,17 @@ export class NetLabelToTraceSolver extends BaseSolver {
       pinIds: [firstPin.pinId, secondPin.pinId],
     }
 
+    if (
+      !this.canRecoverRailPair({
+        trace: recoveredTrace,
+        existingTraces: retainedTraces,
+        retainedLabels:
+          candidate.recoveryMode === "routed_components"
+            ? this.outputNetLabelPlacements
+            : undefined,
+      })
+    )
+      return
     this.recoveredTraceIds.add(mspPairId)
     this.outputTraces = [...retainedTraces, recoveredTrace]
     if (candidate.recoveryMode !== "routed_components") {
