@@ -18,21 +18,23 @@ export const shortenSameSideRailToLabelAnchor = ({
 }) =>
   traces.map((trace) => {
     const path = trace.tracePath
-    if (path.length !== 4) return trace
-    const [firstPin, firstRail, secondRail, secondPin] = path
-    if (
-      !firstPin ||
-      !firstRail ||
-      !secondRail ||
-      !secondPin ||
-      !isHorizontal(firstPin, firstRail) ||
-      !isVertical(firstRail, secondRail) ||
-      !isHorizontal(secondRail, secondPin) ||
-      !nearlyEqual(firstPin.x, secondPin.x)
-    ) {
+    const firstPin = path[0]
+    const secondPin = path.at(-1)
+    if (!firstPin || !secondPin || !nearlyEqual(firstPin.x, secondPin.x)) {
       return trace
     }
 
+    const railIndex = path.findIndex(
+      (point, index) =>
+        index > 0 &&
+        index < path.length - 2 &&
+        isHorizontal(path[index - 1]!, point) &&
+        isVertical(point, path[index + 1]!) &&
+        isHorizontal(path[index + 1]!, path[index + 2]!),
+    )
+    if (railIndex < 0) return trace
+    const firstRail = path[railIndex]!
+    const secondRail = path[railIndex + 1]!
     const escapeLength = Math.abs(firstRail.x - firstPin.x)
     const label = netLabelPlacements.find(
       ({ anchorPoint, orientation, mspConnectionPairIds }) =>
@@ -51,11 +53,10 @@ export const shortenSameSideRailToLabelAnchor = ({
 
     return {
       ...trace,
-      tracePath: [
-        firstPin,
-        { x: label.anchorPoint.x, y: firstPin.y },
-        { x: label.anchorPoint.x, y: secondPin.y },
-        secondPin,
-      ],
+      tracePath: path.map((point, index) =>
+        index === railIndex || index === railIndex + 1
+          ? { ...point, x: label.anchorPoint.x }
+          : point,
+      ),
     }
   })
