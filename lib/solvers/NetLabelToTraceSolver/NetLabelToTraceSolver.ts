@@ -30,6 +30,7 @@ import {
 import { getSimpleElbowPath } from "./getSimpleElbowPath"
 import { findPerpendicularPathCrossings } from "../TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 import { reduceTraceCrossings } from "./reduceTraceCrossings"
+import { collapseNearParallelSameNetCycles } from "../SameNetJunctionAlignmentSolver/collapseNearParallelSameNetCycles"
 
 type GlobalConnNetId = NetLabelPlacement["globalConnNetId"]
 
@@ -91,6 +92,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
   private canRecoverParallelPair: ReturnType<typeof getParallelNetLabelPolicy>
   private queuedCandidates: CandidatePair[]
   private currentCandidate: CandidatePair | null = null
+  private collapsedNearParallelCycles = false
   declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
 
   constructor(private input: InlineNetLabelOutput) {
@@ -593,6 +595,16 @@ export class NetLabelToTraceSolver extends BaseSolver {
     }
 
     if (!candidate) {
+      if (!this.collapsedNearParallelCycles) {
+        const result = collapseNearParallelSameNetCycles({
+          traces: this.outputTraces,
+          netLabelPlacements: this.outputNetLabelPlacements,
+          inlineNetLabelPlacements: this.input.inlineNetLabelPlacements,
+        })
+        this.outputTraces = result.traces
+        this.stats.collapsedNearParallelCycleCount = result.collapsedCycleCount
+        this.collapsedNearParallelCycles = true
+      }
       this.solved = true
       return
     }
