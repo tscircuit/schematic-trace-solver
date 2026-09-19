@@ -24,7 +24,7 @@ const createInputProblem = (): InputProblem => ({
     {
       netId: "connection",
       pinIds: ["a", "b"],
-      labelFullyRoutedConnection: false,
+      showLabelOnFullyRoutedConnection: false,
     },
   ],
   netConnections: [],
@@ -44,10 +44,10 @@ test("fully routed unlabeled connection creates no label obstacle", () => {
 
 test.each([true, undefined])(
   "preserves automatic labels when configured as %s",
-  (labelFullyRoutedConnection) => {
+  (showLabelOnFullyRoutedConnection) => {
     const inputProblem = createInputProblem()
-    inputProblem.directConnections[0]!.labelFullyRoutedConnection =
-      labelFullyRoutedConnection
+    inputProblem.directConnections[0]!.showLabelOnFullyRoutedConnection =
+      showLabelOnFullyRoutedConnection
     const solver = new SchematicTracePipelineSolver(inputProblem)
     solver.solve()
     expect(solver.solved).toBe(true)
@@ -81,7 +81,7 @@ test("a routed island retains its label when another endpoint is disconnected", 
   inputProblem.directConnections.push({
     netId: "connection",
     pinIds: ["b", "c"],
-    labelFullyRoutedConnection: false,
+    showLabelOnFullyRoutedConnection: false,
   })
   const solver = new NetLabelPlacementSolver({
     inputProblem,

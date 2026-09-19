@@ -55,7 +55,7 @@ export interface InputDirectConnection {
    * Disconnected routed islands and unrouted endpoints still receive labels.
    * Omitted retains automatic label placement.
    */
-  labelFullyRoutedConnection?: boolean
+  showLabelOnFullyRoutedConnection?: boolean
 
   /**
    * User-facing text to render for this net label. `netId` remains the stable

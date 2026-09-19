@@ -240,7 +240,8 @@ export class NetLabelPlacementSolver extends BaseSolver {
                 connection.pinIds.some((pinId) => component.has(pinId)),
               )
               .every(
-                (connection) => connection.labelFullyRoutedConnection === false,
+                (connection) =>
+                  connection.showLabelOnFullyRoutedConnection === false,
               )
           ) {
             continue

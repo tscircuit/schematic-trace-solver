@@ -11,7 +11,7 @@ test("PGA300 ground connector stays straight without hidden direct-connection la
     ),
   ).json()
   for (const connection of input.directConnections) {
-    connection.labelFullyRoutedConnection = false
+    connection.showLabelOnFullyRoutedConnection = false
   }
   const solver = new SchematicTracePipelineSolver(input)
   solver.solve()
