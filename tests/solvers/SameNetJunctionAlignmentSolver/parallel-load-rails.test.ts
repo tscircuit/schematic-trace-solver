@@ -4,6 +4,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { InputProblem } from "lib/types/InputProblem"
+import { SCHEMATIC_TRACE_STROKE_WIDTH } from "lib/utils/doesPathCoincideWithTraces"
 
 const createFixture = (mirrorX = 1, mirrorY = 1) => {
   const point = (x: number, y: number) => ({ x: x * mirrorX, y: y * mirrorY })
@@ -191,6 +192,29 @@ for (const [name, path] of [
       tracePath: [...path],
     })
     const result = alignSameNetJunctions(fixture)
+    expect(result.traces.find((trace) => trace.mspPairId === "return")).toEqual(
+      original,
+    )
+  })
+}
+
+for (const strokeOffset of [-1, -0.5, 0.5, 1]) {
+  test(`keeps a return column clear of another net at ${strokeOffset} stroke widths`, () => {
+    const fixture = createFixture()
+    const original = structuredClone(fixture.traces[2]!)
+    const foreignRailX = strokeOffset * SCHEMATIC_TRACE_STROKE_WIDTH
+    fixture.traces.push({
+      ...original,
+      mspPairId: "foreign",
+      globalConnNetId: "foreign",
+      tracePath: [
+        { x: foreignRailX, y: -0.5 },
+        { x: foreignRailX, y: 0.3 },
+      ],
+    })
+
+    const result = alignSameNetJunctions(fixture)
+
     expect(result.traces.find((trace) => trace.mspPairId === "return")).toEqual(
       original,
     )

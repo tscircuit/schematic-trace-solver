@@ -23,7 +23,10 @@ import {
   nearlyEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import type { InputPin, InputProblem, PinId } from "lib/types/InputProblem"
-import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
+import {
+  doesPathCoincideWithTraces,
+  doesPathOverlapTraceStrokes,
+} from "lib/utils/doesPathCoincideWithTraces"
 import {
   pathEntersAnyNetLabel,
   pathIntersectsAnyNetLabel,
@@ -928,6 +931,23 @@ const candidateIsClear = ({
   )
   if (doesPathCoincideWithTraces(candidateTrace.tracePath, otherNetTraces)) {
     return false
+  }
+
+  // Reject new stroke contact without blocking cleanup of an already touching net.
+  // The candidate is already in traces; only unchanged paths establish prior contact.
+  for (const otherTrace of otherNetTraces) {
+    if (
+      doesPathOverlapTraceStrokes(candidateTrace.tracePath, [otherTrace]) &&
+      !doesPathOverlapTraceStrokes(originalTrace.tracePath, [otherTrace]) &&
+      !traces.some(
+        (trace) =>
+          trace.mspPairId !== candidateTrace.mspPairId &&
+          trace.globalConnNetId === candidateTrace.globalConnNetId &&
+          doesPathOverlapTraceStrokes(trace.tracePath, [otherTrace]),
+      )
+    ) {
+      return false
+    }
   }
 
   // Moving a junction must not introduce an extra crossing on another net,
