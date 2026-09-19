@@ -61,5 +61,18 @@ test("repro bluetooth controller cc2564c trace routing", () => {
 
   solver.solve()
 
+  const traces = solver.netLabelToTraceSolver!.getOutput().traces
+  const supplyRail = traces.find((trace) =>
+    trace.pinIds.includes("schematic_port_81"),
+  )!
+  const regulatorRail = traces.find((trace) =>
+    trace.pinIds.includes("schematic_port_79"),
+  )!
+  const minimumRailSeparation = 0.06
+  expect(supplyRail.globalConnNetId).not.toBe(regulatorRail.globalConnNetId)
+  expect(
+    Math.abs(supplyRail.tracePath[1]!.y - regulatorRail.tracePath[1]!.y),
+  ).toBeGreaterThanOrEqual(minimumRailSeparation)
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

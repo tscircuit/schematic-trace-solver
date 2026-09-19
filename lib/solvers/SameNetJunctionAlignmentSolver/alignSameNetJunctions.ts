@@ -23,7 +23,7 @@ import {
   nearlyEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import type { InputPin, InputProblem, PinId } from "lib/types/InputProblem"
-import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
+import { doesPathOverlapTraceStrokes } from "lib/utils/doesPathCoincideWithTraces"
 import {
   pathEntersAnyNetLabel,
   pathIntersectsAnyNetLabel,
@@ -926,7 +926,7 @@ const candidateIsClear = ({
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== candidateTrace.globalConnNetId,
   )
-  if (doesPathCoincideWithTraces(candidateTrace.tracePath, otherNetTraces)) {
+  if (doesPathOverlapTraceStrokes(candidateTrace.tracePath, otherNetTraces)) {
     return false
   }
 
