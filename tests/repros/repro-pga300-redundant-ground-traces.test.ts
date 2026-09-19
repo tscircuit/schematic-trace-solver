@@ -5,7 +5,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-pga300-redundant-ground-traces.input.json"
 
-// Full solver input captured from tscircuit/ti#117 at 067b6a2 using
+// Full solver input captured from tscircuit/ti at 54d747b using
 // `tsci build ... --schematic-only --disable-pcb --solver-debug`.
 // Only the debug serializer's { value_type: "undefined" } markers were removed.
 const COMP = "schematic_port_10"
