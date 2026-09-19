@@ -23,6 +23,10 @@ test("bug-report-20260916T054012Z", () => {
       Object.fromEntries(traces.map((trace) => [trace.mspPairId, trace])),
     ),
   ).toBe(false)
-
+  const ad0FsyncTrace = traces.find(
+    (trace) => trace.mspPairId === "schematic_port_117-schematic_port_115",
+  )!
+  expect(ad0FsyncTrace.tracePath[1]!.x).toBeCloseTo(ground.anchorPoint.x)
+  expect(ad0FsyncTrace.tracePath[2]!.x).toBeCloseTo(ground.anchorPoint.x)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
