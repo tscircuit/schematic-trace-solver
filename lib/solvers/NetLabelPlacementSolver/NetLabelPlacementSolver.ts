@@ -165,10 +165,11 @@ export class NetLabelPlacementSolver extends BaseSolver {
       ) as string[]
       const pinsInNet = allIdsInNet.filter((id) => pinIdToPinMap.has(id))
 
-      for (const traceConnectedComponent of getTraceConnectedPinComponents({
+      const traceConnectedComponents = getTraceConnectedPinComponents({
         pinIds: pinsInNet,
         traces: byGlobal[globalConnNetId] ?? [],
-      })) {
+      })
+      for (const traceConnectedComponent of traceConnectedComponents) {
         const component = new Set(traceConnectedComponent.pinIds)
         const compTraces = traceConnectedComponent.traces
 
@@ -226,6 +227,23 @@ export class NetLabelPlacementSolver extends BaseSolver {
               .find((text): text is string => Boolean(text)),
             overlappingTraces: rep,
             mspConnectionPairIds,
+          }
+          // A fully wired net needs no anonymous label obstacle. Separate
+          // routed islands still need labels to preserve their connectivity.
+          if (
+            traceConnectedComponents.length === 1 &&
+            !this.inputProblem.netConnections.some((connection) =>
+              connection.pinIds.some((pinId) => component.has(pinId)),
+            ) &&
+            this.inputProblem.directConnections
+              .filter((connection) =>
+                connection.pinIds.some((pinId) => component.has(pinId)),
+              )
+              .every(
+                (connection) => connection.labelFullyRoutedConnection === false,
+              )
+          ) {
+            continue
           }
           groups.push(group)
         } else {
