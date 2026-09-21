@@ -4,7 +4,7 @@ import { tryConnectPoints } from "./tryConnectPoints"
 
 export const getInteriorShortcutPaths = (path: Point[]): Point[][] => {
   const candidates: Point[][] = [path]
-  // Keep the terminal segments so shortcuts preserve the pin exit directions.
+  // Reconnect interior points to remove old loops left behind by a connector detour.
   for (let startIndex = 1; startIndex < path.length - 3; startIndex++) {
     for (
       let endIndex = startIndex + 2;
@@ -20,23 +20,19 @@ export const getInteriorShortcutPaths = (path: Point[]): Point[][] => {
           ...connection,
           ...path.slice(endIndex + 1),
         ])
-        const preservesTerminalDirections = [0, path.length - 1].every(
-          (index) => {
-            let neighborIndex = 1
-            let candidateNeighbor = candidate[1]!
-            if (index !== 0) {
-              neighborIndex = path.length - 2
-              candidateNeighbor = candidate.at(-2)!
-            }
-            const endpoint = path[index]!
-            const neighbor = path[neighborIndex]!
-            return (
-              (neighbor.x - endpoint.x) * (candidateNeighbor.x - endpoint.x) +
-                (neighbor.y - endpoint.y) * (candidateNeighbor.y - endpoint.y) >
-              0
-            )
-          },
-        )
+        const preservesTerminalDirections = [
+          [0, 1],
+          [-1, -2],
+        ].every(([endIndex, neighborIndex]) => {
+          const endpoint = path.at(endIndex!)!
+          const neighbor = path.at(neighborIndex!)!
+          const candidateNeighbor = candidate.at(neighborIndex!)!
+          return (
+            (neighbor.x - endpoint.x) * (candidateNeighbor.x - endpoint.x) +
+              (neighbor.y - endpoint.y) * (candidateNeighbor.y - endpoint.y) >
+            0
+          )
+        })
         if (preservesTerminalDirections) candidates.push(candidate)
       }
     }
