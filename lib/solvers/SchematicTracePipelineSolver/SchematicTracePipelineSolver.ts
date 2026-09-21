@@ -559,6 +559,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             inputProblem: instance.inputProblem,
             traces: simplificationOutput.traces,
             netLabelPlacements: simplificationOutput.netLabelPlacements,
+            preserveNonInlineLabelsAgainstInlineEligibleCollisions: true,
           },
         ]
       },

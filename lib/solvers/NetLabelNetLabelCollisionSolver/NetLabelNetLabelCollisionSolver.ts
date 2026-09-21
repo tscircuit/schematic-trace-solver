@@ -93,6 +93,8 @@ function sampleAnchorsAlongSegment(
 }
 
 export interface NetLabelNetLabelCollisionSolverParams {
+  /** Move temporary port-only inline labels before moving their neighbors. */
+  preserveNonInlineLabelsAgainstInlineEligibleCollisions?: boolean
   /** Use the final horizontal tag envelope after inline conversion. */
   useRenderedLabelBounds?: boolean
   /** Already placed labels that are obstacles, but must not be moved. */
@@ -148,6 +150,8 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
       netLabelPlacements: this.netLabelPlacements,
       fixedNetLabelPlacements: this.params.fixedNetLabelPlacements,
       useRenderedLabelBounds: this.params.useRenderedLabelBounds,
+      preserveNonInlineLabelsAgainstInlineEligibleCollisions:
+        this.params.preserveNonInlineLabelsAgainstInlineEligibleCollisions,
     }
   }
 
@@ -166,6 +170,50 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
 
   private collisionKey(a: NetLabelPlacement, b: NetLabelPlacement) {
     return [a.globalConnNetId, b.globalConnNetId].sort().join("::")
+  }
+
+  private isSingleTerminalInlineEligible(label: NetLabelPlacement) {
+    if (!label.netId) return false
+    return [
+      ...this.inputProblem.netConnections,
+      ...this.inputProblem.directConnections,
+    ].some(
+      (connection) =>
+        connection.allowInlineNetLabel &&
+        connection.pinIds.length === 1 &&
+        connection.netId === label.netId &&
+        label.pinIds.every((pinId) => connection.pinIds.includes(pinId)),
+    )
+  }
+
+  private hasSatisfiedSingleOrientation(label: NetLabelPlacement) {
+    if (!label.netId) return false
+    const orientations =
+      this.inputProblem.availableNetLabelOrientations[label.netId]
+    return orientations?.length === 1 && orientations[0] === label.orientation
+  }
+
+  private isAlignedWithHostTrace(label: NetLabelPlacement) {
+    const orientationAxis = label.orientation.startsWith("x") ? "x" : "y"
+    return label.mspConnectionPairIds.some((mspPairId) => {
+      const trace = this.traceMap[mspPairId]
+      return trace?.tracePath.slice(1).some((end, index) => {
+        const start = trace.tracePath[index]!
+        if (!tracePathContainsPoint([start, end], label.anchorPoint))
+          return false
+        const segmentAxis =
+          Math.abs(start.x - end.x) < SEGMENT_PARALLEL_EPS ? "y" : "x"
+        return segmentAxis === orientationAxis
+      })
+    })
+  }
+
+  private isProtectedAgainstTemporaryInlineCollision(label: NetLabelPlacement) {
+    return (
+      !this.isSingleTerminalInlineEligible(label) &&
+      this.hasSatisfiedSingleOrientation(label) &&
+      this.isAlignedWithHostTrace(label)
+    )
   }
 
   private findNextCollidingPair():
@@ -394,6 +442,24 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
       this.labelsToTry = [pair[1], pair[0]].filter(
         (label) => !(this.params.fixedNetLabelPlacements ?? []).includes(label),
       )
+      if (
+        this.params.preserveNonInlineLabelsAgainstInlineEligibleCollisions &&
+        pair.some((label) => this.isSingleTerminalInlineEligible(label)) &&
+        pair.some((label) =>
+          this.isProtectedAgainstTemporaryInlineCollision(label),
+        )
+      ) {
+        this.labelsToTry = this.labelsToTry.filter(
+          (label) =>
+            this.isSingleTerminalInlineEligible(label) ||
+            !this.isProtectedAgainstTemporaryInlineCollision(label),
+        )
+      }
+      if (this.labelsToTry.length === 0) {
+        this.skippedCollisionKeys.add(this.collisionKey(pair[0], pair[1]))
+        this.clearActiveSearch()
+        return
+      }
       this.beginSearchForLabel(this.labelsToTry.shift()!)
       return
     }
