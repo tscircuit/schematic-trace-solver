@@ -158,3 +158,52 @@ test("allows crossings between generated label connectors", () => {
   expect(result.reroutedTraceCount).toBe(0)
   expect(result.traces).toEqual([connectorTrace, otherConnector])
 })
+
+test.each([false, true])(
+  "removes the old loop when rerouting a connector crossing (reversed: %s)",
+  (reversed) => {
+    let tracePath = [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 1, y: 3 },
+      { x: 4, y: 3 },
+      { x: 4, y: -3 },
+      { x: 0, y: -3 },
+    ]
+    if (reversed) tracePath = tracePath.toReversed()
+    const trace = makeTrace({
+      mspPairId: "loop",
+      globalConnNetId: "signal",
+      pinIds: ["a", "b"],
+      tracePath,
+    })
+    const connector = makeTrace({
+      mspPairId: "connector",
+      globalConnNetId: "power",
+      pinIds: ["c"],
+      tracePath: [
+        { x: 0, y: 1 },
+        { x: 2, y: 1 },
+      ],
+    })
+    const result = rerouteGeneratedNetLabelConnectorCrossings({
+      inputProblem,
+      traces: [trace, connector],
+      netLabelPlacements: [],
+      mergedLabelNetIdMap: {},
+      clearance: 0.1,
+      connectorTraceIds: new Set([connector.mspPairId]),
+    })
+    const path = result.traces[0]!.tracePath
+    expect(result.reroutedTraceCount).toBe(1)
+    expect(path).toHaveLength(4)
+    expect(path[0]).toEqual(tracePath[0])
+    expect(path.at(-1)).toEqual(tracePath.at(-1))
+    expect(getPathLength(path)).toBeLessThan(getPathLength(tracePath))
+    expect(
+      findPerpendicularPathCrossings(path, connector.tracePath, {
+        includeTerminalSegments: true,
+      }),
+    ).toEqual([])
+  },
+)
