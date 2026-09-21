@@ -75,6 +75,16 @@ export function* getLocalTraceLabelShifts(
     minY: label.center.y - label.height / 2,
     maxY: label.center.y + label.height / 2,
   }))
+  const pendingReplacementBounds = output.netLabelPlacements
+    .filter((label) =>
+      pendingInlinePlacements.some(
+        (placement) =>
+          placement.globalConnNetId === label.globalConnNetId &&
+          placement.pinIds.length === label.pinIds.length &&
+          placement.pinIds.every((pinId) => label.pinIds.includes(pinId)),
+      ),
+    )
+    .map(getAnchoredNetLabelRenderedBounds)
   const pinPositions = [
     ...inputProblem.chips.flatMap((chip) => chip.pins),
     ...output.traces.flatMap((trace) => trace.pins),
@@ -87,7 +97,7 @@ export function* getLocalTraceLabelShifts(
       const axis = Math.abs(a.x - b.x) < EPS ? "x" : "y"
       const along = axis === "x" ? "y" : "x"
       if (Math.abs(a[axis] - b[axis]) > EPS || same(a, b)) continue
-      const blocking = [
+      const candidateObstacles = [
         ...output.netLabelPlacements
           .filter((label) => label.globalConnNetId !== trace.globalConnNetId)
           .map(getAnchoredNetLabelRenderedBounds),
@@ -98,7 +108,32 @@ export function* getLocalTraceLabelShifts(
               !trace.pinIds.some((pinId) => label.pinIds.includes(pinId)),
           )
           .map(({ bounds }) => bounds),
-      ].filter((bounds) => segmentIntersectsRect(a, b, bounds))
+      ]
+      const attachedLabelBounds = output.netLabelPlacements
+        .filter(
+          (label) =>
+            label.globalConnNetId === trace.globalConnNetId &&
+            label.netId != null &&
+            inputProblem.availableNetLabelOrientations[label.netId]?.length ===
+              1 &&
+            inputProblem.availableNetLabelOrientations[label.netId]?.[0] ===
+              label.orientation &&
+            (axis === "x"
+              ? label.orientation === "y+" || label.orientation === "y-"
+              : label.orientation === "x+" || label.orientation === "x-") &&
+            tracePathContainsPoint([a, b], label.anchorPoint),
+        )
+        .map(getAnchoredNetLabelRenderedBounds)
+      const blocking = [
+        ...candidateObstacles.filter((bounds) =>
+          segmentIntersectsRect(a, b, bounds),
+        ),
+        ...pendingReplacementBounds.filter((bounds) =>
+          attachedLabelBounds.some((labelBounds) =>
+            boundsOverlap(labelBounds, bounds),
+          ),
+        ),
+      ]
       if (!blocking.length) continue
       // Cleanup can split one rail across several trace records, including a
       // branch that starts at a junction instead of at its pin. Shift the

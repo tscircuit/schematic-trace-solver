@@ -1195,6 +1195,7 @@ export class InlineNetLabelSolver extends BaseSolver {
         fixedNetLabelPlacements: fixedLabels,
         netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
         useRenderedLabelBounds: activeInlinePlacements.length > 0,
+        preserveNonInlineLabelsAgainstInlineEligibleCollisions: true,
       })
       if (activeInlinePlacements.length > 0) labelCollisionSolver.solve()
       const pushed = pushAnchoredNetLabelsAwayFromInlineLabels({
