@@ -6,9 +6,11 @@ import type {
   InputProblem,
   PinId,
 } from "../../types/InputProblem"
+import { getInputChipBounds } from "../GuidelinesSolver/getInputChipBounds"
 import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 
 const ENDPOINT_EPSILON = 1e-9
+const TERMINAL_CLEARANCE = 0.2
 
 type PinContext = { pin: InputPin; chip: InputChip }
 
@@ -41,6 +43,57 @@ const restorePinPosition = ({
 
 const getDirectionAxis = (direction: "x+" | "x-" | "y+" | "y-") => direction[0]
 
+const rebuildTerminalElbow = ({
+  tracePath,
+  endpointIndex,
+  originalPin,
+  routingChip,
+}: {
+  tracePath: Point[]
+  endpointIndex: number
+  originalPin: InputPin
+  routingChip: InputChip
+}) => {
+  const isStart = endpointIndex === 0
+  const path = isStart ? [...tracePath].reverse() : [...tracePath]
+  const adjacentPoint = path.at(-2)
+  const previousPoint = path.at(-3)
+  const facing = originalPin._facingDirection!
+  if (!adjacentPoint) return tracePath
+
+  const bounds = getInputChipBounds(routingChip)
+  const approachPoint: Point =
+    facing === "x-"
+      ? { x: bounds.minX - TERMINAL_CLEARANCE, y: originalPin.y }
+      : facing === "x+"
+        ? { x: bounds.maxX + TERMINAL_CLEARANCE, y: originalPin.y }
+        : facing === "y-"
+          ? { x: originalPin.x, y: bounds.minY - TERMINAL_CLEARANCE }
+          : { x: originalPin.x, y: bounds.maxY + TERMINAL_CLEARANCE }
+  const cornerPoint: Point =
+    getDirectionAxis(facing) === "x"
+      ? { x: approachPoint.x, y: adjacentPoint.y }
+      : { x: adjacentPoint.x, y: approachPoint.y }
+  const adjacentSegmentAlreadyTurnsTowardPort =
+    previousPoint &&
+    (getDirectionAxis(facing) === "x"
+      ? pointsMatch({ x: 0, y: previousPoint.y }, { x: 0, y: adjacentPoint.y })
+      : pointsMatch({ x: previousPoint.x, y: 0 }, { x: adjacentPoint.x, y: 0 }))
+
+  path.splice(
+    adjacentSegmentAlreadyTurnsTowardPort ? -2 : -1,
+    adjacentSegmentAlreadyTurnsTowardPort ? 2 : 1,
+    cornerPoint,
+    approachPoint,
+    { x: originalPin.x, y: originalPin.y },
+  )
+
+  const deduplicatedPath = path.filter(
+    (point, index) => index === 0 || !pointsMatch(point, path[index - 1]!),
+  )
+  return isStart ? deduplicatedPath.reverse() : deduplicatedPath
+}
+
 export const restoreOriginalTraceEndpoints = ({
   traces,
   routingProblem,
@@ -54,10 +107,11 @@ export const restoreOriginalTraceEndpoints = ({
   const originalPinsById = getPinsById(originalProblem)
 
   const restoredTraces = traces.map((trace) => {
-    const tracePath = [...trace.tracePath]
+    let tracePath = [...trace.tracePath]
     const restoredPinIds = new Set<PinId>()
 
-    for (const endpointIndex of [0, tracePath.length - 1]) {
+    for (const endpointSide of ["start", "end"] as const) {
+      const endpointIndex = endpointSide === "start" ? 0 : tracePath.length - 1
       const endpoint = tracePath[endpointIndex]
       if (!endpoint) continue
 
@@ -80,9 +134,15 @@ export const restoreOriginalTraceEndpoints = ({
         )
       })
       const originalPin = pinId ? originalPinsById[pinId]?.pin : undefined
-      if (!pinId || !originalPin) continue
+      const routingChip = pinId ? routingPinsById[pinId]?.chip : undefined
+      if (!pinId || !originalPin || !routingChip) continue
 
-      tracePath[endpointIndex] = { x: originalPin.x, y: originalPin.y }
+      tracePath = rebuildTerminalElbow({
+        tracePath,
+        endpointIndex,
+        originalPin,
+        routingChip,
+      })
       restoredPinIds.add(pinId)
     }
 
