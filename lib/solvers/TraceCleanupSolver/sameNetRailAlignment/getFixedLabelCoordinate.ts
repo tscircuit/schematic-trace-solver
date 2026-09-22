@@ -2,7 +2,11 @@ import { distance } from "@tscircuit/math-utils"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { getDistinctCoordinates, RAIL_ALIGNMENT_EPSILON } from "./geometry"
+import {
+  getDistinctCoordinates,
+  nearlyEqual,
+  RAIL_ALIGNMENT_EPSILON,
+} from "./geometry"
 import type { RailSegment } from "./types"
 
 const getTransitivelyConnectedTraceIds = (
@@ -59,13 +63,6 @@ export const getFixedLabelCoordinate = (
         .get(traceId)
         ?.pins.every((pin) => pin.chipId === group[0]!.componentId) === true,
   )
-  const groupHasOnlySingleRailTraces = [...groupTraceIds].every(
-    (traceId) => traceMap.get(traceId)?.tracePath.length === 4,
-  )
-  // A fixed label may lengthen the endpoint legs around one movable rail. A
-  // trace with more elbows still has to pass the normal readability scoring.
-  if (!groupHasOnlySingleRailTraces) return null
-
   const orientation = group[0]!.orientation
   const linkedLabels = getLabelsLinkedToRailGroup(
     group,
@@ -107,6 +104,18 @@ export const getFixedLabelCoordinate = (
         Math.abs(segment.coordinate - labelCoordinate) <=
         RAIL_ALIGNMENT_EPSILON,
     )?.coordinate ?? labelCoordinate
+  // A fixed label may lengthen the endpoint legs around one movable rail.
+  // A multi-turn backbone may share the group when it already lies on that
+  // coordinate, but moving its elbows still requires normal readability scoring.
+  if (
+    group.some(
+      (segment) =>
+        traceMap.get(segment.traceId)?.tracePath.length !== 4 &&
+        !nearlyEqual(segment.coordinate, coordinate),
+    )
+  ) {
+    return null
+  }
   const labelIsAnchoredToRoutedBackbone = anchoringLabels.some((label) =>
     label.mspConnectionPairIds.some(
       (traceId) => (traceMap.get(traceId)?.tracePath.length ?? 0) > 4,

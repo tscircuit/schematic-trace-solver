@@ -1,11 +1,13 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { countPathIntersections } from "lib/solvers/Example28Solver/geometry"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import { getInteriorShortcutPaths } from "lib/solvers/TraceCleanupSolver/getInteriorShortcutPaths"
 import { preservesLabelAnchors } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/preservesLabelAnchors"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
@@ -82,7 +84,24 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
         otherTrace.mspPairId !== trace.mspPairId &&
         otherTrace.globalConnNetId !== trace.globalConnNetId,
     )
+    const initialPathLength = getPathLength(tracePath)
     const candidateByPath = new Map<string, Point[]>()
+    // Consecutive label detours can leave a staircase between two clear legs.
+    // Keep equivalent-length shortcuts, as with the transition candidates below;
+    // shortening the route belongs to turn minimization. Terminal directions,
+    // label anchors, and collision checks still apply.
+    for (const candidate of getInteriorShortcutPaths(tracePath)) {
+      if (
+        Math.abs(getPathLength(candidate) - initialPathLength) >
+        PATH_LENGTH_EPSILON
+      ) {
+        continue
+      }
+      candidateByPath.set(
+        candidate.map((point) => `${point.x},${point.y}`).join(";"),
+        candidate,
+      )
+    }
     const completedReroutes = this.input.completedReroutes.filter(
       (completedReroute) =>
         completedReroute.initialTrace.mspPairId === trace.mspPairId,
@@ -145,8 +164,6 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
         ({ label }) => `${label.globalConnNetId}:${label.netId}`,
       ),
     )
-    const initialPathLength = getPathLength(tracePath)
-
     const validCandidates = [...candidateByPath.values()].filter(
       (candidatePath) => {
         const candidateTrace = { ...trace, tracePath: candidatePath }
@@ -175,7 +192,12 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
             [candidateTrace],
           ) &&
           !isPathCollidingWithObstacles(candidatePath, this.obstacles) &&
-          !doesPathCoincideWithTraces(candidatePath, otherNetTraces)
+          !doesPathCoincideWithTraces(candidatePath, otherNetTraces) &&
+          otherNetTraces.every(
+            (otherTrace) =>
+              countPathIntersections(candidatePath, otherTrace.tracePath) <=
+              countPathIntersections(tracePath, otherTrace.tracePath),
+          )
         )
       },
     )
