@@ -297,12 +297,18 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     }
 
     // A label on an extended connector must keep that attachment point.
-    // Stage replays may omit the optional connector IDs. A same-net trace
-    // outside the label's original host pairs also supplies that attachment.
+    // Stage replays may omit the optional connector IDs. Infer an extension
+    // only when the anchor has left its original host traces. A junction on
+    // a host trace is still free to move along that host to avoid overlaps.
+    const isOnOriginalHost = label.mspConnectionPairIds.some((id) => {
+      const trace = this.traceMap[id]
+      return trace && tracePathContainsPoint(trace.tracePath, label.anchorPoint)
+    })
     const isAnchoredOnConnector = this.traces.some(
       (trace) =>
         (this.params.netLabelConnectorTraceIds?.has(trace.mspPairId) ||
-          !label.mspConnectionPairIds.includes(trace.mspPairId)) &&
+          (!isOnOriginalHost &&
+            !label.mspConnectionPairIds.includes(trace.mspPairId))) &&
         trace.globalConnNetId === label.globalConnNetId &&
         tracePathContainsPoint(trace.tracePath, label.anchorPoint),
     )

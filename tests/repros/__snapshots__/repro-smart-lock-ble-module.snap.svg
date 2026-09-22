@@ -4,7 +4,7 @@
 globalConnNetId: connectivity_net8" data-x="-8.2" data-y="-5.337375450000001" x="170.53264317916182" y="433.6527050258808" width="11.22057104691936" height="7.854399732843547" fill="#ef444466" stroke="#ef4444" stroke-width="0.053473214285714284"/></g><g><rect data-type="rect" data-label="netId: VDDR
 globalConnNetId: connectivity_net8" data-x="-3.4499999999999997" data-y="2.561000000000001" x="259.3621639672733" y="285.94556687259967" width="11.22057104691936" height="7.854399732843547" fill="#ef444466" stroke="#ef4444" stroke-width="0.053473214285714284"/></g><g><rect data-type="rect" data-label="netId: VDDR
 globalConnNetId: connectivity_net8" data-x="-5.2" data-y="5.59" x="226.63549841375857" y="229.30038403740187" width="11.22057104691936" height="7.854399732843547" fill="#ef444466" stroke="#ef4444" stroke-width="0.053473214285714284"/></g><g><rect data-type="rect" data-label="netId: VDDS
-globalConnNetId: connectivity_net0" data-x="-3.421" data-y="1.5600000000000012" x="259.9044915678744" y="304.6652195692102" width="11.22057104691936" height="7.854399732843547" fill="#ef444466" stroke="#ef4444" stroke-width="0.053473214285714284"/></g><g><rect data-type="rect" data-label="netId: VDDS
+globalConnNetId: connectivity_net0" data-x="-3.6311" data-y="0.9500000000000014" x="257.6585072633161" y="314.38971447654023" width="7.854399732843547" height="11.22057104691936" fill="#ef444466" stroke="#ef4444" stroke-width="0.053473214285714284"/></g><g><rect data-type="rect" data-label="netId: VDDS
 globalConnNetId: connectivity_net0" data-x="-6" data-y="-0.71" x="211.6747370178661" y="347.1163800300551" width="11.22057104691936" height="7.854399732843547" fill="#ef444466" stroke="#ef4444" stroke-width="0.053473214285714284"/></g><g><rect data-type="rect" data-label="netId: VDDS
 globalConnNetId: connectivity_net0" data-x="-12.5" data-y="2.9000000000000004" x="90.11855067623978" y="279.60594423109035" width="11.22057104691936" height="7.854399732843547" fill="#ef444466" stroke="#ef4444" stroke-width="0.053473214285714284"/></g><g><rect data-type="rect" data-label="netId: VDDS
 globalConnNetId: connectivity_net0" data-x="5.1" data-y="2.011" x="419.2553013858741" y="296.2310903322758" width="11.22057104691936" height="7.854399732843547" fill="#ef444466" stroke="#ef4444" stroke-width="0.053473214285714284"/></g><g><rect data-type="rect" data-label="netId: .U1 &gt; .pin25 to R1.pin2
@@ -234,7 +234,7 @@ x+" data-x="13.2" data-y="-5.15" cx="576.343296042745" cy="434.07580564368004" r
 orientation: y+" data-x="-8.2" data-y="-5.5473754500000005" cx="176.1429287026215" cy="441.5071047587243" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: y+" data-x="-3.4499999999999997" data-y="2.351000000000001" cx="264.972449490733" cy="293.7999666054433" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: y+" data-x="-5.2" data-y="5.38" cx="232.24578393721825" cy="237.15478377024544" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-3.421" data-y="1.3500000000000012" cx="265.5147770913341" cy="312.51961930205374" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
+orientation: x-" data-x="-3.421" data-y="0.9500000000000014" cx="265.5147770913341" cy="319.99999999999994" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: y+" data-x="-6" data-y="-0.9199999999999999" cx="217.2850225413258" cy="354.97077976289864" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: y+" data-x="-12.5" data-y="2.6900000000000004" cx="95.72883619969946" cy="287.46034396393384" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: y+" data-x="5.1" data-y="1.8" cx="424.8655869093338" cy="304.1041910168642" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
@@ -377,13 +377,13 @@ RF_TEST" data-x="12.1" data-y="5.515000000000001" cx="555.772249123393" cy="234.
     L 425.15397082652004,215.31799027553282
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.777957860616px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_2__stack1" x="421.26418152344" y="213.91766612642402" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="7.001620745544px" transform="rotate(-90 421.26418152344 213.91766612642402)">VDDR</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_3__stack1" d="
-    M 490.4635332252332,374.17698541332
-    L 486.5737439221532,372.0764991896568
-    L 486.5737439221532,349.0800648298478
-    L 494.35332252831324,349.0800648298478
-    L 494.35332252831324,372.0764991896568
+    M 490.4635332252332,389.73614262563996
+    L 488.36304700157,393.62593192872
+    L 465.36661264176104,393.62593192872
+    L 465.36661264176104,385.84635332255993
+    L 488.36304700157,385.84635332255993
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.777957860616px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_3__stack1" x="490.4635332252332" y="370.676175040548" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="7.001620745544px" transform="rotate(-90 490.4635332252332 370.676175040548)">VDDS</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_4__stack1" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.777957860616px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_3__stack1" x="486.96272285246124" y="389.73614262563996" fill="rgb(132, 0, 0)" text-anchor="end" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="7.001620745544px" transform="">VDDS</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_4__stack1" d="
     M 390.1458670988,462.475202593236
     L 386.25607779572,460.3747163695728
     L 386.25607779572,437.37828200976384
