@@ -1363,7 +1363,7 @@
       ]
     },
     {
-      "netId": "source_connectivity_source_port_301",
+      "netId": "source_connectivity_source_port_294",
       "netLabelText": "ENC_SDA",
       "netLabelWidth": 0.96,
       "pinIds": [
@@ -1371,7 +1371,7 @@
       ]
     },
     {
-      "netId": "source_connectivity_source_port_302",
+      "netId": "source_connectivity_source_port_295",
       "netLabelText": "ENC_SCL",
       "netLabelWidth": 0.96,
       "pinIds": [
@@ -1379,7 +1379,7 @@
       ]
     },
     {
-      "netId": "source_connectivity_source_port_321",
+      "netId": "source_connectivity_source_port_314",
       "netLabelText": "BUZZER_PWM",
       "netLabelWidth": 1.32,
       "pinIds": [
@@ -1699,15 +1699,15 @@
       "x-",
       "x+"
     ],
-    "source_connectivity_source_port_301": [
+    "source_connectivity_source_port_294": [
       "x-",
       "x+"
     ],
-    "source_connectivity_source_port_302": [
+    "source_connectivity_source_port_295": [
       "x-",
       "x+"
     ],
-    "source_connectivity_source_port_321": [
+    "source_connectivity_source_port_314": [
       "x-",
       "x+"
     ]
