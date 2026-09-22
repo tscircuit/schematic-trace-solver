@@ -1,0 +1,975 @@
+{
+  "inputProblem": {
+    "chips": [
+      {
+        "chipId": "schematic_component_13",
+        "center": {
+          "x": -2.7,
+          "y": 6.85
+        },
+        "width": 3.5999999999999996,
+        "height": 5.2,
+        "pins": [
+          {
+            "pinId": "schematic_port_81",
+            "displayName": "IOVDD2",
+            "x": -0.9000000000000004,
+            "y": 4.475
+          },
+          {
+            "pinId": "schematic_port_82",
+            "displayName": "ADC_AVDD",
+            "x": -0.9000000000000004,
+            "y": 4.674999999999999
+          },
+          {
+            "pinId": "schematic_port_83",
+            "displayName": "VREG_IN",
+            "x": -0.9000000000000004,
+            "y": 5.225
+          },
+          {
+            "pinId": "schematic_port_84",
+            "displayName": "VREG_VOUT",
+            "x": -0.9000000000000004,
+            "y": 5.424999999999999
+          },
+          {
+            "pinId": "schematic_port_85",
+            "displayName": "USB_DM",
+            "x": -0.9000000000000004,
+            "y": 5.975
+          },
+          {
+            "pinId": "schematic_port_86",
+            "displayName": "USB_DP",
+            "x": -0.9000000000000004,
+            "y": 6.174999999999999
+          },
+          {
+            "pinId": "schematic_port_87",
+            "displayName": "USB_VDD",
+            "x": -0.9000000000000004,
+            "y": 6.375
+          },
+          {
+            "pinId": "schematic_port_88",
+            "displayName": "IOVDD1",
+            "x": -0.9000000000000004,
+            "y": 6.924999999999999
+          },
+          {
+            "pinId": "schematic_port_89",
+            "displayName": "DVDD1",
+            "x": -0.9000000000000004,
+            "y": 7.125
+          },
+          {
+            "pinId": "schematic_port_90",
+            "displayName": "QSPI_SD3",
+            "x": -0.9000000000000004,
+            "y": 7.725
+          },
+          {
+            "pinId": "schematic_port_91",
+            "displayName": "QSPI_SCLK",
+            "x": -0.9000000000000004,
+            "y": 7.925000000000001
+          },
+          {
+            "pinId": "schematic_port_92",
+            "displayName": "QSPI_SD0",
+            "x": -0.9000000000000004,
+            "y": 8.125
+          },
+          {
+            "pinId": "schematic_port_93",
+            "displayName": "QSPI_SD2",
+            "x": -0.9000000000000004,
+            "y": 8.325000000000001
+          },
+          {
+            "pinId": "schematic_port_94",
+            "displayName": "QSPI_SD1",
+            "x": -0.9000000000000004,
+            "y": 8.525
+          },
+          {
+            "pinId": "schematic_port_95",
+            "displayName": "QSPI_SS",
+            "x": -0.9000000000000004,
+            "y": 8.725000000000001
+          },
+          {
+            "pinId": "schematic_port_96",
+            "displayName": "GND/thermalpad",
+            "x": -0.9000000000000004,
+            "y": 9.225000000000001
+          }
+        ],
+        "sectionId": "MCU__rp2040"
+      },
+      {
+        "chipId": "schematic_component_30",
+        "center": {
+          "x": 1.5924999999999998,
+          "y": 4.6
+        },
+        "width": 1.285,
+        "height": 0.7599999999999998,
+        "pins": [
+          {
+            "pinId": "schematic_port_145",
+            "displayName": "anode",
+            "x": 1.4,
+            "y": 4.9799999999999995,
+            "_facingDirection": "y+"
+          },
+          {
+            "pinId": "schematic_port_146",
+            "displayName": "cathode",
+            "x": 1.4,
+            "y": 4.22,
+            "_facingDirection": "y-"
+          }
+        ],
+        "sectionId": "MCU__rp2040",
+        "symbolName": "capacitor_down"
+      }
+    ],
+    "directConnections": [
+      {
+        "netId": "VREG_CORE",
+        "pinIds": [
+          "schematic_port_84",
+          "schematic_port_145"
+        ]
+      },
+      {
+        "netId": "USBV_IO1",
+        "pinIds": [
+          "schematic_port_87",
+          "schematic_port_88"
+        ]
+      }
+    ],
+    "netConnections": [
+      {
+        "netId": "source_connectivity_source_net_10",
+        "netLabelText": "V3V3",
+        "netLabelWidth": 0.6,
+        "pinIds": [
+          "schematic_port_87"
+        ]
+      },
+      {
+        "netId": "source_connectivity_source_port_115",
+        "netLabelText": "QSPI_SS",
+        "netLabelWidth": 0.96,
+        "pinIds": [
+          "schematic_port_95"
+        ]
+      },
+      {
+        "netId": "source_connectivity_source_port_101",
+        "netLabelText": "QSPI_SD0",
+        "netLabelWidth": 1.08,
+        "pinIds": [
+          "schematic_port_92"
+        ]
+      },
+      {
+        "netId": "source_connectivity_source_port_94",
+        "netLabelText": "QSPI_SD1",
+        "netLabelWidth": 1.08,
+        "pinIds": [
+          "schematic_port_94"
+        ]
+      },
+      {
+        "netId": "source_connectivity_source_port_93",
+        "netLabelText": "QSPI_SD2",
+        "netLabelWidth": 1.08,
+        "pinIds": [
+          "schematic_port_93"
+        ]
+      },
+      {
+        "netId": "source_connectivity_source_port_103",
+        "netLabelText": "QSPI_SD3",
+        "netLabelWidth": 1.08,
+        "pinIds": [
+          "schematic_port_90"
+        ]
+      },
+      {
+        "netId": "source_connectivity_source_port_102",
+        "netLabelText": "QSPI_SCLK",
+        "netLabelWidth": 1.2,
+        "pinIds": [
+          "schematic_port_91"
+        ]
+      },
+      {
+        "netId": "source_connectivity_source_port_138",
+        "netLabelText": "USB_DN",
+        "netLabelWidth": 0.84,
+        "pinIds": [
+          "schematic_port_85"
+        ]
+      },
+      {
+        "netId": "source_connectivity_source_port_140",
+        "netLabelText": "USB_DP",
+        "netLabelWidth": 0.84,
+        "pinIds": [
+          "schematic_port_86"
+        ]
+      },
+      {
+        "netId": "source_connectivity_source_net_10",
+        "netLabelText": "V3V3",
+        "netLabelWidth": 0.6,
+        "pinIds": [
+          "schematic_port_83"
+        ]
+      },
+      {
+        "netId": "source_connectivity_source_port_115",
+        "netLabelText": "QSPI_SS",
+        "netLabelWidth": 0.96,
+        "anchoredNetLabelWidth": 0.96,
+        "allowInlineNetLabel": true,
+        "inlineNetLabelHeight": 0.12,
+        "inlineNetLabelWidth": 0.64,
+        "pinIds": [
+          "schematic_port_95"
+        ]
+      },
+      {
+        "netId": "source_connectivity_source_net_0",
+        "netLabelText": "GND",
+        "netLabelWidth": 0.48,
+        "pinIds": [
+          "schematic_port_96"
+        ]
+      },
+      {
+        "netId": "V3V3",
+        "isGround": false,
+        "netLabelWidth": 0.42,
+        "netLabelHeight": 0.6,
+        "pinIds": [
+          "schematic_port_81",
+          "schematic_port_83",
+          "schematic_port_87",
+          "schematic_port_88"
+        ]
+      },
+      {
+        "netId": "GND",
+        "isGround": true,
+        "netLabelWidth": 0.42,
+        "netLabelHeight": 0.48,
+        "pinIds": [
+          "schematic_port_96",
+          "schematic_port_146"
+        ]
+      },
+      {
+        "netId": "ADC_VREF",
+        "isGround": false,
+        "netLabelWidth": 0.42,
+        "netLabelHeight": 1.08,
+        "pinIds": [
+          "schematic_port_82"
+        ]
+      },
+      {
+        "netId": "V1V1",
+        "isGround": false,
+        "netLabelWidth": 0.42,
+        "netLabelHeight": 0.6,
+        "pinIds": [
+          "schematic_port_84",
+          "schematic_port_89",
+          "schematic_port_145"
+        ]
+      }
+    ],
+    "textBoxes": [],
+    "availableNetLabelOrientations": {
+      "GND": [
+        "y-"
+      ],
+      "V3V3": [
+        "y+"
+      ],
+      "ADC_VREF": [
+        "y+"
+      ],
+      "V1V1": [
+        "y+"
+      ],
+      "source_connectivity_source_net_10": [
+        "x-",
+        "x+"
+      ],
+      "source_connectivity_source_port_115": [
+        "x-",
+        "x+"
+      ],
+      "source_connectivity_source_port_101": [
+        "x-",
+        "x+"
+      ],
+      "source_connectivity_source_port_94": [
+        "x-",
+        "x+"
+      ],
+      "source_connectivity_source_port_93": [
+        "x-",
+        "x+"
+      ],
+      "source_connectivity_source_port_103": [
+        "x-",
+        "x+"
+      ],
+      "source_connectivity_source_port_102": [
+        "x-",
+        "x+"
+      ],
+      "source_connectivity_source_port_138": [
+        "x-",
+        "x+"
+      ],
+      "source_connectivity_source_port_140": [
+        "x-",
+        "x+"
+      ],
+      "source_connectivity_source_net_0": [
+        "x-",
+        "x+"
+      ]
+    },
+    "maxMspPairDistance": 2.4,
+    "_hideRatsNet": false
+  },
+  "traces": [
+    {
+      "mspPairId": "schematic_port_88-schematic_port_87",
+      "dcConnNetId": "connectivity_net3",
+      "globalConnNetId": "connectivity_net3",
+      "userNetId": "V3V3",
+      "pins": [
+        {
+          "pinId": "schematic_port_88",
+          "displayName": "IOVDD1",
+          "x": -0.9000000000000004,
+          "y": 6.924999999999999,
+          "chipId": "schematic_component_13",
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_87",
+          "displayName": "USB_VDD",
+          "x": -0.9000000000000004,
+          "y": 6.375,
+          "chipId": "schematic_component_13",
+          "_facingDirection": "x+"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.9000000000000004,
+          "y": 6.924999999999999
+        },
+        {
+          "x": 0.04099999999999962,
+          "y": 6.924999999999999
+        },
+        {
+          "x": 0.04099999999999962,
+          "y": 6.375
+        },
+        {
+          "x": -0.9000000000000004,
+          "y": 6.375
+        }
+      ],
+      "mspConnectionPairIds": [
+        "schematic_port_88-schematic_port_87"
+      ],
+      "pinIds": [
+        "schematic_port_88",
+        "schematic_port_87"
+      ]
+    },
+    {
+      "mspPairId": "schematic_port_89-schematic_port_84",
+      "dcConnNetId": "connectivity_net0",
+      "globalConnNetId": "connectivity_net2",
+      "userNetId": "V1V1",
+      "pins": [
+        {
+          "pinId": "schematic_port_89",
+          "displayName": "DVDD1",
+          "x": -0.9000000000000004,
+          "y": 7.125,
+          "chipId": "schematic_component_13",
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_84",
+          "displayName": "VREG_VOUT",
+          "x": -0.9000000000000004,
+          "y": 5.424999999999999,
+          "chipId": "schematic_component_13",
+          "_facingDirection": "x+"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.9000000000000004,
+          "y": 7.125
+        },
+        {
+          "x": -0.8000000000000004,
+          "y": 7.125
+        },
+        {
+          "x": -0.8000000000000004,
+          "y": 6.674999999999999
+        },
+        {
+          "x": 0.17099999999999946,
+          "y": 6.674999999999999
+        },
+        {
+          "x": 0.17099999999999946,
+          "y": 5.475
+        },
+        {
+          "x": -0.8000000000000004,
+          "y": 5.475
+        },
+        {
+          "x": -0.8000000000000004,
+          "y": 5.424999999999999
+        },
+        {
+          "x": -0.9000000000000004,
+          "y": 5.424999999999999
+        }
+      ],
+      "mspConnectionPairIds": [
+        "schematic_port_89-schematic_port_84"
+      ],
+      "pinIds": [
+        "schematic_port_89",
+        "schematic_port_84"
+      ]
+    },
+    {
+      "mspPairId": "schematic_port_83-schematic_port_81",
+      "dcConnNetId": "connectivity_net3",
+      "globalConnNetId": "connectivity_net3",
+      "userNetId": "V3V3",
+      "pins": [
+        {
+          "pinId": "schematic_port_83",
+          "displayName": "VREG_IN",
+          "x": -0.9000000000000004,
+          "y": 5.225,
+          "chipId": "schematic_component_13",
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_81",
+          "displayName": "IOVDD2",
+          "x": -0.9000000000000004,
+          "y": 4.475,
+          "chipId": "schematic_component_13",
+          "_facingDirection": "x+"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.9000000000000004,
+          "y": 5.225
+        },
+        {
+          "x": 0.04099999999999962,
+          "y": 5.225
+        },
+        {
+          "x": 0.04099999999999962,
+          "y": 4.475
+        },
+        {
+          "x": -0.9000000000000004,
+          "y": 4.475
+        }
+      ],
+      "mspConnectionPairIds": [
+        "schematic_port_83-schematic_port_81"
+      ],
+      "pinIds": [
+        "schematic_port_83",
+        "schematic_port_81"
+      ]
+    },
+    {
+      "mspPairId": "schematic_port_87-schematic_port_83",
+      "dcConnNetId": "connectivity_net3",
+      "globalConnNetId": "connectivity_net3",
+      "userNetId": "V3V3",
+      "pins": [
+        {
+          "pinId": "schematic_port_87",
+          "displayName": "USB_VDD",
+          "x": -0.9000000000000004,
+          "y": 6.375,
+          "chipId": "schematic_component_13",
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_83",
+          "displayName": "VREG_IN",
+          "x": -0.9000000000000004,
+          "y": 5.225,
+          "chipId": "schematic_component_13",
+          "_facingDirection": "x+"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.9000000000000004,
+          "y": 6.375
+        },
+        {
+          "x": 0.04099999999999962,
+          "y": 6.374999999999998
+        },
+        {
+          "x": 0.04099999999999962,
+          "y": 5.225
+        },
+        {
+          "x": -0.9000000000000004,
+          "y": 5.225
+        }
+      ],
+      "mspConnectionPairIds": [
+        "schematic_port_87-schematic_port_83"
+      ],
+      "pinIds": [
+        "schematic_port_87",
+        "schematic_port_83"
+      ]
+    },
+    {
+      "mspPairId": "schematic_port_96-schematic_port_146",
+      "dcConnNetId": "connectivity_net19",
+      "globalConnNetId": "connectivity_net19",
+      "pins": [
+        {
+          "pinId": "schematic_port_96",
+          "displayName": "GND/thermalpad",
+          "x": -0.9000000000000004,
+          "y": 9.225000000000001,
+          "chipId": "schematic_component_13",
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_146",
+          "displayName": "cathode",
+          "x": 1.4,
+          "y": 4.22,
+          "_facingDirection": "y-",
+          "chipId": "schematic_component_30"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.9000000000000004,
+          "y": 9.225000000000001
+        },
+        {
+          "x": 0.24999999999999978,
+          "y": 9.225000000000001
+        },
+        {
+          "x": 0.24999999999999978,
+          "y": 8.125
+        },
+        {
+          "x": 0.4009999999999996,
+          "y": 8.125
+        },
+        {
+          "x": 0.4009999999999996,
+          "y": 7.725000000000001
+        },
+        {
+          "x": 0.24999999999999978,
+          "y": 7.725000000000001
+        },
+        {
+          "x": 0.24999999999999978,
+          "y": 4.02
+        },
+        {
+          "x": 1.4,
+          "y": 4.02
+        },
+        {
+          "x": 1.4,
+          "y": 4.22
+        }
+      ],
+      "mspConnectionPairIds": [
+        "schematic_port_96-schematic_port_146"
+      ],
+      "pinIds": [
+        "schematic_port_96",
+        "schematic_port_146"
+      ]
+    },
+    {
+      "mspPairId": "available-net-orientation-0-V3V3",
+      "dcConnNetId": "connectivity_net3",
+      "globalConnNetId": "connectivity_net3",
+      "userNetId": "V3V3",
+      "pins": [
+        {
+          "pinId": "schematic_port_83",
+          "displayName": "VREG_IN",
+          "x": -0.9000000000000004,
+          "y": 5.225,
+          "chipId": "schematic_component_13"
+        },
+        {
+          "pinId": "schematic_port_81",
+          "displayName": "IOVDD2",
+          "x": -0.9000000000000004,
+          "y": 4.475,
+          "chipId": "schematic_component_13"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.37900000000000045,
+          "y": 5.225
+        },
+        {
+          "x": 0.5709999999999995,
+          "y": 5.225
+        },
+        {
+          "x": 0.5709999999999995,
+          "y": 5.276
+        }
+      ],
+      "mspConnectionPairIds": [
+        "available-net-orientation-0-V3V3"
+      ],
+      "pinIds": [
+        "schematic_port_83",
+        "schematic_port_81"
+      ]
+    },
+    {
+      "mspPairId": "available-net-orientation-24-ADC_VREF",
+      "dcConnNetId": "connectivity_net30",
+      "globalConnNetId": "connectivity_net30",
+      "userNetId": "ADC_VREF",
+      "pins": [
+        {
+          "pinId": "schematic_port_82",
+          "displayName": "ADC_AVDD",
+          "x": -0.9000000000000004,
+          "y": 4.674999999999999,
+          "chipId": "schematic_component_13"
+        },
+        {
+          "pinId": "schematic_port_82",
+          "displayName": "ADC_AVDD",
+          "x": -0.9000000000000004,
+          "y": 4.674999999999999,
+          "chipId": "schematic_component_13"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.9000000000000004,
+          "y": 4.674999999999999
+        },
+        {
+          "x": 0.8910000000000001,
+          "y": 4.674999999999999
+        },
+        {
+          "x": 0.8910000000000001,
+          "y": 5.425999999999999
+        }
+      ],
+      "mspConnectionPairIds": [
+        "available-net-orientation-24-ADC_VREF"
+      ],
+      "pinIds": [
+        "schematic_port_82"
+      ]
+    }
+  ],
+  "netLabelPlacements": [
+    {
+      "globalConnNetId": "connectivity_net3",
+      "dcConnNetId": "connectivity_net3",
+      "netId": "V3V3",
+      "netLabelText": "V3V3",
+      "mspConnectionPairIds": [
+        "schematic_port_83-schematic_port_81"
+      ],
+      "pinIds": [
+        "schematic_port_83",
+        "schematic_port_81"
+      ],
+      "orientation": "y+",
+      "anchorPoint": {
+        "x": 0.5709999999999995,
+        "y": 5.225
+      },
+      "width": 0.6,
+      "height": 0.42,
+      "center": {
+        "x": 0.5709999999999995,
+        "y": 5.435
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net19",
+      "dcConnNetId": "connectivity_net19",
+      "netId": "GND",
+      "netLabelText": "GND",
+      "mspConnectionPairIds": [
+        "schematic_port_96-schematic_port_146"
+      ],
+      "pinIds": [
+        "schematic_port_96",
+        "schematic_port_146"
+      ],
+      "orientation": "y-",
+      "anchorPoint": {
+        "x": 1.4,
+        "y": 4.02
+      },
+      "width": 0.48,
+      "height": 0.42,
+      "center": {
+        "x": 1.4,
+        "y": 3.8099999999999996
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net30",
+      "netId": "ADC_VREF",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_82"
+      ],
+      "orientation": "y+",
+      "anchorPoint": {
+        "x": 0.8910000000000001,
+        "y": 5.425999999999999
+      },
+      "width": 1.08,
+      "height": 0.42,
+      "center": {
+        "x": 0.8910000000000001,
+        "y": 5.635999999999999
+      },
+      "netLabelText": "ADC_VREF"
+    },
+    {
+      "globalConnNetId": "connectivity_net2",
+      "netId": "V1V1",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_145"
+      ],
+      "orientation": "y+",
+      "anchorPoint": {
+        "x": 1.4,
+        "y": 4.9799999999999995
+      },
+      "width": 0.6,
+      "height": 0.42,
+      "center": {
+        "x": 1.4,
+        "y": 5.191
+      },
+      "netLabelText": "V1V1"
+    },
+    {
+      "globalConnNetId": "connectivity_net15",
+      "netId": "source_connectivity_source_port_138",
+      "netLabelText": "USB_DN",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_85"
+      ],
+      "orientation": "x+",
+      "anchorPoint": {
+        "x": -0.9000000000000004,
+        "y": 5.975
+      },
+      "width": 0.84,
+      "height": 0.2,
+      "center": {
+        "x": -0.47900000000000037,
+        "y": 5.975
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net16",
+      "netId": "source_connectivity_source_port_140",
+      "netLabelText": "USB_DP",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_86"
+      ],
+      "orientation": "x+",
+      "anchorPoint": {
+        "x": -0.9000000000000004,
+        "y": 6.174999999999999
+      },
+      "width": 0.84,
+      "height": 0.2,
+      "center": {
+        "x": -0.47900000000000037,
+        "y": 6.174999999999999
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net13",
+      "netId": "source_connectivity_source_port_103",
+      "netLabelText": "QSPI_SD3",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_90"
+      ],
+      "orientation": "x+",
+      "anchorPoint": {
+        "x": -0.9000000000000004,
+        "y": 7.725
+      },
+      "width": 1.08,
+      "height": 0.2,
+      "center": {
+        "x": -0.3590000000000003,
+        "y": 7.725
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net14",
+      "netId": "source_connectivity_source_port_102",
+      "netLabelText": "QSPI_SCLK",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_91"
+      ],
+      "orientation": "x+",
+      "anchorPoint": {
+        "x": -0.9000000000000004,
+        "y": 7.925000000000001
+      },
+      "width": 1.2,
+      "height": 0.2,
+      "center": {
+        "x": -0.2990000000000004,
+        "y": 7.925000000000001
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net10",
+      "netId": "source_connectivity_source_port_101",
+      "netLabelText": "QSPI_SD0",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_92"
+      ],
+      "orientation": "x+",
+      "anchorPoint": {
+        "x": -0.9000000000000004,
+        "y": 8.125
+      },
+      "width": 1.08,
+      "height": 0.2,
+      "center": {
+        "x": -0.3590000000000003,
+        "y": 8.125
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net12",
+      "netId": "source_connectivity_source_port_93",
+      "netLabelText": "QSPI_SD2",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_93"
+      ],
+      "orientation": "x+",
+      "anchorPoint": {
+        "x": -0.9000000000000004,
+        "y": 8.325000000000001
+      },
+      "width": 1.08,
+      "height": 0.2,
+      "center": {
+        "x": -0.3590000000000003,
+        "y": 8.325000000000001
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net11",
+      "netId": "source_connectivity_source_port_94",
+      "netLabelText": "QSPI_SD1",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_94"
+      ],
+      "orientation": "x+",
+      "anchorPoint": {
+        "x": -0.9000000000000004,
+        "y": 8.525
+      },
+      "width": 1.08,
+      "height": 0.2,
+      "center": {
+        "x": -0.3590000000000003,
+        "y": 8.525
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net9",
+      "netId": "source_connectivity_source_port_115",
+      "netLabelText": "QSPI_SS",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_95"
+      ],
+      "orientation": "x+",
+      "anchorPoint": {
+        "x": -0.9000000000000004,
+        "y": 8.725000000000001
+      },
+      "width": 0.96,
+      "height": 0.2,
+      "center": {
+        "x": -0.41900000000000037,
+        "y": 8.725000000000001
+      }
+    }
+  ]
+}
