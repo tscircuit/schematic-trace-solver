@@ -8,8 +8,6 @@ export interface RailNetLabelCornerPlacementSolverParams {
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   netLabelConnectorTraceIds?: ReadonlySet<string>
-  /** Revalidate labels after routing without moving already-clear placements. */
-  onlyOverlappingLabels?: boolean
 }
 
 export type Bounds = {

@@ -57,7 +57,6 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   private shouldAdvanceToNextLabel = false
   private traceMap: Record<string, SolvedTracePath>
   private netLabelConnectorTraceIds: ReadonlySet<string>
-  private onlyOverlappingLabels: boolean
 
   constructor(params: RailNetLabelCornerPlacementSolverParams) {
     super()
@@ -70,7 +69,6 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     )
     this.netLabelConnectorTraceIds =
       params.netLabelConnectorTraceIds ?? new Set()
-    this.onlyOverlappingLabels = params.onlyOverlappingLabels ?? false
     this.queuedLabelIndices = this.getProcessableLabelIndices()
     this.prepareNextLabel()
   }
@@ -83,7 +81,6 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       traces: this.traces,
       netLabelPlacements: this.netLabelPlacements,
       netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
-      onlyOverlappingLabels: this.onlyOverlappingLabels,
     }
   }
 
@@ -266,9 +263,6 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   }
 
   private shouldProcessLabel(label: NetLabelPlacement) {
-    if (this.onlyOverlappingLabels && !this.isLabelCrossedByTrace(label)) {
-      return false
-    }
     // Power/ground rail labels (VCC, GND, V3_3, ...) have a fixed vertical
     // orientation and read best snapped to a trace corner rather than floating
     // mid-segment. Signal labels (x+/x-) are left where they are.

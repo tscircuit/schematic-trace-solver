@@ -549,8 +549,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
-    // Rail alignment can bring a continuation through its own label. Recheck
-    // crossed rail labels while the trace corners are still available.
+    // Rail alignment can bring a continuation through its own label. Revisit
+    // rail-label corners before junction alignment trims redundant segments.
     definePipelineStep(
       "finalRailNetLabelCornerPlacementSolver",
       RailNetLabelCornerPlacementSolver,
@@ -560,7 +560,6 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           ...instance.finalTraceElbowTransitionSimplificationSolver!.getOutput(),
           netLabelConnectorTraceIds:
             instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
-          onlyOverlappingLabels: true,
         },
       ],
     ),
