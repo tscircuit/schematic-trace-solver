@@ -8,6 +8,8 @@ export interface RailNetLabelCornerPlacementSolverParams {
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   netLabelConnectorTraceIds?: ReadonlySet<string>
+  /** Only reconsider labels whose original corner was removed by rerouting. */
+  originalTraces?: SolvedTracePath[]
 }
 
 export type Bounds = {

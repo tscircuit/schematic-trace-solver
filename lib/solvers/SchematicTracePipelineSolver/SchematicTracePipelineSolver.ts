@@ -102,6 +102,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   traceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   preAlignmentTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   finalTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
+  finalRailNetLabelCornerPlacementSolver?: RailNetLabelCornerPlacementSolver
   sameNetJunctionAlignmentSolver?: SameNetJunctionAlignmentSolver
   inlineNetLabelSolver?: InlineNetLabelSolver
   netLabelToTraceSolver?: NetLabelToTraceSolver
@@ -548,17 +549,34 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
+    // Label detours and elbow simplification can move a previously selected
+    // rail corner. Re-evaluate rail labels against the resulting geometry before
+    // resolving the remaining label collisions.
+    definePipelineStep(
+      "finalRailNetLabelCornerPlacementSolver",
+      RailNetLabelCornerPlacementSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          ...instance.finalTraceElbowTransitionSimplificationSolver!.getOutput(),
+          originalTraces:
+            instance.railNetLabelCornerPlacementSolver!.getOutput().traces,
+          netLabelConnectorTraceIds:
+            instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
+        },
+      ],
+    ),
     definePipelineStep(
       "netLabelNetLabelCollisionSolver",
       NetLabelNetLabelCollisionSolver,
       (instance) => {
-        const simplificationOutput =
-          instance.finalTraceElbowTransitionSimplificationSolver!.getOutput()
+        const cornerPlacementOutput =
+          instance.finalRailNetLabelCornerPlacementSolver!.getOutput()
         return [
           {
             inputProblem: instance.inputProblem,
-            traces: simplificationOutput.traces,
-            netLabelPlacements: simplificationOutput.netLabelPlacements,
+            traces: cornerPlacementOutput.traces,
+            netLabelPlacements: cornerPlacementOutput.netLabelPlacements,
             preserveNonInlineLabelsAgainstInlineEligibleCollisions: true,
           },
         ]
