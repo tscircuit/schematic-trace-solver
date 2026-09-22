@@ -9,6 +9,7 @@ import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/Schemati
 import type { InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 import { countTurns } from "./countTurns"
+import { getInteriorShortcutPaths } from "./getInteriorShortcutPaths"
 import { hasCollisionsWithLabels } from "./hasCollisionsWithLabels"
 import { findPerpendicularPathCrossings } from "./sub-solver/findIntersectionsWithObstacles"
 import { generatePerpendicularTraceDetours } from "./sub-solver/generateLShapeRerouteCandidates"
@@ -150,6 +151,12 @@ export const rerouteGeneratedNetLabelConnectorCrossings = ({
         chipBounds: [],
         clearance,
       })
+        .flatMap((candidate) =>
+          getInteriorShortcutPaths(candidate.path).map((path) => ({
+            ...candidate,
+            path,
+          })),
+        )
         .filter(
           (candidate) =>
             getPathLength(candidate.path) <=
