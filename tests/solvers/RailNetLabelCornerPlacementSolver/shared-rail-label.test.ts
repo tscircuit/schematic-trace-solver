@@ -52,6 +52,7 @@ const createFixture = (direction = 1, mirror = 1) => {
     inputProblem,
     traces,
     netLabelPlacements,
+    onlyOverlappingLabels: true,
   }
 }
 
@@ -85,7 +86,7 @@ for (const direction of [1, -1]) {
   }
 }
 
-test("preserves a label already at a clear rail corner", () => {
+test("leaves a clear label at its existing anchor", () => {
   const fixture = createFixture()
   fixture.traces.splice(1)
   const solver = new RailNetLabelCornerPlacementSolver(fixture)
