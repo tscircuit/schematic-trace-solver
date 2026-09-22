@@ -37,6 +37,7 @@ import { TraceElbowTransitionSimplificationSolver } from "../TraceElbowTransitio
 import { InlineNetLabelSolver } from "../InlineNetLabelSolver/InlineNetLabelSolver"
 import { NetLabelToTraceSolver } from "../NetLabelToTraceSolver/NetLabelToTraceSolver"
 import { findPerpendicularPathCrossings } from "../TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
+import { restoreOriginalTraceEndpoints } from "./restoreOriginalTraceEndpoints"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -112,6 +113,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   firstIterationOfPhase: Record<string, number>
 
   inputProblem: InputProblem
+  private readonly originalInputProblem: InputProblem
   hideRatsNet: boolean
 
   pipelineDef = [
@@ -620,12 +622,26 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           },
         ]
       },
+      {
+        onSolved: (instance) => {
+          const finalSolver = instance.netLabelToTraceSolver!
+          finalSolver.outputTraces = restoreOriginalTraceEndpoints({
+            traces: finalSolver.outputTraces,
+            routingProblem: instance.inputProblem,
+            originalProblem: instance.originalInputProblem,
+          })
+        },
+      },
     ),
   ]
 
   constructor(inputProblem: InputProblem, opts?: Options) {
     super()
     this.hideRatsNet = opts?.hideRatsNet ?? false
+    this.originalInputProblem = structuredClone({
+      ...inputProblem,
+      _chipObstacleSpatialIndex: undefined,
+    })
     this.inputProblem = this.cloneAndCorrectInputProblem(inputProblem)
     this.MAX_ITERATIONS = 1e6
     this.startTimeOfPhase = {}

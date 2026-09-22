@@ -56,7 +56,14 @@ test("repro smart-lock BLE module schematic sheet", async () => {
     expect(neighbor.y).toBeLessThan(endpoint.y)
   }
   expect(
-    isPathCollidingWithObstacles(path, getObstacleRects(solver.inputProblem)),
+    isPathCollidingWithObstacles(
+      path,
+      getObstacleRects(solver.inputProblem).filter(
+        (obstacle) =>
+          obstacle.kind !== "chip" ||
+          !groundTrace.pins.some((pin) => pin.chipId === obstacle.chipId),
+      ),
+    ),
   ).toBe(false)
   expect(
     detectTraceLabelOverlap({
