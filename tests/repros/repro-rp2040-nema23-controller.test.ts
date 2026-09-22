@@ -10,9 +10,8 @@ import input from "./assets/repro-rp2040-nema23-controller.input.json"
 // Rendered the original board source with its frozen bun.lock: core 0.0.1914,
 // schematic-trace-solver 0.0.196. PCB rendering is disabled as in the board's
 // render-schematic script. No geometry, connections, or display data is edited.
-// The published solver produces the reported dangling V3V3 connector. Current
-// routing avoids the label collision; the companion collision-stage repro
-// preserves its complete real input to exercise the remaining cleanup bug.
+// Solver 0.0.196 produces the reported dangling V3V3 connector. Solver 0.0.204
+// keeps the label attached; this full-sheet snapshot records the current output.
 test("repro RP2040 NEMA23 complete controller sheet", async () => {
   const solver = new SchematicTracePipelineSolver(
     structuredClone(input) as unknown as InputProblem,
