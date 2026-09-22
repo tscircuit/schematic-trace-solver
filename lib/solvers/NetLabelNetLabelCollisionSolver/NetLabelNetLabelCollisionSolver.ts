@@ -297,9 +297,18 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     }
 
     // A label on an extended connector must keep that attachment point.
+    // Stage replays may omit the optional connector IDs. Infer an extension
+    // only when the anchor has left its original host traces. A junction on
+    // a host trace is still free to move along that host to avoid overlaps.
+    const isOnOriginalHost = label.mspConnectionPairIds.some((id) => {
+      const trace = this.traceMap[id]
+      return trace && tracePathContainsPoint(trace.tracePath, label.anchorPoint)
+    })
     const isAnchoredOnConnector = this.traces.some(
       (trace) =>
-        this.params.netLabelConnectorTraceIds?.has(trace.mspPairId) &&
+        (this.params.netLabelConnectorTraceIds?.has(trace.mspPairId) ||
+          (!isOnOriginalHost &&
+            !label.mspConnectionPairIds.includes(trace.mspPairId))) &&
         trace.globalConnNetId === label.globalConnNetId &&
         tracePathContainsPoint(trace.tracePath, label.anchorPoint),
     )
@@ -348,7 +357,17 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
       }
     }
 
-    return candidates
+    // Rotating an attached power label can turn a rail into a tag. Respect
+    // its allowed orientations; if none clear the collision, try moving the
+    // other label instead. Keep the existing host-trace search unchanged.
+    const allowedOrientations = label.netId
+      ? this.inputProblem.availableNetLabelOrientations[label.netId]
+      : undefined
+    return isAnchoredOnConnector && allowedOrientations?.length
+      ? candidates.filter((candidate) =>
+          allowedOrientations.includes(candidate.orientation),
+        )
+      : candidates
   }
 
   private checkCandidate(

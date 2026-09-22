@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test"
+import { getAnchoredNetLabelRenderedBounds } from "lib/solvers/InlineNetLabelSolver/getAnchoredNetLabelRenderedBounds"
+import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
@@ -26,6 +28,28 @@ test("repro smart-lock BLE module schematic sheet", async () => {
       "schematic_port_246-schematic_port_243",
     ),
   )!
+  // VDDS at U1 must remain free to slide along its original host trace,
+  // even where another same-net trace meets it. Treating that junction as
+  // an extended connector pins the label across the neighboring traces.
+  const u1SupplyLabel = netLabelPlacements.find(
+    (label) =>
+      label.netId === "VDDS" && Math.abs(label.anchorPoint.x + 3.421) < 1e-6,
+  )!
+  expect(u1SupplyLabel).toBeDefined()
+  expect(u1SupplyLabel.orientation).toBe("x-")
+  expect(u1SupplyLabel.anchorPoint.y).toBeCloseTo(0.95)
+  const supplyBounds = getAnchoredNetLabelRenderedBounds(u1SupplyLabel)
+  const crossingTraces = traces.filter(
+    (trace) =>
+      trace.globalConnNetId !== u1SupplyLabel.globalConnNetId &&
+      trace.tracePath
+        .slice(1)
+        .some((end, index) =>
+          segmentIntersectsRect(trace.tracePath[index]!, end, supplyBounds),
+        ),
+  )
+  expect(crossingTraces).toHaveLength(0)
+
   // C99, C104, C103, and C102 must share C101's labeled VDDS rail.
   for (const traceId of [
     "schematic_port_244-schematic_port_246",
