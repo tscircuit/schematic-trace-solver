@@ -57,6 +57,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   private shouldAdvanceToNextLabel = false
   private traceMap: Record<string, SolvedTracePath>
   private netLabelConnectorTraceIds: ReadonlySet<string>
+  private onlyOverlappingLabels: boolean
 
   constructor(params: RailNetLabelCornerPlacementSolverParams) {
     super()
@@ -69,6 +70,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     )
     this.netLabelConnectorTraceIds =
       params.netLabelConnectorTraceIds ?? new Set()
+    this.onlyOverlappingLabels = params.onlyOverlappingLabels ?? false
     this.queuedLabelIndices = this.getProcessableLabelIndices()
     this.prepareNextLabel()
   }
@@ -81,6 +83,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       traces: this.traces,
       netLabelPlacements: this.netLabelPlacements,
       netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
+      onlyOverlappingLabels: this.onlyOverlappingLabels,
     }
   }
 
@@ -250,12 +253,22 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
 
     this.outputNetLabelPlacements[labelIndex] = {
       ...label,
+      ...(!this.pointsEqual(label.anchorPoint, candidate.anchorPoint) &&
+      !label.mspConnectionPairIds.includes(candidate.traceId)
+        ? {
+            mspConnectionPairIds: [candidate.traceId],
+            pinIds: [...this.traceMap[candidate.traceId]!.pinIds],
+          }
+        : {}),
       anchorPoint: candidate.anchorPoint,
       center: candidate.center,
     }
   }
 
   private shouldProcessLabel(label: NetLabelPlacement) {
+    if (this.onlyOverlappingLabels && !this.isLabelCrossedByTrace(label)) {
+      return false
+    }
     // Power/ground rail labels (VCC, GND, V3_3, ...) have a fixed vertical
     // orientation and read best snapped to a trace corner rather than floating
     // mid-segment. Signal labels (x+/x-) are left where they are.
@@ -290,7 +303,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     const labelTraces = this.getTraceLinesForLabel(label)
     const allowRailAlignedFallback =
       this.isConfiguredRailLabel(label) &&
-      (this.isLabelCrossedByOtherNetTrace(label) ||
+      (this.isLabelCrossedByTrace(label) ||
         !labelTraces.some((trace) =>
           getTraceCorners(trace.tracePath).some((corner) =>
             this.pointsEqual(corner, label.anchorPoint),
@@ -456,15 +469,9 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     )
   }
 
-  private isLabelCrossedByOtherNetTrace(label: NetLabelPlacement) {
+  private isLabelCrossedByTrace(label: NetLabelPlacement) {
     const bounds = getRectBounds(label.center, label.width, label.height)
-    const otherNetTraceMap = Object.fromEntries(
-      this.traces
-        .filter((trace) => trace.globalConnNetId !== label.globalConnNetId)
-        .map((trace) => [trace.mspPairId, trace]),
-    )
-
-    return traceCrossesBoundsInterior(bounds, otherNetTraceMap)
+    return traceCrossesBoundsInterior(bounds, this.traceMap)
   }
 
   private pointsEqual(a: Point, b: Point) {
@@ -637,6 +644,15 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   private isTraceForLabel(trace: SolvedTracePath, label: NetLabelPlacement) {
     if (!tracePathContainsPoint(trace.tracePath, label.anchorPoint)) {
       return false
+    }
+
+    // Rail alignment can join another trace at the label's anchor. Its clear
+    // outer corners are valid attachments when the shared rail crosses the label.
+    if (
+      trace.globalConnNetId === label.globalConnNetId &&
+      this.isLabelCrossedByTrace(label)
+    ) {
+      return true
     }
 
     const traceIds = new Set(label.mspConnectionPairIds)
