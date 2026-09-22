@@ -7,6 +7,7 @@ import {
   nearlyEqual,
   RAIL_ALIGNMENT_EPSILON,
 } from "./geometry"
+import { hasLabelOnAdjacentInteriorLeg } from "./hasLabelOnAdjacentInteriorLeg"
 import type { RailSegment } from "./types"
 
 const getTransitivelyConnectedTraceIds = (
@@ -92,16 +93,19 @@ export const getFixedLabelCoordinate = (
   })
   const coordinates = getDistinctCoordinates(
     anchoringLabels.flatMap((label) => {
-      // A same-component bus can turn around the component before reaching
-      // its label. Preserve that labeled backbone's existing rail instead of
-      // projecting the label on its perpendicular end leg onto the rail.
+      // A label on an adjoining interior leg anchors that routed corner.
+      // Keep its rail coordinate instead of projecting the label across
+      // the leg. Labels on terminal pin legs still use their own coordinate.
       const labeledBackboneSegments =
         groupIsWithinSingleComponent && labelsOrientedAlongRail.has(label)
-          ? group.filter(
-              (segment) =>
+          ? group.filter((segment) => {
+              const trace = traceMap.get(segment.traceId)
+              return (
+                trace &&
                 label.mspConnectionPairIds.includes(segment.traceId) &&
-                (traceMap.get(segment.traceId)?.tracePath.length ?? 0) > 4,
-            )
+                hasLabelOnAdjacentInteriorLeg(segment, trace, label.anchorPoint)
+              )
+            })
           : []
       if (labeledBackboneSegments.length > 0) {
         return labeledBackboneSegments.map((segment) => segment.coordinate)

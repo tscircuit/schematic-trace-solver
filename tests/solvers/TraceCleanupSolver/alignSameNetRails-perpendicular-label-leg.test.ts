@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { getComponentSideRailSegments } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/getComponentSideRailSegments"
+import { getFixedLabelCoordinate } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/getFixedLabelCoordinate"
 import type { InputProblem } from "lib/types/InputProblem"
 import { align, createTrace } from "./fixtures/alignSameNetRails"
 
@@ -108,5 +110,90 @@ test.each([...sides])(
       netLabelPlacements: [label],
     })
     expect(result.traces).toEqual([branch, backbone])
+  },
+)
+
+test.each([...sides])(
+  "does not fix the %s rail to a label on a terminal pin leg",
+  (side) => {
+    const { problem, branch, backbone, label, point } = createFixture(side)
+    label.anchorPoint = point(-2, 0)
+    const chipMap = new Map(problem.chips.map((chip) => [chip.chipId, chip]))
+    const branchSegment = getComponentSideRailSegments(branch, chipMap)[0]!
+    const group = [branch, backbone]
+      .flatMap((trace) => getComponentSideRailSegments(trace, chipMap))
+      .filter(
+        (segment) =>
+          segment.componentFacingDirection ===
+          branchSegment.componentFacingDirection,
+      )
+
+    expect(getFixedLabelCoordinate(group, [label], [branch, backbone])).toBe(
+      null,
+    )
+  },
+)
+
+test.each([...sides])(
+  "does not fix the %s rail to a label on a nonadjacent segment",
+  (side) => {
+    const { problem, branch, backbone, label, point } = createFixture(side)
+    label.anchorPoint = point(0, -3.5)
+    const chipMap = new Map(problem.chips.map((chip) => [chip.chipId, chip]))
+    const branchSegment = getComponentSideRailSegments(branch, chipMap)[0]!
+    const group = [branch, backbone]
+      .flatMap((trace) => getComponentSideRailSegments(trace, chipMap))
+      .filter(
+        (segment) =>
+          segment.componentFacingDirection ===
+          branchSegment.componentFacingDirection,
+      )
+
+    expect(getFixedLabelCoordinate(group, [label], [branch, backbone])).toBe(
+      null,
+    )
+  },
+)
+
+test.each([...sides])(
+  "aligns the %s rail when the labeled backbone is reversed",
+  (side) => {
+    const { problem, branch, backbone, label, point } = createFixture(side)
+    backbone.tracePath.reverse()
+    backbone.pins.reverse()
+    backbone.pinIds.reverse()
+    const result = align([branch, backbone], {
+      inputProblem: problem,
+      netLabelPlacements: [label],
+    })
+
+    expect(result.traces[0]!.tracePath).toEqual([
+      point(-1, 2),
+      point(-3, 2),
+      point(-3, 0),
+      point(-1, 0),
+    ])
+    expect(result.traces[1]).toEqual(backbone)
+  },
+)
+
+test.each([...sides])(
+  "aligns the %s rail when the labeled leg has collinear subdivisions",
+  (side) => {
+    const { problem, branch, backbone, label, point } = createFixture(side)
+    const originalPath = [...backbone.tracePath]
+    backbone.tracePath.splice(2, 0, point(-1, -4), point(-2, -4))
+    const result = align([branch, backbone], {
+      inputProblem: problem,
+      netLabelPlacements: [label],
+    })
+
+    expect(result.traces[0]!.tracePath).toEqual([
+      point(-1, 2),
+      point(-3, 2),
+      point(-3, 0),
+      point(-1, 0),
+    ])
+    expect(result.traces[1]!.tracePath).toEqual(originalPath)
   },
 )
