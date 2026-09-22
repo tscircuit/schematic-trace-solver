@@ -91,9 +91,25 @@ export const getFixedLabelCoordinate = (
     })
   })
   const coordinates = getDistinctCoordinates(
-    anchoringLabels.map((label) =>
-      orientation === "vertical" ? label.anchorPoint.x : label.anchorPoint.y,
-    ),
+    anchoringLabels.flatMap((label) => {
+      // A same-component bus can turn around the component before reaching
+      // its label. Preserve that labeled backbone's existing rail instead of
+      // projecting the label on its perpendicular end leg onto the rail.
+      const labeledBackboneSegments =
+        groupIsWithinSingleComponent && labelsOrientedAlongRail.has(label)
+          ? group.filter(
+              (segment) =>
+                label.mspConnectionPairIds.includes(segment.traceId) &&
+                (traceMap.get(segment.traceId)?.tracePath.length ?? 0) > 4,
+            )
+          : []
+      if (labeledBackboneSegments.length > 0) {
+        return labeledBackboneSegments.map((segment) => segment.coordinate)
+      }
+      return [
+        orientation === "vertical" ? label.anchorPoint.x : label.anchorPoint.y,
+      ]
+    }),
   )
   if (coordinates.length !== 1) return null
 
