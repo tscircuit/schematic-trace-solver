@@ -1,12 +1,24 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { InputPin, InputProblem, PinId } from "../../types/InputProblem"
+import type {
+  InputChip,
+  InputPin,
+  InputProblem,
+  PinId,
+} from "../../types/InputProblem"
+import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 
 const ENDPOINT_EPSILON = 1e-9
 
-const getPinsById = (problem: InputProblem): Partial<Record<PinId, InputPin>> =>
+type PinContext = { pin: InputPin; chip: InputChip }
+
+const getPinsById = (
+  problem: InputProblem,
+): Partial<Record<PinId, PinContext>> =>
   Object.fromEntries(
-    problem.chips.flatMap((chip) => chip.pins.map((pin) => [pin.pinId, pin])),
+    problem.chips.flatMap((chip) =>
+      chip.pins.map((pin) => [pin.pinId, { pin, chip }]),
+    ),
   )
 
 const pointsMatch = (first: Point, second: Point) =>
@@ -20,12 +32,14 @@ const restorePinPosition = ({
 }: {
   pin: SolvedTracePath["pins"][number]
   restoredPinIds: Set<PinId>
-  originalPinsById: Partial<Record<PinId, InputPin>>
+  originalPinsById: Partial<Record<PinId, PinContext>>
 }) => {
-  const originalPin = originalPinsById[pin.pinId]
+  const originalPin = originalPinsById[pin.pinId]?.pin
   if (!restoredPinIds.has(pin.pinId) || !originalPin) return pin
   return { ...pin, x: originalPin.x, y: originalPin.y }
 }
+
+const getDirectionAxis = (direction: "x+" | "x-" | "y+" | "y-") => direction[0]
 
 export const restoreOriginalTraceEndpoints = ({
   traces,
@@ -51,16 +65,21 @@ export const restoreOriginalTraceEndpoints = ({
       // collision-sensitive work is complete, extend that terminal segment
       // back to the caller's real port coordinate.
       const pinId = trace.pinIds.find((candidatePinId) => {
-        const routingPin = routingPinsById[candidatePinId]
-        const originalPin = originalPinsById[candidatePinId]
+        const routing = routingPinsById[candidatePinId]
+        const originalPin = originalPinsById[candidatePinId]?.pin
         return (
-          routingPin &&
+          routing &&
           originalPin?._facingDirection &&
-          !pointsMatch(routingPin, originalPin) &&
-          pointsMatch(endpoint, routingPin)
+          getDirectionAxis(originalPin._facingDirection) !==
+            getDirectionAxis(
+              routing.pin._facingDirection ??
+                getPinDirection(routing.pin, routing.chip),
+            ) &&
+          !pointsMatch(routing.pin, originalPin) &&
+          pointsMatch(endpoint, routing.pin)
         )
       })
-      const originalPin = pinId ? originalPinsById[pinId] : undefined
+      const originalPin = pinId ? originalPinsById[pinId]?.pin : undefined
       if (!pinId || !originalPin) continue
 
       tracePath[endpointIndex] = { x: originalPin.x, y: originalPin.y }

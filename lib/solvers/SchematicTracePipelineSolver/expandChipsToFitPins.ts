@@ -8,7 +8,7 @@ import type { InputProblem } from "lib/types/InputProblem"
  * Notes:
  * - Center is preserved.
  * - Only increases dimensions as needed.
- * - Preserves provided pin facing directions when geometry changes.
+ * - Clears cached _facingDirection on pins since geometry changed.
  */
 export const expandChipsToFitPins = (problem: InputProblem) => {
   for (const chip of problem.chips) {
@@ -31,6 +31,11 @@ export const expandChipsToFitPins = (problem: InputProblem) => {
     if (newHalfWidth > halfWidth || newHalfHeight > halfHeight) {
       chip.width = newHalfWidth * 2
       chip.height = newHalfHeight * 2
+
+      // Clear any cached facing direction since geometry changed.
+      for (const pin of chip.pins) {
+        pin._facingDirection = undefined
+      }
     }
   }
 }
