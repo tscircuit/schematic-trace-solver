@@ -1,0 +1,543 @@
+{
+  "inputProblem": {
+    "chips": [
+      {
+        "chipId": "U1",
+        "center": {
+          "x": -2.7,
+          "y": 5.3
+        },
+        "width": 2.7999999999999994,
+        "height": 8.250000000000005,
+        "pins": [
+          {
+            "pinId": "schematic_port_81",
+            "displayName": "IOVDD2",
+            "x": -0.9000000000000004,
+            "y": 4.475,
+            "_facingDirection": "x+"
+          },
+          {
+            "pinId": "schematic_port_82",
+            "displayName": "ADC_AVDD",
+            "x": -0.9000000000000004,
+            "y": 4.674999999999999,
+            "_facingDirection": "x+"
+          },
+          {
+            "pinId": "schematic_port_83",
+            "displayName": "VREG_IN",
+            "x": -0.9000000000000004,
+            "y": 5.225,
+            "_facingDirection": "x+"
+          },
+          {
+            "pinId": "schematic_port_84",
+            "displayName": "VREG_VOUT",
+            "x": -0.9000000000000004,
+            "y": 5.424999999999999,
+            "_facingDirection": "x+"
+          },
+          {
+            "pinId": "schematic_port_87",
+            "displayName": "USB_VDD",
+            "x": -0.9000000000000004,
+            "y": 6.375,
+            "_facingDirection": "x+"
+          },
+          {
+            "pinId": "schematic_port_88",
+            "displayName": "IOVDD1",
+            "x": -0.9000000000000004,
+            "y": 6.924999999999999,
+            "_facingDirection": "x+"
+          },
+          {
+            "pinId": "schematic_port_89",
+            "displayName": "DVDD1",
+            "x": -0.9000000000000004,
+            "y": 7.125,
+            "_facingDirection": "x+"
+          },
+          {
+            "pinId": "schematic_port_96",
+            "displayName": "GND/thermalpad",
+            "x": -0.9000000000000004,
+            "y": 9.225000000000001,
+            "_facingDirection": "x+"
+          }
+        ]
+      },
+      {
+        "chipId": "C_CORE",
+        "center": {
+          "x": 1.5924999999999998,
+          "y": 4.6
+        },
+        "width": 1.285,
+        "height": 0.7599999999999998,
+        "pins": [
+          {
+            "pinId": "schematic_port_145",
+            "displayName": "anode",
+            "x": 1.4,
+            "y": 4.8999999999999995,
+            "_facingDirection": "y+"
+          },
+          {
+            "pinId": "schematic_port_146",
+            "displayName": "cathode",
+            "x": 1.4,
+            "y": 4.3,
+            "_facingDirection": "y-"
+          }
+        ],
+        "symbolName": "capacitor_down"
+      }
+    ],
+    "directConnections": [],
+    "netConnections": [
+      {
+        "netId": "V3V3",
+        "pinIds": [
+          "schematic_port_88",
+          "schematic_port_87",
+          "schematic_port_83",
+          "schematic_port_81"
+        ]
+      },
+      {
+        "netId": "V1V1",
+        "pinIds": [
+          "schematic_port_89",
+          "schematic_port_84"
+        ]
+      },
+      {
+        "netId": "ADC_VREF",
+        "pinIds": [
+          "schematic_port_82"
+        ]
+      }
+    ],
+    "availableNetLabelOrientations": {
+      "V3V3": [
+        "y+"
+      ],
+      "ADC_VREF": [
+        "y+"
+      ]
+    },
+    "_hideRatsNet": true
+  },
+  "traces": [
+    {
+      "mspPairId": "schematic_port_88-schematic_port_87",
+      "dcConnNetId": "connectivity_net3",
+      "globalConnNetId": "connectivity_net3",
+      "userNetId": "V3V3",
+      "pins": [
+        {
+          "pinId": "schematic_port_88",
+          "displayName": "IOVDD1",
+          "x": -0.9000000000000004,
+          "y": 6.924999999999999,
+          "_facingDirection": "x+",
+          "chipId": "U1"
+        },
+        {
+          "pinId": "schematic_port_87",
+          "displayName": "USB_VDD",
+          "x": -0.9000000000000004,
+          "y": 6.375,
+          "_facingDirection": "x+",
+          "chipId": "U1"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.9000000000000004,
+          "y": 6.924999999999999
+        },
+        {
+          "x": 0.04099999999999959,
+          "y": 6.924999999999999
+        },
+        {
+          "x": 0.04099999999999962,
+          "y": 6.375
+        },
+        {
+          "x": -0.9000000000000004,
+          "y": 6.375
+        }
+      ],
+      "mspConnectionPairIds": [
+        "schematic_port_88-schematic_port_87"
+      ],
+      "pinIds": [
+        "schematic_port_88",
+        "schematic_port_87"
+      ]
+    },
+    {
+      "mspPairId": "schematic_port_89-schematic_port_84",
+      "dcConnNetId": "connectivity_net0",
+      "globalConnNetId": "connectivity_net2",
+      "userNetId": "V1V1",
+      "pins": [
+        {
+          "pinId": "schematic_port_89",
+          "displayName": "DVDD1",
+          "x": -0.9000000000000004,
+          "y": 7.125,
+          "_facingDirection": "x+",
+          "chipId": "U1"
+        },
+        {
+          "pinId": "schematic_port_84",
+          "displayName": "VREG_VOUT",
+          "x": -0.9000000000000004,
+          "y": 5.424999999999999,
+          "_facingDirection": "x+",
+          "chipId": "U1"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.9000000000000004,
+          "y": 7.125
+        },
+        {
+          "x": -0.8000000000000004,
+          "y": 7.125
+        },
+        {
+          "x": -0.8000000000000004,
+          "y": 6.674999999999999
+        },
+        {
+          "x": 0.17099999999999949,
+          "y": 6.674999999999999
+        },
+        {
+          "x": 0.17099999999999946,
+          "y": 5.475
+        },
+        {
+          "x": -0.8000000000000004,
+          "y": 5.475
+        },
+        {
+          "x": -0.8000000000000004,
+          "y": 5.424999999999999
+        },
+        {
+          "x": -0.9000000000000004,
+          "y": 5.424999999999999
+        }
+      ],
+      "mspConnectionPairIds": [
+        "schematic_port_89-schematic_port_84"
+      ],
+      "pinIds": [
+        "schematic_port_89",
+        "schematic_port_84"
+      ]
+    },
+    {
+      "mspPairId": "schematic_port_83-schematic_port_81",
+      "dcConnNetId": "connectivity_net3",
+      "globalConnNetId": "connectivity_net3",
+      "userNetId": "V3V3",
+      "pins": [
+        {
+          "pinId": "schematic_port_83",
+          "displayName": "VREG_IN",
+          "x": -0.9000000000000004,
+          "y": 5.225,
+          "_facingDirection": "x+",
+          "chipId": "U1"
+        },
+        {
+          "pinId": "schematic_port_81",
+          "displayName": "IOVDD2",
+          "x": -0.9000000000000004,
+          "y": 4.475,
+          "_facingDirection": "x+",
+          "chipId": "U1"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.9000000000000004,
+          "y": 5.225
+        },
+        {
+          "x": 0.04099999999999962,
+          "y": 5.225
+        },
+        {
+          "x": 0.04099999999999962,
+          "y": 4.475
+        },
+        {
+          "x": -0.9000000000000004,
+          "y": 4.475
+        }
+      ],
+      "mspConnectionPairIds": [
+        "schematic_port_83-schematic_port_81"
+      ],
+      "pinIds": [
+        "schematic_port_83",
+        "schematic_port_81"
+      ]
+    },
+    {
+      "mspPairId": "schematic_port_87-schematic_port_83",
+      "dcConnNetId": "connectivity_net3",
+      "globalConnNetId": "connectivity_net3",
+      "userNetId": "V3V3",
+      "pins": [
+        {
+          "pinId": "schematic_port_87",
+          "displayName": "USB_VDD",
+          "x": -0.9000000000000004,
+          "y": 6.375,
+          "_facingDirection": "x+",
+          "chipId": "U1"
+        },
+        {
+          "pinId": "schematic_port_83",
+          "displayName": "VREG_IN",
+          "x": -0.9000000000000004,
+          "y": 5.225,
+          "_facingDirection": "x+",
+          "chipId": "U1"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": 0.04099999999999962,
+          "y": 6.375
+        },
+        {
+          "x": 0.04099999999999962,
+          "y": 5.225
+        },
+        {
+          "x": -0.9000000000000004,
+          "y": 5.225
+        }
+      ],
+      "mspConnectionPairIds": [
+        "schematic_port_87-schematic_port_83"
+      ],
+      "pinIds": [
+        "schematic_port_87",
+        "schematic_port_83"
+      ]
+    },
+    {
+      "mspPairId": "schematic_port_96-schematic_port_146",
+      "dcConnNetId": "connectivity_net19",
+      "globalConnNetId": "connectivity_net19",
+      "pins": [
+        {
+          "pinId": "schematic_port_96",
+          "displayName": "GND/thermalpad",
+          "x": -0.9000000000000004,
+          "y": 9.225000000000001,
+          "_facingDirection": "x+",
+          "chipId": "U1"
+        },
+        {
+          "pinId": "schematic_port_146",
+          "displayName": "cathode",
+          "x": 1.4,
+          "y": 4.22,
+          "_facingDirection": "y-",
+          "chipId": "C_CORE"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.9000000000000004,
+          "y": 9.225000000000001
+        },
+        {
+          "x": 0.24999999999999978,
+          "y": 9.225000000000001
+        },
+        {
+          "x": 0.24999999999999978,
+          "y": 8.125
+        },
+        {
+          "x": 0.4009999999999996,
+          "y": 8.125
+        },
+        {
+          "x": 0.4009999999999996,
+          "y": 7.725000000000001
+        },
+        {
+          "x": 0.24999999999999978,
+          "y": 7.725000000000001
+        },
+        {
+          "x": 0.24999999999999978,
+          "y": 4.02
+        },
+        {
+          "x": 1.4,
+          "y": 4.02
+        },
+        {
+          "x": 1.4,
+          "y": 4.3
+        }
+      ],
+      "mspConnectionPairIds": [
+        "schematic_port_96-schematic_port_146"
+      ],
+      "pinIds": [
+        "schematic_port_96",
+        "schematic_port_146"
+      ]
+    },
+    {
+      "mspPairId": "available-net-orientation-0-V3V3",
+      "dcConnNetId": "connectivity_net3",
+      "globalConnNetId": "connectivity_net3",
+      "userNetId": "V3V3",
+      "pins": [
+        {
+          "pinId": "schematic_port_83",
+          "displayName": "VREG_IN",
+          "x": -0.9000000000000004,
+          "y": 5.225,
+          "chipId": "U1"
+        },
+        {
+          "pinId": "schematic_port_81",
+          "displayName": "IOVDD2",
+          "x": -0.9000000000000004,
+          "y": 4.475,
+          "chipId": "U1"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.37900000000000045,
+          "y": 5.225
+        },
+        {
+          "x": 0.5709999999999995,
+          "y": 5.225
+        },
+        {
+          "x": 0.5709999999999995,
+          "y": 5.276
+        }
+      ],
+      "mspConnectionPairIds": [
+        "available-net-orientation-0-V3V3"
+      ],
+      "pinIds": [
+        "schematic_port_83",
+        "schematic_port_81"
+      ]
+    },
+    {
+      "mspPairId": "available-net-orientation-24-ADC_VREF",
+      "dcConnNetId": "connectivity_net30",
+      "globalConnNetId": "connectivity_net30",
+      "userNetId": "ADC_VREF",
+      "pins": [
+        {
+          "pinId": "schematic_port_82",
+          "displayName": "ADC_AVDD",
+          "x": -0.9000000000000004,
+          "y": 4.674999999999999,
+          "chipId": "U1"
+        },
+        {
+          "pinId": "schematic_port_82",
+          "displayName": "ADC_AVDD",
+          "x": -0.9000000000000004,
+          "y": 4.674999999999999,
+          "chipId": "U1"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": -0.9000000000000004,
+          "y": 4.674999999999999
+        },
+        {
+          "x": 0.891,
+          "y": 4.674999999999999
+        },
+        {
+          "x": 0.8910000000000001,
+          "y": 5.425999999999999
+        }
+      ],
+      "mspConnectionPairIds": [
+        "available-net-orientation-24-ADC_VREF"
+      ],
+      "pinIds": [
+        "schematic_port_82"
+      ]
+    }
+  ],
+  "netLabelPlacements": [
+    {
+      "globalConnNetId": "connectivity_net3",
+      "dcConnNetId": "connectivity_net3",
+      "netId": "V3V3",
+      "netLabelText": "V3V3",
+      "mspConnectionPairIds": [
+        "schematic_port_83-schematic_port_81"
+      ],
+      "pinIds": [
+        "schematic_port_83",
+        "schematic_port_81"
+      ],
+      "orientation": "y+",
+      "anchorPoint": {
+        "x": 0.571,
+        "y": 5.276
+      },
+      "width": 0.6,
+      "height": 0.42,
+      "center": {
+        "x": 0.571,
+        "y": 5.486
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net30",
+      "netId": "ADC_VREF",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_82"
+      ],
+      "orientation": "y+",
+      "anchorPoint": {
+        "x": 0.891,
+        "y": 5.426
+      },
+      "width": 1.08,
+      "height": 0.42,
+      "center": {
+        "x": 0.891,
+        "y": 5.636
+      },
+      "netLabelText": "ADC_VREF"
+    }
+  ],
+  "preserveNonInlineLabelsAgainstInlineEligibleCollisions": true
+}
