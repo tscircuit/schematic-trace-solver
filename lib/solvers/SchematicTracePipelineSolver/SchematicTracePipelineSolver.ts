@@ -549,8 +549,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
-    // Rail alignment can bring a continuation through its own label. Recheck
-    // crossed rail labels while the trace corners are still available.
+    // Late routing can move a label's corner or bring a trace through it.
+    // Recheck both cases while the trace corners are still available.
     definePipelineStep(
       "finalRailNetLabelCornerPlacementSolver",
       RailNetLabelCornerPlacementSolver,
@@ -558,6 +558,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         {
           inputProblem: instance.inputProblem,
           ...instance.finalTraceElbowTransitionSimplificationSolver!.getOutput(),
+          originalTraces:
+            instance.railNetLabelCornerPlacementSolver!.getOutput().traces,
           netLabelConnectorTraceIds:
             instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
           onlyOverlappingLabels: true,

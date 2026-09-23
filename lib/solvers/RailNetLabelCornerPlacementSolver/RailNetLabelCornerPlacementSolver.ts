@@ -57,6 +57,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   private shouldAdvanceToNextLabel = false
   private traceMap: Record<string, SolvedTracePath>
   private netLabelConnectorTraceIds: ReadonlySet<string>
+  private originalTraces?: SolvedTracePath[]
   private onlyOverlappingLabels: boolean
 
   constructor(params: RailNetLabelCornerPlacementSolverParams) {
@@ -70,6 +71,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     )
     this.netLabelConnectorTraceIds =
       params.netLabelConnectorTraceIds ?? new Set()
+    this.originalTraces = params.originalTraces
     this.onlyOverlappingLabels = params.onlyOverlappingLabels ?? false
     this.queuedLabelIndices = this.getProcessableLabelIndices()
     this.prepareNextLabel()
@@ -83,6 +85,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       traces: this.traces,
       netLabelPlacements: this.netLabelPlacements,
       netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
+      originalTraces: this.originalTraces,
       onlyOverlappingLabels: this.onlyOverlappingLabels,
     }
   }
@@ -266,8 +269,13 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   }
 
   private shouldProcessLabel(label: NetLabelPlacement) {
-    if (this.onlyOverlappingLabels && !this.isLabelCrossedByTrace(label)) {
-      return false
+    if (this.originalTraces || this.onlyOverlappingLabels) {
+      // Late routing can remove a label's corner or bring a trace through it.
+      // Either change requires revalidation when both checks are enabled.
+      const cornerMoved = this.originalTraces && this.hasMovedCorner(label)
+      const labelCrossed =
+        this.onlyOverlappingLabels && this.isLabelCrossedByTrace(label)
+      if (!cornerMoved && !labelCrossed) return false
     }
     // Power/ground rail labels (VCC, GND, V3_3, ...) have a fixed vertical
     // orientation and read best snapped to a trace corner rather than floating
@@ -279,6 +287,27 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       (this.getStraightConnectorCandidates(label).length > 0 ||
         this.getCornerCandidatesForLabel(label).length > 0)
     )
+  }
+
+  private hasMovedCorner(label: NetLabelPlacement) {
+    return this.originalTraces!.some((trace) => {
+      if (!this.isTraceForLabel(trace, label)) return false
+      if (
+        !getTraceCorners(trace.tracePath).some((corner) =>
+          this.pointsEqual(corner, label.anchorPoint),
+        )
+      ) {
+        return false
+      }
+
+      const reroutedTrace = this.traceMap[trace.mspPairId]
+      return (
+        reroutedTrace !== undefined &&
+        !getTraceCorners(reroutedTrace.tracePath).some((corner) =>
+          this.pointsEqual(corner, label.anchorPoint),
+        )
+      )
+    })
   }
 
   private intersectsAnyChip(bounds: Bounds) {

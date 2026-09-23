@@ -8,7 +8,9 @@ export interface RailNetLabelCornerPlacementSolverParams {
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   netLabelConnectorTraceIds?: ReadonlySet<string>
-  /** Revalidate labels after routing without moving already-clear placements. */
+  /** Reconsider labels whose original corner was removed by rerouting. */
+  originalTraces?: SolvedTracePath[]
+  /** Revalidate crossed labels, in addition to moved corners when originalTraces is supplied. */
   onlyOverlappingLabels?: boolean
 }
 
