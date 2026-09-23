@@ -40,7 +40,6 @@ import { findPerpendicularPathCrossings } from "../TraceCleanupSolver/sub-solver
 import {
   getOriginalPinById,
   restoreOriginalTraceEndpoints,
-  type OriginalPinById,
 } from "./restoreOriginalTraceEndpoints"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
@@ -117,7 +116,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   firstIterationOfPhase: Record<string, number>
 
   inputProblem: InputProblem
-  private readonly originalPinById: OriginalPinById
+  private readonly originalPinById: ReturnType<typeof getOriginalPinById>
   hideRatsNet: boolean
 
   pipelineDef = [
@@ -195,7 +194,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           inputTracePaths: restoreOriginalTraceEndpoints({
             traces:
               this.unroutedTraceRecoverySolver!.getOutput().allTracesMerged,
-            routingProblem: this.inputProblem,
+            routingChipById: this.mspConnectionPairSolver!.chipMap,
             originalPinById: this.originalPinById,
           }),
           globalConnMap: this.mspConnectionPairSolver!.globalConnMap,

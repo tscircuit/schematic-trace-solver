@@ -3,14 +3,9 @@ import type { Point } from "@tscircuit/math-utils"
 export const DEFAULT_TRACE_CLEARANCE = 0.2
 export const TRACE_COORDINATE_EPSILON = 1e-9
 
-export const traceCoordinatesMatch = (
-  firstCoordinate: number,
-  secondCoordinate: number,
-) => Math.abs(firstCoordinate - secondCoordinate) <= TRACE_COORDINATE_EPSILON
-
 export const tracePointsMatch = (firstPoint: Point, secondPoint: Point) =>
-  traceCoordinatesMatch(firstPoint.x, secondPoint.x) &&
-  traceCoordinatesMatch(firstPoint.y, secondPoint.y)
+  Math.abs(firstPoint.x - secondPoint.x) <= TRACE_COORDINATE_EPSILON &&
+  Math.abs(firstPoint.y - secondPoint.y) <= TRACE_COORDINATE_EPSILON
 
 export const removeConsecutiveDuplicateTracePoints = (path: Point[]) =>
   path.filter(
