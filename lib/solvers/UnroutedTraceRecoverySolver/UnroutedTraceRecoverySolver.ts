@@ -21,14 +21,31 @@ import {
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem, PinId } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
-import {
-  DEFAULT_TRACE_CLEARANCE,
-  removeConsecutiveDuplicateTracePoints,
-  TRACE_COORDINATE_EPSILON,
-  tracePointsMatch,
-} from "lib/utils/traceRouting"
 
+export const ROUTE_CLEARANCE = 0.2
+const COORDINATE_TOLERANCE = 1e-9
 const GROUND_NET_ID = "GND"
+
+export const pointsAreEqual = (
+  firstPoint: Point,
+  secondPoint: Point,
+): boolean => {
+  return (
+    Math.abs(firstPoint.x - secondPoint.x) <= COORDINATE_TOLERANCE &&
+    Math.abs(firstPoint.y - secondPoint.y) <= COORDINATE_TOLERANCE
+  )
+}
+
+const removeConsecutiveDuplicatePoints = (path: Point[]): Point[] => {
+  const filteredPath: Point[] = []
+  for (const point of path) {
+    const previousPoint = filteredPath.at(-1)
+    if (!previousPoint || !pointsAreEqual(previousPoint, point)) {
+      filteredPath.push(point)
+    }
+  }
+  return filteredPath
+}
 
 const getPathLength = (path: Point[]): number => {
   let pathLength = 0
@@ -50,16 +67,16 @@ const getEscapePoint = ({
 }): Point => {
   const escapePoint = { x: pin.x, y: pin.y }
   if (facingDirection === "x+") {
-    escapePoint.x += DEFAULT_TRACE_CLEARANCE
+    escapePoint.x += ROUTE_CLEARANCE
   }
   if (facingDirection === "x-") {
-    escapePoint.x -= DEFAULT_TRACE_CLEARANCE
+    escapePoint.x -= ROUTE_CLEARANCE
   }
   if (facingDirection === "y+") {
-    escapePoint.y += DEFAULT_TRACE_CLEARANCE
+    escapePoint.y += ROUTE_CLEARANCE
   }
   if (facingDirection === "y-") {
-    escapePoint.y -= DEFAULT_TRACE_CLEARANCE
+    escapePoint.y -= ROUTE_CLEARANCE
   }
   return escapePoint
 }
@@ -93,19 +110,19 @@ const getPinConnectionCandidates = ({
   })
   const outerBounds = getOuterBounds(obstacles)
   const horizontalChannels = [
-    outerBounds.minY - DEFAULT_TRACE_CLEARANCE,
-    outerBounds.maxY + DEFAULT_TRACE_CLEARANCE,
+    outerBounds.minY - ROUTE_CLEARANCE,
+    outerBounds.maxY + ROUTE_CLEARANCE,
     ...channelObstacles.flatMap((obstacle) => [
-      obstacle.minY - DEFAULT_TRACE_CLEARANCE,
-      obstacle.maxY + DEFAULT_TRACE_CLEARANCE,
+      obstacle.minY - ROUTE_CLEARANCE,
+      obstacle.maxY + ROUTE_CLEARANCE,
     ]),
   ]
   const verticalChannels = [
-    outerBounds.minX - DEFAULT_TRACE_CLEARANCE,
-    outerBounds.maxX + DEFAULT_TRACE_CLEARANCE,
+    outerBounds.minX - ROUTE_CLEARANCE,
+    outerBounds.maxX + ROUTE_CLEARANCE,
     ...channelObstacles.flatMap((obstacle) => [
-      obstacle.minX - DEFAULT_TRACE_CLEARANCE,
-      obstacle.maxX + DEFAULT_TRACE_CLEARANCE,
+      obstacle.minX - ROUTE_CLEARANCE,
+      obstacle.maxX + ROUTE_CLEARANCE,
     ]),
   ]
   // Recovery uses actual text bounds, so try local elbows before the perimeter.
@@ -113,13 +130,13 @@ const getPinConnectionCandidates = ({
     calculateElbow(
       { ...firstPin, facingDirection: firstPin._facingDirection! },
       { ...secondPin, facingDirection: secondPin._facingDirection! },
-      { overshoot: DEFAULT_TRACE_CLEARANCE },
+      { overshoot: ROUTE_CLEARANCE },
     ),
   ]
 
   for (const channelY of new Set(horizontalChannels)) {
     candidates.push(
-      removeConsecutiveDuplicateTracePoints([
+      removeConsecutiveDuplicatePoints([
         firstPin,
         firstEscapePoint,
         { x: firstEscapePoint.x, y: channelY },
@@ -132,7 +149,7 @@ const getPinConnectionCandidates = ({
 
   for (const channelX of new Set(verticalChannels)) {
     candidates.push(
-      removeConsecutiveDuplicateTracePoints([
+      removeConsecutiveDuplicatePoints([
         firstPin,
         firstEscapePoint,
         { x: channelX, y: firstEscapePoint.y },
@@ -264,12 +281,12 @@ const getJunctionCandidates = ({
 }): Point[][] => {
   const outerBounds = getOuterBounds(obstacles)
   const horizontalChannels = [
-    outerBounds.minY - DEFAULT_TRACE_CLEARANCE,
-    outerBounds.maxY + DEFAULT_TRACE_CLEARANCE,
+    outerBounds.minY - ROUTE_CLEARANCE,
+    outerBounds.maxY + ROUTE_CLEARANCE,
   ]
   const verticalChannels = [
-    outerBounds.minX - DEFAULT_TRACE_CLEARANCE,
-    outerBounds.maxX + DEFAULT_TRACE_CLEARANCE,
+    outerBounds.minX - ROUTE_CLEARANCE,
+    outerBounds.maxX + ROUTE_CLEARANCE,
   ]
   const candidates: Point[][] = []
   const junctionPoints = getJunctionPoints(sameNetTraces)
@@ -288,7 +305,7 @@ const getJunctionCandidates = ({
         continue
       }
       candidates.push(
-        removeConsecutiveDuplicateTracePoints([
+        removeConsecutiveDuplicatePoints([
           pin,
           escapePoint,
           { x: escapePoint.x, y: junctionPoint.y },
@@ -296,7 +313,7 @@ const getJunctionCandidates = ({
         ]),
       )
       candidates.push(
-        removeConsecutiveDuplicateTracePoints([
+        removeConsecutiveDuplicatePoints([
           pin,
           escapePoint,
           { x: junctionPoint.x, y: escapePoint.y },
@@ -305,7 +322,7 @@ const getJunctionCandidates = ({
       )
       for (const channelY of horizontalChannels) {
         candidates.push(
-          removeConsecutiveDuplicateTracePoints([
+          removeConsecutiveDuplicatePoints([
             pin,
             escapePoint,
             { x: escapePoint.x, y: channelY },
@@ -316,7 +333,7 @@ const getJunctionCandidates = ({
       }
       for (const channelX of verticalChannels) {
         candidates.push(
-          removeConsecutiveDuplicateTracePoints([
+          removeConsecutiveDuplicatePoints([
             pin,
             escapePoint,
             { x: channelX, y: escapePoint.y },
@@ -348,10 +365,10 @@ const pathCollidesWithObstacles = ({
   const firstPathPoint = path[0]!
   const lastPathPoint = path.at(-1)!
   const firstPathPin = connectionPair.pins.find((pin) =>
-    tracePointsMatch(pin, firstPathPoint),
+    pointsAreEqual(pin, firstPathPoint),
   )
   const lastPathPin = connectionPair.pins.find((pin) =>
-    tracePointsMatch(pin, lastPathPoint),
+    pointsAreEqual(pin, lastPathPoint),
   )
   // Endpoint exemptions must not allow a route through the back of a component.
   for (const [pin, neighbor] of [
@@ -362,7 +379,7 @@ const pathCollidesWithObstacles = ({
     const outward = dir(pin._facingDirection)
     if (
       (neighbor.x - pin.x) * outward.x + (neighbor.y - pin.y) * outward.y <
-      -TRACE_COORDINATE_EPSILON
+      -COORDINATE_TOLERANCE
     ) {
       return true
     }
@@ -458,7 +475,7 @@ const segmentsOverlapBeyondEndpoint = ({
         Math.min(firstStart.x, firstEnd.x),
         Math.min(secondStart.x, secondEnd.x),
       )
-    return overlapLength > TRACE_COORDINATE_EPSILON
+    return overlapLength > COORDINATE_TOLERANCE
   }
   if (isVertical(firstStart, firstEnd) && isVertical(secondStart, secondEnd)) {
     const overlapLength =
@@ -470,7 +487,7 @@ const segmentsOverlapBeyondEndpoint = ({
         Math.min(firstStart.y, firstEnd.y),
         Math.min(secondStart.y, secondEnd.y),
       )
-    return overlapLength > TRACE_COORDINATE_EPSILON
+    return overlapLength > COORDINATE_TOLERANCE
   }
   return false
 }
@@ -518,10 +535,10 @@ const pathCrossesExistingTraces = ({
         }
         const intersectionIsAllowedJunction = allowedJunctionPoints.some(
           (junctionPoint) =>
-            (tracePointsMatch(pathStart, junctionPoint) ||
-              tracePointsMatch(pathEnd, junctionPoint)) &&
-            (tracePointsMatch(traceStart, junctionPoint) ||
-              tracePointsMatch(traceEnd, junctionPoint)),
+            (pointsAreEqual(pathStart, junctionPoint) ||
+              pointsAreEqual(pathEnd, junctionPoint)) &&
+            (pointsAreEqual(traceStart, junctionPoint) ||
+              pointsAreEqual(traceEnd, junctionPoint)),
         )
         if (
           intersectionIsAllowedJunction &&

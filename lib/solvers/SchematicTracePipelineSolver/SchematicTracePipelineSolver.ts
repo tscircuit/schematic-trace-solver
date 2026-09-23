@@ -5,7 +5,8 @@
 
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputPin, InputProblem, PinId } from "lib/types/InputProblem"
+import { dir } from "lib/utils/dir"
 import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectionPairSolver"
 import {
   SchematicTraceLinesSolver,
@@ -31,16 +32,19 @@ import { RailNetLabelCornerPlacementSolver } from "../RailNetLabelCornerPlacemen
 import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
 import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
-import { UnroutedTraceRecoverySolver } from "../UnroutedTraceRecoverySolver/UnroutedTraceRecoverySolver"
+import {
+  pointsAreEqual,
+  ROUTE_CLEARANCE,
+  UnroutedTraceRecoverySolver,
+} from "../UnroutedTraceRecoverySolver/UnroutedTraceRecoverySolver"
 import { SameNetJunctionAlignmentSolver } from "../SameNetJunctionAlignmentSolver/SameNetJunctionAlignmentSolver"
 import { TraceElbowTransitionSimplificationSolver } from "../TraceElbowTransitionSimplificationSolver/TraceElbowTransitionSimplificationSolver"
 import { InlineNetLabelSolver } from "../InlineNetLabelSolver/InlineNetLabelSolver"
 import { NetLabelToTraceSolver } from "../NetLabelToTraceSolver/NetLabelToTraceSolver"
 import { findPerpendicularPathCrossings } from "../TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
-import {
-  getOriginalPinById,
-  restoreOriginalTraceEndpoints,
-} from "./restoreOriginalTraceEndpoints"
+import { getInputChipBounds } from "../GuidelinesSolver/getInputChipBounds"
+import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
+import { simplifyPath } from "../TraceCleanupSolver/simplifyPath"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -116,7 +120,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   firstIterationOfPhase: Record<string, number>
 
   inputProblem: InputProblem
-  private readonly originalPinById: ReturnType<typeof getOriginalPinById>
+  private readonly originalPinById: Partial<Record<PinId, InputPin>>
   hideRatsNet: boolean
 
   pipelineDef = [
@@ -191,12 +195,9 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       () => [
         {
           inputProblem: this.inputProblem,
-          inputTracePaths: restoreOriginalTraceEndpoints({
-            traces:
-              this.unroutedTraceRecoverySolver!.getOutput().allTracesMerged,
-            routingChipById: this.mspConnectionPairSolver!.chipMap,
-            originalPinById: this.originalPinById,
-          }),
+          inputTracePaths: this.restoreOriginalTraceEndpoints(
+            this.unroutedTraceRecoverySolver!.getOutput().allTracesMerged,
+          ),
           globalConnMap: this.mspConnectionPairSolver!.globalConnMap,
         },
       ],
@@ -635,13 +636,77 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   constructor(inputProblem: InputProblem, opts?: Options) {
     super()
     this.hideRatsNet = opts?.hideRatsNet ?? false
-    this.originalPinById = getOriginalPinById(inputProblem)
+    this.originalPinById = Object.fromEntries(
+      inputProblem.chips.flatMap((chip) =>
+        chip.pins.map((pin) => [pin.pinId, pin]),
+      ),
+    )
     this.inputProblem = this.cloneAndCorrectInputProblem(inputProblem)
     this.MAX_ITERATIONS = 1e6
     this.startTimeOfPhase = {}
     this.endTimeOfPhase = {}
     this.timeSpentOnPhase = {}
     this.firstIterationOfPhase = {}
+  }
+
+  private restoreOriginalTraceEndpoints(traces: SolvedTracePath[]) {
+    const routingChipById = this.mspConnectionPairSolver!.chipMap
+    return traces.map((trace) => {
+      let tracePath = [...trace.tracePath]
+      const pins = [...trace.pins] as SolvedTracePath["pins"]
+
+      for (const [pinIndex, routingPin] of trace.pins.entries()) {
+        const atStart = pointsAreEqual(routingPin, tracePath[0]!)
+        if (!atStart && !pointsAreEqual(routingPin, tracePath.at(-1)!)) {
+          continue
+        }
+
+        const originalPin = this.originalPinById[routingPin.pinId]
+        const facingDirection = originalPin?._facingDirection
+        const routingChip = routingChipById[routingPin.chipId]
+        if (!originalPin || !facingDirection || !routingChip) continue
+
+        const routingDirection =
+          routingPin._facingDirection ??
+          getPinDirection(routingPin, routingChip)
+        if (
+          facingDirection[0] === routingDirection[0] ||
+          pointsAreEqual(routingPin, originalPin)
+        ) {
+          continue
+        }
+
+        const adjacentPoint = tracePath[atStart ? 1 : tracePath.length - 2]
+        if (!adjacentPoint) continue
+        const bounds = getInputChipBounds(routingChip)
+        const outward = dir(facingDirection)
+        const approachPoint = {
+          x: outward.x
+            ? (outward.x < 0 ? bounds.minX : bounds.maxX) +
+              outward.x * ROUTE_CLEARANCE
+            : originalPin.x,
+          y: outward.y
+            ? (outward.y < 0 ? bounds.minY : bounds.maxY) +
+              outward.y * ROUTE_CLEARANCE
+            : originalPin.y,
+        }
+        const cornerPoint = outward.x
+          ? { x: approachPoint.x, y: adjacentPoint.y }
+          : { x: adjacentPoint.x, y: approachPoint.y }
+        const retainedPath = atStart
+          ? tracePath.slice(1)
+          : tracePath.slice(0, -1)
+        const originalPoint = { x: originalPin.x, y: originalPin.y }
+        tracePath = simplifyPath(
+          atStart
+            ? [originalPoint, approachPoint, cornerPoint, ...retainedPath]
+            : [...retainedPath, cornerPoint, approachPoint, originalPoint],
+        )
+        pins[pinIndex] = { ...routingPin, ...originalPoint }
+      }
+
+      return { ...trace, pins, tracePath }
+    })
   }
 
   override getConstructorParams(): ConstructorParameters<
