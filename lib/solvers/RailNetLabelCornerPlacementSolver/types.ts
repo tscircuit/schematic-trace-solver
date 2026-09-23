@@ -8,8 +8,10 @@ export interface RailNetLabelCornerPlacementSolverParams {
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   netLabelConnectorTraceIds?: ReadonlySet<string>
-  /** Only reconsider labels whose original corner was removed by rerouting. */
+  /** Reconsider labels whose original corner was removed by rerouting. */
   originalTraces?: SolvedTracePath[]
+  /** Revalidate crossed labels, in addition to moved corners when originalTraces is supplied. */
+  onlyOverlappingLabels?: boolean
 }
 
 export type Bounds = {

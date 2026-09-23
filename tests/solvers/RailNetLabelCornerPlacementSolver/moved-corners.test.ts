@@ -48,9 +48,32 @@ const createFixture = (anchorPoint = { x: 1, y: 2 }) => {
   }
 }
 
-test("reanchors a removed rail corner without changing the simplified route", () => {
-  const input = createFixture()
-  const solver = new RailNetLabelCornerPlacementSolver(input)
+test.each([false, true])(
+  "reanchors a removed rail corner with overlap revalidation=%s",
+  (onlyOverlappingLabels) => {
+    const input = createFixture()
+    const solver = new RailNetLabelCornerPlacementSolver({
+      ...input,
+      onlyOverlappingLabels,
+    })
+    solver.solve()
+
+    expect(solver.getOutput().netLabelPlacements[0]!.anchorPoint).toEqual({
+      x: 3,
+      y: 2,
+    })
+    expect(solver.getOutput().traces).toEqual(input.traces)
+    expect(input.netLabelPlacements[0]!.anchorPoint).toEqual({ x: 1, y: 2 })
+  },
+)
+
+test("rechecks a crossed label even when its original corner has not moved", () => {
+  const input = createFixture({ x: 3, y: 0 })
+  input.originalTraces = input.traces
+  const solver = new RailNetLabelCornerPlacementSolver({
+    ...input,
+    onlyOverlappingLabels: true,
+  })
   solver.solve()
 
   expect(solver.getOutput().netLabelPlacements[0]!.anchorPoint).toEqual({
@@ -58,7 +81,6 @@ test("reanchors a removed rail corner without changing the simplified route", ()
     y: 2,
   })
   expect(solver.getOutput().traces).toEqual(input.traces)
-  expect(input.netLabelPlacements[0]!.anchorPoint).toEqual({ x: 1, y: 2 })
 })
 
 test.each([

@@ -99,10 +99,10 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   traceCleanupSolver2?: TraceCleanupSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
+  finalRailNetLabelCornerPlacementSolver?: RailNetLabelCornerPlacementSolver
   traceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   preAlignmentTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   finalTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
-  finalRailNetLabelCornerPlacementSolver?: RailNetLabelCornerPlacementSolver
   sameNetJunctionAlignmentSolver?: SameNetJunctionAlignmentSolver
   inlineNetLabelSolver?: InlineNetLabelSolver
   netLabelToTraceSolver?: NetLabelToTraceSolver
@@ -549,9 +549,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
-    // Label detours and elbow simplification can move a previously selected
-    // rail corner. Re-evaluate rail labels against the resulting geometry before
-    // resolving the remaining label collisions.
+    // Late routing can move a label's corner or bring a trace through it.
+    // Recheck both cases while the trace corners are still available.
     definePipelineStep(
       "finalRailNetLabelCornerPlacementSolver",
       RailNetLabelCornerPlacementSolver,
@@ -563,6 +562,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             instance.railNetLabelCornerPlacementSolver!.getOutput().traces,
           netLabelConnectorTraceIds:
             instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
+          onlyOverlappingLabels: true,
         },
       ],
     ),
@@ -570,13 +570,13 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       "netLabelNetLabelCollisionSolver",
       NetLabelNetLabelCollisionSolver,
       (instance) => {
-        const cornerPlacementOutput =
+        const placementOutput =
           instance.finalRailNetLabelCornerPlacementSolver!.getOutput()
         return [
           {
             inputProblem: instance.inputProblem,
-            traces: cornerPlacementOutput.traces,
-            netLabelPlacements: cornerPlacementOutput.netLabelPlacements,
+            traces: placementOutput.traces,
+            netLabelPlacements: placementOutput.netLabelPlacements,
             preserveNonInlineLabelsAgainstInlineEligibleCollisions: true,
           },
         ]

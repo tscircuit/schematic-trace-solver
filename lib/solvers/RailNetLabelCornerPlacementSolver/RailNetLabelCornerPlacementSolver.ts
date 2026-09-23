@@ -58,6 +58,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   private traceMap: Record<string, SolvedTracePath>
   private netLabelConnectorTraceIds: ReadonlySet<string>
   private originalTraces?: SolvedTracePath[]
+  private onlyOverlappingLabels: boolean
 
   constructor(params: RailNetLabelCornerPlacementSolverParams) {
     super()
@@ -71,6 +72,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     this.netLabelConnectorTraceIds =
       params.netLabelConnectorTraceIds ?? new Set()
     this.originalTraces = params.originalTraces
+    this.onlyOverlappingLabels = params.onlyOverlappingLabels ?? false
     this.queuedLabelIndices = this.getProcessableLabelIndices()
     this.prepareNextLabel()
   }
@@ -84,6 +86,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       netLabelPlacements: this.netLabelPlacements,
       netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
       originalTraces: this.originalTraces,
+      onlyOverlappingLabels: this.onlyOverlappingLabels,
     }
   }
 
@@ -253,14 +256,27 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
 
     this.outputNetLabelPlacements[labelIndex] = {
       ...label,
+      ...(!this.pointsEqual(label.anchorPoint, candidate.anchorPoint) &&
+      !label.mspConnectionPairIds.includes(candidate.traceId)
+        ? {
+            mspConnectionPairIds: [candidate.traceId],
+            pinIds: [...this.traceMap[candidate.traceId]!.pinIds],
+          }
+        : {}),
       anchorPoint: candidate.anchorPoint,
       center: candidate.center,
     }
   }
 
   private shouldProcessLabel(label: NetLabelPlacement) {
-    if (this.originalTraces && !this.hasMovedCorner(label)) return false
-
+    if (this.originalTraces || this.onlyOverlappingLabels) {
+      // Late routing can remove a label's corner or bring a trace through it.
+      // Either change requires revalidation when both checks are enabled.
+      const cornerMoved = this.originalTraces && this.hasMovedCorner(label)
+      const labelCrossed =
+        this.onlyOverlappingLabels && this.isLabelCrossedByTrace(label)
+      if (!cornerMoved && !labelCrossed) return false
+    }
     // Power/ground rail labels (VCC, GND, V3_3, ...) have a fixed vertical
     // orientation and read best snapped to a trace corner rather than floating
     // mid-segment. Signal labels (x+/x-) are left where they are.
@@ -316,7 +332,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     const labelTraces = this.getTraceLinesForLabel(label)
     const allowRailAlignedFallback =
       this.isConfiguredRailLabel(label) &&
-      (this.isLabelCrossedByOtherNetTrace(label) ||
+      (this.isLabelCrossedByTrace(label) ||
         !labelTraces.some((trace) =>
           getTraceCorners(trace.tracePath).some((corner) =>
             this.pointsEqual(corner, label.anchorPoint),
@@ -482,15 +498,9 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     )
   }
 
-  private isLabelCrossedByOtherNetTrace(label: NetLabelPlacement) {
+  private isLabelCrossedByTrace(label: NetLabelPlacement) {
     const bounds = getRectBounds(label.center, label.width, label.height)
-    const otherNetTraceMap = Object.fromEntries(
-      this.traces
-        .filter((trace) => trace.globalConnNetId !== label.globalConnNetId)
-        .map((trace) => [trace.mspPairId, trace]),
-    )
-
-    return traceCrossesBoundsInterior(bounds, otherNetTraceMap)
+    return traceCrossesBoundsInterior(bounds, this.traceMap)
   }
 
   private pointsEqual(a: Point, b: Point) {
@@ -663,6 +673,15 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   private isTraceForLabel(trace: SolvedTracePath, label: NetLabelPlacement) {
     if (!tracePathContainsPoint(trace.tracePath, label.anchorPoint)) {
       return false
+    }
+
+    // Rail alignment can join another trace at the label's anchor. Its clear
+    // outer corners are valid attachments when the shared rail crosses the label.
+    if (
+      trace.globalConnNetId === label.globalConnNetId &&
+      this.isLabelCrossedByTrace(label)
+    ) {
+      return true
     }
 
     const traceIds = new Set(label.mspConnectionPairIds)
