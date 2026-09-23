@@ -17,6 +17,16 @@ test("traces reach original ports inside expanded component bounds", () => {
   solver.solve()
 
   expect(solver.schematicTraceLinesSolver!.solvedTracePaths).toHaveLength(2)
+  const overlapSolverInputTraces =
+    solver.traceOverlapShiftSolver!.inputTracePaths
+  expect(
+    overlapSolverInputTraces.find((trace) => trace.pinIds.includes("F1.1"))
+      ?.tracePath,
+  ).toContainEqual({ x: -10.4, y: 6 })
+  expect(
+    overlapSolverInputTraces.find((trace) => trace.pinIds.includes("RV1.1"))
+      ?.tracePath,
+  ).toContainEqual({ x: -10.4, y: 3.5 })
   const traces = solver.netLabelToTraceSolver!.getOutput().traces
   expect(
     traces.find((trace) => trace.pinIds.includes("F1.1"))?.tracePath,
