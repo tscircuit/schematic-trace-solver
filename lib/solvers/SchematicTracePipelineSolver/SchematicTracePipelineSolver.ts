@@ -99,6 +99,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   traceCleanupSolver2?: TraceCleanupSolver
   netLabelNetLabelCollisionSolver?: NetLabelNetLabelCollisionSolver
+  finalRailNetLabelCornerPlacementSolver?: RailNetLabelCornerPlacementSolver
   traceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   preAlignmentTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   finalTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
@@ -548,17 +549,32 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
+    // Rail alignment can bring a continuation through its own label. Recheck
+    // crossed rail labels while the trace corners are still available.
+    definePipelineStep(
+      "finalRailNetLabelCornerPlacementSolver",
+      RailNetLabelCornerPlacementSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          ...instance.finalTraceElbowTransitionSimplificationSolver!.getOutput(),
+          netLabelConnectorTraceIds:
+            instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
+          onlyOverlappingLabels: true,
+        },
+      ],
+    ),
     definePipelineStep(
       "netLabelNetLabelCollisionSolver",
       NetLabelNetLabelCollisionSolver,
       (instance) => {
-        const simplificationOutput =
-          instance.finalTraceElbowTransitionSimplificationSolver!.getOutput()
+        const placementOutput =
+          instance.finalRailNetLabelCornerPlacementSolver!.getOutput()
         return [
           {
             inputProblem: instance.inputProblem,
-            traces: simplificationOutput.traces,
-            netLabelPlacements: simplificationOutput.netLabelPlacements,
+            traces: placementOutput.traces,
+            netLabelPlacements: placementOutput.netLabelPlacements,
             preserveNonInlineLabelsAgainstInlineEligibleCollisions: true,
           },
         ]

@@ -11,7 +11,7 @@ import inputProblem from "./assets/repro173-boost-drv8711-ground-label-overlap.i
 // Only symbolName and netLabelText were added for readable snapshots; routing
 // geometry, pin order, and all eight cross-sheet U1 gate-drive labels are intact.
 // The controller sheet is solved independently, so its input is not needed.
-test("repro173 BOOST-DRV8711 ground trace overlaps the R1 GND label", async () => {
+test("repro173 BOOST-DRV8711 ground trace clears the R1 GND label", async () => {
   const solver = new SchematicTracePipelineSolver(
     inputProblem as unknown as InputProblem,
     { hideRatsNet: true },
@@ -32,10 +32,9 @@ test("repro173 BOOST-DRV8711 ground trace overlaps the R1 GND label", async () =
       trace.pinIds.includes("schematic_port_85"),
   )!
 
-  // Current bug: the C1-to-R2 ground rail crosses the rendered GND label below
-  // R1. Record the observed failure; update this assertion and snapshot when fixed.
+  // The C1-to-R2 ground rail must not cross the rendered GND label for R1.
   expect(
     pathIntersectsRenderedLabel(c1ToR2GroundTrace.tracePath, r1GroundLabel),
-  ).toBe(true)
+  ).toBe(false)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
