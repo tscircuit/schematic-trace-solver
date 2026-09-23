@@ -3,6 +3,7 @@ import { getAnchoredNetLabelRenderedBounds } from "lib/solvers/InlineNetLabelSol
 import { segmentCrossesBoundsInterior } from "lib/solvers/AvailableNetOrientationSolver/geometry"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import { countTurns } from "lib/solvers/TraceCleanupSolver/countTurns"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-allwinner-t113-power-label-crossing.input.json"
@@ -18,6 +19,19 @@ test("keeps Allwinner T113 traces clear of their power-label bodies", async () =
   expect(solver.solved).toBe(true)
   const { traces, netLabelPlacements } =
     solver.netLabelToTraceSolver!.getOutput()
+  const upperSupplyPins = inputProblem.chips[0]!.pins.filter((pin) =>
+    ["LDOA_OUT", "VCC_PLL"].includes(pin.displayName),
+  )
+  expect(upperSupplyPins).toHaveLength(2)
+  const upperSupplyTrace = traces.find((trace) =>
+    upperSupplyPins.every((pin) => trace.pinIds.includes(pin.pinId)),
+  )!
+  expect(upperSupplyTrace).toBeDefined()
+  // One outer rail and the two pin exits replace the individual label detours.
+  expect(countTurns(upperSupplyTrace.tracePath)).toBe(2)
+  for (const pin of upperSupplyPins) {
+    expect(tracePathContainsPoint(upperSupplyTrace.tracePath, pin)).toBe(true)
+  }
   const label = netLabelPlacements.find(
     (placement) =>
       placement.netId === "LDOA1V8" &&

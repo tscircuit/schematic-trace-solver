@@ -450,6 +450,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             completedReroutes: collisionOutput.completedReroutes,
             netLabelPlacements: collisionOutput.netLabelPlacements,
             paddingBuffer: 0.1,
+            allowShorterPaths: true,
           },
         ]
       },
@@ -545,6 +546,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             completedReroutes: collisionOutput.completedReroutes,
             netLabelPlacements: collisionOutput.netLabelPlacements,
             paddingBuffer: 0.1,
+            allowShorterPaths: true,
           },
         ]
       },

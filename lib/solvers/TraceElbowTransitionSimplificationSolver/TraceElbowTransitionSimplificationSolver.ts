@@ -9,12 +9,14 @@ import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/Schemati
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import { getInteriorShortcutPaths } from "lib/solvers/TraceCleanupSolver/getInteriorShortcutPaths"
 import { preservesLabelAnchors } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/preservesLabelAnchors"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
 import type { InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 import type { CompletedTraceReroute } from "./types"
 import { generateElbowTransitionSimplificationCandidates } from "./generateElbowTransitionSimplificationCandidates"
+import { getSameNetJunctions } from "./getSameNetJunctions"
 
 interface TraceElbowTransitionSimplificationSolverInput {
   inputProblem: InputProblem
@@ -22,6 +24,11 @@ interface TraceElbowTransitionSimplificationSolverInput {
   completedReroutes: CompletedTraceReroute[]
   netLabelPlacements: NetLabelPlacement[]
   paddingBuffer: number
+  /**
+   * Enable iterative shortening once labels have been placed. The early pass
+   * preserves length because turn minimization and label placement follow it.
+   */
+  allowShorterPaths?: boolean
 }
 
 const PATH_LENGTH_EPSILON = 1e-9
@@ -85,15 +92,17 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
         otherTrace.globalConnNetId !== trace.globalConnNetId,
     )
     const initialPathLength = getPathLength(tracePath)
+    const junctions = getSameNetJunctions(trace, this.outputTraces)
     const candidateByPath = new Map<string, Point[]>()
     // Consecutive label detours can leave a staircase between two clear legs.
-    // Keep equivalent-length shortcuts, as with the transition candidates below;
-    // shortening the route belongs to turn minimization. Terminal directions,
-    // label anchors, and collision checks still apply.
+    // Shortcuts can also shorten repeated detours. Terminal directions, label
+    // anchors, and collision checks still apply.
     for (const candidate of getInteriorShortcutPaths(tracePath)) {
       if (
-        Math.abs(getPathLength(candidate) - initialPathLength) >
-        PATH_LENGTH_EPSILON
+        this.input.allowShorterPaths
+          ? getPathLength(candidate) > initialPathLength + PATH_LENGTH_EPSILON
+          : Math.abs(getPathLength(candidate) - initialPathLength) >
+            PATH_LENGTH_EPSILON
       ) {
         continue
       }
@@ -191,6 +200,9 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
             [trace],
             [candidateTrace],
           ) &&
+          junctions.every((point) =>
+            tracePathContainsPoint(candidatePath, point),
+          ) &&
           !isPathCollidingWithObstacles(candidatePath, this.obstacles) &&
           !doesPathCoincideWithTraces(candidatePath, otherNetTraces) &&
           otherNetTraces.every(
@@ -218,6 +230,9 @@ export class TraceElbowTransitionSimplificationSolver extends BaseSolver {
 
     this.outputTraces[traceIndex] = { ...trace, tracePath: bestCandidate }
     this.stats.simplifiedTraceCount = (this.stats.simplifiedTraceCount ?? 0) + 1
+    // Each accepted path removes collisions or bends. Revisit it because
+    // clearing one detour can expose a shortcut through the next one.
+    if (this.input.allowShorterPaths) this.traceIdQueue.push(traceId)
   }
 
   getOutput() {
