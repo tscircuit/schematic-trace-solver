@@ -13,5 +13,22 @@ test("repro complete AM3352 03-Interfaces sheet", async () => {
   solver.solve()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
+  const { traces, netLabelPlacements } =
+    solver.netLabelToTraceSolver!.getOutput()
+  const spiGroundPinId = "schematic_port_876"
+  const i2cGroundPinId = "schematic_port_884"
+  expect(
+    traces.some(
+      (trace) =>
+        trace.pinIds.includes(spiGroundPinId) &&
+        trace.pinIds.includes(i2cGroundPinId),
+    ),
+  ).toBe(false)
+  expect(
+    netLabelPlacements.filter((label) => label.pinIds.includes(spiGroundPinId)),
+  ).toHaveLength(1)
+  expect(
+    netLabelPlacements.filter((label) => label.pinIds.includes(i2cGroundPinId)),
+  ).toHaveLength(1)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

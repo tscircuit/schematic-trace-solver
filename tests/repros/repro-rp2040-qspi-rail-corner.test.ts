@@ -29,5 +29,22 @@ test("reproduces the QSPI rail label placement in core's full RP2040 schematic",
 
   expect(label.orientation).toBe("y+")
   expect(label.anchorPoint).toEqual(rightCorner)
+  expect(
+    output.inlineNetLabelPlacements.some((label) =>
+      label.pinIds.includes("schematic_port_126"),
+    ),
+  ).toBe(true)
+  expect(
+    output.inlineNetLabelPlacements.some((label) =>
+      label.pinIds.includes("schematic_port_127"),
+    ),
+  ).toBe(true)
+  expect(
+    output.netLabelPlacements.some(
+      (label) =>
+        label.pinIds.includes("schematic_port_126") ||
+        label.pinIds.includes("schematic_port_127"),
+    ),
+  ).toBe(false)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
