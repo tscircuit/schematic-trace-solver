@@ -450,6 +450,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             completedReroutes: collisionOutput.completedReroutes,
             netLabelPlacements: collisionOutput.netLabelPlacements,
             paddingBuffer: 0.1,
+            allowShorterPaths: true,
           },
         ]
       },
@@ -545,12 +546,13 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             completedReroutes: collisionOutput.completedReroutes,
             netLabelPlacements: collisionOutput.netLabelPlacements,
             paddingBuffer: 0.1,
+            allowShorterPaths: true,
           },
         ]
       },
     ),
-    // Late routing can move a label's corner or bring a trace through it.
-    // Recheck both cases while the trace corners are still available.
+    // Late routing can move a label's corner, bring a trace through it, or
+    // expose a direct corner attachment for a generated label connector.
     definePipelineStep(
       "finalRailNetLabelCornerPlacementSolver",
       RailNetLabelCornerPlacementSolver,

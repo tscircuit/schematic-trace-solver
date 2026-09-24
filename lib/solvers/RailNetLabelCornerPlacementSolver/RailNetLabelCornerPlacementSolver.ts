@@ -39,6 +39,7 @@ import type {
 } from "./types"
 import { visualizeRailNetLabelCornerPlacementSolver } from "./visualize"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
+import { getRemovableRailLabelConnectors } from "./getRemovableRailLabelConnectors"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -206,15 +207,22 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     if (this.intersectsAnyChip(bounds)) return "chip-collision"
     if (rectIntersectsAnyTextBox(bounds, this.inputProblem))
       return "text-collision"
+    const retainedTraceMap = candidate.obsoleteConnectorTraceId
+      ? Object.fromEntries(
+          Object.entries(this.traceMap).filter(
+            ([traceId]) => traceId !== candidate.obsoleteConnectorTraceId,
+          ),
+        )
+      : this.traceMap
     const candidateTraceMap = candidate.reroutedTracePath
       ? {
-          ...this.traceMap,
+          ...retainedTraceMap,
           [candidate.traceId]: {
             ...this.traceMap[candidate.traceId]!,
             tracePath: candidate.reroutedTracePath,
           },
         }
-      : this.traceMap
+      : retainedTraceMap
     if (traceCrossesBoundsInterior(bounds, candidateTraceMap)) {
       return "trace-collision"
     }
@@ -254,10 +262,18 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       })
     }
 
+    if (candidate.obsoleteConnectorTraceId) {
+      this.traces = this.traces.filter(
+        (trace) => trace.mspPairId !== candidate.obsoleteConnectorTraceId,
+      )
+      delete this.traceMap[candidate.obsoleteConnectorTraceId]
+    }
+
     this.outputNetLabelPlacements[labelIndex] = {
       ...label,
-      ...(!this.pointsEqual(label.anchorPoint, candidate.anchorPoint) &&
-      !label.mspConnectionPairIds.includes(candidate.traceId)
+      ...(candidate.obsoleteConnectorTraceId ||
+      (!this.pointsEqual(label.anchorPoint, candidate.anchorPoint) &&
+        !label.mspConnectionPairIds.includes(candidate.traceId))
         ? {
             mspConnectionPairIds: [candidate.traceId],
             pinIds: [...this.traceMap[candidate.traceId]!.pinIds],
@@ -270,12 +286,13 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
 
   private shouldProcessLabel(label: NetLabelPlacement) {
     if (this.originalTraces || this.onlyOverlappingLabels) {
-      // Late routing can remove a label's corner or bring a trace through it.
-      // Either change requires revalidation when both checks are enabled.
+      // Late routing can move a label's corner, bring a trace through it,
+      // or expose a corner that makes a generated connector unnecessary.
       const cornerMoved = this.originalTraces && this.hasMovedCorner(label)
       const labelCrossed =
         this.onlyOverlappingLabels && this.isLabelCrossedByTrace(label)
-      if (!cornerMoved && !labelCrossed) return false
+      const newRailCorner = this.getNewRailCornerCandidates(label).length > 0
+      if (!cornerMoved && !labelCrossed && !newRailCorner) return false
     }
     // Power/ground rail labels (VCC, GND, V3_3, ...) have a fixed vertical
     // orientation and read best snapped to a trace corner rather than floating
@@ -328,7 +345,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
 
   private getCornerCandidatesForLabel(label: NetLabelPlacement) {
     const anchorAlignedCandidates: TraceCornerCandidate[] = []
-    const railAlignedCandidates: TraceCornerCandidate[] = []
+    const railAlignedCandidates = this.getNewRailCornerCandidates(label)
     const labelTraces = this.getTraceLinesForLabel(label)
     const allowRailAlignedFallback =
       this.isConfiguredRailLabel(label) &&
@@ -377,6 +394,59 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       ...anchorAlignedCandidates.sort((a, b) => a.distance - b.distance),
       ...railAlignedCandidates.sort((a, b) => a.distance - b.distance),
     ]
+  }
+
+  private getNewRailCornerCandidates(
+    label: NetLabelPlacement,
+  ): TraceCornerCandidate[] {
+    if (!this.originalTraces || !this.isConfiguredRailLabel(label)) return []
+    const newCornersByTrace = new Map<string, Point[]>()
+    const rails = this.traces.filter((trace) => {
+      if (this.netLabelConnectorTraceIds.has(trace.mspPairId)) return false
+      if (trace.globalConnNetId !== label.globalConnNetId) return false
+      if (
+        label.mspConnectionPairIds.length > 0 &&
+        !label.mspConnectionPairIds.includes(trace.mspPairId)
+      )
+        return false
+      const original = this.originalTraces!.find(
+        (item) => item.mspPairId === trace.mspPairId,
+      )
+      if (!original) return false
+      const originalCorners = getTraceCorners(original.tracePath)
+      const newCorners = getTraceCorners(trace.tracePath).filter(
+        (corner) =>
+          !originalCorners.some((point) => this.pointsEqual(point, corner)) &&
+          this.isPinAlignedCorner(
+            trace.tracePath,
+            trace.tracePath.indexOf(corner),
+          ),
+      )
+      if (newCorners.length === 0) return false
+      newCornersByTrace.set(trace.mspPairId, newCorners)
+      return true
+    })
+    if (rails.length === 0) return []
+    const attachments = getRemovableRailLabelConnectors({
+      label,
+      traces: this.traces,
+      rails,
+      netLabelPlacements: this.outputNetLabelPlacements,
+      netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
+      inputProblem: this.inputProblem,
+    })
+    // A newly exposed corner can replace a temporary label connector.
+    // Only use existing geometry; a clear current attachment does not
+    // justify rerouting the rail solely to make room for the label.
+    return attachments.flatMap(({ connector, rail }) =>
+      newCornersByTrace.get(rail.mspPairId)!.map((anchorPoint) => ({
+        anchorPoint,
+        traceId: rail.mspPairId,
+        distance: getDistance(anchorPoint, label.anchorPoint),
+        pinAligned: true,
+        obsoleteConnectorTraceId: connector.mspPairId,
+      })),
+    )
   }
 
   private getStraightConnectorCandidates(

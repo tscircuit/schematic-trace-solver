@@ -15,8 +15,12 @@ test("collapses repeated junctions around adjacent power rails", () => {
   solver.solve()
 
   expect(solver.solved).toBe(true)
+  // Earlier detour simplification leaves one cycle for junction alignment.
   expect(solver.sameNetJunctionAlignmentSolver?.stats.collapsedCycleCount).toBe(
-    2,
+    1,
   )
+  expect(
+    solver.sameNetJunctionAlignmentSolver?.stats.alignedJunctionCount,
+  ).toBe(2)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
