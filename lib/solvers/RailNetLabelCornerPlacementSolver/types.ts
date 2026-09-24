@@ -8,9 +8,9 @@ export interface RailNetLabelCornerPlacementSolverParams {
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   netLabelConnectorTraceIds?: ReadonlySet<string>
-  /** Reconsider labels whose original corner was removed by rerouting. */
+  /** Reconsider moved corners and newly exposed corners for generated connectors. */
   originalTraces?: SolvedTracePath[]
-  /** Revalidate crossed labels, in addition to moved corners when originalTraces is supplied. */
+  /** Revalidate crossed labels, in addition to changed corners when originalTraces is supplied. */
   onlyOverlappingLabels?: boolean
 }
 
@@ -31,6 +31,8 @@ export type TraceCornerCandidate = {
    */
   pinAligned: boolean
   reroutedTracePath?: Point[]
+  /** A dedicated label connector replaced by a direct attachment to this corner. */
+  obsoleteConnectorTraceId?: string
 }
 
 export type CornerCandidateStatus =
