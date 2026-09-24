@@ -23,5 +23,25 @@ test("bug-report-20260907T083336Z", () => {
   ).toBe(true)
   expect(r6.tracePath.at(-1)!.y).toBeCloseTo(-3.135)
 
+  const { inlineNetLabelPlacements, netLabelPlacements } =
+    solver.netLabelToTraceSolver!.getOutput()
+  expect(
+    inlineNetLabelPlacements.some((label) =>
+      label.pinIds.includes("schematic_port_144"),
+    ),
+  ).toBe(true)
+  expect(
+    inlineNetLabelPlacements.some((label) =>
+      label.pinIds.includes("schematic_port_145"),
+    ),
+  ).toBe(true)
+  expect(
+    netLabelPlacements.some(
+      (label) =>
+        label.pinIds.includes("schematic_port_144") ||
+        label.pinIds.includes("schematic_port_145"),
+    ),
+  ).toBe(false)
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
