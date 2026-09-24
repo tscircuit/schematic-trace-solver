@@ -96,17 +96,22 @@ test("preserves explicit ground wires beyond the local distance", () => {
   expect(solver.getOutput().newTraces).toHaveLength(1)
 })
 
-test("preserves a ground return rail between connectors on the same row", () => {
+test("preserves a ground return between side-by-side connectors with staggered pins", () => {
   const problem = structuredClone(inputProblem)
+  problem.chips[0]!.pins = [
+    { pinId: "a", x: 2, y: 0, _facingDirection: "x+" },
+    { pinId: "first-signal", x: 0, y: 0.2 },
+    { pinId: "first-power", x: 0, y: -0.2 },
+  ]
   problem.chips[1] = {
     chipId: "second",
-    center: { x: 5, y: 0 },
+    center: { x: 6, y: 0 },
     width: 2,
     height: 1,
     pins: [
-      { pinId: "b", x: 4, y: 0, _facingDirection: "x-" },
-      { pinId: "second-signal", x: 6, y: 0.2 },
-      { pinId: "second-power", x: 6, y: -0.2 },
+      { pinId: "b", x: 5, y: 0.2, _facingDirection: "x-" },
+      { pinId: "second-signal", x: 7, y: 0.2 },
+      { pinId: "second-power", x: 7, y: -0.2 },
     ],
   }
   const solver = new LongDistancePairSolver({
