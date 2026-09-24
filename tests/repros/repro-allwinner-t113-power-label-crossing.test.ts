@@ -32,6 +32,23 @@ test("keeps Allwinner T113 traces clear of their power-label bodies", async () =
   for (const pin of upperSupplyPins) {
     expect(tracePathContainsPoint(upperSupplyTrace.tracePath, pin)).toBe(true)
   }
+  const upperSupplyLabel = netLabelPlacements.find((placement) =>
+    placement.mspConnectionPairIds.includes(upperSupplyTrace.mspPairId),
+  )!
+  const upperY = Math.max(...upperSupplyPins.map((pin) => pin.y))
+  const upperCorner = upperSupplyTrace.tracePath.find(
+    (point) => point.y === upperY && point.x < upperSupplyPins[0]!.x,
+  )!
+  expect(upperCorner).toBeDefined()
+  expect(upperSupplyLabel.anchorPoint).toEqual(upperCorner)
+  expect(
+    traces.some(
+      (trace) =>
+        solver.availableNetOrientationSolver!.netLabelConnectorTraceIds.has(
+          trace.mspPairId,
+        ) && upperSupplyPins.every((pin) => trace.pinIds.includes(pin.pinId)),
+    ),
+  ).toBe(false)
   const label = netLabelPlacements.find(
     (placement) =>
       placement.netId === "LDOA1V8" &&

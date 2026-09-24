@@ -16,7 +16,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 import type { CompletedTraceReroute } from "./types"
 import { generateElbowTransitionSimplificationCandidates } from "./generateElbowTransitionSimplificationCandidates"
-import { getSameNetJunctions } from "./getSameNetJunctions"
+import { getSameNetJunctions } from "lib/utils/getSameNetJunctions"
 
 interface TraceElbowTransitionSimplificationSolverInput {
   inputProblem: InputProblem

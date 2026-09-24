@@ -21,34 +21,45 @@ test("rp2040 robot controller keeps GND connected after junction alignment", () 
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
 
-  const before = solver.netLabelNetLabelCollisionSolver!
-  const after = solver.inlineNetLabelSolver!.getOutput()
-  const groundLabel = after.netLabelPlacements.find((label) =>
-    label.pinIds.includes("schematic_port_162"),
-  )!
-  const beforeConnector = before.traces.find(
-    (trace) =>
-      solver.availableNetOrientationSolver!.netLabelConnectorTraceIds.has(
-        trace.mspPairId,
-      ) && trace.pinIds.includes("schematic_port_162"),
-  )!
-  const afterConnector = after.traces.find(
-    (trace) => trace.mspPairId === beforeConnector.mspPairId,
-  )!
-  const beforeGroundLabel = before
-    .getOutput()
-    .netLabelPlacements.find((label) =>
-      label.pinIds.includes("schematic_port_162"),
+  const groundPinIds = ["schematic_port_162", "schematic_port_167"]
+  const groundPins = inputProblem.chips
+    .flatMap((chip) => chip.pins)
+    .filter((pin) => groundPinIds.includes(pin.pinId))
+  expect(groundPins).toHaveLength(2)
+  for (const output of [
+    {
+      ...solver.netLabelNetLabelCollisionSolver!.getOutput(),
+      traces: solver.netLabelNetLabelCollisionSolver!.traces,
+    },
+    solver.inlineNetLabelSolver!.getOutput(),
+  ]) {
+    const label = output.netLabelPlacements.find((item) =>
+      item.pinIds.includes(groundPinIds[0]!),
     )!
-  expect(
-    tracePathContainsPoint(
-      beforeConnector.tracePath,
-      beforeGroundLabel.anchorPoint,
-    ),
-  ).toBe(true)
-  expect(
-    tracePathContainsPoint(afterConnector.tracePath, groundLabel.anchorPoint),
-  ).toBe(true)
+    expect(label).toBeDefined()
+    const rail = output.traces.find(
+      (trace) =>
+        !solver.availableNetOrientationSolver!.netLabelConnectorTraceIds.has(
+          trace.mspPairId,
+        ) && groundPinIds.every((pinId) => trace.pinIds.includes(pinId)),
+    )!
+    expect(rail).toBeDefined()
+    for (const pin of groundPins) {
+      expect(tracePathContainsPoint(rail.tracePath, pin)).toBe(true)
+    }
+    // A label can attach directly to the rail or through a retained connector.
+    // In either case it must remain electrically joined to both ground pins.
+    expect(
+      output.traces.some(
+        (trace) =>
+          trace.globalConnNetId === rail.globalConnNetId &&
+          tracePathContainsPoint(trace.tracePath, label.anchorPoint) &&
+          trace.tracePath.some((point) =>
+            tracePathContainsPoint(rail.tracePath, point),
+          ),
+      ),
+    ).toBe(true)
+  }
 
   expect(
     convertCircuitJsonToSchematicSvg(convertSolverOutputToCircuitJson(solver), {
