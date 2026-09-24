@@ -16,6 +16,7 @@ import { arePinsInDifferentSchematicSections } from "../../utils/arePinsInDiffer
 import { BaseSolver } from "../BaseSolver/BaseSolver"
 import { getParallelNetLabelPolicy } from "./getParallelNetLabelPolicy"
 import { getGroundConnectionPolicy } from "../MspConnectionPairSolver/getGroundConnectionPolicy"
+import { isUnwiredGroundConnectionBetweenChips } from "./isUnwiredGroundConnectionBetweenChips"
 import { isLabeledPeripheralConnection } from "../MspConnectionPairSolver/isLabeledPeripheralConnection"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { SchematicTraceSingleLineSolver2 } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
@@ -179,7 +180,8 @@ export class LongDistancePairSolver extends BaseSolver {
       primaryConnectedPinIds.add(pair.pins[1].pinId)
     }
 
-    const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
+    const { netConnMap, directConnMap } =
+      getConnectivityMapsFromInputProblem(inputProblem)
     this.netConnMap = netConnMap
     const canRecoverParallelPair = getParallelNetLabelPolicy(
       inputProblem,
@@ -233,14 +235,21 @@ export class LongDistancePairSolver extends BaseSolver {
             if (!targetPin) return [] // Gracefully handle missing pins
             if (!canRouteGroundPair(sourcePin.pinId, targetPin.pinId)) return []
             if (!canRecoverParallelPair(sourcePin, targetPin)) return []
-            const isNamedTwoPinConnection = inputProblem.netConnections.some(
+            const requiresLocalRoute = inputProblem.netConnections.some(
               (connection) =>
-                connection.pinIds.length === 2 &&
+                (connection.pinIds.length === 2 ||
+                  isUnwiredGroundConnectionBetweenChips({
+                    connection,
+                    sourcePin,
+                    targetPin,
+                    chipMap: this.chipMap,
+                    directConnMap,
+                  })) &&
                 connection.pinIds.includes(sourcePin.pinId) &&
                 connection.pinIds.includes(targetPin.pinId),
             )
             if (
-              isNamedTwoPinConnection &&
+              requiresLocalRoute &&
               manhattanDistance(sourcePin, targetPin) > this.maxMspPairDistance
             ) {
               return []
