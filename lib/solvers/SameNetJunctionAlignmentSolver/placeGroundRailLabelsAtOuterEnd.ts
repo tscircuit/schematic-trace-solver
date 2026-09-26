@@ -1,5 +1,6 @@
 import { traceCrossesBoundsInterior } from "lib/solvers/AvailableNetOrientationSolver/geometry"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import { getGroundGlobalConnNetIds } from "lib/solvers/MspConnectionPairSolver/getGroundGlobalConnNetIds"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -30,8 +31,8 @@ export const placeGroundRailLabelsAtOuterEnd = ({
   netLabelPlacements: NetLabelPlacement[]
 }): NetLabelPlacement[] => {
   const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
-  const groundNetId = netConnMap.getNetConnectedToId("GND")
-  if (!groundNetId) return netLabelPlacements
+  const groundNetIds = getGroundGlobalConnNetIds(inputProblem, netConnMap)
+  if (groundNetIds.size === 0) return netLabelPlacements
   const chipMap = new Map(inputProblem.chips.map((chip) => [chip.chipId, chip]))
   const traceMap = Object.fromEntries(
     traces.map((trace) => [trace.mspPairId, trace]),
@@ -40,7 +41,7 @@ export const placeGroundRailLabelsAtOuterEnd = ({
   const output = [...netLabelPlacements]
 
   for (const rail of traces) {
-    if (rail.globalConnNetId !== groundNetId) continue
+    if (!groundNetIds.has(rail.globalConnNetId)) continue
     const [a, b] = rail.pins
     if (
       a.chipId === b.chipId ||
@@ -63,7 +64,7 @@ export const placeGroundRailLabelsAtOuterEnd = ({
       continue
 
     for (const feed of traces) {
-      if (feed.globalConnNetId !== groundNetId) continue
+      if (!groundNetIds.has(feed.globalConnNetId)) continue
       const shared = feed.pins.find((pin) => rail.pinIds.includes(pin.pinId))
       const icPin = feed.pins.find(
         (pin) =>
@@ -79,7 +80,7 @@ export const placeGroundRailLabelsAtOuterEnd = ({
       for (let index = 0; index < output.length; index++) {
         const label = output[index]!
         if (
-          label.globalConnNetId !== groundNetId ||
+          !groundNetIds.has(label.globalConnNetId) ||
           label.orientation !== "y-" ||
           !label.mspConnectionPairIds.some(
             (id) => id === feed.mspPairId || id === rail.mspPairId,
