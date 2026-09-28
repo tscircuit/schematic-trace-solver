@@ -511,6 +511,13 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
               movedLabel.anchorPoint,
             )
       const connectorObstructed =
+        connector.tracePath.slice(1).some((end, index) => {
+          const start = connector.tracePath[index]!
+          return (
+            Math.abs(end.x - start.x) > POINT_EPSILON &&
+            Math.abs(end.y - start.y) > POINT_EPSILON
+          )
+        }) ||
         outputTraces.some(
           (trace) =>
             trace.globalConnNetId !== connector.globalConnNetId &&

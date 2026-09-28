@@ -19,6 +19,18 @@ test("bug-report-20260907T145640Z", async () => {
   // This is the output consumed by core, before NetLabelToTraceSolver renders
   // diagnostic terminal wires.
   const output = solver.inlineNetLabelSolver!.getOutput()
+  const geometryEpsilon = 1e-6
+  expect(
+    output.traces.every((trace) =>
+      trace.tracePath.slice(1).every((end, index) => {
+        const start = trace.tracePath[index]!
+        return (
+          Math.abs(end.x - start.x) <= geometryEpsilon ||
+          Math.abs(end.y - start.y) <= geometryEpsilon
+        )
+      }),
+    ),
+  ).toBe(true)
   // Audit the entire report, including U3, rather than selected screenshots.
   expect([...getOutputLabelCollisions(output)]).toEqual([])
   for (const connection of inputProblem.netConnections.filter(
