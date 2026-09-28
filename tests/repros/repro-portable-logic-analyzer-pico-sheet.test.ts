@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
+import { getOutputLabelCollisions } from "lib/solvers/InlineNetLabelSolver/getOutputLabelCollisions"
 import "tests/fixtures/matcher"
 import input from "./assets/repro-portable-logic-analyzer-pico-sheet.input.json"
 
@@ -16,5 +17,25 @@ test("repro portable logic analyzer Pico schematic sheet", async () => {
   expect(input.netConnections).toHaveLength(18)
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
+  const output = solver.netLabelToTraceSolver!.getOutput()
+  const groundLabel = output.netLabelPlacements.find(
+    (label) =>
+      label.netId === "GND" &&
+      label.anchorPoint.y > 0 &&
+      label.anchorPoint.x < 0,
+  )!
+  expect(groundLabel.anchorPoint.x).toBeCloseTo(-3.42)
+  expect(
+    output.traces.some(
+      (trace) =>
+        trace.globalConnNetId === groundLabel.globalConnNetId &&
+        trace.tracePath.some(
+          (point) =>
+            point.x === groundLabel.anchorPoint.x &&
+            point.y === groundLabel.anchorPoint.y,
+        ),
+    ),
+  ).toBe(true)
+  expect(getOutputLabelCollisions(output)).toEqual([])
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

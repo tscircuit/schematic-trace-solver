@@ -375,7 +375,8 @@ export const pushAnchoredNetLabelsAwayFromInlineLabels = ({
           obstacleIndex < outputLabels.length;
           obstacleIndex++
         ) {
-          if (group.has(obstacleIndex)) continue
+          if (obstacleIndex === movingIndex || group.has(obstacleIndex))
+            continue
           const obstacle = outputLabels[obstacleIndex]!
           const existingObstacleDistance = distances.get(obstacleIndex) ?? 0
           const obstacleBounds = getAnchoredNetLabelRenderedBounds(
