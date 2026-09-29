@@ -40,6 +40,7 @@ import type {
 import { visualizeRailNetLabelCornerPlacementSolver } from "./visualize"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 import { getRemovableRailLabelConnectors } from "./getRemovableRailLabelConnectors"
+import { getStraightPortConnectorCandidate } from "./getStraightPortConnectorCandidate"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -287,12 +288,16 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   private shouldProcessLabel(label: NetLabelPlacement) {
     if (this.originalTraces || this.onlyOverlappingLabels) {
       // Late routing can move a label's corner, bring a trace through it,
-      // or expose a corner that makes a generated connector unnecessary.
+      // expose a corner that makes a generated connector unnecessary, or
+      // clear the pin's exit row so a connector no longer needs its detour.
       const cornerMoved = this.originalTraces && this.hasMovedCorner(label)
       const labelCrossed =
         this.onlyOverlappingLabels && this.isLabelCrossedByTrace(label)
       const newRailCorner = this.getNewRailCornerCandidates(label).length > 0
-      if (!cornerMoved && !labelCrossed && !newRailCorner) return false
+      const straightConnector =
+        this.getStraightConnectorCandidates(label).length > 0
+      if (!cornerMoved && !labelCrossed && !newRailCorner && !straightConnector)
+        return false
     }
     // Power/ground rail labels (VCC, GND, V3_3, ...) have a fixed vertical
     // orientation and read best snapped to a trace corner rather than floating
@@ -452,6 +457,19 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   private getStraightConnectorCandidates(
     label: NetLabelPlacement,
   ): TraceCornerCandidate[] {
+    // Recheck port connector detours during the late pass, after trace
+    // simplification has had a chance to clear their original exit rows.
+    const portConnectorCandidate = this.originalTraces
+      ? getStraightPortConnectorCandidate({
+          label,
+          traces: this.traces,
+          netLabelPlacements: this.outputNetLabelPlacements,
+          netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
+          inputProblem: this.inputProblem,
+        })
+      : undefined
+    if (portConnectorCandidate) return [portConnectorCandidate]
+
     if (label.pinIds.length !== 2 || !this.isConfiguredRailLabel(label)) {
       return []
     }
