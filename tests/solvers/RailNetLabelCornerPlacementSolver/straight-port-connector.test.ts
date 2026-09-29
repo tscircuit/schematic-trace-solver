@@ -43,12 +43,23 @@ const createFixture = (mirror = 1, direction = 1, reversed = false) => {
     width: 0.4,
     height: 0.4,
   }
+  const initialTrace = {
+    ...trace,
+    tracePath: [point(0, 0), point(-2, 0), label.anchorPoint],
+  }
+  if (reversed) initialTrace.tracePath.reverse()
   return {
     inputProblem,
     traces: [trace],
     originalTraces: [trace],
     netLabelPlacements: [label],
     netLabelConnectorTraceIds: new Set([trace.mspPairId]),
+    completedTraceShifts: [
+      {
+        initialTrace,
+        shiftedTracePath: structuredClone(trace.tracePath),
+      },
+    ],
     onlyOverlappingLabels: true,
   }
 }
@@ -141,13 +152,14 @@ test("requires generated connector provenance", () => {
   })
 })
 
-test("preserves a single elbow used to reach a rail label", () => {
+test("preserves an unshifted single elbow used to reach a rail label", () => {
   const fixture = createFixture()
   fixture.traces[0]!.tracePath = [
     { x: 0, y: 0 },
     { x: -2, y: 0 },
     fixture.netLabelPlacements[0]!.anchorPoint,
   ]
+  fixture.completedTraceShifts = []
   const solver = new RailNetLabelCornerPlacementSolver(fixture)
   solver.solve()
   expect(solver.getOutput()).toEqual({
@@ -156,17 +168,101 @@ test("preserves a single elbow used to reach a rail label", () => {
   })
 })
 
-test("leaves port connector detours for the late placement pass", () => {
+test("does not simplify an unrecorded detour", () => {
   const fixture = createFixture()
   const solver = new RailNetLabelCornerPlacementSolver({
     ...fixture,
-    originalTraces: undefined,
-    onlyOverlappingLabels: false,
+    completedTraceShifts: undefined,
   })
   solver.solve()
   expect(solver.getOutput()).toEqual({
     traces: fixture.traces,
     netLabelPlacements: fixture.netLabelPlacements,
+  })
+})
+
+test("straightens a recorded shift with only one remaining bend", () => {
+  const fixture = createFixture()
+  fixture.traces[0]!.tracePath = [
+    { x: 0, y: 0 },
+    { x: -2, y: 0 },
+    fixture.netLabelPlacements[0]!.anchorPoint,
+  ]
+  fixture.completedTraceShifts = [
+    {
+      initialTrace: {
+        ...fixture.traces[0]!,
+        tracePath: [
+          { x: 0, y: 0 },
+          { x: -1.9, y: 0 },
+          { x: -1.9, y: -0.05 },
+          fixture.netLabelPlacements[0]!.anchorPoint,
+        ],
+      },
+      shiftedTracePath: structuredClone(fixture.traces[0]!.tracePath),
+    },
+  ]
+  const solver = new RailNetLabelCornerPlacementSolver(fixture)
+  solver.solve()
+  expect(solver.getOutput().traces[0]!.tracePath).toEqual([
+    { x: 0, y: 0 },
+    { x: -2, y: 0 },
+  ])
+})
+
+test("does not undo geometry changed after the recorded overlap shift", () => {
+  const fixture = createFixture()
+  fixture.traces[0]!.tracePath[2]!.y = -0.15
+  fixture.traces[0]!.tracePath[3]!.y = -0.15
+  const solver = new RailNetLabelCornerPlacementSolver(fixture)
+  solver.solve()
+  expect(solver.getOutput()).toEqual({
+    traces: fixture.traces,
+    netLabelPlacements: fixture.netLabelPlacements,
+  })
+})
+
+test("does not treat an unchanged route as an overlap shift", () => {
+  const fixture = createFixture()
+  fixture.completedTraceShifts[0]!.initialTrace = structuredClone(
+    fixture.traces[0]!,
+  )
+  const solver = new RailNetLabelCornerPlacementSolver(fixture)
+  solver.solve()
+  expect(solver.getOutput()).toEqual({
+    traces: fixture.traces,
+    netLabelPlacements: fixture.netLabelPlacements,
+  })
+})
+
+test("does not mutate an already straight shifted connector in reverse order", () => {
+  const fixture = createFixture()
+  const anchorPoint = { x: -2, y: 0 }
+  fixture.netLabelPlacements[0]!.anchorPoint = anchorPoint
+  fixture.netLabelPlacements[0]!.center = { x: -2, y: -0.2 }
+  fixture.traces[0]!.tracePath = [anchorPoint, { x: 0, y: 0 }]
+  fixture.completedTraceShifts = [
+    {
+      initialTrace: {
+        ...fixture.traces[0]!,
+        tracePath: [
+          anchorPoint,
+          { x: -2, y: -0.1 },
+          { x: -0.2, y: -0.1 },
+          { x: -0.2, y: 0 },
+          { x: 0, y: 0 },
+        ],
+      },
+      shiftedTracePath: structuredClone(fixture.traces[0]!.tracePath),
+    },
+  ]
+  const before = structuredClone(fixture)
+  const solver = new RailNetLabelCornerPlacementSolver(fixture)
+  solver.solve()
+  expect(fixture).toEqual(before)
+  expect(solver.getOutput()).toEqual({
+    traces: before.traces,
+    netLabelPlacements: before.netLabelPlacements,
   })
 })
 

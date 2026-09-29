@@ -13,6 +13,11 @@ import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnecti
 type ConnNetId = string
 type TraceState = Record<MspConnectionPairId, SolvedTracePath>
 
+export interface CompletedTraceShift {
+  initialTrace: SolvedTracePath
+  shiftedTracePath: SolvedTracePath["tracePath"]
+}
+
 const TRACE_STATE_POSITION_EPSILON = 1e-6
 
 /**
@@ -99,6 +104,18 @@ export class TraceOverlapShiftSolver extends BaseSolver {
     }
 
     return islands
+  }
+
+  /** Preserve the before/after geometry for later revalidation of overlap shifts. */
+  getCompletedTraceShifts(): CompletedTraceShift[] {
+    return this.inputTracePaths.flatMap((initialTrace) => {
+      const shiftedTrace = this.correctedTraceMap[initialTrace.mspPairId]
+      // Overlap corrections replace paths; unchanged traces retain their input path.
+      if (!shiftedTrace || shiftedTrace.tracePath === initialTrace.tracePath) {
+        return []
+      }
+      return [{ initialTrace, shiftedTracePath: shiftedTrace.tracePath }]
+    })
   }
 
   findNextOverlapIssue(): {

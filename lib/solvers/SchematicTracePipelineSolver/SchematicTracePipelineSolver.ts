@@ -569,6 +569,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           ...instance.finalTraceElbowTransitionSimplificationSolver!.getOutput(),
           originalTraces:
             instance.railNetLabelCornerPlacementSolver!.getOutput().traces,
+          completedTraceShifts:
+            instance.postLabelTraceOverlapShiftSolver!.getCompletedTraceShifts(),
           netLabelConnectorTraceIds:
             instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
           onlyOverlappingLabels: true,

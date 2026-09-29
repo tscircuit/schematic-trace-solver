@@ -41,6 +41,7 @@ import { visualizeRailNetLabelCornerPlacementSolver } from "./visualize"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 import { getRemovableRailLabelConnectors } from "./getRemovableRailLabelConnectors"
 import { getStraightPortConnectorCandidate } from "./getStraightPortConnectorCandidate"
+import type { CompletedTraceShift } from "lib/solvers/TraceOverlapShiftSolver/TraceOverlapShiftSolver"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -60,6 +61,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   private traceMap: Record<string, SolvedTracePath>
   private netLabelConnectorTraceIds: ReadonlySet<string>
   private originalTraces?: SolvedTracePath[]
+  private completedTraceShifts: CompletedTraceShift[]
   private onlyOverlappingLabels: boolean
 
   constructor(params: RailNetLabelCornerPlacementSolverParams) {
@@ -74,6 +76,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     this.netLabelConnectorTraceIds =
       params.netLabelConnectorTraceIds ?? new Set()
     this.originalTraces = params.originalTraces
+    this.completedTraceShifts = params.completedTraceShifts ?? []
     this.onlyOverlappingLabels = params.onlyOverlappingLabels ?? false
     this.queuedLabelIndices = this.getProcessableLabelIndices()
     this.prepareNextLabel()
@@ -88,6 +91,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       netLabelPlacements: this.netLabelPlacements,
       netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
       originalTraces: this.originalTraces,
+      completedTraceShifts: this.completedTraceShifts,
       onlyOverlappingLabels: this.onlyOverlappingLabels,
     }
   }
@@ -457,17 +461,14 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   private getStraightConnectorCandidates(
     label: NetLabelPlacement,
   ): TraceCornerCandidate[] {
-    // Recheck port connector detours during the late pass, after trace
-    // simplification has had a chance to clear their original exit rows.
-    const portConnectorCandidate = this.originalTraces
-      ? getStraightPortConnectorCandidate({
-          label,
-          traces: this.traces,
-          netLabelPlacements: this.outputNetLabelPlacements,
-          netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
-          inputProblem: this.inputProblem,
-        })
-      : undefined
+    const portConnectorCandidate = getStraightPortConnectorCandidate({
+      label,
+      traces: this.traces,
+      netLabelPlacements: this.outputNetLabelPlacements,
+      netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
+      completedTraceShifts: this.completedTraceShifts,
+      inputProblem: this.inputProblem,
+    })
     if (portConnectorCandidate) return [portConnectorCandidate]
 
     if (label.pinIds.length !== 2 || !this.isConfiguredRailLabel(label)) {

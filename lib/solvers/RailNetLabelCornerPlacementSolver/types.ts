@@ -2,14 +2,17 @@ import type { Point } from "@tscircuit/math-utils"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputProblem } from "lib/types/InputProblem"
+import type { CompletedTraceShift } from "lib/solvers/TraceOverlapShiftSolver/TraceOverlapShiftSolver"
 
 export interface RailNetLabelCornerPlacementSolverParams {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   netLabelConnectorTraceIds?: ReadonlySet<string>
-  /** Reconsider moved corners, newly exposed corners, and generated connector detours. */
+  /** Reconsider moved corners and newly exposed corners for generated connectors. */
   originalTraces?: SolvedTracePath[]
+  /** Recorded overlap shifts to revalidate after surrounding routes have changed. */
+  completedTraceShifts?: CompletedTraceShift[]
   /** Revalidate crossed labels, in addition to changed corners when originalTraces is supplied. */
   onlyOverlappingLabels?: boolean
 }
