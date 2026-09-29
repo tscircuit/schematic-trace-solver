@@ -73,10 +73,14 @@ const drawCurrentOverlap = (
 ) => {
   if (!state.currentOverlap) return
 
-  for (const labelIndex of [
-    state.currentOverlap.firstLabelIndex,
-    state.currentOverlap.secondLabelIndex,
-  ]) {
+  const labelIndices =
+    state.currentOverlap.type === "trace"
+      ? [state.currentOverlap.labelIndex]
+      : [
+          state.currentOverlap.firstLabelIndex,
+          state.currentOverlap.secondLabelIndex,
+        ]
+  for (const labelIndex of labelIndices) {
     const label = state.outputNetLabelPlacements[labelIndex]
     if (!label) continue
 

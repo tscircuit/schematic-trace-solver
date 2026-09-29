@@ -1,4 +1,5 @@
 import type { Point } from "@tscircuit/math-utils"
+import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { FacingDirection } from "lib/utils/dir"
@@ -20,6 +21,13 @@ export const rectsOverlap = (a: Bounds, b: Bounds) =>
 export const rectsTouchOrOverlap = (a: Bounds, b: Bounds) =>
   Math.min(a.maxX, b.maxX) - Math.max(a.minX, b.minX) >= -EPS &&
   Math.min(a.maxY, b.maxY) - Math.max(a.minY, b.minY) >= -EPS
+
+export const traceIntersectsBounds = (bounds: Bounds, trace: SolvedTracePath) =>
+  trace.tracePath
+    .slice(1)
+    .some((end, index) =>
+      segmentIntersectsRect(trace.tracePath[index]!, end, bounds),
+    )
 
 export const traceCrossesBoundsInterior = (
   bounds: Bounds,

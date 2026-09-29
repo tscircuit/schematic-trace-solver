@@ -11,6 +11,7 @@ import {
   rectsOverlap,
   rectsTouchOrOverlap,
   traceCrossesBoundsInterior,
+  traceIntersectsBounds,
 } from "./geometry"
 import type {
   Bounds,
@@ -43,9 +44,11 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
 
   private activeSearch: ActiveOverlapSearch | null = null
   private skippedOverlapKeys = new Set<string>()
+  private overlapMode: "labels" | "traces"
 
   constructor(params: TraceAnchoredNetLabelOverlapSolverParams) {
     super()
+    this.overlapMode = params.overlapMode ?? "labels"
     this.inputProblem = params.inputProblem
     this.traces = params.traces
     this.netLabelPlacements = params.netLabelPlacements
@@ -56,6 +59,7 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
     typeof TraceAnchoredNetLabelOverlapSolver
   >[0] {
     return {
+      overlapMode: this.overlapMode,
       inputProblem: this.inputProblem,
       traces: this.traces,
       netLabelPlacements: this.netLabelPlacements,
@@ -81,11 +85,13 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
   }
 
   private findNextOverlap() {
+    if (this.overlapMode === "traces") return this.findNextTraceOverlap()
     for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
       for (let j = i + 1; j < this.outputNetLabelPlacements.length; j++) {
         if (!this.isLabelEligible(i) && !this.isLabelEligible(j)) continue
 
-        const overlap = {
+        const overlap: LabelOverlap = {
+          type: "labels",
           firstLabelIndex: i,
           secondLabelIndex: j,
         }
@@ -97,11 +103,34 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
     return null
   }
 
+  private findNextTraceOverlap(): LabelOverlap | null {
+    for (
+      let labelIndex = 0;
+      labelIndex < this.outputNetLabelPlacements.length;
+      labelIndex++
+    ) {
+      if (!this.isLabelEligible(labelIndex)) continue
+      const label = this.outputNetLabelPlacements[labelIndex]!
+      const bounds = getLabelBounds(label)
+      for (const trace of this.traces) {
+        if (trace.globalConnNetId === label.globalConnNetId) continue
+        const overlap: LabelOverlap = {
+          type: "trace",
+          labelIndex,
+          traceId: trace.mspPairId,
+        }
+        if (this.skippedOverlapKeys.has(this.getOverlapKey(overlap))) continue
+        if (traceIntersectsBounds(bounds, trace)) return overlap
+      }
+    }
+    return null
+  }
+
   private isLabelEligible(labelIndex: number) {
     return this.getTraceLocationsForLabel(labelIndex).length > 0
   }
 
-  private labelsOverlap(overlap: LabelOverlap) {
+  private labelsOverlap(overlap: Extract<LabelOverlap, { type: "labels" }>) {
     const first = this.outputNetLabelPlacements[overlap.firstLabelIndex]
     const second = this.outputNetLabelPlacements[overlap.secondLabelIndex]
     if (!first || !second) return false
@@ -128,6 +157,7 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
   }
 
   private getMoveLabelIndices(overlap: LabelOverlap) {
+    if (overlap.type === "trace") return [overlap.labelIndex]
     const labelIndices: number[] = []
 
     if (this.isLabelEligible(overlap.secondLabelIndex)) {
@@ -232,6 +262,16 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
       return "text-collision"
     if (traceCrossesBoundsInterior(bounds, this.traces))
       return "trace-collision"
+    if (
+      this.overlapMode === "traces" &&
+      this.traces.some(
+        (trace) =>
+          trace.globalConnNetId !==
+            this.outputNetLabelPlacements[labelIndex]!.globalConnNetId &&
+          traceIntersectsBounds(bounds, trace),
+      )
+    )
+      return "trace-collision"
     if (this.intersectsAnyOtherLabel(bounds, labelIndex)) {
       return "netlabel-collision"
     }
@@ -292,6 +332,17 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
   }
 
   private getOverlapKey(overlap: LabelOverlap) {
+    if (overlap.type === "trace") {
+      const label = this.outputNetLabelPlacements[overlap.labelIndex]!
+      return [
+        "trace",
+        overlap.traceId,
+        overlap.labelIndex,
+        label.anchorPoint.x,
+        label.anchorPoint.y,
+        label.orientation,
+      ].join(":")
+    }
     const first = this.outputNetLabelPlacements[overlap.firstLabelIndex]
     const second = this.outputNetLabelPlacements[overlap.secondLabelIndex]
     return [
