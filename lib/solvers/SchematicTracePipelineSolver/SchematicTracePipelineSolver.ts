@@ -95,6 +95,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   postLabelTraceOverlapShiftSolver?: TraceOverlapShiftSolver
   railNetLabelCornerPlacementSolver?: RailNetLabelCornerPlacementSolver
   traceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
+  finalTraceAnchoredNetLabelOverlapSolver?: TraceAnchoredNetLabelOverlapSolver
   preAlignmentNetLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   netLabelTraceCollisionSolver?: NetLabelTraceCollisionSolver
   traceCleanupSolver2?: TraceCleanupSolver
@@ -415,6 +416,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => [
         {
           inputProblem: instance.inputProblem,
+          netLabelConnectorTraceIds:
+            instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
           traces:
             instance.railNetLabelCornerPlacementSolver!.getOutput().traces,
           netLabelPlacements:
@@ -591,12 +594,30 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         ]
       },
     ),
+    // Rail cleanup can move a trace onto an anchored label's edge. Move the
+    // label along its host before final alignment, keeping the routed traces.
+    definePipelineStep(
+      "finalTraceAnchoredNetLabelOverlapSolver",
+      TraceAnchoredNetLabelOverlapSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          netLabelConnectorTraceIds:
+            instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
+          traces: instance.netLabelNetLabelCollisionSolver!.traces,
+          netLabelPlacements:
+            instance.netLabelNetLabelCollisionSolver!.getOutput()
+              .netLabelPlacements,
+          overlapMode: "traces",
+        },
+      ],
+    ),
     definePipelineStep(
       "sameNetJunctionAlignmentSolver",
       SameNetJunctionAlignmentSolver,
       (instance) => {
         const collisionOutput =
-          instance.netLabelNetLabelCollisionSolver!.getOutput()
+          instance.finalTraceAnchoredNetLabelOverlapSolver!.getOutput()
         return [
           {
             inputProblem: instance.inputProblem,

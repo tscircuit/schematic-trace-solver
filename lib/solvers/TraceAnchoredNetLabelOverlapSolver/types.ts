@@ -5,6 +5,10 @@ import type { InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
 
 export interface TraceAnchoredNetLabelOverlapSolverParams {
+  /** Which obstacles trigger a search along the label's existing host trace. */
+  overlapMode?: "labels" | "traces"
+  /** Generated terminal connectors must not be used as host traces. */
+  netLabelConnectorTraceIds?: ReadonlySet<string>
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
@@ -17,10 +21,9 @@ export type Bounds = {
   maxY: number
 }
 
-export type LabelOverlap = {
-  firstLabelIndex: number
-  secondLabelIndex: number
-}
+export type LabelOverlap =
+  | { type: "labels"; firstLabelIndex: number; secondLabelIndex: number }
+  | { type: "trace"; labelIndex: number; traceId: string }
 
 export type TraceLocation = {
   trace: SolvedTracePath
