@@ -5,7 +5,6 @@ import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabe
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { generateCandidatesAlongTrace } from "./candidates"
-import { getLabelConnectorUpdates } from "./getLabelConnectorUpdates"
 import {
   getLabelBounds,
   getTraceLocationsForPoint,
@@ -85,7 +84,6 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
 
   getOutput() {
     return {
-      traces: this.traces,
       netLabelPlacements: this.outputNetLabelPlacements,
     }
   }
@@ -226,24 +224,9 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
 
     search.candidateIndex += 1
 
-    const connectorUpdates = getLabelConnectorUpdates({
-      label,
-      anchorPoint: candidate.anchorPoint,
-      traces: this.traces,
-      netLabelPlacements: this.outputNetLabelPlacements,
-      netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
-      inputProblem: this.inputProblem,
-    })
-    const updatedCandidate = {
+    const evaluatedCandidate = {
       ...candidate,
-      connectorUpdates: connectorUpdates ?? undefined,
-    }
-    const evaluatedCandidate: LabelCandidate = {
-      ...updatedCandidate,
-      status:
-        connectorUpdates === null
-          ? "attachment-loss"
-          : this.getCandidateStatus(updatedCandidate, labelIndex),
+      status: this.getCandidateStatus(candidate, labelIndex),
     }
     search.candidateResults.push(evaluatedCandidate)
 
@@ -260,7 +243,7 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
     for (const traceLocation of getTraceLocationsForPoint(
       label.anchorPoint,
       this.traces,
-    ).filter(({ trace }) => this.isTraceAssociatedWithLabel(trace, label))) {
+    ).filter(({ trace }) => this.isHostTraceForLabel(trace, label))) {
       candidates.push(
         ...generateCandidatesAlongTrace({
           inputProblem: this.inputProblem,
@@ -278,14 +261,14 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
     labelIndex: number,
   ): CandidateStatus {
     const bounds = getLabelBounds(candidate)
-    const traces = this.getCandidateTraces(candidate)
     if (this.intersectsAnyChip(bounds)) return "chip-collision"
     if (rectIntersectsAnyTextBox(bounds, this.inputProblem))
       return "text-collision"
-    if (traceCrossesBoundsInterior(bounds, traces)) return "trace-collision"
+    if (traceCrossesBoundsInterior(bounds, this.traces))
+      return "trace-collision"
     if (
       this.overlapMode === "traces" &&
-      traces.some(
+      this.traces.some(
         (trace) =>
           trace.globalConnNetId !==
             this.outputNetLabelPlacements[labelIndex]!.globalConnNetId &&
@@ -300,46 +283,13 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
     return "valid"
   }
 
-  private getCandidateTraces(candidate: LabelCandidate) {
-    if (!candidate.connectorUpdates?.length) return this.traces
-    return this.traces.flatMap((trace) => {
-      const update = candidate.connectorUpdates!.find(
-        (update) => update.traceId === trace.mspPairId,
-      )
-      if (!update) return [trace]
-      return update.tracePath.length === 0
-        ? []
-        : [{ ...trace, tracePath: update.tracePath }]
-    })
-  }
-
   private applyCandidate(
     labelIndex: number,
     label: NetLabelPlacement,
     candidate: LabelCandidate,
   ) {
-    this.traces = this.getCandidateTraces(candidate)
-    const removedConnectors =
-      candidate.connectorUpdates?.filter(
-        (update) => update.replacementHostTraceId,
-      ) ?? []
     this.outputNetLabelPlacements[labelIndex] = {
       ...label,
-      ...(removedConnectors.length > 0
-        ? {
-            mspConnectionPairIds: [
-              ...new Set([
-                ...label.mspConnectionPairIds.filter(
-                  (id) =>
-                    !removedConnectors.some((update) => update.traceId === id),
-                ),
-                ...removedConnectors.map(
-                  (update) => update.replacementHostTraceId!,
-                ),
-              ]),
-            ],
-          }
-        : {}),
       anchorPoint: candidate.anchorPoint,
       center: candidate.center,
       width: candidate.width,
@@ -369,14 +319,17 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
     if (!label) return []
 
     return getTraceLocationsForPoint(label.anchorPoint, this.traces).filter(
-      ({ trace }) => this.isTraceAssociatedWithLabel(trace, label),
+      ({ trace }) => this.isHostTraceForLabel(trace, label),
     )
   }
 
-  private isTraceAssociatedWithLabel(
+  private isHostTraceForLabel(
     trace: SolvedTracePath,
     label: NetLabelPlacement,
   ) {
+    // Generated connectors inherit their host's pin IDs, but moving a label
+    // along one would leave its terminal geometry behind.
+    if (this.netLabelConnectorTraceIds.has(trace.mspPairId)) return false
     if (label.mspConnectionPairIds.includes(trace.mspPairId)) return true
     if (label.netId !== undefined && label.netId === trace.userNetId) {
       return true

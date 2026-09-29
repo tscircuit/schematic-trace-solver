@@ -7,7 +7,7 @@ import type { FacingDirection } from "lib/utils/dir"
 export interface TraceAnchoredNetLabelOverlapSolverParams {
   /** Which obstacles trigger a search along the label's existing host trace. */
   overlapMode?: "labels" | "traces"
-  /** Exact identities of the generated label connector traces. */
+  /** Generated terminal connectors must not be used as host traces. */
   netLabelConnectorTraceIds?: ReadonlySet<string>
   inputProblem: InputProblem
   traces: SolvedTracePath[]
@@ -36,13 +36,6 @@ export type CandidateStatus =
   | "text-collision"
   | "trace-collision"
   | "netlabel-collision"
-  | "attachment-loss"
-
-export type LabelConnectorUpdate = {
-  traceId: string
-  tracePath: Point[]
-  replacementHostTraceId?: string
-}
 
 export type LabelCandidate = {
   anchorPoint: Point
@@ -55,5 +48,4 @@ export type LabelCandidate = {
   distanceFromOriginal: number
   status: CandidateStatus
   selected: boolean
-  connectorUpdates?: LabelConnectorUpdate[]
 }

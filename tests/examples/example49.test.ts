@@ -8,10 +8,16 @@ test("example49", () => {
 
   solver.solve()
 
-  const { outputTraces: traces, outputNetLabelPlacements: labels } =
-    solver.netLabelToTraceSolver!
-  const label = labels.find(
-    (label) => label.netId === "CSN" && label.pinIds.includes("U4.7"),
+  const originalLabel = solver
+    .netLabelNetLabelCollisionSolver!.getOutput()
+    .netLabelPlacements.find(
+      (label) => label.netId === "CSN" && label.pinIds.includes("U4.7"),
+    )!
+  const { traces, netLabelPlacements } =
+    solver.netLabelToTraceSolver!.getOutput()
+  const label = netLabelPlacements.find(
+    (label) =>
+      label.netId === originalLabel.netId && label.pinIds.includes("U4.7"),
   )!
   const connector = traces.find(
     (trace) =>
@@ -20,8 +26,13 @@ test("example49", () => {
         trace.mspPairId,
       ),
   )!
-  expect(connector.tracePath.at(-1)!.x).toBeCloseTo(label.anchorPoint.x)
-  expect(connector.tracePath.at(-1)!.y).toBeCloseTo(label.anchorPoint.y)
+  expect(label).toEqual(originalLabel)
+  expect(connector).toEqual(
+    solver.netLabelNetLabelCollisionSolver!.traces.find(
+      (trace) => trace.mspPairId === connector.mspPairId,
+    )!,
+  )
+  expect(connector.tracePath.at(-1)).toEqual(label.anchorPoint)
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
