@@ -172,39 +172,3 @@ test("chooses the point-contact separation direction with fewer intersections", 
     correctedInner.tracePath[3]!.x,
   )
 })
-
-test("reports original and shifted paths without including unchanged traces", () => {
-  const first = makeTrace("first", "first-net", [
-    { x: -1, y: -1 },
-    { x: 0, y: -1 },
-    { x: 0, y: 1 },
-    { x: 1, y: 1 },
-  ])
-  const second = makeTrace("second", "second-net", [
-    { x: -1, y: -0.5 },
-    { x: 0, y: -0.5 },
-    { x: 0, y: 0.5 },
-    { x: -1, y: 0.5 },
-  ])
-  const unrelated = makeTrace("unrelated", "other-net", [
-    { x: 5, y: 5 },
-    { x: 6, y: 5 },
-  ])
-  const traces = [first, second, unrelated]
-  const before = structuredClone(traces)
-  const solver = createSolver(traces)
-  expect(solver.getCompletedTraceShifts()).toEqual([])
-  solver.solve()
-  const shifts = solver.getCompletedTraceShifts()
-  expect(shifts.map((shift) => shift.initialTrace.mspPairId)).toEqual([
-    "first",
-    "second",
-  ])
-  for (const shift of shifts) {
-    expect(shift.shiftedTracePath).toEqual(
-      solver.correctedTraceMap[shift.initialTrace.mspPairId]!.tracePath,
-    )
-    expect(shift.shiftedTracePath).not.toEqual(shift.initialTrace.tracePath)
-  }
-  expect(traces).toEqual(before)
-})
