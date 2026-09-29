@@ -5,6 +5,7 @@ import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabe
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { generateCandidatesAlongTrace } from "./candidates"
+import { getLabelConnectorUpdates } from "./getLabelConnectorUpdates"
 import {
   getLabelBounds,
   getTraceLocationsForPoint,
@@ -45,10 +46,13 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
   private activeSearch: ActiveOverlapSearch | null = null
   private skippedOverlapKeys = new Set<string>()
   private overlapMode: "labels" | "traces"
+  private netLabelConnectorTraceIds: ReadonlySet<string>
 
   constructor(params: TraceAnchoredNetLabelOverlapSolverParams) {
     super()
     this.overlapMode = params.overlapMode ?? "labels"
+    this.netLabelConnectorTraceIds =
+      params.netLabelConnectorTraceIds ?? new Set()
     this.inputProblem = params.inputProblem
     this.traces = params.traces
     this.netLabelPlacements = params.netLabelPlacements
@@ -60,6 +64,7 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
   >[0] {
     return {
       overlapMode: this.overlapMode,
+      netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
       inputProblem: this.inputProblem,
       traces: this.traces,
       netLabelPlacements: this.netLabelPlacements,
@@ -80,6 +85,7 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
 
   getOutput() {
     return {
+      traces: this.traces,
       netLabelPlacements: this.outputNetLabelPlacements,
     }
   }
@@ -220,9 +226,24 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
 
     search.candidateIndex += 1
 
-    const evaluatedCandidate = {
+    const connectorUpdates = getLabelConnectorUpdates({
+      label,
+      anchorPoint: candidate.anchorPoint,
+      traces: this.traces,
+      netLabelPlacements: this.outputNetLabelPlacements,
+      netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
+      inputProblem: this.inputProblem,
+    })
+    const updatedCandidate = {
       ...candidate,
-      status: this.getCandidateStatus(candidate, labelIndex),
+      connectorUpdates: connectorUpdates ?? undefined,
+    }
+    const evaluatedCandidate: LabelCandidate = {
+      ...updatedCandidate,
+      status:
+        connectorUpdates === null
+          ? "attachment-loss"
+          : this.getCandidateStatus(updatedCandidate, labelIndex),
     }
     search.candidateResults.push(evaluatedCandidate)
 
@@ -257,14 +278,14 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
     labelIndex: number,
   ): CandidateStatus {
     const bounds = getLabelBounds(candidate)
+    const traces = this.getCandidateTraces(candidate)
     if (this.intersectsAnyChip(bounds)) return "chip-collision"
     if (rectIntersectsAnyTextBox(bounds, this.inputProblem))
       return "text-collision"
-    if (traceCrossesBoundsInterior(bounds, this.traces))
-      return "trace-collision"
+    if (traceCrossesBoundsInterior(bounds, traces)) return "trace-collision"
     if (
       this.overlapMode === "traces" &&
-      this.traces.some(
+      traces.some(
         (trace) =>
           trace.globalConnNetId !==
             this.outputNetLabelPlacements[labelIndex]!.globalConnNetId &&
@@ -279,13 +300,46 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
     return "valid"
   }
 
+  private getCandidateTraces(candidate: LabelCandidate) {
+    if (!candidate.connectorUpdates?.length) return this.traces
+    return this.traces.flatMap((trace) => {
+      const update = candidate.connectorUpdates!.find(
+        (update) => update.traceId === trace.mspPairId,
+      )
+      if (!update) return [trace]
+      return update.tracePath.length === 0
+        ? []
+        : [{ ...trace, tracePath: update.tracePath }]
+    })
+  }
+
   private applyCandidate(
     labelIndex: number,
     label: NetLabelPlacement,
     candidate: LabelCandidate,
   ) {
+    this.traces = this.getCandidateTraces(candidate)
+    const removedConnectors =
+      candidate.connectorUpdates?.filter(
+        (update) => update.replacementHostTraceId,
+      ) ?? []
     this.outputNetLabelPlacements[labelIndex] = {
       ...label,
+      ...(removedConnectors.length > 0
+        ? {
+            mspConnectionPairIds: [
+              ...new Set([
+                ...label.mspConnectionPairIds.filter(
+                  (id) =>
+                    !removedConnectors.some((update) => update.traceId === id),
+                ),
+                ...removedConnectors.map(
+                  (update) => update.replacementHostTraceId!,
+                ),
+              ]),
+            ],
+          }
+        : {}),
       anchorPoint: candidate.anchorPoint,
       center: candidate.center,
       width: candidate.width,

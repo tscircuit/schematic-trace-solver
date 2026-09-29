@@ -416,6 +416,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       (instance) => [
         {
           inputProblem: instance.inputProblem,
+          netLabelConnectorTraceIds:
+            instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
           traces:
             instance.railNetLabelCornerPlacementSolver!.getOutput().traces,
           netLabelPlacements:
@@ -431,7 +433,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         {
           inputProblem: instance.inputProblem,
           traces:
-            instance.railNetLabelCornerPlacementSolver!.getOutput().traces,
+            instance.traceAnchoredNetLabelOverlapSolver!.getOutput().traces,
           netLabelPlacements:
             instance.traceAnchoredNetLabelOverlapSolver!
               .outputNetLabelPlacements,
@@ -593,13 +595,15 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     // Rail cleanup can move a trace onto an anchored label's edge. Move the
-    // label along its host before final alignment, keeping the routed traces.
+    // label along its host before final alignment, updating its connector.
     definePipelineStep(
       "finalTraceAnchoredNetLabelOverlapSolver",
       TraceAnchoredNetLabelOverlapSolver,
       (instance) => [
         {
           inputProblem: instance.inputProblem,
+          netLabelConnectorTraceIds:
+            instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
           traces: instance.netLabelNetLabelCollisionSolver!.traces,
           netLabelPlacements:
             instance.netLabelNetLabelCollisionSolver!.getOutput()
@@ -617,7 +621,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         return [
           {
             inputProblem: instance.inputProblem,
-            traces: instance.netLabelNetLabelCollisionSolver!.traces,
+            traces: collisionOutput.traces,
             netLabelPlacements: collisionOutput.netLabelPlacements,
             netLabelConnectorTraceIds:
               instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
