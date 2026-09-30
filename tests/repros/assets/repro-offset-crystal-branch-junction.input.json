@@ -1,0 +1,187 @@
+{
+  "chips": [
+    {
+      "chipId": "U1",
+      "center": { "x": -3.9, "y": -2.88 },
+      "width": 2.000000000000001,
+      "height": 0.40000000000000036,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "XIN",
+          "x": -4.9,
+          "y": -2.88
+        }
+      ],
+      "sectionId": "controller"
+    },
+    {
+      "chipId": "Y1",
+      "symbolName": "crystal_4pin_right",
+      "center": { "x": 0.72, "y": 0 },
+      "width": 2.52,
+      "height": 1.42,
+      "pins": [
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "gnd1",
+          "x": 0,
+          "y": 0.71,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "gnd2",
+          "x": -0.02,
+          "y": -0.71,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "X1",
+          "x": -0.54,
+          "y": -0.01,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_4",
+          "displayName": "X2",
+          "x": 1.98,
+          "y": -0.01,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "clock"
+    },
+    {
+      "chipId": "C_XIN",
+      "symbolName": "capacitor_down",
+      "center": { "x": -0.017500000000000016, "y": -1.75 },
+      "width": 1.165,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "schematic_port_5",
+          "displayName": "1",
+          "x": -0.15000000000000002,
+          "y": -1.37,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_6",
+          "displayName": "2",
+          "x": -0.14999999999999997,
+          "y": -2.13,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "clock"
+    },
+    {
+      "chipId": "C_XOUT",
+      "symbolName": "capacitor_down",
+      "center": { "x": 1.8925, "y": -1.75 },
+      "width": 1.2850000000000001,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "schematic_port_7",
+          "displayName": "1",
+          "x": 1.7,
+          "y": -1.37,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_8",
+          "displayName": "2",
+          "x": 1.7,
+          "y": -2.13,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "clock"
+    },
+    {
+      "chipId": "R_XOUT",
+      "symbolName": "boxresistor_right",
+      "center": { "x": 2.9, "y": 0 },
+      "width": 0.7199999999999998,
+      "height": 0.6799999999999999,
+      "pins": [
+        {
+          "pinId": "schematic_port_9",
+          "displayName": "anode",
+          "x": 2.54,
+          "y": 0,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_10",
+          "displayName": "cathode",
+          "x": 3.26,
+          "y": 0,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "clock"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "CXIN",
+      "netLabelWidth": 0.48,
+      "pinIds": ["schematic_port_5", "schematic_port_3"]
+    },
+    {
+      "netId": "XOUT_R",
+      "netLabelWidth": 0.84,
+      "pinIds": ["schematic_port_4", "schematic_port_9"]
+    },
+    {
+      "netId": "CXOUT",
+      "netLabelText": "XOUT_R",
+      "netLabelWidth": 0.84,
+      "pinIds": ["schematic_port_7", "schematic_port_4"]
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_port_0",
+      "netLabelText": "XIN",
+      "netLabelWidth": 0.48,
+      "anchoredNetLabelWidth": 0.48,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.32,
+      "pinIds": ["schematic_port_3", "schematic_port_0"]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelText": "GND",
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_1",
+        "schematic_port_2",
+        "schematic_port_6",
+        "schematic_port_8"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "U1",
+      "center": { "x": -4.38, "y": -2.5649999999999995 },
+      "width": 0.35999999999999943,
+      "height": 0.24999999999999956,
+      "text": "U1"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": ["y-"],
+    "source_connectivity_source_port_0": ["x-", "x+"]
+  },
+  "maxMspPairDistance": 0.8,
+  "_hideRatsNet": false
+}
