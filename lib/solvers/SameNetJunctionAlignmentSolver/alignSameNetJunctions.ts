@@ -5,7 +5,10 @@ import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/Ms
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import {
+  findFirstCollision,
+  segmentOverlapsRectBoundary,
+} from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { getMovedAnchorPointForReroute } from "lib/solvers/Example28Solver/getMovedAnchorPointForReroute"
 import { isLabelAttachedToTrace } from "lib/solvers/Example28Solver/isLabelAttachedToTrace"
@@ -421,8 +424,44 @@ const getAlignedSharedEndpointRailPath = ({
 
   const donorDepartureAxis = getSegmentAxis(donorPath[0]!, donorPath[1]!)
   const branchDepartureAxis = getSegmentAxis(branchPath[0]!, branchPath[1]!)
-  if (!donorDepartureAxis || donorDepartureAxis !== branchDepartureAxis) {
+  if (!donorDepartureAxis || !branchDepartureAxis) {
     return null
+  }
+  if (donorDepartureAxis !== branchDepartureAxis) {
+    // Keep this rewrite local to one donor elbow and one branch dogleg.
+    if (donorPath.length !== 3 || branchPath.length !== 5) return null
+    const branchRailAxis = getSegmentAxis(branchPath[1]!, branchPath[2]!)
+    const donorRailAxis = getSegmentAxis(donorPath[1]!, donorPath[2]!)
+    if (
+      branchRailAxis !== donorDepartureAxis ||
+      donorRailAxis !== branchDepartureAxis ||
+      getPinFacingAxis(sharedPin) !== branchDepartureAxis ||
+      !isCoordinateOnPinFacingSide({
+        coordinate: branchPath[1]![branchDepartureAxis],
+        axis: branchDepartureAxis,
+        pin: sharedPin,
+      })
+    ) {
+      return null
+    }
+    const donorDirection =
+      donorPath[1]![donorDepartureAxis] - donorPath[0]![donorDepartureAxis]
+    const branchDirection =
+      branchPath[2]![branchRailAxis] - branchPath[1]![branchRailAxis]
+    if (Math.sign(donorDirection) === Math.sign(branchDirection)) return null
+
+    const railCoordinateAxis = branchRailAxis === "x" ? "y" : "x"
+    const candidateFromShared = simplifyPath([
+      branchPath[0]!,
+      {
+        ...branchPath[2]!,
+        [railCoordinateAxis]: donorPath[0]![railCoordinateAxis],
+      },
+      ...branchPath.slice(3),
+    ])
+    return branchTrace.pins[0]!.pinId === sharedPin.pinId
+      ? candidateFromShared
+      : candidateFromShared.reverse()
   }
   const donorDeparture =
     donorPath[1]![donorDepartureAxis] - donorPath[0]![donorDepartureAxis]
@@ -919,7 +958,33 @@ const candidateIsClear = ({
   attachedLabelIndexes: number[]
 }) => {
   const obstacles = getObstacleRects(inputProblem)
-  if (isPathCollidingWithObstacles(candidateTrace.tracePath, obstacles)) {
+  // Terminal segments may legally follow their own component boundary.
+  const collision = findFirstCollision(candidateTrace.tracePath, obstacles, {
+    excludeRectsForSegment: (segmentIndex) =>
+      new Set(
+        obstacles.filter(
+          (obstacle) =>
+            obstacle.kind === "chip" &&
+            candidateTrace.pins.some(
+              (pin) =>
+                obstacle.chipId === pin.chipId &&
+                [
+                  candidateTrace.tracePath[segmentIndex]!,
+                  candidateTrace.tracePath[segmentIndex + 1]!,
+                ].some(
+                  (point) =>
+                    nearlyEqual(point.x, pin.x) && nearlyEqual(point.y, pin.y),
+                ),
+            ) &&
+            segmentOverlapsRectBoundary(
+              candidateTrace.tracePath[segmentIndex]!,
+              candidateTrace.tracePath[segmentIndex + 1]!,
+              obstacle,
+            ),
+        ),
+      ),
+  })
+  if (collision) {
     return false
   }
 

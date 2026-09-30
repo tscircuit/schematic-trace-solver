@@ -27,7 +27,7 @@ const isSchematicTrace = (
 
 // Complete solver input captured from @tscircuit/core's crystal junction repro,
 // with component names and symbols restored for a faithful snapshot.
-test("repro crystal branch junction is offset from the branch", () => {
+test("aligns the crystal branch with its junction", () => {
   const solver = new SchematicTracePipelineSolver(solverInput)
 
   solver.solve()
@@ -104,6 +104,12 @@ test("repro crystal branch junction is offset from the branch", () => {
         x2SchematicPort.schematic_port_id,
   )
   expect(x2Traces).toHaveLength(2)
+  const capacitorBranch = x2Traces.toSorted(
+    (first, second) => second.edges.length - first.edges.length,
+  )[0]!
+  expect(capacitorBranch.edges.at(-1)!.from.x).toBeCloseTo(
+    capacitorBranch.edges.at(-1)!.to.x,
+  )
   const junctionPoint = x2Traces[0]!.edges.at(-1)!.to
   for (const trace of x2Traces) {
     const terminalEdge = trace.edges.at(-1)!
