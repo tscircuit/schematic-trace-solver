@@ -71,7 +71,11 @@ try {
     if (Object.keys(installed[field] ?? {}).length)
       throw new Error(`Unexpected consumer ${field}`)
   }
-  const names = ["SchematicTracePipelineSolver", "InlineNetLabelSolver", "SchematicTraceSingleLineSolver2"]
+  const names = [
+    "SchematicTracePipelineSolver",
+    "InlineNetLabelSolver",
+    "SchematicTraceSingleLineSolver2",
+  ]
   const source = `import { ${names.join(", ")} } from "${name}";\n${names.map((n) => `if (typeof ${n} !== "function") throw new Error("Missing ${n}");`).join("\n")}\n`
   writeFileSync(join(consumer, "consumer.js"), source)
   writeFileSync(join(consumer, "consumer.ts"), source)
