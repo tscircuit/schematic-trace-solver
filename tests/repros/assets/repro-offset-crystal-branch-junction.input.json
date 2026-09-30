@@ -139,6 +139,7 @@
     },
     {
       "netId": "CXOUT",
+      "netLabelText": "XOUT_R",
       "netLabelWidth": 0.84,
       "pinIds": ["schematic_port_7", "schematic_port_4"]
     }
