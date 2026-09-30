@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     // Environment setup & latest features
     "lib": ["ESNext", "DOM"],
     "target": "ESNext",
@@ -33,5 +34,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "include": ["lib/**/*"],
+  "exclude": ["node_modules", "tests/**/*", "site/**/*"]
 }
