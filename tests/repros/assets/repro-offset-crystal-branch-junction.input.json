@@ -1,7 +1,7 @@
 {
   "chips": [
     {
-      "chipId": "schematic_component_0",
+      "chipId": "U1",
       "center": { "x": -3.9, "y": -2.88 },
       "width": 2.000000000000001,
       "height": 0.40000000000000036,
@@ -16,7 +16,8 @@
       "sectionId": "controller"
     },
     {
-      "chipId": "schematic_component_1",
+      "chipId": "Y1",
+      "symbolName": "crystal_4pin_right",
       "center": { "x": 0.72, "y": 0 },
       "width": 2.52,
       "height": 1.42,
@@ -53,7 +54,8 @@
       "sectionId": "clock"
     },
     {
-      "chipId": "schematic_component_2",
+      "chipId": "C_XIN",
+      "symbolName": "capacitor_down",
       "center": { "x": -0.017500000000000016, "y": -1.75 },
       "width": 1.165,
       "height": 0.76,
@@ -76,7 +78,8 @@
       "sectionId": "clock"
     },
     {
-      "chipId": "schematic_component_3",
+      "chipId": "C_XOUT",
+      "symbolName": "capacitor_down",
       "center": { "x": 1.8925, "y": -1.75 },
       "width": 1.2850000000000001,
       "height": 0.76,
@@ -99,7 +102,8 @@
       "sectionId": "clock"
     },
     {
-      "chipId": "schematic_component_4",
+      "chipId": "R_XOUT",
+      "symbolName": "boxresistor_right",
       "center": { "x": 2.9, "y": 0 },
       "width": 0.7199999999999998,
       "height": 0.6799999999999999,
@@ -153,6 +157,7 @@
     {
       "netId": "GND",
       "isGround": true,
+      "netLabelText": "GND",
       "netLabelWidth": 0.42,
       "netLabelHeight": 0.48,
       "pinIds": [
@@ -165,7 +170,7 @@
   ],
   "textBoxes": [
     {
-      "chipId": "schematic_component_0",
+      "chipId": "U1",
       "center": { "x": -4.38, "y": -2.5649999999999995 },
       "width": 0.35999999999999943,
       "height": 0.24999999999999956,

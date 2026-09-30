@@ -6,8 +6,8 @@ import inputProblem from "./assets/repro-offset-crystal-branch-junction.input.js
 
 const solverInput: InputProblem = JSON.parse(JSON.stringify(inputProblem))
 
-// Complete solver input captured from @tscircuit/core's crystal junction repro
-// through its solver:started event.
+// Complete solver input captured from @tscircuit/core's crystal junction repro,
+// with component names and symbols restored for a faithful snapshot.
 test("repro crystal branch junction is offset from the branch", () => {
   const solver = new SchematicTracePipelineSolver(solverInput)
 

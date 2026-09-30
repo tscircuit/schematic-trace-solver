@@ -22,6 +22,7 @@ import type {
   InputPin,
   InputProblem,
   NetId,
+  PinId,
 } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
 import { type SchSymbol, symbols } from "schematic-symbols"
@@ -293,8 +294,8 @@ const getPinsInNumberOrder = (chip: InputChip) =>
   })
 
 const getDefaultSymbolName = (chip: InputChip, refdes: string) => {
-  if (chip.pins.length !== 2) return undefined
   if (chip.symbolName && chip.symbolName in symbols) return chip.symbolName
+  if (chip.pins.length !== 2) return undefined
   const baseSymbolName = getDefaultSymbolBaseName(refdes)
   if (!baseSymbolName) return undefined
 
@@ -398,10 +399,34 @@ type SnapshotSymbolGeometry = {
   center: Point
   size: { width: number; height: number }
   circuitToSvgOffset: Point
+  pinPositions?: Record<PinId, Point>
 }
 
 const GENERIC_BOX_STEM_LENGTH = 0.4
 const CHIP_EDGE_TOLERANCE = 1e-6
+
+const getMedian = (numbers: number[]) => {
+  const sortedNumbers = [...numbers].sort((a, b) => a - b)
+  const middleIndex = Math.floor(sortedNumbers.length / 2)
+  return sortedNumbers.length % 2
+    ? sortedNumbers[middleIndex]!
+    : (sortedNumbers[middleIndex - 1]! + sortedNumbers[middleIndex]!) / 2
+}
+
+const getDirectionFromCenter = (
+  point: Point,
+  center: Point,
+): FacingDirection => {
+  const deltaX = point.x - center.x
+  const deltaY = point.y - center.y
+  return Math.abs(deltaX) >= Math.abs(deltaY)
+    ? deltaX >= 0
+      ? "x+"
+      : "x-"
+    : deltaY >= 0
+      ? "y+"
+      : "y-"
+}
 
 /**
  * Legacy solver inputs describe generic box obstacles from stem tip to stem
@@ -474,7 +499,54 @@ const getSnapshotSymbolGeometry = (
   const symbol = symbols[symbolName as keyof typeof symbols] as
     | SchSymbol
     | undefined
-  if (!symbol || chip.pins.length !== 2 || symbol.ports.length !== 2) {
+  if (!symbol) return undefined
+
+  if (chip.pins.length === symbol.ports.length && chip.pins.length > 2) {
+    const remainingPorts = new Set(symbol.ports)
+    const pinPortMatches = chip.pins.flatMap((pin) => {
+      const displayName = getPinDisplayName(pin)
+      const symbolPort =
+        [...remainingPorts].find(
+          (port) => displayName && port.labels.includes(displayName),
+        ) ??
+        [...remainingPorts].find(
+          (port) =>
+            getDirectionFromCenter(port, symbol.center) ===
+            getFacingDirection(pin, chip),
+        )
+      if (!symbolPort) return []
+      remainingPorts.delete(symbolPort)
+      return [{ pin, symbolPort }]
+    })
+    if (pinPortMatches.length !== chip.pins.length) return undefined
+
+    const possibleCenters = pinPortMatches.map(({ pin, symbolPort }) => ({
+      x: pin.x - (symbolPort.x - symbol.center.x),
+      y: pin.y - (symbolPort.y - symbol.center.y),
+    }))
+    const center = {
+      x: getMedian(possibleCenters.map(({ x }) => x)),
+      y: getMedian(possibleCenters.map(({ y }) => y)),
+    }
+
+    return {
+      symbolName,
+      center,
+      size: symbol.size,
+      circuitToSvgOffset: { x: 0, y: 0 },
+      pinPositions: Object.fromEntries(
+        pinPortMatches.map(({ pin, symbolPort }) => [
+          pin.pinId,
+          {
+            x: center.x + symbolPort.x - symbol.center.x,
+            y: center.y + symbolPort.y - symbol.center.y,
+          },
+        ]),
+      ),
+    }
+  }
+
+  if (chip.pins.length !== 2 || symbol.ports.length !== 2) {
     return undefined
   }
 
@@ -541,6 +613,12 @@ const pointKey = (point: Point) => `${point.x.toFixed(9)},${point.y.toFixed(9)}`
 
 const traceKey = (trace: SnapshotTrace) =>
   trace.mspPairId ?? trace.tracePath.map(pointKey).join(";")
+
+const dedupeAdjacentPoints = (points: Point[]) =>
+  points.filter(
+    (point, index) =>
+      index === 0 || pointKey(point) !== pointKey(points[index - 1]!),
+  )
 
 const dedupeTraces = (traces: SnapshotTrace[]) => {
   const uniqueTraces = new Map<string, SnapshotTrace>()
@@ -738,15 +816,20 @@ const getJunctionsByTraceIndex = (
   >()
 
   for (const [traceIndex, trace] of traces.entries()) {
-    const netKey = trace.globalConnNetId ?? getTraceNetName(trace) ?? "unknown"
+    const connectivityKeys = [
+      `net:${trace.globalConnNetId ?? getTraceNetName(trace) ?? "unknown"}`,
+      ...getTracePinIds(trace).map((pinId) => `pin:${pinId}`),
+    ]
     for (const key of new Set(trace.tracePath.map(pointKey))) {
-      const netPointKey = `${netKey}:${key}`
-      const entry = traceIndexesByNetPoint.get(netPointKey) ?? {
-        point: trace.tracePath.find((point) => pointKey(point) === key)!,
-        traceIndexes: new Set<number>(),
+      for (const connectivityKey of connectivityKeys) {
+        const netPointKey = `${connectivityKey}:${key}`
+        const entry = traceIndexesByNetPoint.get(netPointKey) ?? {
+          point: trace.tracePath.find((point) => pointKey(point) === key)!,
+          traceIndexes: new Set<number>(),
+        }
+        entry.traceIndexes.add(traceIndex)
+        traceIndexesByNetPoint.set(netPointKey, entry)
       }
-      entry.traceIndexes.add(traceIndex)
-      traceIndexesByNetPoint.set(netPointKey, entry)
     }
   }
 
@@ -816,6 +899,8 @@ export const convertSolverOutputToCircuitJson = (
   const schematicPortIdByPinId = new Map<string, string>()
   const sourcePortIdsByPoint = new Map<string, string[]>()
   const schematicPortIdsByPoint = new Map<string, string[]>()
+  const inputPinById = new Map<PinId, InputPin>()
+  const renderedPinPositionById = new Map<PinId, Point>()
 
   for (const [chipIndex, chip] of inputProblem.chips.entries()) {
     const sourceComponentId = `source_component_${chipIndex}`
@@ -889,6 +974,8 @@ export const convertSolverOutputToCircuitJson = (
             componentSize,
             sideOfComponent,
           })
+      const renderedPinPosition =
+        symbolGeometry?.pinPositions?.[pin.pinId] ?? pin
 
       circuitJson.push({
         type: "source_port",
@@ -904,8 +991,8 @@ export const convertSolverOutputToCircuitJson = (
         source_port_id: sourcePortId,
         schematic_component_id: schematicComponentId,
         center: {
-          x: pin.x + symbolOffset.x,
-          y: pin.y + symbolOffset.y,
+          x: renderedPinPosition.x + symbolOffset.x,
+          y: renderedPinPosition.y + symbolOffset.y,
         },
         facing_direction: facingDirectionToCircuitJson(facingDirection),
         side_of_component: sideOfComponent,
@@ -916,7 +1003,9 @@ export const convertSolverOutputToCircuitJson = (
 
       sourcePortIdByPinId.set(pin.pinId, sourcePortId)
       schematicPortIdByPinId.set(pin.pinId, schematicPortId)
-      const key = pointKey(pin)
+      inputPinById.set(pin.pinId, pin)
+      renderedPinPositionById.set(pin.pinId, renderedPinPosition)
+      const key = pointKey(renderedPinPosition)
       sourcePortIdsByPoint.set(key, [
         ...(sourcePortIdsByPoint.get(key) ?? []),
         sourcePortId,
@@ -991,11 +1080,25 @@ export const convertSolverOutputToCircuitJson = (
     } satisfies SourceNet)
   }
 
+  const renderedTraces = traces.map((trace) => {
+    const tracePath = [...trace.tracePath]
+    for (const pinId of getTracePinIds(trace)) {
+      const inputPin = inputPinById.get(pinId)
+      const renderedPin = renderedPinPositionById.get(pinId)
+      if (!inputPin || !renderedPin) continue
+      if (pointKey(inputPin) === pointKey(tracePath[0]!)) {
+        tracePath.unshift(renderedPin)
+      } else if (pointKey(inputPin) === pointKey(tracePath.at(-1)!)) {
+        tracePath.push(renderedPin)
+      }
+    }
+    return { ...trace, tracePath: dedupeAdjacentPoints(tracePath) }
+  })
   const junctionsByTraceIndex = getJunctionsByTraceIndex(
-    traces,
+    renderedTraces,
     getTraceNetName,
   )
-  for (const [traceIndex, trace] of traces.entries()) {
+  for (const [traceIndex, trace] of renderedTraces.entries()) {
     const sourceTraceId = `source_trace_${traceIndex}`
     const schematicTraceId = `schematic_trace_${traceIndex}`
     const tracePinIds = getTracePinIds(trace)
