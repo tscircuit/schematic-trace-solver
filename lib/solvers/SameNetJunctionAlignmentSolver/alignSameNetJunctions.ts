@@ -447,34 +447,23 @@ const getAlignedSharedEndpointRailPath = ({
     (donorRailAxis === "y" && nearlyEqual(donorPath[1]!.x, branchPath[1]!.x))
   const donorOtherPin = getOtherPin({ trace: donorTrace, sharedPin })
   const branchOtherPin = getOtherPin({ trace: branchTrace, sharedPin })
-  // Keep a terminal bridge compact when the opposing load joins between its pins.
-  if (
-    !firstRailsAreAligned &&
-    branchOtherPin &&
-    nearlyEqual(
-      sharedPin[donorDepartureAxis],
-      branchOtherPin[donorDepartureAxis],
-    ) &&
-    sharedPin._facingDirection &&
-    sharedPin._facingDirection === branchOtherPin._facingDirection &&
+  const isTerminalBridge =
+    branchOtherPin !== null &&
     !traces.some(
       (trace) =>
         trace.mspPairId !== branchTrace.mspPairId &&
         !netLabelConnectorTraceIds.has(trace.mspPairId) &&
         trace.pinIds.includes(branchOtherPin.pinId),
-    ) &&
-    donorOtherPin &&
-    getPinFacingAxis(donorOtherPin) === donorDepartureAxis &&
-    donorOtherPin._facingDirection !== sharedPin._facingDirection &&
+    )
+  const widensBridge = Math.abs(donorDeparture) > Math.abs(branchDeparture)
+  const loadJoinsBridge =
+    donorOtherPin !== null &&
     tracePathContainsPoint([branchPath[1]!, branchPath[2]!], {
       x: donorOtherPin.x,
       y: donorOtherPin.y,
       [donorDepartureAxis]: branchPath[1]![donorDepartureAxis],
-    }) &&
-    Math.abs(donorDeparture) > Math.abs(branchDeparture)
-  ) {
-    return null
-  }
+    })
+  if (isTerminalBridge && widensBridge && loadJoinsBridge) return null
   // An already-shared rail can lead into the nearby parallel pair to merge.
   if (firstRailsAreAligned) {
     railIndex++
