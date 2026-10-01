@@ -445,12 +445,14 @@ const getAlignedSharedEndpointRailPath = ({
     (donorRailAxis === "y" && nearlyEqual(donorPath[1]!.x, branchPath[1]!.x))
   const donorOtherPin = getOtherPin({ trace: donorTrace, sharedPin })
   const branchOtherPin = getOtherPin({ trace: branchTrace, sharedPin })
-  // Keep the compact pin bridge when an opposing load can join between its pins.
+  // Keep adjacent-pin bridges compact when an opposing load joins between the pins.
   if (
     !firstRailsAreAligned &&
     sharedPin.chipId === branchOtherPin?.chipId &&
     sharedPin._facingDirection &&
     sharedPin._facingDirection === branchOtherPin?._facingDirection &&
+    Math.abs(sharedPin[donorRailAxis] - branchOtherPin[donorRailAxis]) <=
+      MAX_ALIGNED_LOAD_PIN_OFFSET &&
     donorOtherPin &&
     getPinFacingAxis(donorOtherPin) === donorDepartureAxis &&
     donorOtherPin._facingDirection !== sharedPin._facingDirection &&
