@@ -428,8 +428,12 @@ const getAlignedSharedEndpointRailPath = ({
     return null
   }
   if (donorDepartureAxis !== branchDepartureAxis) {
-    // Keep this rewrite local to one donor elbow and one branch dogleg.
-    if (donorPath.length !== 3 || branchPath.length !== 5) return null
+    if (
+      !nearlyEqual(donorPath[0]!.x, branchPath[0]!.x) ||
+      !nearlyEqual(donorPath[0]!.y, branchPath[0]!.y)
+    ) {
+      return null
+    }
     const branchRailAxis = getSegmentAxis(branchPath[1]!, branchPath[2]!)
     const donorRailAxis = getSegmentAxis(donorPath[1]!, donorPath[2]!)
     if (
