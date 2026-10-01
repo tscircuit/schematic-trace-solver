@@ -190,3 +190,67 @@ for (const mismatch of ["net", "chip", "facing"] as const)
       ),
     ).toBe(true)
   })
+
+for (const rotation of [0, 1, 2, 3])
+  for (const scale of [0.5, 1, 4])
+    for (const reverse of [false, true])
+      for (const reorder of [false, true]) {
+        test(`prefers compact bank and retains external stem (${rotation}, ${scale}, ${reverse}, ${reorder})`, () => {
+          const f = fixture(rotation, scale, reverse, reorder)
+          f.traces = f.traces.filter((trace) => trace.mspPairId !== "signal")
+          const externalPin = { pinId: "R.1", chipId: "R", ...f.point(-4, -1) }
+          const externalPath = [
+            f.point(-4, -1),
+            f.point(-3, -1),
+            f.point(-3, 0),
+          ]
+          f.traces.push({
+            ...f.traces[0]!,
+            mspPairId: "external",
+            mspConnectionPairIds: ["external"],
+            pins: reverse
+              ? [f.pins[2]!, externalPin]
+              : [externalPin, f.pins[2]!],
+            pinIds: ["R.1", f.pins[2]!.pinId],
+            tracePath: reverse ? [...externalPath].reverse() : externalPath,
+          })
+          f.netLabelPlacements.push({
+            globalConnNetId: "bus",
+            mspConnectionPairIds: ["external"],
+            pinIds: ["R.1"],
+            orientation: (["y-", "x+", "y+", "x-"] as const)[rotation]!,
+            anchorPoint: f.point(-3.5, -1),
+            center: f.point(-3.5, -1.2),
+            width: 0.2 * scale,
+            height: 0.2 * scale,
+          })
+          const originalLabels = structuredClone(f.netLabelPlacements)
+          const output = alignSameNetJunctions(f)
+          for (const id of ["outer", "branch"]) {
+            const trace = output.traces.find((trace) => trace.mspPairId === id)!
+            const y = id === "outer" ? 0.5 : 1.5
+            expect(
+              tracePathContainsPoint(trace.tracePath, f.point(-0.2, y)),
+            ).toBe(true)
+            expect(
+              tracePathContainsPoint(trace.tracePath, f.point(-3, y)),
+            ).toBe(false)
+          }
+          const external = output.traces.find(
+            (trace) => trace.mspPairId === "external",
+          )!
+          for (const point of externalPath)
+            expect(tracePathContainsPoint(external.tracePath, point)).toBe(true)
+          expect(
+            tracePathContainsPoint(external.tracePath, f.point(-0.2, 0)),
+          ).toBe(true)
+          expect(output.netLabelPlacements).toEqual(originalLabels)
+          expect(
+            alignSameNetJunctions({
+              ...f,
+              traces: output.traces,
+              netLabelPlacements: output.netLabelPlacements,
+            }).traces,
+          ).toEqual(output.traces)
+        })
+      }

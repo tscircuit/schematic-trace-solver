@@ -247,6 +247,19 @@ const getAlignedBranchPath = ({
   if (branchRail && nearlyEqual(branchRail.start.y, donorRail.start.y)) {
     return null
   }
+  // An off-component return may travel farther out than an already compact
+  // rail joining adjacent pins. Keep the local pin bank and join the return at
+  // its existing branch rather than pulling the pin bank onto that return.
+  if (
+    donorOtherPin.chipId !== sharedPin.chipId &&
+    otherPin.chipId === sharedPin.chipId &&
+    otherPin._facingDirection === sharedPin._facingDirection &&
+    branchRail &&
+    Math.abs(branchRail.start.y - sharedPin.y) <
+      Math.abs(donorRail.start.y - sharedPin.y)
+  ) {
+    return null
+  }
   const railFacesOtherPin = railIsOnFacingSide({
     railY: donorRail.start.y,
     pin: otherPin,
@@ -395,10 +408,12 @@ const getAlignedSharedEndpointRailPath = ({
   donorTrace,
   branchTrace,
   netLabelConnectorTraceIds,
+  compactPinBankOnly = false,
 }: {
   donorTrace: SolvedTracePath
   branchTrace: SolvedTracePath
   netLabelConnectorTraceIds: ReadonlySet<MspConnectionPairId>
+  compactPinBankOnly?: boolean
 }): Point[] | null => {
   if (
     netLabelConnectorTraceIds.has(donorTrace.mspPairId) ||
@@ -494,6 +509,14 @@ const getAlignedSharedEndpointRailPath = ({
       axis: railCoordinateAxis,
       pin: sharedPin,
     })
+  if (
+    compactPinBankOnly &&
+    (!isSameSidePinBank ||
+      Math.abs(donorCoordinate - sharedPin[railCoordinateAxis]) >=
+        Math.abs(branchCoordinate - sharedPin[railCoordinateAxis]))
+  ) {
+    return null
+  }
   if (
     nearlyEqual(donorCoordinate, branchCoordinate) ||
     (railOffset > MAX_SHARED_ENDPOINT_RAIL_OFFSET && !isSameSidePinBank)
@@ -676,10 +699,12 @@ const preserveAttachedTraceJunctions = ({
   originalTrace,
   candidateTrace,
   traces,
+  preserveRemovedStems = false,
 }: {
   originalTrace: SolvedTracePath
   candidateTrace: SolvedTracePath
   traces: SolvedTracePath[]
+  preserveRemovedStems?: boolean
 }): SolvedTracePath[] | null => {
   let outputTraces = traces.map((trace) =>
     trace.mspPairId === originalTrace.mspPairId ? candidateTrace : trace,
@@ -722,19 +747,37 @@ const preserveAttachedTraceJunctions = ({
 
     const neighborIndex = endpointIndex === 0 ? 1 : endpointIndex - 1
     const neighbor = connector.tracePath[neighborIndex]
-    if (
-      !neighbor ||
-      getSegmentAxis(originalJunction, neighbor) !==
-        getSegmentAxis(movedJunction, neighbor)
-    ) {
-      return null
-    }
+    if (!neighbor) return null
+    const canMoveEndpoint =
+      getSegmentAxis(originalJunction, neighbor) ===
+      getSegmentAxis(movedJunction, neighbor)
+    // An inward bus move can leave an external branch on the removed pin
+    // stem. Retain that exact segment as part of the external branch, instead
+    // of either disconnecting it or forcing the whole bus outward.
+    const canRetainStem =
+      preserveRemovedStems &&
+      getSegmentAxis(originalJunction, movedJunction) !== null &&
+      originalTrace.tracePath.some((start, index) => {
+        const end = originalTrace.tracePath[index + 1]
+        return (
+          end &&
+          tracePathContainsPoint([start, end], originalJunction) &&
+          tracePathContainsPoint([start, end], movedJunction)
+        )
+      })
+    if (!canMoveEndpoint && !canRetainStem) return null
 
     const movedConnector = {
       ...connector,
-      tracePath: connector.tracePath.map((point, index) =>
-        index === endpointIndex ? movedJunction : point,
-      ),
+      tracePath: canRetainStem
+        ? simplifyPath(
+            endpointIndex === 0
+              ? [movedJunction, ...connector.tracePath]
+              : [...connector.tracePath, movedJunction],
+          )
+        : connector.tracePath.map((point, index) =>
+            index === endpointIndex ? movedJunction : point,
+          ),
     }
     if (!pathsIntersect(candidateTrace.tracePath, movedConnector.tracePath)) {
       return null
@@ -1188,7 +1231,11 @@ export const alignSameNetJunctions = ({
 
   // First level the load rails, then attach return branches to those final
   // rails. Doing this in one pass could attach a branch to a rail that moves later.
-  for (const alignReturnBranches of [false, true]) {
+  // Prefer a clear inner pin-bank rail before considering outward alignment.
+  // Otherwise donor order can fan every adjacent pin out to an external branch.
+  for (const phase of ["compact-pin-banks", "loads", "returns"] as const) {
+    const compactPinBankOnly = phase === "compact-pin-banks"
+    const alignReturnBranches = phase === "returns"
     // Reuse each aligned branch as the rail for the next load in the chain. An
     // aligned branch may already have had its donor turn, so queue it again when
     // its geometry changes.
@@ -1213,42 +1260,53 @@ export const alignSameNetJunctions = ({
         const branchIsLabelConnector = netLabelConnectorTraceIds.has(
           branchTrace.mspPairId,
         )
-        const candidatePaths = branchIsLabelConnector
-          ? alignReturnBranches && !donorIsLabelConnector
-            ? [
-                getAlignedAttachedLabelConnectorPath({
+        const candidatePaths = compactPinBankOnly
+          ? donorIsLabelConnector || branchIsLabelConnector
+            ? []
+            : [
+                getAlignedSharedEndpointRailPath({
                   donorTrace,
-                  connectorTrace: branchTrace,
+                  branchTrace,
                   netLabelConnectorTraceIds,
+                  compactPinBankOnly: true,
                 }),
               ]
-            : []
-          : donorIsLabelConnector
-            ? []
-            : alignReturnBranches
+          : branchIsLabelConnector
+            ? alignReturnBranches && !donorIsLabelConnector
               ? [
-                  ...[1, 0.5, 0.25].map((returnStemScale) =>
-                    getAlignedReturnBranchPath({
-                      donorTrace,
-                      branchTrace,
-                      returnStemScale,
-                    }),
-                  ),
-                  getAlignedPerpendicularEndpointBusPath({
+                  getAlignedAttachedLabelConnectorPath({
                     donorTrace,
-                    branchTrace,
-                    traces: outputTraces,
-                  }),
-                  getAlignedSharedEndpointRailPath({
-                    donorTrace,
-                    branchTrace,
+                    connectorTrace: branchTrace,
                     netLabelConnectorTraceIds,
                   }),
                 ]
-              : [
-                  getAlignedBranchPath({ donorTrace, branchTrace }),
-                  getAlignedParallelPinExitPath({ donorTrace, branchTrace }),
-                ]
+              : []
+            : donorIsLabelConnector
+              ? []
+              : alignReturnBranches
+                ? [
+                    ...[1, 0.5, 0.25].map((returnStemScale) =>
+                      getAlignedReturnBranchPath({
+                        donorTrace,
+                        branchTrace,
+                        returnStemScale,
+                      }),
+                    ),
+                    getAlignedPerpendicularEndpointBusPath({
+                      donorTrace,
+                      branchTrace,
+                      traces: outputTraces,
+                    }),
+                    getAlignedSharedEndpointRailPath({
+                      donorTrace,
+                      branchTrace,
+                      netLabelConnectorTraceIds,
+                    }),
+                  ]
+                : [
+                    getAlignedBranchPath({ donorTrace, branchTrace }),
+                    getAlignedParallelPinExitPath({ donorTrace, branchTrace }),
+                  ]
         for (const candidatePath of candidatePaths) {
           if (!candidatePath) continue
           const candidateTrace = { ...branchTrace, tracePath: candidatePath }
@@ -1281,6 +1339,7 @@ export const alignSameNetJunctions = ({
             originalTrace: branchTrace,
             candidateTrace,
             traces: outputTraces,
+            preserveRemovedStems: compactPinBankOnly,
           })
           if (!candidateTraces) continue
           if (

@@ -12,6 +12,44 @@ test("bug-report-20260907T083336Z", () => {
 
   expect(solver.solved).toBe(true)
   const traces = solver.netLabelToTraceSolver!.getOutput().traces
+  const shellPinIds = new Set([
+    "schematic_port_0",
+    "schematic_port_1",
+    "schematic_port_2",
+    "schematic_port_3",
+    "schematic_port_4",
+    "schematic_port_15",
+  ])
+  const shellTraces = traces.filter((trace) =>
+    trace.pins.every((pin) => shellPinIds.has(pin.pinId)),
+  )
+  expect(shellTraces).toHaveLength(5)
+  const shellRailX =
+    inputProblem.chips[0]!.pins.find((pin) => pin.pinId === "schematic_port_0")!
+      .x + 0.2
+  for (const trace of shellTraces) {
+    const verticalSegments = trace.tracePath
+      .slice(1)
+      .filter(
+        (end, index) =>
+          Math.abs(end.x - trace.tracePath[index]!.x) < 1e-6 &&
+          Math.abs(end.y - trace.tracePath[index]!.y) > 1e-6,
+      )
+    expect(verticalSegments).toHaveLength(1)
+    expect(verticalSegments[0]!.x).toBeCloseTo(shellRailX, 6)
+  }
+  const externalGround = traces.find(
+    (trace) => trace.mspPairId === "schematic_port_111-schematic_port_1",
+  )!
+  const shellPin = inputProblem.chips[0]!.pins.find(
+    (pin) => pin.pinId === "schematic_port_1",
+  )!
+  expect(tracePathContainsPoint(externalGround.tracePath, shellPin)).toBe(true)
+  expect(
+    externalGround.tracePath.some(
+      (point) => Math.abs(point.x - shellRailX) < 1e-6,
+    ),
+  ).toBe(false)
   const r6 = traces.find(
     (trace) => trace.mspPairId === "schematic_port_134-schematic_port_120",
   )!
