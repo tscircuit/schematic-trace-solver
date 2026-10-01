@@ -409,11 +409,13 @@ const getAlignedSharedEndpointRailPath = ({
   branchTrace,
   netLabelConnectorTraceIds,
   compactPinBankOnly = false,
+  outwardPinBankOnly = false,
 }: {
   donorTrace: SolvedTracePath
   branchTrace: SolvedTracePath
   netLabelConnectorTraceIds: ReadonlySet<MspConnectionPairId>
   compactPinBankOnly?: boolean
+  outwardPinBankOnly?: boolean
 }): Point[] | null => {
   if (
     netLabelConnectorTraceIds.has(donorTrace.mspPairId) ||
@@ -517,6 +519,13 @@ const getAlignedSharedEndpointRailPath = ({
   ) {
     return null
   }
+  if (
+    outwardPinBankOnly &&
+    (!isSameSidePinBank ||
+      Math.abs(donorCoordinate - sharedPin[railCoordinateAxis]) <=
+        Math.abs(branchCoordinate - sharedPin[railCoordinateAxis]))
+  )
+    return null
   if (
     nearlyEqual(donorCoordinate, branchCoordinate) ||
     (railOffset > MAX_SHARED_ENDPOINT_RAIL_OFFSET && !isSameSidePinBank)
@@ -971,6 +980,7 @@ const candidateIsClear = ({
   originalNetLabelPlacements,
   candidateNetLabelPlacements,
   attachedLabelIndexes,
+  preserveExistingObstacleContact = false,
 }: {
   candidateTrace: SolvedTracePath
   originalTrace: SolvedTracePath
@@ -979,10 +989,53 @@ const candidateIsClear = ({
   originalNetLabelPlacements: NetLabelPlacement[]
   candidateNetLabelPlacements: NetLabelPlacement[]
   attachedLabelIndexes: number[]
+  preserveExistingObstacleContact?: boolean
 }) => {
   const obstacles = getObstacleRects(inputProblem)
-  if (isPathCollidingWithObstacles(candidateTrace.tracePath, obstacles)) {
+  if (
+    !preserveExistingObstacleContact &&
+    isPathCollidingWithObstacles(candidateTrace.tracePath, obstacles)
+  )
     return false
+  const pathLengthInsideRect = (
+    path: Point[],
+    rect: { minX: number; maxX: number; minY: number; maxY: number },
+  ) =>
+    path.slice(1).reduce((length, point, index) => {
+      const previous = path[index]!
+      if (nearlyEqual(previous.x, point.x)) {
+        if (previous.x < rect.minX || previous.x > rect.maxX) return length
+        return (
+          length +
+          Math.max(
+            0,
+            Math.min(Math.max(previous.y, point.y), rect.maxY) -
+              Math.max(Math.min(previous.y, point.y), rect.minY),
+          )
+        )
+      }
+      if (nearlyEqual(previous.y, point.y)) {
+        if (previous.y < rect.minY || previous.y > rect.maxY) return length
+        return (
+          length +
+          Math.max(
+            0,
+            Math.min(Math.max(previous.x, point.x), rect.maxX) -
+              Math.max(Math.min(previous.x, point.x), rect.minX),
+          )
+        )
+      }
+      return length
+    }, 0)
+  for (const obstacle of preserveExistingObstacleContact ? obstacles : []) {
+    if (!isPathCollidingWithObstacles(candidateTrace.tracePath, [obstacle]))
+      continue
+    if (
+      !isPathCollidingWithObstacles(originalTrace.tracePath, [obstacle]) ||
+      pathLengthInsideRect(candidateTrace.tracePath, obstacle) >
+        pathLengthInsideRect(originalTrace.tracePath, obstacle) + 1e-6
+    )
+      return false
   }
 
   const otherNetTraces = traces.filter(
@@ -1233,9 +1286,15 @@ export const alignSameNetJunctions = ({
   // rails. Doing this in one pass could attach a branch to a rail that moves later.
   // Prefer a clear inner pin-bank rail before considering outward alignment.
   // Otherwise donor order can fan every adjacent pin out to an external branch.
-  for (const phase of ["compact-pin-banks", "loads", "returns"] as const) {
+  for (const phase of [
+    "compact-pin-banks",
+    "loads",
+    "returns",
+    "established-pin-bank-rails",
+  ] as const) {
     const compactPinBankOnly = phase === "compact-pin-banks"
     const alignReturnBranches = phase === "returns"
+    const extendEstablishedRail = phase === "established-pin-bank-rails"
     // Reuse each aligned branch as the rail for the next load in the chain. An
     // aligned branch may already have had its donor turn, so queue it again when
     // its geometry changes.
@@ -1248,7 +1307,11 @@ export const alignSameNetJunctions = ({
         (trace) => trace.mspPairId === donorTraceId,
       )!
       for (const branchTrace of outputTraces) {
-        if (alignedBranchTraceIds.has(branchTrace.mspPairId)) continue
+        if (
+          !extendEstablishedRail &&
+          alignedBranchTraceIds.has(branchTrace.mspPairId)
+        )
+          continue
         if (donorTrace.mspPairId === branchTrace.mspPairId) continue
         if (donorTrace.globalConnNetId !== branchTrace.globalConnNetId) continue
 
@@ -1260,53 +1323,106 @@ export const alignSameNetJunctions = ({
         const branchIsLabelConnector = netLabelConnectorTraceIds.has(
           branchTrace.mspPairId,
         )
-        const candidatePaths = compactPinBankOnly
-          ? donorIsLabelConnector || branchIsLabelConnector
+        // Only extend an already shared bus. A single outer trace is not
+        // sufficient evidence to pull a compact connector pin bank outward.
+        const donorPath = simplifyPath(donorTrace.tracePath)
+        const donorRailAxis =
+          donorPath[1] && donorPath[2]
+            ? getSegmentAxis(donorPath[1], donorPath[2])
+            : null
+        const donorRailCoordinateAxis = donorRailAxis === "x" ? "y" : "x"
+        const donorHasSharedRail = Boolean(
+          extendEstablishedRail &&
+            donorRailAxis &&
+            outputTraces.some((trace) => {
+              if (
+                trace.mspPairId === donorTrace.mspPairId ||
+                trace.mspPairId === branchTrace.mspPairId ||
+                trace.globalConnNetId !== donorTrace.globalConnNetId ||
+                !trace.pins.every((pin) =>
+                  donorTrace.pins.every(
+                    (donorPin) =>
+                      pin.chipId === donorPin.chipId &&
+                      pin._facingDirection === donorPin._facingDirection,
+                  ),
+                )
+              )
+                return false
+              const path = simplifyPath(trace.tracePath)
+              return path.some(
+                (point, index) =>
+                  index < path.length - 1 &&
+                  getSegmentAxis(point, path[index + 1]!) === donorRailAxis &&
+                  nearlyEqual(
+                    point[donorRailCoordinateAxis],
+                    donorPath[1]![donorRailCoordinateAxis],
+                  ),
+              )
+            }),
+        )
+        const candidatePaths = extendEstablishedRail
+          ? donorIsLabelConnector ||
+            branchIsLabelConnector ||
+            !donorHasSharedRail
             ? []
             : [
                 getAlignedSharedEndpointRailPath({
                   donorTrace,
                   branchTrace,
                   netLabelConnectorTraceIds,
-                  compactPinBankOnly: true,
+                  outwardPinBankOnly: true,
                 }),
               ]
-          : branchIsLabelConnector
-            ? alignReturnBranches && !donorIsLabelConnector
-              ? [
-                  getAlignedAttachedLabelConnectorPath({
+          : compactPinBankOnly
+            ? donorIsLabelConnector || branchIsLabelConnector
+              ? []
+              : [
+                  getAlignedSharedEndpointRailPath({
                     donorTrace,
-                    connectorTrace: branchTrace,
+                    branchTrace,
                     netLabelConnectorTraceIds,
+                    compactPinBankOnly: true,
                   }),
                 ]
-              : []
-            : donorIsLabelConnector
-              ? []
-              : alignReturnBranches
+            : branchIsLabelConnector
+              ? alignReturnBranches && !donorIsLabelConnector
                 ? [
-                    ...[1, 0.5, 0.25].map((returnStemScale) =>
-                      getAlignedReturnBranchPath({
-                        donorTrace,
-                        branchTrace,
-                        returnStemScale,
-                      }),
-                    ),
-                    getAlignedPerpendicularEndpointBusPath({
+                    getAlignedAttachedLabelConnectorPath({
                       donorTrace,
-                      branchTrace,
-                      traces: outputTraces,
-                    }),
-                    getAlignedSharedEndpointRailPath({
-                      donorTrace,
-                      branchTrace,
+                      connectorTrace: branchTrace,
                       netLabelConnectorTraceIds,
                     }),
                   ]
-                : [
-                    getAlignedBranchPath({ donorTrace, branchTrace }),
-                    getAlignedParallelPinExitPath({ donorTrace, branchTrace }),
-                  ]
+                : []
+              : donorIsLabelConnector
+                ? []
+                : alignReturnBranches
+                  ? [
+                      ...[1, 0.5, 0.25].map((returnStemScale) =>
+                        getAlignedReturnBranchPath({
+                          donorTrace,
+                          branchTrace,
+                          returnStemScale,
+                        }),
+                      ),
+                      getAlignedPerpendicularEndpointBusPath({
+                        donorTrace,
+                        branchTrace,
+                        traces: outputTraces,
+                      }),
+                      getAlignedSharedEndpointRailPath({
+                        donorTrace,
+                        branchTrace,
+                        netLabelConnectorTraceIds,
+                      }),
+                    ]
+                  : [
+                      getAlignedBranchPath({ donorTrace, branchTrace }),
+                      getAlignedParallelPinExitPath({
+                        donorTrace,
+                        branchTrace,
+                      }),
+                    ]
         for (const candidatePath of candidatePaths) {
           if (!candidatePath) continue
           const candidateTrace = { ...branchTrace, tracePath: candidatePath }
@@ -1322,19 +1438,59 @@ export const alignSameNetJunctions = ({
               getVisibleTraceLength(candidatePair),
               getVisibleTraceLength(originalPair),
             )
-          if (!removesVisibleSegment && !shortensVisibleTrace) {
+          if (
+            !extendEstablishedRail &&
+            !removesVisibleSegment &&
+            !shortensVisibleTrace
+          ) {
             continue
           }
           const attachedLabelIndexes = getAttachedLabelIndexes(
             branchTrace,
             outputNetLabelPlacements,
           )
-          const candidateNetLabelPlacements = moveAttachedLabels({
+          let candidateNetLabelPlacements = moveAttachedLabels({
             trace: branchTrace,
             reroutedTracePath: candidatePath,
             netLabelPlacements: outputNetLabelPlacements,
             attachedLabelIndexes,
           })
+          if (extendEstablishedRail) {
+            candidateNetLabelPlacements = candidateNetLabelPlacements.map(
+              (label, index) => {
+                if (!attachedLabelIndexes.includes(index)) return label
+                const oldBend = branchTrace.tracePath.findIndex(
+                  (point, pointIndex) =>
+                    pointIndex > 0 &&
+                    pointIndex < branchTrace.tracePath.length - 1 &&
+                    nearlyEqual(point.x, label.anchorPoint.x) &&
+                    nearlyEqual(point.y, label.anchorPoint.y),
+                )
+                const newBend = candidatePath[oldBend]
+                if (
+                  oldBend < 0 ||
+                  !newBend ||
+                  !nearlyEqual(
+                    label.anchorPoint.x,
+                    outputNetLabelPlacements[index]!.anchorPoint.x,
+                  ) ||
+                  !nearlyEqual(
+                    label.anchorPoint.y,
+                    outputNetLabelPlacements[index]!.anchorPoint.y,
+                  )
+                )
+                  return label
+                return {
+                  ...label,
+                  anchorPoint: newBend,
+                  center: {
+                    x: label.center.x + newBend.x - label.anchorPoint.x,
+                    y: label.center.y + newBend.y - label.anchorPoint.y,
+                  },
+                }
+              },
+            )
+          }
           const candidateTraces = preserveAttachedTraceJunctions({
             originalTrace: branchTrace,
             candidateTrace,
@@ -1351,6 +1507,7 @@ export const alignSameNetJunctions = ({
               originalNetLabelPlacements: outputNetLabelPlacements,
               candidateNetLabelPlacements,
               attachedLabelIndexes,
+              preserveExistingObstacleContact: extendEstablishedRail,
             })
           ) {
             continue
