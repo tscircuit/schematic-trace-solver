@@ -447,7 +447,7 @@ const getAlignedSharedEndpointRailPath = ({
     (donorRailAxis === "y" && nearlyEqual(donorPath[1]!.x, branchPath[1]!.x))
   const donorOtherPin = getOtherPin({ trace: donorTrace, sharedPin })
   const branchOtherPin = getOtherPin({ trace: branchTrace, sharedPin })
-  const isTerminalBridge =
+  const branchEndsAtTerminalPin =
     branchOtherPin !== null &&
     !traces.some(
       (trace) =>
@@ -455,15 +455,16 @@ const getAlignedSharedEndpointRailPath = ({
         !netLabelConnectorTraceIds.has(trace.mspPairId) &&
         trace.pinIds.includes(branchOtherPin.pinId),
     )
-  const widensBridge = Math.abs(donorDeparture) > Math.abs(branchDeparture)
-  const loadJoinsBridge =
+  const extendsBranchExit = Math.abs(donorDeparture) > Math.abs(branchDeparture)
+  const donorPinProjectsOntoRail =
     donorOtherPin !== null &&
     tracePathContainsPoint([branchPath[1]!, branchPath[2]!], {
       x: donorOtherPin.x,
       y: donorOtherPin.y,
       [donorDepartureAxis]: branchPath[1]![donorDepartureAxis],
     })
-  if (isTerminalBridge && widensBridge && loadJoinsBridge) return null
+  if (branchEndsAtTerminalPin && extendsBranchExit && donorPinProjectsOntoRail)
+    return null
   // An already-shared rail can lead into the nearby parallel pair to merge.
   if (firstRailsAreAligned) {
     railIndex++
