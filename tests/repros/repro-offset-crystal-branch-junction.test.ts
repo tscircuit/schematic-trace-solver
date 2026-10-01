@@ -5,11 +5,10 @@ import type {
   SchematicTrace,
   SourcePort,
 } from "circuit-json"
-import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { convertSolverOutputToCircuitJson } from "tests/fixtures/convertSolverOutputToCircuitJson"
-import "tests/fixtures/matcher"
+import { getSolverSnapshotSvg } from "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-offset-crystal-branch-junction.input.json"
 
 const solverInput: InputProblem = JSON.parse(JSON.stringify(inputProblem))
@@ -122,10 +121,7 @@ test("aligns the crystal branch with its junction", () => {
   }
   x2Traces[0]!.junctions = [junctionPoint]
 
-  expect(
-    convertCircuitJsonToSchematicSvg(circuitJson, {
-      width: 1200,
-      height: 800,
-    }).replace(/[ \t]+$/gm, ""),
-  ).toMatchSvgSnapshot(import.meta.path)
+  expect(getSolverSnapshotSvg({ solver, circuitJson })).toMatchSvgSnapshot(
+    import.meta.path,
+  )
 })
