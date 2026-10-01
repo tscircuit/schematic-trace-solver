@@ -1,11 +1,14 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
-import inputProblem from "./board1096-usb-label-overlap-iteration.json"
+import inputProblemJson from "./board1096-usb-label-overlap-iteration.json"
 import "tests/fixtures/matcher"
 
 test("board1096 USB section stops retrying failed merged-label overlaps", () => {
-  const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
+  const inputProblem: InputProblem = JSON.parse(
+    JSON.stringify(inputProblemJson),
+  )
+  const solver = new SchematicTracePipelineSolver(inputProblem)
 
   solver.solve()
 
