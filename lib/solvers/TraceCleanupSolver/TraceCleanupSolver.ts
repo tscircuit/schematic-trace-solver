@@ -7,6 +7,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { alignSameNetRails } from "./alignSameNetRails"
+import { mergeNearbySameNetTraceSegments } from "./mergeNearbySameNetTraceSegments"
 
 export type TraceCleanupOperation =
   | "untangling_traces"
@@ -14,6 +15,7 @@ export type TraceCleanupOperation =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "aligning_same_net_rails"
+  | "merging_same_net_segments"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -112,6 +114,9 @@ export class TraceCleanupSolver extends BaseSolver {
       case "aligning_same_net_rails":
         this._runAlignSameNetRailsStep()
         break
+      case "merging_same_net_segments":
+        this._runMergingSameNetSegmentsStep()
+        break
     }
   }
 
@@ -195,6 +200,18 @@ export class TraceCleanupSolver extends BaseSolver {
 
     this.tracesMap.set(targetMspConnectionPairId, updatedTrace)
     this.outputTraces = Array.from(this.tracesMap.values())
+  }
+
+  private _runMergingSameNetSegmentsStep() {
+    const result = mergeNearbySameNetTraceSegments(
+      Array.from(this.tracesMap.values()),
+      {
+        snapDistance: this.input.paddingBuffer,
+      },
+    )
+    this.outputTraces = result.traces
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this._advancePipeline()
   }
 
   private _runAlignSameNetRailsStep() {
