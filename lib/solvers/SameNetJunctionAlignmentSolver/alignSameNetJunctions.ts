@@ -475,9 +475,28 @@ const getAlignedSharedEndpointRailPath = ({
   const donorCoordinate = donorPath[railIndex]![railCoordinateAxis]
   const branchCoordinate = branchPath[railIndex]![railCoordinateAxis]
   const railOffset = Math.abs(donorCoordinate - branchCoordinate)
+  // Pin-bank buses may need a long escape to clear intervening signal labels.
+  // Their existing rail is a better alignment target than an absolute distance
+  // cutoff. Restrict this exception to the first rail of one component side;
+  // the caller still checks visible improvement, junctions, labels and obstacles.
+  const pins = [...donorTrace.pins, ...branchTrace.pins]
+  const isSameSidePinBank =
+    railIndex === 1 &&
+    getPinFacingAxis(sharedPin) === railCoordinateAxis &&
+    pins.every(
+      (pin) =>
+        pin.chipId === sharedPin.chipId &&
+        pin._facingDirection === sharedPin._facingDirection &&
+        nearlyEqual(pin[railCoordinateAxis], sharedPin[railCoordinateAxis]),
+    ) &&
+    isCoordinateOnPinFacingSide({
+      coordinate: donorCoordinate,
+      axis: railCoordinateAxis,
+      pin: sharedPin,
+    })
   if (
     nearlyEqual(donorCoordinate, branchCoordinate) ||
-    railOffset > MAX_SHARED_ENDPOINT_RAIL_OFFSET
+    (railOffset > MAX_SHARED_ENDPOINT_RAIL_OFFSET && !isSameSidePinBank)
   ) {
     return null
   }
