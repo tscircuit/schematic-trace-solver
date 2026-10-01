@@ -395,10 +395,12 @@ const getAlignedSharedEndpointRailPath = ({
   donorTrace,
   branchTrace,
   netLabelConnectorTraceIds,
+  traces,
 }: {
   donorTrace: SolvedTracePath
   branchTrace: SolvedTracePath
   netLabelConnectorTraceIds: ReadonlySet<MspConnectionPairId>
+  traces: SolvedTracePath[]
 }): Point[] | null => {
   if (
     netLabelConnectorTraceIds.has(donorTrace.mspPairId) ||
@@ -445,22 +447,25 @@ const getAlignedSharedEndpointRailPath = ({
     (donorRailAxis === "y" && nearlyEqual(donorPath[1]!.x, branchPath[1]!.x))
   const donorOtherPin = getOtherPin({ trace: donorTrace, sharedPin })
   const branchOtherPin = getOtherPin({ trace: branchTrace, sharedPin })
-  // Keep adjacent-pin bridges compact when an opposing load joins between the pins.
+  // Keep a terminal pin bridge compact; shared rail endpoints retain their alignment.
   if (
     !firstRailsAreAligned &&
-    sharedPin.chipId === branchOtherPin?.chipId &&
+    branchOtherPin &&
+    nearlyEqual(
+      sharedPin[donorDepartureAxis],
+      branchOtherPin[donorDepartureAxis],
+    ) &&
     sharedPin._facingDirection &&
     sharedPin._facingDirection === branchOtherPin?._facingDirection &&
-    Math.abs(sharedPin[donorRailAxis] - branchOtherPin[donorRailAxis]) <=
-      MAX_ALIGNED_LOAD_PIN_OFFSET &&
+    !traces.some(
+      (trace) =>
+        trace.mspPairId !== branchTrace.mspPairId &&
+        !netLabelConnectorTraceIds.has(trace.mspPairId) &&
+        trace.pinIds.includes(branchOtherPin.pinId),
+    ) &&
     donorOtherPin &&
     getPinFacingAxis(donorOtherPin) === donorDepartureAxis &&
     donorOtherPin._facingDirection !== sharedPin._facingDirection &&
-    tracePathContainsPoint([branchPath[1]!, branchPath[2]!], {
-      x: donorOtherPin.x,
-      y: donorOtherPin.y,
-      [donorDepartureAxis]: branchPath[1]![donorDepartureAxis],
-    }) &&
     Math.abs(donorDeparture) > Math.abs(branchDeparture)
   ) {
     return null
@@ -1246,6 +1251,7 @@ export const alignSameNetJunctions = ({
                     donorTrace,
                     branchTrace,
                     netLabelConnectorTraceIds,
+                    traces: outputTraces,
                   }),
                 ]
               : [
