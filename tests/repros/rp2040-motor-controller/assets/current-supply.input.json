@@ -1,0 +1,107 @@
+{
+  "chips": [
+    {
+      "chipId": "C_CURRENT_A",
+      "center": {
+        "x": -1.5075000000000003,
+        "y": -5
+      },
+      "width": 1.885,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_315",
+          "displayName": "anode",
+          "x": -2,
+          "y": -4.62,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_316",
+          "displayName": "cathode",
+          "x": -2,
+          "y": -5.38,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "current_supply",
+      "symbolName": "capacitor_down"
+    },
+    {
+      "chipId": "C_CURRENT_B",
+      "center": {
+        "x": 0.9924999999999999,
+        "y": -5
+      },
+      "width": 1.8849999999999998,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_331",
+          "displayName": "anode",
+          "x": 0.5,
+          "y": -4.62,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_332",
+          "displayName": "cathode",
+          "x": 0.5,
+          "y": -5.38,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "current_supply",
+      "symbolName": "capacitor_down"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_315",
+        "schematic_port_331"
+      ]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_316",
+        "schematic_port_332"
+      ],
+      "netLabelText": "GND"
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_315",
+        "schematic_port_331"
+      ],
+      "netLabelText": "V3V3"
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "source_connectivity_source_net_9": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

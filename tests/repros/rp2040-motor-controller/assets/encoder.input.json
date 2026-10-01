@@ -1,0 +1,270 @@
+{
+  "chips": [
+    {
+      "chipId": "U_ENCODER",
+      "center": {
+        "x": -5,
+        "y": 0.43900000000000006
+      },
+      "width": 2.8499999999999996,
+      "height": 2.4000000000000004,
+      "pins": [
+        {
+          "pinId": "schematic_port_359",
+          "displayName": "VDD5V",
+          "x": -6.425,
+          "y": 1.089
+        },
+        {
+          "pinId": "schematic_port_360",
+          "displayName": "VDD3V3",
+          "x": -6.425,
+          "y": 0.8889999999999999
+        },
+        {
+          "pinId": "schematic_port_361",
+          "displayName": "OUT",
+          "x": -3.575,
+          "y": 1.039
+        },
+        {
+          "pinId": "schematic_port_362",
+          "displayName": "GND",
+          "x": -5,
+          "y": -0.7610000000000001
+        },
+        {
+          "pinId": "schematic_port_363",
+          "displayName": "PGO",
+          "x": -3.575,
+          "y": -0.16099999999999998
+        },
+        {
+          "pinId": "schematic_port_364",
+          "displayName": "SDA",
+          "x": -6.425,
+          "y": 0.38899999999999996
+        },
+        {
+          "pinId": "schematic_port_365",
+          "displayName": "SCL",
+          "x": -6.425,
+          "y": 0.189
+        },
+        {
+          "pinId": "schematic_port_366",
+          "displayName": "DIR",
+          "x": -6.425,
+          "y": -0.2109999999999999
+        }
+      ],
+      "sectionId": "encoder"
+    },
+    {
+      "chipId": "R_ENC_SDA",
+      "center": {
+        "x": -10.605,
+        "y": 2.2
+      },
+      "width": 1.6899999999999995,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_371",
+          "displayName": "anode",
+          "x": -11,
+          "y": 1.9000000000000001
+        },
+        {
+          "pinId": "schematic_port_372",
+          "displayName": "cathode",
+          "x": -11,
+          "y": 2.5
+        }
+      ],
+      "sectionId": "encoder",
+      "symbolName": "boxresistor_up"
+    },
+    {
+      "chipId": "R_ENC_SCL",
+      "center": {
+        "x": -8.605,
+        "y": 2.2
+      },
+      "width": 1.6899999999999995,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_373",
+          "displayName": "anode",
+          "x": -9,
+          "y": 1.9000000000000001
+        },
+        {
+          "pinId": "schematic_port_374",
+          "displayName": "cathode",
+          "x": -9,
+          "y": 2.5
+        }
+      ],
+      "sectionId": "encoder",
+      "symbolName": "boxresistor_up"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "ENCODER_3V3_MODE",
+      "pinIds": [
+        "schematic_port_360",
+        "schematic_port_359"
+      ],
+      "netLabelText": "ENCODER_3V3_MODE"
+    },
+    {
+      "netId": "R_ENC_SDA_SIGNAL",
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_371",
+        "schematic_port_364"
+      ],
+      "netLabelText": "R_ENC_SDA_SIGNAL"
+    },
+    {
+      "netId": "R_ENC_SDA_VCC",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_372",
+        "schematic_port_360"
+      ],
+      "netLabelText": "R_ENC_SDA_VCC"
+    },
+    {
+      "netId": "R_ENC_SCL_SIGNAL",
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_373",
+        "schematic_port_365"
+      ],
+      "netLabelText": "R_ENC_SCL_SIGNAL"
+    },
+    {
+      "netId": "R_ENC_SCL_VCC",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_374",
+        "schematic_port_360"
+      ],
+      "netLabelText": "R_ENC_SCL_VCC"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_360"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_394",
+      "netLabelText": "ENC_SDA",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_364"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_395",
+      "netLabelText": "ENC_SCL",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_365"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_360"
+      ]
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_359",
+        "schematic_port_360",
+        "schematic_port_372",
+        "schematic_port_374"
+      ],
+      "netLabelText": "V3V3"
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_362",
+        "schematic_port_366"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "U_ENCODER",
+      "center": {
+        "x": -5.365,
+        "y": 1.589
+      },
+      "width": 1.3200000000000003,
+      "height": 0.18000000000000016,
+      "text": "AS5600-ASOM"
+    },
+    {
+      "chipId": "U_ENCODER",
+      "center": {
+        "x": -5.485,
+        "y": 1.354
+      },
+      "width": 1.1999999999999993,
+      "height": 0.2500000000000002,
+      "text": "U_ENCODER"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "source_connectivity_source_net_9": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_394": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_395": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

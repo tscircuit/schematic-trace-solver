@@ -1,0 +1,125 @@
+{
+  "chips": [
+    {
+      "chipId": "J1",
+      "center": {
+        "x": 9,
+        "y": -1.5
+      },
+      "width": 2,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "schematic_port_217",
+          "displayName": "A_PLUS",
+          "x": 8,
+          "y": -1.2
+        },
+        {
+          "pinId": "schematic_port_218",
+          "displayName": "A_MINUS",
+          "x": 8,
+          "y": -1.4
+        },
+        {
+          "pinId": "schematic_port_219",
+          "displayName": "B_PLUS",
+          "x": 8,
+          "y": -1.6
+        },
+        {
+          "pinId": "schematic_port_220",
+          "displayName": "B_MINUS",
+          "x": 8,
+          "y": -1.8
+        }
+      ],
+      "sectionId": "motor_driver_outputs"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_port_167",
+      "netLabelText": "A-",
+      "netLabelWidth": 0.36,
+      "anchoredNetLabelWidth": 0.36,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.24,
+      "pinIds": [
+        "schematic_port_218"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_168",
+      "netLabelText": "B-",
+      "netLabelWidth": 0.36,
+      "anchoredNetLabelWidth": 0.36,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.24,
+      "pinIds": [
+        "schematic_port_220"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_241",
+      "netLabelText": "A+",
+      "netLabelWidth": 0.36,
+      "pinIds": [
+        "schematic_port_217"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_243",
+      "netLabelText": "B+",
+      "netLabelWidth": 0.36,
+      "pinIds": [
+        "schematic_port_219"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "J1",
+      "center": {
+        "x": 9.48,
+        "y": -2.13
+      },
+      "width": 2.16,
+      "height": 0.17999999999999972,
+      "text": "B4B-PH-K-S(LF)(SN)"
+    },
+    {
+      "chipId": "J1",
+      "center": {
+        "x": 8.52,
+        "y": -0.885
+      },
+      "width": 0.3600000000000012,
+      "height": 0.25,
+      "text": "J1"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "source_connectivity_source_port_167": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_168": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_241": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_243": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

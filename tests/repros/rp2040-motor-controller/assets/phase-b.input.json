@@ -1,0 +1,318 @@
+{
+  "chips": [
+    {
+      "chipId": "R_PHASE_B",
+      "center": {
+        "x": 2.895,
+        "y": 0
+      },
+      "width": 1.6900000000000004,
+      "height": 0.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_321",
+          "displayName": "anode",
+          "x": 2.5,
+          "y": 0.3,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_322",
+          "displayName": "cathode",
+          "x": 2.5,
+          "y": -0.3,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "phase_B",
+      "symbolName": "boxresistor_down"
+    },
+    {
+      "chipId": "U_CURRENT_B",
+      "center": {
+        "x": 6,
+        "y": 0
+      },
+      "width": 2.8000000000000007,
+      "height": 2.51,
+      "pins": [
+        {
+          "pinId": "schematic_port_323",
+          "displayName": "IN_NEG",
+          "x": 4.6,
+          "y": -0.42500000000000004
+        },
+        {
+          "pinId": "schematic_port_324",
+          "displayName": "GND",
+          "x": 6,
+          "y": -1.255
+        },
+        {
+          "pinId": "schematic_port_325",
+          "displayName": "REF2",
+          "x": 6.5,
+          "y": 1.255
+        },
+        {
+          "pinId": "schematic_port_326",
+          "displayName": "NC",
+          "x": 7.4,
+          "y": -0.42500000000000004
+        },
+        {
+          "pinId": "schematic_port_327",
+          "displayName": "OUT",
+          "x": 7.4,
+          "y": 0.42500000000000004
+        },
+        {
+          "pinId": "schematic_port_328",
+          "displayName": "VS",
+          "x": 5.5,
+          "y": 1.255
+        },
+        {
+          "pinId": "schematic_port_329",
+          "displayName": "REF1",
+          "x": 6,
+          "y": 1.255
+        },
+        {
+          "pinId": "schematic_port_330",
+          "displayName": "IN_POS",
+          "x": 4.6,
+          "y": 0.42500000000000004
+        }
+      ],
+      "sectionId": "phase_B"
+    },
+    {
+      "chipId": "R_ADC_B",
+      "center": {
+        "x": 10,
+        "y": 0
+      },
+      "width": 0.8399999999999999,
+      "height": 0.6799999999999999,
+      "pins": [
+        {
+          "pinId": "schematic_port_333",
+          "displayName": "anode",
+          "x": 9.58,
+          "y": 0,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_334",
+          "displayName": "cathode",
+          "x": 10.42,
+          "y": 0,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "phase_B",
+      "symbolName": "boxresistor_right"
+    },
+    {
+      "chipId": "C_ADC_B",
+      "center": {
+        "x": 12.252500000000001,
+        "y": -2
+      },
+      "width": 1.4049999999999994,
+      "height": 0.7600000000000009,
+      "pins": [
+        {
+          "pinId": "schematic_port_335",
+          "displayName": "anode",
+          "x": 12,
+          "y": -1.6199999999999997,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_336",
+          "displayName": "cathode",
+          "x": 12,
+          "y": -2.3800000000000003,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "phase_B",
+      "symbolName": "capacitor_down"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "CURRENT_B_SENSE_POS",
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_321",
+        "schematic_port_330"
+      ],
+      "netLabelText": "CURRENT_B_SENSE_POS"
+    },
+    {
+      "netId": "CURRENT_B_SENSE_NEG",
+      "anchoredNetLabelWidth": 0.36,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.24,
+      "pinIds": [
+        "schematic_port_322",
+        "schematic_port_323"
+      ],
+      "netLabelText": "CURRENT_B_SENSE_NEG"
+    },
+    {
+      "netId": "CURRENT_B_OUT",
+      "anchoredNetLabelWidth": 1.68,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.12,
+      "pinIds": [
+        "schematic_port_327",
+        "schematic_port_333"
+      ],
+      "netLabelText": "CURRENT_B_OUT"
+    },
+    {
+      "netId": "CURRENT_B_FILTER",
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.8,
+      "pinIds": [
+        "schematic_port_334",
+        "schematic_port_335"
+      ],
+      "netLabelText": "CURRENT_B_FILTER"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_port_170",
+      "netLabelText": "B_DRIVE",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_321"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_328"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_243",
+      "netLabelText": "B+",
+      "netLabelWidth": 0.36,
+      "pinIds": [
+        "schematic_port_322"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_328"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_329"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_364",
+      "netLabelText": "CURRENT_B",
+      "netLabelWidth": 1.2,
+      "pinIds": [
+        "schematic_port_334"
+      ]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_324",
+        "schematic_port_325",
+        "schematic_port_326",
+        "schematic_port_336"
+      ],
+      "netLabelText": "GND"
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_328",
+        "schematic_port_329"
+      ],
+      "netLabelText": "V3V3"
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "U_CURRENT_B",
+      "center": {
+        "x": 7.699999999999999,
+        "y": 1.205
+      },
+      "width": 1.1999999999999993,
+      "height": 0.18000000000000016,
+      "text": "INA240A1DR"
+    },
+    {
+      "chipId": "U_CURRENT_B",
+      "center": {
+        "x": 7.76,
+        "y": 0.9700000000000001
+      },
+      "width": 1.4400000000000004,
+      "height": 0.2500000000000002,
+      "text": "U_CURRENT_B"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "source_connectivity_source_port_170": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_net_9": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_243": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_364": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

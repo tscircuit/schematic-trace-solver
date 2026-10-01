@@ -1,0 +1,116 @@
+{
+  "chips": [
+    {
+      "chipId": "C_ADC",
+      "center": {
+        "x": 4.8325,
+        "y": -0.1999999999999993
+      },
+      "width": 1.165,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "schematic_port_22",
+          "displayName": "anode",
+          "x": 4.699999999999999,
+          "y": 0.18000000000000071,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_23",
+          "displayName": "cathode",
+          "x": 4.699999999999999,
+          "y": -0.5799999999999993,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "MCU__power",
+      "symbolName": "capacitor_down"
+    },
+    {
+      "chipId": "L_AVDD",
+      "center": {
+        "x": 0.8638967045878901,
+        "y": 0.3829999999999991
+      },
+      "width": 1.8600527091757801,
+      "height": 1.055825,
+      "pins": [
+        {
+          "pinId": "schematic_port_155",
+          "displayName": "anode",
+          "x": 0.9026245499999996,
+          "y": 0.9109124999999991
+        },
+        {
+          "pinId": "schematic_port_156",
+          "displayName": "cathode",
+          "x": 0.8973754500000002,
+          "y": -0.1449125000000009
+        }
+      ],
+      "sectionId": "MCU__power",
+      "symbolName": "inductor_down"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_155"
+      ]
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_155"
+      ],
+      "netLabelText": "V3V3"
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_23"
+      ],
+      "netLabelText": "GND"
+    },
+    {
+      "netId": "ADC_VREF",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 1.08,
+      "pinIds": [
+        "schematic_port_22",
+        "schematic_port_156"
+      ],
+      "netLabelText": "ADC_VREF"
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "ADC_VREF": [
+      "y+"
+    ],
+    "source_connectivity_source_net_9": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

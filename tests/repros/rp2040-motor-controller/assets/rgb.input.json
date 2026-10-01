@@ -1,0 +1,371 @@
+{
+  "chips": [
+    {
+      "chipId": "D_STATUS",
+      "center": {
+        "x": -0.17999999999999994,
+        "y": 4.09
+      },
+      "width": 1.4400000000000002,
+      "height": 2.0600000000000005,
+      "pins": [
+        {
+          "pinId": "schematic_port_337",
+          "displayName": "_POS",
+          "x": -0.9,
+          "y": 4
+        },
+        {
+          "pinId": "schematic_port_338",
+          "displayName": "R_NEG",
+          "x": 0.5400000000000001,
+          "y": 4.8
+        },
+        {
+          "pinId": "schematic_port_339",
+          "displayName": "G_NEG",
+          "x": 0.5400000000000001,
+          "y": 4
+        },
+        {
+          "pinId": "schematic_port_340",
+          "displayName": "B_NEG",
+          "x": 0.5400000000000001,
+          "y": 3.2
+        }
+      ],
+      "sectionId": "rgb"
+    },
+    {
+      "chipId": "R_STATUS_R",
+      "center": {
+        "x": -4.545,
+        "y": 1
+      },
+      "width": 1.8100000000000005,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_341",
+          "displayName": "anode",
+          "x": -5,
+          "y": 1.3,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_342",
+          "displayName": "cathode",
+          "x": -5,
+          "y": 0.7,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "rgb",
+      "symbolName": "boxresistor_down"
+    },
+    {
+      "chipId": "Q_STATUS_R",
+      "center": {
+        "x": -5.199999999999999,
+        "y": -2
+      },
+      "width": 1.6000000000000014,
+      "height": 1.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_343",
+          "displayName": "C",
+          "x": -4.8,
+          "y": -1.2
+        },
+        {
+          "pinId": "schematic_port_344",
+          "displayName": "E",
+          "x": -4.8,
+          "y": -2.8
+        },
+        {
+          "pinId": "schematic_port_345",
+          "displayName": "B",
+          "x": -6,
+          "y": -2
+        }
+      ],
+      "sectionId": "rgb"
+    },
+    {
+      "chipId": "R_STATUS_G",
+      "center": {
+        "x": 0.45499999999999996,
+        "y": 1
+      },
+      "width": 1.8099999999999998,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_346",
+          "displayName": "anode",
+          "x": -1.8369701987210297e-17,
+          "y": 1.3,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_347",
+          "displayName": "cathode",
+          "x": 1.8369701987210297e-17,
+          "y": 0.7,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "rgb",
+      "symbolName": "boxresistor_down"
+    },
+    {
+      "chipId": "Q_STATUS_G",
+      "center": {
+        "x": -0.19999999999999996,
+        "y": -2
+      },
+      "width": 1.6,
+      "height": 1.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_348",
+          "displayName": "C",
+          "x": 0.2,
+          "y": -1.2
+        },
+        {
+          "pinId": "schematic_port_349",
+          "displayName": "E",
+          "x": 0.2,
+          "y": -2.8
+        },
+        {
+          "pinId": "schematic_port_350",
+          "displayName": "B",
+          "x": -1,
+          "y": -2
+        }
+      ],
+      "sectionId": "rgb"
+    },
+    {
+      "chipId": "R_STATUS_B",
+      "center": {
+        "x": 5.455,
+        "y": 1
+      },
+      "width": 1.8100000000000005,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_351",
+          "displayName": "anode",
+          "x": 5,
+          "y": 1.3,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_352",
+          "displayName": "cathode",
+          "x": 5,
+          "y": 0.7,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "rgb",
+      "symbolName": "boxresistor_down"
+    },
+    {
+      "chipId": "Q_STATUS_B",
+      "center": {
+        "x": 4.800000000000001,
+        "y": -2
+      },
+      "width": 1.6000000000000014,
+      "height": 1.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_353",
+          "displayName": "C",
+          "x": 5.2,
+          "y": -1.2
+        },
+        {
+          "pinId": "schematic_port_354",
+          "displayName": "E",
+          "x": 5.2,
+          "y": -2.8
+        },
+        {
+          "pinId": "schematic_port_355",
+          "displayName": "B",
+          "x": 4,
+          "y": -2
+        }
+      ],
+      "sectionId": "rgb"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "STATUS_R_LED",
+      "netLabelWidth": 1.56,
+      "anchoredNetLabelWidth": 1.56,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.04,
+      "pinIds": [
+        "schematic_port_338",
+        "schematic_port_341"
+      ],
+      "netLabelText": "STATUS_R_LED"
+    },
+    {
+      "netId": "STATUS_R_SINK",
+      "anchoredNetLabelWidth": 1.68,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.12,
+      "pinIds": [
+        "schematic_port_342",
+        "schematic_port_343"
+      ],
+      "netLabelText": "STATUS_R_SINK"
+    },
+    {
+      "netId": "STATUS_G_LED",
+      "netLabelWidth": 1.56,
+      "anchoredNetLabelWidth": 1.56,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.04,
+      "pinIds": [
+        "schematic_port_339",
+        "schematic_port_346"
+      ],
+      "netLabelText": "STATUS_G_LED"
+    },
+    {
+      "netId": "STATUS_G_SINK",
+      "anchoredNetLabelWidth": 1.68,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.12,
+      "pinIds": [
+        "schematic_port_347",
+        "schematic_port_348"
+      ],
+      "netLabelText": "STATUS_G_SINK"
+    },
+    {
+      "netId": "STATUS_B_LED",
+      "netLabelWidth": 1.56,
+      "anchoredNetLabelWidth": 1.56,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.04,
+      "pinIds": [
+        "schematic_port_340",
+        "schematic_port_351"
+      ],
+      "netLabelText": "STATUS_B_LED"
+    },
+    {
+      "netId": "STATUS_B_SINK",
+      "anchoredNetLabelWidth": 1.68,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.12,
+      "pinIds": [
+        "schematic_port_352",
+        "schematic_port_353"
+      ],
+      "netLabelText": "STATUS_B_SINK"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_net_7",
+      "netLabelText": "VBUS",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_337"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_375",
+      "netLabelText": "LED_R",
+      "netLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_345"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_380",
+      "netLabelText": "LED_G",
+      "netLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_350"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_385",
+      "netLabelText": "LED_B",
+      "netLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_355"
+      ]
+    },
+    {
+      "netId": "VBUS",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_337"
+      ],
+      "netLabelText": "VBUS"
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_344",
+        "schematic_port_349",
+        "schematic_port_354"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "VBUS": [
+      "y+"
+    ],
+    "source_connectivity_source_net_7": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_375": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_380": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_385": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

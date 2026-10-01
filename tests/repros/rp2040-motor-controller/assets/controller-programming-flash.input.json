@@ -1,0 +1,219 @@
+{
+  "chips": [
+    {
+      "chipId": "U2",
+      "center": {
+        "x": 10,
+        "y": 0.1999999999999993
+      },
+      "width": 2,
+      "height": 3.6000000000000005,
+      "pins": [
+        {
+          "pinId": "schematic_port_97",
+          "displayName": "CS",
+          "x": 9,
+          "y": 1.3999999999999995
+        },
+        {
+          "pinId": "schematic_port_98",
+          "displayName": "2",
+          "x": 9,
+          "y": -0.24000000000000044
+        },
+        {
+          "pinId": "schematic_port_99",
+          "displayName": "3",
+          "x": 9,
+          "y": -0.6200000000000006
+        },
+        {
+          "pinId": "schematic_port_100",
+          "displayName": "GND",
+          "x": 9.6,
+          "y": -1.600000000000001
+        },
+        {
+          "pinId": "schematic_port_101",
+          "displayName": "5",
+          "x": 9,
+          "y": 0.13999999999999946
+        },
+        {
+          "pinId": "schematic_port_102",
+          "displayName": "CLK",
+          "x": 9,
+          "y": 0.7699999999999995
+        },
+        {
+          "pinId": "schematic_port_103",
+          "displayName": "7",
+          "x": 9,
+          "y": -1.0000000000000009
+        },
+        {
+          "pinId": "schematic_port_104",
+          "displayName": "VCC",
+          "x": 10,
+          "y": 1.9999999999999996
+        },
+        {
+          "pinId": "schematic_port_105",
+          "displayName": "EP",
+          "x": 10.4,
+          "y": -1.600000000000001
+        }
+      ],
+      "sectionId": "MCU__programming_flash"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "FLSH_EP_GND_JOIN",
+      "pinIds": [
+        "schematic_port_105",
+        "schematic_port_100"
+      ],
+      "netLabelText": "FLSH_EP_GND_JOIN"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_104"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_115",
+      "netLabelText": "QSPI_SS",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_97"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_101",
+      "netLabelText": "QSPI_SD0",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_101"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_94",
+      "netLabelText": "QSPI_SD1",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_98"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_93",
+      "netLabelText": "QSPI_SD2",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_99"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_103",
+      "netLabelText": "QSPI_SD3",
+      "netLabelWidth": 1.08,
+      "pinIds": [
+        "schematic_port_103"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_102",
+      "netLabelText": "QSPI_SCLK",
+      "netLabelWidth": 1.2,
+      "pinIds": [
+        "schematic_port_102"
+      ]
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_104"
+      ],
+      "netLabelText": "V3V3"
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_100",
+        "schematic_port_105"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "U2",
+      "center": {
+        "x": 11.419999999999998,
+        "y": 1.9499999999999993
+      },
+      "width": 1.4399999999999995,
+      "height": 0.17999999999999994,
+      "text": "W25Q16JVUXIQ"
+    },
+    {
+      "chipId": "U2",
+      "center": {
+        "x": 10.82,
+        "y": 1.7149999999999994
+      },
+      "width": 0.3600000000000012,
+      "height": 0.24999999999999978,
+      "text": "U2"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "source_connectivity_source_net_9": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_115": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_101": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_94": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_93": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_103": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_102": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

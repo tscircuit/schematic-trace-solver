@@ -1,0 +1,415 @@
+{
+  "chips": [
+    {
+      "chipId": "U_TEMP",
+      "center": {
+        "x": -3,
+        "y": 1
+      },
+      "width": 2.4000000000000004,
+      "height": 2,
+      "pins": [
+        {
+          "pinId": "schematic_port_272",
+          "displayName": "SCL",
+          "x": -4.2,
+          "y": 1.1
+        },
+        {
+          "pinId": "schematic_port_273",
+          "displayName": "GND",
+          "x": -3.35,
+          "y": 0
+        },
+        {
+          "pinId": "schematic_port_274",
+          "displayName": "ALERT",
+          "x": -1.7999999999999998,
+          "y": 1
+        },
+        {
+          "pinId": "schematic_port_275",
+          "displayName": "ADD0",
+          "x": -2.65,
+          "y": 0
+        },
+        {
+          "pinId": "schematic_port_276",
+          "displayName": "V_POS",
+          "x": -3,
+          "y": 2
+        },
+        {
+          "pinId": "schematic_port_277",
+          "displayName": "SDA",
+          "x": -4.2,
+          "y": 0.9
+        }
+      ],
+      "sectionId": "thermal_protection"
+    },
+    {
+      "chipId": "C_TEMP",
+      "center": {
+        "x": -5.8075,
+        "y": -3
+      },
+      "width": 1.2850000000000001,
+      "height": 0.7600000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_278",
+          "displayName": "anode",
+          "x": -6,
+          "y": -2.6199999999999997,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_279",
+          "displayName": "cathode",
+          "x": -6,
+          "y": -3.3800000000000003,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "thermal_protection",
+      "symbolName": "capacitor_down"
+    },
+    {
+      "chipId": "R_TEMP_SDA",
+      "center": {
+        "x": -7.545,
+        "y": 1.4
+      },
+      "width": 1.8099999999999996,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_280",
+          "displayName": "anode",
+          "x": -8,
+          "y": 1.0999999999999999,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_281",
+          "displayName": "cathode",
+          "x": -8,
+          "y": 1.7,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "thermal_protection",
+      "symbolName": "boxresistor_up"
+    },
+    {
+      "chipId": "R_TEMP_SCL",
+      "center": {
+        "x": -5.545,
+        "y": 1.6
+      },
+      "width": 1.8100000000000005,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_282",
+          "displayName": "anode",
+          "x": -6,
+          "y": 1.3,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_283",
+          "displayName": "cathode",
+          "x": -6,
+          "y": 1.9000000000000001,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "thermal_protection",
+      "symbolName": "boxresistor_up"
+    },
+    {
+      "chipId": "R_MCU_ENABLE_PD",
+      "center": {
+        "x": -0.2450000000000001,
+        "y": -3
+      },
+      "width": 2.4099999999999997,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_284",
+          "displayName": "anode",
+          "x": -1,
+          "y": -2.7,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_285",
+          "displayName": "cathode",
+          "x": -1,
+          "y": -3.3,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "thermal_protection",
+      "symbolName": "boxresistor_down"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "TEMP_ADDR_0X48",
+      "pinIds": [
+        "schematic_port_275",
+        "schematic_port_273"
+      ],
+      "netLabelText": "TEMP_ADDR_0X48"
+    },
+    {
+      "netId": "TEMP_DECOUPLE",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_278",
+        "schematic_port_276"
+      ],
+      "netLabelText": "TEMP_DECOUPLE"
+    },
+    {
+      "netId": "SDA_PULLUP",
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_280",
+        "schematic_port_277"
+      ],
+      "netLabelText": "SDA_PULLUP"
+    },
+    {
+      "netId": "SCL_PULLUP",
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_282",
+        "schematic_port_272"
+      ],
+      "netLabelText": "SCL_PULLUP"
+    },
+    {
+      "netId": "R_TEMP_SDA_3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_281",
+        "schematic_port_276"
+      ],
+      "netLabelText": "R_TEMP_SDA_3V3"
+    },
+    {
+      "netId": "R_TEMP_SCL_3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_283",
+        "schematic_port_276"
+      ],
+      "netLabelText": "R_TEMP_SCL_3V3"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_net_5",
+      "netLabelText": "TEMP_SDA",
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_277"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_6",
+      "netLabelText": "TEMP_SCL",
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_272"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_0",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_273"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_276"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_4",
+      "netLabelText": "MCU_ENABLE",
+      "netLabelWidth": 1.32,
+      "anchoredNetLabelWidth": 1.32,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.88,
+      "pinIds": [
+        "schematic_port_284"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_0",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_285"
+      ]
+    },
+    {
+      "netId": "TEMP_SCL",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_272",
+        "schematic_port_282"
+      ],
+      "netLabelText": "TEMP_SCL"
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_273",
+        "schematic_port_275",
+        "schematic_port_279",
+        "schematic_port_285"
+      ],
+      "netLabelText": "GND"
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_276",
+        "schematic_port_278",
+        "schematic_port_281",
+        "schematic_port_283"
+      ],
+      "netLabelText": "V3V3"
+    },
+    {
+      "netId": "TEMP_SDA",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_277",
+        "schematic_port_280"
+      ],
+      "netLabelText": "TEMP_SDA"
+    },
+    {
+      "netId": "MCU_ENABLE",
+      "isGround": false,
+      "netLabelWidth": 1.32,
+      "anchoredNetLabelWidth": 1.32,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.88,
+      "pinIds": [
+        "schematic_port_284"
+      ],
+      "netLabelText": "MCU_ENABLE"
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "U_TEMP",
+      "center": {
+        "x": -1.3800000000000001,
+        "y": 1.9500000000000002
+      },
+      "width": 1.44,
+      "height": 0.17999999999999994,
+      "text": "TMP102AIDRLR"
+    },
+    {
+      "chipId": "U_TEMP",
+      "center": {
+        "x": -1.7400000000000002,
+        "y": 1.7149999999999999
+      },
+      "width": 0.8400000000000001,
+      "height": 0.24999999999999978,
+      "text": "U_TEMP"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "MCU_ENABLE": [
+      "x-",
+      "x+"
+    ],
+    "TEMP_SDA": [
+      "x-",
+      "x+"
+    ],
+    "TEMP_SCL": [
+      "x-",
+      "x+"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "source_connectivity_source_net_5": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_net_6": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_net_0": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_net_9": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_net_4": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

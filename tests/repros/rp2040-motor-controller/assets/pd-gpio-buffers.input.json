@@ -1,0 +1,335 @@
+{
+  "chips": [
+    {
+      "chipId": "Q_PD_CFG1",
+      "center": {
+        "x": -7.199999999999999,
+        "y": 0
+      },
+      "width": 1.6000000000000014,
+      "height": 1.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_375",
+          "displayName": "OUT",
+          "x": -6.8,
+          "y": 0.8
+        },
+        {
+          "pinId": "schematic_port_376",
+          "displayName": "GND",
+          "x": -6.8,
+          "y": -0.8
+        },
+        {
+          "pinId": "schematic_port_377",
+          "displayName": "IN",
+          "x": -8,
+          "y": 0
+        }
+      ],
+      "sectionId": "pd_gpio_buffers"
+    },
+    {
+      "chipId": "R_PD_CFG1_PU",
+      "center": {
+        "x": -6.225,
+        "y": 2.7
+      },
+      "width": 2.0500000000000007,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_378",
+          "displayName": "anode",
+          "x": -6.8,
+          "y": 2.4000000000000004,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_379",
+          "displayName": "cathode",
+          "x": -6.8,
+          "y": 3,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "pd_gpio_buffers",
+      "symbolName": "boxresistor_up"
+    },
+    {
+      "chipId": "Q_PD_CFG2",
+      "center": {
+        "x": -0.19999999999999996,
+        "y": 0
+      },
+      "width": 1.6,
+      "height": 1.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_380",
+          "displayName": "OUT",
+          "x": 0.2,
+          "y": 0.8
+        },
+        {
+          "pinId": "schematic_port_381",
+          "displayName": "GND",
+          "x": 0.2,
+          "y": -0.8
+        },
+        {
+          "pinId": "schematic_port_382",
+          "displayName": "IN",
+          "x": -1,
+          "y": 0
+        }
+      ],
+      "sectionId": "pd_gpio_buffers"
+    },
+    {
+      "chipId": "R_PD_CFG2_PU",
+      "center": {
+        "x": 0.7750000000000002,
+        "y": 2.7
+      },
+      "width": 2.0500000000000003,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_383",
+          "displayName": "anode",
+          "x": 0.20000000000000015,
+          "y": 2.4000000000000004,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_384",
+          "displayName": "cathode",
+          "x": 0.2000000000000002,
+          "y": 3,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "pd_gpio_buffers",
+      "symbolName": "boxresistor_up"
+    },
+    {
+      "chipId": "Q_PD_CFG3",
+      "center": {
+        "x": 6.800000000000001,
+        "y": 0
+      },
+      "width": 1.6000000000000014,
+      "height": 1.6,
+      "pins": [
+        {
+          "pinId": "schematic_port_385",
+          "displayName": "OUT",
+          "x": 7.2,
+          "y": 0.8
+        },
+        {
+          "pinId": "schematic_port_386",
+          "displayName": "GND",
+          "x": 7.2,
+          "y": -0.8
+        },
+        {
+          "pinId": "schematic_port_387",
+          "displayName": "IN",
+          "x": 6,
+          "y": 0
+        }
+      ],
+      "sectionId": "pd_gpio_buffers"
+    },
+    {
+      "chipId": "R_PD_CFG3_PU",
+      "center": {
+        "x": 7.775,
+        "y": 2.7
+      },
+      "width": 2.0500000000000007,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_388",
+          "displayName": "anode",
+          "x": 7.2,
+          "y": 2.4000000000000004,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_389",
+          "displayName": "cathode",
+          "x": 7.2,
+          "y": 3,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "pd_gpio_buffers",
+      "symbolName": "boxresistor_up"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "PD_CFG1_PULLUP",
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_375",
+        "schematic_port_378"
+      ],
+      "netLabelText": "PD_CFG1_PULLUP"
+    },
+    {
+      "netId": "PD_CFG2_PULLUP",
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_380",
+        "schematic_port_383"
+      ],
+      "netLabelText": "PD_CFG2_PULLUP"
+    },
+    {
+      "netId": "PD_CFG3_PULLUP",
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_385",
+        "schematic_port_388"
+      ],
+      "netLabelText": "PD_CFG3_PULLUP"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_port_407",
+      "netLabelText": "PD_CFG1_LOW",
+      "netLabelWidth": 1.44,
+      "pinIds": [
+        "schematic_port_377"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_238",
+      "netLabelText": "PD_CFG1",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_375"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_230",
+      "netLabelText": "PD_VDD",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_379"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_412",
+      "netLabelText": "PD_CFG2_LOW",
+      "netLabelWidth": 1.44,
+      "pinIds": [
+        "schematic_port_382"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_231",
+      "netLabelText": "PD_CFG2",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_380"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_230",
+      "netLabelText": "PD_VDD",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_384"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_417",
+      "netLabelText": "PD_CFG3_LOW",
+      "netLabelWidth": 1.44,
+      "pinIds": [
+        "schematic_port_387"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_232",
+      "netLabelText": "PD_CFG3",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_385"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_230",
+      "netLabelText": "PD_VDD",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_389"
+      ]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_376",
+        "schematic_port_381",
+        "schematic_port_386"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "source_connectivity_source_port_407": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_238": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_230": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_412": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_231": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_417": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_232": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

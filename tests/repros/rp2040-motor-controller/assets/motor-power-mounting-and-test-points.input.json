@@ -1,0 +1,224 @@
+{
+  "chips": [
+    {
+      "chipId": "MH1",
+      "center": {
+        "x": 8,
+        "y": -6
+      },
+      "width": 2,
+      "height": 0.40000000000000036,
+      "pins": [
+        {
+          "pinId": "schematic_port_286",
+          "displayName": "GND",
+          "x": 7,
+          "y": -6
+        }
+      ]
+    },
+    {
+      "chipId": "MH2",
+      "center": {
+        "x": 8,
+        "y": -4
+      },
+      "width": 2,
+      "height": 0.40000000000000036,
+      "pins": [
+        {
+          "pinId": "schematic_port_287",
+          "displayName": "GND",
+          "x": 7,
+          "y": -4
+        }
+      ]
+    },
+    {
+      "chipId": "MH3",
+      "center": {
+        "x": 11,
+        "y": -6
+      },
+      "width": 2,
+      "height": 0.40000000000000036,
+      "pins": [
+        {
+          "pinId": "schematic_port_288",
+          "displayName": "GND",
+          "x": 10,
+          "y": -6
+        }
+      ]
+    },
+    {
+      "chipId": "MH4",
+      "center": {
+        "x": 11,
+        "y": -4
+      },
+      "width": 2,
+      "height": 0.40000000000000036,
+      "pins": [
+        {
+          "pinId": "schematic_port_289",
+          "displayName": "GND",
+          "x": 10,
+          "y": -4
+        }
+      ]
+    },
+    {
+      "chipId": "TP_PD",
+      "center": {
+        "x": 11.08125,
+        "y": -7
+      },
+      "width": 0.9624999999999986,
+      "height": 0.1999999999999993,
+      "pins": [
+        {
+          "pinId": "schematic_port_356",
+          "displayName": "1",
+          "x": 10.600000000000001,
+          "y": -7
+        }
+      ],
+      "symbolName": "testpoint_right"
+    },
+    {
+      "chipId": "TP_VMOTOR",
+      "center": {
+        "x": 14.52125,
+        "y": -7
+      },
+      "width": 1.442499999999999,
+      "height": 0.1999999999999993,
+      "pins": [
+        {
+          "pinId": "schematic_port_357",
+          "displayName": "1",
+          "x": 13.8,
+          "y": -7
+        }
+      ],
+      "symbolName": "testpoint_right"
+    },
+    {
+      "chipId": "TP_PD_GND",
+      "center": {
+        "x": 12.52125,
+        "y": -10
+      },
+      "width": 1.442499999999999,
+      "height": 0.1999999999999993,
+      "pins": [
+        {
+          "pinId": "schematic_port_358",
+          "displayName": "1",
+          "x": 11.8,
+          "y": -10
+        }
+      ],
+      "symbolName": "testpoint_right"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_port_219",
+      "netLabelText": "PD",
+      "netLabelWidth": 0.36,
+      "anchoredNetLabelWidth": 0.36,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.24,
+      "pinIds": [
+        "schematic_port_356"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_164",
+      "netLabelText": "VMOTOR",
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_357"
+      ]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_286",
+        "schematic_port_287",
+        "schematic_port_288",
+        "schematic_port_289",
+        "schematic_port_358"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "MH1",
+      "center": {
+        "x": 7.58,
+        "y": -5.6850000000000005
+      },
+      "width": 0.47999999999999954,
+      "height": 0.2499999999999991,
+      "text": "MH1"
+    },
+    {
+      "chipId": "MH2",
+      "center": {
+        "x": 7.58,
+        "y": -3.6849999999999996
+      },
+      "width": 0.47999999999999954,
+      "height": 0.24999999999999956,
+      "text": "MH2"
+    },
+    {
+      "chipId": "MH3",
+      "center": {
+        "x": 10.58,
+        "y": -5.6850000000000005
+      },
+      "width": 0.4800000000000004,
+      "height": 0.2499999999999991,
+      "text": "MH3"
+    },
+    {
+      "chipId": "MH4",
+      "center": {
+        "x": 10.58,
+        "y": -3.6849999999999996
+      },
+      "width": 0.4800000000000004,
+      "height": 0.24999999999999956,
+      "text": "MH4"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "source_connectivity_source_port_164": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_219": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

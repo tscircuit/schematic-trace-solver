@@ -1,0 +1,117 @@
+{
+  "chips": [
+    {
+      "chipId": "D_PWR",
+      "center": {
+        "x": 12.745,
+        "y": -6.199999999999999
+      },
+      "width": 1.1099999999999994,
+      "height": 1.08,
+      "pins": [
+        {
+          "pinId": "schematic_port_123",
+          "displayName": "cathode",
+          "x": 12.5,
+          "y": -5.659999999999999,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_124",
+          "displayName": "anode",
+          "x": 12.5,
+          "y": -6.739999999999999,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "MCU__status",
+      "symbolName": "led_down"
+    },
+    {
+      "chipId": "R_PWR_LED",
+      "center": {
+        "x": 12.895,
+        "y": -4.6
+      },
+      "width": 1.6899999999999995,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_127",
+          "displayName": "anode",
+          "x": 12.5,
+          "y": -4.3,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_128",
+          "displayName": "cathode",
+          "x": 12.5,
+          "y": -4.8999999999999995,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "MCU__status",
+      "symbolName": "boxresistor_down"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "PLED_D",
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_128",
+        "schematic_port_124"
+      ],
+      "netLabelText": "PLED_D"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_net_0",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_123"
+      ]
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_127"
+      ],
+      "netLabelText": "V3V3"
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_123"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "source_connectivity_source_net_0": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

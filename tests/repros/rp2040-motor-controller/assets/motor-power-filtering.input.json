@@ -1,0 +1,241 @@
+{
+  "chips": [
+    {
+      "chipId": "D_MOTOR_BLOCK",
+      "center": {
+        "x": 0,
+        "y": -7.43
+      },
+      "width": 1.58,
+      "height": 0.6799999999999997,
+      "pins": [
+        {
+          "pinId": "schematic_port_221",
+          "displayName": "cathode",
+          "x": 0.79,
+          "y": -7.5,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_222",
+          "displayName": "anode",
+          "x": -0.79,
+          "y": -7.5,
+          "_facingDirection": "x-"
+        }
+      ],
+      "sectionId": "motor_power_filtering",
+      "symbolName": "diode_right"
+    },
+    {
+      "chipId": "F_MOTOR_VBUS",
+      "center": {
+        "x": -2.74,
+        "y": -7.5
+      },
+      "width": 2.8400000000000003,
+      "height": 1.0600000000000005,
+      "pins": [
+        {
+          "pinId": "schematic_port_223",
+          "displayName": "1",
+          "x": -2.96,
+          "y": -6.97
+        },
+        {
+          "pinId": "schematic_port_224",
+          "displayName": "2",
+          "x": -2.96,
+          "y": -8.030000000000001
+        }
+      ],
+      "sectionId": "motor_power_filtering",
+      "symbolName": "fuse_vert"
+    },
+    {
+      "chipId": "C_PD_VBUS",
+      "center": {
+        "x": 3.3725,
+        "y": -7.5
+      },
+      "width": 1.6450000000000005,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_225",
+          "displayName": "anode",
+          "x": 3,
+          "y": -7.12,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_226",
+          "displayName": "cathode",
+          "x": 3,
+          "y": -7.88,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "motor_power_filtering",
+      "symbolName": "capacitor_down"
+    },
+    {
+      "chipId": "C_MOTOR_BULK",
+      "center": {
+        "x": 6.585000000000001,
+        "y": -7.5
+      },
+      "width": 2.2700000000000005,
+      "height": 0.7799999999999994,
+      "pins": [
+        {
+          "pinId": "schematic_port_227",
+          "displayName": "neg",
+          "x": 6,
+          "y": -7.89,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_228",
+          "displayName": "pos",
+          "x": 6,
+          "y": -7.11,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "motor_power_filtering",
+      "symbolName": "capacitor_polarized_down"
+    },
+    {
+      "chipId": "D_MOTOR_TVS",
+      "center": {
+        "x": 9.64,
+        "y": -7.5
+      },
+      "width": 1.8200000000000003,
+      "height": 1.0399999999999991,
+      "pins": [
+        {
+          "pinId": "schematic_port_229",
+          "displayName": "cathode",
+          "x": 9,
+          "y": -8.02,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_230",
+          "displayName": "anode",
+          "x": 9,
+          "y": -6.98,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "motor_power_filtering",
+      "symbolName": "diode_down"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "MOTOR_REVERSE_BLOCK",
+      "netLabelWidth": 2.4,
+      "anchoredNetLabelWidth": 2.4,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.6,
+      "pinIds": [
+        "schematic_port_224",
+        "schematic_port_222"
+      ],
+      "netLabelText": "MOTOR_REVERSE_BLOCK"
+    },
+    {
+      "netId": "MOTOR_VBUS_CAP",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_221",
+        "schematic_port_225"
+      ],
+      "netLabelText": "MOTOR_VBUS_CAP"
+    },
+    {
+      "netId": "MOTOR_VBUS_BULK",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_221",
+        "schematic_port_228"
+      ],
+      "netLabelText": "MOTOR_VBUS_BULK"
+    },
+    {
+      "netId": "MOTOR_VBUS_TVS",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_221",
+        "schematic_port_229"
+      ],
+      "netLabelText": "MOTOR_VBUS_TVS"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_port_164",
+      "netLabelText": "VMOTOR",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_221"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_219",
+      "netLabelText": "PD",
+      "netLabelWidth": 0.36,
+      "anchoredNetLabelWidth": 0.36,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.24,
+      "pinIds": [
+        "schematic_port_223"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_164",
+      "netLabelText": "VMOTOR",
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_221"
+      ]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_226",
+        "schematic_port_227",
+        "schematic_port_230"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "source_connectivity_source_port_164": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_219": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

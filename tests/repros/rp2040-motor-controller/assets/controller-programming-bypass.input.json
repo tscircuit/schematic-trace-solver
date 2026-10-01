@@ -1,0 +1,180 @@
+{
+  "chips": [
+    {
+      "chipId": "C_FLASH",
+      "center": {
+        "x": -1.2475,
+        "y": -6
+      },
+      "width": 1.4049999999999998,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_18",
+          "displayName": "anode",
+          "x": -1.5,
+          "y": -5.62,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_19",
+          "displayName": "cathode",
+          "x": -1.5,
+          "y": -6.38,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "MCU__programming_bypass",
+      "symbolName": "capacitor_down"
+    },
+    {
+      "chipId": "C_USB_VDD",
+      "center": {
+        "x": 1.8724999999999996,
+        "y": -6
+      },
+      "width": 1.6449999999999998,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_20",
+          "displayName": "anode",
+          "x": 1.4999999999999996,
+          "y": -5.62,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_21",
+          "displayName": "cathode",
+          "x": 1.4999999999999996,
+          "y": -6.38,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "MCU__programming_bypass",
+      "symbolName": "capacitor_down"
+    },
+    {
+      "chipId": "C_3V3",
+      "center": {
+        "x": -1.3675,
+        "y": -8.5
+      },
+      "width": 1.165,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_139",
+          "displayName": "anode",
+          "x": -1.5,
+          "y": -8.120000000000001,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_140",
+          "displayName": "cathode",
+          "x": -1.5,
+          "y": -8.879999999999999,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "MCU__programming_bypass",
+      "symbolName": "capacitor_down"
+    },
+    {
+      "chipId": "C_USB",
+      "center": {
+        "x": 1.6324999999999994,
+        "y": -8.5
+      },
+      "width": 1.1649999999999998,
+      "height": 0.759999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_143",
+          "displayName": "anode",
+          "x": 1.4999999999999996,
+          "y": -8.120000000000001,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_144",
+          "displayName": "cathode",
+          "x": 1.4999999999999996,
+          "y": -8.879999999999999,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "MCU__programming_bypass",
+      "symbolName": "capacitor_down"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_18"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_20"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_143"
+      ]
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_18",
+        "schematic_port_20",
+        "schematic_port_139",
+        "schematic_port_143"
+      ],
+      "netLabelText": "V3V3"
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_19",
+        "schematic_port_21",
+        "schematic_port_140",
+        "schematic_port_144"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "source_connectivity_source_net_9": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

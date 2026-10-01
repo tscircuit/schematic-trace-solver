@@ -1,0 +1,596 @@
+{
+  "chips": [
+    {
+      "chipId": "J_MOTOR_USB",
+      "center": {
+        "x": 5.5,
+        "y": 0
+      },
+      "width": 3.8000000000000007,
+      "height": 4.75,
+      "pins": [
+        {
+          "pinId": "schematic_port_190",
+          "displayName": "EH1",
+          "x": 3.5999999999999996,
+          "y": 1.7000000000000002
+        },
+        {
+          "pinId": "schematic_port_191",
+          "displayName": "EH2",
+          "x": 3.5999999999999996,
+          "y": 1.4000000000000001
+        },
+        {
+          "pinId": "schematic_port_192",
+          "displayName": "EH3",
+          "x": 3.5999999999999996,
+          "y": -1.4
+        },
+        {
+          "pinId": "schematic_port_193",
+          "displayName": "EH4",
+          "x": 3.5999999999999996,
+          "y": -1.7000000000000002
+        },
+        {
+          "pinId": "schematic_port_194",
+          "displayName": "A1B12",
+          "x": 5.5,
+          "y": -2.375
+        },
+        {
+          "pinId": "schematic_port_195",
+          "displayName": "A4B9",
+          "x": 5.5,
+          "y": 2.375
+        },
+        {
+          "pinId": "schematic_port_196",
+          "displayName": "B8",
+          "x": 7.4,
+          "y": -1.4000000000000004
+        },
+        {
+          "pinId": "schematic_port_197",
+          "displayName": "A5",
+          "x": 7.4,
+          "y": 1.4000000000000001
+        },
+        {
+          "pinId": "schematic_port_198",
+          "displayName": "B7",
+          "x": 7.4,
+          "y": -0.6000000000000005
+        },
+        {
+          "pinId": "schematic_port_199",
+          "displayName": "A6",
+          "x": 7.4,
+          "y": 0.5999999999999994
+        },
+        {
+          "pinId": "schematic_port_200",
+          "displayName": "A7",
+          "x": 7.4,
+          "y": -0.20000000000000062
+        },
+        {
+          "pinId": "schematic_port_201",
+          "displayName": "B6",
+          "x": 7.4,
+          "y": 0.1999999999999993
+        },
+        {
+          "pinId": "schematic_port_202",
+          "displayName": "A8",
+          "x": 7.4,
+          "y": -1.0000000000000004
+        },
+        {
+          "pinId": "schematic_port_203",
+          "displayName": "B5",
+          "x": 7.4,
+          "y": 0.9999999999999998
+        },
+        {
+          "pinId": "schematic_port_204",
+          "displayName": "B4A9",
+          "x": 7.4,
+          "y": 1.8000000000000005
+        },
+        {
+          "pinId": "schematic_port_205",
+          "displayName": "B1A12",
+          "x": 7.4,
+          "y": -1.8000000000000005
+        }
+      ],
+      "sectionId": "motor_power_pd_negotiation"
+    },
+    {
+      "chipId": "U_PD",
+      "center": {
+        "x": -5,
+        "y": 0
+      },
+      "width": 2.5999999999999996,
+      "height": 2.5700000000000003,
+      "pins": [
+        {
+          "pinId": "schematic_port_206",
+          "displayName": "VDD",
+          "x": -5,
+          "y": 1.2850000000000001
+        },
+        {
+          "pinId": "schematic_port_207",
+          "displayName": "CFG2",
+          "x": -3.7,
+          "y": 0.20000000000000007
+        },
+        {
+          "pinId": "schematic_port_208",
+          "displayName": "CFG3",
+          "x": -3.7,
+          "y": 1.1102230246251565e-16
+        },
+        {
+          "pinId": "schematic_port_209",
+          "displayName": "DP",
+          "x": -6.3,
+          "y": 0.5
+        },
+        {
+          "pinId": "schematic_port_210",
+          "displayName": "DM",
+          "x": -6.3,
+          "y": 0.3
+        },
+        {
+          "pinId": "schematic_port_211",
+          "displayName": "CC2",
+          "x": -6.3,
+          "y": -0.30000000000000004
+        },
+        {
+          "pinId": "schematic_port_212",
+          "displayName": "CC1",
+          "x": -6.3,
+          "y": -0.5
+        },
+        {
+          "pinId": "schematic_port_213",
+          "displayName": "VBUS",
+          "x": -3.7,
+          "y": -0.6
+        },
+        {
+          "pinId": "schematic_port_214",
+          "displayName": "CFG1",
+          "x": -3.7,
+          "y": 0.4
+        },
+        {
+          "pinId": "schematic_port_215",
+          "displayName": "PG",
+          "x": -3.7,
+          "y": 0.6
+        },
+        {
+          "pinId": "schematic_port_216",
+          "displayName": "GND",
+          "x": -5,
+          "y": -1.2850000000000001
+        }
+      ],
+      "sectionId": "motor_power_pd_negotiation"
+    },
+    {
+      "chipId": "C_PD_VDD",
+      "center": {
+        "x": -8.0875,
+        "y": 0
+      },
+      "width": 1.5249999999999995,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "schematic_port_231",
+          "displayName": "anode",
+          "x": -8.4,
+          "y": 0.38,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_232",
+          "displayName": "cathode",
+          "x": -8.4,
+          "y": -0.38,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "motor_power_pd_negotiation",
+      "symbolName": "capacitor_down"
+    },
+    {
+      "chipId": "R_PD_VDD",
+      "center": {
+        "x": 2.575,
+        "y": 3
+      },
+      "width": 1.57,
+      "height": 0.5999999999999996,
+      "pins": [
+        {
+          "pinId": "schematic_port_233",
+          "displayName": "anode",
+          "x": 2.24,
+          "y": 2.7,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_234",
+          "displayName": "cathode",
+          "x": 2.24,
+          "y": 3.3,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "motor_power_pd_negotiation",
+      "symbolName": "boxresistor_up"
+    },
+    {
+      "chipId": "R_PD_VBUS",
+      "center": {
+        "x": 1.5,
+        "y": 0.75
+      },
+      "width": 1.08,
+      "height": 0.6800000000000002,
+      "pins": [
+        {
+          "pinId": "schematic_port_235",
+          "displayName": "anode",
+          "x": 2.04,
+          "y": 0.75,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_236",
+          "displayName": "cathode",
+          "x": 0.96,
+          "y": 0.75,
+          "_facingDirection": "x-"
+        }
+      ],
+      "sectionId": "motor_power_pd_negotiation",
+      "symbolName": "boxresistor_left"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "MOTOR_VBUS_JOIN",
+      "pinIds": [
+        "schematic_port_195",
+        "schematic_port_204"
+      ],
+      "netLabelText": "MOTOR_VBUS_JOIN"
+    },
+    {
+      "netId": "PD_VDD_FEED",
+      "netLabelWidth": 0.36,
+      "pinIds": [
+        "schematic_port_195",
+        "schematic_port_233"
+      ],
+      "netLabelText": "PD_VDD_FEED"
+    },
+    {
+      "netId": "PD_VBUS_SENSE_FEED",
+      "netLabelWidth": 0.36,
+      "pinIds": [
+        "schematic_port_195",
+        "schematic_port_235"
+      ],
+      "netLabelText": "PD_VBUS_SENSE_FEED"
+    },
+    {
+      "netId": "PD_VDD_INPUT",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_234",
+        "schematic_port_206"
+      ],
+      "netLabelText": "PD_VDD_INPUT"
+    },
+    {
+      "netId": "PD_VBUS_INPUT",
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_236",
+        "schematic_port_213"
+      ],
+      "netLabelText": "PD_VBUS_INPUT"
+    },
+    {
+      "netId": "PD_VDD_DECOUPLE",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_206",
+        "schematic_port_231"
+      ],
+      "netLabelText": "PD_VDD_DECOUPLE"
+    },
+    {
+      "netId": "PD_CC1",
+      "netLabelWidth": 0.48,
+      "anchoredNetLabelWidth": 0.48,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.32,
+      "pinIds": [
+        "schematic_port_197",
+        "schematic_port_212"
+      ],
+      "netLabelText": "PD_CC1"
+    },
+    {
+      "netId": "PD_CC2",
+      "netLabelWidth": 0.48,
+      "anchoredNetLabelWidth": 0.48,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.32,
+      "pinIds": [
+        "schematic_port_203",
+        "schematic_port_211"
+      ],
+      "netLabelText": "PD_CC2"
+    },
+    {
+      "netId": "PD_DP_A",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_199",
+        "schematic_port_209"
+      ],
+      "netLabelText": "PD_DP_A"
+    },
+    {
+      "netId": "PD_DP_JOIN",
+      "pinIds": [
+        "schematic_port_201",
+        "schematic_port_199"
+      ],
+      "netLabelText": "PD_DP_JOIN"
+    },
+    {
+      "netId": "PD_DM_A",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_200",
+        "schematic_port_210"
+      ],
+      "netLabelText": "PD_DM_A"
+    },
+    {
+      "netId": "PD_DM_JOIN",
+      "pinIds": [
+        "schematic_port_198",
+        "schematic_port_200"
+      ],
+      "netLabelText": "PD_DM_JOIN"
+    },
+    {
+      "netId": "MOTOR_USB_GND_JOIN",
+      "pinIds": [
+        "schematic_port_205",
+        "schematic_port_194"
+      ],
+      "netLabelText": "MOTOR_USB_GND_JOIN"
+    },
+    {
+      "netId": "MOTOR_USB_SHIELD_1",
+      "netLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_190",
+        "schematic_port_194"
+      ],
+      "netLabelText": "MOTOR_USB_SHIELD_1"
+    },
+    {
+      "netId": "MOTOR_USB_SHIELD_2",
+      "netLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_191",
+        "schematic_port_194"
+      ],
+      "netLabelText": "MOTOR_USB_SHIELD_2"
+    },
+    {
+      "netId": "MOTOR_USB_SHIELD_3",
+      "pinIds": [
+        "schematic_port_192",
+        "schematic_port_194"
+      ],
+      "netLabelText": "MOTOR_USB_SHIELD_3"
+    },
+    {
+      "netId": "MOTOR_USB_SHIELD_4",
+      "pinIds": [
+        "schematic_port_193",
+        "schematic_port_194"
+      ],
+      "netLabelText": "MOTOR_USB_SHIELD_4"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_port_219",
+      "netLabelText": "PD",
+      "netLabelWidth": 0.36,
+      "anchoredNetLabelWidth": 0.36,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.24,
+      "pinIds": [
+        "schematic_port_195"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_0",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_194"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_0",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_216"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_239",
+      "netLabelText": "PD_GOOD",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_215"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_230",
+      "netLabelText": "PD_VDD",
+      "netLabelWidth": 0.84,
+      "pinIds": [
+        "schematic_port_206"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_238",
+      "netLabelText": "PD_CFG1",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_214"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_231",
+      "netLabelText": "PD_CFG2",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_207"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_232",
+      "netLabelText": "PD_CFG3",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_208"
+      ]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_190",
+        "schematic_port_191",
+        "schematic_port_192",
+        "schematic_port_193",
+        "schematic_port_194",
+        "schematic_port_205",
+        "schematic_port_216",
+        "schematic_port_232"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "J_MOTOR_USB",
+      "center": {
+        "x": 7.9399999999999995,
+        "y": 2.325
+      },
+      "width": 1.6799999999999997,
+      "height": 0.17999999999999972,
+      "text": "TYPE-C-31-M-12"
+    },
+    {
+      "chipId": "J_MOTOR_USB",
+      "center": {
+        "x": 7.76,
+        "y": 2.09
+      },
+      "width": 1.4400000000000004,
+      "height": 0.24999999999999978,
+      "text": "J_MOTOR_USB"
+    },
+    {
+      "chipId": "U_PD",
+      "center": {
+        "x": -3.6399999999999997,
+        "y": 1.2349999999999999
+      },
+      "width": 0.7200000000000002,
+      "height": 0.18000000000000016,
+      "text": "CH224K"
+    },
+    {
+      "chipId": "U_PD",
+      "center": {
+        "x": -3.76,
+        "y": 1
+      },
+      "width": 0.6000000000000001,
+      "height": 0.2500000000000002,
+      "text": "U_PD"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "source_connectivity_source_port_219": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_net_0": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_239": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_230": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_238": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_231": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_232": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

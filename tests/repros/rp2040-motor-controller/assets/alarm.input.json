@@ -1,0 +1,261 @@
+{
+  "chips": [
+    {
+      "chipId": "BZ1",
+      "center": {
+        "x": 5,
+        "y": 3
+      },
+      "width": 2,
+      "height": 0.8000000000000007,
+      "pins": [
+        {
+          "pinId": "schematic_port_290",
+          "displayName": "_POS",
+          "x": 4.6,
+          "y": 3.4000000000000004
+        },
+        {
+          "pinId": "schematic_port_291",
+          "displayName": "_NEG",
+          "x": 4.6,
+          "y": 2.5999999999999996
+        },
+        {
+          "pinId": "schematic_port_292",
+          "displayName": "NC1",
+          "x": 6,
+          "y": 2.9
+        },
+        {
+          "pinId": "schematic_port_293",
+          "displayName": "NC2",
+          "x": 6,
+          "y": 3.1
+        }
+      ],
+      "sectionId": "alarm"
+    },
+    {
+      "chipId": "Q_BUZZER",
+      "center": {
+        "x": 5.140000000000001,
+        "y": 0
+      },
+      "width": 1.0800000000000018,
+      "height": 2,
+      "pins": [
+        {
+          "pinId": "schematic_port_294",
+          "displayName": "G",
+          "x": 4.6,
+          "y": 0
+        },
+        {
+          "pinId": "schematic_port_295",
+          "displayName": "S",
+          "x": 5.6800000000000015,
+          "y": -0.4
+        },
+        {
+          "pinId": "schematic_port_296",
+          "displayName": "D",
+          "x": 5.2,
+          "y": 1
+        }
+      ],
+      "sectionId": "alarm"
+    },
+    {
+      "chipId": "D_BUZZER",
+      "center": {
+        "x": 7.539999999999999,
+        "y": 3
+      },
+      "width": 1.46,
+      "height": 1.04,
+      "pins": [
+        {
+          "pinId": "schematic_port_297",
+          "displayName": "cathode",
+          "x": 8,
+          "y": 3.52,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_298",
+          "displayName": "anode",
+          "x": 8,
+          "y": 2.48,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "alarm",
+      "symbolName": "diode_up"
+    },
+    {
+      "chipId": "R_BUZZER_GATE",
+      "center": {
+        "x": 1,
+        "y": 0
+      },
+      "width": 1.56,
+      "height": 0.6799999999999999,
+      "pins": [
+        {
+          "pinId": "schematic_port_299",
+          "displayName": "anode",
+          "x": 0.21999999999999997,
+          "y": 0,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_300",
+          "displayName": "cathode",
+          "x": 1.78,
+          "y": 0,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "alarm",
+      "symbolName": "boxresistor_right"
+    },
+    {
+      "chipId": "R_BUZZER_PD",
+      "center": {
+        "x": 3.515,
+        "y": -2
+      },
+      "width": 1.9300000000000006,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_301",
+          "displayName": "anode",
+          "x": 3,
+          "y": -1.7
+        },
+        {
+          "pinId": "schematic_port_302",
+          "displayName": "cathode",
+          "x": 3,
+          "y": -2.3
+        }
+      ],
+      "sectionId": "alarm",
+      "symbolName": "boxresistor_down"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "BUZZER_GATE",
+      "netLabelWidth": 1.44,
+      "pinIds": [
+        "schematic_port_300",
+        "schematic_port_294"
+      ],
+      "netLabelText": "BUZZER_GATE"
+    },
+    {
+      "netId": "BUZZER_OFF",
+      "pinIds": [
+        "schematic_port_294",
+        "schematic_port_301"
+      ],
+      "netLabelText": "BUZZER_OFF"
+    },
+    {
+      "netId": "BUZZER_SINK",
+      "pinIds": [
+        "schematic_port_296",
+        "schematic_port_291"
+      ],
+      "netLabelText": "BUZZER_SINK"
+    },
+    {
+      "netId": "BUZZER_FLYBACK_A",
+      "netLabelWidth": 1.44,
+      "pinIds": [
+        "schematic_port_298",
+        "schematic_port_296"
+      ],
+      "netLabelText": "BUZZER_FLYBACK_A"
+    },
+    {
+      "netId": "BUZZER_FLYBACK_K",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_297",
+        "schematic_port_290"
+      ],
+      "netLabelText": "BUZZER_FLYBACK_K"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_port_329",
+      "netLabelText": "BUZZER_PWM",
+      "netLabelWidth": 1.32,
+      "pinIds": [
+        "schematic_port_299"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_290"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_net_9",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.6,
+      "pinIds": [
+        "schematic_port_290"
+      ]
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_290",
+        "schematic_port_297"
+      ],
+      "netLabelText": "V3V3"
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_295",
+        "schematic_port_302"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "source_connectivity_source_port_329": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_net_9": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

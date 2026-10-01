@@ -1,0 +1,182 @@
+{
+  "chips": [
+    {
+      "chipId": "R_RUN",
+      "center": {
+        "x": 11.385000000000002,
+        "y": -0.75
+      },
+      "width": 1.209999999999999,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_16",
+          "displayName": "anode",
+          "x": 11.23,
+          "y": -1.05,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_17",
+          "displayName": "cathode",
+          "x": 11.23,
+          "y": -0.44999999999999996,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "MCU__controls",
+      "symbolName": "boxresistor_up"
+    },
+    {
+      "chipId": "SW_BOOT",
+      "center": {
+        "x": 8.9,
+        "y": -2.5
+      },
+      "width": 0.9400000000000013,
+      "height": 0.7189106999999986,
+      "pins": [
+        {
+          "pinId": "schematic_port_115",
+          "displayName": "1",
+          "x": 8.43,
+          "y": -2.5,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_117",
+          "displayName": "3",
+          "x": 9.370000000000001,
+          "y": -2.5,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "MCU__controls",
+      "symbolName": "push_button_normally_open_momentary_right"
+    },
+    {
+      "chipId": "SW_RUN",
+      "center": {
+        "x": 11.9,
+        "y": -2.5
+      },
+      "width": 0.9400000000000013,
+      "height": 0.7189106999999986,
+      "pins": [
+        {
+          "pinId": "schematic_port_119",
+          "displayName": "1",
+          "x": 11.43,
+          "y": -2.5,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_121",
+          "displayName": "3",
+          "x": 12.370000000000001,
+          "y": -2.5,
+          "_facingDirection": "x+"
+        }
+      ],
+      "sectionId": "MCU__controls",
+      "symbolName": "push_button_normally_open_momentary_right"
+    },
+    {
+      "chipId": "R_BOOT",
+      "center": {
+        "x": 8.445,
+        "y": -0.75
+      },
+      "width": 1.330000000000001,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_125",
+          "displayName": "anode",
+          "x": 8.23,
+          "y": -1.05,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_126",
+          "displayName": "cathode",
+          "x": 8.23,
+          "y": -0.44999999999999996,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "MCU__controls",
+      "symbolName": "boxresistor_up"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_port_119",
+      "netLabelText": "RUN_R",
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_16",
+        "schematic_port_119"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_115",
+      "netLabelText": "QSPI_SS",
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_115",
+        "schematic_port_125"
+      ]
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_17",
+        "schematic_port_126"
+      ],
+      "netLabelText": "V3V3"
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_117",
+        "schematic_port_121"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "source_connectivity_source_port_119": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_115": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

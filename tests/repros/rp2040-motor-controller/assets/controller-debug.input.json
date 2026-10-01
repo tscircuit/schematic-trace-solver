@@ -1,0 +1,146 @@
+{
+  "chips": [
+    {
+      "chipId": "TP_SWCLK",
+      "center": {
+        "x": 8.96125,
+        "y": -8.399999999999999
+      },
+      "width": 1.322499999999998,
+      "height": 0.1999999999999993,
+      "pins": [
+        {
+          "pinId": "schematic_port_157",
+          "displayName": "1",
+          "x": 8.3,
+          "y": -8.399999999999999
+        }
+      ],
+      "sectionId": "MCU__debug",
+      "symbolName": "testpoint_right"
+    },
+    {
+      "chipId": "TP_GND",
+      "center": {
+        "x": 12.34125,
+        "y": -8.399999999999999
+      },
+      "width": 1.0824999999999996,
+      "height": 0.1999999999999993,
+      "pins": [
+        {
+          "pinId": "schematic_port_158",
+          "displayName": "1",
+          "x": 11.8,
+          "y": -8.399999999999999
+        }
+      ],
+      "sectionId": "MCU__debug",
+      "symbolName": "testpoint_right"
+    },
+    {
+      "chipId": "TP_SWDIO",
+      "center": {
+        "x": 8.96125,
+        "y": -10
+      },
+      "width": 1.322499999999998,
+      "height": 0.1999999999999993,
+      "pins": [
+        {
+          "pinId": "schematic_port_159",
+          "displayName": "1",
+          "x": 8.3,
+          "y": -10
+        }
+      ],
+      "sectionId": "MCU__debug",
+      "symbolName": "testpoint_right"
+    },
+    {
+      "chipId": "TP_3V3",
+      "center": {
+        "x": 12.34125,
+        "y": -10
+      },
+      "width": 1.0824999999999996,
+      "height": 0.1999999999999993,
+      "pins": [
+        {
+          "pinId": "schematic_port_160",
+          "displayName": "1",
+          "x": 11.8,
+          "y": -10
+        }
+      ],
+      "sectionId": "MCU__debug",
+      "symbolName": "testpoint_right"
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_port_157",
+      "netLabelText": "SWCLK",
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_157"
+      ]
+    },
+    {
+      "netId": "source_connectivity_source_port_159",
+      "netLabelText": "SWD",
+      "netLabelWidth": 0.48,
+      "anchoredNetLabelWidth": 0.48,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.32,
+      "pinIds": [
+        "schematic_port_159"
+      ]
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_160"
+      ],
+      "netLabelText": "V3V3"
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_158"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "source_connectivity_source_port_157": [
+      "x-",
+      "x+"
+    ],
+    "source_connectivity_source_port_159": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

@@ -1,0 +1,246 @@
+{
+  "chips": [
+    {
+      "chipId": "D_VBUS",
+      "center": {
+        "x": -8.125,
+        "y": 3.0999999999999996
+      },
+      "width": 1.29,
+      "height": 1.04,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "cathode",
+          "x": -8.5,
+          "y": 2.5799999999999996,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "anode",
+          "x": -8.5,
+          "y": 3.6199999999999997,
+          "_facingDirection": "y+"
+        }
+      ],
+      "sectionId": "MCU__programming_supply",
+      "symbolName": "schottky_diode_down"
+    },
+    {
+      "chipId": "R_3V3_EN",
+      "center": {
+        "x": -8.165,
+        "y": 1.25
+      },
+      "width": 1.5699999999999994,
+      "height": 0.6000000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "anode",
+          "x": -8.5,
+          "y": 1.55,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "cathode",
+          "x": -8.5,
+          "y": 0.95,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "MCU__programming_supply",
+      "symbolName": "boxresistor_down"
+    },
+    {
+      "chipId": "U3",
+      "center": {
+        "x": -6,
+        "y": 1.25
+      },
+      "width": 2,
+      "height": 2.2,
+      "pins": [
+        {
+          "pinId": "schematic_port_106",
+          "displayName": "VIN",
+          "x": -7,
+          "y": 1.75
+        },
+        {
+          "pinId": "schematic_port_107",
+          "displayName": "GND",
+          "x": -6,
+          "y": 0.1499999999999999
+        },
+        {
+          "pinId": "schematic_port_108",
+          "displayName": "EN",
+          "x": -7,
+          "y": 0.75
+        },
+        {
+          "pinId": "schematic_port_109",
+          "displayName": "NC",
+          "x": -5,
+          "y": 0.75
+        },
+        {
+          "pinId": "schematic_port_110",
+          "displayName": "VOUT",
+          "x": -5,
+          "y": 1.75
+        }
+      ],
+      "sectionId": "MCU__programming_supply"
+    },
+    {
+      "chipId": "C_VBUS",
+      "center": {
+        "x": 2.1924999999999994,
+        "y": 4.5
+      },
+      "width": 1.2849999999999995,
+      "height": 0.7599999999999998,
+      "pins": [
+        {
+          "pinId": "schematic_port_137",
+          "displayName": "anode",
+          "x": 1.9999999999999996,
+          "y": 4.88,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_138",
+          "displayName": "cathode",
+          "x": 1.9999999999999996,
+          "y": 4.12,
+          "_facingDirection": "y-"
+        }
+      ],
+      "sectionId": "MCU__programming_supply",
+      "symbolName": "capacitor_down"
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "EN_R",
+      "anchoredNetLabelWidth": 0.6,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.4,
+      "pinIds": [
+        "schematic_port_3",
+        "schematic_port_108"
+      ],
+      "netLabelText": "EN_R"
+    },
+    {
+      "netId": "VBUS_G",
+      "netLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_138",
+        "schematic_port_107"
+      ],
+      "netLabelText": "VBUS_G"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "source_connectivity_source_net_0",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_107"
+      ]
+    },
+    {
+      "netId": "VSYS",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_0",
+        "schematic_port_2",
+        "schematic_port_106"
+      ],
+      "netLabelText": "VSYS"
+    },
+    {
+      "netId": "VBUS",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_1",
+        "schematic_port_137"
+      ],
+      "netLabelText": "VBUS"
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_110"
+      ],
+      "netLabelText": "V3V3"
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_107",
+        "schematic_port_138"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "U3",
+      "center": {
+        "x": -5.699999999999999,
+        "y": 2.3
+      },
+      "width": 1.7999999999999998,
+      "height": 0.17999999999999972,
+      "text": "AP2112K_3_3TRG1"
+    },
+    {
+      "chipId": "U3",
+      "center": {
+        "x": -6.4799999999999995,
+        "y": 2.065
+      },
+      "width": 0.35999999999999943,
+      "height": 0.25,
+      "text": "U3"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "VBUS": [
+      "y+"
+    ],
+    "VSYS": [
+      "y+"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "source_connectivity_source_net_0": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": true
+}

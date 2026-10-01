@@ -1,0 +1,364 @@
+{
+  "package": "imrishabh18/rp2040-motor-controller",
+  "version": "1.0.40",
+  "releaseId": "cb88c834-87f2-42f1-8839-a2893dd7b77e",
+  "coreVersion": "0.0.2032",
+  "publishedCircuitJsonSha256": "8f97ae5e6d0b87ca664e6f09285ee13d681aa451bf065c58a2f150e4004f76fc",
+  "sections": [
+    {
+      "file": "controller-programming-supply",
+      "sheet": "controller_programming",
+      "section": "MCU__programming_supply",
+      "components": {
+        "schematic_component_0": "D_VBUS",
+        "schematic_component_1": "R_3V3_EN",
+        "schematic_component_15": "U3",
+        "schematic_component_26": "C_VBUS"
+      },
+      "pinCount": 11,
+      "directConnectionCount": 2,
+      "netConnectionCount": 5
+    },
+    {
+      "file": "controller-programming-bypass",
+      "sheet": "controller_programming",
+      "section": "MCU__programming_bypass",
+      "components": {
+        "schematic_component_9": "C_FLASH",
+        "schematic_component_10": "C_USB_VDD",
+        "schematic_component_27": "C_3V3",
+        "schematic_component_29": "C_USB"
+      },
+      "pinCount": 8,
+      "directConnectionCount": 0,
+      "netConnectionCount": 5
+    },
+    {
+      "file": "controller-usb",
+      "sheet": "controller_programming",
+      "section": "MCU__usb",
+      "components": {
+        "schematic_component_12": "J_USB",
+        "schematic_component_22": "R_CC1",
+        "schematic_component_23": "R_CC2",
+        "schematic_component_24": "R_USB1",
+        "schematic_component_25": "R_USB2"
+      },
+      "pinCount": 24,
+      "directConnectionCount": 6,
+      "netConnectionCount": 5
+    },
+    {
+      "file": "controller-programming-flash",
+      "sheet": "controller_programming",
+      "section": "MCU__programming_flash",
+      "components": {
+        "schematic_component_14": "U2"
+      },
+      "pinCount": 9,
+      "directConnectionCount": 1,
+      "netConnectionCount": 9
+    },
+    {
+      "file": "controller-rp2040",
+      "sheet": "controller",
+      "section": "MCU__rp2040",
+      "components": {
+        "schematic_component_2": "C_IOVDD1",
+        "schematic_component_3": "C_IOVDD2",
+        "schematic_component_4": "C_IOVDD3",
+        "schematic_component_5": "C_IOVDD4",
+        "schematic_component_6": "C_IOVDD5",
+        "schematic_component_7": "C_IOVDD6",
+        "schematic_component_13": "U1",
+        "schematic_component_28": "C_CORE",
+        "schematic_component_33": "C_DVDD1",
+        "schematic_component_34": "C_DVDD2"
+      },
+      "pinCount": 75,
+      "directConnectionCount": 4,
+      "netConnectionCount": 43
+    },
+    {
+      "file": "controller-controls",
+      "sheet": "controller",
+      "section": "MCU__controls",
+      "components": {
+        "schematic_component_8": "R_RUN",
+        "schematic_component_17": "SW_BOOT",
+        "schematic_component_18": "SW_RUN",
+        "schematic_component_20": "R_BOOT"
+      },
+      "pinCount": 8,
+      "directConnectionCount": 0,
+      "netConnectionCount": 4
+    },
+    {
+      "file": "controller-power",
+      "sheet": "controller",
+      "section": "MCU__power",
+      "components": {
+        "schematic_component_11": "C_ADC",
+        "schematic_component_35": "L_AVDD"
+      },
+      "pinCount": 4,
+      "directConnectionCount": 0,
+      "netConnectionCount": 4
+    },
+    {
+      "file": "controller-clock",
+      "sheet": "controller",
+      "section": "MCU__clock",
+      "components": {
+        "schematic_component_16": "Y1",
+        "schematic_component_30": "C_XIN",
+        "schematic_component_31": "C_XOUT",
+        "schematic_component_32": "R_XOUT"
+      },
+      "pinCount": 10,
+      "directConnectionCount": 3,
+      "netConnectionCount": 3
+    },
+    {
+      "file": "controller-status",
+      "sheet": "controller",
+      "section": "MCU__status",
+      "components": {
+        "schematic_component_19": "D_PWR",
+        "schematic_component_21": "R_PWR_LED"
+      },
+      "pinCount": 4,
+      "directConnectionCount": 1,
+      "netConnectionCount": 3
+    },
+    {
+      "file": "controller-debug",
+      "sheet": "controller",
+      "section": "MCU__debug",
+      "components": {
+        "schematic_component_36": "TP_SWCLK",
+        "schematic_component_37": "TP_GND",
+        "schematic_component_38": "TP_SWDIO",
+        "schematic_component_39": "TP_3V3"
+      },
+      "pinCount": 4,
+      "directConnectionCount": 0,
+      "netConnectionCount": 4
+    },
+    {
+      "file": "motor-driver-core",
+      "sheet": "motor_driver",
+      "section": "motor_driver_core",
+      "components": {
+        "schematic_component_40": "DRIVER",
+        "schematic_component_52": "C_CP",
+        "schematic_component_53": "C_VCP",
+        "schematic_component_54": "R_VCP",
+        "schematic_component_55": "C_VMA",
+        "schematic_component_56": "C_DRV_3V3",
+        "schematic_component_57": "R_DRV_REF_TOP",
+        "schematic_component_58": "R_DRV_REF_BOTTOM",
+        "schematic_component_59": "C_DRV_REF",
+        "schematic_component_60": "R_DRV_ENABLE_PU",
+        "schematic_component_61": "C_VM_BULK",
+        "schematic_component_62": "C_VM_HF",
+        "schematic_component_63": "R_ISEN_A",
+        "schematic_component_64": "R_ISEN_B",
+        "schematic_component_65": "R_SLEEP_PD",
+        "schematic_component_66": "R_FAULT_PU",
+        "schematic_component_67": "Q_PD_ENABLE",
+        "schematic_component_68": "R_PD_ENABLE_PU"
+      },
+      "pinCount": 64,
+      "directConnectionCount": 26,
+      "netConnectionCount": 17
+    },
+    {
+      "file": "motor-driver-outputs",
+      "sheet": "motor_driver",
+      "section": "motor_driver_outputs",
+      "components": {
+        "schematic_component_43": "J1"
+      },
+      "pinCount": 4,
+      "directConnectionCount": 0,
+      "netConnectionCount": 4
+    },
+    {
+      "file": "motor-power-pd-negotiation",
+      "sheet": "motor_power",
+      "section": "motor_power_pd_negotiation",
+      "components": {
+        "schematic_component_41": "J_MOTOR_USB",
+        "schematic_component_42": "U_PD",
+        "schematic_component_49": "C_PD_VDD",
+        "schematic_component_50": "R_PD_VDD",
+        "schematic_component_51": "R_PD_VBUS"
+      },
+      "pinCount": 33,
+      "directConnectionCount": 17,
+      "netConnectionCount": 9
+    },
+    {
+      "file": "motor-power-filtering",
+      "sheet": "motor_power",
+      "section": "motor_power_filtering",
+      "components": {
+        "schematic_component_44": "D_MOTOR_BLOCK",
+        "schematic_component_45": "F_MOTOR_VBUS",
+        "schematic_component_46": "C_PD_VBUS",
+        "schematic_component_47": "C_MOTOR_BULK",
+        "schematic_component_48": "D_MOTOR_TVS"
+      },
+      "pinCount": 10,
+      "directConnectionCount": 4,
+      "netConnectionCount": 4
+    },
+    {
+      "file": "motor-power-mounting-and-test-points",
+      "sheet": "motor_power",
+      "section": null,
+      "components": {
+        "schematic_component_74": "MH1",
+        "schematic_component_75": "MH2",
+        "schematic_component_76": "MH3",
+        "schematic_component_77": "MH4",
+        "schematic_component_101": "TP_PD",
+        "schematic_component_102": "TP_VMOTOR",
+        "schematic_component_103": "TP_PD_GND"
+      },
+      "pinCount": 7,
+      "directConnectionCount": 0,
+      "netConnectionCount": 3
+    },
+    {
+      "file": "thermal-protection",
+      "sheet": "thermal_protection",
+      "section": "thermal_protection",
+      "components": {
+        "schematic_component_69": "U_TEMP",
+        "schematic_component_70": "C_TEMP",
+        "schematic_component_71": "R_TEMP_SDA",
+        "schematic_component_72": "R_TEMP_SCL",
+        "schematic_component_73": "R_MCU_ENABLE_PD"
+      },
+      "pinCount": 14,
+      "directConnectionCount": 6,
+      "netConnectionCount": 11
+    },
+    {
+      "file": "alarm",
+      "sheet": "position_alarm",
+      "section": "alarm",
+      "components": {
+        "schematic_component_78": "BZ1",
+        "schematic_component_79": "Q_BUZZER",
+        "schematic_component_80": "D_BUZZER",
+        "schematic_component_81": "R_BUZZER_GATE",
+        "schematic_component_82": "R_BUZZER_PD"
+      },
+      "pinCount": 13,
+      "directConnectionCount": 5,
+      "netConnectionCount": 5
+    },
+    {
+      "file": "feedback-supply",
+      "sheet": "position_alarm",
+      "section": "feedback_supply",
+      "components": {
+        "schematic_component_83": "C_BUZZER",
+        "schematic_component_105": "C_ENCODER",
+        "schematic_component_106": "C_ENCODER_BULK"
+      },
+      "pinCount": 6,
+      "directConnectionCount": 0,
+      "netConnectionCount": 3
+    },
+    {
+      "file": "encoder",
+      "sheet": "position_alarm",
+      "section": "encoder",
+      "components": {
+        "schematic_component_104": "U_ENCODER",
+        "schematic_component_107": "R_ENC_SDA",
+        "schematic_component_108": "R_ENC_SCL"
+      },
+      "pinCount": 12,
+      "directConnectionCount": 5,
+      "netConnectionCount": 6
+    },
+    {
+      "file": "phase-a",
+      "sheet": "current_telemetry",
+      "section": "phase_A",
+      "components": {
+        "schematic_component_84": "R_PHASE_A",
+        "schematic_component_85": "U_CURRENT_A",
+        "schematic_component_87": "R_ADC_A",
+        "schematic_component_88": "C_ADC_A"
+      },
+      "pinCount": 14,
+      "directConnectionCount": 4,
+      "netConnectionCount": 8
+    },
+    {
+      "file": "current-supply",
+      "sheet": "current_telemetry",
+      "section": "current_supply",
+      "components": {
+        "schematic_component_86": "C_CURRENT_A",
+        "schematic_component_91": "C_CURRENT_B"
+      },
+      "pinCount": 4,
+      "directConnectionCount": 0,
+      "netConnectionCount": 3
+    },
+    {
+      "file": "phase-b",
+      "sheet": "current_telemetry",
+      "section": "phase_B",
+      "components": {
+        "schematic_component_89": "R_PHASE_B",
+        "schematic_component_90": "U_CURRENT_B",
+        "schematic_component_92": "R_ADC_B",
+        "schematic_component_93": "C_ADC_B"
+      },
+      "pinCount": 14,
+      "directConnectionCount": 4,
+      "netConnectionCount": 8
+    },
+    {
+      "file": "rgb",
+      "sheet": "status_led",
+      "section": "rgb",
+      "components": {
+        "schematic_component_94": "D_STATUS",
+        "schematic_component_95": "R_STATUS_R",
+        "schematic_component_96": "Q_STATUS_R",
+        "schematic_component_97": "R_STATUS_G",
+        "schematic_component_98": "Q_STATUS_G",
+        "schematic_component_99": "R_STATUS_B",
+        "schematic_component_100": "Q_STATUS_B"
+      },
+      "pinCount": 19,
+      "directConnectionCount": 6,
+      "netConnectionCount": 6
+    },
+    {
+      "file": "pd-gpio-buffers",
+      "sheet": "pd_voltage_control",
+      "section": "pd_gpio_buffers",
+      "components": {
+        "schematic_component_109": "Q_PD_CFG1",
+        "schematic_component_110": "R_PD_CFG1_PU",
+        "schematic_component_111": "Q_PD_CFG2",
+        "schematic_component_112": "R_PD_CFG2_PU",
+        "schematic_component_113": "Q_PD_CFG3",
+        "schematic_component_114": "R_PD_CFG3_PU"
+      },
+      "pinCount": 15,
+      "directConnectionCount": 3,
+      "netConnectionCount": 10
+    }
+  ]
+}
