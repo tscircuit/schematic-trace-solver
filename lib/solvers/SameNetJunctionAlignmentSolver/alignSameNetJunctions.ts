@@ -456,7 +456,7 @@ const getAlignedSharedEndpointRailPath = ({
       branchOtherPin[donorDepartureAxis],
     ) &&
     sharedPin._facingDirection &&
-    sharedPin._facingDirection === branchOtherPin?._facingDirection &&
+    sharedPin._facingDirection === branchOtherPin._facingDirection &&
     !traces.some(
       (trace) =>
         trace.mspPairId !== branchTrace.mspPairId &&
