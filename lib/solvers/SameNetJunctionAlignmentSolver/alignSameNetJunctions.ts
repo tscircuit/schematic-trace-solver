@@ -443,6 +443,26 @@ const getAlignedSharedEndpointRailPath = ({
   const firstRailsAreAligned =
     (donorRailAxis === "x" && nearlyEqual(donorPath[1]!.y, branchPath[1]!.y)) ||
     (donorRailAxis === "y" && nearlyEqual(donorPath[1]!.x, branchPath[1]!.x))
+  const donorOtherPin = getOtherPin({ trace: donorTrace, sharedPin })
+  const branchOtherPin = getOtherPin({ trace: branchTrace, sharedPin })
+  // Keep the compact pin bridge when an opposing load can join between its pins.
+  if (
+    !firstRailsAreAligned &&
+    sharedPin.chipId === branchOtherPin?.chipId &&
+    sharedPin._facingDirection &&
+    sharedPin._facingDirection === branchOtherPin?._facingDirection &&
+    donorOtherPin &&
+    getPinFacingAxis(donorOtherPin) === donorDepartureAxis &&
+    donorOtherPin._facingDirection !== sharedPin._facingDirection &&
+    tracePathContainsPoint([branchPath[1]!, branchPath[2]!], {
+      x: donorOtherPin.x,
+      y: donorOtherPin.y,
+      [donorDepartureAxis]: branchPath[1]![donorDepartureAxis],
+    }) &&
+    Math.abs(donorDeparture) > Math.abs(branchDeparture)
+  ) {
+    return null
+  }
   // An already-shared rail can lead into the nearby parallel pair to merge.
   if (firstRailsAreAligned) {
     railIndex++
