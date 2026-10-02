@@ -7,6 +7,7 @@ import inputProblemJson from "./assets/repro-isolated-rs485-isow7841.input.json"
 const EXPECTED_D_P_RAIL_Y = 2.2
 const REDUNDANT_D_P_RAIL_Y = 2.3
 const EXPECTED_GND1_RAIL_Y = 1.76
+const EXPECTED_GND1_PIN_BRIDGE_X = -10.9
 const GND1_RAIL_PIN_IDS = ["schematic_port_35", "schematic_port_33"] satisfies [
   PinId,
   PinId,
@@ -52,5 +53,12 @@ test("repro isolated RS-485 ISOW7841 schematic traces", () => {
     )
   expect(gnd1RailTrace?.tracePath[1]?.y).toBeCloseTo(EXPECTED_GND1_RAIL_Y)
   expect(gnd1RailTrace?.tracePath[2]?.y).toBeCloseTo(EXPECTED_GND1_RAIL_Y)
+  const gnd1PinBridge =
+    solver.sameNetJunctionAlignmentSolver?.outputTraces.find(
+      (trace) =>
+        trace.pinIds.includes("schematic_port_7") &&
+        trace.pinIds.includes("schematic_port_13"),
+    )
+  expect(gnd1PinBridge?.tracePath[1]?.x).toBeCloseTo(EXPECTED_GND1_PIN_BRIDGE_X)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
