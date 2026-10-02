@@ -16,19 +16,21 @@ test("reproduces LTC3115 buck-boost logic supply routing", async () => {
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
 
-  // Baseline: the explicitly wired R_FF -> C_FF connection becomes two
-  // inline terminal stubs before the final trace recovery stage can see it.
+  // Recover the explicit feed-forward wire before converting its labels.
   const output = solver.netLabelToTraceSolver!.getOutput()
   expect(
     output.traces.some((trace) =>
       ["R_FF.2", "C_FF.1"].every((pinId) => trace.pinIds.includes(pinId)),
     ),
-  ).toBe(false)
+  ).toBe(true)
   expect(
     output.inlineNetLabelPlacements.filter(
       (label) => label.netId === "FF_C" && label.stubTracePath,
     ),
-  ).toHaveLength(2)
+  ).toHaveLength(0)
+  expect(
+    output.inlineNetLabelPlacements.filter((label) => label.netId === "FF_C"),
+  ).toHaveLength(1)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
 
