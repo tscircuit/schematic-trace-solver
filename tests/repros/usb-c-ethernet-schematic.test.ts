@@ -3,11 +3,24 @@ import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipeline
 import type { InputProblem } from "lib/types/InputProblem"
 import inputProblem from "./assets/usb-c-ethernet-schematic.input.json"
 import "tests/fixtures/matcher"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 
 test("USB-C Ethernet adapter schematic sheet", async () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
   solver.solve()
   const output = solver.inlineNetLabelSolver!.getOutput()
+  const supplyBranch = output.traces.find((trace) =>
+    trace.pinIds.includes("schematic_port_41"),
+  )!
+  const supplyRail = output.traces.find((trace) =>
+    trace.pinIds.includes("schematic_port_30"),
+  )!
+  expect(
+    tracePathContainsPoint(
+      supplyRail.tracePath,
+      supplyBranch.tracePath.at(-1)!,
+    ),
+  ).toBe(true)
   const bridge = output.traces.find((trace) =>
     trace.pinIds.includes("schematic_port_6"),
   )!
