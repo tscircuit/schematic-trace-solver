@@ -4,7 +4,7 @@ This fixture reconstructs the attached "02 - Buck-boost logic supply" image
 (`repro-ltc3115-buck-boost-logic-supply.source.png`). It is manually transcribed
 solver input, rather than a captured Core input or an electrical simulation.
 
-The 17 components retain their approximate source positions and orientations,
+The 18 components retain their approximate source positions and orientations,
 the LTC3115's 21 numbered pins and display names, and all 15 named nets.
 Coordinates use 72 image pixels per schematic unit, with the chip centered at
 the origin and image y inverted. Component values and the MPN are text obstacles.

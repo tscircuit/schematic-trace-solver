@@ -43,7 +43,8 @@ test("buck-boost fixture assigns every terminal to exactly one named net", () =>
       netByPin.set(pinId, net.netId)
     }
   }
-  expect(new Set(pinIds).size).toBe(53)
+  expect(input.chips).toHaveLength(18)
+  expect(new Set(pinIds).size).toBe(55)
   expect([...netByPin.keys()].sort()).toEqual([...pinIds].sort())
   for (const connection of input.directConnections) {
     for (const pinId of connection.pinIds) {
