@@ -10,7 +10,6 @@ import inputJson from "./assets/repro-rp2040-temperature-alarm.input.json"
 // Only BZ1, Q_BUZZER, D_BUZZER, R_BUZZER_GATE and R_BUZZER_PD are retained;
 // cross-section connections retain their boundary net labels. Component IDs,
 // symbol names and label text are annotated for readability; geometry is unchanged.
-// Custom symbols are annotated with boundsMode: "body", as emitted by core.
 // Legacy pin-inclusive normalization expands both obstacles and relocates BZ1._NEG.
 test("RP2040 Temperature Alarm leaves the buzzer bottom port as a net label", async () => {
   const solver = new SchematicTracePipelineSolver(

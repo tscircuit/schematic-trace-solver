@@ -38,8 +38,7 @@
           "_facingDirection": "x+"
         }
       ],
-      "sectionId": "alarm",
-      "boundsMode": "body"
+      "sectionId": "alarm"
     },
     {
       "chipId": "Q_BUZZER",
@@ -72,8 +71,7 @@
           "_facingDirection": "y+"
         }
       ],
-      "sectionId": "alarm",
-      "boundsMode": "body"
+      "sectionId": "alarm"
     },
     {
       "chipId": "D_BUZZER",
