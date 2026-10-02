@@ -1,5 +1,6 @@
 import { getSvgFromGraphicsObject, type GraphicsObject } from "graphics-debug"
 import { expect, type MatcherResult } from "bun:test"
+import type { AnyCircuitElement } from "circuit-json"
 import type { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { colorAvailableNetOrientationLabels } from "lib/solvers/SchematicTracePipelineSolver/colorAvailableNetOrientationLabels"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -58,21 +59,24 @@ const getLegacySolverSvg = (
   }).replace(/[ \t]+$/gm, "")
 }
 
-async function toMatchSolverSnapshot(
-  this: any,
-  received: BaseSolver,
-  testPathOriginal: string,
-  svgName?: string,
-): Promise<MatcherResult> {
-  const inputProblem = getInputProblemFromSolver(received)
+export const getSolverSnapshotSvg = ({
+  solver,
+  circuitJson,
+}: {
+  solver: BaseSolver
+  circuitJson?: AnyCircuitElement[]
+}) => {
+  const inputProblem = getInputProblemFromSolver(solver)
   if (inputProblem) {
-    const circuitJson = convertSolverOutputToCircuitJson(received)
-    const circuitJsonSvg = convertCircuitJsonToSchematicSvg(circuitJson, {
-      width: 1200,
-      height: 800,
-    }).replace(/[ \t]+$/gm, "")
-    const legacySvg = getLegacySolverSvg(received, inputProblem)
-    const svg = stackSvgsVertically([legacySvg, circuitJsonSvg], {
+    const circuitJsonSvg = convertCircuitJsonToSchematicSvg(
+      circuitJson ?? convertSolverOutputToCircuitJson(solver),
+      {
+        width: 1200,
+        height: 800,
+      },
+    ).replace(/[ \t]+$/gm, "")
+    const legacySvg = getLegacySolverSvg(solver, inputProblem)
+    return stackSvgsVertically([legacySvg, circuitJsonSvg], {
       gap: 16,
       normalizeSize: true,
       targetSize: 1200,
@@ -82,29 +86,22 @@ async function toMatchSolverSnapshot(
           "Solver debug visualization on top and Circuit JSON schematic on the bottom",
       },
     })
-
-    return expect(svg).toMatchSvgSnapshot(testPathOriginal, svgName)
   }
 
   // Keep a graphics-debug fallback for solver snapshots that do not expose an
   // InputProblem. Semantic Circuit JSON rendering is the default.
-  const fallbackInputProblem = getInputProblem(received)
-  const svg = getLegacySolverSvg(received, fallbackInputProblem)
-
-  return expect(svg).toMatchSvgSnapshot(testPathOriginal, svgName)
+  return getLegacySolverSvg(solver)
 }
 
-const getInputProblem = (solver: BaseSolver): InputProblem | undefined => {
-  const maybeSolver = solver as BaseSolver & {
-    inputProblem?: InputProblem
-    input?: { inputProblem?: InputProblem }
-    params?: { inputProblem?: InputProblem }
-  }
-
-  return (
-    maybeSolver.inputProblem ??
-    maybeSolver.input?.inputProblem ??
-    maybeSolver.params?.inputProblem
+async function toMatchSolverSnapshot(
+  this: any,
+  received: BaseSolver,
+  testPathOriginal: string,
+  svgName?: string,
+): Promise<MatcherResult> {
+  return expect(getSolverSnapshotSvg({ solver: received })).toMatchSvgSnapshot(
+    testPathOriginal,
+    svgName,
   )
 }
 

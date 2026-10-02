@@ -5,8 +5,15 @@ import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/Ms
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
-import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import {
+  findFirstCollision,
+  segmentOverlapsRectBoundary,
+} from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
+import {
+  getObstacleRects,
+  type ObstacleRect,
+  type RectBounds,
+} from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { getMovedAnchorPointForReroute } from "lib/solvers/Example28Solver/getMovedAnchorPointForReroute"
 import { isLabelAttachedToTrace } from "lib/solvers/Example28Solver/isLabelAttachedToTrace"
 import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
@@ -440,8 +447,48 @@ const getAlignedSharedEndpointRailPath = ({
 
   const donorDepartureAxis = getSegmentAxis(donorPath[0]!, donorPath[1]!)
   const branchDepartureAxis = getSegmentAxis(branchPath[0]!, branchPath[1]!)
-  if (!donorDepartureAxis || donorDepartureAxis !== branchDepartureAxis) {
+  if (!donorDepartureAxis || !branchDepartureAxis) {
     return null
+  }
+  if (donorDepartureAxis !== branchDepartureAxis) {
+    if (
+      !nearlyEqual(donorPath[0]!.x, branchPath[0]!.x) ||
+      !nearlyEqual(donorPath[0]!.y, branchPath[0]!.y)
+    ) {
+      return null
+    }
+    const branchRailAxis = getSegmentAxis(branchPath[1]!, branchPath[2]!)
+    const donorRailAxis = getSegmentAxis(donorPath[1]!, donorPath[2]!)
+    if (
+      branchRailAxis !== donorDepartureAxis ||
+      donorRailAxis !== branchDepartureAxis ||
+      getPinFacingAxis(sharedPin) !== branchDepartureAxis ||
+      !isCoordinateOnPinFacingSide({
+        coordinate: branchPath[1]![branchDepartureAxis],
+        axis: branchDepartureAxis,
+        pin: sharedPin,
+      })
+    ) {
+      return null
+    }
+    const donorDirection =
+      donorPath[1]![donorDepartureAxis] - donorPath[0]![donorDepartureAxis]
+    const branchDirection =
+      branchPath[2]![branchRailAxis] - branchPath[1]![branchRailAxis]
+    if (Math.sign(donorDirection) === Math.sign(branchDirection)) return null
+
+    const railCoordinateAxis = branchRailAxis === "x" ? "y" : "x"
+    const candidateFromShared = simplifyPath([
+      branchPath[0]!,
+      {
+        ...branchPath[2]!,
+        [railCoordinateAxis]: donorPath[0]![railCoordinateAxis],
+      },
+      ...branchPath.slice(3),
+    ])
+    return branchTrace.pins[0]!.pinId === sharedPin.pinId
+      ? candidateFromShared
+      : candidateFromShared.reverse()
   }
   const donorDeparture =
     donorPath[1]![donorDepartureAxis] - donorPath[0]![donorDepartureAxis]
@@ -994,6 +1041,73 @@ const getAlignedPerpendicularEndpointBusPath = ({
   return branchStartsAtSharedPin ? candidate : candidate.reverse()
 }
 
+const traceCollidesWithObstacles = ({
+  trace,
+  obstacles,
+}: {
+  trace: SolvedTracePath
+  obstacles: ObstacleRect[]
+}) =>
+  findFirstCollision(trace.tracePath, obstacles, {
+    excludeRectsForSegment: (segmentIndex) =>
+      new Set(
+        obstacles.filter(
+          (obstacle) =>
+            obstacle.kind === "chip" &&
+            trace.pins.some(
+              (pin) =>
+                obstacle.chipId === pin.chipId &&
+                [
+                  trace.tracePath[segmentIndex]!,
+                  trace.tracePath[segmentIndex + 1]!,
+                ].some(
+                  (point) =>
+                    nearlyEqual(point.x, pin.x) && nearlyEqual(point.y, pin.y),
+                ),
+            ) &&
+            segmentOverlapsRectBoundary(
+              trace.tracePath[segmentIndex]!,
+              trace.tracePath[segmentIndex + 1]!,
+              obstacle,
+            ),
+        ),
+      ),
+  }) !== null
+
+const getPathLengthInsideRect = ({
+  path,
+  rect,
+}: {
+  path: Point[]
+  rect: RectBounds
+}) =>
+  path.slice(1).reduce((length, point, index) => {
+    const previous = path[index]!
+    if (nearlyEqual(previous.x, point.x)) {
+      if (previous.x < rect.minX || previous.x > rect.maxX) return length
+      return (
+        length +
+        Math.max(
+          0,
+          Math.min(Math.max(previous.y, point.y), rect.maxY) -
+            Math.max(Math.min(previous.y, point.y), rect.minY),
+        )
+      )
+    }
+    if (nearlyEqual(previous.y, point.y)) {
+      if (previous.y < rect.minY || previous.y > rect.maxY) return length
+      return (
+        length +
+        Math.max(
+          0,
+          Math.min(Math.max(previous.x, point.x), rect.maxX) -
+            Math.max(Math.min(previous.x, point.x), rect.minX),
+        )
+      )
+    }
+    return length
+  }, 0)
+
 const candidateIsClear = ({
   candidateTrace,
   originalTrace,
@@ -1016,46 +1130,31 @@ const candidateIsClear = ({
   const obstacles = getObstacleRects(inputProblem)
   if (
     !preserveExistingObstacleContact &&
-    isPathCollidingWithObstacles(candidateTrace.tracePath, obstacles)
+    traceCollidesWithObstacles({ trace: candidateTrace, obstacles })
   )
     return false
-  const pathLengthInsideRect = (
-    path: Point[],
-    rect: { minX: number; maxX: number; minY: number; maxY: number },
-  ) =>
-    path.slice(1).reduce((length, point, index) => {
-      const previous = path[index]!
-      if (nearlyEqual(previous.x, point.x)) {
-        if (previous.x < rect.minX || previous.x > rect.maxX) return length
-        return (
-          length +
-          Math.max(
-            0,
-            Math.min(Math.max(previous.y, point.y), rect.maxY) -
-              Math.max(Math.min(previous.y, point.y), rect.minY),
-          )
-        )
-      }
-      if (nearlyEqual(previous.y, point.y)) {
-        if (previous.y < rect.minY || previous.y > rect.maxY) return length
-        return (
-          length +
-          Math.max(
-            0,
-            Math.min(Math.max(previous.x, point.x), rect.maxX) -
-              Math.max(Math.min(previous.x, point.x), rect.minX),
-          )
-        )
-      }
-      return length
-    }, 0)
   for (const obstacle of preserveExistingObstacleContact ? obstacles : []) {
-    if (!isPathCollidingWithObstacles(candidateTrace.tracePath, [obstacle]))
+    if (
+      !traceCollidesWithObstacles({
+        trace: candidateTrace,
+        obstacles: [obstacle],
+      })
+    )
       continue
     if (
-      !isPathCollidingWithObstacles(originalTrace.tracePath, [obstacle]) ||
-      pathLengthInsideRect(candidateTrace.tracePath, obstacle) >
-        pathLengthInsideRect(originalTrace.tracePath, obstacle) + 1e-6
+      !traceCollidesWithObstacles({
+        trace: originalTrace,
+        obstacles: [obstacle],
+      }) ||
+      getPathLengthInsideRect({
+        path: candidateTrace.tracePath,
+        rect: obstacle,
+      }) >
+        getPathLengthInsideRect({
+          path: originalTrace.tracePath,
+          rect: obstacle,
+        }) +
+          1e-6
     )
       return false
   }
