@@ -7,22 +7,20 @@
         "y": 0.52
       },
       "width": 1.1650000000000005,
-      "height": 0.7600000000000001,
+      "height": 0.7600000000000002,
       "symbolName": "capacitor_down",
       "pins": [
         {
           "pinId": "schematic_port_0",
           "displayName": "1",
           "x": 3.4374999999999996,
-          "y": 0.9000000000000001,
-          "_facingDirection": "y+"
+          "y": 0.9000000000000001
         },
         {
           "pinId": "schematic_port_1",
           "displayName": "2",
           "x": 3.4374999999999996,
-          "y": 0.13999999999999996,
-          "_facingDirection": "y-"
+          "y": 0.1399999999999999
         }
       ]
     },

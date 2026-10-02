@@ -26,7 +26,20 @@ Solve for the correct positions and routing for schematic traces and net labels.
 The Schematic Trace Solver is a pipeline that figures out how to route schematic traces
 and place net labels for a given schematic layout.
 
-Chips are defined by their center point, width, and height and pins.
+Chips supply an authoritative rectangular body obstacle (`center`, `width`,
+`height`) in schematic world millimeters (+X right, +Y up). The caller computes
+this rectangle from the drawn symbol geometry and supplies text in `textBoxes`.
+Pins supply their actual terminal coordinates and outward `_facingDirection`.
+When a port has a drawn stem, `stemEnd` supplies its inner endpoint. Stems are
+separate collision obstacles; they never fill the empty area between an
+asymmetric terminal and the symbol body. Omit `stemEnd` for undrawn stems.
+External terminals, including no-connect terminals, do not enlarge the obstacle.
+There is no bounds mode or automatic pin-based size correction.
+
+The pipeline clones the supplied input into its existing `inputProblem` working
+copy. A terminal drawn inside its body can use an escape point on the body edge,
+along its facing direction. This does not mutate the caller's input or change
+body bounds; external terminal coordinates and directions are preserved.
 
 You then pass in direct connections and net connections. Direct connections are
 explicit pin-to-pin connections. When there's a direct connection between two

@@ -19,6 +19,7 @@ import type {
 } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
+import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
@@ -265,6 +266,22 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const orientations = this.getAvailableOrientations(label)
     if (orientations.length === 0) return false
     if (!orientations.includes(label.orientation)) return true
+    if (this.isPortOnlyLabel(label)) {
+      const pin = this.pinMap[label.pinIds[0]!]
+      const chip = this.inputProblem.chips.find(
+        (chip) => chip.chipId === pin?.chipId,
+      )
+      // An external terminal can fit a perpendicular label beside the body,
+      // but still needs an outward connector before the label turns.
+      if (
+        pin &&
+        chip &&
+        (pin._facingDirection ?? getPinDirection(pin, chip)) !==
+          label.orientation
+      ) {
+        return true
+      }
+    }
     if (this.getTextBlockedMultiPinRailTraces(label, orientations[0]!)) {
       return true
     }

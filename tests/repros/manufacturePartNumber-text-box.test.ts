@@ -8,7 +8,8 @@ const inputProblem: InputProblem = {
     {
       chipId: "U1",
       center: { x: 0, y: 0 },
-      width: 1.3,
+      // Explicit obstacle extent previously inferred from the outer pins.
+      width: 2.1,
       height: 0.6,
       pins: [
         { pinId: "U1.3", x: 1.05, y: -0.1 },

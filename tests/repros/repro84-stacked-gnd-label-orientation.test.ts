@@ -9,7 +9,8 @@ const inputProblem: InputProblem = {
       chipId: "TOP",
       center: { x: 0, y: 1.4 },
       width: 0.8,
-      height: 1.4,
+      // Explicit obstacle extent previously inferred from the outer pins.
+      height: 2.2,
       pins: [
         {
           pinId: "TOP.GND",
@@ -23,7 +24,8 @@ const inputProblem: InputProblem = {
       chipId: "BOTTOM",
       center: { x: 0, y: -1.5 },
       width: 0.8,
-      height: 1.4,
+      // Explicit obstacle extent previously inferred from the outer pins.
+      height: 2.2,
       pins: [
         {
           pinId: "BOTTOM.GND",

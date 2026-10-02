@@ -23,6 +23,9 @@ export const segmentIntersectsRect = <TRect extends RectBounds>(
     if (x < r.minX - eps || x > r.maxX + eps) return false
     const segMinY = Math.min(a.y, b.y)
     const segMaxY = Math.max(a.y, b.y)
+    if (Math.abs(r.maxY - r.minY) <= eps) {
+      return r.minY > segMinY + eps && r.minY < segMaxY - eps
+    }
     const overlap = Math.min(segMaxY, r.maxY) - Math.max(segMinY, r.minY)
     return overlap > eps
   } else {
@@ -30,6 +33,9 @@ export const segmentIntersectsRect = <TRect extends RectBounds>(
     if (y < r.minY - eps || y > r.maxY + eps) return false
     const segMinX = Math.min(a.x, b.x)
     const segMaxX = Math.max(a.x, b.x)
+    if (Math.abs(r.maxX - r.minX) <= eps) {
+      return r.minX > segMinX + eps && r.minX < segMaxX - eps
+    }
     const overlap = Math.min(segMaxX, r.maxX) - Math.max(segMinX, r.minX)
     return overlap > eps
   }

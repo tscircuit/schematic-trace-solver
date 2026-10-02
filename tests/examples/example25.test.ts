@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
-import inputProblem from "../assets/example25.json"
+import inputProblem from "../assets/example25-routing.json"
 import "tests/fixtures/matcher"
 
 test("example25", () => {

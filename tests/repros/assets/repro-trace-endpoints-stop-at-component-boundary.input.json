@@ -3,14 +3,13 @@
     {
       "chipId": "J1",
       "center": { "x": -13, "y": 6 },
-      "width": 1.3,
+      "width": 2.1000000000000014,
       "height": 0.4,
       "pins": [
         {
           "pinId": "J1.1",
           "x": -14.05,
-          "y": 6,
-          "_facingDirection": "x-"
+          "y": 6
         }
       ]
     },
@@ -18,20 +17,18 @@
       "chipId": "F1",
       "symbolName": "fuse_horz",
       "center": { "x": -10.17, "y": 6.115 },
-      "width": 0.74,
+      "width": 1.1400000000000006,
       "height": 0.39,
       "pins": [
         {
           "pinId": "F1.1",
           "x": -10.4,
-          "y": 6,
-          "_facingDirection": "x-"
+          "y": 5.92
         },
         {
           "pinId": "F1.2",
           "x": -9.6,
-          "y": 6,
-          "_facingDirection": "x+"
+          "y": 6
         }
       ]
     },
@@ -39,20 +36,18 @@
       "chipId": "RV1",
       "symbolName": "varistor_horz",
       "center": { "x": -10.195, "y": 3.615 },
-      "width": 0.79,
+      "width": 1.1900000000000013,
       "height": 0.47,
       "pins": [
         {
           "pinId": "RV1.1",
           "x": -10.4,
-          "y": 3.5,
-          "_facingDirection": "x-"
+          "y": 3.3800000000000003
         },
         {
           "pinId": "RV1.2",
           "x": -9.6,
-          "y": 3.5,
-          "_facingDirection": "x+"
+          "y": 3.5
         }
       ]
     }

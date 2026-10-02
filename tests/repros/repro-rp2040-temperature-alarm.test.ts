@@ -11,33 +11,55 @@ import inputJson from "./assets/repro-rp2040-temperature-alarm.input.json"
 // cross-section connections retain their boundary net labels. Component IDs,
 // symbol names and label text are annotated for readability; geometry is unchanged.
 // Legacy pin-inclusive normalization expands both obstacles and relocates BZ1._NEG.
-test("RP2040 Temperature Alarm leaves the buzzer bottom port as a net label", async () => {
-  const solver = new SchematicTracePipelineSolver(
-    structuredClone(inputJson) as unknown as InputProblem,
-    { hideRatsNet: true },
-  )
+test("RP2040 Temperature Alarm connects the buzzer bottom port with a trace", async () => {
+  const input = structuredClone(inputJson) as unknown as InputProblem
+  const solver = new SchematicTracePipelineSolver(input, { hideRatsNet: true })
   solver.solve()
 
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
+  for (const chip of input.chips.filter((chip) =>
+    ["BZ1", "Q_BUZZER"].includes(chip.chipId),
+  )) {
+    expect(
+      solver.inputProblem.chips.find(
+        (normalized) => normalized.chipId === chip.chipId,
+      ),
+    ).toEqual(chip)
+  }
   const buzzerNegative = "schematic_port_294"
   const transistorDrain = "schematic_port_299"
   const output = solver.netLabelToTraceSolver!.getOutput()
-  expect(
-    solver.schematicTraceLinesSolver!.failedConnectionPairs.some(
-      (pair) =>
-        pair.pins.some((pin) => pin.pinId === buzzerNegative) &&
-        pair.pins.some((pin) => pin.pinId === transistorDrain),
-    ),
-  ).toBe(true)
-  expect(
-    output.traces.some((trace) => trace.pinIds.includes(buzzerNegative)),
-  ).toBe(false)
+  const buzzerTrace = output.traces.find(
+    (trace) =>
+      trace.pinIds.includes(buzzerNegative) &&
+      trace.pinIds.includes(transistorDrain),
+  )
+  expect(buzzerTrace).toBeDefined()
+  for (const pinId of [buzzerNegative, transistorDrain]) {
+    const pin = input.chips
+      .flatMap((chip) => chip.pins)
+      .find((pin) => pin.pinId === pinId)!
+    expect(
+      [buzzerTrace!.tracePath[0]!, buzzerTrace!.tracePath.at(-1)!].some(
+        (point) =>
+          Math.abs(point.x - pin.x) < 1e-9 && Math.abs(point.y - pin.y) < 1e-9,
+      ),
+    ).toBe(true)
+  }
+  for (let i = 1; i < buzzerTrace!.tracePath.length; i++) {
+    const previous = buzzerTrace!.tracePath[i - 1]!
+    const point = buzzerTrace!.tracePath[i]!
+    expect(
+      Math.abs(point.x - previous.x) < 1e-9 ||
+        Math.abs(point.y - previous.y) < 1e-9,
+    ).toBe(true)
+  }
   expect(
     output.netLabelPlacements.some(
       (label) =>
         label.pinIds.length === 1 && label.pinIds[0] === buzzerNegative,
     ),
-  ).toBe(true)
+  ).toBe(false)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

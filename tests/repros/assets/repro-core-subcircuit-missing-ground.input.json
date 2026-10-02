@@ -6,26 +6,23 @@
         "x": -4,
         "y": 0
       },
-      "width": 1.9000000000000004,
+      "width": 2.7,
       "height": 0.8,
       "pins": [
         {
           "pinId": "schematic_component_0.1",
           "x": -2.65,
-          "y": 0.2,
-          "_facingDirection": "x+"
+          "y": 0.2
         },
         {
           "pinId": "schematic_component_0.2",
           "x": -2.65,
-          "y": 0,
-          "_facingDirection": "x+"
+          "y": 0
         },
         {
           "pinId": "schematic_component_0.3",
           "x": -2.65,
-          "y": -0.2,
-          "_facingDirection": "x+"
+          "y": -0.2
         }
       ]
     },
@@ -35,26 +32,23 @@
         "x": 4,
         "y": 0
       },
-      "width": 1.6999999999999997,
+      "width": 2.5,
       "height": 0.8,
       "pins": [
         {
           "pinId": "schematic_component_1.1",
           "x": 2.75,
-          "y": 0.2,
-          "_facingDirection": "x-"
+          "y": 0.2
         },
         {
           "pinId": "schematic_component_1.2",
           "x": 2.75,
-          "y": 0,
-          "_facingDirection": "x-"
+          "y": 0
         },
         {
           "pinId": "schematic_component_1.3",
           "x": 2.75,
-          "y": -0.2,
-          "_facingDirection": "x-"
+          "y": -0.2
         }
       ]
     }

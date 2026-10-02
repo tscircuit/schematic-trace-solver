@@ -2,6 +2,7 @@ import type { InputChip } from "lib/types/InputProblem"
 import type { Bounds, Point } from "@tscircuit/math-utils"
 import Flatbush from "flatbush"
 import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
+import { getInputChipObstacleBounds } from "lib/utils/getInputChipObstacleBounds"
 
 export interface SpatiallyIndexedChip extends InputChip {
   bounds: Bounds
@@ -21,9 +22,14 @@ export class ChipObstacleSpatialIndex {
     }))
 
     this.spatialIndexIdToChip = new Map()
-    this.spatialIndex = new Flatbush(chips.length)
+    const obstacles = this.chips.flatMap((chip) =>
+      getInputChipObstacleBounds(chip).map((bounds, index) =>
+        index === 0 ? chip : { ...chip, bounds },
+      ),
+    )
+    this.spatialIndex = new Flatbush(obstacles.length)
 
-    for (const chip of this.chips) {
+    for (const chip of obstacles) {
       chip.spatialIndexId = this.spatialIndex.add(
         chip.bounds.minX,
         chip.bounds.minY,

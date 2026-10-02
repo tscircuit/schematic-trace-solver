@@ -109,6 +109,18 @@ export const balanceZShapes = ({
       coordsEqual(p1.x, p2.x) &&
       coordsEqual(p2.y, p3.y)
 
+    const isVHVShape =
+      coordsEqual(p0.x, p1.x) &&
+      coordsEqual(p1.y, p2.y) &&
+      coordsEqual(p2.x, p3.x)
+    const isZShape =
+      (isHVHShape && Math.sign(p1.x - p0.x) === Math.sign(p3.x - p2.x)) ||
+      (isVHVShape && Math.sign(p1.y - p0.y) === Math.sign(p3.y - p2.y))
+    // A U-shaped route approaches both terminals from the same side. Moving
+    // its middle segment between them reverses one terminal's approach, even
+    // when the actual body obstacle (which excludes external pins) stays clear.
+    if (!isZShape) return { ...targetTrace }
+
     if (isHVHShape) {
       const idealX = (p0.x + p3.x) / 2
       p1New = { x: idealX, y: p1.y }

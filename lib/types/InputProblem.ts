@@ -15,8 +15,15 @@ export interface InputPin {
    */
   displayName?: string
 
+  /** Actual terminal point in schematic world mm (+X right, +Y up). */
   x: number
   y: number
+
+  /** Inner endpoint of the drawn port stem, in the same world-mm frame.
+   * Omitted when the port has no separately drawn stem. Never inferred from
+   * the distance between the terminal and the component's bounding box.
+   */
+  stemEnd?: { x: number; y: number }
 
   _facingDirection?: "x+" | "x-" | "y+" | "y-"
 }
@@ -34,12 +41,16 @@ export interface InputChip {
 
   /**
    * Exact directional/oriented schematic-symbol name when the caller has it.
-   * `center`, `width`, and `height` describe the solver obstacle and may be
-   * expanded to include reference/value or manufacturer-part-number text, so
-   * renderers should use this symbol's geometry for the component body.
+   * Renderers can use this name to draw the symbol. It does not determine
+   * routing bounds; the caller supplies the obstacle geometry explicitly.
    */
   symbolName?: string
 
+  /**
+   * Authoritative component obstacle in schematic world coordinates
+   * (mm, +X right, +Y up). Ports and text are supplied separately and do not
+   * change these bounds. The solver must not infer body size from pin locations.
+   */
   center: { x: number; y: number }
   width: number
   height: number

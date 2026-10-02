@@ -755,21 +755,19 @@
         "y": -15.919999999999998
       },
       "width": 1.1250000000000004,
-      "height": 1.1300000000000008,
+      "height": 1.1300000000000026,
       "pins": [
         {
           "pinId": "schematic_port_108",
           "displayName": "anode",
           "x": -3.2675,
-          "y": -15.354999999999997,
-          "_facingDirection": "y+"
+          "y": -15.354999999999997
         },
         {
           "pinId": "schematic_port_109",
           "displayName": "cathode",
           "x": -3.2675,
-          "y": -16.485,
-          "_facingDirection": "y-"
+          "y": -16.485
         }
       ],
       "sectionId": "LED"

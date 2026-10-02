@@ -1,0 +1,77 @@
+<svg width="1200" height="2016" viewBox="0 0 1200 2016" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solver debug visualization on top and Circuit JSON schematic on the bottom">
+  <g transform="translate(0, 0) scale(1.875, 1.875) translate(0, 0)">
+    <rect width="100%" height="100%" fill="white"/><g><polyline data-points="-1.9,3 -1.9,-3" data-type="line" data-label="" points="251.75003500000003,110 251.75003500000003,530" fill="none" stroke="hsl(277, 100%, 50%, 0.8)" stroke-width="1px"/></g><g><polyline data-points="-1.9,3 -3.350001,3 -3.350001,-3 -1.9,-3" data-type="line" data-label="" points="251.75003500000003,110 150.24996500000003,110 150.24996500000003,530 251.75003500000003,530" fill="none" stroke="purple" stroke-width="1px"/></g><g><polyline data-points="-1.9,0 -3.3,0" data-type="line" data-label="" points="251.75003500000003,320 153.75003500000003,320" fill="none" stroke="purple" stroke-width="1px"/></g><g><rect data-type="rect" data-label="U1" data-x="0" data-y="0" x="279.750035" y="40" width="210" height="560" fill="hsl(164, 100%, 50%, 0.8)" stroke="black" stroke-width="0.014285714285714285"/></g><g><rect data-type="rect" data-label="netId: POWER
+globalConnNetId: connectivity_net0" data-x="-1.9" data-y="3.225" x="244.75003500000003" y="78.5" width="14" height="31.5" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.014285714285714285"/></g><g><rect data-type="rect" data-label="INLINE netId: SIGNAL
+axis: x
+side: y+" data-x="-2.5999999999999996" data-y="0.14" x="160.75003500000005" y="303.9" width="84" height="12.600000000000023" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.014285714285714285"/></g><text data-type="text" data-label="SIGNAL" data-x="-1.9999999999999996" data-y="0.14" x="244.75003500000005" y="310.2" fill="green" font-size="12.6" font-family="sans-serif" text-anchor="end" dominant-baseline="central">SIGNAL</text><g><circle data-type="point" data-label="A
+x-" data-x="-1.9" data-y="3" cx="251.75003500000003" cy="110" r="3" fill="hsl(65, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="MID
+x-" data-x="-1.9" data-y="0" cx="251.75003500000003" cy="320" r="3" fill="hsl(8, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="B
+x-" data-x="-1.9" data-y="-3" cx="251.75003500000003" cy="530" r="3" fill="hsl(66, 100%, 50%, 0.8)"/></g><g><circle data-type="point" data-label="anchorPoint
+orientation: y+" data-x="-1.9" data-y="3" cx="251.75003500000003" cy="110" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="inline anchor
+SIGNAL" data-x="-2.5999999999999996" data-y="0" cx="202.75003500000005" cy="320" r="3" fill="green"/></g><g id="crosshair" style="display: none"><line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5"/><line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5"/><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
+              document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+                const svg = e.currentTarget;
+                const rect = svg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const crosshair = svg.getElementById('crosshair');
+                const h = svg.getElementById('crosshair-h');
+                const v = svg.getElementById('crosshair-v');
+                const coords = svg.getElementById('coordinates');
+
+                crosshair.style.display = 'block';
+                h.setAttribute('x1', '0');
+                h.setAttribute('x2', '640');
+                h.setAttribute('y1', y);
+                h.setAttribute('y2', y);
+                v.setAttribute('x1', x);
+                v.setAttribute('x2', x);
+                v.setAttribute('y1', '0');
+                v.setAttribute('y2', '640');
+
+                // Calculate real coordinates using inverse transformation
+                const matrix = {"a":70,"c":0,"e":384.750035,"b":0,"d":-70,"f":320};
+                // Manually invert and apply the affine transform
+                // Since we only use translate and scale, we can directly compute:
+                // x' = (x - tx) / sx
+                // y' = (y - ty) / sy
+                const sx = matrix.a;
+                const sy = matrix.d;
+                const tx = matrix.e;
+                const ty = matrix.f;
+                const realPoint = {
+                  x: (x - tx) / sx,
+                  y: (y - ty) / sy // Flip y back since we used negative scale
+                }
+
+                coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+                coords.setAttribute('x', (x + 5).toString());
+                coords.setAttribute('y', (y - 5).toString());
+              });
+              document.currentScript.parentElement.addEventListener('mouseleave', () => {
+                document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+              });
+            ]]></script>
+  </g>
+  <g transform="translate(0, 1216)">
+    <style>
+              .boundary { fill: rgb(245, 241, 237); }
+              .schematic-boundary { fill: none; stroke: #fff; }
+              .component { fill: none; stroke: rgb(132, 0, 0); }
+              .chip { fill: rgb(255, 255, 194); stroke: rgb(132, 0, 0); }
+              .component-pin { fill: none; stroke: rgb(132, 0, 0); }
+              .text { font-family: sans-serif; fill: rgb(0, 150, 0); }
+              .pin-number { fill: rgb(169, 0, 0); }
+              .port-label { fill: rgb(0, 100, 100); }
+              .component-name { fill: rgb(0, 100, 100); }
+
+            </style><rect class="boundary" x="0" y="0" width="1200" height="800"/><g class="trace sch-trace" data-layer="base" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0__stack1"><path d="M 515.99999999999 133.3333333333 L 387.1110222221962 133.3333333333 L 387.1110222221962 666.6666666666999 L 515.99999999999 666.6666666666999" class="trace-invisible-hover-outline sch-trace-hitbox" stroke="rgb(0, 150, 0)" fill="none" stroke-width="14.222222222224px" stroke-linecap="round" opacity="0" stroke-linejoin="round"/><path class="sch-trace-path" d="M 515.99999999999 133.3333333333 L 387.1110222221962 133.3333333333 L 387.1110222221962 666.6666666666999 L 515.99999999999 666.6666666666999" stroke="rgb(0, 150, 0)" fill="none" stroke-width="1.777777777778px" stroke-linecap="round" stroke-linejoin="round"/></g><g class="trace sch-trace" data-layer="base" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_1__stack1"><path d="M 515.99999999999 400 L 391.5555555555301 400" class="trace-invisible-hover-outline sch-trace-hitbox" stroke="rgb(0, 150, 0)" fill="none" stroke-width="14.222222222224px" stroke-linecap="round" opacity="0" stroke-linejoin="round"/><path class="sch-trace-path" d="M 515.99999999999 400 L 391.5555555555301 400" stroke="rgb(0, 150, 0)" fill="none" stroke-width="1.777777777778px" stroke-linecap="round" stroke-linejoin="round"/></g><g class="trace-overlays sch-trace-overlays" data-layer="overlay" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_0__stack1"/><g class="trace-overlays sch-trace-overlays" data-layer="overlay" data-circuit-json-type="schematic_trace" data-schematic-trace-id="schematic_trace_1__stack1"/><g class="sch-component" data-circuit-json-type="schematic_component" data-schematic-component-id="schematic_component_0__stack1"><rect class="component chip sch-component-body" x="551.5555555555501" y="44.444444444400006" width="266.66666666669994" height="711.1111111112" stroke-width="1.777777777778px" fill="rgb(255, 255, 194)" stroke="rgb(132, 0, 0)"/><rect class="component-overlay sch-component-overlay" x="551.5555555555501" y="44.444444444400006" width="266.66666666669994" height="711.1111111112" fill="transparent"/><text class="sch-text" x="684.8888888889" y="400" fill="#0f172a" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="16.000000000002px" transform="rotate(0, 684.8888888889, 400)">U1</text><line class="component-pin sch-component-pin sch-port-line" x1="551.5555555555501" y1="133.3333333333" x2="515.99999999999" y2="133.3333333333" stroke-width="1.777777777778px"/><g class="sch-port" data-schematic-port-id="source_port_0_0__stack1"><rect x="514.2222222222119" y="131.555555555522" width="3.555555555556" height="3.555555555556" opacity="0"/></g><text class="pin-number sch-pin-number" x="533.7777777777701" y="131.555555555522" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="13.333333333335px" transform=""></text><text class="pin-number sch-pin-label" x="560.44444444444" y="133.3333333333" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="start" dominant-baseline="middle" font-size="13.333333333335px" transform="">A</text><line class="component-pin sch-component-pin sch-port-line" x1="551.5555555555501" y1="400" x2="515.99999999999" y2="400" stroke-width="1.777777777778px"/><g class="sch-port" data-schematic-port-id="source_port_0_1__stack1"><rect x="514.2222222222119" y="398.222222222222" width="3.555555555556" height="3.555555555556" opacity="0"/></g><text class="pin-number sch-pin-number" x="533.7777777777701" y="398.222222222222" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="13.333333333335px" transform=""></text><text class="pin-number sch-pin-label" x="560.44444444444" y="400" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="start" dominant-baseline="middle" font-size="13.333333333335px" transform="">MID</text><line class="component-pin sch-component-pin sch-port-line" x1="551.5555555555501" y1="666.6666666666999" x2="515.99999999999" y2="666.6666666666999" stroke-width="1.777777777778px"/><g class="sch-port" data-schematic-port-id="source_port_0_2__stack1"><rect x="514.2222222222119" y="664.8888888889219" width="3.555555555556" height="3.555555555556" opacity="0"/></g><text class="pin-number sch-pin-number" x="533.7777777777701" y="664.888888888922" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="middle" dominant-baseline="auto" font-size="13.333333333335px" transform=""></text><text class="pin-number sch-pin-label" x="560.44444444444" y="666.6666666666999" style="font-family: sans-serif;" fill="rgb(169, 0, 0)" text-anchor="start" dominant-baseline="middle" font-size="13.333333333335px" transform="">B</text></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_0__stack1"><circle cx="515.99999999999" cy="133.3333333333" r="3.555555555556" fill="red" opacity="0"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_1__stack1"><circle cx="515.99999999999" cy="400" r="3.555555555556" fill="red" opacity="0"/></g><g class="schematic-port-hover sch-port-hover" data-schematic-port-id="source_port_0_2__stack1"><circle cx="515.99999999999" cy="666.6666666666999" r="3.555555555556" fill="red" opacity="0"/></g><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0__stack1" d="
+    M 515.99999999999,133.3333333333
+    L 507.1111111111,128.5333333332994
+    L 507.1111111111,98.05037037033263
+    L 524.88888888888,98.05037037033263
+    L 524.88888888888,128.5333333332994
+    Z
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="1.777777777778px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_0__stack1" x="515.99999999999" y="125.33333333329901" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="16.000000000002px" transform="rotate(-90 515.99999999999 125.33333333329901)">XX</text><text class="sch-text" x="453.7777777777601" y="387.555555555554" fill="#047857" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="16.000000000002px" transform="rotate(0, 453.7777777777601, 387.555555555554)">XXXXXXXXX</text>
+  </g>
+</svg>
