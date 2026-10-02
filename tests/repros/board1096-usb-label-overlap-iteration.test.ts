@@ -12,5 +12,11 @@ test("board1096 USB section stops retrying failed merged-label overlaps", () => 
   expect(solver.failed).toBe(false)
   expect(solver.error).toBe(null)
   expect(solver.traceLabelOverlapAvoidanceSolver?.iterations).toBe(30)
+  const bridge = solver.sameNetJunctionAlignmentSolver!.outputTraces.find(
+    (trace) =>
+      trace.pinIds.includes("schematic_port_319") &&
+      trace.pinIds.includes("schematic_port_321"),
+  )!
+  expect(bridge.tracePath[1]!.x - bridge.pins[0].x).toBeCloseTo(0.63125)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

@@ -410,12 +410,14 @@ const getAlignedSharedEndpointRailPath = ({
   netLabelConnectorTraceIds,
   compactPinBankOnly = false,
   outwardPinBankOnly = false,
+  traces,
 }: {
   donorTrace: SolvedTracePath
   branchTrace: SolvedTracePath
   netLabelConnectorTraceIds: ReadonlySet<MspConnectionPairId>
   compactPinBankOnly?: boolean
   outwardPinBankOnly?: boolean
+  traces: SolvedTracePath[]
 }): Point[] | null => {
   if (
     netLabelConnectorTraceIds.has(donorTrace.mspPairId) ||
@@ -460,6 +462,26 @@ const getAlignedSharedEndpointRailPath = ({
   const firstRailsAreAligned =
     (donorRailAxis === "x" && nearlyEqual(donorPath[1]!.y, branchPath[1]!.y)) ||
     (donorRailAxis === "y" && nearlyEqual(donorPath[1]!.x, branchPath[1]!.x))
+  const donorOtherPin = getOtherPin({ trace: donorTrace, sharedPin })
+  const branchOtherPin = getOtherPin({ trace: branchTrace, sharedPin })
+  const branchEndsAtTerminalPin =
+    branchOtherPin !== null &&
+    !traces.some(
+      (trace) =>
+        trace.mspPairId !== branchTrace.mspPairId &&
+        !netLabelConnectorTraceIds.has(trace.mspPairId) &&
+        trace.pinIds.includes(branchOtherPin.pinId),
+    )
+  const extendsBranchExit = Math.abs(donorDeparture) > Math.abs(branchDeparture)
+  const donorPinProjectsOntoRail =
+    donorOtherPin !== null &&
+    tracePathContainsPoint([branchPath[1]!, branchPath[2]!], {
+      x: donorOtherPin.x,
+      y: donorOtherPin.y,
+      [donorDepartureAxis]: branchPath[1]![donorDepartureAxis],
+    })
+  if (branchEndsAtTerminalPin && extendsBranchExit && donorPinProjectsOntoRail)
+    return null
   // An already-shared rail can lead into the nearby parallel pair to merge.
   if (firstRailsAreAligned) {
     railIndex++
@@ -1371,6 +1393,7 @@ export const alignSameNetJunctions = ({
                   branchTrace,
                   netLabelConnectorTraceIds,
                   outwardPinBankOnly: true,
+                  traces: outputTraces,
                 }),
               ]
           : compactPinBankOnly
@@ -1382,6 +1405,7 @@ export const alignSameNetJunctions = ({
                     branchTrace,
                     netLabelConnectorTraceIds,
                     compactPinBankOnly: true,
+                    traces: outputTraces,
                   }),
                 ]
             : branchIsLabelConnector
@@ -1414,6 +1438,7 @@ export const alignSameNetJunctions = ({
                         donorTrace,
                         branchTrace,
                         netLabelConnectorTraceIds,
+                        traces: outputTraces,
                       }),
                     ]
                   : [
