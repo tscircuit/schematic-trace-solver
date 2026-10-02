@@ -35,3 +35,13 @@ this with two outward inline-label stubs: inline conversion removed the fallback
 anchored labels before final trace recovery could see them. The pre-inline
 recovery stage now restores the explicit wire using the existing routing and
 collision checks. Inline conversion then places one label on that real trace.
+
+## Recovered feedback elbow
+
+The source also explicitly wires `C_FF.2` to `R_FB_BOT.1` on `LOGIC_FB`.
+Those terminals already belong to two routed islands, with fallback labels
+far apart. Pre-inline recovery now accepts their single outward elbow when it
+passes the existing obstacle, label, crossing, and section checks. All four
+feedback passives share one physical trace component and one inline label;
+the chip's separate `LOGIC_FB` stub is retained. This exception applies only
+before inline conversion, preserving final recovery's rail-label behavior.

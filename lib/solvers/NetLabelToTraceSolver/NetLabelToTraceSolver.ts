@@ -334,6 +334,8 @@ export class NetLabelToTraceSolver extends BaseSolver {
       ...this.inputProblem.directConnections,
     ]) {
       const isDirectConnection = directConnections.has(connection)
+      const canRecoverElbow =
+        isDirectConnection && this.options.onlyInlineDirectConnections
       const globalConnNetId = netConnMap.getNetConnectedToId(
         connection.pinIds[0],
       )
@@ -396,14 +398,12 @@ export class NetLabelToTraceSolver extends BaseSolver {
           )
           if (!firstLabel || !secondLabel || firstLabel === secondLabel)
             continue
-          if (
+          const labelsAreAligned =
             getPerpendicularOffset(
               firstLabel.anchorPoint,
               secondLabel.anchorPoint,
-            ) > MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET
-          ) {
-            continue
-          }
+            ) <= MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET
+          if (!labelsAreAligned && !canRecoverElbow) continue
 
           let bestCandidate: CandidatePair | undefined
           let firstPinIds = firstComponent.pinIds
@@ -428,9 +428,21 @@ export class NetLabelToTraceSolver extends BaseSolver {
                 firstPin,
                 secondPin,
               )
+              // Explicit inline wires may join routed islands whose labels are
+              // far apart. Relax the alignment heuristic only for the single
+              // direction-respecting elbow, not for a detour search.
+              const simpleElbowPath =
+                canRecoverElbow &&
+                (!labelsAreAligned ||
+                  perpendicularOffset >
+                    MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET)
+                  ? getSimpleElbowPath(firstPin, secondPin)
+                  : undefined
               if (
-                perpendicularOffset >
-                  MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET ||
+                ((!labelsAreAligned ||
+                  perpendicularOffset >
+                    MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET) &&
+                  !simpleElbowPath) ||
                 arePinsCoFacingAlongSeparationAxis(firstPin, secondPin) ||
                 arePinsInDifferentSchematicSections(
                   this.inputProblem,
@@ -465,6 +477,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
                 key: getCanonicalPairKey(firstPin.pinId, secondPin.pinId),
                 recoveryMode,
                 netConnectionPinIds: connectionPinIds,
+                simpleElbowPath,
               }
               if (
                 !bestCandidate ||
@@ -529,7 +542,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
           trace.globalConnNetId !== candidate.firstLabel.globalConnNetId,
       )
     }
-    // Only recover a named two-pin elbow when the shortest, direction-respecting
+    // Only recover an elbow when the shortest, direction-respecting
     // path is clear. Do not replace labels with obstacle detours or many hops.
     if (candidate.simpleElbowPath) {
       tracePath = candidate.simpleElbowPath

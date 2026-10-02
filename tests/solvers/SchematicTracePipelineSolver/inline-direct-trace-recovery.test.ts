@@ -8,9 +8,17 @@ const feedForwardPins = ["R_FF.2", "C_FF.1"]
 
 const getStageInput = () => {
   const pipeline = new SchematicTracePipelineSolver(
-    input as unknown as InputProblem,
+    structuredClone(input) as unknown as InputProblem,
   )
   pipeline.solveUntilPhase("inlineDirectTraceRecoverySolver")
+  // Keep these controls scoped to the feed-forward wire, independently of
+  // other inline-eligible connections the pipeline learns to recover.
+  for (const connection of [
+    ...pipeline.inputProblem.directConnections,
+    ...pipeline.inputProblem.netConnections,
+  ]) {
+    if (connection.netId !== "FF_C") connection.allowInlineNetLabel = false
+  }
   return {
     inputProblem: pipeline.inputProblem,
     ...pipeline.sameNetJunctionAlignmentSolver!.getOutput(),

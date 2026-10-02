@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
+import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 import "tests/fixtures/matcher"
 import input from "./assets/repro-ltc3115-buck-boost-logic-supply.input.json"
 
@@ -30,6 +31,28 @@ test("reproduces LTC3115 buck-boost logic supply routing", async () => {
   ).toHaveLength(0)
   expect(
     output.inlineNetLabelPlacements.filter((label) => label.netId === "FF_C"),
+  ).toHaveLength(1)
+  // The divider, feed-forward capacitor, and compensation capacitor form
+  // one wired feedback network, rather than two labeled islands.
+  const feedbackPins = ["R_FB_TOP.2", "C_FF.2", "R_FB_BOT.1", "C_COMP.2"]
+  expect(
+    getTraceConnectedPinComponents({
+      pinIds: feedbackPins,
+      traces: output.traces,
+    }),
+  ).toHaveLength(1)
+  expect(
+    output.inlineNetLabelPlacements.filter(
+      (label) => label.netId === "LOGIC_FB" && !label.stubTracePath,
+    ),
+  ).toHaveLength(1)
+  expect(
+    output.inlineNetLabelPlacements.filter(
+      (label) =>
+        label.netId === "LOGIC_FB" &&
+        label.pinIds.includes("U_LOGIC.8") &&
+        !!label.stubTracePath,
+    ),
   ).toHaveLength(1)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
