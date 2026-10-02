@@ -30,11 +30,15 @@ test.each([0, 1, 2, 3])(
     const original = structuredClone(input)
     const solver = new SchematicTracePipelineSolver(input)
     for (const chip of original.chips) {
-      expect(
-        solver.inputProblem.chips.find(
-          (normalized) => normalized.chipId === chip.chipId,
-        ),
-      ).toEqual(chip)
+      const routedChip = solver.inputProblem.chips.find(
+        (normalized) => normalized.chipId === chip.chipId,
+      )!
+      expect(routedChip.center).toEqual(chip.center)
+      expect(routedChip.width).toBe(chip.width)
+      expect(routedChip.height).toBe(chip.height)
+      if (["BZ1", "Q_BUZZER"].includes(chip.chipId)) {
+        expect(routedChip.pins).toEqual(chip.pins)
+      }
     }
     expect(input).toEqual(original)
   },
@@ -48,17 +52,16 @@ const problemWithChip = (chip: InputChip): InputProblem => ({
 })
 
 test("body bounds still project an interior terminal along its known direction", () => {
-  const solver = new SchematicTracePipelineSolver(
-    problemWithChip({
-      chipId: "custom",
-      center: { x: 0, y: 0 },
-      width: 2,
-      height: 1,
-      pins: [{ pinId: "inside", x: 0, y: 0.4, _facingDirection: "x-" }],
-    }),
-  )
-  expect(solver.inputProblem.chips[0]!.pins[0]!.x).toBe(0)
-  expect(solver.routingInputProblem.chips[0]!.pins[0]).toEqual({
+  const input = problemWithChip({
+    chipId: "custom",
+    center: { x: 0, y: 0 },
+    width: 2,
+    height: 1,
+    pins: [{ pinId: "inside", x: 0, y: 0.4, _facingDirection: "x-" }],
+  })
+  const solver = new SchematicTracePipelineSolver(input)
+  expect(input.chips[0]!.pins[0]!.x).toBe(0)
+  expect(solver.inputProblem.chips[0]!.pins[0]).toEqual({
     pinId: "inside",
     x: -1,
     y: 0.4,
@@ -80,5 +83,5 @@ test("external unconnected terminals do not expand the obstacle or move other pi
   const solver = new SchematicTracePipelineSolver(problemWithChip(chip))
   solver.solve()
   expect(solver.inputProblem.chips[0]).toEqual(chip)
-  expect(solver.routingInputProblem.chips[0]).toEqual(chip)
+  expect(chip.pins[1]!.x).toBe(3)
 })

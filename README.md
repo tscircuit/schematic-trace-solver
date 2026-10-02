@@ -33,10 +33,10 @@ Pins supply their actual terminal coordinates and outward `_facingDirection`.
 External terminals, including no-connect terminals, do not enlarge the obstacle.
 There is no bounds mode or automatic pin-based size correction.
 
-`inputProblem` preserves the supplied geometry. `routingInputProblem` is a separate
-working copy: a terminal drawn inside its body can use an escape point on the
-body edge, along its facing direction. This does not move the supplied terminal
-or change the body bounds.
+The pipeline clones the supplied input into its existing `inputProblem` working
+copy. A terminal drawn inside its body can use an escape point on the body edge,
+along its facing direction. This does not mutate the caller's input or change
+body bounds; external terminal coordinates and directions are preserved.
 
 You then pass in direct connections and net connections. Direct connections are
 explicit pin-to-pin connections. When there's a direct connection between two
