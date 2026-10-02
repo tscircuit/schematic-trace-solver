@@ -73,5 +73,32 @@ test("repro TIDA-010076 page 02 net-label placement", () => {
     ),
   ).toEqual([])
 
+  // The lower AGND pins continue the established outer rail, including the
+  // label at its free end, instead of forming a second inner ground stub.
+  const outerRailTrace = output.traces.find((trace) =>
+    ["schematic_port_245", "schematic_port_237"].every((pinId) =>
+      trace.pinIds.includes(pinId),
+    ),
+  )!
+  const outerRailX = Math.max(
+    ...outerRailTrace.tracePath.map((point) => point.x),
+  )
+  for (const pair of [
+    ["schematic_port_244", "schematic_port_245"],
+    ["schematic_port_243", "schematic_port_244"],
+  ]) {
+    const branch = output.traces.find((trace) =>
+      pair.every((pinId) => trace.pinIds.includes(pinId)),
+    )!
+    expect(
+      branch.tracePath.some((point) => Math.abs(point.x - outerRailX) < 1e-6),
+    ).toBe(true)
+  }
+  const lowerAgndLabel = output.netLabelPlacements.find(
+    (label) =>
+      label.netId === "NET_AGND" && label.pinIds.includes("schematic_port_243"),
+  )!
+  expect(lowerAgndLabel.anchorPoint.x).toBeCloseTo(outerRailX)
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
