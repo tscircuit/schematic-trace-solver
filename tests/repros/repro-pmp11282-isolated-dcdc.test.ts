@@ -80,5 +80,24 @@ test("repro PMP11282 isolated DC/DC traces and endpoint net labels", () => {
   ).toBe(false)
   expect(endpointPairNetIds).toContain("U500.pin8 to C501.pin1")
   expect(endpointPairNetIds).toContain("L500.pin1 to L500.pin2")
+  // The final recovery pass can connect terminals that lie inside each
+  // other's expanded endpoint bounds without crossing any other obstacle.
+  const recoveredOutput = diagnosticPipeline.netLabelToTraceSolver!.getOutput()
+  for (const pinIds of [
+    ["schematic_port_168", "schematic_port_44"],
+    ["schematic_port_183", "schematic_port_194"],
+  ]) {
+    expect(
+      recoveredOutput.traces.some((trace) =>
+        pinIds.every((pinId) => trace.pinIds.includes(pinId)),
+      ),
+    ).toBe(true)
+    expect(
+      recoveredOutput.netLabelPlacements.some(
+        (label) =>
+          label.pinIds.length === 1 && pinIds.includes(label.pinIds[0]!),
+      ),
+    ).toBe(false)
+  }
   expect(diagnosticPipeline).toMatchSolverSnapshot(import.meta.path)
 }, 30_000)

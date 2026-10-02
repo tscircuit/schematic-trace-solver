@@ -22,6 +22,7 @@ import {
   segmentIntersectsRect,
   segmentOverlapsRectBoundary,
 } from "./collisions"
+import { canRouteThroughOverlappingEndpointBounds } from "./canRouteThroughOverlappingEndpointBounds"
 import { generateEndpointCollisionDetours } from "./generateEndpointCollisionDetours"
 import { generateInternalSegmentCollisionDetours } from "./generateInternalSegmentCollisionDetours"
 import {
@@ -256,7 +257,18 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
     // that local connection directly instead of sending it through obstacle
     // detour search, which can turn overlapping endpoint symbols into two
     // fallback labels.
-    if (preferredCandidate.isDirectShortPath) {
+    // Expanded endpoint bounds can enclose each other's terminals. No route
+    // can escape those bounds without a collision. Allow the local elbow only
+    // when every other component and text obstacle is clear; retain the full
+    // obstacle set for detour search if that local connection is blocked.
+    if (
+      preferredCandidate.isDirectShortPath ||
+      canRouteThroughOverlappingEndpointBounds({
+        pins: this.pins,
+        path: preferredCandidate.baseElbow,
+        obstacles: this.obstacles,
+      })
+    ) {
       this.solvedTracePath = preferredCandidate.baseElbow
     }
 
