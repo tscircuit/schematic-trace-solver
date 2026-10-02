@@ -316,13 +316,6 @@
           "x": 4.66,
           "y": 0.5,
           "_facingDirection": "x-"
-        },
-        {
-          "pinId": "schematic_port_36",
-          "displayName": "pin2_internal_1",
-          "x": 4.66,
-          "y": 0.5,
-          "_facingDirection": "x-"
         }
       ]
     },
