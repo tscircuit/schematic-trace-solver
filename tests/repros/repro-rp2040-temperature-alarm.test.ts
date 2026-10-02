@@ -5,11 +5,13 @@ import "tests/fixtures/matcher"
 import inputJson from "./assets/repro-rp2040-temperature-alarm.input.json"
 
 // imrishabh18/rp2040-motor-controller v1.0.42, position_alarm / Temperature Alarm.
-// Captured with @tscircuit/core 0.0.2032 after schematic layout/style refinement.
+// Raw input captured with @tscircuit/core 0.0.2032 after layout/style refinement,
+// before solver normalization (debug:logOutput, not solver:started).
 // Only BZ1, Q_BUZZER, D_BUZZER, R_BUZZER_GATE and R_BUZZER_PD are retained;
 // cross-section connections retain their boundary net labels. Component IDs,
 // symbol names and label text are annotated for readability; geometry is unchanged.
-// BZ1._NEG and Q_BUZZER.D lie inside each other's expanded routing obstacles.
+// Custom symbols are annotated with boundsMode: "body", as emitted by core.
+// Legacy pin-inclusive normalization expands both obstacles and relocates BZ1._NEG.
 test("RP2040 Temperature Alarm leaves the buzzer bottom port as a net label", async () => {
   const solver = new SchematicTracePipelineSolver(
     structuredClone(inputJson) as unknown as InputProblem,
