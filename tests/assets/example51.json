@@ -237,19 +237,17 @@
         "y": 8.2
       },
       "width": 0.9249999999999972,
-      "height": 0.7600000000000007,
+      "height": 0.7600000000000016,
       "pins": [
         {
           "pinId": "schematic_port_20",
           "x": -26.8,
-          "y": 8.58,
-          "_facingDirection": "y+"
+          "y": 8.58
         },
         {
           "pinId": "schematic_port_21",
           "x": -26.8,
-          "y": 7.8199999999999985,
-          "_facingDirection": "y-"
+          "y": 7.8199999999999985
         }
       ]
     },

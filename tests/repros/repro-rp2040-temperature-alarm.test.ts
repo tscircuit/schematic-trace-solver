@@ -10,7 +10,6 @@ import inputJson from "./assets/repro-rp2040-temperature-alarm.input.json"
 // Only BZ1, Q_BUZZER, D_BUZZER, R_BUZZER_GATE and R_BUZZER_PD are retained;
 // cross-section connections retain their boundary net labels. Component IDs,
 // symbol names and label text are annotated for readability; geometry is unchanged.
-// Custom symbols are annotated with boundsMode: "body", as emitted by core.
 // Legacy pin-inclusive normalization expands both obstacles and relocates BZ1._NEG.
 test("RP2040 Temperature Alarm connects the buzzer bottom port with a trace", async () => {
   const input = structuredClone(inputJson) as unknown as InputProblem
@@ -19,7 +18,9 @@ test("RP2040 Temperature Alarm connects the buzzer bottom port with a trace", as
 
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
-  for (const chip of input.chips.filter((chip) => chip.boundsMode === "body")) {
+  for (const chip of input.chips.filter((chip) =>
+    ["BZ1", "Q_BUZZER"].includes(chip.chipId),
+  )) {
     expect(
       solver.inputProblem.chips.find(
         (normalized) => normalized.chipId === chip.chipId,

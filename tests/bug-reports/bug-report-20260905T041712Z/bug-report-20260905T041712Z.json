@@ -1005,21 +1005,19 @@
         "y": 8
       },
       "width": 1.045,
-      "height": 0.7600000000000007,
+      "height": 0.7600000000000016,
       "pins": [
         {
           "pinId": "schematic_port_128",
           "displayName": "anode",
           "x": -9,
-          "y": 8.38,
-          "_facingDirection": "y+"
+          "y": 8.38
         },
         {
           "pinId": "schematic_port_129",
           "displayName": "cathode",
           "x": -9,
-          "y": 7.619999999999999,
-          "_facingDirection": "y-"
+          "y": 7.619999999999999
         }
       ],
       "sectionId": "POWER"
@@ -1031,21 +1029,19 @@
         "y": 8
       },
       "width": 1.0450000000000008,
-      "height": 0.7600000000000007,
+      "height": 0.7600000000000016,
       "pins": [
         {
           "pinId": "schematic_port_130",
           "displayName": "anode",
           "x": -5,
-          "y": 8.38,
-          "_facingDirection": "y+"
+          "y": 8.38
         },
         {
           "pinId": "schematic_port_131",
           "displayName": "cathode",
           "x": -5,
-          "y": 7.619999999999999,
-          "_facingDirection": "y-"
+          "y": 7.619999999999999
         }
       ],
       "sectionId": "POWER"
@@ -1057,21 +1053,19 @@
         "y": 8
       },
       "width": 1.0450000000000008,
-      "height": 0.7600000000000007,
+      "height": 0.7600000000000016,
       "pins": [
         {
           "pinId": "schematic_port_132",
           "displayName": "anode",
           "x": 7,
-          "y": 8.38,
-          "_facingDirection": "y+"
+          "y": 8.38
         },
         {
           "pinId": "schematic_port_133",
           "displayName": "cathode",
           "x": 7,
-          "y": 7.619999999999999,
-          "_facingDirection": "y-"
+          "y": 7.619999999999999
         }
       ],
       "sectionId": "MCU"
@@ -1109,21 +1103,19 @@
         "y": 4
       },
       "width": 0.9250000000000007,
-      "height": 0.7600000000000011,
+      "height": 0.7600000000000016,
       "pins": [
         {
           "pinId": "schematic_port_136",
           "displayName": "anode",
           "x": 7,
-          "y": 4.380000000000001,
-          "_facingDirection": "y+"
+          "y": 4.380000000000001
         },
         {
           "pinId": "schematic_port_137",
           "displayName": "cathode",
           "x": 7,
-          "y": 3.619999999999999,
-          "_facingDirection": "y-"
+          "y": 3.619999999999999
         }
       ],
       "sectionId": "MCU"

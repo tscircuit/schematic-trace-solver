@@ -29,9 +29,7 @@ test.each([0, 1, 2, 3])(
     }
     const original = structuredClone(input)
     const solver = new SchematicTracePipelineSolver(input)
-    for (const chip of original.chips.filter(
-      (chip) => chip.boundsMode === "body",
-    )) {
+    for (const chip of original.chips) {
       expect(
         solver.inputProblem.chips.find(
           (normalized) => normalized.chipId === chip.chipId,
@@ -53,14 +51,14 @@ test("body bounds still project an interior terminal along its known direction",
   const solver = new SchematicTracePipelineSolver(
     problemWithChip({
       chipId: "custom",
-      boundsMode: "body",
       center: { x: 0, y: 0 },
       width: 2,
       height: 1,
       pins: [{ pinId: "inside", x: 0, y: 0.4, _facingDirection: "x-" }],
     }),
   )
-  expect(solver.inputProblem.chips[0]!.pins[0]).toEqual({
+  expect(solver.inputProblem.chips[0]!.pins[0]!.x).toBe(0)
+  expect(solver.routingInputProblem.chips[0]!.pins[0]).toEqual({
     pinId: "inside",
     x: -1,
     y: 0.4,
@@ -68,20 +66,19 @@ test("body bounds still project an interior terminal along its known direction",
   })
 })
 
-test.each([undefined, "include_pins"] as const)(
-  "legacy bounds mode %s continues to include pins",
-  (boundsMode) => {
-    const solver = new SchematicTracePipelineSolver(
-      problemWithChip({
-        chipId: "legacy",
-        boundsMode,
-        center: { x: 0, y: 0 },
-        width: 2,
-        height: 1,
-        pins: [{ pinId: "external", x: 3, y: 0, _facingDirection: "x+" }],
-      }),
-    )
-    expect(solver.inputProblem.chips[0]!.width).toBe(6)
-    expect(solver.inputProblem.chips[0]!.height).toBe(1)
-  },
-)
+test("external unconnected terminals do not expand the obstacle or move other pins", () => {
+  const chip: InputChip = {
+    chipId: "asymmetric",
+    center: { x: 0, y: 0 },
+    width: 2,
+    height: 1,
+    pins: [
+      { pinId: "signal", x: -1, y: 0, _facingDirection: "x-" },
+      { pinId: "unconnected", x: 3, y: 0, _facingDirection: "x+" },
+    ],
+  }
+  const solver = new SchematicTracePipelineSolver(problemWithChip(chip))
+  solver.solve()
+  expect(solver.inputProblem.chips[0]).toEqual(chip)
+  expect(solver.routingInputProblem.chips[0]).toEqual(chip)
+})

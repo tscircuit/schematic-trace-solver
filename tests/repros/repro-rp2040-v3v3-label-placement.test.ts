@@ -21,7 +21,8 @@ const inputProblem: InputProblem = {
     {
       chipId: "U1",
       center: { x: 0, y: 0 },
-      width: 1.9,
+      // Explicit obstacle extent previously inferred from the outer pins.
+      width: 2.7,
       height: 6,
       pins: [...createRp2040SidePins("left"), ...createRp2040SidePins("right")],
     },
