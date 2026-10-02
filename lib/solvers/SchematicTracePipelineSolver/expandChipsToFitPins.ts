@@ -12,6 +12,11 @@ import type { InputProblem } from "lib/types/InputProblem"
  */
 export const expandChipsToFitPins = (problem: InputProblem) => {
   for (const chip of problem.chips) {
+    // Custom symbol body bounds do not include external terminals. Expanding
+    // them would turn empty space beside a long stem into a solid obstacle and
+    // cause correctPinsInsideChips to relocate unrelated pins.
+    if (chip.boundsMode === "body") continue
+
     const halfWidth = chip.width / 2
     const halfHeight = chip.height / 2
 

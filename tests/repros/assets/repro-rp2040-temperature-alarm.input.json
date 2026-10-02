@@ -6,35 +6,40 @@
         "x": 12.27,
         "y": -1.54
       },
-      "width": 2,
+      "width": 0.8000000000000007,
       "height": 0.7999999999999998,
       "pins": [
         {
           "pinId": "schematic_port_293",
           "displayName": "_POS",
           "x": 11.87,
-          "y": -1.1400000000000001
+          "y": -1.3399999999999999,
+          "_facingDirection": "x-"
         },
         {
           "pinId": "schematic_port_294",
           "displayName": "_NEG",
           "x": 11.87,
-          "y": -1.94
+          "y": -1.74,
+          "_facingDirection": "x-"
         },
         {
           "pinId": "schematic_port_295",
           "displayName": "NC1",
           "x": 13.27,
-          "y": -1.64
+          "y": -1.64,
+          "_facingDirection": "x+"
         },
         {
           "pinId": "schematic_port_296",
           "displayName": "NC2",
           "x": 13.27,
-          "y": -1.44
+          "y": -1.44,
+          "_facingDirection": "x+"
         }
       ],
-      "sectionId": "alarm"
+      "sectionId": "alarm",
+      "boundsMode": "body"
     },
     {
       "chipId": "Q_BUZZER",
@@ -42,29 +47,33 @@
         "x": 11.69,
         "y": -2.74
       },
-      "width": 1.0800000000000018,
-      "height": 2,
+      "width": 0.6799999999999997,
+      "height": 0.40000000000000036,
       "pins": [
         {
           "pinId": "schematic_port_297",
           "displayName": "G",
           "x": 11.149999999999999,
-          "y": -2.74
+          "y": -2.74,
+          "_facingDirection": "x-"
         },
         {
           "pinId": "schematic_port_298",
           "displayName": "S",
-          "x": 12.23,
-          "y": -3.14
+          "x": 11.749999999999998,
+          "y": -3.14,
+          "_facingDirection": "y-"
         },
         {
           "pinId": "schematic_port_299",
           "displayName": "D",
           "x": 11.749999999999998,
-          "y": -1.7400000000000002
+          "y": -1.7400000000000002,
+          "_facingDirection": "y+"
         }
       ],
-      "sectionId": "alarm"
+      "sectionId": "alarm",
+      "boundsMode": "body"
     },
     {
       "chipId": "D_BUZZER",
@@ -100,19 +109,21 @@
         "y": -2.44
       },
       "width": 2.045000000000001,
-      "height": 0.6000000000000014,
+      "height": 0.5999999999999996,
       "pins": [
         {
           "pinId": "schematic_port_302",
           "displayName": "anode",
           "x": 8.13,
-          "y": -2.1399999999999992
+          "y": -2.1399999999999992,
+          "_facingDirection": "y+"
         },
         {
           "pinId": "schematic_port_303",
           "displayName": "cathode",
           "x": 8.13,
-          "y": -2.7400000000000007
+          "y": -2.7400000000000007,
+          "_facingDirection": "y-"
         }
       ],
       "sectionId": "alarm",

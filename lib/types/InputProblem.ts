@@ -40,6 +40,16 @@ export interface InputChip {
    */
   symbolName?: string
 
+  /**
+   * `body` keeps the supplied obstacle bounds instead of expanding them to
+   * contain every pin. Use it for custom symbols with external pin stems or
+   * asymmetric/no-connect terminals. External pin positions and facing
+   * directions are preserved; pins inside the body still escape to its edge.
+   * Omitted (or `include_pins`) retains the legacy pin-inclusive normalization.
+   * Bounds and pin points use schematic world coordinates (mm, +X right, +Y up).
+   */
+  boundsMode?: "body" | "include_pins"
+
   center: { x: number; y: number }
   width: number
   height: number
