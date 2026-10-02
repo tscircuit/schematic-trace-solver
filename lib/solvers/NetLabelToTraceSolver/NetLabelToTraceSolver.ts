@@ -52,6 +52,11 @@ const RECOVERED_TRACE_PREFIX = "net-label-to-trace-"
 const MAX_NAMED_NET_RECOVERY_PERPENDICULAR_OFFSET = 0.05
 const MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET = 0.25
 
+interface Options {
+  /** Recover only explicit inline-eligible wires before terminal stub conversion. */
+  onlyInlineDirectConnections?: boolean
+}
+
 const getCanonicalPairKey = (firstPinId: PinId, secondPinId: PinId) =>
   [firstPinId, secondPinId].sort().join("--")
 
@@ -93,7 +98,10 @@ export class NetLabelToTraceSolver extends BaseSolver {
   private currentCandidate: CandidatePair | null = null
   declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
 
-  constructor(private input: InlineNetLabelOutput) {
+  constructor(
+    private input: InlineNetLabelOutput,
+    private options: Options = {},
+  ) {
     super()
     this.inputProblem = input.inputProblem
     this.outputTraces = [...input.traces]
@@ -119,8 +127,8 @@ export class NetLabelToTraceSolver extends BaseSolver {
     this.stats.recoveredTraceCount = 0
   }
 
-  override getConstructorParams(): [InlineNetLabelOutput] {
-    return [this.input]
+  override getConstructorParams(): [InlineNetLabelOutput, Options] {
+    return [this.input, this.options]
   }
 
   private isPortOnlyFallbackLabel(
@@ -275,13 +283,36 @@ export class NetLabelToTraceSolver extends BaseSolver {
       ...this.buildRoutedComponentCandidates(groundGlobalConnNetIds),
     )
 
-    candidates.sort(
+    // Inline conversion replaces fallback tags with terminal stubs. Recover
+    // explicitly requested wires while their two endpoint tags still exist,
+    // using the same route and collision checks as final recovery. Net-only
+    // connectivity keeps its normal later recovery behavior.
+    const selectedCandidates = this.options.onlyInlineDirectConnections
+      ? candidates.filter((candidate) =>
+          this.inputProblem.directConnections.some(
+            (connection) =>
+              candidate.pins.every((pin) =>
+                connection.pinIds.includes(pin.pinId),
+              ) &&
+              (connection.allowInlineNetLabel ||
+                this.inputProblem.netConnections.some(
+                  (net) =>
+                    net.allowInlineNetLabel &&
+                    candidate.pins.every((pin) =>
+                      net.pinIds.includes(pin.pinId),
+                    ),
+                )),
+          ),
+        )
+      : candidates
+
+    selectedCandidates.sort(
       (first, second) =>
         first.perpendicularOffset - second.perpendicularOffset ||
         first.routeDistance - second.routeDistance ||
         first.key.localeCompare(second.key),
     )
-    return candidates
+    return selectedCandidates
   }
 
   private buildRoutedComponentCandidates(

@@ -28,10 +28,10 @@ bun run debug:pipeline tests/repros/assets/repro-ltc3115-buck-boost-logic-supply
 The Cosmos page is
 `site/SchematicTracePipelineSolver/repro-ltc3115-buck-boost-logic-supply.page.tsx`.
 
-## Baseline issue
+## Recovered feed-forward wire
 
-The source explicitly wires `R_FF.2` to `C_FF.1` on `FF_C`. The current result
-replaces this with two outward inline-label stubs. Inline conversion removes
-the fallback anchored labels before `NetLabelToTraceSolver` can recover their
-connection. A follow-up can attempt collision-checked recovery of explicitly
-wired, inline-eligible connections before converting those labels into stubs.
+The source explicitly wires `R_FF.2` to `C_FF.1` on `FF_C`. The baseline replaced
+this with two outward inline-label stubs: inline conversion removed the fallback
+anchored labels before final trace recovery could see them. The pre-inline
+recovery stage now restores the explicit wire using the existing routing and
+collision checks. Inline conversion then places one label on that real trace.

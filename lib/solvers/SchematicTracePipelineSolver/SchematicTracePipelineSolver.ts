@@ -105,6 +105,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   preAlignmentTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   finalTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   sameNetJunctionAlignmentSolver?: SameNetJunctionAlignmentSolver
+  inlineDirectTraceRecoverySolver?: NetLabelToTraceSolver
   inlineNetLabelSolver?: InlineNetLabelSolver
   netLabelToTraceSolver?: NetLabelToTraceSolver
 
@@ -630,11 +631,25 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
+      "inlineDirectTraceRecoverySolver",
+      NetLabelToTraceSolver,
+      (instance) => [
+        {
+          inputProblem: instance.inputProblem,
+          ...instance.sameNetJunctionAlignmentSolver!.getOutput(),
+          inlineNetLabelPlacements: [] as [],
+          netLabelConnectorTraceIds:
+            instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
+        },
+        { onlyInlineDirectConnections: true },
+      ],
+    ),
+    definePipelineStep(
       "inlineNetLabelSolver",
       InlineNetLabelSolver,
       (instance) => {
-        const junctionOutput =
-          instance.sameNetJunctionAlignmentSolver!.getOutput()
+        const recoveredOutput =
+          instance.inlineDirectTraceRecoverySolver!.getOutput()
         const completedReroutes = [
           ...instance.traceLabelOverlapAvoidanceSolver!.getOutput()
             .completedReroutes,
@@ -646,8 +661,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
         return [
           {
             inputProblem: instance.inputProblem,
-            traces: junctionOutput.traces,
-            netLabelPlacements: junctionOutput.netLabelPlacements,
+            traces: recoveredOutput.traces,
+            netLabelPlacements: recoveredOutput.netLabelPlacements,
             completedReroutes,
             resolveTraceCollisions: true,
             netLabelConnectorTraceIds:
