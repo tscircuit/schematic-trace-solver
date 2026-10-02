@@ -1,5 +1,20 @@
 # Schematic Trace Solver
 
+## Installation
+
+Releases are published to GitHub Packages and served publicly through jscdn:
+
+```sh
+bun add https://jscdn.tscircuit.com/@tscircuit/schematic-trace-solver/latest.tgz
+```
+
+Pin the resolved release version in your dependency URL for reproducible installs.
+The release contains bundled JavaScript and TypeScript declarations in `dist`;
+Git checkouts, test fixtures, examples, and development dependencies are excluded.
+
+Run `bun run test:package` to build and validate the actual tarball in an isolated
+consumer before publishing.
+
 Solve for the correct positions and routing for schematic traces and net labels. For use inside [@tscircuit/core](https://github.com/tscircuit/core)
 
 [Online Playground](https://schematic-trace-solver.vercel.app) ・ [tscircuit](https://github.com/tscircuit/tscircuit) ・ [@tscircuit/core](https://github.com/tscircuit/core)

@@ -1,0 +1,24 @@
+{
+  "compilationOptions": {
+    "preferredConfigPath": "tsconfig.build.json"
+  },
+  "entries": [
+    {
+      "filePath": "lib/index.ts",
+      "outFile": "dist/index.d.ts",
+      "libraries": {
+        "inlinedLibraries": [
+          "graphics-debug",
+          "@tscircuit/solver-utils",
+          "@tscircuit/math-utils",
+          "connectivity-map",
+          "flatbush",
+          "flatqueue"
+        ]
+      },
+      "output": {
+        "exportReferencedTypes": false
+      }
+    }
+  ]
+}

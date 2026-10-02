@@ -372,26 +372,36 @@ export function* getLocalTraceLabelShifts(
             blocked = true
             break
           }
-          const junctions = output.traces
-            .filter(
-              (other) =>
-                other !== original &&
-                other.globalConnNetId === original.globalConnNetId,
+          for (const [otherIndex, other] of output.traces.entries()) {
+            if (
+              other === original ||
+              other.globalConnNetId !== original.globalConnNetId
             )
-            .flatMap((other) => [
+              continue
+            const junctions = [
               ...other.tracePath,
               ...intersections(previous, other.tracePath),
-            ])
-            .filter((p) => tracePathContainsPoint(previous, p))
-            .map((p) =>
-              original.globalConnNetId === trace.globalConnNetId && onRail(p)
-                ? translate(p, axis, distance)
-                : p,
-            )
-          const protectedPoints = [
-            ...pinPositions.filter((p) => tracePathContainsPoint(previous, p)),
-            ...junctions,
-          ]
+            ].filter((p) => tracePathContainsPoint(previous, p))
+            for (let junction of junctions) {
+              if (
+                original.globalConnNetId === trace.globalConnNetId &&
+                onRail(junction)
+              )
+                junction = translate(junction, axis, distance)
+              if (
+                !tracePathContainsPoint(candidate, junction) ||
+                !tracePathContainsPoint(traces[otherIndex]!.tracePath, junction)
+              ) {
+                blocked = true
+                break
+              }
+            }
+            if (blocked) break
+          }
+          if (blocked) break
+          const protectedPoints = pinPositions.filter((p) =>
+            tracePathContainsPoint(previous, p),
+          )
           if (
             protectedPoints.some(
               (p) => !tracePathContainsPoint(candidate, p),

@@ -308,6 +308,30 @@ test("clears a moved rail's own tag and a neighboring power label in one proposa
   expect(output).toEqual(saved)
 })
 
+test("keeps a shifted branch junction within its unchanged host segment", () => {
+  const { input, output } = fixture()
+  output.traces[0]!.tracePath = [
+    { x: 0, y: -1 },
+    { x: 1, y: -1 },
+    { x: 1, y: 1 },
+  ]
+  output.traces.push({
+    ...trace("host", [
+      { x: 0, y: 1 },
+      { x: 1.1, y: 1 },
+      { x: 1.1, y: 2 },
+      { x: 0, y: 2 },
+    ]),
+    globalConnNetId: "wire",
+  })
+
+  const proposals = [...getLocalTraceLabelShifts(input, output)]
+
+  expect(
+    proposals.map((proposal) => proposal.traces[0]!.tracePath.at(-1)),
+  ).toEqual([{ x: 0.75, y: 1 }])
+})
+
 test("collision identity preserves opaque trace, net, and pin IDs", () => {
   const first = fixture().output
   first.traces[0]!.mspPairId = "a/b"

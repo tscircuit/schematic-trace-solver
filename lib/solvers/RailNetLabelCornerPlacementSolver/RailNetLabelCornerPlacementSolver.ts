@@ -41,6 +41,7 @@ import { visualizeRailNetLabelCornerPlacementSolver } from "./visualize"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 import { getRemovableRailLabelConnectors } from "./getRemovableRailLabelConnectors"
 import { getStraightPortConnectorCandidate } from "./getStraightPortConnectorCandidate"
+import { getSimplifiedRailConnectorCandidates } from "./getSimplifiedRailConnectorCandidates"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -153,7 +154,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     this.currentLabel = label
     this.currentCandidateResults = []
     this.queuedCornerCandidates = [
-      ...this.getStraightConnectorCandidates(label),
+      ...this.getSimplifiedConnectorCandidates(label),
       ...this.getCornerCandidatesForLabel(label),
     ]
 
@@ -295,7 +296,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
         this.onlyOverlappingLabels && this.isLabelCrossedByTrace(label)
       const newRailCorner = this.getNewRailCornerCandidates(label).length > 0
       const straightConnector =
-        this.getStraightConnectorCandidates(label).length > 0
+        this.getSimplifiedConnectorCandidates(label).length > 0
       if (!cornerMoved && !labelCrossed && !newRailCorner && !straightConnector)
         return false
     }
@@ -306,7 +307,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       label.orientation === "y+" || label.orientation === "y-"
     return (
       isVerticalRailLabel &&
-      (this.getStraightConnectorCandidates(label).length > 0 ||
+      (this.getSimplifiedConnectorCandidates(label).length > 0 ||
         this.getCornerCandidatesForLabel(label).length > 0)
     )
   }
@@ -452,6 +453,23 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
         obsoleteConnectorTraceId: connector.mspPairId,
       })),
     )
+  }
+
+  private getSimplifiedConnectorCandidates(
+    label: NetLabelPlacement,
+  ): TraceCornerCandidate[] {
+    return [
+      ...(this.originalTraces
+        ? getSimplifiedRailConnectorCandidates({
+            label,
+            traces: this.traces,
+            netLabelPlacements: this.outputNetLabelPlacements,
+            netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
+            inputProblem: this.inputProblem,
+          })
+        : []),
+      ...this.getStraightConnectorCandidates(label),
+    ]
   }
 
   private getStraightConnectorCandidates(

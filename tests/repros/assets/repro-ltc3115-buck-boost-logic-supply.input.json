@@ -1,0 +1,1186 @@
+{
+  "chips": [
+    {
+      "chipId": "U_LOGIC",
+      "center": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "width": 4.083333,
+      "height": 3.0,
+      "pins": [
+        {
+          "pinId": "U_LOGIC.1",
+          "displayName": "PGND1",
+          "x": -2.041667,
+          "y": 1.236111,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U_LOGIC.2",
+          "displayName": "RUN",
+          "x": -2.041667,
+          "y": 0.986111,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U_LOGIC.3",
+          "displayName": "SW2",
+          "x": -2.041667,
+          "y": 0.736111,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U_LOGIC.4",
+          "displayName": "PVOUT",
+          "x": -2.041667,
+          "y": 0.486111,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U_LOGIC.5",
+          "displayName": "GND1",
+          "x": -2.041667,
+          "y": 0.236111,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U_LOGIC.6",
+          "displayName": "GND2",
+          "x": -2.041667,
+          "y": -0.013889,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U_LOGIC.7",
+          "displayName": "VC",
+          "x": -2.041667,
+          "y": -0.263889,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U_LOGIC.8",
+          "displayName": "FB",
+          "x": -2.041667,
+          "y": -0.513889,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U_LOGIC.9",
+          "displayName": "RT",
+          "x": -2.041667,
+          "y": -0.763889,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U_LOGIC.10",
+          "displayName": "PGND2",
+          "x": -2.041667,
+          "y": -1.013889,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U_LOGIC.11",
+          "displayName": "PGND4",
+          "x": -2.041667,
+          "y": -1.263889,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U_LOGIC.21",
+          "displayName": "EPAD",
+          "x": 2.041667,
+          "y": 1.111111,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U_LOGIC.20",
+          "displayName": "PGND3",
+          "x": 2.041667,
+          "y": 0.861111,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U_LOGIC.19",
+          "displayName": "PWM_SYNC",
+          "x": 2.041667,
+          "y": 0.611111,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U_LOGIC.18",
+          "displayName": "SW1",
+          "x": 2.041667,
+          "y": 0.361111,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U_LOGIC.17",
+          "displayName": "PVIN",
+          "x": 2.041667,
+          "y": 0.111111,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U_LOGIC.16",
+          "displayName": "BST1",
+          "x": 2.041667,
+          "y": -0.138889,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U_LOGIC.15",
+          "displayName": "BST2",
+          "x": 2.041667,
+          "y": -0.388889,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U_LOGIC.14",
+          "displayName": "PVCC",
+          "x": 2.041667,
+          "y": -0.638889,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U_LOGIC.13",
+          "displayName": "VIN",
+          "x": 2.041667,
+          "y": -0.888889,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "U_LOGIC.12",
+          "displayName": "VCC",
+          "x": 2.041667,
+          "y": -1.138889,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "D_AUX",
+      "symbolName": "diode_right",
+      "center": {
+        "x": -9.236111,
+        "y": 0.611111
+      },
+      "width": 1.25,
+      "height": 0.638889,
+      "pins": [
+        {
+          "pinId": "D_AUX.1",
+          "displayName": "1",
+          "x": -9.861111,
+          "y": 0.611111,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "D_AUX.2",
+          "displayName": "2",
+          "x": -8.611111,
+          "y": 0.611111,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "D_USB",
+      "symbolName": "diode_right",
+      "center": {
+        "x": -9.236111,
+        "y": -2.472222
+      },
+      "width": 1.25,
+      "height": 0.638889,
+      "pins": [
+        {
+          "pinId": "D_USB.1",
+          "displayName": "1",
+          "x": -9.861111,
+          "y": -2.472222,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "D_USB.2",
+          "displayName": "2",
+          "x": -8.611111,
+          "y": -2.472222,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "C_BST1",
+      "symbolName": "capacitor_right",
+      "center": {
+        "x": -2.458333,
+        "y": 3.694444
+      },
+      "width": 0.75,
+      "height": 0.638889,
+      "pins": [
+        {
+          "pinId": "C_BST1.1",
+          "displayName": "1",
+          "x": -2.833333,
+          "y": 3.694444,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "C_BST1.2",
+          "displayName": "2",
+          "x": -2.083333,
+          "y": 3.694444,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "C_BST2",
+      "symbolName": "capacitor_right",
+      "center": {
+        "x": 2.458333,
+        "y": 3.694444
+      },
+      "width": 0.75,
+      "height": 0.638889,
+      "pins": [
+        {
+          "pinId": "C_BST2.1",
+          "displayName": "1",
+          "x": 2.083333,
+          "y": 3.694444,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "C_BST2.2",
+          "displayName": "2",
+          "x": 2.833333,
+          "y": 3.694444,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "L_LOGIC",
+      "symbolName": "inductor_right",
+      "center": {
+        "x": 4.916667,
+        "y": 0.0
+      },
+      "width": 1.388889,
+      "height": 0.638889,
+      "pins": [
+        {
+          "pinId": "L_LOGIC.1",
+          "displayName": "1",
+          "x": 4.222222,
+          "y": 0.0,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "L_LOGIC.2",
+          "displayName": "2",
+          "x": 5.611111,
+          "y": 0.0,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "C_LOGIC_IN",
+      "symbolName": "capacitor_down",
+      "center": {
+        "x": -6.416667,
+        "y": -1.861111
+      },
+      "width": 0.638889,
+      "height": 0.75,
+      "pins": [
+        {
+          "pinId": "C_LOGIC_IN.1",
+          "displayName": "1",
+          "x": -6.416667,
+          "y": -1.486111,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C_LOGIC_IN.2",
+          "displayName": "2",
+          "x": -6.416667,
+          "y": -2.236111,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "C_LOGIC_HF",
+      "symbolName": "capacitor_down",
+      "center": {
+        "x": -3.208333,
+        "y": -1.861111
+      },
+      "width": 0.638889,
+      "height": 0.75,
+      "pins": [
+        {
+          "pinId": "C_LOGIC_HF.1",
+          "displayName": "1",
+          "x": -3.208333,
+          "y": -1.486111,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C_LOGIC_HF.2",
+          "displayName": "2",
+          "x": -3.208333,
+          "y": -2.236111,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "C_VCC",
+      "symbolName": "capacitor_down",
+      "center": {
+        "x": -3.708333,
+        "y": -4.916667
+      },
+      "width": 0.638889,
+      "height": 0.75,
+      "pins": [
+        {
+          "pinId": "C_VCC.1",
+          "displayName": "1",
+          "x": -3.708333,
+          "y": -4.541667,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C_VCC.2",
+          "displayName": "2",
+          "x": -3.708333,
+          "y": -5.291667,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "R_RT",
+      "symbolName": "boxresistor_down",
+      "center": {
+        "x": -1.236111,
+        "y": -6.166667
+      },
+      "width": 0.638889,
+      "height": 0.75,
+      "pins": [
+        {
+          "pinId": "R_RT.1",
+          "displayName": "1",
+          "x": -1.236111,
+          "y": -5.791667,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "R_RT.2",
+          "displayName": "2",
+          "x": -1.236111,
+          "y": -6.541667,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "R_FF",
+      "symbolName": "boxresistor_right",
+      "center": {
+        "x": 2.458333,
+        "y": -1.236111
+      },
+      "width": 0.75,
+      "height": 0.638889,
+      "pins": [
+        {
+          "pinId": "R_FF.1",
+          "displayName": "1",
+          "x": 2.083333,
+          "y": -1.236111,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R_FF.2",
+          "displayName": "2",
+          "x": 2.833333,
+          "y": -1.236111,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "C_FF",
+      "symbolName": "capacitor_right",
+      "center": {
+        "x": 4.916667,
+        "y": -1.236111
+      },
+      "width": 0.75,
+      "height": 0.638889,
+      "pins": [
+        {
+          "pinId": "C_FF.1",
+          "displayName": "1",
+          "x": 4.541667,
+          "y": -1.236111,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "C_FF.2",
+          "displayName": "2",
+          "x": 5.291667,
+          "y": -1.236111,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "R_FB_TOP",
+      "symbolName": "boxresistor_down",
+      "center": {
+        "x": 8.625,
+        "y": 1.847222
+      },
+      "width": 0.638889,
+      "height": 0.75,
+      "pins": [
+        {
+          "pinId": "R_FB_TOP.1",
+          "displayName": "1",
+          "x": 8.625,
+          "y": 2.222222,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "R_FB_TOP.2",
+          "displayName": "2",
+          "x": 8.625,
+          "y": 1.472222,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "R_FB_BOT",
+      "symbolName": "boxresistor_down",
+      "center": {
+        "x": 6.152778,
+        "y": -3.694444
+      },
+      "width": 0.638889,
+      "height": 0.75,
+      "pins": [
+        {
+          "pinId": "R_FB_BOT.1",
+          "displayName": "1",
+          "x": 6.152778,
+          "y": -3.319444,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "R_FB_BOT.2",
+          "displayName": "2",
+          "x": 6.152778,
+          "y": -4.069444,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "C_LOGIC_OUT1",
+      "symbolName": "capacitor_down",
+      "center": {
+        "x": 7.388889,
+        "y": -1.861111
+      },
+      "width": 0.638889,
+      "height": 0.75,
+      "pins": [
+        {
+          "pinId": "C_LOGIC_OUT1.1",
+          "displayName": "1",
+          "x": 7.388889,
+          "y": -1.486111,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C_LOGIC_OUT1.2",
+          "displayName": "2",
+          "x": 7.388889,
+          "y": -2.236111,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "C_LOGIC_OUT2",
+      "symbolName": "capacitor_down",
+      "center": {
+        "x": 10.597222,
+        "y": -1.861111
+      },
+      "width": 0.638889,
+      "height": 0.75,
+      "pins": [
+        {
+          "pinId": "C_LOGIC_OUT2.1",
+          "displayName": "1",
+          "x": 10.597222,
+          "y": -1.486111,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C_LOGIC_OUT2.2",
+          "displayName": "2",
+          "x": 10.597222,
+          "y": -2.236111,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "R_COMP",
+      "symbolName": "boxresistor_right",
+      "center": {
+        "x": 2.458333,
+        "y": -4.930556
+      },
+      "width": 0.75,
+      "height": 0.638889,
+      "pins": [
+        {
+          "pinId": "R_COMP.1",
+          "displayName": "1",
+          "x": 2.083333,
+          "y": -4.930556,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "R_COMP.2",
+          "displayName": "2",
+          "x": 2.833333,
+          "y": -4.930556,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "C_COMP",
+      "symbolName": "capacitor_right",
+      "center": {
+        "x": 3.694444,
+        "y": -7.388889
+      },
+      "width": 0.75,
+      "height": 0.638889,
+      "pins": [
+        {
+          "pinId": "C_COMP.1",
+          "displayName": "1",
+          "x": 3.319444,
+          "y": -7.388889,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "C_COMP.2",
+          "displayName": "2",
+          "x": 4.069444,
+          "y": -7.388889,
+          "_facingDirection": "x+"
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": [
+        "D_AUX.2",
+        "D_USB.2"
+      ],
+      "netId": "LOGIC_IN",
+      "netLabelText": "LOGIC_IN",
+      "netLabelWidth": 0.8
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.2",
+        "C_LOGIC_IN.1"
+      ],
+      "netId": "LOGIC_IN",
+      "netLabelText": "LOGIC_IN",
+      "netLabelWidth": 0.8
+    },
+    {
+      "pinIds": [
+        "C_LOGIC_IN.1",
+        "C_LOGIC_HF.1"
+      ],
+      "netId": "LOGIC_IN",
+      "netLabelText": "LOGIC_IN",
+      "netLabelWidth": 0.8
+    },
+    {
+      "pinIds": [
+        "C_LOGIC_HF.1",
+        "U_LOGIC.17"
+      ],
+      "netId": "LOGIC_IN",
+      "netLabelText": "LOGIC_IN",
+      "netLabelWidth": 0.8
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.17",
+        "U_LOGIC.13"
+      ],
+      "netId": "LOGIC_IN",
+      "netLabelText": "LOGIC_IN",
+      "netLabelWidth": 0.8
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.1",
+        "U_LOGIC.5"
+      ],
+      "netId": "GND",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.3
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.5",
+        "U_LOGIC.6"
+      ],
+      "netId": "GND",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.3
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.6",
+        "U_LOGIC.10"
+      ],
+      "netId": "GND",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.3
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.10",
+        "U_LOGIC.11"
+      ],
+      "netId": "GND",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.3
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.11",
+        "C_LOGIC_HF.2"
+      ],
+      "netId": "GND",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.3
+    },
+    {
+      "pinIds": [
+        "C_LOGIC_HF.2",
+        "C_LOGIC_IN.2"
+      ],
+      "netId": "GND",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.3
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.19",
+        "U_LOGIC.20"
+      ],
+      "netId": "GND",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.3
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.20",
+        "U_LOGIC.21"
+      ],
+      "netId": "GND",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.3
+    },
+    {
+      "pinIds": [
+        "C_VCC.2",
+        "R_RT.2"
+      ],
+      "netId": "GND",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.3
+    },
+    {
+      "pinIds": [
+        "C_LOGIC_OUT1.2",
+        "C_LOGIC_OUT2.2"
+      ],
+      "netId": "GND",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.3
+    },
+    {
+      "pinIds": [
+        "C_LOGIC_OUT1.1",
+        "C_LOGIC_OUT2.1"
+      ],
+      "netId": "V3V3",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.4
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.18",
+        "L_LOGIC.1"
+      ],
+      "netId": "LOGIC_SW1",
+      "netLabelText": "LOGIC_SW1",
+      "netLabelWidth": 0.9
+    },
+    {
+      "pinIds": [
+        "L_LOGIC.2",
+        "C_BST2.2"
+      ],
+      "netId": "LOGIC_SW2",
+      "netLabelText": "LOGIC_SW2",
+      "netLabelWidth": 0.9
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.12",
+        "U_LOGIC.14"
+      ],
+      "netId": "LOGIC_VCC",
+      "netLabelText": "LOGIC_VCC",
+      "netLabelWidth": 0.9
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.14",
+        "C_VCC.1"
+      ],
+      "netId": "LOGIC_VCC",
+      "netLabelText": "LOGIC_VCC",
+      "netLabelWidth": 0.9
+    },
+    {
+      "pinIds": [
+        "R_FB_TOP.2",
+        "R_FB_BOT.1"
+      ],
+      "netId": "LOGIC_FB",
+      "netLabelText": "LOGIC_FB",
+      "netLabelWidth": 0.8,
+      "allowInlineNetLabel": true
+    },
+    {
+      "pinIds": [
+        "R_FB_BOT.1",
+        "C_FF.2"
+      ],
+      "netId": "LOGIC_FB",
+      "netLabelText": "LOGIC_FB",
+      "netLabelWidth": 0.8,
+      "allowInlineNetLabel": true
+    },
+    {
+      "pinIds": [
+        "C_FF.2",
+        "C_COMP.2"
+      ],
+      "netId": "LOGIC_FB",
+      "netLabelText": "LOGIC_FB",
+      "netLabelWidth": 0.8,
+      "allowInlineNetLabel": true
+    },
+    {
+      "pinIds": [
+        "R_FF.2",
+        "C_FF.1"
+      ],
+      "netId": "FF_C",
+      "netLabelText": "FF_C",
+      "netLabelWidth": 0.4,
+      "allowInlineNetLabel": true
+    }
+  ],
+  "netConnections": [
+    {
+      "pinIds": [
+        "D_AUX.1"
+      ],
+      "netId": "PD_BUS",
+      "netLabelText": "PD_BUS",
+      "netLabelWidth": 0.6
+    },
+    {
+      "pinIds": [
+        "D_USB.1"
+      ],
+      "netId": "USB5",
+      "netLabelText": "USB5",
+      "netLabelWidth": 0.4
+    },
+    {
+      "pinIds": [
+        "D_AUX.2",
+        "D_USB.2",
+        "U_LOGIC.2",
+        "U_LOGIC.17",
+        "U_LOGIC.13",
+        "C_LOGIC_IN.1",
+        "C_LOGIC_HF.1"
+      ],
+      "netId": "LOGIC_IN",
+      "netLabelText": "LOGIC_IN",
+      "netLabelWidth": 0.8
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.1",
+        "U_LOGIC.5",
+        "U_LOGIC.6",
+        "U_LOGIC.10",
+        "U_LOGIC.11",
+        "U_LOGIC.19",
+        "U_LOGIC.20",
+        "U_LOGIC.21",
+        "C_LOGIC_IN.2",
+        "C_LOGIC_HF.2",
+        "C_VCC.2",
+        "R_RT.2",
+        "R_FB_BOT.2",
+        "C_LOGIC_OUT1.2",
+        "C_LOGIC_OUT2.2"
+      ],
+      "netId": "GND",
+      "netLabelText": "GND",
+      "netLabelWidth": 0.3,
+      "isGround": true
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.4",
+        "R_FF.1",
+        "R_FB_TOP.1",
+        "C_LOGIC_OUT1.1",
+        "C_LOGIC_OUT2.1"
+      ],
+      "netId": "V3V3",
+      "netLabelText": "V3V3",
+      "netLabelWidth": 0.4
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.18",
+        "L_LOGIC.1",
+        "C_BST1.2"
+      ],
+      "netId": "LOGIC_SW1",
+      "netLabelText": "LOGIC_SW1",
+      "netLabelWidth": 0.9
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.3",
+        "L_LOGIC.2",
+        "C_BST2.2"
+      ],
+      "netId": "LOGIC_SW2",
+      "netLabelText": "LOGIC_SW2",
+      "netLabelWidth": 0.9
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.16",
+        "C_BST1.1"
+      ],
+      "netId": "LOGIC_BST1",
+      "netLabelText": "LOGIC_BST1",
+      "netLabelWidth": 1.0,
+      "allowInlineNetLabel": true
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.15",
+        "C_BST2.1"
+      ],
+      "netId": "LOGIC_BST2",
+      "netLabelText": "LOGIC_BST2",
+      "netLabelWidth": 1.0,
+      "allowInlineNetLabel": true
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.12",
+        "U_LOGIC.14",
+        "C_VCC.1"
+      ],
+      "netId": "LOGIC_VCC",
+      "netLabelText": "LOGIC_VCC",
+      "netLabelWidth": 0.9
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.7",
+        "R_COMP.1"
+      ],
+      "netId": "LOGIC_VC",
+      "netLabelText": "LOGIC_VC",
+      "netLabelWidth": 0.8
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.8",
+        "R_FB_TOP.2",
+        "R_FB_BOT.1",
+        "C_FF.2",
+        "C_COMP.2"
+      ],
+      "netId": "LOGIC_FB",
+      "netLabelText": "LOGIC_FB",
+      "netLabelWidth": 0.8,
+      "allowInlineNetLabel": true
+    },
+    {
+      "pinIds": [
+        "U_LOGIC.9",
+        "R_RT.1"
+      ],
+      "netId": "LOGIC_RT",
+      "netLabelText": "LOGIC_RT",
+      "netLabelWidth": 0.8,
+      "allowInlineNetLabel": true
+    },
+    {
+      "pinIds": [
+        "R_FF.2",
+        "C_FF.1"
+      ],
+      "netId": "FF_C",
+      "netLabelText": "FF_C",
+      "netLabelWidth": 0.4,
+      "allowInlineNetLabel": true
+    },
+    {
+      "pinIds": [
+        "R_COMP.2",
+        "C_COMP.1"
+      ],
+      "netId": "COMP_C",
+      "netLabelText": "COMP_C",
+      "netLabelWidth": 0.6,
+      "allowInlineNetLabel": true
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "U_LOGIC",
+      "center": {
+        "x": 0.0,
+        "y": -1.833333
+      },
+      "width": 2.4,
+      "height": 0.18,
+      "text": "LTC3115EFE-2#TRPBF"
+    },
+    {
+      "chipId": "C_BST1",
+      "center": {
+        "x": -2.458333,
+        "y": 3.333333
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "100nF"
+    },
+    {
+      "chipId": "C_BST2",
+      "center": {
+        "x": 2.458333,
+        "y": 3.333333
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "100nF"
+    },
+    {
+      "chipId": "L_LOGIC",
+      "center": {
+        "x": 4.916667,
+        "y": -0.361111
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "10uH"
+    },
+    {
+      "chipId": "C_LOGIC_IN",
+      "center": {
+        "x": -5.861111,
+        "y": -2.222222
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "4.7uF"
+    },
+    {
+      "chipId": "C_LOGIC_HF",
+      "center": {
+        "x": -2.652778,
+        "y": -2.222222
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "100nF"
+    },
+    {
+      "chipId": "C_VCC",
+      "center": {
+        "x": -3.152778,
+        "y": -5.277778
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "4.7uF"
+    },
+    {
+      "chipId": "R_RT",
+      "center": {
+        "x": -0.680556,
+        "y": -6.527778
+      },
+      "width": 0.54,
+      "height": 0.18,
+      "text": "47.5k\u03a9"
+    },
+    {
+      "chipId": "R_FF",
+      "center": {
+        "x": 2.458333,
+        "y": -1.597222
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "137k\u03a9"
+    },
+    {
+      "chipId": "C_FF",
+      "center": {
+        "x": 4.916667,
+        "y": -1.597222
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "33pF"
+    },
+    {
+      "chipId": "R_FB_TOP",
+      "center": {
+        "x": 9.180556,
+        "y": 1.486111
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "232k\u03a9"
+    },
+    {
+      "chipId": "R_FB_BOT",
+      "center": {
+        "x": 6.708333,
+        "y": -4.055556
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "100k\u03a9"
+    },
+    {
+      "chipId": "C_LOGIC_OUT1",
+      "center": {
+        "x": 7.944444,
+        "y": -2.222222
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "47uF"
+    },
+    {
+      "chipId": "C_LOGIC_OUT2",
+      "center": {
+        "x": 11.152778,
+        "y": -2.222222
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "47uF"
+    },
+    {
+      "chipId": "R_COMP",
+      "center": {
+        "x": 2.458333,
+        "y": -5.291667
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "15k\u03a9"
+    },
+    {
+      "chipId": "C_COMP",
+      "center": {
+        "x": 3.694444,
+        "y": -7.75
+      },
+      "width": 0.45,
+      "height": 0.18,
+      "text": "3.3nF"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "PD_BUS": [
+      "y+"
+    ],
+    "USB5": [
+      "y+"
+    ],
+    "LOGIC_IN": [
+      "y+"
+    ],
+    "LOGIC_SW1": [
+      "y+"
+    ],
+    "LOGIC_SW2": [
+      "y+"
+    ],
+    "LOGIC_VCC": [
+      "y+"
+    ],
+    "LOGIC_VC": [
+      "y+"
+    ]
+  }
+}
