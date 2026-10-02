@@ -2,6 +2,7 @@ import { boundsDistance, type Bounds } from "@tscircuit/math-utils"
 import { getInputChipBounds } from "lib/solvers/GuidelinesSolver/getInputChipBounds"
 import type { InputChip, InputProblem } from "lib/types/InputProblem"
 import { getTextBoxBounds, type RectPadding } from "lib/utils/textBoxBounds"
+import { getInputChipObstacleBounds } from "lib/utils/getInputChipObstacleBounds"
 
 // Component text is normally placed 0.04 units from its chip. A trace
 // centerline can fit mathematically, but its rendered stroke cannot usefully
@@ -35,7 +36,15 @@ export const getObstacleRects = (
   problem: InputProblem,
   opts: { textBoxPadding?: RectPadding } = {},
 ): ObstacleRect[] => {
-  const chipRects = problem.chips.map(chipToRect)
+  const chipRects = problem.chips.flatMap((chip) =>
+    getInputChipObstacleBounds(chip).map(
+      (bounds): ChipObstacleRect => ({
+        kind: "chip",
+        chipId: chip.chipId,
+        ...bounds,
+      }),
+    ),
+  )
   const textBoxRects = (problem.textBoxes ?? []).map((textBox) => {
     const textBounds = getTextBoxBounds(textBox, opts.textBoxPadding)
     const attachedChipBounds = chipRects.find(

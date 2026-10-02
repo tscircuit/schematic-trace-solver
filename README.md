@@ -30,6 +30,9 @@ Chips supply an authoritative rectangular body obstacle (`center`, `width`,
 `height`) in schematic world millimeters (+X right, +Y up). The caller computes
 this rectangle from the drawn symbol geometry and supplies text in `textBoxes`.
 Pins supply their actual terminal coordinates and outward `_facingDirection`.
+When a port has a drawn stem, `stemEnd` supplies its inner endpoint. Stems are
+separate collision obstacles; they never fill the empty area between an
+asymmetric terminal and the symbol body. Omit `stemEnd` for undrawn stems.
 External terminals, including no-connect terminals, do not enlarge the obstacle.
 There is no bounds mode or automatic pin-based size correction.
 

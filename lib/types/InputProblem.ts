@@ -19,6 +19,12 @@ export interface InputPin {
   x: number
   y: number
 
+  /** Inner endpoint of the drawn port stem, in the same world-mm frame.
+   * Omitted when the port has no separately drawn stem. Never inferred from
+   * the distance between the terminal and the component's bounding box.
+   */
+  stemEnd?: { x: number; y: number }
+
   _facingDirection?: "x+" | "x-" | "y+" | "y-"
 }
 

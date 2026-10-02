@@ -4,6 +4,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import type { FacingDirection } from "lib/utils/dir"
 import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import { EPS, TRACE_BOUNDARY_TOLERANCE } from "./constants"
+import { segmentIntersectsRect as intersectsObstacle } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import type { Bounds, ChipSide } from "./types"
 
 export const isYOrientation = (
@@ -46,6 +47,9 @@ export const segmentCrossesBoundsInterior = (
   p2: Point,
   bounds: Bounds,
 ) => {
+  if (bounds.minX === bounds.maxX || bounds.minY === bounds.maxY) {
+    return intersectsObstacle(p1, p2, bounds)
+  }
   const interiorBounds = {
     minX: bounds.minX + TRACE_BOUNDARY_TOLERANCE,
     minY: bounds.minY + TRACE_BOUNDARY_TOLERANCE,
