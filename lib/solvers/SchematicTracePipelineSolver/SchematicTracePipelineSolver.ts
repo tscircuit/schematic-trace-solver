@@ -641,7 +641,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
           netLabelConnectorTraceIds:
             instance.availableNetOrientationSolver!.netLabelConnectorTraceIds,
         },
-        { onlyInlineDirectConnections: true },
+        { onlyInlineConnections: true },
       ],
     ),
     definePipelineStep(
