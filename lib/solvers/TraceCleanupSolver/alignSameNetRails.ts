@@ -81,6 +81,7 @@ export const alignSameNetRails = ({
           obstacles,
           eligibleTraceIds,
           preserveWholeNetReadability: true,
+          allowFixedLabelLengthening: false,
         })
         if (applied) break
       }
