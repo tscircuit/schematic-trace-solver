@@ -178,9 +178,10 @@ function* iterateRailGroups(
         continue
       }
 
+      // Keep the partial fallback confined to the three-branch reproducer.
+      if (options?.requireFixedLabel) continue
       const traceIds = new Set(group.map((segment) => segment.traceId))
-      // Two-trace groups already had their complete alignment evaluated.
-      if (traceIds.size < 3) continue
+      if (traceIds.size !== 3) continue
 
       // A partial fallback should be narrower than the maximal-group pass:
       // consider only segment pairs that are directly connected under the
@@ -191,6 +192,7 @@ function* iterateRailGroups(
         const first = group[firstIndex]!
         for (const second of group.slice(firstIndex + 1)) {
           if (first.traceId === second.traceId) continue
+          if (!tracesSharePin(first, second, traceMap)) continue
           if (!canJoinRailGroup(first, first, second, traceMap, obstacles)) {
             continue
           }
