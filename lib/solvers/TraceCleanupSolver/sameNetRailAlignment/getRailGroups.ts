@@ -69,6 +69,7 @@ export const getRailGroups = (
   inputProblem: InputProblem,
   obstacles: ObstacleRect[],
   netLabelPlacements: NetLabelPlacement[],
+  options?: { onlyPairFallbacks?: boolean },
 ): RailSegment[][] => {
   const chipMap = new Map(inputProblem.chips.map((chip) => [chip.chipId, chip]))
   const traceMap = new Map(traces.map((trace) => [trace.mspPairId, trace]))
@@ -160,7 +161,8 @@ export const getRailGroups = (
     getComponentSideRailSegments(trace, chipMap),
   )
   // Preserve the original nearest-endpoint grouping and its ordering.
-  for (const group of collectConnectedGroups(primarySegments)) {
+  const primaryGroups = collectConnectedGroups(primarySegments)
+  for (const group of primaryGroups) {
     addEligibleGroup(group)
   }
 
@@ -172,9 +174,35 @@ export const getRailGroups = (
       maxMspPairDistance: inputProblem.maxMspPairDistance,
     }),
   )
-  for (const group of collectConnectedGroups(tiedEndpointSegments)) {
+  const tiedEndpointGroups = collectConnectedGroups(tiedEndpointSegments)
+  for (const group of tiedEndpointGroups) {
     addEligibleGroup(group, { requireFixedLabel: true })
   }
+  if (!options?.onlyPairFallbacks) return selectedGroups
+  selectedGroups.length = 0
+
+  // A connected group may contain conflicting label anchors or a blocked
+  // branch. Try clear connected pairs only after all original whole-group
+  // candidates, retaining every existing geometry and anchor safety check.
+  const addPairFallbacks = (
+    groups: RailSegment[][],
+    options?: { requireFixedLabel?: boolean },
+  ) => {
+    for (const group of groups) {
+      if (new Set(group.map((segment) => segment.traceId)).size < 3) continue
+      for (let firstIndex = 0; firstIndex < group.length - 1; firstIndex++) {
+        const first = group[firstIndex]!
+        for (const second of group.slice(firstIndex + 1)) {
+          if (!canJoinRailGroup(first, first, second, traceMap, obstacles)) {
+            continue
+          }
+          addEligibleGroup([first, second], options)
+        }
+      }
+    }
+  }
+  addPairFallbacks(primaryGroups)
+  addPairFallbacks(tiedEndpointGroups, { requireFixedLabel: true })
 
   return selectedGroups
 }
