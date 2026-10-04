@@ -7,11 +7,13 @@ import inputProblem from "./assets/repro-y1-hosco-extra-bends.input.json"
 
 // Reconstructed from the reported 24 MHz crystal schematic. Y1's obstacle
 // includes its right-hand value text; its pins retain their symbol directions.
-// Expanding the obstacle by even one floating-point unit currently discards
-// those directions and moves X2 to the bottom edge, producing a staircase.
+// Expanding the obstacle by even one floating-point unit used to discard
+// those directions and move X2 to the bottom edge, producing a staircase.
 // HOSCO should leave Y1 horizontally and turn down once toward C_OSCO.
-test("repro Y1 HOSCO takes unnecessary bends before the load capacitor", () => {
-  const solver = new SchematicTracePipelineSolver(inputProblem as unknown as InputProblem)
+test("Y1 HOSCO exits horizontally and turns down once toward the load capacitor", () => {
+  const solver = new SchematicTracePipelineSolver(
+    inputProblem as unknown as InputProblem,
+  )
   solver.solve()
 
   expect(solver.solved).toBe(true)
@@ -20,6 +22,14 @@ test("repro Y1 HOSCO takes unnecessary bends before the load capacitor", () => {
     trace.pinIds?.includes("Y1.X2"),
   )
   expect(hoscoTrace).toBeDefined()
+  const path = hoscoTrace!.tracePath
+  expect(path).toHaveLength(3)
+  expect(path[0]!.y).toBe(-0.01)
+  expect(path[1]).toEqual({ x: 2.5, y: -0.01 })
+  expect(path[2]).toEqual({ x: 2.5, y: -0.62 })
+  expect(path[1]!.x).toBeGreaterThan(path[0]!.x)
+  expect(path[2]!.y).toBeLessThan(path[1]!.y)
+  expect(solver.inputProblem.chips[0]!.pins[3]!._facingDirection).toBe("x+")
 
   const circuitJson = convertSolverOutputToCircuitJson(solver)
   const y1 = circuitJson.find(
