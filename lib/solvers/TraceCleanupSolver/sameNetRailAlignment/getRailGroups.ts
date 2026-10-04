@@ -178,22 +178,24 @@ function* iterateRailGroups(
         continue
       }
 
-      const traceIds = [...new Set(group.map((segment) => segment.traceId))]
+      const traceIds = new Set(group.map((segment) => segment.traceId))
       // Two-trace groups already had their complete alignment evaluated.
-      if (traceIds.length < 3) continue
+      if (traceIds.size < 3) continue
 
-      for (let first = 0; first < traceIds.length - 1; first++) {
-        for (let second = first + 1; second < traceIds.length; second++) {
-          const pairSegments = group.filter(
-            (segment) =>
-              segment.traceId === traceIds[first] ||
-              segment.traceId === traceIds[second],
-          )
-          // Removing other traces can remove the bridge between these two.
-          // Retain all segments for both trace IDs, then apply the original
-          // connectivity rules again rather than assuming the pair connects.
-          for (const pairGroup of collectConnectedGroups(pairSegments)) {
-            if (acceptEligibleGroup(pairGroup, options)) yield pairGroup
+      // A partial fallback should be narrower than the maximal-group pass:
+      // consider only segment pairs that are directly connected under the
+      // original grouping rules. Pulling every segment from two traces into a
+      // fresh connected-component search can create a new bridge through
+      // another endpoint and move unrelated rails elsewhere in the net.
+      for (let firstIndex = 0; firstIndex < group.length - 1; firstIndex++) {
+        const first = group[firstIndex]!
+        for (const second of group.slice(firstIndex + 1)) {
+          if (first.traceId === second.traceId) continue
+          if (!canJoinRailGroup(first, first, second, traceMap, obstacles)) {
+            continue
+          }
+          if (acceptEligibleGroup([first, second], options)) {
+            yield [first, second]
           }
         }
       }
