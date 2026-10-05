@@ -109,6 +109,20 @@ export const balanceZShapes = ({
       coordsEqual(p1.x, p2.x) &&
       coordsEqual(p2.y, p3.y)
 
+    const isVHVShape =
+      coordsEqual(p0.x, p1.x) &&
+      coordsEqual(p1.y, p2.y) &&
+      coordsEqual(p2.x, p3.x)
+    const isSameDirection = isHVHShape
+      ? Math.sign(p1.x - p0.x) === Math.sign(p3.x - p2.x)
+      : Math.sign(p1.y - p0.y) === Math.sign(p3.y - p2.y)
+
+    // Balancing a U-shaped detour reverses a terminal approach. Only Z shapes
+    // have a midpoint between the terminals that preserves both directions.
+    if (!(isHVHShape || isVHVShape) || !isSameDirection) {
+      return { ...targetTrace }
+    }
+
     if (isHVHShape) {
       const idealX = (p0.x + p3.x) / 2
       p1New = { x: idealX, y: p1.y }
