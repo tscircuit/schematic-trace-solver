@@ -17,7 +17,7 @@ import { colorAvailableNetOrientationLabels } from "./colorAvailableNetOrientati
 import { visualizeInputProblem } from "./visualizeInputProblem"
 import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
 import { correctPinsInsideChips } from "./correctPinsInsideChip"
-import { expandChipsToFitPins } from "./expandChipsToFitPins"
+import { normalizeChipBounds } from "./normalizeChipBounds"
 import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
 import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
 import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
@@ -712,8 +712,8 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       _hideRatsNet: this.hideRatsNet,
     })
 
-    // First, expand chips so existing pin coordinates sit on or within their edges without shrinking.
-    expandChipsToFitPins(cloned)
+    // Use supplied body geometry; preserve legacy pin-inclusive sizing otherwise.
+    normalizeChipBounds(cloned)
     // Then, for any remaining pins that are still inside due to mixed extremes, snap them to the nearest edge.
     correctPinsInsideChips(cloned)
 

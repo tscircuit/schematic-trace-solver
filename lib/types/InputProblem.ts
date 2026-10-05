@@ -1,3 +1,4 @@
+import type { Bounds } from "@tscircuit/math-utils"
 import type { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import type { FacingDirection } from "lib/utils/dir"
 
@@ -31,6 +32,12 @@ export interface TextBoxes {
 
 export interface InputChip {
   chipId: ChipId
+
+  /** Drawn body AABB in schematic world mm (+X right, +Y up), supplied by core.
+   * Text and terminal positions do not enlarge this obstacle. When omitted,
+   * legacy inputs retain pin-inclusive bounds derived from center/width/height.
+   */
+  bodyBounds?: Bounds
 
   /**
    * Exact directional/oriented schematic-symbol name when the caller has it.

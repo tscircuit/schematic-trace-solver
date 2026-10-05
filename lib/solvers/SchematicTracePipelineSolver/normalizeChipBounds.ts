@@ -1,18 +1,15 @@
+import { getBoundsCenter } from "@tscircuit/math-utils"
 import type { InputProblem } from "lib/types/InputProblem"
 
-/**
- * Expands chip width/height (never shrinks) so that all existing pin coordinates
- * are inside or on the chip boundary, and any pin at the furthest extent in X/Y
- * lies exactly on an edge.
- *
- * Notes:
- * - Center is preserved.
- * - Only increases dimensions as needed.
- * - Preserves supplied pin directions, which describe the symbol terminals
- *   rather than the potentially text-inclusive obstacle bounds.
- */
-export const expandChipsToFitPins = (problem: InputProblem) => {
+/** Use supplied drawn-body bounds, retaining pin-inclusive sizing for legacy inputs. */
+export const normalizeChipBounds = (problem: InputProblem) => {
   for (const chip of problem.chips) {
+    if (chip.bodyBounds) {
+      chip.center = getBoundsCenter(chip.bodyBounds)
+      chip.width = chip.bodyBounds.maxX - chip.bodyBounds.minX
+      chip.height = chip.bodyBounds.maxY - chip.bodyBounds.minY
+      continue
+    }
     const halfWidth = chip.width / 2
     const halfHeight = chip.height / 2
 
