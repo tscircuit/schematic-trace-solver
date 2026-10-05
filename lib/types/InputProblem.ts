@@ -40,6 +40,9 @@ export interface InputChip {
    */
   symbolName?: string
 
+  /** Authoritative routing obstacle in schematic world mm (+X right, +Y up).
+   * Terminal positions may lie outside this rectangle and do not enlarge it.
+   */
   center: { x: number; y: number }
   width: number
   height: number
