@@ -479,21 +479,19 @@
         "y": -4
       },
       "width": 1.165,
-      "height": 0.7600000000000011,
+      "height": 0.7600000000000016,
       "pins": [
         {
           "pinId": "schematic_port_71",
           "displayName": "1",
           "x": 5.2,
-          "y": -3.619999999999999,
-          "_facingDirection": "y+"
+          "y": -3.619999999999999
         },
         {
           "pinId": "schematic_port_72",
           "displayName": "2",
           "x": 5.2,
-          "y": -4.380000000000001,
-          "_facingDirection": "y-"
+          "y": -4.380000000000001
         }
       ]
     },
@@ -504,21 +502,19 @@
         "y": -4
       },
       "width": 1.285000000000001,
-      "height": 0.7600000000000011,
+      "height": 0.7600000000000016,
       "pins": [
         {
           "pinId": "schematic_port_73",
           "displayName": "1",
           "x": 8.4,
-          "y": -3.619999999999999,
-          "_facingDirection": "y+"
+          "y": -3.619999999999999
         },
         {
           "pinId": "schematic_port_74",
           "displayName": "2",
           "x": 8.4,
-          "y": -4.380000000000001,
-          "_facingDirection": "y-"
+          "y": -4.380000000000001
         }
       ]
     },
@@ -2641,13 +2637,13 @@
         "y": -15.2
       },
       "width": 1.8000000000000003,
-      "height": 2.3000000000000007,
+      "height": 2.3000000000000043,
       "pins": [
         {
           "pinId": "schematic_port_283",
           "displayName": "DC_PLUS",
           "x": 0,
-          "y": -14.049999999999999
+          "y": -14.049999999999997
         },
         {
           "pinId": "schematic_port_284",

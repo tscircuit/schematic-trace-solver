@@ -51,21 +51,19 @@
       "symbolName": "boxresistor_up",
       "center": { "x": -12.465, "y": -7.4 },
       "width": 0.97,
-      "height": 0.6,
+      "height": 0.6000000000000014,
       "pins": [
         {
           "pinId": "R43.1",
           "displayName": "1",
           "x": -12.5,
-          "y": -7.1,
-          "_facingDirection": "y+"
+          "y": -7.1
         },
         {
           "pinId": "R43.2",
           "displayName": "2",
           "x": -12.5,
-          "y": -7.7,
-          "_facingDirection": "y-"
+          "y": -7.700000000000001
         }
       ]
     },
@@ -73,22 +71,20 @@
       "chipId": "R38",
       "symbolName": "boxresistor_right",
       "center": { "x": -11.3, "y": -7 },
-      "width": 0.6,
+      "width": 0.6000000000000014,
       "height": 0.68,
       "pins": [
         {
           "pinId": "R38.1",
           "displayName": "1",
           "x": -11,
-          "y": -7,
-          "_facingDirection": "x+"
+          "y": -7
         },
         {
           "pinId": "R38.2",
           "displayName": "2",
-          "x": -11.6,
-          "y": -7,
-          "_facingDirection": "x-"
+          "x": -11.600000000000001,
+          "y": -7
         }
       ]
     },
@@ -96,22 +92,20 @@
       "chipId": "R44",
       "symbolName": "boxresistor_right",
       "center": { "x": -11.3, "y": -8 },
-      "width": 0.6,
+      "width": 0.6000000000000014,
       "height": 0.68,
       "pins": [
         {
           "pinId": "R44.1",
           "displayName": "1",
           "x": -11,
-          "y": -8,
-          "_facingDirection": "x+"
+          "y": -8
         },
         {
           "pinId": "R44.2",
           "displayName": "2",
-          "x": -11.6,
-          "y": -8,
-          "_facingDirection": "x-"
+          "x": -11.600000000000001,
+          "y": -8
         }
       ]
     }

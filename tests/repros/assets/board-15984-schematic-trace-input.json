@@ -235,19 +235,17 @@
         "y": -3.8050000000000015
       },
       "width": 1.04,
-      "height": 0.7600000000000011,
+      "height": 0.7600000000000016,
       "pins": [
         {
           "pinId": "schematic_port_30",
           "x": 4.72,
-          "y": -3.4250000000000007,
-          "_facingDirection": "y+"
+          "y": -3.4250000000000007
         },
         {
           "pinId": "schematic_port_31",
           "x": 4.72,
-          "y": -4.185000000000002,
-          "_facingDirection": "y-"
+          "y": -4.185000000000002
         }
       ],
       "sectionId": "Power Input & 3V3 Regulator"
@@ -283,19 +281,17 @@
         "y": -3.8050000000000015
       },
       "width": 0.9199999999999999,
-      "height": 0.7600000000000011,
+      "height": 0.7600000000000016,
       "pins": [
         {
           "pinId": "schematic_port_34",
           "x": 7.659999999999999,
-          "y": -3.4250000000000007,
-          "_facingDirection": "y+"
+          "y": -3.4250000000000007
         },
         {
           "pinId": "schematic_port_35",
           "x": 7.659999999999999,
-          "y": -4.185000000000002,
-          "_facingDirection": "y-"
+          "y": -4.185000000000002
         }
       ],
       "sectionId": "Power Input & 3V3 Regulator"

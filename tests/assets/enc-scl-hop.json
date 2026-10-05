@@ -7,19 +7,17 @@
         "y": 1.8
       },
       "width": 0.16000000000000003,
-      "height": 0.4,
+      "height": 0.6000000000000001,
       "pins": [
         {
           "pinId": "R_ENC_SDA.1",
           "x": 0.0,
-          "y": 2.1,
-          "_facingDirection": "y+"
+          "y": 2.1
         },
         {
           "pinId": "R_ENC_SDA.2",
           "x": 0.0,
-          "y": 1.5,
-          "_facingDirection": "y-"
+          "y": 1.5
         }
       ]
     },
@@ -30,19 +28,17 @@
         "y": 1.8
       },
       "width": 0.16000000000000003,
-      "height": 0.4,
+      "height": 0.6000000000000001,
       "pins": [
         {
           "pinId": "R_ENC_SCL.1",
           "x": 2.0,
-          "y": 2.1,
-          "_facingDirection": "y+"
+          "y": 2.1
         },
         {
           "pinId": "R_ENC_SCL.2",
           "x": 2.0,
-          "y": 1.5,
-          "_facingDirection": "y-"
+          "y": 1.5
         }
       ]
     },
@@ -52,64 +48,56 @@
         "x": 6.0,
         "y": 0.0
       },
-      "width": 1.7600000000000002,
-      "height": 1.6,
+      "width": 2.5600000000000005,
+      "height": 2.4000000000000004,
       "pins": [
         {
           "pinId": "U_ENCODER.6",
           "displayName": "SDA",
-          "x": 4.720000000000001,
-          "y": 0.1,
-          "_facingDirection": "x-"
+          "x": 4.72,
+          "y": 0.1
         },
         {
           "pinId": "U_ENCODER.7",
           "displayName": "SCL",
-          "x": 4.720000000000001,
-          "y": -0.1,
-          "_facingDirection": "x-"
+          "x": 4.72,
+          "y": -0.1
         },
         {
           "pinId": "U_ENCODER.1",
           "displayName": "VDD5V",
           "x": 5.9,
-          "y": 1.2000000000000002,
-          "_facingDirection": "y+"
+          "y": 1.2000000000000002
         },
         {
           "pinId": "U_ENCODER.2",
           "displayName": "VDD3V3",
           "x": 6.1000000000000005,
-          "y": 1.2000000000000002,
-          "_facingDirection": "y+"
+          "y": 1.2000000000000002
         },
         {
           "pinId": "U_ENCODER.4",
           "displayName": "GND",
           "x": 5.9,
-          "y": -1.2000000000000002,
-          "_facingDirection": "y-"
+          "y": -1.2000000000000002
         },
         {
           "pinId": "U_ENCODER.8",
           "displayName": "DIR",
           "x": 6.1000000000000005,
-          "y": -1.2000000000000002,
-          "_facingDirection": "y-"
+          "y": -1.2000000000000002
         },
         {
           "pinId": "U_ENCODER.3",
           "displayName": "OUT",
           "x": 7.28,
-          "y": 0.1,
-          "_facingDirection": "x+"
+          "y": 0.1
         },
         {
           "pinId": "U_ENCODER.5",
           "displayName": "PGO",
           "x": 7.28,
-          "y": -0.1,
-          "_facingDirection": "x+"
+          "y": -0.1
         }
       ]
     }

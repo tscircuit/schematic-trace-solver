@@ -6,64 +6,56 @@
         "x": -1.247499999999998,
         "y": 3.3
       },
-      "width": 1.3000000000000003,
+      "width": 2.1,
       "height": 1,
       "pins": [
         {
           "pinId": "schematic_port_0",
           "displayName": "OSCI",
           "x": -2.297499999999998,
-          "y": 3.5999999999999996,
-          "_facingDirection": "x-"
+          "y": 3.5999999999999996
         },
         {
           "pinId": "schematic_port_1",
           "displayName": "OSCO",
           "x": -2.297499999999998,
-          "y": 3.4,
-          "_facingDirection": "x-"
+          "y": 3.4
         },
         {
           "pinId": "schematic_port_2",
           "displayName": "N_INT",
           "x": -2.297499999999998,
-          "y": 3.1999999999999997,
-          "_facingDirection": "x-"
+          "y": 3.1999999999999997
         },
         {
           "pinId": "schematic_port_3",
           "displayName": "VSS",
           "x": -2.297499999999998,
-          "y": 3,
-          "_facingDirection": "x-"
+          "y": 3
         },
         {
           "pinId": "schematic_port_4",
           "displayName": "SDA",
           "x": -0.197499999999998,
-          "y": 3,
-          "_facingDirection": "x+"
+          "y": 3
         },
         {
           "pinId": "schematic_port_5",
           "displayName": "SCL",
           "x": -0.197499999999998,
-          "y": 3.1999999999999997,
-          "_facingDirection": "x+"
+          "y": 3.1999999999999997
         },
         {
           "pinId": "schematic_port_6",
           "displayName": "CLKOUT",
           "x": -0.197499999999998,
-          "y": 3.4,
-          "_facingDirection": "x+"
+          "y": 3.4
         },
         {
           "pinId": "schematic_port_7",
           "displayName": "VDD",
           "x": -0.197499999999998,
-          "y": 3.5999999999999996,
-          "_facingDirection": "x+"
+          "y": 3.5999999999999996
         }
       ],
       "sectionId": "data"
@@ -159,14 +151,14 @@
           "pinId": "schematic_port_14",
           "displayName": "pos",
           "x": 3.2775000000000016,
-          "y": 3.0049999999999994,
+          "y": 3.085,
           "_facingDirection": "y+"
         },
         {
           "pinId": "schematic_port_15",
           "displayName": "neg",
           "x": 3.2775000000000016,
-          "y": 2.405,
+          "y": 2.3249999999999993,
           "_facingDirection": "y-"
         }
       ],
@@ -178,106 +170,92 @@
         "x": -1.2474999999999998,
         "y": 0
       },
-      "width": 1.2000000000000002,
+      "width": 2,
       "height": 1.6,
       "pins": [
         {
           "pinId": "schematic_port_16",
           "displayName": "1",
           "x": -2.2474999999999996,
-          "y": 0.6,
-          "_facingDirection": "x-"
+          "y": 0.6
         },
         {
           "pinId": "schematic_port_17",
           "displayName": "SDx",
           "x": -2.2474999999999996,
-          "y": 0.39999999999999997,
-          "_facingDirection": "x-"
+          "y": 0.39999999999999997
         },
         {
           "pinId": "schematic_port_18",
           "displayName": "SCx",
           "x": -2.2474999999999996,
-          "y": 0.19999999999999996,
-          "_facingDirection": "x-"
+          "y": 0.19999999999999996
         },
         {
           "pinId": "schematic_port_19",
           "displayName": "INT1",
           "x": -2.2474999999999996,
-          "y": -1.1102230246251565e-16,
-          "_facingDirection": "x-"
+          "y": -1.1102230246251565e-16
         },
         {
           "pinId": "schematic_port_20",
           "displayName": "VDDIO",
           "x": -2.2474999999999996,
-          "y": -0.20000000000000007,
-          "_facingDirection": "x-"
+          "y": -0.20000000000000007
         },
         {
           "pinId": "schematic_port_21",
           "displayName": "GND1",
           "x": -2.2474999999999996,
-          "y": -0.4,
-          "_facingDirection": "x-"
+          "y": -0.4
         },
         {
           "pinId": "schematic_port_22",
           "displayName": "GND2",
           "x": -2.2474999999999996,
-          "y": -0.6,
-          "_facingDirection": "x-"
+          "y": -0.6
         },
         {
           "pinId": "schematic_port_23",
           "displayName": "VDD",
           "x": -0.24749999999999983,
-          "y": -0.6,
-          "_facingDirection": "x+"
+          "y": -0.6
         },
         {
           "pinId": "schematic_port_24",
           "displayName": "INT2",
           "x": -0.24749999999999983,
-          "y": -0.39999999999999997,
-          "_facingDirection": "x+"
+          "y": -0.39999999999999997
         },
         {
           "pinId": "schematic_port_25",
           "displayName": "NC1",
           "x": -0.24749999999999983,
-          "y": -0.19999999999999996,
-          "_facingDirection": "x+"
+          "y": -0.19999999999999996
         },
         {
           "pinId": "schematic_port_26",
           "displayName": "NC2",
           "x": -0.24749999999999983,
-          "y": 1.1102230246251565e-16,
-          "_facingDirection": "x+"
+          "y": 1.1102230246251565e-16
         },
         {
           "pinId": "schematic_port_27",
           "displayName": "CS",
           "x": -0.24749999999999983,
-          "y": 0.20000000000000007,
-          "_facingDirection": "x+"
+          "y": 0.20000000000000007
         },
         {
           "pinId": "schematic_port_28",
           "displayName": "SCL",
           "x": -0.24749999999999983,
-          "y": 0.4,
-          "_facingDirection": "x+"
+          "y": 0.4
         },
         {
           "pinId": "schematic_port_29",
           "displayName": "SDA",
           "x": -0.24749999999999983,
-          "y": 0.6,
-          "_facingDirection": "x+"
+          "y": 0.6
         }
       ],
       "sectionId": "data"
@@ -295,14 +273,14 @@
           "pinId": "schematic_port_30",
           "displayName": "pos",
           "x": -1.3968749999999996,
-          "y": -6.0600000000000005,
+          "y": -5.98,
           "_facingDirection": "y+"
         },
         {
           "pinId": "schematic_port_31",
           "displayName": "neg",
           "x": -1.3968749999999996,
-          "y": -6.66,
+          "y": -6.74,
           "_facingDirection": "y-"
         }
       ],
@@ -321,14 +299,14 @@
           "pinId": "schematic_port_32",
           "displayName": "pos",
           "x": -1.3968749999999996,
-          "y": -7.9799999999999995,
+          "y": -7.900000000000001,
           "_facingDirection": "y+"
         },
         {
           "pinId": "schematic_port_33",
           "displayName": "neg",
           "x": -1.3968749999999996,
-          "y": -8.58,
+          "y": -8.66,
           "_facingDirection": "y-"
         }
       ],
@@ -341,21 +319,19 @@
         "y": 0.3
       },
       "width": 1.4449999999999998,
-      "height": 0.6,
+      "height": 0.6000000000000002,
       "pins": [
         {
           "pinId": "schematic_port_34",
           "displayName": "anode",
           "x": 1.1249999999999998,
-          "y": -5.551115123125783e-17,
-          "_facingDirection": "y-"
+          "y": -1.1102230246251565e-16
         },
         {
           "pinId": "schematic_port_35",
           "displayName": "cathode",
           "x": 1.1249999999999998,
-          "y": 0.6000000000000001,
-          "_facingDirection": "y+"
+          "y": 0.6000000000000001
         }
       ],
       "sectionId": "data"
@@ -418,99 +394,86 @@
         "x": -1.2474999999999996,
         "y": -3.6000000000000005
       },
-      "width": 1.2000000000000002,
+      "width": 2,
       "height": 1.5999999999999996,
       "pins": [
         {
           "pinId": "schematic_port_40",
           "displayName": "1",
           "x": -2.2474999999999996,
-          "y": -3.0000000000000004,
-          "_facingDirection": "x-"
+          "y": -3.0000000000000004
         },
         {
           "pinId": "schematic_port_41",
           "displayName": "2",
           "x": -2.2474999999999996,
-          "y": -3.2000000000000006,
-          "_facingDirection": "x-"
+          "y": -3.2000000000000006
         },
         {
           "pinId": "schematic_port_42",
           "displayName": "3",
           "x": -2.2474999999999996,
-          "y": -3.4000000000000004,
-          "_facingDirection": "x-"
+          "y": -3.4000000000000004
         },
         {
           "pinId": "schematic_port_43",
           "displayName": "VDD",
           "x": -2.2474999999999996,
-          "y": -3.6000000000000005,
-          "_facingDirection": "x-"
+          "y": -3.6000000000000005
         },
         {
           "pinId": "schematic_port_44",
           "displayName": "5",
           "x": -2.2474999999999996,
-          "y": -3.8000000000000007,
-          "_facingDirection": "x-"
+          "y": -3.8000000000000007
         },
         {
           "pinId": "schematic_port_45",
           "displayName": "VSS",
           "x": -2.2474999999999996,
-          "y": -4.000000000000001,
-          "_facingDirection": "x-"
+          "y": -4.000000000000001
         },
         {
           "pinId": "schematic_port_46",
           "displayName": "7",
           "x": -2.2474999999999996,
-          "y": -4.2,
-          "_facingDirection": "x-"
+          "y": -4.2
         },
         {
           "pinId": "schematic_port_47",
           "displayName": "8",
           "x": -0.2474999999999996,
-          "y": -4.1000000000000005,
-          "_facingDirection": "x+"
+          "y": -4.1000000000000005
         },
         {
           "pinId": "schematic_port_48",
           "displayName": "CD",
           "x": -0.2474999999999996,
-          "y": -3.9000000000000004,
-          "_facingDirection": "x+"
+          "y": -3.9000000000000004
         },
         {
           "pinId": "schematic_port_49",
           "displayName": "GND1",
           "x": -0.2474999999999996,
-          "y": -3.7000000000000006,
-          "_facingDirection": "x+"
+          "y": -3.7000000000000006
         },
         {
           "pinId": "schematic_port_50",
           "displayName": "GND4",
           "x": -0.2474999999999996,
-          "y": -3.5000000000000004,
-          "_facingDirection": "x+"
+          "y": -3.5000000000000004
         },
         {
           "pinId": "schematic_port_51",
           "displayName": "GND3",
           "x": -0.2474999999999996,
-          "y": -3.3000000000000007,
-          "_facingDirection": "x+"
+          "y": -3.3000000000000007
         },
         {
           "pinId": "schematic_port_52",
           "displayName": "GND2",
           "x": -0.2474999999999996,
-          "y": -3.1000000000000005,
-          "_facingDirection": "x+"
+          "y": -3.1000000000000005
         }
       ],
       "sectionId": "data"
@@ -528,14 +491,14 @@
           "pinId": "schematic_port_53",
           "displayName": "pos",
           "x": -0.8626785714285701,
-          "y": -9.845,
+          "y": -9.765000000000002,
           "_facingDirection": "y+"
         },
         {
           "pinId": "schematic_port_54",
           "displayName": "neg",
           "x": -0.8626785714285701,
-          "y": -10.445000000000002,
+          "y": -10.525,
           "_facingDirection": "y-"
         }
       ],
@@ -554,14 +517,14 @@
           "pinId": "schematic_port_55",
           "displayName": "pos",
           "x": -0.862678571428571,
-          "y": -11.655000000000003,
+          "y": -11.575000000000005,
           "_facingDirection": "y+"
         },
         {
           "pinId": "schematic_port_56",
           "displayName": "neg",
           "x": -0.862678571428571,
-          "y": -12.255000000000004,
+          "y": -12.335000000000003,
           "_facingDirection": "y-"
         }
       ],

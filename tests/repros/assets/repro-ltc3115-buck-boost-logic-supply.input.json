@@ -6,155 +6,134 @@
         "x": 0.0,
         "y": 0.0
       },
-      "width": 4.083333,
+      "width": 4.083334,
       "height": 3.0,
       "pins": [
         {
           "pinId": "U_LOGIC.1",
           "displayName": "PGND1",
           "x": -2.041667,
-          "y": 1.236111,
-          "_facingDirection": "x-"
+          "y": 1.236111
         },
         {
           "pinId": "U_LOGIC.2",
           "displayName": "RUN",
           "x": -2.041667,
-          "y": 0.986111,
-          "_facingDirection": "x-"
+          "y": 0.986111
         },
         {
           "pinId": "U_LOGIC.3",
           "displayName": "SW2",
           "x": -2.041667,
-          "y": 0.736111,
-          "_facingDirection": "x-"
+          "y": 0.736111
         },
         {
           "pinId": "U_LOGIC.4",
           "displayName": "PVOUT",
           "x": -2.041667,
-          "y": 0.486111,
-          "_facingDirection": "x-"
+          "y": 0.486111
         },
         {
           "pinId": "U_LOGIC.5",
           "displayName": "GND1",
           "x": -2.041667,
-          "y": 0.236111,
-          "_facingDirection": "x-"
+          "y": 0.236111
         },
         {
           "pinId": "U_LOGIC.6",
           "displayName": "GND2",
           "x": -2.041667,
-          "y": -0.013889,
-          "_facingDirection": "x-"
+          "y": -0.013889
         },
         {
           "pinId": "U_LOGIC.7",
           "displayName": "VC",
           "x": -2.041667,
-          "y": -0.263889,
-          "_facingDirection": "x-"
+          "y": -0.263889
         },
         {
           "pinId": "U_LOGIC.8",
           "displayName": "FB",
           "x": -2.041667,
-          "y": -0.513889,
-          "_facingDirection": "x-"
+          "y": -0.513889
         },
         {
           "pinId": "U_LOGIC.9",
           "displayName": "RT",
           "x": -2.041667,
-          "y": -0.763889,
-          "_facingDirection": "x-"
+          "y": -0.763889
         },
         {
           "pinId": "U_LOGIC.10",
           "displayName": "PGND2",
           "x": -2.041667,
-          "y": -1.013889,
-          "_facingDirection": "x-"
+          "y": -1.013889
         },
         {
           "pinId": "U_LOGIC.11",
           "displayName": "PGND4",
           "x": -2.041667,
-          "y": -1.263889,
-          "_facingDirection": "x-"
+          "y": -1.263889
         },
         {
           "pinId": "U_LOGIC.21",
           "displayName": "EPAD",
           "x": 2.041667,
-          "y": 1.111111,
-          "_facingDirection": "x+"
+          "y": 1.111111
         },
         {
           "pinId": "U_LOGIC.20",
           "displayName": "PGND3",
           "x": 2.041667,
-          "y": 0.861111,
-          "_facingDirection": "x+"
+          "y": 0.861111
         },
         {
           "pinId": "U_LOGIC.19",
           "displayName": "PWM_SYNC",
           "x": 2.041667,
-          "y": 0.611111,
-          "_facingDirection": "x+"
+          "y": 0.611111
         },
         {
           "pinId": "U_LOGIC.18",
           "displayName": "SW1",
           "x": 2.041667,
-          "y": 0.361111,
-          "_facingDirection": "x+"
+          "y": 0.361111
         },
         {
           "pinId": "U_LOGIC.17",
           "displayName": "PVIN",
           "x": 2.041667,
-          "y": 0.111111,
-          "_facingDirection": "x+"
+          "y": 0.111111
         },
         {
           "pinId": "U_LOGIC.16",
           "displayName": "BST1",
           "x": 2.041667,
-          "y": -0.138889,
-          "_facingDirection": "x+"
+          "y": -0.138889
         },
         {
           "pinId": "U_LOGIC.15",
           "displayName": "BST2",
           "x": 2.041667,
-          "y": -0.388889,
-          "_facingDirection": "x+"
+          "y": -0.388889
         },
         {
           "pinId": "U_LOGIC.14",
           "displayName": "PVCC",
           "x": 2.041667,
-          "y": -0.638889,
-          "_facingDirection": "x+"
+          "y": -0.638889
         },
         {
           "pinId": "U_LOGIC.13",
           "displayName": "VIN",
           "x": 2.041667,
-          "y": -0.888889,
-          "_facingDirection": "x+"
+          "y": -0.888889
         },
         {
           "pinId": "U_LOGIC.12",
           "displayName": "VCC",
           "x": 2.041667,
-          "y": -1.138889,
-          "_facingDirection": "x+"
+          "y": -1.138889
         }
       ]
     },
@@ -269,22 +248,20 @@
         "x": 4.916667,
         "y": 0.0
       },
-      "width": 1.388889,
+      "width": 1.38889,
       "height": 0.638889,
       "pins": [
         {
           "pinId": "L_LOGIC.1",
           "displayName": "1",
           "x": 4.222222,
-          "y": 0.0,
-          "_facingDirection": "x-"
+          "y": 0.0
         },
         {
           "pinId": "L_LOGIC.2",
           "displayName": "2",
-          "x": 5.611111,
-          "y": 0.0,
-          "_facingDirection": "x+"
+          "x": 5.611112,
+          "y": 0.0
         }
       ]
     },
@@ -296,21 +273,19 @@
         "y": -1.861111
       },
       "width": 0.638889,
-      "height": 0.75,
+      "height": 0.7500000000000004,
       "pins": [
         {
           "pinId": "C_LOGIC_IN.1",
           "displayName": "1",
           "x": -6.416667,
-          "y": -1.486111,
-          "_facingDirection": "y+"
+          "y": -1.4861109999999997
         },
         {
           "pinId": "C_LOGIC_IN.2",
           "displayName": "2",
           "x": -6.416667,
-          "y": -2.236111,
-          "_facingDirection": "y-"
+          "y": -2.236111
         }
       ]
     },
@@ -322,21 +297,19 @@
         "y": -1.861111
       },
       "width": 0.638889,
-      "height": 0.75,
+      "height": 0.7500000000000004,
       "pins": [
         {
           "pinId": "C_LOGIC_HF.1",
           "displayName": "1",
           "x": -3.208333,
-          "y": -1.486111,
-          "_facingDirection": "y+"
+          "y": -1.4861109999999997
         },
         {
           "pinId": "C_LOGIC_HF.2",
           "displayName": "2",
           "x": -3.208333,
-          "y": -2.236111,
-          "_facingDirection": "y-"
+          "y": -2.236111
         }
       ]
     },
@@ -504,21 +477,19 @@
         "y": -1.861111
       },
       "width": 0.638889,
-      "height": 0.75,
+      "height": 0.7500000000000004,
       "pins": [
         {
           "pinId": "C_LOGIC_OUT1.1",
           "displayName": "1",
           "x": 7.388889,
-          "y": -1.486111,
-          "_facingDirection": "y+"
+          "y": -1.4861109999999997
         },
         {
           "pinId": "C_LOGIC_OUT1.2",
           "displayName": "2",
           "x": 7.388889,
-          "y": -2.236111,
-          "_facingDirection": "y-"
+          "y": -2.236111
         }
       ]
     },
@@ -530,21 +501,19 @@
         "y": -1.861111
       },
       "width": 0.638889,
-      "height": 0.75,
+      "height": 0.7500000000000004,
       "pins": [
         {
           "pinId": "C_LOGIC_OUT2.1",
           "displayName": "1",
           "x": 10.597222,
-          "y": -1.486111,
-          "_facingDirection": "y+"
+          "y": -1.4861109999999997
         },
         {
           "pinId": "C_LOGIC_OUT2.2",
           "displayName": "2",
           "x": 10.597222,
-          "y": -2.236111,
-          "_facingDirection": "y-"
+          "y": -2.236111
         }
       ]
     },
