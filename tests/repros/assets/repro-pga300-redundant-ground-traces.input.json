@@ -555,6 +555,7 @@
   "directConnections": [
     {
       "netId": "U1.GATE to U1.AVSS",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_2",
         "schematic_port_18"
@@ -562,6 +563,7 @@
     },
     {
       "netId": "U1.AVSS to U1.DVSS",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_18",
         "schematic_port_19"
@@ -569,6 +571,7 @@
     },
     {
       "netId": "U1.DVSS to U1.GND",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_19",
         "schematic_port_7"
@@ -576,6 +579,7 @@
     },
     {
       "netId": "U1.DVDD_MEM to U1.DVDD",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_0",
         "schematic_port_1"
@@ -583,6 +587,7 @@
     },
     {
       "netId": "U1.DVDD to C2.pin1",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_1",
         "schematic_port_29"
@@ -590,6 +595,7 @@
     },
     {
       "netId": "U1.AVDD to C1.pin1",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_6",
         "schematic_port_27"
@@ -597,6 +603,7 @@
     },
     {
       "netId": "U1.REFCAP to C3.pin1",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_13",
         "schematic_port_31"
@@ -604,6 +611,7 @@
     },
     {
       "netId": "U1.VINPP to R2.pin2",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_15",
         "schematic_port_22"
@@ -611,6 +619,7 @@
     },
     {
       "netId": "R2.pin2 to C6.pin1",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_22",
         "schematic_port_25"
@@ -618,6 +627,7 @@
     },
     {
       "netId": "U1.VINPN to R3.pin2",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_14",
         "schematic_port_24"
@@ -625,6 +635,7 @@
     },
     {
       "netId": "R3.pin2 to C6.pin2",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_24",
         "schematic_port_26"
@@ -632,6 +643,7 @@
     },
     {
       "netId": "U1.VDD to Q1.pin1",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_3",
         "schematic_port_33"
@@ -639,6 +651,7 @@
     },
     {
       "netId": "U1.VDD to R_L1.pin1",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_3",
         "schematic_port_43"
@@ -646,6 +659,7 @@
     },
     {
       "netId": "Q1.pin1 to C4.pin1",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_33",
         "schematic_port_41"
@@ -653,6 +667,7 @@
     },
     {
       "netId": "U1.VOUT to Q1.pin2",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_5",
         "schematic_port_35"
@@ -660,6 +675,7 @@
     },
     {
       "netId": "Q1.pin3 to R1.pin1",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_34",
         "schematic_port_37"
@@ -667,6 +683,7 @@
     },
     {
       "netId": "U1.COMP to R1.pin2",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_10",
         "schematic_port_38"
@@ -674,6 +691,7 @@
     },
     {
       "netId": "U1.DACCAP to C5.pin1",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_4",
         "schematic_port_39"
@@ -681,6 +699,7 @@
     },
     {
       "netId": "U1.FBP to C5.pin2",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_9",
         "schematic_port_40"
@@ -688,6 +707,7 @@
     },
     {
       "netId": "U1.FBP to R_L2.pin1",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_9",
         "schematic_port_45"
@@ -695,6 +715,7 @@
     },
     {
       "netId": "C4.pin2 to C5.pin2",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_42",
         "schematic_port_40"
@@ -702,6 +723,7 @@
     },
     {
       "netId": "R_L1.pin2 to D2.pin2",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_44",
         "schematic_port_50"
@@ -709,6 +731,7 @@
     },
     {
       "netId": "D1.pin1 to D2.pin2",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_47",
         "schematic_port_50"
@@ -716,6 +739,7 @@
     },
     {
       "netId": "D2.pin1 to R4.pin1",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_49",
         "schematic_port_51"
@@ -723,6 +747,7 @@
     },
     {
       "netId": "R_L2.pin2 to D1.pin2",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_46",
         "schematic_port_48"
@@ -730,6 +755,7 @@
     },
     {
       "netId": "D1.pin2 to D3.pin2",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_48",
         "schematic_port_54"
@@ -737,6 +763,7 @@
     },
     {
       "netId": "R4.pin2 to D3.pin1",
+      "showLabelOnFullyRoutedConnection": false,
       "pinIds": [
         "schematic_port_52",
         "schematic_port_53"

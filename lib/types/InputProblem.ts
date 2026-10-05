@@ -51,6 +51,13 @@ export interface InputDirectConnection {
   netId?: string
 
   /**
+   * Set false when the producer will not display a label on a fully wired net.
+   * Disconnected routed islands and unrouted endpoints still receive labels.
+   * Omitted retains automatic label placement.
+   */
+  showLabelOnFullyRoutedConnection?: boolean
+
+  /**
    * User-facing text to render for this net label. `netId` remains the stable
    * connectivity identifier and may be an internal id. When this is omitted
    * but a label width is provided, renderers should use a width-preserving
