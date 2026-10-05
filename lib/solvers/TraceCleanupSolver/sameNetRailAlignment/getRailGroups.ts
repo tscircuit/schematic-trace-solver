@@ -37,6 +37,27 @@ const corridorIsClear = (
   )
 }
 
+const segmentWouldHitObstacleAtCoordinate = (
+  segment: RailSegment,
+  coordinate: number,
+  obstacles: ObstacleRect[],
+) => {
+  const [start, end]: [Point, Point] =
+    segment.orientation === "vertical"
+      ? [
+          { x: coordinate, y: segment.minAlong },
+          { x: coordinate, y: segment.maxAlong },
+        ]
+      : [
+          { x: segment.minAlong, y: coordinate },
+          { x: segment.maxAlong, y: coordinate },
+        ]
+
+  return obstacles.some((obstacle) =>
+    segmentIntersectsRect(start, end, obstacle),
+  )
+}
+
 const tracesSharePin = (
   a: RailSegment,
   b: RailSegment,
@@ -196,6 +217,29 @@ function* iterateRailGroups(
           if (!canJoinRailGroup(first, first, second, traceMap, obstacles)) {
             continue
           }
+
+          // The partial fallback exists for a maximal three-trace group where
+          // one branch cannot join the clear pair because the same target rail
+          // would run through an obstacle. Do not treat any other rejection
+          // reason as permission to realign an unrelated pair.
+          const pairTraceIds = new Set([first.traceId, second.traceId])
+          const thirdTraceSegments = group.filter(
+            (segment) => !pairTraceIds.has(segment.traceId),
+          )
+          const thirdTraceBlocksCompleteAlignment = [
+            first.coordinate,
+            second.coordinate,
+          ].some((coordinate) =>
+            thirdTraceSegments.some((segment) =>
+              segmentWouldHitObstacleAtCoordinate(
+                segment,
+                coordinate,
+                obstacles,
+              ),
+            ),
+          )
+          if (!thirdTraceBlocksCompleteAlignment) continue
+
           if (acceptEligibleGroup([first, second], options)) {
             yield [first, second]
           }
