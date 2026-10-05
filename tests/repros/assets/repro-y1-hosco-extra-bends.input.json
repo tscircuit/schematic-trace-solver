@@ -1,0 +1,162 @@
+{
+  "chips": [
+    {
+      "chipId": "Y1",
+      "symbolName": "crystal_4pin_right",
+      "center": {
+        "x": 0.72,
+        "y": 0
+      },
+      "width": 2.5199999999999996,
+      "height": 1.42,
+      "pins": [
+        {
+          "pinId": "Y1.gnd1",
+          "x": 0,
+          "y": 0.71,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "Y1.gnd2",
+          "x": -0.02,
+          "y": -0.71,
+          "_facingDirection": "y-"
+        },
+        {
+          "pinId": "Y1.X1",
+          "x": -0.54,
+          "y": -0.01,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "Y1.X2",
+          "x": 0.54,
+          "y": -0.01,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "C_OSCI",
+      "symbolName": "capacitor_down",
+      "center": {
+        "x": -2.3675,
+        "y": -1
+      },
+      "width": 1.165,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "C_OSCI.1",
+          "x": -2.5,
+          "y": -0.62,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C_OSCI.2",
+          "x": -2.5,
+          "y": -1.38,
+          "_facingDirection": "y-"
+        }
+      ]
+    },
+    {
+      "chipId": "C_OSCO",
+      "symbolName": "capacitor_down",
+      "center": {
+        "x": 2.6325,
+        "y": -1
+      },
+      "width": 1.165,
+      "height": 0.76,
+      "pins": [
+        {
+          "pinId": "C_OSCO.1",
+          "x": 2.5,
+          "y": -0.62,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "C_OSCO.2",
+          "x": 2.5,
+          "y": -1.38,
+          "_facingDirection": "y-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "HOSCI",
+      "pinIds": [
+        "Y1.X1",
+        "C_OSCI.1"
+      ],
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.48,
+      "netLabelWidth": 0.6,
+      "netLabelText": "HOSCI"
+    },
+    {
+      "netId": "HOSCO",
+      "pinIds": [
+        "Y1.X2",
+        "C_OSCO.1"
+      ],
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.48,
+      "netLabelWidth": 0.6,
+      "netLabelText": "HOSCO"
+    },
+    {
+      "netId": "GND",
+      "pinIds": [
+        "C_OSCI.2",
+        "C_OSCO.2"
+      ],
+      "netLabelText": "GND"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "isGround": true,
+      "pinIds": [
+        "Y1.gnd1",
+        "Y1.gnd2",
+        "C_OSCI.2",
+        "C_OSCO.2"
+      ],
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "netLabelText": "GND"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ]
+  },
+  "textBoxes": [
+    {
+      "chipId": "Y1",
+      "center": {
+        "x": 0.66,
+        "y": 0.375
+      },
+      "width": 0.3,
+      "height": 0.18,
+      "text": "Y1"
+    },
+    {
+      "chipId": "Y1",
+      "center": {
+        "x": 1.1,
+        "y": -0.35
+      },
+      "width": 1.1,
+      "height": 0.18,
+      "text": "24MHz / 12pF"
+    }
+  ]
+}

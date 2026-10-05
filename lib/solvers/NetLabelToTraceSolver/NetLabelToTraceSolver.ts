@@ -27,7 +27,7 @@ import {
   type InlineNetLabelPlacement,
   visualizeInlineNetLabelOutput,
 } from "../InlineNetLabelSolver/InlineNetLabelSolver"
-import { getSimpleElbowPath } from "./getSimpleElbowPath"
+import { getSimpleConnectionPath } from "./getSimpleConnectionPath"
 import { findPerpendicularPathCrossings } from "../TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 import { reduceTraceCrossings } from "./reduceTraceCrossings"
 
@@ -45,7 +45,7 @@ interface CandidatePair {
     | "routed_components"
     | "routed_direct_connection"
   netConnectionPinIds?: PinId[]
-  simpleElbowPath?: Point[]
+  simpleConnectionPath?: Point[]
 }
 
 const RECOVERED_TRACE_PREFIX = "net-label-to-trace-"
@@ -55,6 +55,8 @@ const MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET = 0.25
 interface Options {
   /** Recover only explicit inline-eligible wires before terminal stub conversion. */
   onlyInlineDirectConnections?: boolean
+  /** Also recover straight two-pin named nets before inline terminal conversion. */
+  onlyInlineConnections?: boolean
 }
 
 const getCanonicalPairKey = (firstPinId: PinId, secondPinId: PinId) =>
@@ -226,15 +228,15 @@ export class NetLabelToTraceSolver extends BaseSolver {
           const secondMultiPinNetConnection =
             this.getMultiPinNetConnection(secondLabel)
           const twoPinNetConnection = this.getTwoPinNetConnection(firstLabel)
-          const simpleElbowPath =
+          const simpleConnectionPath =
             !bothLabelsBelongToDirectConnections &&
             twoPinNetConnection &&
             firstPin.chipId !== secondPin.chipId &&
             twoPinNetConnection === this.getTwoPinNetConnection(secondLabel)
-              ? getSimpleElbowPath(firstPin, secondPin)
+              ? getSimpleConnectionPath(firstPin, secondPin)
               : undefined
           if (
-            !simpleElbowPath &&
+            !simpleConnectionPath &&
             !bothLabelsBelongToDirectConnections &&
             (!firstMultiPinNetConnection ||
               firstMultiPinNetConnection !== secondMultiPinNetConnection ||
@@ -273,7 +275,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
               Math.abs(firstPin.y - secondPin.y),
             key: getCanonicalPairKey(firstPin.pinId, secondPin.pinId),
             recoveryMode: "fallback_labels",
-            simpleElbowPath,
+            simpleConnectionPath,
           })
         }
       }
@@ -284,27 +286,40 @@ export class NetLabelToTraceSolver extends BaseSolver {
     )
 
     // Inline conversion replaces fallback tags with terminal stubs. Recover
-    // explicitly requested wires while their two endpoint tags still exist,
-    // using the same route and collision checks as final recovery. Net-only
-    // connectivity keeps its normal later recovery behavior.
-    const selectedCandidates = this.options.onlyInlineDirectConnections
-      ? candidates.filter((candidate) =>
-          this.inputProblem.directConnections.some(
-            (connection) =>
-              candidate.pins.every((pin) =>
-                connection.pinIds.includes(pin.pinId),
-              ) &&
-              (connection.allowInlineNetLabel ||
+    // explicitly requested wires and straight two-pin nets while their two
+    // endpoint tags still exist, using the final recovery collision checks.
+    const selectedCandidates =
+      this.options.onlyInlineDirectConnections ||
+      this.options.onlyInlineConnections
+        ? candidates.filter(
+            (candidate) =>
+              (this.options.onlyInlineConnections &&
+                candidate.simpleConnectionPath?.length === 2 &&
                 this.inputProblem.netConnections.some(
                   (net) =>
                     net.allowInlineNetLabel &&
+                    !net.isGround &&
+                    net.pinIds.length === 2 &&
                     candidate.pins.every((pin) =>
                       net.pinIds.includes(pin.pinId),
                     ),
-                )),
-          ),
-        )
-      : candidates
+                )) ||
+              this.inputProblem.directConnections.some(
+                (connection) =>
+                  candidate.pins.every((pin) =>
+                    connection.pinIds.includes(pin.pinId),
+                  ) &&
+                  (connection.allowInlineNetLabel ||
+                    this.inputProblem.netConnections.some(
+                      (net) =>
+                        net.allowInlineNetLabel &&
+                        candidate.pins.every((pin) =>
+                          net.pinIds.includes(pin.pinId),
+                        ),
+                    )),
+              ),
+          )
+        : candidates
 
     selectedCandidates.sort(
       (first, second) =>
@@ -335,7 +350,9 @@ export class NetLabelToTraceSolver extends BaseSolver {
     ]) {
       const isDirectConnection = directConnections.has(connection)
       const canRecoverElbow =
-        isDirectConnection && this.options.onlyInlineDirectConnections
+        isDirectConnection &&
+        (this.options.onlyInlineDirectConnections ||
+          this.options.onlyInlineConnections)
       const globalConnNetId = netConnMap.getNetConnectedToId(
         connection.pinIds[0],
       )
@@ -431,18 +448,18 @@ export class NetLabelToTraceSolver extends BaseSolver {
               // Explicit inline wires may join routed islands whose labels are
               // far apart. Relax the alignment heuristic only for the single
               // direction-respecting elbow, not for a detour search.
-              const simpleElbowPath =
+              const simpleConnectionPath =
                 canRecoverElbow &&
                 (!labelsAreAligned ||
                   perpendicularOffset >
                     MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET)
-                  ? getSimpleElbowPath(firstPin, secondPin)
+                  ? getSimpleConnectionPath(firstPin, secondPin)
                   : undefined
               if (
                 ((!labelsAreAligned ||
                   perpendicularOffset >
                     MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET) &&
-                  !simpleElbowPath) ||
+                  !simpleConnectionPath) ||
                 arePinsCoFacingAlongSeparationAxis(firstPin, secondPin) ||
                 arePinsInDifferentSchematicSections(
                   this.inputProblem,
@@ -477,7 +494,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
                 key: getCanonicalPairKey(firstPin.pinId, secondPin.pinId),
                 recoveryMode,
                 netConnectionPinIds: connectionPinIds,
-                simpleElbowPath,
+                simpleConnectionPath,
               }
               if (
                 !bestCandidate ||
@@ -542,10 +559,10 @@ export class NetLabelToTraceSolver extends BaseSolver {
           trace.globalConnNetId !== candidate.firstLabel.globalConnNetId,
       )
     }
-    // Only recover an elbow when the shortest, direction-respecting
+    // Only recover a simple connection when the direction-respecting
     // path is clear. Do not replace labels with obstacle detours or many hops.
-    if (candidate.simpleElbowPath) {
-      tracePath = candidate.simpleElbowPath
+    if (candidate.simpleConnectionPath) {
+      tracePath = candidate.simpleConnectionPath
       if (
         findFirstCollision(tracePath, this.activeSubSolver!.obstacles) ||
         collisionTraces.reduce(

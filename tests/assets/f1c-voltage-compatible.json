@@ -1,0 +1,94 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 3,
+        "y": 0
+      },
+      "width": 2.3,
+      "height": 0.4,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "AVCC",
+          "x": 1.85,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -3,
+        "y": 0
+      },
+      "width": 2.3,
+      "height": 0.4,
+      "pins": [
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "VOUT",
+          "x": -1.85,
+          "y": 0
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "AVCC",
+      "isGround": false,
+      "netLabelWidth": 0.6,
+      "anchoredNetLabelWidth": 0.6,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.4,
+      "pinIds": [
+        "schematic_port_0",
+        "schematic_port_1"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 2.67,
+        "y": -0.33
+      },
+      "width": 0.8399999999999999,
+      "height": 0.18000000000000002,
+      "text": "F1C100S"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 2.55,
+        "y": 0.315
+      },
+      "width": 0.7200000000000002,
+      "height": 0.25,
+      "text": "U_F1C"
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": -3.45,
+        "y": 0.315
+      },
+      "width": 0.7200000000000002,
+      "height": 0.25,
+      "text": "U_REG"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "AVCC": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}

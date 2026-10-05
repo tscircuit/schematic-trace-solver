@@ -9,7 +9,8 @@
         {
           "pinId": "J1.1",
           "x": -14.05,
-          "y": 6
+          "y": 6,
+          "_facingDirection": "x-"
         }
       ]
     },
@@ -23,12 +24,14 @@
         {
           "pinId": "F1.1",
           "x": -10.4,
-          "y": 5.92
+          "y": 6,
+          "_facingDirection": "x-"
         },
         {
           "pinId": "F1.2",
           "x": -9.6,
-          "y": 6
+          "y": 6,
+          "_facingDirection": "x+"
         }
       ]
     },
@@ -42,12 +45,14 @@
         {
           "pinId": "RV1.1",
           "x": -10.4,
-          "y": 3.3800000000000003
+          "y": 3.5,
+          "_facingDirection": "x-"
         },
         {
           "pinId": "RV1.2",
           "x": -9.6,
-          "y": 3.5
+          "y": 3.5,
+          "_facingDirection": "x+"
         }
       ]
     }
