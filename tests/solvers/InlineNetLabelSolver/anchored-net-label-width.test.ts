@@ -28,7 +28,8 @@ const routedInputProblem: InputProblem = {
     {
       chipId: "U1",
       center: { x: 0, y: 0 },
-      width: 3.29,
+      // Explicit obstacle extent previously inferred from the outer pins.
+      width: 4.09,
       height: 6.35,
       sectionId: "driver",
       pins: [
@@ -42,7 +43,7 @@ const routedInputProblem: InputProblem = {
     {
       chipId: "J4",
       center: { x: 7, y: -0.4 },
-      width: 2.05,
+      width: 2.8499999999999996,
       height: 4,
       sectionId: "driver",
       pins: [

@@ -121,21 +121,19 @@
         "y": -4
       },
       "width": 1.1649999999999991,
-      "height": 0.7600000000000011,
+      "height": 0.7600000000000016,
       "pins": [
         {
           "pinId": "schematic_port_17",
           "displayName": "anode",
           "x": -9,
-          "y": -3.619999999999999,
-          "_facingDirection": "y+"
+          "y": -3.619999999999999
         },
         {
           "pinId": "schematic_port_18",
           "displayName": "cathode",
           "x": -9,
-          "y": -4.380000000000001,
-          "_facingDirection": "y-"
+          "y": -4.380000000000001
         }
       ],
       "sectionId": "Power"
@@ -147,21 +145,19 @@
         "y": -4
       },
       "width": 0.9250000000000007,
-      "height": 0.7600000000000011,
+      "height": 0.7600000000000016,
       "pins": [
         {
           "pinId": "schematic_port_19",
           "displayName": "anode",
           "x": -6,
-          "y": -3.619999999999999,
-          "_facingDirection": "y+"
+          "y": -3.619999999999999
         },
         {
           "pinId": "schematic_port_20",
           "displayName": "cathode",
           "x": -6,
-          "y": -4.380000000000001,
-          "_facingDirection": "y-"
+          "y": -4.380000000000001
         }
       ],
       "sectionId": "Power"

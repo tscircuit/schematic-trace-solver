@@ -9,7 +9,7 @@
         {
           "pinId": "schematic_port_q1b_drain",
           "x": -1.043443,
-          "y": 2.195032,
+          "y": 2.1950320000000003,
           "_facingDirection": "y+"
         },
         {
@@ -49,7 +49,7 @@
         {
           "pinId": "schematic_port_q2a_drain",
           "x": 1.043443,
-          "y": 2.195032,
+          "y": 2.1950320000000003,
           "_facingDirection": "y+"
         },
         {
@@ -113,14 +113,14 @@
         {
           "pinId": "schematic_port_c18_1",
           "displayName": "1",
-          "x": -0.391391,
+          "x": -0.451391,
           "y": 0,
           "_facingDirection": "x-"
         },
         {
           "pinId": "schematic_port_c18_2",
           "displayName": "2",
-          "x": 0.208609,
+          "x": 0.268609,
           "y": 0,
           "_facingDirection": "x+"
         }

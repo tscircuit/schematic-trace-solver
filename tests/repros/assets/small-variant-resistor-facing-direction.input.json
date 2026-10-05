@@ -214,13 +214,13 @@
       "pins": [
         {
           "pinId": "R_FAULT_PULLUP.1",
-          "x": 13.7,
+          "x": 13.16,
           "y": 10,
           "_facingDirection": "x-"
         },
         {
           "pinId": "R_FAULT_PULLUP.2",
-          "x": 14.3,
+          "x": 14.84,
           "y": 10,
           "_facingDirection": "x+"
         }

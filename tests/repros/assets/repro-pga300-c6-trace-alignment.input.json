@@ -13,40 +13,36 @@
     {
       "chipId": "R2",
       "center": { "x": -10.1, "y": 0.95 },
-      "width": 0.6,
+      "width": 0.6000000000000014,
       "height": 0.68,
       "pins": [
         {
           "pinId": "R2.1",
           "x": -10.4,
-          "y": 0.95,
-          "_facingDirection": "x-"
+          "y": 0.95
         },
         {
           "pinId": "R2.2",
-          "x": -9.8,
-          "y": 0.95,
-          "_facingDirection": "x+"
+          "x": -9.799999999999999,
+          "y": 0.95
         }
       ]
     },
     {
       "chipId": "R3",
       "center": { "x": -10.1, "y": 0.15 },
-      "width": 0.6,
+      "width": 0.6000000000000014,
       "height": 0.68,
       "pins": [
         {
           "pinId": "R3.1",
           "x": -10.4,
-          "y": 0.15,
-          "_facingDirection": "x-"
+          "y": 0.15
         },
         {
           "pinId": "R3.2",
-          "x": -9.8,
-          "y": 0.15,
-          "_facingDirection": "x+"
+          "x": -9.799999999999999,
+          "y": 0.15
         }
       ]
     },

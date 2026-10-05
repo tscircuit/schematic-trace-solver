@@ -6,56 +6,48 @@
         "x": 0,
         "y": 0
       },
-      "width": 0.4,
+      "width": 1.2000000000000002,
       "height": 1,
       "pins": [
         {
           "pinId": "schematic_port_0",
           "x": -0.6000000000000001,
-          "y": 0.30000000000000004,
-          "_facingDirection": "x-"
+          "y": 0.30000000000000004
         },
         {
           "pinId": "schematic_port_1",
           "x": -0.6000000000000001,
-          "y": 0.10000000000000003,
-          "_facingDirection": "x-"
+          "y": 0.10000000000000003
         },
         {
           "pinId": "schematic_port_2",
           "x": -0.6000000000000001,
-          "y": -0.09999999999999998,
-          "_facingDirection": "x-"
+          "y": -0.09999999999999998
         },
         {
           "pinId": "schematic_port_3",
           "x": -0.6000000000000001,
-          "y": -0.30000000000000004,
-          "_facingDirection": "x-"
+          "y": -0.30000000000000004
         },
         {
           "pinId": "schematic_port_4",
           "x": 0.6000000000000001,
-          "y": -0.30000000000000004,
-          "_facingDirection": "x+"
+          "y": -0.30000000000000004
         },
         {
           "pinId": "schematic_port_5",
           "x": 0.6000000000000001,
-          "y": -0.10000000000000003,
-          "_facingDirection": "x+"
+          "y": -0.10000000000000003
         },
         {
           "pinId": "schematic_port_6",
           "x": 0.6000000000000001,
-          "y": 0.09999999999999998,
-          "_facingDirection": "x+"
+          "y": 0.09999999999999998
         },
         {
           "pinId": "schematic_port_7",
           "x": 0.6000000000000001,
-          "y": 0.30000000000000004,
-          "_facingDirection": "x+"
+          "y": 0.30000000000000004
         }
       ]
     },
@@ -70,13 +62,13 @@
       "pins": [
         {
           "pinId": "schematic_port_8",
-          "x": 2.46,
+          "x": 2.435,
           "y": 0,
           "_facingDirection": "x-"
         },
         {
           "pinId": "schematic_port_9",
-          "x": 3.54,
+          "x": 3.565,
           "y": 0,
           "_facingDirection": "x+"
         }

@@ -470,13 +470,13 @@
         "y": -2.1
       },
       "width": 1.0900000000000007,
-      "height": 0.6000000000000001,
+      "height": 0.6000000000000005,
       "pins": [
         {
           "pinId": "schematic_port_42",
           "displayName": "anode",
           "x": 6,
-          "y": -1.8
+          "y": -1.7999999999999998
         },
         {
           "pinId": "schematic_port_43",
