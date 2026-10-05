@@ -3,8 +3,8 @@ import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipeline
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 
-// Geometry from core's group-schematic-box-connected regression with explicit
-// body bounds. The OUT pin
+// Geometry from core's group-schematic-box-connected regression. The supplied
+// center, width, and height describe the drawn box body. The OUT pin
 // extends 0.4 mm left of the actual box body; it must be approached from outside.
 test("cleanup keeps the group box trace outside its port stem", async () => {
   const input: InputProblem = {
@@ -14,7 +14,6 @@ test("cleanup keeps the group box trace outside its port stem", async () => {
         center: { x: 0, y: -1.74 },
         width: 1.4,
         height: 0.4,
-        bodyBounds: { minX: -0.7, maxX: 0.7, minY: -1.94, maxY: -1.54 },
         pins: [
           {
             pinId: "OUT",
