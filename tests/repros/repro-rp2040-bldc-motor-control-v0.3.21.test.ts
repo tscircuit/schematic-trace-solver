@@ -1,12 +1,11 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
-import inputProblem from "./motor-control.input.json"
 import "tests/fixtures/matcher"
+import inputProblem from "./assets/repro-rp2040-bldc-motor-control-v0.3.21.input.json"
 
-// Captured from the published v0.3.21 motor_control sheet, before trace routing.
-// This snapshots the current behavior; it does not claim to fix the reported
-// readability/style issues. See README.md for provenance and reproduction steps.
+// Full motor_control sheet from MustafaMulla29/rp2040-bldc-motor-controller-new v0.3.21.
+// Unmodified input captured with the release’s locked core/solver versions.
 test("RP2040 BLDC controller v0.3.21 motor_control sheet", async () => {
   const solver = new SchematicTracePipelineSolver(
     structuredClone(inputProblem) as unknown as InputProblem,

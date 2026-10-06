@@ -1,13 +1,12 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
-import inputProblem from "./charger.input.json"
 import "tests/fixtures/matcher"
+import inputProblem from "./assets/repro-rp2040-bldc-programming-v0.3.21.input.json"
 
-// Captured from the published v0.3.21 charger sheet, before trace routing.
-// This snapshots the current behavior; it does not claim to fix the reported
-// readability/style issues. See README.md for provenance and reproduction steps.
-test("RP2040 BLDC controller v0.3.21 charger sheet", async () => {
+// Full programming sheet from MustafaMulla29/rp2040-bldc-motor-controller-new v0.3.21.
+// Unmodified input captured with the release’s locked core/solver versions.
+test("RP2040 BLDC controller v0.3.21 programming sheet", async () => {
   const solver = new SchematicTracePipelineSolver(
     structuredClone(inputProblem) as InputProblem,
   )
