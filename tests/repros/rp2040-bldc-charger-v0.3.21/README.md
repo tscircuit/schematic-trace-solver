@@ -54,3 +54,9 @@ The website's style-warning count is produced by a separate analysis and is not
 an assertion of this reproduction test.
 
 [Published Circuit JSON](https://api.tscircuit.com/package_files/view?package_release_id=bdff7fc1-f5b9-4266-8bb2-4014de872446&file_path=dist%2Findex%2Fcircuit.json)
+
+## Related sheets from the same release
+
+- [programming](../rp2040-bldc-programming-v0.3.21/README.md)
+- [motor_control](../rp2040-bldc-motor-control-v0.3.21/README.md)
+- [battery](../rp2040-bldc-battery-v0.3.21/README.md)
