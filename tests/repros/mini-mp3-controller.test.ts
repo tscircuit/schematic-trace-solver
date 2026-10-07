@@ -4,7 +4,8 @@ import type { InputProblem } from "lib/types/InputProblem"
 import input from "../assets/mini-mp3-controller.input.json"
 import "tests/fixtures/matcher"
 
-// Derived from mini-mp3-player.json's controller sheet (32 components, 96 pins).
+// Derived from mini-mp3-player.json's controller sheet, excluding TP1–TP16
+// and their connections (16 components, 80 pins).
 // Retains exported symbol bounds, port positions/directions, source connectivity,
 // and rail flags. Label dimensions follow Core's default text/rail sizing.
 // This is not the original Core debug input: text-expanded obstacles and
