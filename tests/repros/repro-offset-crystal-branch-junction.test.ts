@@ -5,11 +5,10 @@ import type {
   SchematicTrace,
   SourcePort,
 } from "circuit-json"
-import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { convertSolverOutputToCircuitJson } from "tests/fixtures/convertSolverOutputToCircuitJson"
-import "tests/fixtures/matcher"
+import { getSolverSnapshotSvg } from "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-offset-crystal-branch-junction.input.json"
 
 const solverInput: InputProblem = JSON.parse(JSON.stringify(inputProblem))
@@ -27,7 +26,7 @@ const isSchematicTrace = (
 
 // Complete solver input captured from @tscircuit/core's crystal junction repro,
 // with component names and symbols restored for a faithful snapshot.
-test("repro crystal branch junction is offset from the branch", () => {
+test("aligns the crystal branch with its junction", () => {
   const solver = new SchematicTracePipelineSolver(solverInput)
 
   solver.solve()
@@ -104,6 +103,12 @@ test("repro crystal branch junction is offset from the branch", () => {
         x2SchematicPort.schematic_port_id,
   )
   expect(x2Traces).toHaveLength(2)
+  const capacitorBranch = x2Traces.toSorted(
+    (first, second) => second.edges.length - first.edges.length,
+  )[0]!
+  expect(capacitorBranch.edges.at(-1)!.from.x).toBeCloseTo(
+    capacitorBranch.edges.at(-1)!.to.x,
+  )
   const junctionPoint = x2Traces[0]!.edges.at(-1)!.to
   for (const trace of x2Traces) {
     const terminalEdge = trace.edges.at(-1)!
@@ -116,10 +121,7 @@ test("repro crystal branch junction is offset from the branch", () => {
   }
   x2Traces[0]!.junctions = [junctionPoint]
 
-  expect(
-    convertCircuitJsonToSchematicSvg(circuitJson, {
-      width: 1200,
-      height: 800,
-    }).replace(/[ \t]+$/gm, ""),
-  ).toMatchSvgSnapshot(import.meta.path)
+  expect(getSolverSnapshotSvg({ solver, circuitJson })).toMatchSvgSnapshot(
+    import.meta.path,
+  )
 })

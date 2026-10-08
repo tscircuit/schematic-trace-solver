@@ -35,5 +35,12 @@ test("VREF trace clears a vertical passive GND label", async () => {
   expect(pathIntersectsRenderedLabel(vrefTrace.tracePath, groundLabel)).toBe(
     false,
   )
+  const alignedVrefBranch =
+    solver.sameNetJunctionAlignmentSolver!.outputTraces.find(
+      (trace) => trace.mspPairId === "schematic_port_22-schematic_port_0",
+    )!
+  expect(alignedVrefBranch.tracePath.at(-2)!.y).toBeCloseTo(
+    alignedVrefBranch.tracePath.at(-1)!.y,
+  )
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

@@ -18,6 +18,13 @@ test("bug-report-20260825T045913Z", () => {
       .flatMap((trace) => trace.tracePath.map((point) => point.y)),
   )
   expect(u1SwTraceMinY).toBe(1.1)
+  const alignedSharedPinBranch =
+    solver.sameNetJunctionAlignmentSolver!.outputTraces.find(
+      (trace) => trace.mspPairId === "schematic_port_29-schematic_port_21",
+    )!
+  expect(alignedSharedPinBranch.tracePath[0]!.x).toBeCloseTo(
+    alignedSharedPinBranch.tracePath[1]!.x,
+  )
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
