@@ -1,0 +1,232 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -3.2,
+        "y": -3.4
+      },
+      "width": 1.6,
+      "height": 2.3999999999999995,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "GNDA",
+          "x": -4,
+          "y": -2.4,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "SRAL",
+          "x": -4,
+          "y": -2.6,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "SRAH",
+          "x": -4,
+          "y": -2.8,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "SRBH",
+          "x": -4,
+          "y": -3,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_4",
+          "displayName": "SRBL",
+          "x": -4,
+          "y": -3.2,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_5",
+          "displayName": "TST_MODE",
+          "x": -4,
+          "y": -3.4,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_6",
+          "displayName": "CLK",
+          "x": -4,
+          "y": -3.6,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_7",
+          "displayName": "CSN_CFG3",
+          "x": -4,
+          "y": -3.8,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_8",
+          "displayName": "SCK_CFG2",
+          "x": -4,
+          "y": -4,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_9",
+          "displayName": "SDI_CFG1",
+          "x": -4,
+          "y": -4.2,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_10",
+          "displayName": "SDO_CFG0",
+          "x": -4,
+          "y": -4.3999999999999995,
+          "_facingDirection": "x-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_0",
+        "schematic_port_1",
+        "schematic_port_4",
+        "schematic_port_5",
+        "schematic_port_6"
+      ]
+    },
+    {
+      "netId": "SENSE_A",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_2"
+      ]
+    },
+    {
+      "netId": "SENSE_B",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_3"
+      ]
+    },
+    {
+      "netId": "TMC_CS_N",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_7"
+      ]
+    },
+    {
+      "netId": "SPI_SCK",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_8"
+      ]
+    },
+    {
+      "netId": "SPI_MOSI",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_9"
+      ]
+    },
+    {
+      "netId": "SPI_MISO",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_10"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -2.8200000000000003,
+        "y": -4.7299999999999995
+      },
+      "width": 1.56,
+      "height": 0.17999999999999972,
+      "text": "TMC5160A-TA-T"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -3.4800000000000004,
+        "y": -2.085
+      },
+      "width": 0.3599999999999999,
+      "height": 0.24999999999999956,
+      "text": "U7"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "SENSE_A": [
+      "x-",
+      "x+"
+    ],
+    "SENSE_B": [
+      "x-",
+      "x+"
+    ],
+    "TMC_CS_N": [
+      "x-",
+      "x+"
+    ],
+    "SPI_SCK": [
+      "x-",
+      "x+"
+    ],
+    "SPI_MOSI": [
+      "x-",
+      "x+"
+    ],
+    "SPI_MISO": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 0.8
+}
