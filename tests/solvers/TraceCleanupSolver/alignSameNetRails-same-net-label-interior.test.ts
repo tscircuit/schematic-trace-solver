@@ -203,15 +203,17 @@ for (const labelNetId of ["RETURN", undefined]) {
   }
 }
 
-test.each(["net", "direct"])(
-  "protects legacy GND labels declared through %s connections without metadata",
+test.each(["unmarked net", "non-ground net", "direct connection"])(
+  "does not infer ground from GND declared as %s",
   (declaration) => {
     const { inputProblem, traces, label, blocker } = createFixture(
       "left",
       false,
     )
     delete inputProblem.netConnections[0]!.isGround
-    if (declaration === "direct") {
+    if (declaration === "non-ground net")
+      inputProblem.netConnections[0]!.isGround = false
+    if (declaration === "direct connection") {
       inputProblem.netConnections = []
       inputProblem.directConnections = traces.map((trace) => ({
         netId: "GND",
@@ -227,8 +229,14 @@ test.each(["net", "direct"])(
       inputProblem,
       netLabelPlacements: [label, blocker],
     })
-    expect(result.alignedRailGroupCount).toBe(0)
-    expect(result.traces).toEqual(traces)
+    expect(result.alignedRailGroupCount).toBe(1)
+    expect(
+      placeGroundRailLabelsAtOuterEnd({
+        inputProblem,
+        traces: result.traces,
+        netLabelPlacements: [label],
+      }),
+    ).toEqual([label])
   },
 )
 

@@ -12,8 +12,5 @@ export const getGroundNetIds = (
     const netId = netConnMap.getNetConnectedToId(connection.netId)
     if (netId) groundNetIds.add(netId)
   }
-  // Legacy inputs can declare GND without metadata, including direct connections.
-  const legacyGroundNetId = netConnMap.getNetConnectedToId("GND")
-  if (legacyGroundNetId) groundNetIds.add(legacyGroundNetId)
   return groundNetIds
 }
