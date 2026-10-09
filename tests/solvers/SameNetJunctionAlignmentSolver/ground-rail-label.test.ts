@@ -7,6 +7,7 @@ import { createParallelGroundRailProblem } from "tests/fixtures/parallel-ground-
 
 const createFixture = () => {
   const inputProblem = createParallelGroundRailProblem()
+  inputProblem.netConnections[0]!.isGround = true
   const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
   const globalConnNetId = netConnMap.getNetConnectedToId("GND")!
   const pins = new Map(
@@ -117,6 +118,32 @@ test("label placement is independent of trace and endpoint ordering", () => {
     y: 0.6,
   })
 })
+
+test("does not infer ground from a direct connection named GND", () => {
+  const fixture = createFixture()
+  fixture.inputProblem.netConnections = []
+  fixture.inputProblem.directConnections[0]!.netId = "GND"
+  const { netConnMap } = getConnectivityMapsFromInputProblem(
+    fixture.inputProblem,
+  )
+  const globalConnNetId = netConnMap.getNetConnectedToId("GND")!
+  for (const trace of fixture.traces) trace.globalConnNetId = globalConnNetId
+  fixture.netLabelPlacements[0]!.globalConnNetId = globalConnNetId
+
+  expect(placeGroundRailLabelsAtOuterEnd(fixture)).toEqual(
+    fixture.netLabelPlacements,
+  )
+})
+
+for (const isGround of [undefined, false]) {
+  test(`does not infer ground from a net named GND with isGround=${isGround}`, () => {
+    const fixture = createFixture()
+    fixture.inputProblem.netConnections[0]!.isGround = isGround
+    expect(placeGroundRailLabelsAtOuterEnd(fixture)).toEqual(
+      fixture.netLabelPlacements,
+    )
+  })
+}
 
 for (const obstacle of [
   "chip",

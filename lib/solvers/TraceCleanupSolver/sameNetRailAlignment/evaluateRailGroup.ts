@@ -1,4 +1,9 @@
+import type { InputProblem } from "lib/types/InputProblem"
+import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import { placeGroundRailLabelsAtOuterEnd } from "lib/solvers/SameNetJunctionAlignmentSolver/placeGroundRailLabelsAtOuterEnd"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import { tracePathCrossesAnyBounds } from "lib/solvers/AvailableNetOrientationSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import type { ObstacleRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
@@ -7,6 +12,7 @@ import {
   doesPathCoincideWithTraces,
   doesPathOverlapTraceStrokes,
 } from "lib/utils/doesPathCoincideWithTraces"
+import { getGroundNetIds } from "lib/utils/getGroundNetIds"
 import { getDistinctCoordinates, pointsEqual } from "./geometry"
 import { getRailAlignmentFallbackCoordinates } from "./getRailAlignmentFallbackCoordinates"
 import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
@@ -20,6 +26,7 @@ import {
 import type { AlignmentCandidate, AlignmentScore, RailSegment } from "./types"
 
 interface EvaluateRailGroupInput {
+  inputProblem: InputProblem
   group: RailSegment[]
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
@@ -37,6 +44,7 @@ const tracePathChanged = (
   )
 
 export const evaluateRailGroup = ({
+  inputProblem,
   group,
   traces,
   netLabelPlacements,
@@ -58,6 +66,14 @@ export const evaluateRailGroup = ({
   )
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
+  )
+  const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
+  const groundNetIds = getGroundNetIds(inputProblem, netConnMap)
+  const groundLabelIndices = netLabelPlacements.flatMap((label, index) =>
+    label.globalConnNetId === group[0]!.globalConnNetId &&
+    groundNetIds.has(label.globalConnNetId)
+      ? [index]
+      : [],
   )
   const immutableSameNetTraces = traces.filter(
     (trace) =>
@@ -86,6 +102,17 @@ export const evaluateRailGroup = ({
       const allCandidateTraces = traces.map(
         (trace) => candidateMap.get(trace.mspPairId) ?? trace,
       )
+      const placedGroundLabels = groundLabelIndices.length
+        ? placeGroundRailLabelsAtOuterEnd({
+            inputProblem,
+            traces: allCandidateTraces,
+            netLabelPlacements,
+          })
+        : netLabelPlacements
+      const groundLabelBounds = groundLabelIndices.map((index) => {
+        const label = placedGroundLabels[index]!
+        return getRectBounds(label.center, label.width, label.height)
+      })
       const candidatesAreClear = candidateTraces.every(
         (candidate) =>
           !isPathCollidingWithObstacles(candidate.tracePath, obstacles) &&
@@ -93,6 +120,11 @@ export const evaluateRailGroup = ({
             traces: [candidate],
             netLabels: netLabelPlacements,
           }).length === 0 &&
+          // Ground labels may move to the new rail end later in the pipeline.
+          // Reject alignment if even that placement leaves a symbol crossed.
+          !groundLabelBounds.some((bounds) =>
+            tracePathCrossesAnyBounds(candidate.tracePath, bounds),
+          ) &&
           !doesPathOverlapTraceStrokes(candidate.tracePath, otherNetTraces) &&
           !doesPathCoincideWithTraces(
             candidate.tracePath,

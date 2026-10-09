@@ -15,11 +15,13 @@ import {
   isHorizontal,
   isVertical,
   nearlyEqual,
+  RAIL_ALIGNMENT_EPSILON,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import type { InputProblem } from "lib/types/InputProblem"
+import { getGroundNetIds } from "lib/utils/getGroundNetIds"
 
-/** Put a shared decoupling GND at the load end of its rail, away from the IC. */
+/** Place shared ground labels at a clear end of their connected rail. */
 export const placeGroundRailLabelsAtOuterEnd = ({
   inputProblem,
   traces,
@@ -30,8 +32,8 @@ export const placeGroundRailLabelsAtOuterEnd = ({
   netLabelPlacements: NetLabelPlacement[]
 }): NetLabelPlacement[] => {
   const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
-  const groundNetId = netConnMap.getNetConnectedToId("GND")
-  if (!groundNetId) return netLabelPlacements
+  const groundNetIds = getGroundNetIds(inputProblem, netConnMap)
+  if (groundNetIds.size === 0) return netLabelPlacements
   const chipMap = new Map(inputProblem.chips.map((chip) => [chip.chipId, chip]))
   const traceMap = Object.fromEntries(
     traces.map((trace) => [trace.mspPairId, trace]),
@@ -40,7 +42,7 @@ export const placeGroundRailLabelsAtOuterEnd = ({
   const output = [...netLabelPlacements]
 
   for (const rail of traces) {
-    if (rail.globalConnNetId !== groundNetId) continue
+    if (!groundNetIds.has(rail.globalConnNetId)) continue
     const [a, b] = rail.pins
     if (
       a.chipId === b.chipId ||
@@ -63,7 +65,7 @@ export const placeGroundRailLabelsAtOuterEnd = ({
       continue
 
     for (const feed of traces) {
-      if (feed.globalConnNetId !== groundNetId) continue
+      if (feed.globalConnNetId !== rail.globalConnNetId) continue
       const shared = feed.pins.find((pin) => rail.pinIds.includes(pin.pinId))
       const icPin = feed.pins.find(
         (pin) =>
@@ -79,7 +81,7 @@ export const placeGroundRailLabelsAtOuterEnd = ({
       for (let index = 0; index < output.length; index++) {
         const label = output[index]!
         if (
-          label.globalConnNetId !== groundNetId ||
+          label.globalConnNetId !== rail.globalConnNetId ||
           label.orientation !== "y-" ||
           !label.mspConnectionPairIds.some(
             (id) => id === feed.mspPairId || id === rail.mspPairId,
@@ -121,27 +123,46 @@ export const placeGroundRailLabelsAtOuterEnd = ({
 
   for (let index = 0; index < output.length; index++) {
     const label = output[index]!
-    if (label.orientation !== "y-") continue
-    // Use producer metadata so ground aliases do not require name matching.
-    const connection = inputProblem.netConnections.find(
+    if (label.orientation !== "y-" || !groundNetIds.has(label.globalConnNetId))
+      continue
+    const hasSharedRail = inputProblem.netConnections.some(
       (candidate) =>
-        candidate.isGround &&
-        candidate.netId === label.netId &&
-        candidate.pinIds.length > 2,
+        candidate.pinIds.length > 2 &&
+        netConnMap.getNetConnectedToId(candidate.netId) ===
+          label.globalConnNetId,
     )
-    if (!connection) continue
+    if (!hasSharedRail) continue
 
-    // Reuse the lowest point on the existing column without changing the trace.
-    const anchorPoint = traces
+    // Follow only the continuous column attached to this label. Separate
+    // ground branches may share an x coordinate without sharing a rail.
+    const columnSegments = traces
       .filter((trace) => trace.globalConnNetId === label.globalConnNetId)
-      .flatMap((trace) => trace.tracePath)
-      .filter(
-        (point) =>
-          nearlyEqual(point.x, label.anchorPoint.x) &&
-          point.y < label.anchorPoint.y,
+      .flatMap((trace) =>
+        trace.tracePath.slice(1).flatMap((end, pointIndex) => {
+          const start = trace.tracePath[pointIndex]!
+          return nearlyEqual(start.x, label.anchorPoint.x) &&
+            nearlyEqual(end.x, label.anchorPoint.x)
+            ? [
+                {
+                  minY: Math.min(start.y, end.y),
+                  maxY: Math.max(start.y, end.y),
+                },
+              ]
+            : []
+        }),
       )
-      .sort((a, b) => a.y - b.y)[0]
-    if (!anchorPoint) continue
+      .sort((a, b) => b.maxY - a.maxY)
+    let lowestY = label.anchorPoint.y
+    for (const segment of columnSegments) {
+      if (
+        segment.maxY + RAIL_ALIGNMENT_EPSILON >= lowestY &&
+        segment.minY < lowestY
+      ) {
+        lowestY = segment.minY
+      }
+    }
+    if (nearlyEqual(lowestY, label.anchorPoint.y)) continue
+    const anchorPoint = { x: label.anchorPoint.x, y: lowestY }
 
     const center = getCenterFromAnchor(
       anchorPoint,
