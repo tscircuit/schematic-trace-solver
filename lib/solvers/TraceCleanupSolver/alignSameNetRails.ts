@@ -42,23 +42,30 @@ export const alignSameNetRails = ({
   )
 
   for (let pass = 0; pass < maximumPasses; pass++) {
-    const groups = getRailGroups(
-      outputTraces,
-      eligibleTraceIds,
-      inputProblem,
-      obstacles,
-      netLabelPlacements,
-    )
     let applied: AlignmentCandidate | null = null
 
-    for (const group of groups) {
-      applied = evaluateRailGroup({
-        group,
-        traces: outputTraces,
-        netLabelPlacements,
-        obstacles,
+    for (const onlyPairFallbacks of [false, true]) {
+      const groups = getRailGroups(
+        outputTraces,
         eligibleTraceIds,
-      })
+        inputProblem,
+        obstacles,
+        netLabelPlacements,
+        { onlyPairFallbacks },
+      )
+      for (const group of groups) {
+        applied = evaluateRailGroup({
+          group,
+          traces: outputTraces,
+          netLabelPlacements,
+          obstacles,
+          eligibleTraceIds,
+          // A partial group is optional cleanup: unlike the whole bus, a
+          // fixed label must not bypass ordinary readability scoring.
+          allowFixedLabelLengthening: !onlyPairFallbacks,
+        })
+        if (applied) break
+      }
       if (applied) break
     }
     if (!applied) break

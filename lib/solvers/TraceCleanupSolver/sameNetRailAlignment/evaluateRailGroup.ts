@@ -25,6 +25,7 @@ interface EvaluateRailGroupInput {
   netLabelPlacements: NetLabelPlacement[]
   obstacles: ObstacleRect[]
   eligibleTraceIds: ReadonlySet<string>
+  allowFixedLabelLengthening?: boolean
 }
 
 const tracePathChanged = (
@@ -42,6 +43,7 @@ export const evaluateRailGroup = ({
   netLabelPlacements,
   obstacles,
   eligibleTraceIds,
+  allowFixedLabelLengthening = true,
 }: EvaluateRailGroupInput): AlignmentCandidate | null => {
   const groupTraceIds = new Set(group.map((segment) => segment.traceId))
   const originalGroupTraces = traces.filter((trace) =>
@@ -116,7 +118,7 @@ export const evaluateRailGroup = ({
       // A fixed label anchor determines the rail coordinate. It may lengthen
       // endpoint legs, but it must still preserve turns and every safety gate.
       if (
-        options?.coordinateIsFixedByLabel
+        options?.coordinateIsFixedByLabel && allowFixedLabelLengthening
           ? metrics.turnCount > baseline.turnCount
           : !isReadabilityImprovement(metrics, baseline)
       ) {
