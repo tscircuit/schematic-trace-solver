@@ -18,7 +18,7 @@ const solveRepro = () => {
   return solver
 }
 
-test("repro: TMC5160 ground bus intersects its GND symbol", async () => {
+test("TMC5160 ground bus stays clear of its GND symbol", async () => {
   const solver = solveRepro()
   expect(solver.solved).toBe(true)
   expect(
@@ -26,11 +26,10 @@ test("repro: TMC5160 ground bus intersects its GND symbol", async () => {
       .netLabelToTraceSolver!.getOutput()
       .netLabelPlacements.filter((label) => label.netId === "GND"),
   ).toHaveLength(1)
-  // The snapshot intentionally captures the existing overlap.
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
 
-test.failing("TMC5160 ground traces should not cross the GND label interior", () => {
+test("TMC5160 ground traces should not cross the GND label interior", () => {
   const solver = solveRepro()
   const { traces, netLabelPlacements } =
     solver.netLabelToTraceSolver!.getOutput()
@@ -49,7 +48,5 @@ test.failing("TMC5160 ground traces should not cross the GND label interior", ()
         pathIntersectsRenderedLabel(trace.tracePath, labelInterior),
     )
     .map((trace) => trace.pins.map((pin) => pin.displayName).join(" → "))
-  // Known failure: TST_MODE → SRBL and CLK → TST_MODE cross the GND label.
-  // Remove .failing when fixing the placement; this assertion must then pass.
   expect(crossingGroundTraces).toEqual([])
 })

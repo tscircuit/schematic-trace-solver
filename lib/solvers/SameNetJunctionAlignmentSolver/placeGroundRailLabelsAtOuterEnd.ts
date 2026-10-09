@@ -15,6 +15,7 @@ import {
   isHorizontal,
   isVertical,
   nearlyEqual,
+  RAIL_ALIGNMENT_EPSILON,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -131,17 +132,36 @@ export const placeGroundRailLabelsAtOuterEnd = ({
     )
     if (!connection) continue
 
-    // Reuse the lowest point on the existing column without changing the trace.
-    const anchorPoint = traces
+    // Follow only the continuous column attached to this label. Separate
+    // ground branches may share an x coordinate without sharing a rail.
+    const columnSegments = traces
       .filter((trace) => trace.globalConnNetId === label.globalConnNetId)
-      .flatMap((trace) => trace.tracePath)
-      .filter(
-        (point) =>
-          nearlyEqual(point.x, label.anchorPoint.x) &&
-          point.y < label.anchorPoint.y,
+      .flatMap((trace) =>
+        trace.tracePath.slice(1).flatMap((end, pointIndex) => {
+          const start = trace.tracePath[pointIndex]!
+          return nearlyEqual(start.x, label.anchorPoint.x) &&
+            nearlyEqual(end.x, label.anchorPoint.x)
+            ? [
+                {
+                  minY: Math.min(start.y, end.y),
+                  maxY: Math.max(start.y, end.y),
+                },
+              ]
+            : []
+        }),
       )
-      .sort((a, b) => a.y - b.y)[0]
-    if (!anchorPoint) continue
+      .sort((a, b) => b.maxY - a.maxY)
+    let lowestY = label.anchorPoint.y
+    for (const segment of columnSegments) {
+      if (
+        segment.maxY + RAIL_ALIGNMENT_EPSILON >= lowestY &&
+        segment.minY < lowestY
+      ) {
+        lowestY = segment.minY
+      }
+    }
+    if (nearlyEqual(lowestY, label.anchorPoint.y)) continue
+    const anchorPoint = { x: label.anchorPoint.x, y: lowestY }
 
     const center = getCenterFromAnchor(
       anchorPoint,

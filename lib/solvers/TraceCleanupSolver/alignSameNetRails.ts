@@ -53,6 +53,7 @@ export const alignSameNetRails = ({
 
     for (const group of groups) {
       applied = evaluateRailGroup({
+        inputProblem,
         group,
         traces: outputTraces,
         netLabelPlacements,
