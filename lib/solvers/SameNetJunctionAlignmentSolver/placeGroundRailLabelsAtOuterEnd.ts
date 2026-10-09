@@ -19,6 +19,7 @@ import {
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import type { InputProblem } from "lib/types/InputProblem"
+import { getGroundNetIds } from "lib/utils/getGroundNetIds"
 
 /** Place shared ground labels at a clear end of their connected rail. */
 export const placeGroundRailLabelsAtOuterEnd = ({
@@ -31,16 +32,7 @@ export const placeGroundRailLabelsAtOuterEnd = ({
   netLabelPlacements: NetLabelPlacement[]
 }): NetLabelPlacement[] => {
   const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
-  // Legacy inputs identify GND by name; newer producers also mark aliases.
-  const groundNetIds = new Set(
-    inputProblem.netConnections.flatMap((connection) => {
-      if (!connection.isGround) return []
-      const netId = netConnMap.getNetConnectedToId(connection.netId)
-      return netId ? [netId] : []
-    }),
-  )
-  const legacyGroundNetId = netConnMap.getNetConnectedToId("GND")
-  if (legacyGroundNetId) groundNetIds.add(legacyGroundNetId)
+  const groundNetIds = getGroundNetIds(inputProblem, netConnMap)
   if (groundNetIds.size === 0) return netLabelPlacements
   const chipMap = new Map(inputProblem.chips.map((chip) => [chip.chipId, chip]))
   const traceMap = Object.fromEntries(
@@ -131,15 +123,15 @@ export const placeGroundRailLabelsAtOuterEnd = ({
 
   for (let index = 0; index < output.length; index++) {
     const label = output[index]!
-    if (label.orientation !== "y-") continue
-    // Use producer metadata so ground aliases do not require name matching.
-    const connection = inputProblem.netConnections.find(
+    if (label.orientation !== "y-" || !groundNetIds.has(label.globalConnNetId))
+      continue
+    const hasSharedRail = inputProblem.netConnections.some(
       (candidate) =>
-        candidate.isGround &&
-        candidate.netId === label.netId &&
-        candidate.pinIds.length > 2,
+        candidate.pinIds.length > 2 &&
+        netConnMap.getNetConnectedToId(candidate.netId) ===
+          label.globalConnNetId,
     )
-    if (!connection) continue
+    if (!hasSharedRail) continue
 
     // Follow only the continuous column attached to this label. Separate
     // ground branches may share an x coordinate without sharing a rail.

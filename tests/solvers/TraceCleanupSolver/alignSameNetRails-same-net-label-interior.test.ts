@@ -164,6 +164,116 @@ test.each(["AGND", "source_net_7"])(
   },
 )
 
+for (const labelNetId of ["RETURN", undefined]) {
+  for (const blocked of [true, false]) {
+    test(`resolves a ground alias with label netId=${labelNetId} and blocked=${blocked}`, () => {
+      const { inputProblem, traces, label, blocker } = createFixture(
+        "left",
+        false,
+        "AGND",
+      )
+      inputProblem.netConnections.push({
+        netId: "RETURN",
+        pinIds: ["U1.2"],
+      })
+      const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
+      const globalConnNetId = netConnMap.getNetConnectedToId("RETURN")!
+      expect(globalConnNetId).toBe(netConnMap.getNetConnectedToId("AGND")!)
+      label.netId = labelNetId
+      label.globalConnNetId = globalConnNetId
+      for (const trace of traces) trace.globalConnNetId = globalConnNetId
+      const netLabelPlacements = blocked ? [label, blocker] : [label]
+      const before = structuredClone({
+        inputProblem,
+        traces,
+        netLabelPlacements,
+      })
+
+      const result = align(traces, { inputProblem, netLabelPlacements })
+      expect(result.alignedRailGroupCount).toBe(blocked ? 0 : 1)
+      if (blocked) expect(result.traces).toEqual(traces)
+      const [placedLabel] = placeGroundRailLabelsAtOuterEnd({
+        inputProblem,
+        traces: result.traces,
+        netLabelPlacements,
+      })
+      expect(placedLabel!.anchorPoint).toEqual({ x: -2, y: blocked ? 0 : -2 })
+      expect({ inputProblem, traces, netLabelPlacements }).toEqual(before)
+    })
+  }
+}
+
+test.each(["net", "direct"])(
+  "protects legacy GND labels declared through %s connections without metadata",
+  (declaration) => {
+    const { inputProblem, traces, label, blocker } = createFixture(
+      "left",
+      false,
+    )
+    delete inputProblem.netConnections[0]!.isGround
+    if (declaration === "direct") {
+      inputProblem.netConnections = []
+      inputProblem.directConnections = traces.map((trace) => ({
+        netId: "GND",
+        pinIds: [trace.pins[0].pinId, trace.pins[1].pinId],
+      }))
+    }
+    const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
+    const globalConnNetId = netConnMap.getNetConnectedToId("GND")!
+    label.globalConnNetId = globalConnNetId
+    for (const trace of traces) trace.globalConnNetId = globalConnNetId
+
+    const result = align(traces, {
+      inputProblem,
+      netLabelPlacements: [label, blocker],
+    })
+    expect(result.alignedRailGroupCount).toBe(0)
+    expect(result.traces).toEqual(traces)
+  },
+)
+
+test("does not apply ground handling to an unconnected net with ground display text", () => {
+  const { inputProblem, traces, label, blocker } = createFixture(
+    "left",
+    false,
+    "RETURN",
+  )
+  delete inputProblem.netConnections[0]!.isGround
+  const groundChip = structuredClone(inputProblem.chips[0]!)
+  groundChip.chipId = "U2"
+  groundChip.center.x += 10
+  groundChip.pins = groundChip.pins.map((pin, index) => ({
+    ...pin,
+    pinId: `U2.${index + 1}`,
+    x: pin.x + 10,
+  }))
+  inputProblem.chips.push(groundChip)
+  inputProblem.netConnections.push({
+    netId: "AGND",
+    isGround: true,
+    pinIds: groundChip.pins.map((pin) => pin.pinId),
+  })
+  const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
+  const globalConnNetId = netConnMap.getNetConnectedToId("RETURN")!
+  expect(globalConnNetId).not.toBe(netConnMap.getNetConnectedToId("AGND"))
+  label.globalConnNetId = globalConnNetId
+  label.netLabelText = "GND"
+  for (const trace of traces) trace.globalConnNetId = globalConnNetId
+
+  const result = align(traces, {
+    inputProblem,
+    netLabelPlacements: [label, blocker],
+  })
+  expect(result.alignedRailGroupCount).toBe(1)
+  expect(
+    placeGroundRailLabelsAtOuterEnd({
+      inputProblem,
+      traces: result.traces,
+      netLabelPlacements: [label],
+    }),
+  ).toEqual([label])
+})
+
 test("a separate ground branch in the same column is not a label destination", () => {
   const { inputProblem, traces, label } = createFixture("left", false)
   traces.push(

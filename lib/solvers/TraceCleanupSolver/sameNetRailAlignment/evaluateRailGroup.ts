@@ -1,4 +1,5 @@
 import type { InputProblem } from "lib/types/InputProblem"
+import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import { placeGroundRailLabelsAtOuterEnd } from "lib/solvers/SameNetJunctionAlignmentSolver/placeGroundRailLabelsAtOuterEnd"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
@@ -11,6 +12,7 @@ import {
   doesPathCoincideWithTraces,
   doesPathOverlapTraceStrokes,
 } from "lib/utils/doesPathCoincideWithTraces"
+import { getGroundNetIds } from "lib/utils/getGroundNetIds"
 import { getDistinctCoordinates, pointsEqual } from "./geometry"
 import { getRailAlignmentFallbackCoordinates } from "./getRailAlignmentFallbackCoordinates"
 import { getFixedLabelCoordinate } from "./getFixedLabelCoordinate"
@@ -65,11 +67,11 @@ export const evaluateRailGroup = ({
   const otherNetTraces = traces.filter(
     (trace) => trace.globalConnNetId !== group[0]!.globalConnNetId,
   )
+  const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
+  const groundNetIds = getGroundNetIds(inputProblem, netConnMap)
   const groundLabelIndices = netLabelPlacements.flatMap((label, index) =>
     label.globalConnNetId === group[0]!.globalConnNetId &&
-    inputProblem.netConnections.some(
-      (net) => net.isGround && net.netId === label.netId,
-    )
+    groundNetIds.has(label.globalConnNetId)
       ? [index]
       : [],
   )
