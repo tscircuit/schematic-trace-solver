@@ -20,7 +20,7 @@ import {
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import type { InputProblem } from "lib/types/InputProblem"
 
-/** Put a shared decoupling GND at the load end of its rail, away from the IC. */
+/** Place shared ground labels at a clear end of their connected rail. */
 export const placeGroundRailLabelsAtOuterEnd = ({
   inputProblem,
   traces,
@@ -31,8 +31,17 @@ export const placeGroundRailLabelsAtOuterEnd = ({
   netLabelPlacements: NetLabelPlacement[]
 }): NetLabelPlacement[] => {
   const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
-  const groundNetId = netConnMap.getNetConnectedToId("GND")
-  if (!groundNetId) return netLabelPlacements
+  // Legacy inputs identify GND by name; newer producers also mark aliases.
+  const groundNetIds = new Set(
+    inputProblem.netConnections.flatMap((connection) => {
+      if (!connection.isGround) return []
+      const netId = netConnMap.getNetConnectedToId(connection.netId)
+      return netId ? [netId] : []
+    }),
+  )
+  const legacyGroundNetId = netConnMap.getNetConnectedToId("GND")
+  if (legacyGroundNetId) groundNetIds.add(legacyGroundNetId)
+  if (groundNetIds.size === 0) return netLabelPlacements
   const chipMap = new Map(inputProblem.chips.map((chip) => [chip.chipId, chip]))
   const traceMap = Object.fromEntries(
     traces.map((trace) => [trace.mspPairId, trace]),
@@ -41,7 +50,7 @@ export const placeGroundRailLabelsAtOuterEnd = ({
   const output = [...netLabelPlacements]
 
   for (const rail of traces) {
-    if (rail.globalConnNetId !== groundNetId) continue
+    if (!groundNetIds.has(rail.globalConnNetId)) continue
     const [a, b] = rail.pins
     if (
       a.chipId === b.chipId ||
@@ -64,7 +73,7 @@ export const placeGroundRailLabelsAtOuterEnd = ({
       continue
 
     for (const feed of traces) {
-      if (feed.globalConnNetId !== groundNetId) continue
+      if (feed.globalConnNetId !== rail.globalConnNetId) continue
       const shared = feed.pins.find((pin) => rail.pinIds.includes(pin.pinId))
       const icPin = feed.pins.find(
         (pin) =>
@@ -80,7 +89,7 @@ export const placeGroundRailLabelsAtOuterEnd = ({
       for (let index = 0; index < output.length; index++) {
         const label = output[index]!
         if (
-          label.globalConnNetId !== groundNetId ||
+          label.globalConnNetId !== rail.globalConnNetId ||
           label.orientation !== "y-" ||
           !label.mspConnectionPairIds.some(
             (id) => id === feed.mspPairId || id === rail.mspPairId,

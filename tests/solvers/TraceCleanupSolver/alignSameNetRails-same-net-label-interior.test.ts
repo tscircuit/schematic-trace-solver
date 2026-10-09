@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { placeGroundRailLabelsAtOuterEnd } from "lib/solvers/SameNetJunctionAlignmentSolver/placeGroundRailLabelsAtOuterEnd"
 import { pathIntersectsRenderedLabel } from "lib/utils/pathIntersectsRenderedLabel"
@@ -11,7 +12,11 @@ import {
 
 const sides = ["left", "right", "top", "bottom"] as const
 
-const createFixture = (side: (typeof sides)[number], atOuterEnd: boolean) => {
+const createFixture = (
+  side: (typeof sides)[number],
+  atOuterEnd: boolean,
+  netId = "GND",
+) => {
   // Schematic world coordinates: rotate/reflect the left-side fixture to
   // exercise vertical and horizontal rails on all four component sides.
   const vertical = side === "left" || side === "right"
@@ -30,23 +35,27 @@ const createFixture = (side: (typeof sides)[number], atOuterEnd: boolean) => {
   }))
   inputProblem.netConnections = [
     {
-      netId: "GND",
+      netId,
       isGround: true,
       pinIds: chip.pins.map((pin) => pin.pinId),
       netLabelWidth: 0.4,
       netLabelHeight: 0.2,
     },
   ]
+  const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
+  const globalConnNetId = netConnMap.getNetConnectedToId(netId)!
   const traces = getVerticalRailTraces()
   for (const trace of traces) {
+    trace.globalConnNetId = globalConnNetId
+    trace.userNetId = netId
     trace.tracePath = trace.tracePath.map(point)
     for (const pin of trace.pins) {
       Object.assign(pin, point(pin), { _facingDirection: facing[side] })
     }
   }
   const label: NetLabelPlacement = {
-    globalConnNetId: "power-net",
-    netId: "GND",
+    globalConnNetId,
+    netId,
     mspConnectionPairIds: ["upper"],
     pinIds: traces[0]!.pinIds,
     orientation: vertical
@@ -140,6 +149,21 @@ test.each(["left", "right"] as const)(
   },
 )
 
+test.each(["AGND", "source_net_7"])(
+  "uses isGround metadata when aligning a clear %s rail",
+  (netId) => {
+    const { inputProblem, traces, label } = createFixture("left", false, netId)
+    const result = align(traces, { inputProblem, netLabelPlacements: [label] })
+    expect(result.alignedRailGroupCount).toBe(1)
+    const [placedLabel] = placeGroundRailLabelsAtOuterEnd({
+      inputProblem,
+      traces: result.traces,
+      netLabelPlacements: [label],
+    })
+    expect(placedLabel!.anchorPoint).toEqual({ x: -2, y: -2 })
+  },
+)
+
 test("a separate ground branch in the same column is not a label destination", () => {
   const { inputProblem, traces, label } = createFixture("left", false)
   traces.push(
@@ -153,6 +177,7 @@ test("a separate ground branch in the same column is not a label destination", (
         { pinId: "X1.1", chipId: "X1", x: -2, y: -4 },
         { pinId: "X2.1", chipId: "X2", x: -2, y: -6 },
       ],
+      label.globalConnNetId,
     ),
   )
   const before = structuredClone({ inputProblem, traces, label })

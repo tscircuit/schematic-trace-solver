@@ -118,6 +118,23 @@ test("label placement is independent of trace and endpoint ordering", () => {
   })
 })
 
+test("preserves legacy GND declared through direct connections only", () => {
+  const fixture = createFixture()
+  fixture.inputProblem.netConnections = []
+  fixture.inputProblem.directConnections[0]!.netId = "GND"
+  const { netConnMap } = getConnectivityMapsFromInputProblem(
+    fixture.inputProblem,
+  )
+  const globalConnNetId = netConnMap.getNetConnectedToId("GND")!
+  for (const trace of fixture.traces) trace.globalConnNetId = globalConnNetId
+  fixture.netLabelPlacements[0]!.globalConnNetId = globalConnNetId
+
+  expect(placeGroundRailLabelsAtOuterEnd(fixture)[0]!.anchorPoint).toEqual({
+    x: 0,
+    y: 0.6,
+  })
+})
+
 for (const obstacle of [
   "chip",
   "text",
