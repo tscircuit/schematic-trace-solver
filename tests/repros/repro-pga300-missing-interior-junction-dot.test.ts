@@ -1,20 +1,43 @@
 import { expect, test } from "bun:test"
-import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { convertSolverOutputToCircuitJson } from "tests/fixtures/convertSolverOutputToCircuitJson"
 import "tests/fixtures/matcher"
-import inputProblem from "./assets/repro-pga300-redundant-ground-traces.input.json"
+import inputProblem from "./assets/repro-pga300-missing-interior-junction-dot.input.json"
 
-// Reuse the existing full-board PGA300 capture from tscircuit/ti#117 at
-// 067b6a2, introduced in schematic-trace-solver#930 and normalized in #1292.
+// Full-board PGA300 capture from tscircuit/ti#117 at 067b6a2, copied unchanged
+// from schematic-trace-solver#930 at e51b323 (before fixture normalization).
 // Circuit source: https://github.com/tscircuit/ti/blob/067b6a211b04bea3840fdd6b59cac6e5e9b0ed61/lib/subcircuits/PressureTransmitter_PGA300.circuit.tsx
-test("PGA300 supply branches lose junction dots at wire interiors", async () => {
+const solveRepro = () => {
   const input = structuredClone(inputProblem) as unknown as InputProblem
-  expect(input.chips).toHaveLength(17)
-  expect(input.chips.flatMap((chip) => chip.pins)).toHaveLength(55)
   const solver = new SchematicTracePipelineSolver(input, { hideRatsNet: true })
   solver.solve()
+  return solver
+}
+
+const junctions = [
+  { x: 5.49, y: 3.05 },
+  { x: 5.49, y: 1.29945535 },
+]
+const junctionsAt = (
+  solver: SchematicTracePipelineSolver,
+  point: { x: number; y: number },
+) =>
+  convertSolverOutputToCircuitJson(solver)
+    .flatMap((element) =>
+      element.type === "schematic_trace" ? element.junctions : [],
+    )
+    .filter(
+      (junction) =>
+        Math.abs(junction.x - point.x) < 1e-6 &&
+        Math.abs(junction.y - point.y) < 1e-6,
+    )
+
+test("repro: PGA300 supply branches lose junction dots at wire interiors", async () => {
+  const input = inputProblem as unknown as InputProblem
+  expect(input.chips).toHaveLength(17)
+  expect(input.chips.flatMap((chip) => chip.pins)).toHaveLength(55)
+  const solver = solveRepro()
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
 
@@ -33,7 +56,7 @@ test("PGA300 supply branches lose junction dots at wire interiors", async () => 
     {
       host: supplyRail,
       branch: q1Branch,
-      junction: { x: 5.49, y: 3.05 },
+      junction: junctions[0],
       segment: [
         { x: 7, y: 3.05 },
         { x: 2.55, y: 3.05 },
@@ -42,7 +65,7 @@ test("PGA300 supply branches lose junction dots at wire interiors", async () => 
     {
       host: q1Branch,
       branch: c4Branch,
-      junction: { x: 5.49, y: 1.29945535 },
+      junction: junctions[1],
       segment: [
         { x: 5.49, y: 1.0994553499999997 },
         { x: 5.49, y: 3.05 },
@@ -63,33 +86,25 @@ test("PGA300 supply branches lose junction dots at wire interiors", async () => 
     expect(junction[axis]).toBeLessThan(Math.max(a[axis], b[axis]))
   }
 
-  const circuitJson = convertSolverOutputToCircuitJson(solver)
-  const junctionsAt = (point: { x: number; y: number }) =>
-    convertSolverOutputToCircuitJson(solver)
-      .flatMap((element) =>
-        element.type === "schematic_trace" ? element.junctions : [],
-      )
-      .filter(
-        (junction) =>
-          Math.abs(junction.x - point.x) < 1e-6 &&
-          Math.abs(junction.y - point.y) < 1e-6,
-      )
   // Pin the current converter defect on the actual captured board.
-  for (const { junction } of contacts) expect(junctionsAt(junction)).toEqual([])
-  await expect(
-    convertCircuitJsonToSchematicSvg(circuitJson, {
-      width: 1600,
-      height: 800,
-    }).replace(/[ \t]+$/gm, ""),
-  ).toMatchSvgSnapshot(
-    import.meta.path,
-    "repro-pga300-missing-interior-junction-dot-schematic",
-  )
+  for (const { junction } of contacts)
+    expect(junctionsAt(solver, junction)).toEqual([])
+  // The snapshot intentionally captures the existing missing dots.
+  await expect(solver).toMatchSolverSnapshot(import.meta.path)
 
-  // Diagnostic control after snapshots: adding redundant collinear vertices
+  // Diagnostic control after the snapshot: adding redundant collinear vertices
   // changes no wire geometry, but causes both missing dots to be emitted.
   for (const { host, junction } of contacts)
     host.tracePath.splice(1, 0, junction)
   for (const { junction } of contacts)
-    expect(junctionsAt(junction)).toEqual([junction])
+    expect(junctionsAt(solver, junction)).toEqual([junction])
+})
+
+test.failing("PGA300 supply branches should each have one junction dot", () => {
+  const solver = solveRepro()
+  // Known failure: neither same-net endpoint-to-segment contact gets a dot.
+  // Remove .failing when fixing conversion; this assertion should then pass.
+  expect(junctions.map((point) => junctionsAt(solver, point))).toEqual(
+    junctions.map((point) => [point]),
+  )
 })
