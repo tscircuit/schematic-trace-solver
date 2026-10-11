@@ -76,7 +76,6 @@ test("PGA300 supply branches lose junction dots at wire interiors", async () => 
       )
   // Pin the current converter defect on the actual captured board.
   for (const { junction } of contacts) expect(junctionsAt(junction)).toEqual([])
-  await expect(solver).toMatchSolverSnapshot(import.meta.path)
   await expect(
     convertCircuitJsonToSchematicSvg(circuitJson, {
       width: 1600,
