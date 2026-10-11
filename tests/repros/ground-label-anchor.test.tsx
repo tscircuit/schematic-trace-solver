@@ -82,7 +82,7 @@ test.failing("ground label stays on its wire", async () => {
   const orphans = labels.filter(
     (label) =>
       !edges.some(({ from, to }) => {
-        const p = label.anchor_position
+        const p = label.anchor_position!
         return (
           (Math.abs(from.x - p.x) < 1e-6 &&
             Math.abs(to.x - p.x) < 1e-6 &&
@@ -99,8 +99,8 @@ test.failing("ground label stays on its wire", async () => {
         .some(
           (pin) =>
             Math.hypot(
-              pin.center.x - label.anchor_position.x,
-              pin.center.y - label.anchor_position.y,
+              pin.center.x - label.anchor_position!.x,
+              pin.center.y - label.anchor_position!.y,
             ) < 1e-6,
         ),
   )
