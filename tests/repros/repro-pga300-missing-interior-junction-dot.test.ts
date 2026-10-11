@@ -4,11 +4,11 @@ import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipeline
 import type { InputProblem } from "lib/types/InputProblem"
 import { convertSolverOutputToCircuitJson } from "tests/fixtures/convertSolverOutputToCircuitJson"
 import "tests/fixtures/matcher"
-import inputProblem from "./assets/repro-pga300-missing-interior-junction-dot.input.json"
+import inputProblem from "./assets/repro-pga300-redundant-ground-traces.input.json"
 
-// Unmodified full-board capture from tscircuit/ti#117 at 067b6a2,
-// originally committed in schematic-trace-solver#930 at e51b323.
-// See the companion notes for source links and capture provenance.
+// Reuse the existing full-board PGA300 capture from tscircuit/ti#117 at
+// 067b6a2, introduced in schematic-trace-solver#930 and normalized in #1292.
+// Circuit source: https://github.com/tscircuit/ti/blob/067b6a211b04bea3840fdd6b59cac6e5e9b0ed61/lib/subcircuits/PressureTransmitter_PGA300.circuit.tsx
 test("PGA300 supply branches lose junction dots at wire interiors", async () => {
   const input = structuredClone(inputProblem) as unknown as InputProblem
   expect(input.chips).toHaveLength(17)
