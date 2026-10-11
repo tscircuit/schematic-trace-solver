@@ -14,13 +14,29 @@ test("ground label stays on its wire", async () => {
   const caption = "ground labels stay connected"
   circuit.add(
     <board>
+      <net name="GND" />
+      <net name="TEC_CURRENT_COMMAND" />
       <schematictext text={caption} schX={-2.5} schY={3} fontSize={0.18} />
       <chip
         name="U1"
         schWidth={2}
-        pinLabels={Object.fromEntries(
-          Array.from({ length: 15 }, (_, i) => [`pin${i + 1}`, `P${i + 1}`]),
-        )}
+        pinLabels={{
+          pin1: "P1",
+          pin2: "P2",
+          pin3: "P3",
+          pin4: "P4",
+          pin5: "P5",
+          pin6: "P6",
+          pin7: "P7",
+          pin8: "P8",
+          pin9: "P9",
+          pin10: "P10",
+          pin11: "P11",
+          pin12: "P12",
+          pin13: "P13",
+          pin14: "P14",
+          pin15: "P15",
+        }}
         connections={{
           pin2: "net.GND",
           pin7: "net.GND",
