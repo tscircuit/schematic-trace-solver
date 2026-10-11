@@ -55,11 +55,13 @@ const getTraceWithoutSharedPrefix = ({
   pathFromSharedPin,
   sharedPinId,
   branchPoint,
+  netLabelPlacements,
 }: {
   trace: SolvedTracePath
   pathFromSharedPin: Point[]
   sharedPinId: PinId
   branchPoint: Point
+  netLabelPlacements: NetLabelPlacement[]
 }) => {
   const branchSegmentIndex = pathFromSharedPin.findIndex((point, index) => {
     const nextPoint = pathFromSharedPin[index + 1]
@@ -75,6 +77,15 @@ const getTraceWithoutSharedPrefix = ({
   if (trace.pins[0]?.pinId !== sharedPinId) {
     tracePath = pathFromJunction.reverse()
   }
+  if (
+    netLabelPlacements.some(
+      (label) =>
+        label.globalConnNetId === trace.globalConnNetId &&
+        tracePathContainsPoint(trace.tracePath, label.anchorPoint) &&
+        !tracePathContainsPoint(tracePath, label.anchorPoint),
+    )
+  )
+    return null
   return { ...trace, tracePath }
 }
 
@@ -178,6 +189,7 @@ export const collapseRedundantSharedEndpointStubs = ({
           pathFromSharedPin: pathToCollapse,
           sharedPinId: sharedPin.pinId,
           branchPoint,
+          netLabelPlacements,
         })
         if (!collapsedTrace) continue
         outputTraces[traceIndexToCollapse] = collapsedTrace
@@ -263,6 +275,7 @@ export const collapseRedundantSharedEndpointStubs = ({
         pathFromSharedPin: pathToCollapse,
         sharedPinId: sharedPin.pinId,
         branchPoint,
+        netLabelPlacements,
       })
       if (!collapsedTrace) continue
       outputTraces[traceIndexToCollapse] = collapsedTrace

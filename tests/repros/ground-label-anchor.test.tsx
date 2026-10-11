@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { convertCircuitJsonToSchematicSvg } from "circuit-to-svg"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 
-test.failing("ground label stays on its wire", async () => {
+test("ground label stays on its wire", async () => {
   const { Circuit } = await import("@tscircuit/core")
   const circuit = new Circuit()
   circuit.pcbDisabled = true
