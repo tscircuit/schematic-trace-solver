@@ -772,7 +772,13 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
 
   private getTraceLinesForLabel(label: NetLabelPlacement) {
     return this.traces.filter(
-      (trace) => isTraceLine(trace) && this.isTraceForLabel(trace, label),
+      // Generated connectors inherit pin IDs, but are not pin-to-pin rails.
+      // Their labels can move only with the connector geometry and the
+      // attachment checks in getSimplifiedRailConnectorCandidates.
+      (trace) =>
+        !this.netLabelConnectorTraceIds.has(trace.mspPairId) &&
+        isTraceLine(trace) &&
+        this.isTraceForLabel(trace, label),
     )
   }
 
