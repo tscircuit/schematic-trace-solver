@@ -1,0 +1,455 @@
+[
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_0_0",
+    "name": "pin3",
+    "pin_number": 3,
+    "port_hints": [
+      "pin3",
+      "D",
+      "drain",
+      "3"
+    ],
+    "source_component_id": "source_component_0",
+    "subcircuit_id": "subcircuit_source_group_0",
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net2"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_0_1",
+    "name": "pin1",
+    "pin_number": 1,
+    "port_hints": [
+      "pin1",
+      "G",
+      "gate",
+      "1"
+    ],
+    "source_component_id": "source_component_0",
+    "subcircuit_id": "subcircuit_source_group_0",
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net0"
+  },
+  {
+    "type": "source_port",
+    "source_port_id": "source_port_0_2",
+    "name": "pin2",
+    "pin_number": 2,
+    "port_hints": [
+      "pin2",
+      "S",
+      "source",
+      "2"
+    ],
+    "source_component_id": "source_component_0",
+    "subcircuit_id": "subcircuit_source_group_0",
+    "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_0_connectivity_net1"
+  },
+  {
+    "type": "source_component",
+    "source_component_id": "source_component_0",
+    "ftype": "simple_mosfet",
+    "name": "Q1",
+    "mosfet_mode": "enhancement",
+    "channel_type": "n",
+    "source_group_id": "source_group_0"
+  },
+  {
+    "type": "schematic_component",
+    "schematic_component_id": "schematic_component_0",
+    "center": {
+      "x": 5.4445,
+      "y": -0.5
+    },
+    "size": {
+      "width": 2.159,
+      "height": 1.27
+    },
+    "source_component_id": "source_component_0",
+    "is_box_with_pins": false,
+    "schematic_group_id": "schematic_group_0"
+  },
+  {
+    "type": "schematic_port",
+    "schematic_port_id": "schematic_port_0_0",
+    "schematic_component_id": "schematic_component_0",
+    "center": {
+      "x": 5.635,
+      "y": 0.77
+    },
+    "source_port_id": "source_port_0_0",
+    "facing_direction": "up",
+    "distance_from_component_edge": 0.635,
+    "side_of_component": "top",
+    "pin_number": 3,
+    "display_pin_label": "D",
+    "is_connected": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_0",
+    "schematic_component_id": "schematic_component_0",
+    "x1": 5.635,
+    "y1": 0.77,
+    "x2": 5.635,
+    "y2": 0.135,
+    "stroke_width": 0.02,
+    "color": "rgba(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_port",
+    "schematic_port_id": "schematic_port_0_1",
+    "schematic_component_id": "schematic_component_0",
+    "center": {
+      "x": 3.73,
+      "y": -0.5
+    },
+    "source_port_id": "source_port_0_1",
+    "facing_direction": "left",
+    "distance_from_component_edge": 0.635,
+    "side_of_component": "left",
+    "pin_number": 1,
+    "display_pin_label": "G",
+    "is_connected": true
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_1",
+    "schematic_component_id": "schematic_component_0",
+    "x1": 3.73,
+    "y1": -0.5,
+    "x2": 4.365,
+    "y2": -0.5,
+    "stroke_width": 0.02,
+    "color": "rgba(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_port",
+    "schematic_port_id": "schematic_port_0_2",
+    "schematic_component_id": "schematic_component_0",
+    "center": {
+      "x": 5.635,
+      "y": -1.77
+    },
+    "source_port_id": "source_port_0_2",
+    "facing_direction": "down",
+    "distance_from_component_edge": 0.635,
+    "side_of_component": "bottom",
+    "pin_number": 2,
+    "display_pin_label": "S",
+    "is_connected": false
+  },
+  {
+    "type": "schematic_line",
+    "schematic_line_id": "schematic_line_2",
+    "schematic_component_id": "schematic_component_0",
+    "x1": 5.635,
+    "y1": -1.77,
+    "x2": 5.635,
+    "y2": -1.135,
+    "stroke_width": 0.02,
+    "color": "rgba(132, 0, 0)",
+    "is_dashed": false
+  },
+  {
+    "type": "schematic_text",
+    "schematic_text_id": "schematic_text_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "schematic_component_id": "schematic_component_0",
+    "anchor": "bottom_center",
+    "text": "Q1",
+    "font_size": 0.22,
+    "color": "#006464",
+    "position": {
+      "x": 5,
+      "y": 0.19999999999999996
+    },
+    "rotation": 0
+  },
+  {
+    "type": "schematic_path",
+    "schematic_path_id": "schematic_path_0",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "points": [
+      {
+        "x": 5,
+        "y": -0.5
+      },
+      {
+        "x": 5.381,
+        "y": -0.627
+      },
+      {
+        "x": 5.381,
+        "y": -0.373
+      },
+      {
+        "x": 5,
+        "y": -0.5
+      }
+    ],
+    "is_filled": true,
+    "is_dashed": false,
+    "fill_color": "#880000",
+    "stroke_color": "#880000",
+    "stroke_width": 0.035,
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "schematic_path",
+    "schematic_path_id": "schematic_path_1",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "points": [
+      {
+        "x": 6.27,
+        "y": -0.373
+      },
+      {
+        "x": 6.0794999999999995,
+        "y": -0.6905
+      },
+      {
+        "x": 6.4605,
+        "y": -0.6905
+      },
+      {
+        "x": 6.27,
+        "y": -0.373
+      }
+    ],
+    "is_filled": true,
+    "is_dashed": false,
+    "fill_color": "#880000",
+    "stroke_color": "#880000",
+    "stroke_width": 0.035,
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "schematic_path",
+    "schematic_path_id": "schematic_path_2",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "points": [
+      {
+        "x": 5,
+        "y": -0.055499999999999994
+      },
+      {
+        "x": 5.635,
+        "y": -0.055499999999999994
+      },
+      {
+        "x": 5.635,
+        "y": 0.135
+      },
+      {
+        "x": 6.27,
+        "y": 0.135
+      },
+      {
+        "x": 6.27,
+        "y": -0.373
+      }
+    ],
+    "is_filled": false,
+    "is_dashed": false,
+    "stroke_color": "#880000",
+    "stroke_width": 0.035,
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "schematic_path",
+    "schematic_path_id": "schematic_path_3",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "points": [
+      {
+        "x": 5,
+        "y": -0.5
+      },
+      {
+        "x": 5.635,
+        "y": -0.5
+      },
+      {
+        "x": 5.635,
+        "y": -1.135
+      },
+      {
+        "x": 6.27,
+        "y": -1.135
+      },
+      {
+        "x": 6.27,
+        "y": -0.6905
+      }
+    ],
+    "is_filled": false,
+    "is_dashed": false,
+    "stroke_color": "#880000",
+    "stroke_width": 0.035,
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "schematic_path",
+    "schematic_path_id": "schematic_path_4",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "points": [
+      {
+        "x": 5.635,
+        "y": -0.9445
+      },
+      {
+        "x": 5,
+        "y": -0.9445
+      }
+    ],
+    "is_filled": false,
+    "is_dashed": false,
+    "stroke_color": "#880000",
+    "stroke_width": 0.035,
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "schematic_path",
+    "schematic_path_id": "schematic_path_5",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "points": [
+      {
+        "x": 4.873,
+        "y": 0.07150000000000001
+      },
+      {
+        "x": 4.873,
+        "y": -1.0715
+      }
+    ],
+    "is_filled": false,
+    "is_dashed": false,
+    "stroke_color": "#880000",
+    "stroke_width": 0.035,
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "schematic_path",
+    "schematic_path_id": "schematic_path_6",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "points": [
+      {
+        "x": 5,
+        "y": 0.07150000000000001
+      },
+      {
+        "x": 5,
+        "y": -0.1825
+      }
+    ],
+    "is_filled": false,
+    "is_dashed": false,
+    "stroke_color": "#880000",
+    "stroke_width": 0.035,
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "schematic_path",
+    "schematic_path_id": "schematic_path_7",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "points": [
+      {
+        "x": 5,
+        "y": -0.627
+      },
+      {
+        "x": 5,
+        "y": -0.373
+      }
+    ],
+    "is_filled": false,
+    "is_dashed": false,
+    "stroke_color": "#880000",
+    "stroke_width": 0.035,
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "schematic_path",
+    "schematic_path_id": "schematic_path_8",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "points": [
+      {
+        "x": 5,
+        "y": -1.0715
+      },
+      {
+        "x": 5,
+        "y": -0.8175
+      }
+    ],
+    "is_filled": false,
+    "is_dashed": false,
+    "stroke_color": "#880000",
+    "stroke_width": 0.035,
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "schematic_path",
+    "schematic_path_id": "schematic_path_9",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "points": [
+      {
+        "x": 4.365,
+        "y": -0.5
+      },
+      {
+        "x": 4.873,
+        "y": -0.5
+      }
+    ],
+    "is_filled": false,
+    "is_dashed": false,
+    "stroke_color": "#880000",
+    "stroke_width": 0.035,
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "schematic_path",
+    "schematic_path_id": "schematic_path_10",
+    "schematic_component_id": "schematic_component_0",
+    "schematic_symbol_id": "schematic_symbol_0",
+    "points": [
+      {
+        "x": 6.524,
+        "y": -0.373
+      },
+      {
+        "x": 6.397,
+        "y": -0.373
+      },
+      {
+        "x": 6.143,
+        "y": -0.373
+      },
+      {
+        "x": 6.016,
+        "y": -0.373
+      }
+    ],
+    "is_filled": false,
+    "is_dashed": false,
+    "stroke_color": "#880000",
+    "stroke_width": 0.035,
+    "subcircuit_id": "subcircuit_source_group_0"
+  },
+  {
+    "type": "schematic_symbol",
+    "schematic_symbol_id": "schematic_symbol_0"
+  }
+]

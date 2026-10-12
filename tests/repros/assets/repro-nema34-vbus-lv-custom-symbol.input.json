@@ -1,0 +1,98 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 5.4445,
+        "y": -0.5
+      },
+      "width": 2.158999999999999,
+      "height": 1.27,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "D",
+          "x": 5.635,
+          "y": 0.77,
+          "_facingDirection": "y+"
+        },
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "G",
+          "x": 3.73,
+          "y": -0.5,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "S",
+          "x": 5.635,
+          "y": -1.77,
+          "_facingDirection": "y-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "PD_VBUS",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.96,
+      "pinIds": [
+        "schematic_port_0"
+      ],
+      "netLabelText": "PD_VBUS"
+    },
+    {
+      "netId": "EPR_BLK_GATE",
+      "isGround": false,
+      "netLabelWidth": 1.56,
+      "anchoredNetLabelWidth": 1.56,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.04,
+      "pinIds": [
+        "schematic_port_1"
+      ],
+      "netLabelText": "EPR_BLK_GATE"
+    },
+    {
+      "netId": "VBUS_LV",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.96,
+      "pinIds": [
+        "schematic_port_2"
+      ],
+      "netLabelText": "VBUS_LV"
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 5,
+        "y": 0.27
+      },
+      "width": 0.4133333333333322,
+      "height": 0.29,
+      "text": "Q1"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "VBUS_LV": [
+      "y+"
+    ],
+    "PD_VBUS": [
+      "y+"
+    ],
+    "EPR_BLK_GATE": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
