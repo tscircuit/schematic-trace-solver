@@ -8,10 +8,12 @@ import { getSolverSnapshotSvg } from "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-nema34-vbus-lv-custom-symbol.input.json"
 import customSymbol from "./assets/repro-nema34-vbus-lv-custom-symbol.circuit.json"
 
-// Captured from core's solver:started event for the matching Q1 repro.
-// Routing geometry is unchanged; netLabelText was added for readable labels.
-// Custom drawing primitives are rendering/test
-// context only: they are deliberately NOT added to the solver's obstacles.
+// Based on core's solver:started capture for the matching Q1 repro.
+// Chip bounds and terminal positions are unchanged; netLabelText was added for
+// readability. The optional pin stems were copied from the accompanying emitted
+// Circuit JSON (core's adapter does not export them yet). They are input metadata
+// until collision handling is implemented; custom drawing primitives remain
+// rendering/test context, not additional routing obstacles.
 const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
 const getVbusLabel = () =>
   solver
@@ -72,17 +74,34 @@ beforeAll(async () => {
   ).toMatchSvgSnapshot(import.meta.path)
 })
 
+test("NEMA34 input preserves Q1's emitted stems and body bounds", () => {
+  for (const pin of inputProblem.chips[0]!.pins) {
+    const drawnStem = customSymbol.find(
+      (element) =>
+        element.type === "schematic_line" &&
+        element.x1 === pin.x &&
+        element.y1 === pin.y,
+    )!
+    expect(pin.stem).toEqual({
+      from: { x: drawnStem.x1!, y: drawnStem.y1! },
+      to: { x: drawnStem.x2!, y: drawnStem.y2! },
+    })
+  }
+
+  // Check after the full solve: metadata reaches the solver without expanding
+  // the authoritative body box to encompass the external stems.
+  const [solverInput] = solver.getConstructorParams()
+  expect(solverInput.chips).toEqual((inputProblem as InputProblem).chips)
+})
+
 // Expected behavior is upward orientation plus clearance from the source stem.
 // Body-only chip bounds leave a 0.635 mm stem gap; the 0.42 mm label fits inside
-// that gap and is incorrectly considered collision-free.
+// that gap and is incorrectly considered collision-free, even with explicit
+// stem metadata supplied. Consuming that metadata is the follow-up fix.
 test.failing("NEMA34 VBUS_LV rail label clears the custom MOSFET source stem", () => {
-  // Schematic-world mm, +X right and +Y up; endpoints exported by core.
   expect(
     pathIntersectsRenderedLabel(
-      [
-        { x: sourceStem.x1!, y: sourceStem.y1! },
-        { x: sourceStem.x2!, y: sourceStem.y2! },
-      ],
+      [sourcePin.stem.from, sourcePin.stem.to],
       getVbusLabel(),
     ),
   ).toBe(false)
