@@ -1,4 +1,4 @@
-import type { GraphicsObject } from "graphics-debug"
+import type { GraphicsObject, NinePointAnchor } from "graphics-debug"
 import type { PinId, InputPin, InputProblem } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
@@ -19,11 +19,12 @@ export const visualizeInputProblem = (
   } = opts
   const graphics: Pick<
     Required<GraphicsObject>,
-    "lines" | "points" | "rects"
+    "lines" | "points" | "rects" | "texts"
   > = {
     lines: [],
     points: [],
     rects: [],
+    texts: [],
   }
 
   const pinIdMap = new Map<PinId, InputPin>()
@@ -53,14 +54,33 @@ export const visualizeInputProblem = (
   }
 
   for (const textBox of inputProblem.textBoxes ?? []) {
+    const placement = textBox.textPlacement
     graphics.rects.push({
-      label: textBox.text ?? "schematic_text",
+      label: placement ? undefined : (textBox.text ?? "schematic_text"),
       center: textBox.center,
       width: textBox.width,
       height: textBox.height,
       fill: "rgba(160, 0, 220, 0.14)",
       strokeColor: "rgba(160, 0, 220, 0.9)",
     } as any)
+    if (placement && textBox.text) {
+      const anchorAliases: Record<string, NinePointAnchor> = {
+        left: "center_left",
+        right: "center_right",
+        top: "top_center",
+        bottom: "bottom_center",
+      }
+      graphics.texts.push({
+        ...placement.position,
+        text: textBox.text,
+        anchorSide: anchorAliases[placement.anchor] ?? placement.anchor,
+        fontSize: placement.fontSize,
+        // graphics-debug uses counter-clockwise world rotation; Circuit JSON
+        // schematic_text uses clockwise screen rotation.
+        rotation: -(placement.rotation ?? 0),
+        color: "#7e22ce",
+      })
+    }
   }
 
   if (!hideRatsNet) {

@@ -1,3 +1,4 @@
+import type { NinePointAnchor } from "graphics-debug"
 import type { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import type { FacingDirection } from "lib/utils/dir"
 
@@ -27,6 +28,19 @@ export interface TextBoxes {
   width: number
   height: number
   text?: string
+  /**
+   * Original schematic text placement in world mm (+X right, +Y up),
+   * independent of the routing obstacle above (which may include padding).
+   * Omit for legacy centered previews.
+   */
+  textPlacement?: {
+    position: { x: number; y: number }
+    anchor: NinePointAnchor | "left" | "right" | "top" | "bottom"
+    /** Font size in schematic world mm. */
+    fontSize: number
+    /** Clockwise degrees on screen, matching Circuit JSON schematic_text. */
+    rotation?: number
+  }
 }
 
 export interface InputChip {
