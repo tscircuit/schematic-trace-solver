@@ -6,6 +6,14 @@ export type PinId = string
 export type NetId = string
 export type SectionId = string
 
+/** A visible straight pin stem in schematic world mm (+X right, +Y up). */
+export interface InputPinStem {
+  /** Original terminal position, before any solver projection to a chip edge. */
+  from: { x: number; y: number }
+  /** Body-side end of the drawn stem, after the caller's symbol transforms. */
+  to: { x: number; y: number }
+}
+
 export interface InputPin {
   pinId: PinId
 
@@ -17,6 +25,16 @@ export interface InputPin {
 
   x: number
   y: number
+
+  /**
+   * Exact visible stem geometry supplied by the caller. Omission means the
+   * geometry is unknown; it is not inferred from the chip rectangle or facing
+   * direction. These world coordinates stay fixed if the solver projects this
+   * pin's x/y to a chip edge, and do not enlarge the chip's obstacle bounds.
+   * Currently preserved as input metadata; routing and label placement do not
+   * yet use it for collision checks.
+   */
+  stem?: InputPinStem
 
   _facingDirection?: "x+" | "x-" | "y+" | "y-"
 }
