@@ -1,13 +1,15 @@
+import { traceCrossesBoundsInterior } from "lib/solvers/AvailableNetOrientationSolver/geometry"
 import {
   countPathIntersections,
   getPathLength,
 } from "lib/solvers/Example28Solver/geometry"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { countTurns } from "lib/solvers/TraceCleanupSolver/countTurns"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import type { InputProblem } from "lib/types/InputProblem"
-import { EPS, getTraceCorners } from "./geometry"
+import { EPS, getDistance, getTraceCorners } from "./geometry"
 import { getRemovableRailLabelConnectors } from "./getRemovableRailLabelConnectors"
 import type { TraceCornerCandidate } from "./types"
 
@@ -24,6 +26,7 @@ export const getSimplifiedRailConnectorCandidates = (params: {
 
   const direction = label.orientation === "y+" ? 1 : -1
   const candidates: TraceCornerCandidate[] = []
+  const shortenedCandidates: TraceCornerCandidate[] = []
   // Reuse the removal checks: every existing branch, pin, and other label
   // attached to the connector must remain connected through the host rail.
   const attachments = getRemovableRailLabelConnectors({
@@ -66,11 +69,43 @@ export const getSimplifiedRailConnectorCandidates = (params: {
         reroutedTracePath,
       })
     }
+
+    // If the connector crosses its own label and the existing anchor cannot
+    // be reached cleanly, end the label at an earlier connector corner and
+    // trim its unused tail. Moving only the label would leave a dangling wire.
+    if (
+      !traceCrossesBoundsInterior(
+        getRectBounds(label.center, label.width, label.height),
+        { [connector.mspPairId]: connector },
+      )
+    )
+      continue
+    const reversed = getDistance(path[0]!, label.anchorPoint) <= EPS
+    const sourceToLabel = reversed ? [...path].reverse() : path
+    for (let index = 1; index < sourceToLabel.length - 1; index++) {
+      const previous = sourceToLabel[index - 1]!
+      const anchorPoint = sourceToLabel[index]!
+      // The retained segment must approach the symbol along its wick.
+      if (
+        Math.abs(previous.x - anchorPoint.x) > EPS ||
+        (anchorPoint.y - previous.y) * direction <= EPS
+      )
+        continue
+      const retainedPath = sourceToLabel.slice(0, index + 1)
+      shortenedCandidates.push({
+        anchorPoint,
+        traceId: connector.mspPairId,
+        distance: getDistance(anchorPoint, label.anchorPoint),
+        pinAligned: true,
+        reroutedTracePath: reversed ? retainedPath.reverse() : retainedPath,
+      })
+    }
   }
-  return candidates.sort(
-    (a, b) =>
-      getPathLength(a.reroutedTracePath!) -
-        getPathLength(b.reroutedTracePath!) ||
-      countTurns(a.reroutedTracePath!) - countTurns(b.reroutedTracePath!),
-  )
+  const byPathLength = (a: TraceCornerCandidate, b: TraceCornerCandidate) =>
+    getPathLength(a.reroutedTracePath!) - getPathLength(b.reroutedTracePath!) ||
+    countTurns(a.reroutedTracePath!) - countTurns(b.reroutedTracePath!)
+  return [
+    ...candidates.sort(byPathLength),
+    ...shortenedCandidates.sort(byPathLength),
+  ]
 }
