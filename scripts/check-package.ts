@@ -78,18 +78,7 @@ try {
   ]
   const source = `import { ${names.join(", ")} } from "${name}";\n${names.map((n) => `if (typeof ${n} !== "function") throw new Error("Missing ${n}");`).join("\n")}\n`
   writeFileSync(join(consumer, "consumer.js"), source)
-  writeFileSync(
-    join(consumer, "consumer.ts"),
-    `${source}
-import type { InputPin, InputPinStem } from "${name}";
-const stem: InputPinStem = {
-  from: { x: 5.635, y: -1.77 },
-  to: { x: 5.635, y: -1.135 },
-};
-const legacyPin: InputPin = { pinId: "Q1.S", x: 5.635, y: -1.77 };
-const pinWithStem: InputPin = { ...legacyPin, stem };
-`,
-  )
+  writeFileSync(join(consumer, "consumer.ts"), source)
   run("node", ["consumer.js"], consumer)
   writeFileSync(
     join(consumer, "tsconfig.json"),

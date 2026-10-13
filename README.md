@@ -34,30 +34,6 @@ Callers that previously relied on automatic pin-inclusive sizing must supply tha
 obstacle explicitly. Core supplies custom-symbol obstacles covering the drawn
 body and external terminals to keep labels clear of visible pin stems.
 
-Pins can optionally provide a visible straight `stem` segment. Both endpoints
-are schematic world coordinates in millimeters, after symbol rotation and
-scaling: `from` is the original terminal and `to` is the body-side end.
-
-```ts
-import type { InputPin } from "@tscircuit/schematic-trace-solver"
-
-const sourcePin: InputPin = {
-  pinId: "Q1.S",
-  x: 5.635,
-  y: -1.77,
-  _facingDirection: "y-",
-  stem: {
-    from: { x: 5.635, y: -1.77 },
-    to: { x: 5.635, y: -1.135 },
-  },
-}
-```
-
-Omitting `stem` leaves its geometry unknown. The segment stays at its supplied
-world position even if the solver projects the pin to a chip edge, and it does
-not enlarge the chip rectangle. This field currently carries geometry metadata
-only; routing and net-label collision checks do not yet consume it.
-
 You then pass in direct connections and net connections. Direct connections are
 explicit pin-to-pin connections. When there's a direct connection between two
 pins, there is guaranteed to be a routed trace between them.

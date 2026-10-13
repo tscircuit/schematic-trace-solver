@@ -14,10 +14,6 @@
           "displayName": "D",
           "x": 5.635,
           "y": 0.77,
-          "stem": {
-            "from": { "x": 5.635, "y": 0.77 },
-            "to": { "x": 5.635, "y": 0.135 }
-          },
           "_facingDirection": "y+"
         },
         {
@@ -25,10 +21,6 @@
           "displayName": "G",
           "x": 3.73,
           "y": -0.5,
-          "stem": {
-            "from": { "x": 3.73, "y": -0.5 },
-            "to": { "x": 4.365, "y": -0.5 }
-          },
           "_facingDirection": "x-"
         },
         {
@@ -36,10 +28,6 @@
           "displayName": "S",
           "x": 5.635,
           "y": -1.77,
-          "stem": {
-            "from": { "x": 5.635, "y": -1.77 },
-            "to": { "x": 5.635, "y": -1.135 }
-          },
           "_facingDirection": "y-"
         }
       ]
