@@ -31,7 +31,8 @@ is the authoritative routing obstacle in schematic world millimeters (+X right,
 +Y up). External terminals do not enlarge it. Terminals inside the rectangle
 still project to its edge, following their supplied facing direction when present.
 Callers that previously relied on automatic pin-inclusive sizing must supply that
-obstacle explicitly; custom symbols should supply their actual drawn bounds.
+obstacle explicitly. Core supplies custom-symbol obstacles covering the drawn
+body and external terminals to keep labels clear of visible pin stems.
 
 You then pass in direct connections and net connections. Direct connections are
 explicit pin-to-pin connections. When there's a direct connection between two

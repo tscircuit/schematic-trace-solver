@@ -8,10 +8,10 @@ import { getSolverSnapshotSvg } from "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-nema34-vbus-lv-custom-symbol.input.json"
 import customSymbol from "./assets/repro-nema34-vbus-lv-custom-symbol.circuit.json"
 
-// Captured from core's solver:started event for the matching Q1 repro.
-// Routing geometry is unchanged; netLabelText was added for readable labels.
-// Custom drawing primitives are rendering/test
-// context only: they are deliberately NOT added to the solver's obstacles.
+// Routing bounds match core's solver:started capture after tscircuit/core#4580:
+// the obstacle includes Q1's body and external terminals. Terminal positions
+// and custom drawing primitives are unchanged; the latter remain rendering/test
+// context rather than additional routing obstacles.
 const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
 const getVbusLabel = () =>
   solver
@@ -72,10 +72,8 @@ beforeAll(async () => {
   ).toMatchSvgSnapshot(import.meta.path)
 })
 
-// Expected behavior is upward orientation plus clearance from the source stem.
-// Body-only chip bounds leave a 0.635 mm stem gap; the 0.42 mm label fits inside
-// that gap and is incorrectly considered collision-free.
-test.failing("NEMA34 VBUS_LV rail label clears the custom MOSFET source stem", () => {
+// Core's pin-inclusive obstacle keeps the upward rail clear of the source stem.
+test("NEMA34 VBUS_LV rail label clears the custom MOSFET source stem", () => {
   // Schematic-world mm, +X right and +Y up; endpoints exported by core.
   expect(
     pathIntersectsRenderedLabel(
