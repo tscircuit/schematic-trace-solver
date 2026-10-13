@@ -31,7 +31,8 @@ is the authoritative routing obstacle in schematic world millimeters (+X right,
 +Y up). External terminals do not enlarge it. Terminals inside the rectangle
 still project to its edge, following their supplied facing direction when present.
 Callers that previously relied on automatic pin-inclusive sizing must supply that
-obstacle explicitly; custom symbols should supply their actual drawn bounds.
+obstacle explicitly. Core supplies custom-symbol obstacles covering the drawn
+body and external terminals to keep labels clear of visible pin stems.
 
 Pins can optionally provide a visible straight `stem` segment. Both endpoints
 are schematic world coordinates in millimeters, after symbol rotation and

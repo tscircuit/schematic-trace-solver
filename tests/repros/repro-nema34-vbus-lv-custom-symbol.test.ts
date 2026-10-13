@@ -8,15 +8,13 @@ import { getSolverSnapshotSvg } from "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-nema34-vbus-lv-custom-symbol.input.json"
 import customSymbol from "./assets/repro-nema34-vbus-lv-custom-symbol.circuit.json"
 
-// Based on core's solver:started capture for the matching Q1 repro.
-// Chip bounds and terminal positions are unchanged; netLabelText was added for
-// readability. The optional pin stems were copied from the accompanying emitted
-// Circuit JSON (core's adapter does not export them yet). They are input metadata
-// until collision handling is implemented; custom drawing primitives remain
-// rendering/test context, not additional routing obstacles.
+// Routing bounds match core's solver:started capture after tscircuit/core#4580:
+// the obstacle includes Q1's body and external terminals. Terminal positions
+// and custom drawing primitives are unchanged. Optional stems come from the
+// emitted Circuit JSON (core does not export them yet); they remain metadata.
 const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
-const getVbusLabel = () =>
-  solver
+const getVbusLabel = (pipeline = solver) =>
+  pipeline
     .netLabelToTraceSolver!.getOutput()
     .netLabelPlacements.find((label) => label.netId === "VBUS_LV")!
 const sourcePin = inputProblem.chips[0]!.pins.find(
@@ -74,7 +72,7 @@ beforeAll(async () => {
   ).toMatchSvgSnapshot(import.meta.path)
 })
 
-test("NEMA34 input preserves Q1's emitted stems and body bounds", () => {
+test("NEMA34 input preserves Q1's emitted stems and supplied routing bounds", () => {
   for (const pin of inputProblem.chips[0]!.pins) {
     const drawnStem = customSymbol.find(
       (element) =>
@@ -88,21 +86,37 @@ test("NEMA34 input preserves Q1's emitted stems and body bounds", () => {
     })
   }
 
-  // Check after the full solve: metadata reaches the solver without expanding
-  // the authoritative body box to encompass the external stems.
+  // The solver preserves both the caller's pin-inclusive obstacle and the
+  // optional stem metadata, without recalculating the supplied bounds.
   const [solverInput] = solver.getConstructorParams()
   expect(solverInput.chips).toEqual((inputProblem as InputProblem).chips)
 })
 
-// Expected behavior is upward orientation plus clearance from the source stem.
-// Body-only chip bounds leave a 0.635 mm stem gap; the 0.42 mm label fits inside
-// that gap and is incorrectly considered collision-free, even with explicit
-// stem metadata supplied. Consuming that metadata is the follow-up fix.
-test.failing("NEMA34 VBUS_LV rail label clears the custom MOSFET source stem", () => {
+// Core's pin-inclusive obstacle keeps the upward rail clear of the source stem.
+test("NEMA34 VBUS_LV rail label clears the custom MOSFET source stem", () => {
   expect(
     pathIntersectsRenderedLabel(
       [sourcePin.stem.from, sourcePin.stem.to],
       getVbusLabel(),
+    ),
+  ).toBe(false)
+})
+
+test("NEMA34 pin-inclusive bounds clear VBUS_LV without stem metadata", () => {
+  const inputWithoutStems = structuredClone(inputProblem) as InputProblem
+  for (const chip of inputWithoutStems.chips) {
+    for (const pin of chip.pins) delete pin.stem
+  }
+
+  const solverWithoutStems = new SchematicTracePipelineSolver(inputWithoutStems)
+  solverWithoutStems.solve()
+  expect(solverWithoutStems.solved).toBe(true)
+  const label = getVbusLabel(solverWithoutStems)
+  expect(label.orientation).toBe("y+")
+  expect(
+    pathIntersectsRenderedLabel(
+      [sourcePin.stem.from, sourcePin.stem.to],
+      label,
     ),
   ).toBe(false)
 })

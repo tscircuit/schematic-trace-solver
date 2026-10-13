@@ -3,11 +3,11 @@
     {
       "chipId": "schematic_component_0",
       "center": {
-        "x": 5.4445,
+        "x": 5.127,
         "y": -0.5
       },
-      "width": 2.158999999999999,
-      "height": 1.27,
+      "width": 2.793999999999999,
+      "height": 2.54,
       "pins": [
         {
           "pinId": "schematic_port_0",
