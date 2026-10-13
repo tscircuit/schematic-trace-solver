@@ -757,7 +757,8 @@ const getJunctionsByTraceIndex = (
   } of traceIndexesByNetPoint.values()) {
     if (traceIndexes.size < 2) continue
     // A pair of branches on a multi-trace rail can meet both at their shared
-    // pin and at an interior rail vertex. The latter marker is redundant.
+    // pin and at an interior rail vertex. Neither needs an extra dot when
+    // the rail is outside the right-facing pin.
     if (traceIndexes.size === 2) {
       const [firstIndex, secondIndex] = [...traceIndexes]
       const firstTrace = traces[firstIndex]!
@@ -766,6 +767,14 @@ const getJunctionsByTraceIndex = (
         pointKey(trace.tracePath[0]!) === pointKey(sharedPoint) ||
         pointKey(trace.tracePath.at(-1)!) === pointKey(sharedPoint)
       const firstPinIds = new Set(getTracePinIds(firstTrace))
+      const sharedRailPoint = firstTrace.tracePath
+        .slice(1, -1)
+        .find((point) =>
+          secondTrace.tracePath
+            .slice(1, -1)
+            .some((other) => pointKey(other) === pointKey(point)),
+        )
+      const railX = sharedRailPoint?.x ?? sharedPoint.x
       const railTraceCount = traces.filter(
         (trace) =>
           (trace.globalConnNetId ?? getTraceNetName(trace) ?? "unknown") ===
@@ -775,14 +784,17 @@ const getJunctionsByTraceIndex = (
           trace.tracePath.some(
             (point, index) =>
               index > 0 &&
-              Math.abs(point.x - sharedPoint.x) < 1e-9 &&
-              Math.abs(trace.tracePath[index - 1]!.x - sharedPoint.x) < 1e-9,
+              Math.abs(point.x - railX) < 1e-9 &&
+              Math.abs(trace.tracePath[index - 1]!.x - railX) < 1e-9,
           ),
       ).length
       if (
         railTraceCount >= 4 &&
-        !isEndpoint(firstTrace) &&
-        !isEndpoint(secondTrace) &&
+        ((!isEndpoint(firstTrace) && !isEndpoint(secondTrace)) ||
+          (isEndpoint(firstTrace) &&
+            isEndpoint(secondTrace) &&
+            sharedRailPoint !== undefined &&
+            sharedRailPoint.x > sharedPoint.x)) &&
         getTracePinIds(secondTrace).some((pinId) => firstPinIds.has(pinId))
       ) {
         continue

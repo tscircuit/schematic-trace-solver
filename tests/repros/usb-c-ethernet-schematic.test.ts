@@ -56,14 +56,15 @@ test("USB-C Ethernet adapter schematic sheet", async () => {
   const schematicTraces = convertSolverOutputToCircuitJson(solver).filter(
     (element) => element.type === "schematic_trace",
   )
-  expect(
+  const hasJunctionAt = (point: { x: number; y: number }) =>
     schematicTraces.some((trace) =>
       trace.junctions?.some(
         (junction) =>
-          Math.abs(junction.x - outerRailJunction.x) < 1e-6 &&
-          Math.abs(junction.y - outerRailJunction.y) < 1e-6,
+          Math.abs(junction.x - point.x) < 1e-6 &&
+          Math.abs(junction.y - point.y) < 1e-6,
       ),
-    ),
-  ).toBe(false)
+    )
+  expect(hasJunctionAt(ioSupplyRail.tracePath[0]!)).toBe(false)
+  expect(hasJunctionAt(outerRailJunction)).toBe(false)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
