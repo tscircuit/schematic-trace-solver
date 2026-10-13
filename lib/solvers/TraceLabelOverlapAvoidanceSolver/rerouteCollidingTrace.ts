@@ -23,6 +23,7 @@ import { simplifyPath } from "../TraceCleanupSolver/simplifyPath"
 export const generateRerouteCandidates = ({
   trace,
   label,
+  problem,
   paddingBuffer,
   detourCount,
 }: {
@@ -45,6 +46,41 @@ export const generateRerouteCandidates = ({
     maxX: labelBoundsRaw.maxX,
     maxY: labelBoundsRaw.maxY,
     chipId: `netlabel-${label.netId}`,
+  }
+
+  // Right-facing pins on the same component can bypass an intervening label
+  // with one shared outer rail. The local segment detour below can instead
+  // wrap above and below the label, leaving an unnecessary loop.
+  const [firstPin, secondPin] = trace.pins
+  const sameSide =
+    firstPin.chipId === secondPin.chipId &&
+    firstPin._facingDirection === secondPin._facingDirection
+  const facing = firstPin._facingDirection
+  const pinA = initialTrace.tracePath[0]!
+  const pinB = initialTrace.tracePath.at(-1)!
+  const directOuterRailCandidates: Point[][] = []
+  if (
+    sameSide &&
+    pinA.x === pinB.x &&
+    Math.abs(pinA.y - pinB.y) <= 0.5 &&
+    label.width <= Math.abs(pinA.y - pinB.y) + paddingBuffer + 1e-6 &&
+    facing === "x+" &&
+    label.orientation === "x+" &&
+    problem.netConnections.some(
+      (connection) =>
+        connection.netId === label.netId && connection.pinIds.length > 1,
+    ) &&
+    label.anchorPoint.x === pinA.x &&
+    label.anchorPoint.y > Math.min(pinA.y, pinB.y) &&
+    label.anchorPoint.y < Math.max(pinA.y, pinB.y)
+  ) {
+    const railX = Math.max(pinA.x + 0.2, labelBounds.maxX + paddingBuffer)
+    directOuterRailCandidates.push([
+      pinA,
+      { x: railX, y: pinA.y },
+      { x: railX, y: pinB.y },
+      pinB,
+    ])
   }
 
   const fourPointCandidates = generateFourPointDetourCandidates({
@@ -78,5 +114,9 @@ export const generateRerouteCandidates = ({
     detourCount,
   })
 
-  return [...fourPointCandidates, ...snipReconnectCandidates]
+  return [
+    ...directOuterRailCandidates,
+    ...fourPointCandidates,
+    ...snipReconnectCandidates,
+  ]
 }

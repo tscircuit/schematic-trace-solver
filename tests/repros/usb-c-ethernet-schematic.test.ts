@@ -35,5 +35,18 @@ test("USB-C Ethernet adapter schematic sheet", async () => {
       .filter((trace) => output.netLabelConnectorTraceIds!.has(trace.mspPairId))
       .some((trace) => trace.globalConnNetId === bridge.globalConnNetId),
   ).toBe(false)
+  const ioSupplyRail = output.traces.find(
+    (trace) => trace.mspPairId === "schematic_port_77-schematic_port_75",
+  )!
+  const lowerIoSupplyRail = output.traces.find(
+    (trace) => trace.mspPairId === "schematic_port_74-schematic_port_61",
+  )!
+  expect(ioSupplyRail.tracePath).toHaveLength(3)
+  expect(ioSupplyRail.tracePath[1]!.x).toBeGreaterThan(
+    ioSupplyRail.pins[0].x + 0.4,
+  )
+  expect(ioSupplyRail.tracePath[1]!.x).toBeCloseTo(
+    lowerIoSupplyRail.tracePath[1]!.x,
+  )
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
