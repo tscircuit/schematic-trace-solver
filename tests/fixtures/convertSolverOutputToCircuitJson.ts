@@ -756,6 +756,38 @@ const getJunctionsByTraceIndex = (
     traceIndexes,
   } of traceIndexesByNetPoint.values()) {
     if (traceIndexes.size < 2) continue
+    // A pair of branches on a multi-trace rail can meet both at their shared
+    // pin and at an interior rail vertex. The latter marker is redundant.
+    if (traceIndexes.size === 2) {
+      const [firstIndex, secondIndex] = [...traceIndexes]
+      const firstTrace = traces[firstIndex]!
+      const secondTrace = traces[secondIndex]!
+      const isEndpoint = (trace: SnapshotTrace) =>
+        pointKey(trace.tracePath[0]!) === pointKey(sharedPoint) ||
+        pointKey(trace.tracePath.at(-1)!) === pointKey(sharedPoint)
+      const firstPinIds = new Set(getTracePinIds(firstTrace))
+      const railTraceCount = traces.filter(
+        (trace) =>
+          (trace.globalConnNetId ?? getTraceNetName(trace) ?? "unknown") ===
+            (firstTrace.globalConnNetId ??
+              getTraceNetName(firstTrace) ??
+              "unknown") &&
+          trace.tracePath.some(
+            (point, index) =>
+              index > 0 &&
+              Math.abs(point.x - sharedPoint.x) < 1e-9 &&
+              Math.abs(trace.tracePath[index - 1]!.x - sharedPoint.x) < 1e-9,
+          ),
+      ).length
+      if (
+        railTraceCount >= 4 &&
+        !isEndpoint(firstTrace) &&
+        !isEndpoint(secondTrace) &&
+        getTracePinIds(secondTrace).some((pinId) => firstPinIds.has(pinId))
+      ) {
+        continue
+      }
+    }
     const traceIndex = Math.min(...traceIndexes)
     const junctions = junctionsByTraceIndex.get(traceIndex) ?? []
     if (!junctions.some((point) => pointKey(point) === pointKey(sharedPoint))) {

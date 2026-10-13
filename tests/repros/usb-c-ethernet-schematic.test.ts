@@ -4,6 +4,7 @@ import type { InputProblem } from "lib/types/InputProblem"
 import inputProblem from "./assets/usb-c-ethernet-schematic.input.json"
 import "tests/fixtures/matcher"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import { convertSolverOutputToCircuitJson } from "tests/fixtures/convertSolverOutputToCircuitJson"
 
 test("USB-C Ethernet adapter schematic sheet", async () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
@@ -48,5 +49,21 @@ test("USB-C Ethernet adapter schematic sheet", async () => {
   expect(ioSupplyRail.tracePath[1]!.x).toBeCloseTo(
     lowerIoSupplyRail.tracePath[1]!.x,
   )
+  const outerRailJunction = {
+    x: ioSupplyRail.tracePath[1]!.x,
+    y: ioSupplyRail.tracePath[0]!.y,
+  }
+  const schematicTraces = convertSolverOutputToCircuitJson(solver).filter(
+    (element) => element.type === "schematic_trace",
+  )
+  expect(
+    schematicTraces.some((trace) =>
+      trace.junctions?.some(
+        (junction) =>
+          Math.abs(junction.x - outerRailJunction.x) < 1e-6 &&
+          Math.abs(junction.y - outerRailJunction.y) < 1e-6,
+      ),
+    ),
+  ).toBe(false)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
