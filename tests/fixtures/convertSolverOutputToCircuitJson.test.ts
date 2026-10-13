@@ -285,6 +285,26 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
     to: { x: 2, y: -0.3 },
   })
 
+  const labelOnlyNet = circuitJson
+    .filter((element) => element.type === "schematic_net_label")
+    .find((label) => label.schematic_net_label_id === "schematic_net_label_1")!
+  const sourceTraces = circuitJson.filter(
+    (element) => element.type === "source_trace",
+  )
+  // This label connects U1.2 and C1.2 without a rendered schematic trace.
+  expect(
+    sourceTraces.find((trace) =>
+      trace.connected_source_port_ids.includes("source_port_0_1"),
+    ),
+  ).toMatchObject({
+    connected_source_port_ids: ["source_port_0_1", "source_port_1_1"],
+    connected_source_net_ids: [labelOnlyNet.source_net_id],
+  })
+  // Unconnected LED pins must still retain their open-pin indicators.
+  expect(
+    sourceTraces.flatMap((trace) => trace.connected_source_port_ids),
+  ).not.toContain("source_port_2_0")
+
   const svg = convertCircuitJsonToSchematicSvg(circuitJson)
   expect(svg).toContain('data-circuit-json-type="schematic_component"')
   expect(svg).toContain('data-circuit-json-type="schematic_trace"')
