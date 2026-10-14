@@ -707,6 +707,11 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   private cloneAndCorrectInputProblem(original: InputProblem): InputProblem {
     const cloned: InputProblem = structuredClone({
       ...original,
+      chips: original.chips ?? [],
+      directConnections: original.directConnections ?? [],
+      netConnections: original.netConnections ?? [],
+      availableNetLabelOrientations:
+        original.availableNetLabelOrientations ?? {},
       _chipObstacleSpatialIndex: undefined,
       _hideRatsNet: this.hideRatsNet,
     })
