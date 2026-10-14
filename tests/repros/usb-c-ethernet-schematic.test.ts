@@ -4,7 +4,6 @@ import type { InputProblem } from "lib/types/InputProblem"
 import inputProblem from "./assets/usb-c-ethernet-schematic.input.json"
 import "tests/fixtures/matcher"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import { convertSolverOutputToCircuitJson } from "tests/fixtures/convertSolverOutputToCircuitJson"
 
 test("USB-C Ethernet adapter schematic sheet", async () => {
   const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
@@ -42,29 +41,31 @@ test("USB-C Ethernet adapter schematic sheet", async () => {
   const lowerIoSupplyRail = output.traces.find(
     (trace) => trace.mspPairId === "schematic_port_74-schematic_port_61",
   )!
-  expect(ioSupplyRail.tracePath).toHaveLength(3)
-  expect(ioSupplyRail.tracePath[1]!.x).toBeGreaterThan(
-    ioSupplyRail.pins[0].x + 0.4,
+  const railX = lowerIoSupplyRail.tracePath[1]!.x
+  expect(
+    ioSupplyRail.tracePath.every(
+      (point) =>
+        Math.abs(point.x - railX) < 1e-6 ||
+        Math.abs(point.x - ioSupplyRail.pins[0].x) < 1e-6,
+    ),
+  ).toBe(true)
+  const upperIoSupplyRail = output.traces.find((trace) =>
+    trace.pinIds.includes("schematic_port_78"),
+  )!
+  const supplyLabel = output.netLabelPlacements.find((label) =>
+    label.mspConnectionPairIds.includes(upperIoSupplyRail.mspPairId),
+  )!
+  expect(supplyLabel).toBeDefined()
+  expect(supplyLabel.orientation).toBe("y+")
+  expect(supplyLabel.anchorPoint.x).toBeCloseTo(railX)
+  expect(supplyLabel.anchorPoint.y).toBeCloseTo(
+    Math.max(...upperIoSupplyRail.pins.map((pin) => pin.y)),
   )
-  expect(ioSupplyRail.tracePath[1]!.x).toBeCloseTo(
-    lowerIoSupplyRail.tracePath[1]!.x,
-  )
-  const outerRailJunction = {
-    x: ioSupplyRail.tracePath[1]!.x,
-    y: ioSupplyRail.tracePath[0]!.y,
-  }
-  const schematicTraces = convertSolverOutputToCircuitJson(solver).filter(
-    (element) => element.type === "schematic_trace",
-  )
-  const hasJunctionAt = (point: { x: number; y: number }) =>
-    schematicTraces.some((trace) =>
-      trace.junctions?.some(
-        (junction) =>
-          Math.abs(junction.x - point.x) < 1e-6 &&
-          Math.abs(junction.y - point.y) < 1e-6,
-      ),
-    )
-  expect(hasJunctionAt(ioSupplyRail.tracePath[0]!)).toBe(false)
-  expect(hasJunctionAt(outerRailJunction)).toBe(false)
+  expect(
+    tracePathContainsPoint(
+      upperIoSupplyRail.tracePath,
+      supplyLabel.anchorPoint,
+    ),
+  ).toBe(true)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

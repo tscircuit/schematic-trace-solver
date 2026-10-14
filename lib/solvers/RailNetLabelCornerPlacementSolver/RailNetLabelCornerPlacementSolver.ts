@@ -671,13 +671,24 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       label.height,
     )
     const labelBounds = getRectBounds(center, label.width, label.height)
-    const collidingChipBounds = this.inputProblem.chips
-      .map((chip) => getRectBounds(chip.center, chip.width, chip.height))
-      .filter((chipBounds) => rectsOverlap(labelBounds, chipBounds))
+    const collidingBounds = [
+      ...this.inputProblem.chips.map((chip) =>
+        getRectBounds(chip.center, chip.width, chip.height),
+      ),
+      // Preserve clear rail alignments; add label clearance when repairing a crossing.
+      ...(this.isLabelCrossedByTrace(label)
+        ? this.outputNetLabelPlacements
+        : []
+      )
+        .filter((otherLabel) => otherLabel !== label)
+        .map((otherLabel) =>
+          getRectBounds(otherLabel.center, otherLabel.width, otherLabel.height),
+        ),
+    ].filter((bounds) => rectsOverlap(labelBounds, bounds))
     const shiftedCoordinates = new Set<number>()
-    for (const chipBounds of collidingChipBounds) {
-      shiftedCoordinates.add(chipBounds.minX - label.width / 2)
-      shiftedCoordinates.add(chipBounds.maxX + label.width / 2)
+    for (const bounds of collidingBounds) {
+      shiftedCoordinates.add(bounds.minX - label.width / 2)
+      shiftedCoordinates.add(bounds.maxX + label.width / 2)
     }
     for (const otherTrace of this.traces) {
       if (otherTrace.globalConnNetId === label.globalConnNetId) continue
