@@ -1,20 +1,7 @@
 import type { GraphicsObject } from "graphics-debug"
 
-/**
- * Merges multiple GraphicsObject instances into a single GraphicsObject.
- * It combines all lines, points, rectangles, circles, and texts from the input objects.
- */
-export const mergeGraphicsObjects = (
-  objects: (GraphicsObject | undefined)[],
-): GraphicsObject => {
-  const merged: GraphicsObject = {
-    lines: [],
-    points: [],
-    rects: [],
-    circles: [],
-    texts: [],
-  }
-
+export const mergeGraphicsObjects = (objects: (GraphicsObject | undefined)[]): GraphicsObject => {
+  const merged: GraphicsObject = { lines: [], points: [], rects: [], circles: [], texts: [] }
   for (const obj of objects) {
     if (!obj) continue
     if (obj.lines) merged.lines!.push(...obj.lines)
@@ -23,6 +10,15 @@ export const mergeGraphicsObjects = (
     if (obj.circles) merged.circles!.push(...obj.circles)
     if (obj.texts) merged.texts!.push(...obj.texts)
   }
-
+  const finalLines: any[] = []
+  const T = 0.05
+  for (const L of (merged.lines || [])) {
+    for (const E of finalLines) {
+      if (Math.abs(L.x1 - E.x1) < T && Math.abs(L.x2 - E.x2) < T) { L.x1 = E.x1; L.x2 = E.x1 }
+      if (Math.abs(L.y1 - E.y1) < T && Math.abs(L.y2 - E.y2) < T) { L.y1 = E.y1; L.y2 = E.y1 }
+    }
+    finalLines.push(L)
+  }
+  merged.lines = finalLines
   return merged
 }
