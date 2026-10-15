@@ -3,6 +3,13 @@ import type { RectBounds } from "./rect"
 
 const EPS = 1e-9
 
+/**
+ * Segments skewed by less than this are treated as axis-aligned for collision
+ * purposes. Real schematic geometry is on a 0.001-ish grid, so anything under
+ * this is float noise or an off-grid pin, never a deliberate diagonal.
+ */
+const NEARLY_AXIS_ALIGNED_TOLERANCE = 1e-3
+
 export const isVertical = (a: Point, b: Point, eps = EPS) =>
   Math.abs(a.x - b.x) < eps
 export const isHorizontal = (a: Point, b: Point, eps = EPS) =>
@@ -16,7 +23,31 @@ export const segmentIntersectsRect = <TRect extends RectBounds>(
 ): boolean => {
   const vert = isVertical(a, b, eps)
   const horz = isHorizontal(a, b, eps)
-  if (!vert && !horz) return false
+  if (!vert && !horz) {
+    // A segment can miss both fast paths while still being an intended
+    // axis-aligned run: a pin whose coordinate sits a few 1e-5 off the routing
+    // grid is enough. Treating those as "no collision" let traces pass straight
+    // through a chip body, so classify by the dominant axis instead.
+    const dx = Math.abs(a.x - b.x)
+    const dy = Math.abs(a.y - b.y)
+    if (dx < NEARLY_AXIS_ALIGNED_TOLERANCE && dx < dy) {
+      return segmentIntersectsRect(
+        { x: a.x, y: a.y },
+        { x: a.x, y: b.y },
+        r,
+        eps,
+      )
+    }
+    if (dy < NEARLY_AXIS_ALIGNED_TOLERANCE && dy < dx) {
+      return segmentIntersectsRect(
+        { x: a.x, y: a.y },
+        { x: b.x, y: a.y },
+        r,
+        eps,
+      )
+    }
+    return false
+  }
 
   if (vert) {
     const x = a.x
