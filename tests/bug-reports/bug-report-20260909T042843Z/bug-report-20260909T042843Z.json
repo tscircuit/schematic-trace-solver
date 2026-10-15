@@ -1,0 +1,580 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -0.08000000000000007,
+        "y": -2.5
+      },
+      "width": 3.5999999999999996,
+      "height": 5.800000000000001,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "IOVDD6",
+          "x": -1.88,
+          "y": 0.30000000000000115
+        },
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "GPIO0",
+          "x": -1.88,
+          "y": 0.10000000000000098
+        },
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "GPIO1",
+          "x": -1.88,
+          "y": -0.09999999999999876
+        },
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "GPIO2",
+          "x": -1.88,
+          "y": -0.29999999999999893
+        },
+        {
+          "pinId": "schematic_port_4",
+          "displayName": "GPIO3",
+          "x": -1.88,
+          "y": -0.4999999999999991
+        },
+        {
+          "pinId": "schematic_port_5",
+          "displayName": "GPIO4",
+          "x": -1.88,
+          "y": -0.6999999999999988
+        },
+        {
+          "pinId": "schematic_port_6",
+          "displayName": "GPIO5",
+          "x": -1.88,
+          "y": -0.8999999999999988
+        },
+        {
+          "pinId": "schematic_port_7",
+          "displayName": "GPIO6",
+          "x": -1.88,
+          "y": -1.0999999999999988
+        },
+        {
+          "pinId": "schematic_port_8",
+          "displayName": "GPIO7",
+          "x": -1.88,
+          "y": -1.2999999999999987
+        },
+        {
+          "pinId": "schematic_port_9",
+          "displayName": "IOVDD5",
+          "x": -1.88,
+          "y": -1.4999999999999987
+        },
+        {
+          "pinId": "schematic_port_10",
+          "displayName": "GPIO8",
+          "x": -1.88,
+          "y": -1.6999999999999986
+        },
+        {
+          "pinId": "schematic_port_11",
+          "displayName": "GPIO9",
+          "x": -1.88,
+          "y": -1.8999999999999986
+        },
+        {
+          "pinId": "schematic_port_12",
+          "displayName": "GPIO10",
+          "x": -1.88,
+          "y": -2.0999999999999988
+        },
+        {
+          "pinId": "schematic_port_13",
+          "displayName": "GPIO11",
+          "x": -1.88,
+          "y": -2.299999999999999
+        },
+        {
+          "pinId": "schematic_port_14",
+          "displayName": "GPIO12",
+          "x": -1.88,
+          "y": -2.499999999999999
+        },
+        {
+          "pinId": "schematic_port_15",
+          "displayName": "GPIO13",
+          "x": -1.88,
+          "y": -2.6999999999999993
+        },
+        {
+          "pinId": "schematic_port_16",
+          "displayName": "GPIO14",
+          "x": -1.88,
+          "y": -2.8999999999999995
+        },
+        {
+          "pinId": "schematic_port_17",
+          "displayName": "GPIO15",
+          "x": -1.88,
+          "y": -3.0999999999999996
+        },
+        {
+          "pinId": "schematic_port_18",
+          "displayName": "TESTEN",
+          "x": -1.88,
+          "y": -3.3
+        },
+        {
+          "pinId": "schematic_port_19",
+          "displayName": "XIN",
+          "x": -1.88,
+          "y": -3.5
+        },
+        {
+          "pinId": "schematic_port_20",
+          "displayName": "XOUT",
+          "x": -1.88,
+          "y": -3.6999999999999997
+        },
+        {
+          "pinId": "schematic_port_21",
+          "displayName": "IOVDD4",
+          "x": -1.88,
+          "y": -3.9
+        },
+        {
+          "pinId": "schematic_port_22",
+          "displayName": "DVDD2",
+          "x": -1.88,
+          "y": -4.1
+        },
+        {
+          "pinId": "schematic_port_23",
+          "displayName": "SWCLK",
+          "x": -1.88,
+          "y": -4.300000000000001
+        },
+        {
+          "pinId": "schematic_port_24",
+          "displayName": "SWD",
+          "x": -1.88,
+          "y": -4.5
+        },
+        {
+          "pinId": "schematic_port_25",
+          "displayName": "RUN",
+          "x": -1.88,
+          "y": -4.700000000000001
+        },
+        {
+          "pinId": "schematic_port_26",
+          "displayName": "GPIO16",
+          "x": -1.88,
+          "y": -4.9
+        },
+        {
+          "pinId": "schematic_port_27",
+          "displayName": "GPIO17",
+          "x": -1.88,
+          "y": -5.100000000000001
+        },
+        {
+          "pinId": "schematic_port_28",
+          "displayName": "GPIO18",
+          "x": -1.88,
+          "y": -5.300000000000001
+        },
+        {
+          "pinId": "schematic_port_29",
+          "displayName": "GPIO19",
+          "x": 1.7199999999999998,
+          "y": -5.200000000000001
+        },
+        {
+          "pinId": "schematic_port_30",
+          "displayName": "GPIO20",
+          "x": 1.7199999999999998,
+          "y": -5.000000000000001
+        },
+        {
+          "pinId": "schematic_port_31",
+          "displayName": "GPIO21",
+          "x": 1.7199999999999998,
+          "y": -4.800000000000001
+        },
+        {
+          "pinId": "schematic_port_32",
+          "displayName": "IOVDD3",
+          "x": 1.7199999999999998,
+          "y": -4.600000000000001
+        },
+        {
+          "pinId": "schematic_port_33",
+          "displayName": "GPIO22",
+          "x": 1.7199999999999998,
+          "y": -4.400000000000001
+        },
+        {
+          "pinId": "schematic_port_34",
+          "displayName": "GPIO23",
+          "x": 1.7199999999999998,
+          "y": -4.200000000000001
+        },
+        {
+          "pinId": "schematic_port_35",
+          "displayName": "GPIO24",
+          "x": 1.7199999999999998,
+          "y": -4.000000000000001
+        },
+        {
+          "pinId": "schematic_port_36",
+          "displayName": "GPIO25",
+          "x": 1.7199999999999998,
+          "y": -3.800000000000001
+        },
+        {
+          "pinId": "schematic_port_37",
+          "displayName": "GPIO26_ADC0",
+          "x": 1.7199999999999998,
+          "y": -3.6000000000000014
+        },
+        {
+          "pinId": "schematic_port_38",
+          "displayName": "GPIO27_ADC1",
+          "x": 1.7199999999999998,
+          "y": -3.4000000000000012
+        },
+        {
+          "pinId": "schematic_port_39",
+          "displayName": "GPIO28_ADC2",
+          "x": 1.7199999999999998,
+          "y": -3.200000000000001
+        },
+        {
+          "pinId": "schematic_port_40",
+          "displayName": "GPIO29_ADC3",
+          "x": 1.7199999999999998,
+          "y": -3.0000000000000013
+        },
+        {
+          "pinId": "schematic_port_41",
+          "displayName": "IOVDD2",
+          "x": 1.7199999999999998,
+          "y": -2.800000000000001
+        },
+        {
+          "pinId": "schematic_port_42",
+          "displayName": "ADC_AVDD",
+          "x": 1.7199999999999998,
+          "y": -2.600000000000001
+        },
+        {
+          "pinId": "schematic_port_43",
+          "displayName": "VREG_IN",
+          "x": 1.7199999999999998,
+          "y": -2.400000000000001
+        },
+        {
+          "pinId": "schematic_port_44",
+          "displayName": "VREG_VOUT",
+          "x": 1.7199999999999998,
+          "y": -2.2000000000000006
+        },
+        {
+          "pinId": "schematic_port_45",
+          "displayName": "USB_DM",
+          "x": 1.7199999999999998,
+          "y": -2.0000000000000004
+        },
+        {
+          "pinId": "schematic_port_46",
+          "displayName": "USB_DP",
+          "x": 1.7199999999999998,
+          "y": -1.8000000000000003
+        },
+        {
+          "pinId": "schematic_port_47",
+          "displayName": "USB_VDD",
+          "x": 1.7199999999999998,
+          "y": -1.6
+        },
+        {
+          "pinId": "schematic_port_48",
+          "displayName": "IOVDD1",
+          "x": 1.7199999999999998,
+          "y": -1.4
+        },
+        {
+          "pinId": "schematic_port_49",
+          "displayName": "DVDD1",
+          "x": 1.7199999999999998,
+          "y": -1.2000000000000002
+        },
+        {
+          "pinId": "schematic_port_50",
+          "displayName": "QSPI_SD3",
+          "x": 1.7199999999999998,
+          "y": -1
+        },
+        {
+          "pinId": "schematic_port_51",
+          "displayName": "QSPI_SCLK",
+          "x": 1.7199999999999998,
+          "y": -0.7999999999999998
+        },
+        {
+          "pinId": "schematic_port_52",
+          "displayName": "QSPI_SD0",
+          "x": 1.7199999999999998,
+          "y": -0.5999999999999996
+        },
+        {
+          "pinId": "schematic_port_53",
+          "displayName": "QSPI_SD2",
+          "x": 1.7199999999999998,
+          "y": -0.39999999999999947
+        },
+        {
+          "pinId": "schematic_port_54",
+          "displayName": "QSPI_SD1",
+          "x": 1.7199999999999998,
+          "y": -0.1999999999999993
+        },
+        {
+          "pinId": "schematic_port_55",
+          "displayName": "QSPI_SS",
+          "x": 1.7199999999999998,
+          "y": 8.881784197001252e-16
+        },
+        {
+          "pinId": "schematic_port_56",
+          "displayName": "GND/thermalpad",
+          "x": 1.7199999999999998,
+          "y": 0.20000000000000107
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": "USBV_IO1",
+      "pinIds": [
+        "schematic_port_47",
+        "schematic_port_48"
+      ]
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_0",
+        "schematic_port_9",
+        "schematic_port_21",
+        "schematic_port_32",
+        "schematic_port_41",
+        "schematic_port_43",
+        "schematic_port_47",
+        "schematic_port_48"
+      ]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_18",
+        "schematic_port_56"
+      ]
+    },
+    {
+      "netId": "V1V1",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_22",
+        "schematic_port_44",
+        "schematic_port_49"
+      ]
+    },
+    {
+      "netId": "ADC_VREF",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 1.08,
+      "pinIds": [
+        "schematic_port_42"
+      ]
+    },
+    {
+      "netId": "USB_DM",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_45"
+      ]
+    },
+    {
+      "netId": "USB_DP",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_46"
+      ]
+    },
+    {
+      "netId": "QSPI_SD3",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_50"
+      ]
+    },
+    {
+      "netId": "QSPI_SCLK",
+      "isGround": false,
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.8,
+      "pinIds": [
+        "schematic_port_51"
+      ]
+    },
+    {
+      "netId": "QSPI_SD0",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_52"
+      ]
+    },
+    {
+      "netId": "QSPI_SD2",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_53"
+      ]
+    },
+    {
+      "netId": "QSPI_SD1",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_54"
+      ]
+    },
+    {
+      "netId": "QSPI_SS",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_55"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -1.12,
+        "y": -5.53
+      },
+      "width": 0.72,
+      "height": 0.17999999999999972,
+      "text": "RP2040"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -1.3599999999999999,
+        "y": 0.5149999999999999
+      },
+      "width": 0.3600000000000001,
+      "height": 0.25,
+      "text": "U1"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "V3V3": [
+      "y+"
+    ],
+    "V1V1": [
+      "y+"
+    ],
+    "GND": [
+      "y-"
+    ],
+    "QSPI_SS": [
+      "x-",
+      "x+"
+    ],
+    "QSPI_SD0": [
+      "x-",
+      "x+"
+    ],
+    "QSPI_SD1": [
+      "x-",
+      "x+"
+    ],
+    "QSPI_SD2": [
+      "x-",
+      "x+"
+    ],
+    "QSPI_SD3": [
+      "x-",
+      "x+"
+    ],
+    "QSPI_SCLK": [
+      "x-",
+      "x+"
+    ],
+    "USB_DM": [
+      "x-",
+      "x+"
+    ],
+    "USB_DP": [
+      "x-",
+      "x+"
+    ],
+    "ADC_VREF": [
+      "y+"
+    ]
+  },
+  "maxMspPairDistance": 2.4,
+  "_hideRatsNet": false
+}
