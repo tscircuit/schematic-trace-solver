@@ -35,5 +35,37 @@ test("USB-C Ethernet adapter schematic sheet", async () => {
       .filter((trace) => output.netLabelConnectorTraceIds!.has(trace.mspPairId))
       .some((trace) => trace.globalConnNetId === bridge.globalConnNetId),
   ).toBe(false)
+  const ioSupplyRail = output.traces.find(
+    (trace) => trace.mspPairId === "schematic_port_77-schematic_port_75",
+  )!
+  const lowerIoSupplyRail = output.traces.find(
+    (trace) => trace.mspPairId === "schematic_port_74-schematic_port_61",
+  )!
+  const railX = lowerIoSupplyRail.tracePath[1]!.x
+  expect(
+    ioSupplyRail.tracePath.every(
+      (point) =>
+        Math.abs(point.x - railX) < 1e-6 ||
+        Math.abs(point.x - ioSupplyRail.pins[0].x) < 1e-6,
+    ),
+  ).toBe(true)
+  const upperIoSupplyRail = output.traces.find((trace) =>
+    trace.pinIds.includes("schematic_port_78"),
+  )!
+  const supplyLabel = output.netLabelPlacements.find((label) =>
+    label.mspConnectionPairIds.includes(upperIoSupplyRail.mspPairId),
+  )!
+  expect(supplyLabel).toBeDefined()
+  expect(supplyLabel.orientation).toBe("y+")
+  expect(supplyLabel.anchorPoint.x).toBeCloseTo(railX)
+  expect(supplyLabel.anchorPoint.y).toBeCloseTo(
+    Math.max(...upperIoSupplyRail.pins.map((pin) => pin.y)),
+  )
+  expect(
+    tracePathContainsPoint(
+      upperIoSupplyRail.tracePath,
+      supplyLabel.anchorPoint,
+    ),
+  ).toBe(true)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
