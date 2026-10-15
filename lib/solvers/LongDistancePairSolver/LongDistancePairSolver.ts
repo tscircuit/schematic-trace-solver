@@ -174,7 +174,9 @@ export class LongDistancePairSolver extends BaseSolver {
       inputProblem.maxMspPairDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
 
     // 1. Create initial maps and sets for efficient lookup
-    const primaryConnectedPinIds = new Set<PinId>()
+    const primaryConnectedPinIds = new Set<PinId>(
+      inputProblem.externallyConnectedPinIds,
+    )
     for (const pair of primaryMspConnectionPairs) {
       primaryConnectedPinIds.add(pair.pins[0].pinId)
       primaryConnectedPinIds.add(pair.pins[1].pinId)

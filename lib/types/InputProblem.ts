@@ -139,6 +139,14 @@ export interface InputProblem {
   chips: Array<InputChip>
   directConnections: Array<InputDirectConnection>
   netConnections: Array<InputNetConnection>
+  /**
+   * Pins whose connection to their net is already drawn by the caller, for
+   * example through fixed net labels. Within each electrical net these pins
+   * are already connected: route the remaining pins to them without adding
+   * wires between them or generating replacement labels. This does not change
+   * the electrical connectivity declared by directConnections/netConnections.
+   */
+  externallyConnectedPinIds?: PinId[]
   textBoxes?: Array<TextBoxes>
 
   availableNetLabelOrientations: Record<NetId, FacingDirection[]>

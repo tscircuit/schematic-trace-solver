@@ -145,6 +145,9 @@ export class NetLabelPlacementSolver extends BaseSolver {
     }
 
     const groups: Array<OverlappingSameNetTraceGroup> = []
+    const externallyConnectedPinIds = new Set(
+      this.inputProblem.externallyConnectedPinIds,
+    )
 
     const allPinIds = this.inputProblem.chips.flatMap((c) =>
       c.pins.map((p) => p.pinId),
@@ -169,6 +172,13 @@ export class NetLabelPlacementSolver extends BaseSolver {
         pinIds: pinsInNet,
         traces: byGlobal[globalConnNetId] ?? [],
       })) {
+        // This routed component already reaches a label supplied by the caller.
+        if (
+          traceConnectedComponent.pinIds.some((pinId) =>
+            externallyConnectedPinIds.has(pinId),
+          )
+        )
+          continue
         const component = new Set(traceConnectedComponent.pinIds)
         const compTraces = traceConnectedComponent.traces
 

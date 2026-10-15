@@ -5,6 +5,8 @@ import type { InputPin, PinId } from "lib/types/InputProblem"
  * for a set of points and return it as pairs of connected PinIds.
  *
  * The MST minimizes total |Δx| + |Δy| distance and fully connects all points.
+ * Already connected pins act as the roots of a minimum spanning forest; their
+ * existing connection contributes no new edge to the result.
  * Uses Prim's algorithm with O(n^2) time and O(n) extra space.
  *
  * Edge cases:
@@ -21,6 +23,7 @@ export function getOrthogonalMinimumSpanningTree<Pin extends InputPin>(
   opts: {
     maxDistance?: number
     forbidEdge?: (a: Pin, b: Pin) => boolean
+    connectedPinIds?: ReadonlySet<PinId>
   } = {},
 ): Array<[PinId, PinId]> {
   const n = pins.length
@@ -53,7 +56,14 @@ export function getOrthogonalMinimumSpanningTree<Pin extends InputPin>(
   for (let i = 1; i < n; i++) {
     if (pins[i].pinId < pins[startIndex].pinId) startIndex = i
   }
-  bestDist[startIndex] = 0
+  const connectedPinIndices = pins.flatMap((pin, index) =>
+    opts.connectedPinIds?.has(pin.pinId) ? [index] : [],
+  )
+  for (const index of connectedPinIndices.length > 0
+    ? connectedPinIndices
+    : [startIndex]) {
+    bestDist[index] = 0
+  }
 
   const edges: Array<[PinId, PinId]> = []
   for (let iter = 0; iter < n; iter++) {
@@ -99,6 +109,6 @@ export function getOrthogonalMinimumSpanningTree<Pin extends InputPin>(
     }
   }
 
-  // edges.length === n-1 when n>0
+  // A fully reachable net needs n - max(1, connectedPinIndices.length) edges.
   return edges
 }

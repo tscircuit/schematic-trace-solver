@@ -650,6 +650,8 @@ export class InlineNetLabelSolver extends BaseSolver {
     },
   ): InlineNetLabelPlacement | null {
     if (!connection.netId) return null
+    if (this.inputProblem.externallyConnectedPinIds?.includes(pinId))
+      return null
 
     const anchoredPlacement = this.inputNetLabelPlacements.find(
       (placement) =>

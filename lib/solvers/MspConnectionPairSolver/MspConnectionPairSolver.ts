@@ -50,11 +50,15 @@ export class MspConnectionPairSolver extends BaseSolver {
   directConnectionPinPairKeys: Set<string>
   private canRouteGroundPair: (firstPinId: PinId, secondPinId: PinId) => boolean
   private parallelRailPairKeys: Set<string>
+  private externallyConnectedPinIds: ReadonlySet<PinId>
 
   constructor({ inputProblem }: { inputProblem: InputProblem }) {
     super()
 
     this.inputProblem = inputProblem
+    this.externallyConnectedPinIds = new Set(
+      inputProblem.externallyConnectedPinIds,
+    )
     this.canRouteGroundPair = getGroundConnectionPolicy(inputProblem)
     this.maxMspPairDistance =
       inputProblem.maxMspPairDistance ?? DEFAULT_MAX_MSP_PAIR_DISTANCE
@@ -133,6 +137,12 @@ export class MspConnectionPairSolver extends BaseSolver {
 
     if (directlyConnectedPins.length === 2) {
       const [pin1, pin2] = directlyConnectedPins
+      if (
+        directlyConnectedPins.every((pinId) =>
+          this.externallyConnectedPinIds.has(pinId),
+        )
+      )
+        return
       const p1 = this.pinMap[pin1!]!
       const p2 = this.pinMap[pin2!]!
       if (!this.canRouteGroundPair(pin1!, pin2!)) return
@@ -211,6 +221,7 @@ export class MspConnectionPairSolver extends BaseSolver {
       (pinId) => this.pinMap[pinId]!,
     )
     const msp = getOrthogonalMinimumSpanningTree(directlyConnectedPinObjects, {
+      connectedPinIds: this.externallyConnectedPinIds,
       forbidEdge: (a, b) =>
         (Math.abs(a.x - b.x) + Math.abs(a.y - b.y) > this.maxMspPairDistance &&
           !this.parallelRailPairKeys.has(getRailPairKey(a.pinId, b.pinId))) ||
