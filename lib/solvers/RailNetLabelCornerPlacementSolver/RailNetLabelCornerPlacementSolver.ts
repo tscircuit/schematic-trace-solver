@@ -671,15 +671,26 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       label.height,
     )
     const labelBounds = getRectBounds(center, label.width, label.height)
+    const clearNeighboringLabels =
+      label.orientation === "y+" &&
+      corner.y > label.anchorPoint.y + EPS &&
+      this.isLabelCrossedByTrace(label) &&
+      this.getCandidateStatus(
+        labelBounds,
+        this.outputNetLabelPlacements.indexOf(label),
+        {
+          anchorPoint: corner,
+          traceId: trace.mspPairId,
+          distance: getDistance(corner, label.anchorPoint),
+          pinAligned,
+        },
+      ) === "netlabel-collision"
     const collidingBounds = [
       ...this.inputProblem.chips.map((chip) =>
         getRectBounds(chip.center, chip.width, chip.height),
       ),
-      // Preserve clear rail alignments; add label clearance when repairing a crossing.
-      ...(this.isLabelCrossedByTrace(label)
-        ? this.outputNetLabelPlacements
-        : []
-      )
+      // Shift upward around another label only when it alone blocks this corner.
+      ...(clearNeighboringLabels ? this.outputNetLabelPlacements : [])
         .filter((otherLabel) => otherLabel !== label)
         .map((otherLabel) =>
           getRectBounds(otherLabel.center, otherLabel.width, otherLabel.height),

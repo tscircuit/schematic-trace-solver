@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test"
-import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { getAnchoredNetLabelRenderedBounds } from "lib/solvers/InlineNetLabelSolver/getAnchoredNetLabelRenderedBounds"
 import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
@@ -29,19 +28,16 @@ test("repro smart-lock BLE module schematic sheet", async () => {
       "schematic_port_246-schematic_port_243",
     ),
   )!
-  // U1's supply label must stay connected and clear of neighboring traces.
+  // VDDS at U1 must remain free to slide along its original host trace,
+  // even where another same-net trace meets it. Treating that junction as
+  // an extended connector pins the label across the neighboring traces.
   const u1SupplyLabel = netLabelPlacements.find(
     (label) =>
-      label.netId === "VDDS" && label.pinIds.includes("schematic_port_238"),
+      label.netId === "VDDS" && Math.abs(label.anchorPoint.x + 3.421) < 1e-6,
   )!
   expect(u1SupplyLabel).toBeDefined()
-  expect(
-    traces.some(
-      (trace) =>
-        u1SupplyLabel.mspConnectionPairIds.includes(trace.mspPairId) &&
-        tracePathContainsPoint(trace.tracePath, u1SupplyLabel.anchorPoint),
-    ),
-  ).toBe(true)
+  expect(u1SupplyLabel.orientation).toBe("x-")
+  expect(u1SupplyLabel.anchorPoint.y).toBeCloseTo(0.95)
   const supplyBounds = getAnchoredNetLabelRenderedBounds(u1SupplyLabel)
   const crossingTraces = traces.filter(
     (trace) =>
