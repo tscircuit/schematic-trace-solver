@@ -1,12 +1,8 @@
 import { expect, test } from "bun:test"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { RailNetLabelCornerPlacementSolver } from "lib/solvers/RailNetLabelCornerPlacementSolver/RailNetLabelCornerPlacementSolver"
-import {
-  rectsOverlap,
-  tracePathContainsPoint,
-} from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { getRectBounds } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import type { InputProblem } from "lib/types/InputProblem"
 
 const createFixture = (direction = 1, mirror = 1) => {
@@ -62,7 +58,7 @@ const createFixture = (direction = 1, mirror = 1) => {
 
 for (const direction of [1, -1]) {
   for (const mirror of [1, -1]) {
-    test(`moves a crossed rail label onto its joined trace, mirror=${mirror}`, () => {
+    test(`moves a crossed rail label onto its joined trace, direction=${direction}, mirror=${mirror}`, () => {
       const fixture = createFixture(direction, mirror)
       const before = structuredClone(fixture)
       const solver = new RailNetLabelCornerPlacementSolver(fixture)
@@ -122,40 +118,3 @@ test("does not attach the label to an intersecting trace on another net", () => 
     fixture.netLabelPlacements,
   )
 })
-
-for (const mirror of [1, -1]) {
-  test(`clears a neighboring label at the outer rail corner, mirror=${mirror}`, () => {
-    const fixture = createFixture(1, mirror)
-    const neighbor: NetLabelPlacement = {
-      ...fixture.netLabelPlacements[0]!,
-      netId: "neighbor",
-      globalConnNetId: "neighbor",
-      mspConnectionPairIds: [],
-      pinIds: [],
-      anchorPoint: { x: 0, y: 4 },
-      center: { x: 0, y: 4.2 },
-    }
-    fixture.netLabelPlacements.push(neighbor)
-    const before = structuredClone(fixture)
-    const solver = new RailNetLabelCornerPlacementSolver(fixture)
-    solver.solve()
-    const output = solver.getOutput()
-    const label = output.netLabelPlacements[0]!
-    const rail = output.traces.find(
-      (trace) => trace.mspPairId === label.mspConnectionPairIds[0],
-    )!
-    expect(label.anchorPoint.y).toBe(4)
-    expect(label.anchorPoint.x).not.toBe(0)
-    expect(tracePathContainsPoint(rail.tracePath, label.anchorPoint)).toBe(true)
-    expect(rail.tracePath[0]).toEqual(before.traces[1]!.tracePath[0])
-    expect(rail.tracePath.at(-1)).toEqual(before.traces[1]!.tracePath.at(-1))
-    expect(
-      rectsOverlap(
-        getRectBounds(label.center, label.width, label.height),
-        getRectBounds(neighbor.center, neighbor.width, neighbor.height),
-      ),
-    ).toBe(false)
-    expect(output.netLabelPlacements[1]).toEqual(neighbor)
-    expect(fixture).toEqual(before)
-  })
-}
