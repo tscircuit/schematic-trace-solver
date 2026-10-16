@@ -92,15 +92,15 @@ export class TraceAnchoredNetLabelOverlapSolver extends BaseSolver {
     if (this.overlapMode === "traces") return this.findNextTraceOverlap()
     for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
       for (let j = i + 1; j < this.outputNetLabelPlacements.length; j++) {
-        if (!this.isLabelEligible(i) && !this.isLabelEligible(j)) continue
-
         const overlap: LabelOverlap = {
           type: "labels",
           firstLabelIndex: i,
           secondLabelIndex: j,
         }
+        if (!this.labelsOverlap(overlap)) continue
         if (this.skippedOverlapKeys.has(this.getOverlapKey(overlap))) continue
-        if (this.labelsOverlap(overlap)) return overlap
+        if (!this.isLabelEligible(i) && !this.isLabelEligible(j)) continue
+        return overlap
       }
     }
 
