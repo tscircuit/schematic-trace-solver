@@ -226,6 +226,7 @@ export class InlineNetLabelSolver extends BaseSolver {
       distance: number
     }>
     collecting: boolean
+    seenProposals: Set<string>
     before: OutputLabelCollision[]
   }
   private currentProposal?: InlineOutput
@@ -1433,6 +1434,7 @@ export class InlineNetLabelSolver extends BaseSolver {
         proposals: this.getTraceRefinementProposals(current),
         queue: [],
         collecting: true,
+        seenProposals: new Set(),
         before: getOutputLabelCollisions(current),
       }
     }
@@ -1440,6 +1442,13 @@ export class InlineNetLabelSolver extends BaseSolver {
     if (refinement.collecting) {
       const next = refinement.proposals.next()
       if (!next.done) {
+        const key = JSON.stringify([
+          next.value.traces,
+          next.value.netLabelPlacements,
+          [...(next.value.netLabelConnectorTraceIds ?? [])],
+        ])
+        if (refinement.seenProposals.has(key)) return
+        refinement.seenProposals.add(key)
         const distance = next.value.traces.reduce(
           (sum, trace, index) =>
             sum +
