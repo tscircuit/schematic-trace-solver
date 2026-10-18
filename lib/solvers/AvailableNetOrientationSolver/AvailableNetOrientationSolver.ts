@@ -268,6 +268,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     if (this.getTextBlockedMultiPinRailTraces(label, orientations[0]!)) {
       return true
     }
+    if (
+      this.isPortOnlyLabel(label) &&
+      rectIntersectsAnyTextBox(
+        getRectBounds(label.center, label.width, label.height),
+        this.inputProblem,
+      )
+    ) {
+      return true
+    }
 
     const hasSingleVerticalOrientation =
       orientations.length === 1 && isYOrientation(orientations[0]!)
@@ -1005,7 +1014,21 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   private getAvailableOrientations(label: NetLabelPlacement) {
     const effectiveNetId = label.netId ?? label.globalConnNetId
-    return this.inputProblem.availableNetLabelOrientations[effectiveNetId] ?? []
+    const explicitOrientations =
+      this.inputProblem.availableNetLabelOrientations[effectiveNetId]
+    if (explicitOrientations && explicitOrientations.length > 0) {
+      return explicitOrientations
+    }
+    if (
+      this.isPortOnlyLabel(label) &&
+      rectIntersectsAnyTextBox(
+        getRectBounds(label.center, label.width, label.height),
+        this.inputProblem,
+      )
+    ) {
+      return [label.orientation]
+    }
+    return []
   }
 
   private findValidShiftedCandidate(
@@ -1257,12 +1280,17 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     if (candidate.phase === "lateral-shift") {
-      const chipOutwardDir = this.crowdedPortOnlyLabelIndices.has(labelIndex)
-        ? this.getChipOutwardDirection(label.anchorPoint)
-        : (() => {
-            const orientDir = dir(candidate.orientation)
-            return { x: -orientDir.x, y: -orientDir.y }
-          })()
+      const orientDir = dir(candidate.orientation)
+      const naturalChipOutwardDir = this.getChipOutwardDirection(
+        label.anchorPoint,
+      )
+      const chipOutwardDir =
+        this.crowdedPortOnlyLabelIndices.has(labelIndex) ||
+        (this.isPortOnlyLabel(label) &&
+          naturalChipOutwardDir.x === orientDir.x &&
+          naturalChipOutwardDir.y === orientDir.y)
+          ? naturalChipOutwardDir
+          : { x: -orientDir.x, y: -orientDir.y }
       const kickedSource = {
         x: label.anchorPoint.x + chipOutwardDir.x * LABEL_SEARCH_STEP,
         y: label.anchorPoint.y + chipOutwardDir.y * LABEL_SEARCH_STEP,
@@ -1515,29 +1543,39 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         : []
 
     if (labelChips.length > 0) {
-      if (orientation === "y-") {
-        return Math.max(
-          0,
-          ...labelChips.map((chip) => baseAnchor.y - chip.bounds.minY),
-        )
-      }
-      if (orientation === "y+") {
-        return Math.max(
-          0,
-          ...labelChips.map((chip) => chip.bounds.maxY - baseAnchor.y),
-        )
-      }
-      if (orientation === "x-") {
-        return Math.max(
-          0,
-          ...labelChips.map((chip) => baseAnchor.x - chip.bounds.minX),
-        )
-      }
-      if (orientation === "x+") {
-        return Math.max(
-          0,
-          ...labelChips.map((chip) => chip.bounds.maxX - baseAnchor.x),
-        )
+      const orientDir = dir(orientation)
+      const naturalChipOutwardDir = this.getChipOutwardDirection(
+        label.anchorPoint,
+      )
+      const isPortOnTargetFacingSide =
+        this.isPortOnlyLabel(label) &&
+        naturalChipOutwardDir.x === orientDir.x &&
+        naturalChipOutwardDir.y === orientDir.y
+      if (!isPortOnTargetFacingSide) {
+        if (orientation === "y-") {
+          return Math.max(
+            0,
+            ...labelChips.map((chip) => baseAnchor.y - chip.bounds.minY),
+          )
+        }
+        if (orientation === "y+") {
+          return Math.max(
+            0,
+            ...labelChips.map((chip) => chip.bounds.maxY - baseAnchor.y),
+          )
+        }
+        if (orientation === "x-") {
+          return Math.max(
+            0,
+            ...labelChips.map((chip) => baseAnchor.x - chip.bounds.minX),
+          )
+        }
+        if (orientation === "x+") {
+          return Math.max(
+            0,
+            ...labelChips.map((chip) => chip.bounds.maxX - baseAnchor.x),
+          )
+        }
       }
     }
 
@@ -2144,10 +2182,31 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number,
     otherLabelIndex: number,
   ) {
-    return (
+    if (!this.queuedLabelIndices.includes(otherLabelIndex)) return false
+    if (
       this.crowdedPortOnlyLabelIndices.has(labelIndex) &&
-      this.crowdedPortOnlyLabelIndices.has(otherLabelIndex) &&
-      this.queuedLabelIndices.includes(otherLabelIndex)
+      this.crowdedPortOnlyLabelIndices.has(otherLabelIndex)
+    ) {
+      return true
+    }
+    const label = this.outputNetLabelPlacements[labelIndex]!
+    const otherLabel = this.outputNetLabelPlacements[otherLabelIndex]!
+    if (!this.isPortOnlyLabel(label) || !this.isPortOnlyLabel(otherLabel)) {
+      return false
+    }
+    const labelOrientations = this.getAvailableOrientations(label)
+    const otherOrientations = this.getAvailableOrientations(otherLabel)
+    if (
+      labelOrientations.length === 0 ||
+      otherOrientations.length === 0 ||
+      labelOrientations.includes(label.orientation) ||
+      otherOrientations.includes(otherLabel.orientation)
+    ) {
+      return false
+    }
+    return rectsOverlap(
+      getRectBounds(label.center, label.width, label.height),
+      getRectBounds(otherLabel.center, otherLabel.width, otherLabel.height),
     )
   }
 
