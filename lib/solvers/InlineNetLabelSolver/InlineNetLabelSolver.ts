@@ -15,6 +15,7 @@ import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetL
 import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { CompletedTraceReroute } from "lib/solvers/TraceElbowTransitionSimplificationSolver/types"
 import type {
@@ -84,8 +85,15 @@ export interface InlineNetLabelPlacement {
   /** Axis the text runs along: "x" reads left-to-right, "y" reads bottom-to-top */
   axis: "x" | "y"
 
-  /** Midpoint of the trace segment the label is attached to */
+  /** Attachment point on the routed trace, in schematic-world mm (+x right, +y up). */
   anchorPoint: Point
+
+  /**
+   * Alignment along the text's reading direction at anchorPoint; defaults to
+   * center. A spanning label may attach at either end of its text box
+   * when its center is above a jog rather than on the trace.
+   */
+  textAnchor?: "center" | "left" | "right"
 
   /** Center of the label text, offset perpendicular to the trace */
   center: Point
@@ -1010,6 +1018,25 @@ export class InlineNetLabelSolver extends BaseSolver {
             ? { x: along, y: side === "y+" ? maxY : minY }
             : { x: side === "x-" ? minX : maxX, y: along }
 
+        // Keep the collision-checked text box. Its center can miss the wire
+        // when it spans a jog, so try the other supported text alignments on
+        // this same route before moving to another placement candidate.
+        const anchorCandidates = [
+          { anchorPoint, textAnchor: "center" },
+          {
+            anchorPoint: { ...anchorPoint, [axis]: along - halfAlong },
+            textAnchor: "left",
+          },
+          {
+            anchorPoint: { ...anchorPoint, [axis]: along + halfAlong },
+            textAnchor: "right",
+          },
+        ] as const
+        const attachment = anchorCandidates.find((candidate) =>
+          tracePathContainsPoint(path, candidate.anchorPoint),
+        )
+        if (!attachment) continue
+
         return {
           globalConnNetId: trace.globalConnNetId,
           netId: connection.netId,
@@ -1017,7 +1044,7 @@ export class InlineNetLabelSolver extends BaseSolver {
           mspPairId: trace.mspPairId,
           pinIds: [...pinIds],
           axis,
-          anchorPoint,
+          ...attachment,
           center,
           width,
           height,

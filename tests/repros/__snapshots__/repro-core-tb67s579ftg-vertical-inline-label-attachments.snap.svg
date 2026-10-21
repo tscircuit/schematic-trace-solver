@@ -154,10 +154,10 @@ STBLANK" data-x="-0.5999999999999994" data-y="-3.4625000000000004" cx="283.66106
 CTBLANK" data-x="-0.39999999999999947" data-y="-3.4625000000000004" cx="291.6696460493386" cy="413.50017876296033" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
 VREG" data-x="-3.675" data-y="-1.1837499999999999" cx="160.52913836253128" cy="322.2524132999642" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
 GND" data-x="3.7749999999999995" data-y="-1.3115" cx="458.84876653557376" cy="327.36789417232745" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
-OUT_A_P" data-x="-2.600000000000001" data-y="2.61" cx="203.5752592062924" cy="170.33964962459777" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
+OUT_A_P" data-x="-2.600000000000001" data-y="2.29" cx="203.5752592062924" cy="183.15337861994993" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
 OUT_A_N" data-x="-2.400000000000001" data-y="2.3775" cx="211.5838398283875" cy="179.64962459778332" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
 OUT_B_N" data-x="-1.9000000000000004" data-y="2.8425" cx="231.60529138362529" cy="161.02967465141222" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
-OUT_B_P" data-x="-1.7000000000000004" data-y="2.61" cx="239.6138720057204" cy="170.33964962459777" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
+OUT_B_P" data-x="-1.7000000000000004" data-y="2.9299999999999997" cx="239.6138720057204" cy="157.5259206292456" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
 MO" data-x="1.8500000000000005" data-y="2.9099999999999997" cx="381.7661780479085" cy="158.3267786914551" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
 AGC_OUT" data-x="2.0000000000000004" data-y="-2.465" cx="387.7726135144798" cy="373.55738291026097" r="3" fill="green"/></g><g id="crosshair" style="display: none"><line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5"/><line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5"/><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text></g><script><![CDATA[
               document.currentScript.parentElement.addEventListener('mousemove', (e) => {

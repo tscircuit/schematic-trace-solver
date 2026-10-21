@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { InputProblem } from "lib/types/InputProblem"
 import inputProblem from "./assets/repro-core-tb67s579ftg-inline-label-routing.input.json"
 import "tests/fixtures/matcher"
@@ -37,5 +38,13 @@ test("core TB67S579FTG inline label routing", () => {
       (connection) => connection.netId === "AGC_OUT",
     )?.anchoredNetLabelWidth,
   ).toBe(0.96)
+  const output = solver.inlineNetLabelSolver!.getOutput()
+  for (const placement of output.inlineNetLabelPlacements) {
+    const path =
+      placement.stubTracePath ??
+      output.traces.find((trace) => trace.mspPairId === placement.mspPairId)!
+        .tracePath
+    expect(tracePathContainsPoint(path, placement.anchorPoint)).toBe(true)
+  }
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

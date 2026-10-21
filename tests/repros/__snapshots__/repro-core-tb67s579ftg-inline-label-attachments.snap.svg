@@ -158,10 +158,10 @@ STBLANK" data-x="-3.4625000000000004" data-y="0.5999999999999994" cx="231.365447
 CTBLANK" data-x="-3.4625000000000004" data-y="0.39999999999999947" cx="231.3654473017023" cy="317.1604491126404" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
 VREG" data-x="-1.1837499999999999" data-y="4.265" cx="323.80296993842813" cy="160.37667511771105" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
 GND" data-x="-1.3115" data-y="-3.775" cx="318.6207895689967" cy="486.5193770373053" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
-OUT_A_P" data-x="2.61" data-y="2.600000000000001" cx="477.6964867801521" cy="227.91742122419413" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
+OUT_A_P" data-x="2.29" data-y="2.600000000000001" cx="464.71568272365084" cy="227.91742122419413" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
 OUT_A_N" data-x="2.3775" data-y="2.400000000000001" cx="468.2651213328504" cy="236.0304237595074" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
 OUT_B_N" data-x="2.8425" data-y="1.9000000000000004" cx="487.1278522274538" cy="256.3129300977907" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
-OUT_B_P" data-x="2.61" data-y="1.7000000000000004" cx="477.6964867801521" cy="264.42593263310397" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
+OUT_B_P" data-x="2.9299999999999997" data-y="1.7000000000000004" cx="490.67729083665336" cy="264.42593263310397" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
 CLK" data-x="2.2275" data-y="-0.3000000000000007" cx="462.1803694313654" cy="345.55595798623693" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
 LO0" data-x="2.81" data-y="-1.7000000000000006" cx="485.8094893154654" cy="402.34697573342993" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor
 MO" data-x="2.91" data-y="-1.8500000000000005" cx="489.865990583122" cy="408.4317276349149" r="3" fill="green"/></g><g><circle data-type="point" data-label="inline anchor

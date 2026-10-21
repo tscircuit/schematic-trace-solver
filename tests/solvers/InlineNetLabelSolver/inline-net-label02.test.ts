@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import inputProblem from "../../assets/inline-net-label02.json"
 import "tests/fixtures/matcher"
 
@@ -33,6 +34,10 @@ test("inline-net-label02 spans a route with a small jog", () => {
   const routeMinX = Math.min(...trace.tracePath.map((p) => p.x))
   const routeMaxX = Math.max(...trace.tracePath.map((p) => p.x))
   const routeMaxY = Math.max(...trace.tracePath.map((p) => p.y))
+  expect(tracePathContainsPoint(trace.tracePath, placement!.anchorPoint)).toBe(
+    true,
+  )
+  expect(placement!.textAnchor).toBe("center")
   expect(labelBounds.minX).toBeGreaterThanOrEqual(routeMinX - 1e-9)
   expect(labelBounds.maxX).toBeLessThanOrEqual(routeMaxX + 1e-9)
 

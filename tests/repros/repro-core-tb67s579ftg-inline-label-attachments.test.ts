@@ -2,6 +2,7 @@ import { expect, test } from "bun:test"
 import {
   getBoundFromCenteredRect,
   getBoundsFromPoints,
+  pointToSegmentDistance,
 } from "@tscircuit/math-utils"
 import { getSvgFromGraphicsObject, type GraphicsObject } from "graphics-debug"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
@@ -27,7 +28,10 @@ test("core TB67 bent-route inline label attachment points", async () => {
     circles: [],
     texts: [],
   }
-  for (const netId of ["OUT_A_P", "OUT_B_P"]) {
+  for (const [netId, textAnchor] of [
+    ["OUT_A_P", "left"],
+    ["OUT_B_P", "right"],
+  ] as const) {
     const placements = output.inlineNetLabelPlacements.filter(
       (placement) => placement.netId === netId,
     )
@@ -36,6 +40,32 @@ test("core TB67 bent-route inline label attachment points", async () => {
     const path = output.traces.find(
       (trace) => trace.mspPairId === placement.mspPairId,
     )!.tracePath
+    const attachmentDistances = path
+      .slice(1)
+      .map((end, index) =>
+        pointToSegmentDistance(placement.anchorPoint, path[index]!, end),
+      )
+    expect(Math.min(...attachmentDistances)).toBeLessThan(1e-6)
+    expect(placement.textAnchor).toBe(textAnchor)
+    expect(placement.axis).toBe("x")
+
+    // Changing alignment keeps the selected text box in place. The old
+    // centered attachment at this height would fall into the route's jog.
+    expect(placement.anchorPoint.x).toBeCloseTo(
+      placement.center.x +
+        (textAnchor === "left" ? -placement.width / 2 : placement.width / 2),
+    )
+    const centeredAttachment = {
+      x: placement.center.x,
+      y: placement.anchorPoint.y,
+    }
+    const centerDistances = path
+      .slice(1)
+      .map((end, index) =>
+        pointToSegmentDistance(centeredAttachment, path[index]!, end),
+      )
+    expect(Math.min(...centerDistances)).toBeGreaterThan(1e-6)
+
     const bounds = getBoundFromCenteredRect({
       center: placement.center,
       width: placement.width,
