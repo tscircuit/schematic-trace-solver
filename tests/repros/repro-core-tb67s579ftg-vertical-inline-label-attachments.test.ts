@@ -30,18 +30,26 @@ test("core TB67 vertical bent-route inline label attachment points", async () =>
     circles: [],
     texts: [],
   }
+  const stubDetail: GraphicsObject = {
+    coordinateSystem: "cartesian",
+    lines: [],
+    circles: [],
+    texts: [],
+  }
   for (const [netId, textAnchor] of [
     ["OUT_A_P", "left"],
     ["OUT_B_P", "right"],
+    ["AGC_OUT", undefined],
   ] as const) {
     const placements = output.inlineNetLabelPlacements.filter(
       (placement) => placement.netId === netId,
     )
     expect(placements).toHaveLength(1)
     const placement = placements[0]!
-    const path = output.traces.find(
-      (trace) => trace.mspPairId === placement.mspPairId,
-    )!.tracePath
+    const path =
+      placement.stubTracePath ??
+      output.traces.find((trace) => trace.mspPairId === placement.mspPairId)!
+        .tracePath
     const attachmentDistances = path
       .slice(1)
       .map((end, index) =>
@@ -51,29 +59,36 @@ test("core TB67 vertical bent-route inline label attachment points", async () =>
     expect(placement.textAnchor).toBe(textAnchor)
     expect(placement.axis).toBe("y")
 
-    // Changing alignment keeps the selected text box in place. The old
-    // centered attachment at this x-coordinate would fall into the route's jog.
-    expect(placement.anchorPoint.y).toBeCloseTo(
-      placement.center.y +
-        (textAnchor === "left" ? -placement.width / 2 : placement.width / 2),
-    )
-    const centeredAttachment = {
-      x: placement.anchorPoint.x,
-      y: placement.center.y,
-    }
-    const centerDistances = path
-      .slice(1)
-      .map((end, index) =>
-        pointToSegmentDistance(centeredAttachment, path[index]!, end),
+    if (placement.stubTracePath) {
+      expect(path).toHaveLength(2)
+      expect(path[0]!.x).toBeCloseTo(path[1]!.x)
+      expect(path[1]!.y).toBeLessThan(path[0]!.y)
+    } else {
+      // Changing alignment keeps the selected text box in place. The old
+      // centered attachment at this x-coordinate would fall into the route's jog.
+      expect(placement.anchorPoint.y).toBeCloseTo(
+        placement.center.y +
+          (textAnchor === "left" ? -placement.width / 2 : placement.width / 2),
       )
-    expect(Math.min(...centerDistances)).toBeGreaterThan(1e-6)
+      const centeredAttachment = {
+        x: placement.anchorPoint.x,
+        y: placement.center.y,
+      }
+      const centerDistances = path
+        .slice(1)
+        .map((end, index) =>
+          pointToSegmentDistance(centeredAttachment, path[index]!, end),
+        )
+      expect(Math.min(...centerDistances)).toBeGreaterThan(1e-6)
+    }
+    const view = placement.stubTracePath ? stubDetail : detail
 
     const bounds = getBoundFromCenteredRect({
       center: placement.center,
       width: placement.height,
       height: placement.width,
     })
-    detail.lines!.push(
+    view.lines!.push(
       { points: path, strokeColor: "green", strokeWidth: 0.015 },
       {
         points: [
@@ -88,12 +103,12 @@ test("core TB67 vertical bent-route inline label attachment points", async () =>
         strokeDash: "4 3",
       },
     )
-    detail.circles!.push({
+    view.circles!.push({
       center: placement.anchorPoint,
       radius: 0.015,
       fill: "#2563eb",
     })
-    detail.texts!.push({
+    view.texts!.push({
       ...placement.center,
       text: placement.netLabelText ?? placement.netId!,
       fontSize: placement.height,
@@ -103,27 +118,31 @@ test("core TB67 vertical bent-route inline label attachment points", async () =>
     })
   }
 
-  const detailBounds = getBoundsFromPoints(
-    detail.lines!.flatMap((line) => line.points),
-  )!
-  detail.texts!.push({
-    x: (detailBounds.minX + detailBounds.maxX) / 2,
-    y: detailBounds.maxY + 0.2,
-    text: "Dashed: text bounds / Blue dot: attachment point",
-    fontSize: 0.045,
-    color: "#2563eb",
-    anchorSide: "center",
-  })
-
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
-  await expect(
-    getSvgFromGraphicsObject(detail, {
-      backgroundColor: "white",
-      svgWidth: 1000,
-      svgHeight: 700,
-    }).replace(/[ \t]+$/gm, ""),
-  ).toMatchSvgSnapshot(
-    import.meta.path,
-    "repro-core-tb67s579ftg-vertical-inline-label-attachments-detail",
-  )
+  for (const [suffix, view] of [
+    ["detail", detail],
+    ["straight-stub", stubDetail],
+  ] as const) {
+    const bounds = getBoundsFromPoints(
+      view.lines!.flatMap((line) => line.points),
+    )!
+    view.texts!.push({
+      x: (bounds.minX + bounds.maxX) / 2,
+      y: bounds.maxY + 0.2,
+      text: "Dashed: text bounds / Blue dot: attachment point",
+      fontSize: 0.045,
+      color: "#2563eb",
+      anchorSide: "center",
+    })
+    await expect(
+      getSvgFromGraphicsObject(view, {
+        backgroundColor: "white",
+        svgWidth: 1000,
+        svgHeight: 700,
+      }).replace(/[ \t]+$/gm, ""),
+    ).toMatchSvgSnapshot(
+      import.meta.path,
+      `repro-core-tb67s579ftg-vertical-inline-label-attachments-${suffix}`,
+    )
+  }
 })
