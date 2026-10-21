@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/gimbal-one-sheet-power.input.json"
 
@@ -13,5 +14,15 @@ test("gimbal one power sheet trace routing", () => {
     },
   )
   solver.solve()
+  const traces = solver.netLabelToTraceSolver!.getOutput().traces
+  const vmBranch = traces.find((trace) =>
+    trace.pinIds.includes("schematic_port_22"),
+  )!
+  const vmHost = traces.find((trace) =>
+    trace.pinIds.includes("schematic_port_15"),
+  )!
+  expect(
+    tracePathContainsPoint(vmHost.tracePath, vmBranch.tracePath.at(-1)!),
+  ).toBe(true)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
