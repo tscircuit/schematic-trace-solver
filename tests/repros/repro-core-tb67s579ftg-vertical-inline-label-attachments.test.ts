@@ -10,9 +10,10 @@ import type { InputProblem } from "lib/types/InputProblem"
 import inputProblem from "./assets/repro-core-tb67s579ftg-vertical-inline-label-attachments.input.json"
 import "tests/fixtures/matcher"
 
-// Captured from core's repro-tb67s579ftg-vertical-inline-label-attachments
-// TSX test: the existing TB67 breakout laid out vertically using schematic
-// props. Components and connections are unchanged; no routed geometry is edited.
+// Captured from a vertical layout of core's existing
+// tests/repros/repro-tb67s579ftg-inline-net-labels.test.tsx circuit.
+// Normal TSX props put U1's pin rows on top/bottom, J1 below U1, and J4 above.
+// Components and connections are unchanged; no routed geometry is edited.
 test("core TB67 vertical bent-route inline label attachment points", async () => {
   const solver = new SchematicTracePipelineSolver(
     inputProblem as unknown as InputProblem,
