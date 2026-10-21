@@ -14,7 +14,7 @@ import "tests/fixtures/matcher"
 // tests/repros/repro-tb67s579ftg-inline-net-labels.test.tsx circuit.
 // Normal TSX props put U1's pin rows on top/bottom, J1 below U1, and J4 above.
 // Components and connections are unchanged; no routed geometry is edited.
-test("core TB67 vertical bent-route inline label attachment points", async () => {
+test("core TB67 vertical inline label attachment points", async () => {
   const solver = new SchematicTracePipelineSolver(
     inputProblem as unknown as InputProblem,
   )
@@ -37,10 +37,18 @@ test("core TB67 vertical bent-route inline label attachment points", async () =>
     circles: [],
     texts: [],
   }
-  for (const [netId, textAnchor] of [
-    ["OUT_A_P", "left"],
-    ["OUT_B_P", "right"],
-    ["AGC_OUT", undefined],
+  const straightDetail: GraphicsObject = {
+    coordinateSystem: "cartesian",
+    lines: [],
+    circles: [],
+    texts: [],
+  }
+  for (const [netId, textAnchor, view] of [
+    ["OUT_A_P", "left", detail],
+    ["OUT_B_P", "right", detail],
+    ["AGC_OUT", undefined, stubDetail],
+    ["STOP_DET_VTH", undefined, straightDetail],
+    ["NFHYS", undefined, straightDetail],
   ] as const) {
     const placements = output.inlineNetLabelPlacements.filter(
       (placement) => placement.netId === netId,
@@ -60,10 +68,13 @@ test("core TB67 vertical bent-route inline label attachment points", async () =>
     expect(placement.textAnchor).toBe(textAnchor)
     expect(placement.axis).toBe("y")
 
-    if (placement.stubTracePath) {
+    if (!textAnchor) {
       expect(path).toHaveLength(2)
       expect(path[0]!.x).toBeCloseTo(path[1]!.x)
-      expect(path[1]!.y).toBeLessThan(path[0]!.y)
+      expect(placement.anchorPoint.y).toBeCloseTo(placement.center.y)
+      if (placement.stubTracePath) {
+        expect(path[1]!.y).toBeLessThan(path[0]!.y)
+      }
     } else {
       // Changing alignment keeps the selected text box in place. The old
       // centered attachment at this x-coordinate would fall into the route's jog.
@@ -82,8 +93,6 @@ test("core TB67 vertical bent-route inline label attachment points", async () =>
         )
       expect(Math.min(...centerDistances)).toBeGreaterThan(1e-6)
     }
-    const view = placement.stubTracePath ? stubDetail : detail
-
     const bounds = getBoundFromCenteredRect({
       center: placement.center,
       width: placement.height,
@@ -123,6 +132,7 @@ test("core TB67 vertical bent-route inline label attachment points", async () =>
   for (const [suffix, view] of [
     ["detail", detail],
     ["straight-stub", stubDetail],
+    ["straight-detail", straightDetail],
   ] as const) {
     const bounds = getBoundsFromPoints(
       view.lines!.flatMap((line) => line.points),
