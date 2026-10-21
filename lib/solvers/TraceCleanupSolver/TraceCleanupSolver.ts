@@ -7,9 +7,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { alignSameNetRails } from "./alignSameNetRails"
-import { getSameNetJunctions } from "lib/utils/getSameNetJunctions"
-import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import { simplifyPath } from "./simplifyPath"
+import { extendBranchesToTrimmedJunctions } from "./extendBranchesToTrimmedJunctions"
 
 export type TraceCleanupOperation =
   | "untangling_traces"
@@ -196,17 +194,15 @@ export class TraceCleanupSolver extends BaseSolver {
       })
     }
 
-    // Collinear backtracking can carry a branch that simplification would erase.
-    const simplifiedPath = simplifyPath(originalTrace.tracePath)
-    if (
-      getSameNetJunctions(originalTrace, allTraces).some(
-        (junction) =>
-          !tracePathContainsPoint(simplifiedPath, junction) &&
-          !tracePathContainsPoint(updatedTrace.tracePath, junction),
-      )
-    ) {
-      return
-    }
+    const extendedTraces = extendBranchesToTrimmedJunctions({
+      originalTrace,
+      updatedTrace,
+      traces: allTraces,
+    })
+    if (!extendedTraces) return
+    this.tracesMap = new Map(
+      extendedTraces.map((trace) => [trace.mspPairId, trace]),
+    )
 
     this.tracesMap.set(targetMspConnectionPairId, updatedTrace)
     this.outputTraces = Array.from(this.tracesMap.values())

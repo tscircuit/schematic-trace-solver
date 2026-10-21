@@ -24,5 +24,12 @@ test("gimbal one power sheet trace routing", () => {
   expect(
     tracePathContainsPoint(vmHost.tracePath, vmBranch.tracePath.at(-1)!),
   ).toBe(true)
+  const junction = vmBranch.tracePath.at(-1)!
+  expect(vmHost.tracePath).toHaveLength(3)
+  expect(junction).toEqual(vmHost.tracePath[1]!)
+  expect(vmBranch.tracePath.at(-2)!.x).toBeCloseTo(junction.x)
+  expect(vmBranch.tracePath.at(-2)!.y).toBeGreaterThan(junction.y)
+  expect(vmHost.tracePath[0]!.y).toBeLessThan(junction.y)
+  expect(vmHost.tracePath.at(-1)!.y).toBeCloseTo(junction.y)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
