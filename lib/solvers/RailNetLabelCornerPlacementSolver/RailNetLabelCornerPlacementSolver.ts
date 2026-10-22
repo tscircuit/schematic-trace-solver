@@ -671,13 +671,35 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       label.height,
     )
     const labelBounds = getRectBounds(center, label.width, label.height)
-    const collidingChipBounds = this.inputProblem.chips
-      .map((chip) => getRectBounds(chip.center, chip.width, chip.height))
-      .filter((chipBounds) => rectsOverlap(labelBounds, chipBounds))
+    const clearNeighboringLabels =
+      label.orientation === "y+" &&
+      corner.y > label.anchorPoint.y + EPS &&
+      this.isLabelCrossedByTrace(label) &&
+      this.getCandidateStatus(
+        labelBounds,
+        this.outputNetLabelPlacements.indexOf(label),
+        {
+          anchorPoint: corner,
+          traceId: trace.mspPairId,
+          distance: getDistance(corner, label.anchorPoint),
+          pinAligned,
+        },
+      ) === "netlabel-collision"
+    const collidingBounds = [
+      ...this.inputProblem.chips.map((chip) =>
+        getRectBounds(chip.center, chip.width, chip.height),
+      ),
+      // Shift upward around another label only when it alone blocks this corner.
+      ...(clearNeighboringLabels ? this.outputNetLabelPlacements : [])
+        .filter((otherLabel) => otherLabel !== label)
+        .map((otherLabel) =>
+          getRectBounds(otherLabel.center, otherLabel.width, otherLabel.height),
+        ),
+    ].filter((bounds) => rectsOverlap(labelBounds, bounds))
     const shiftedCoordinates = new Set<number>()
-    for (const chipBounds of collidingChipBounds) {
-      shiftedCoordinates.add(chipBounds.minX - label.width / 2)
-      shiftedCoordinates.add(chipBounds.maxX + label.width / 2)
+    for (const bounds of collidingBounds) {
+      shiftedCoordinates.add(bounds.minX - label.width / 2)
+      shiftedCoordinates.add(bounds.maxX + label.width / 2)
     }
     for (const otherTrace of this.traces) {
       if (otherTrace.globalConnNetId === label.globalConnNetId) continue
