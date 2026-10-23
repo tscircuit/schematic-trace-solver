@@ -32,7 +32,7 @@ jobs:
         with:
           node-version: 22
           registry-url: https://npm.pkg.github.com
-          scope: '@tscircuit'
+          scope: "@tscircuit"
       - name: Publish bundled package for jscdn
         run: pver release --no-push-main
         env:
@@ -45,9 +45,9 @@ jobs:
         id: version-pr
         with:
           token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
-          commit-message: 'chore: bump version'
-          title: 'chore: bump version to v${{ steps.version.outputs.version }}'
-          body: 'Record the version published to GitHub Packages for jscdn.'
+          commit-message: "chore: bump version"
+          title: "chore: bump version to v${{ steps.version.outputs.version }}"
+          body: "Record the version published to GitHub Packages for jscdn."
           branch: version-bumps/v${{ steps.version.outputs.version }}
           base: main
           committer: tscircuitbot <githubbot@tscircuit.com>
