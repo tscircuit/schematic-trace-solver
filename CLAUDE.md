@@ -3,6 +3,5 @@
 - use `bun add <package>` to add a package
 
 There are two ways the user tests the algorithm:
-
 - Running `bun test`
 - Looking at the `*.page.tsx` files in the `site` directory via a browser
