@@ -21,6 +21,7 @@ import {
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem, PinId } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
+import { getTraceChannelJunctions } from "./getTraceChannelJunctions"
 
 const ROUTE_CLEARANCE = 0.2
 const COORDINATE_TOLERANCE = 1e-9
@@ -270,11 +271,13 @@ const getJunctionCandidates = ({
   sameNetTraces,
   obstacles,
   maxConnectionDistance,
+  junctionPoints = getJunctionPoints(sameNetTraces),
 }: {
   connectionPair: MspConnectionPair
   sameNetTraces: SolvedTracePath[]
   obstacles: ObstacleRect[]
   maxConnectionDistance: number
+  junctionPoints?: Point[]
 }): Point[][] => {
   const outerBounds = getOuterBounds(obstacles)
   const horizontalChannels = [
@@ -286,7 +289,6 @@ const getJunctionCandidates = ({
     outerBounds.maxX + ROUTE_CLEARANCE,
   ]
   const candidates: Point[][] = []
-  const junctionPoints = getJunctionPoints(sameNetTraces)
   const unconnectedPins = getUnconnectedPins({
     connectionPair,
     sameNetTraces,
@@ -672,6 +674,17 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
         // Local channels shorten valid routes without recovering new connections.
         candidates.push(
           ...getPinConnectionCandidates({ connectionPair, obstacles }),
+          ...getJunctionCandidates({
+            connectionPair,
+            sameNetTraces,
+            obstacles,
+            maxConnectionDistance: this.maxConnectionDistance,
+            junctionPoints: getTraceChannelJunctions({
+              sameNetTraces,
+              obstacles,
+              clearance: ROUTE_CLEARANCE,
+            }),
+          }),
         )
       }
       recoveredPath = tracePath
