@@ -3,7 +3,10 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import type { InputProblem } from "lib/types/InputProblem"
 import { evaluateRailGroup } from "./sameNetRailAlignment/evaluateRailGroup"
-import { getRailGroups } from "./sameNetRailAlignment/getRailGroups"
+import {
+  getPartialRailGroups,
+  getRailGroups,
+} from "./sameNetRailAlignment/getRailGroups"
 import type { AlignmentCandidate } from "./sameNetRailAlignment/types"
 
 interface AlignSameNetRailsInput {
@@ -61,6 +64,28 @@ export const alignSameNetRails = ({
         eligibleTraceIds,
       })
       if (applied) break
+    }
+    // An obstructed member can prevent a maximal group from aligning even
+    // when a connected pair remains clear. Keep complete alignments first.
+    if (!applied) {
+      for (const group of getPartialRailGroups({
+        traces: outputTraces,
+        eligibleTraceIds,
+        inputProblem,
+        obstacles,
+        netLabelPlacements,
+      })) {
+        applied = evaluateRailGroup({
+          group,
+          traces: outputTraces,
+          netLabelPlacements,
+          obstacles,
+          eligibleTraceIds,
+          preserveWholeNetReadability: true,
+          allowFixedLabelLengthening: false,
+        })
+        if (applied) break
+      }
     }
     if (!applied) break
 
