@@ -56,17 +56,8 @@ export const moveNetLabelConnectorsToReroutedTraces = ({
   )
 
   const labels = netLabelPlacements.map((label) => {
-    const originalHostTrace = originalTraces.find((trace) => {
-      if (!label.mspConnectionPairIds.includes(trace.mspPairId)) return false
-      const reroutedTrace = reroutedTraceMap.get(trace.mspPairId)
-      if (!reroutedTrace) return false
-      return reroutedTrace.tracePath !== trace.tracePath
-    })
-    if (!originalHostTrace) return label
-
-    const reroutedHostTrace = reroutedTraceMap.get(originalHostTrace.mspPairId)!
     const connectorIndex = originalTraces.findIndex((trace) => {
-      if (trace.mspPairId === originalHostTrace.mspPairId) return false
+      if (label.mspConnectionPairIds.includes(trace.mspPairId)) return false
       if (trace.globalConnNetId !== label.globalConnNetId) return false
       if (!tracePathContainsPoint(trace.tracePath, label.anchorPoint)) {
         return false
@@ -76,6 +67,21 @@ export const moveNetLabelConnectorsToReroutedTraces = ({
     if (connectorIndex < 0) return label
 
     const connector = originalTraces[connectorIndex]!
+    // A shared rail label can join a different trace than its representative pair.
+    const originalHostTrace = originalTraces.find((trace) => {
+      if (trace.mspPairId === connector.mspPairId) return false
+      if (trace.globalConnNetId !== label.globalConnNetId) return false
+      const reroutedTrace = reroutedTraceMap.get(trace.mspPairId)
+      if (!reroutedTrace || reroutedTrace.tracePath === trace.tracePath) {
+        return false
+      }
+      return connector.tracePath.some((point) =>
+        tracePathContainsPoint(trace.tracePath, point),
+      )
+    })
+    if (!originalHostTrace) return label
+
+    const reroutedHostTrace = reroutedTraceMap.get(originalHostTrace.mspPairId)!
     const originalJunction = connector.tracePath.find((point) =>
       tracePathContainsPoint(originalHostTrace.tracePath, point),
     )

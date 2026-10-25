@@ -7,7 +7,7 @@ import "tests/fixtures/matcher"
 
 // Captured from core's esp8684-disconnected-power-label.test.tsx.
 // The isolated MCU section does not reproduce the disconnected V3V3 label.
-test("ESP8684 V3V3 label disconnects from the MCU power bus", () => {
+test("ESP8684 V3V3 label stays connected when the MCU power bus moves", () => {
   const problem: InputProblem = JSON.parse(JSON.stringify(inputProblem))
   const solver = new SchematicTracePipelineSolver(problem)
   solver.solve()
@@ -27,8 +27,7 @@ test("ESP8684 V3V3 label disconnects from the MCU power bus", () => {
       trace.globalConnNetId === label.globalConnNetId &&
       trace.pinIds.some((pinId) => label.pinIds.includes(pinId)),
   )!
-  // Record the current bug: the label connector misses the power bus by 0.1 mm.
-  expect(cpuPin.x - connector.tracePath[0].x).toBeCloseTo(0.2)
+  expect(cpuPin.x - connector.tracePath[0].x).toBeCloseTo(0.1)
   expect(
     output.traces.some(
       (trace) =>
@@ -36,6 +35,6 @@ test("ESP8684 V3V3 label disconnects from the MCU power bus", () => {
         trace.globalConnNetId === connector.globalConnNetId &&
         tracePathContainsPoint(trace.tracePath, connector.tracePath[0]),
     ),
-  ).toBe(false)
+  ).toBe(true)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
