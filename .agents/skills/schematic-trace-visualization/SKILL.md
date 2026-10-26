@@ -1,4 +1,5 @@
 ---
+
 name: schematic-trace-visualization
 description: Work with schematic trace solver visualization in this repo. Use when changing solver `visualize()` or `preview()` output, adding debug graphics, creating SVG snapshots, inspecting pipeline stages, or generating graphics-debug artifacts for AI/headless review.
 ---
@@ -99,7 +100,6 @@ bun run debug:pipeline tests/assets/example17.json --svg --step-pngs
 ```
 
 The runner writes:
-
 - `logs.txt`
 - `stageNN-stageName.png`
 - `stageNN-stageName.graphics.json` unless `--no-json` is passed

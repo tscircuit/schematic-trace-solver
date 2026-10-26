@@ -7,7 +7,6 @@
 ## Solver Visualization
 
 For schematic trace solver visualization work, use the repo-local skill:
-
 - `.agents/skills/schematic-trace-visualization/SKILL.md`
 
 This repo supports headless stage artifact generation without starting Cosmos:

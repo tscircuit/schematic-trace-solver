@@ -58,7 +58,7 @@ If there is crowding at the pin, we look for an available spot along the trace c
 
 ### Inline net labels
 
-A point-to-point signal trace can be labeled *inline*: the net name is drawn
+A point-to-point signal trace can be labeled _inline_: the net name is drawn
 parallel to the wire (above a horizontal trace, to the left of a vertical one)
 instead of as an anchored label hanging off the end of it. This keeps the visual
 line between the two pins intact.
