@@ -50,6 +50,7 @@ export class TraceOverlapShiftSolver extends BaseSolver {
   // Keep only the current and previous layouts to detect a two-state cycle
   // without accumulating routing history for the whole solve.
   recentTraceStates: TraceState[] = []
+  suspendedNetPairs: Set<string> = new Set()
 
   cleanupPhase: "diagonals" | "done" | null = null
 
@@ -114,6 +115,9 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       for (let j = i + 1; j < netIds.length; j++) {
         const netA = netIds[i]!
         const netB = netIds[j]!
+        if (this.suspendedNetPairs.has(this.getNetPairKey(netA, netB))) {
+          continue
+        }
         const pathsA = this.traceNetIslands[netA] || []
         const pathsB = this.traceNetIslands[netB] || []
 
@@ -374,16 +378,19 @@ export class TraceOverlapShiftSolver extends BaseSolver {
         ...this.activeSubSolver.correctedTraceMap,
       }
       // Returning to the older retained layout means corrections are bouncing
-      // A -> B -> A. Keep B and finish this pass instead of retrying forever.
+      // A -> B -> A. Suspend this net pair and continue solving other pairs.
       if (this.returnsToPreviousTraceState(nextTraceState)) {
+        const pairKey = this.getActiveSubSolverPairKey()
+        if (pairKey) {
+          this.suspendedNetPairs.add(pairKey)
+        }
         this.activeSubSolver = null
-        this.solved = true
-        return
+      } else {
+        this.correctedTraceMap = nextTraceState
+        this.rememberTraceState(nextTraceState)
+        this.activeSubSolver = null
+        this.traceNetIslands = this.computeTraceNetIslands()
       }
-      this.correctedTraceMap = nextTraceState
-      this.rememberTraceState(nextTraceState)
-      this.activeSubSolver = null
-      this.traceNetIslands = this.computeTraceNetIslands()
     }
 
     if (this.activeSubSolver) {
@@ -421,6 +428,16 @@ export class TraceOverlapShiftSolver extends BaseSolver {
       traceNetIslands: this.traceNetIslands,
       traceIdsToShift: this.traceIdsToShift,
     })
+  }
+
+  private getNetPairKey(netA: ConnNetId, netB: ConnNetId): string {
+    return netA < netB ? `${netA}~${netB}` : `${netB}~${netA}`
+  }
+
+  private getActiveSubSolverPairKey(): string | null {
+    const segments = this.activeSubSolver?.overlappingTraceSegments
+    if (!segments || segments.length < 2) return null
+    return this.getNetPairKey(segments[0]!.connNetId, segments[1]!.connNetId)
   }
 
   private rememberTraceState(traceState: TraceState) {
