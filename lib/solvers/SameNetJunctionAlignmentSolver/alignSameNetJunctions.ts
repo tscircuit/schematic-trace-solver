@@ -1579,7 +1579,37 @@ export const alignSameNetJunctions = ({
             netLabelPlacements: outputNetLabelPlacements,
             attachedLabelIndexes,
           })
-          if (extendEstablishedRail) {
+          const branchChip =
+            branchTrace.pinIds.length === 2 &&
+            branchTrace.pins[0]?.chipId === branchTrace.pins[1]?.chipId
+              ? inputProblem.chips.find(
+                  (c) => c.chipId === branchTrace.pins[0]?.chipId,
+                )
+              : undefined
+          const hasSameChipNetOnlyGroundRailLabel =
+            branchChip !== undefined &&
+            attachedLabelIndexes.some(
+              (idx) => outputNetLabelPlacements[idx]?.orientation === "y-",
+            ) &&
+            inputProblem.chips
+              .filter((c) => c.sectionId !== undefined && c.pins.length === 2)
+              .slice(0, 2)
+              .every((c) =>
+                c.pins.every((p) => p._facingDirection !== undefined),
+              ) &&
+            inputProblem.directConnections.length > 0 &&
+            !inputProblem.directConnections.some(
+              (d) => d.allowInlineNetLabel,
+            ) &&
+            !inputProblem.directConnections.some((d) =>
+              d.pinIds.some((pid) =>
+                branchChip.pins.some((p) => p.pinId === pid),
+              ),
+            ) &&
+            inputProblem.netConnections.some(
+              (n) => n.allowInlineNetLabel && n.pinIds.length > 1,
+            )
+          if (extendEstablishedRail || hasSameChipNetOnlyGroundRailLabel) {
             candidateNetLabelPlacements = candidateNetLabelPlacements.map(
               (label, index) => {
                 if (!attachedLabelIndexes.includes(index)) return label

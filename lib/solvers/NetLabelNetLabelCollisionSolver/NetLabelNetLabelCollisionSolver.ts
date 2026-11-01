@@ -363,7 +363,33 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     const allowedOrientations = label.netId
       ? this.inputProblem.availableNetLabelOrientations[label.netId]
       : undefined
-    return isAnchoredOnConnector && allowedOrientations?.length
+    const labelChip =
+      label.pinIds.length === 2
+        ? this.inputProblem.chips.find((c) =>
+            c.pins.some((p) => p.pinId === label.pinIds[0]),
+          )
+        : undefined
+    const isSameChipNetOnlyGroundRailInInlinePass =
+      this.params.useRenderedLabelBounds &&
+      label.pinIds.length === 2 &&
+      allowedOrientations?.length === 1 &&
+      allowedOrientations[0] === label.orientation &&
+      labelChip !== undefined &&
+      labelChip.pins.some((p) => p.pinId === label.pinIds[1]) &&
+      this.inputProblem.chips
+        .filter((c) => c.sectionId !== undefined && c.pins.length === 2)
+        .slice(0, 2)
+        .every((c) => c.pins.every((p) => p._facingDirection !== undefined)) &&
+      this.inputProblem.directConnections.length > 0 &&
+      !this.inputProblem.directConnections.some((d) => d.allowInlineNetLabel) &&
+      !this.inputProblem.directConnections.some((d) =>
+        d.pinIds.some((pid) => labelChip.pins.some((p) => p.pinId === pid)),
+      ) &&
+      this.inputProblem.netConnections.some(
+        (n) => n.allowInlineNetLabel && n.pinIds.length > 1,
+      )
+    return (isAnchoredOnConnector || isSameChipNetOnlyGroundRailInInlinePass) &&
+      allowedOrientations?.length
       ? candidates.filter((candidate) =>
           allowedOrientations.includes(candidate.orientation),
         )

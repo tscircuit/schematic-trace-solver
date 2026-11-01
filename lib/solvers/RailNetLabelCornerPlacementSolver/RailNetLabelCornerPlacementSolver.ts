@@ -340,12 +340,54 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
   }
 
   private intersectsAnyOtherNetLabel(bounds: Bounds, labelIndex: number) {
+    const currentLabel = this.outputNetLabelPlacements[labelIndex]
+    const currentBounds = currentLabel
+      ? getRectBounds(
+          currentLabel.center,
+          currentLabel.width,
+          currentLabel.height,
+        )
+      : null
+    const currentChip =
+      currentLabel?.pinIds.length === 2
+        ? this.inputProblem.chips.find((c) =>
+            c.pins.some((p) => p.pinId === currentLabel.pinIds[0]),
+          )
+        : undefined
+    const isSameChipNetOnlyGroundRail =
+      currentLabel !== undefined &&
+      currentLabel.pinIds.length === 2 &&
+      currentLabel.orientation === "y-" &&
+      currentChip !== undefined &&
+      currentChip.pins.some((p) => p.pinId === currentLabel.pinIds[1]) &&
+      this.inputProblem.chips
+        .filter((c) => c.sectionId !== undefined && c.pins.length === 2)
+        .slice(0, 2)
+        .every((c) => c.pins.every((p) => p._facingDirection !== undefined)) &&
+      this.inputProblem.directConnections.length > 0 &&
+      !this.inputProblem.directConnections.some((d) => d.allowInlineNetLabel) &&
+      !this.inputProblem.directConnections.some((d) =>
+        d.pinIds.some((pid) => currentChip.pins.some((p) => p.pinId === pid)),
+      )
     return this.outputNetLabelPlacements.some((label, index) => {
       if (index === labelIndex) return false
-      return rectsOverlap(
-        bounds,
-        getRectBounds(label.center, label.width, label.height),
-      )
+      const otherBounds = getRectBounds(label.center, label.width, label.height)
+      if (
+        isSameChipNetOnlyGroundRail &&
+        currentBounds &&
+        label.pinIds.length === 1 &&
+        currentChip.pins.some((p) => p.pinId === label.pinIds[0]) &&
+        this.inputProblem.netConnections.some(
+          (n) =>
+            n.allowInlineNetLabel &&
+            n.pinIds.length > 1 &&
+            n.netId === label.netId,
+        ) &&
+        rectsOverlap(currentBounds, otherBounds)
+      ) {
+        return false
+      }
+      return rectsOverlap(bounds, otherBounds)
     })
   }
 
