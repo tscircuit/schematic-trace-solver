@@ -578,11 +578,38 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (shiftedCandidate) return shiftedCandidate
 
-    return this.findValidLateralShiftedCandidate(
+    const lateralCandidate = this.findValidLateralShiftedCandidate(
       label,
       orientations[0]!,
       labelIndex,
     )
+    if (lateralCandidate) return lateralCandidate
+
+    const labelChipId =
+      label.pinIds.length === 1
+        ? this.pinMap[label.pinIds[0]!]?.chipId
+        : undefined
+    const sharesPassiveWithGround =
+      this.inputProblem.directConnections.length === 0 &&
+      labelChipId !== undefined &&
+      this.outputNetLabelPlacements.some(
+        (other, idx) =>
+          idx !== labelIndex &&
+          this.isGroundLabel(other) &&
+          other.pinIds.some((pid) => this.pinMap[pid]?.chipId === labelChipId),
+      )
+    if (sharesPassiveWithGround) {
+      for (const orientation of orientations.slice(1)) {
+        const fallbackShifted = this.findValidShiftedCandidate(
+          label,
+          orientation,
+          labelIndex,
+        )
+        if (fallbackShifted) return fallbackShifted
+      }
+    }
+
+    return null
   }
 
   private findValidCrowdedTopVerticalFanoutCandidate(
