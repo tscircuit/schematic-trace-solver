@@ -16,7 +16,8 @@ export const segmentIntersectsRect = <TRect extends RectBounds>(
 ): boolean => {
   const vert = isVertical(a, b, eps)
   const horz = isHorizontal(a, b, eps)
-  if (!vert && !horz) return false
+
+  if (vert && horz) return false
 
   if (vert) {
     const x = a.x
@@ -25,7 +26,9 @@ export const segmentIntersectsRect = <TRect extends RectBounds>(
     const segMaxY = Math.max(a.y, b.y)
     const overlap = Math.min(segMaxY, r.maxY) - Math.max(segMinY, r.minY)
     return overlap > eps
-  } else {
+  }
+
+  if (horz) {
     const y = a.y
     if (y < r.minY - eps || y > r.maxY + eps) return false
     const segMinX = Math.min(a.x, b.x)
@@ -33,6 +36,20 @@ export const segmentIntersectsRect = <TRect extends RectBounds>(
     const overlap = Math.min(segMaxX, r.maxX) - Math.max(segMinX, r.minX)
     return overlap > eps
   }
+
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const tx1 = (r.minX - a.x) / dx
+  const tx2 = (r.maxX - a.x) / dx
+  const ty1 = (r.minY - a.y) / dy
+  const ty2 = (r.maxY - a.y) / dy
+
+  const tMin = Math.max(0, Math.min(tx1, tx2), Math.min(ty1, ty2))
+  const tMax = Math.min(1, Math.max(tx1, tx2), Math.max(ty1, ty2))
+  if (tMax <= tMin) return false
+
+  const clippedLength = (tMax - tMin) * Math.hypot(dx, dy)
+  return clippedLength > eps
 }
 
 export const segmentOverlapsRectBoundary = <TRect extends RectBounds>(

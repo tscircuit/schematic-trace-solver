@@ -9,7 +9,7 @@ export function segmentIntersectsRect(
 ): boolean {
   const isVert = Math.abs(p1.x - p2.x) < EPS
   const isHorz = Math.abs(p1.y - p2.y) < EPS
-  if (!isVert && !isHorz) return false
+  if (isVert && isHorz) return false
 
   if (isVert) {
     const x = p1.x
@@ -18,7 +18,9 @@ export function segmentIntersectsRect(
     const segMaxY = Math.max(p1.y, p2.y)
     const overlap = Math.min(segMaxY, rect.maxY) - Math.max(segMinY, rect.minY)
     return overlap > EPS
-  } else {
+  }
+
+  if (isHorz) {
     const y = p1.y
     if (y < rect.minY - EPS || y > rect.maxY + EPS) return false
     const segMinX = Math.min(p1.x, p2.x)
@@ -26,6 +28,20 @@ export function segmentIntersectsRect(
     const overlap = Math.min(segMaxX, rect.maxX) - Math.max(segMinX, rect.minX)
     return overlap > EPS
   }
+
+  const dx = p2.x - p1.x
+  const dy = p2.y - p1.y
+  const tx1 = (rect.minX - p1.x) / dx
+  const tx2 = (rect.maxX - p1.x) / dx
+  const ty1 = (rect.minY - p1.y) / dy
+  const ty2 = (rect.maxY - p1.y) / dy
+
+  const tMin = Math.max(0, Math.min(tx1, tx2), Math.min(ty1, ty2))
+  const tMax = Math.min(1, Math.max(tx1, tx2), Math.max(ty1, ty2))
+  if (tMax <= tMin) return false
+
+  const clippedLength = (tMax - tMin) * Math.hypot(dx, dy)
+  return clippedLength > EPS
 }
 
 export function rectIntersectsAnyTrace(
