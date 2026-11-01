@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -57,7 +58,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -79,6 +79,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   blockedStandaloneLabelIndex: number | null = null
   blockedStandaloneLabelTargetAnchorX: number | null = null
+  private allowIgnoreInitialHorizontalTraceLabelForConnector = false
   private traceMap: Record<string, SolvedTracePath>
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private maxSearchDistance: number
@@ -431,7 +432,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       labelIndex === null ? null : this.outputNetLabelPlacements[labelIndex]!
   }
 
-  private findCorrectedCandidate(label: NetLabelPlacement, labelIndex: number) {
+  private findCorrectedCandidate(
+    label: NetLabelPlacement,
+    labelIndex: number,
+  ): EvaluatedCandidate | null {
     const orientations = this.getAvailableOrientations(label)
     const requiredOrientation = orientations[0]!
 
@@ -578,11 +582,28 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (shiftedCandidate) return shiftedCandidate
 
-    return this.findValidLateralShiftedCandidate(
+    const lateralShiftedCandidate = this.findValidLateralShiftedCandidate(
       label,
       orientations[0]!,
       labelIndex,
     )
+    if (lateralShiftedCandidate) return lateralShiftedCandidate
+
+    if (
+      !this.allowIgnoreInitialHorizontalTraceLabelForConnector &&
+      this.isPortOnlyLabel(label) &&
+      orientations.length === 1 &&
+      isYOrientation(requiredOrientation)
+    ) {
+      this.allowIgnoreInitialHorizontalTraceLabelForConnector = true
+      try {
+        return this.findCorrectedCandidate(label, labelIndex)
+      } finally {
+        this.allowIgnoreInitialHorizontalTraceLabelForConnector = false
+      }
+    }
+
+    return null
   }
 
   private findValidCrowdedTopVerticalFanoutCandidate(
@@ -1659,6 +1680,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     for (const i of nearbyLabelIndices) {
       if (i === labelIndex) continue
       if (this.shouldIgnorePendingCrowdedLabel(labelIndex, i)) continue
+      if (
+        this.allowIgnoreInitialHorizontalTraceLabelForConnector &&
+        this.overlapsInitialHorizontalTraceLabel(labelIndex, i)
+      ) {
+        continue
+      }
       const otherLabel = this.outputNetLabelPlacements[i]!
       if (
         tracePathIntersectsBounds(
@@ -2148,6 +2175,31 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.crowdedPortOnlyLabelIndices.has(labelIndex) &&
       this.crowdedPortOnlyLabelIndices.has(otherLabelIndex) &&
       this.queuedLabelIndices.includes(otherLabelIndex)
+    )
+  }
+
+  private overlapsInitialHorizontalTraceLabel(
+    labelIndex: number,
+    otherLabelIndex: number,
+  ) {
+    const initialLabel = this.netLabelPlacements[labelIndex]
+    const otherLabel = this.outputNetLabelPlacements[otherLabelIndex]
+    if (
+      !initialLabel ||
+      !otherLabel ||
+      !this.isPortOnlyLabel(initialLabel) ||
+      this.isPortOnlyLabel(otherLabel) ||
+      !isXOrientation(otherLabel.orientation)
+    ) {
+      return false
+    }
+    return rectsOverlap(
+      getRectBounds(
+        initialLabel.center,
+        initialLabel.width,
+        initialLabel.height,
+      ),
+      getRectBounds(otherLabel.center, otherLabel.width, otherLabel.height),
     )
   }
 
