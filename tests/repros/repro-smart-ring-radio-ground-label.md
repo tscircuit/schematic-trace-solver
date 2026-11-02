@@ -19,7 +19,6 @@ trace whose upper horizontal segment is at y=1.5. Late trace rerouting brings
 that segment through pin 49's rendered label. There is room to shorten the
 dedicated connector and keep the entire label above the trace.
 
-The repro test intentionally asserts the existing overlap. Its solver snapshot
-includes the full sheet's routing geometry and a rendered schematic; the fix
-should invert the overlap assertion and regenerate the snapshot from solver
-output.
+The regression test asserts that the whole label clears pin 45's trace from
+above and that its connector terminates at the new anchor without leaving a
+wire tail. The full-sheet snapshot is regenerated from solver output.
