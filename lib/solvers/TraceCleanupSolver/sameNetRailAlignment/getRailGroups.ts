@@ -69,6 +69,7 @@ export const getRailGroups = (
   inputProblem: InputProblem,
   obstacles: ObstacleRect[],
   netLabelPlacements: NetLabelPlacement[],
+  options?: { targetSubsetSize?: number },
 ): RailSegment[][] => {
   const chipMap = new Map(inputProblem.chips.map((chip) => [chip.chipId, chip]))
   const traceMap = new Map(traces.map((trace) => [trace.mspPairId, trace]))
@@ -160,7 +161,8 @@ export const getRailGroups = (
     getComponentSideRailSegments(trace, chipMap),
   )
   // Preserve the original nearest-endpoint grouping and its ordering.
-  for (const group of collectConnectedGroups(primarySegments)) {
+  const primaryGroups = collectConnectedGroups(primarySegments)
+  for (const group of primaryGroups) {
     addEligibleGroup(group)
   }
 
@@ -172,9 +174,100 @@ export const getRailGroups = (
       maxMspPairDistance: inputProblem.maxMspPairDistance,
     }),
   )
-  for (const group of collectConnectedGroups(tiedEndpointSegments)) {
+  const tiedEndpointGroups = collectConnectedGroups(tiedEndpointSegments)
+  for (const group of tiedEndpointGroups) {
     addEligibleGroup(group, { requireFixedLabel: true })
   }
+
+  if (options?.targetSubsetSize === undefined) return selectedGroups
+  selectedGroups.length = 0
+
+  const targetSize = options.targetSubsetSize
+  const addCompatibleSubsets = (
+    groups: RailSegment[][],
+    subsetOptions?: { requireFixedLabel?: boolean },
+  ) => {
+    for (const group of groups) {
+      const segmentsByTraceId = new Map<string, RailSegment[]>()
+      const orderedTraceIds: string[] = []
+      for (const segment of group) {
+        const list = segmentsByTraceId.get(segment.traceId)
+        if (list) {
+          list.push(segment)
+        } else {
+          segmentsByTraceId.set(segment.traceId, [segment])
+          orderedTraceIds.push(segment.traceId)
+        }
+      }
+
+      const n = orderedTraceIds.length
+      if (n <= targetSize) continue
+
+      const adj = new Map<string, Set<string>>()
+      for (const id of orderedTraceIds) adj.set(id, new Set())
+
+      for (let i = 0; i < orderedTraceIds.length - 1; i++) {
+        const idA = orderedTraceIds[i]!
+        const segsA = segmentsByTraceId.get(idA)!
+        for (let j = i + 1; j < orderedTraceIds.length; j++) {
+          const idB = orderedTraceIds[j]!
+          const segsB = segmentsByTraceId.get(idB)!
+
+          const areConnected = segsA.some((segA) =>
+            segsB.some((segB) =>
+              canJoinRailGroup(group[0]!, segA, segB, traceMap, obstacles),
+            ),
+          )
+
+          if (areConnected) {
+            adj.get(idA)!.add(idB)
+            adj.get(idB)!.add(idA)
+          }
+        }
+      }
+
+      const combinations: string[][] = []
+      const buildCombinations = (startIndex: number, current: string[]) => {
+        if (current.length === targetSize) {
+          combinations.push([...current])
+          return
+        }
+        for (let i = startIndex; i < orderedTraceIds.length; i++) {
+          current.push(orderedTraceIds[i]!)
+          buildCombinations(i + 1, current)
+          current.pop()
+        }
+      }
+      buildCombinations(0, [])
+
+      for (const combo of combinations) {
+        const inCombo = new Set(combo)
+        const visited = new Set<string>([combo[0]!])
+        const queue = [combo[0]!]
+
+        while (queue.length > 0) {
+          const curr = queue.shift()!
+          const neighbors = adj.get(curr)
+          if (neighbors) {
+            for (const nbr of neighbors) {
+              if (inCombo.has(nbr) && !visited.has(nbr)) {
+                visited.add(nbr)
+                queue.push(nbr)
+              }
+            }
+          }
+        }
+
+        if (visited.size !== targetSize) continue
+
+        const subsetSegments = group.filter((s) => inCombo.has(s.traceId))
+        addEligibleGroup(subsetSegments, subsetOptions)
+      }
+    }
+  }
+
+  addCompatibleSubsets(primaryGroups)
+  addCompatibleSubsets(tiedEndpointGroups, { requireFixedLabel: true })
 
   return selectedGroups
 }
