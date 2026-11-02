@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -57,7 +58,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -282,6 +282,54 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           return otherBounds ? rectsOverlap(bounds, otherBounds) : false
         })
       if (overlapsHorizontalConstraintMismatch) return true
+
+      if (
+        label.mspConnectionPairIds.length === 1 &&
+        !this.isInlineAllowedForLabel(label)
+      ) {
+        const hostTrace = this.traceMap[label.mspConnectionPairIds[0]!]
+        if (hostTrace && hostTrace.tracePath.length === 4) {
+          const xs = hostTrace.tracePath.map((pt) => pt.x)
+          const ys = hostTrace.tracePath.map((pt) => pt.y)
+          const traceMinX = Math.min(...xs)
+          const traceMaxX = Math.max(...xs)
+          const traceMinY = Math.min(...ys)
+          const traceMaxY = Math.max(...ys)
+          if (
+            traceMaxY - traceMinY <= label.height + EPS &&
+            this.outputNetLabelPlacements.some((otherLabel, otherIndex) => {
+              if (otherIndex === labelIndex) return false
+              if (otherLabel.globalConnNetId === label.globalConnNetId) {
+                return false
+              }
+              if (!this.isPortOnlyLabel(otherLabel)) return false
+              if (!isXOrientation(otherLabel.orientation)) return false
+              if (this.isInlineAllowedForLabel(otherLabel)) return false
+              const otherOrientations =
+                this.getAvailableOrientations(otherLabel)
+              if (
+                otherOrientations.length > 0 &&
+                !otherOrientations.includes(otherLabel.orientation)
+              ) {
+                return false
+              }
+              const otherBounds = getRectBounds(
+                otherLabel.center,
+                otherLabel.width,
+                otherLabel.height,
+              )
+              return (
+                traceMaxX - traceMinX > label.width + EPS &&
+                rectsOverlap(bounds, otherBounds) &&
+                traceMinX >= otherBounds.minX - 2e-3 &&
+                traceMaxX <= otherBounds.maxX + 2e-3
+              )
+            })
+          ) {
+            return true
+          }
+        }
+      }
     }
 
     if (!this.crowdedPortOnlyLabelIndices.has(labelIndex)) return false
@@ -2059,6 +2107,16 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   private isGroundLabel(label: NetLabelPlacement) {
     return this.getNetConnectionForLabel(label)?.isGround === true
+  }
+
+  private isInlineAllowedForLabel(label: NetLabelPlacement) {
+    if (this.getNetConnectionForLabel(label)?.allowInlineNetLabel) return true
+    return this.inputProblem.directConnections.some(
+      (connection) =>
+        Boolean(connection.allowInlineNetLabel) &&
+        (connection.netId === label.netId ||
+          connection.pinIds.some((pinId) => label.pinIds.includes(pinId))),
+    )
   }
 
   /**

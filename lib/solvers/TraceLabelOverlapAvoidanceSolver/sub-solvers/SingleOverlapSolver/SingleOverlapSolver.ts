@@ -1,16 +1,16 @@
 import type { Point } from "@tscircuit/math-utils"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject } from "graphics-debug"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
-import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
+import type { InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
+import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
+import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath
@@ -18,6 +18,7 @@ interface SingleOverlapSolverInput {
   problem: InputProblem
   paddingBuffer: number
   detourCount: number
+  allowSpanningDetours?: boolean
   tracesToAvoidOverlapping?: SolvedTracePath[]
   netLabelPlacements?: NetLabelPlacement[]
 }
@@ -50,7 +51,11 @@ export class SingleOverlapSolver extends BaseSolver {
   tracesToAvoidOverlapping: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   detourCount: number
-  _tried: number = 0
+  effectivePadding: number
+  allowSpanningDetours: boolean
+  normalCandidateKeys: Set<string>
+  triedFallbackSpanningCandidates = false
+  _tried = 0
 
   constructor(solverInput: SingleOverlapSolverInput) {
     super()
@@ -70,10 +75,13 @@ export class SingleOverlapSolver extends BaseSolver {
     const effectivePadding =
       solverInput.paddingBuffer +
       solverInput.detourCount * solverInput.paddingBuffer
+    this.effectivePadding = effectivePadding
+    this.allowSpanningDetours = Boolean(solverInput.allowSpanningDetours)
 
     const candidates = generateRerouteCandidates({
       ...solverInput,
       paddingBuffer: effectivePadding, // Use the calculated, larger padding
+      allowSpanningDetours: false,
     })
 
     const getLabelOverlapCount = (path: Point[]) =>
@@ -91,6 +99,7 @@ export class SingleOverlapSolver extends BaseSolver {
       )
     }
 
+    this.normalCandidateKeys = new Set(candidateByPath.keys())
     this.queuedCandidatePaths = [...candidateByPath.values()].sort((a, b) => {
       const pathLengthDifference = getPathLength(a) - getPathLength(b)
       if (Math.abs(pathLengthDifference) >= PATH_LENGTH_EPSILON) {
@@ -108,8 +117,61 @@ export class SingleOverlapSolver extends BaseSolver {
   override _step() {
     // Failure conditions: no more candidates or exceeded max tries
     if (this.queuedCandidatePaths.length === 0 || this._tried >= MAX_TRIES) {
-      this.failed = true
-      return
+      if (
+        this.allowSpanningDetours &&
+        !this.triedFallbackSpanningCandidates &&
+        this.initialTrace.tracePath.length === 4 &&
+        this.problem.netConnections.some(
+          (n) =>
+            (n.netId === this.initialTrace.userNetId ||
+              n.netId === this.initialTrace.globalConnNetId) &&
+            n.isGround,
+        )
+      ) {
+        this.triedFallbackSpanningCandidates = true
+        const spanningCandidates = generateRerouteCandidates({
+          trace: this.initialTrace,
+          label: this.label,
+          problem: this.problem,
+          paddingBuffer: this.effectivePadding,
+          detourCount: this.detourCount,
+          allowSpanningDetours: true,
+        })
+        const extraByPath = new Map<string, Point[]>()
+        for (const candidate of spanningCandidates) {
+          const simplifiedCandidate = simplifyPath(candidate)
+          const key = simplifiedCandidate
+            .map((point) => `${point.x},${point.y}`)
+            .join(";")
+          if (!this.normalCandidateKeys.has(key)) {
+            extraByPath.set(key, simplifiedCandidate)
+          }
+        }
+        if (extraByPath.size > 0) {
+          const getLabelOverlapCount = (path: Point[]) =>
+            detectTraceLabelOverlap({
+              traces: [{ ...this.initialTrace, tracePath: path }],
+              netLabels: this.netLabelPlacements,
+            }).length
+          this.queuedCandidatePaths = [...extraByPath.values()].sort((a, b) => {
+            const pathLengthDifference = getPathLength(a) - getPathLength(b)
+            if (Math.abs(pathLengthDifference) >= PATH_LENGTH_EPSILON) {
+              return pathLengthDifference
+            }
+            const overlapCountDifference =
+              getLabelOverlapCount(a) - getLabelOverlapCount(b)
+            if (overlapCountDifference !== 0) return overlapCountDifference
+            return a.length - b.length
+          })
+          this._tried = 0
+        } else {
+          this.failed = true
+          return
+        }
+      } else {
+        this.failed = true
+        return
+      }
     }
 
     this._tried++

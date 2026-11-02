@@ -8,6 +8,7 @@ export const generateSnipAndReconnectCandidates = ({
   labelBounds,
   paddingBuffer,
   detourCount,
+  allowSpanningDetours = false,
 }: {
   initialTrace: SolvedTracePath
   firstInsideIndex: number
@@ -15,6 +16,7 @@ export const generateSnipAndReconnectCandidates = ({
   labelBounds: any
   paddingBuffer: number
   detourCount: number
+  allowSpanningDetours?: boolean
 }): Point[][] => {
   if (
     firstInsideIndex <= 0 ||
@@ -47,10 +49,33 @@ export const generateSnipAndReconnectCandidates = ({
   const topY = labelBounds.maxY + buffer
   const bottomY = labelBounds.minY - buffer
 
+  const isFourPointSameSideLoop =
+    allowSpanningDetours &&
+    firstInsideIndex === 2 &&
+    lastInsideIndex === 1 &&
+    initialTrace.tracePath.length === 4 &&
+    initialTrace.pins.length === 2 &&
+    initialTrace.pins[0]?.chipId === initialTrace.pins[1]?.chipId
+  const spansVertically =
+    isFourPointSameSideLoop &&
+    Math.abs(initialTrace.pins[0]!.x - initialTrace.pins[1]!.x) < 1e-6 &&
+    Math.abs(entryPoint.x - initialTrace.tracePath[0]!.x) <= 0.1 + 1e-6 &&
+    Math.abs(entryPoint.x - exitPoint.x) < 1e-6 &&
+    ((entryPoint.y <= labelBounds.minY && exitPoint.y >= labelBounds.maxY) ||
+      (exitPoint.y <= labelBounds.minY && entryPoint.y >= labelBounds.maxY))
+  const spansHorizontally =
+    isFourPointSameSideLoop &&
+    Math.abs(initialTrace.pins[0]!.y - initialTrace.pins[1]!.y) < 1e-6 &&
+    Math.abs(entryPoint.y - initialTrace.tracePath[0]!.y) <= 0.1 + 1e-6 &&
+    Math.abs(entryPoint.y - exitPoint.y) < 1e-6 &&
+    ((entryPoint.x <= labelBounds.minX && exitPoint.x >= labelBounds.maxX) ||
+      (exitPoint.x <= labelBounds.minX && entryPoint.x >= labelBounds.maxX))
+
   if (
-    (entryPoint.x <= labelBounds.minX || exitPoint.x <= labelBounds.minX) &&
-    entryPoint.x < labelBounds.maxX &&
-    exitPoint.x < labelBounds.maxX
+    ((entryPoint.x <= labelBounds.minX || exitPoint.x <= labelBounds.minX) &&
+      entryPoint.x < labelBounds.maxX &&
+      exitPoint.x < labelBounds.maxX) ||
+    spansVertically
   ) {
     allCandidateDetours.push([
       { x: leftX, y: entryPoint.y },
@@ -59,9 +84,10 @@ export const generateSnipAndReconnectCandidates = ({
   }
 
   if (
-    (entryPoint.x >= labelBounds.maxX || exitPoint.x >= labelBounds.maxX) &&
-    entryPoint.x > labelBounds.minX &&
-    exitPoint.x > labelBounds.minX
+    ((entryPoint.x >= labelBounds.maxX || exitPoint.x >= labelBounds.maxX) &&
+      entryPoint.x > labelBounds.minX &&
+      exitPoint.x > labelBounds.minX) ||
+    spansVertically
   ) {
     allCandidateDetours.push([
       { x: rightX, y: entryPoint.y },
@@ -70,9 +96,10 @@ export const generateSnipAndReconnectCandidates = ({
   }
 
   if (
-    (entryPoint.y >= labelBounds.maxY || exitPoint.y >= labelBounds.maxY) &&
-    entryPoint.y > labelBounds.minY &&
-    exitPoint.y > labelBounds.minY
+    ((entryPoint.y >= labelBounds.maxY || exitPoint.y >= labelBounds.maxY) &&
+      entryPoint.y > labelBounds.minY &&
+      exitPoint.y > labelBounds.minY) ||
+    spansHorizontally
   ) {
     allCandidateDetours.push([
       { x: entryPoint.x, y: topY },
@@ -81,9 +108,10 @@ export const generateSnipAndReconnectCandidates = ({
   }
 
   if (
-    (entryPoint.y <= labelBounds.minY || exitPoint.y <= labelBounds.minY) &&
-    entryPoint.y < labelBounds.maxY &&
-    exitPoint.y < labelBounds.maxY
+    ((entryPoint.y <= labelBounds.minY || exitPoint.y <= labelBounds.minY) &&
+      entryPoint.y < labelBounds.maxY &&
+      exitPoint.y < labelBounds.maxY) ||
+    spansHorizontally
   ) {
     allCandidateDetours.push([
       { x: entryPoint.x, y: bottomY },
