@@ -42,6 +42,7 @@ import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 import { getRemovableRailLabelConnectors } from "./getRemovableRailLabelConnectors"
 import { getStraightPortConnectorCandidate } from "./getStraightPortConnectorCandidate"
 import { getSimplifiedRailConnectorCandidates } from "./getSimplifiedRailConnectorCandidates"
+import { getShortenedRailConnectorCandidates } from "./getShortenedRailConnectorCandidates"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -459,6 +460,13 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     label: NetLabelPlacement,
   ): TraceCornerCandidate[] {
     return [
+      ...getShortenedRailConnectorCandidates({
+        label,
+        traces: this.traces,
+        netLabelPlacements: this.outputNetLabelPlacements,
+        netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
+        inputProblem: this.inputProblem,
+      }),
       ...(this.originalTraces
         ? getSimplifiedRailConnectorCandidates({
             label,

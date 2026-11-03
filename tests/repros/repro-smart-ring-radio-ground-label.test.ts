@@ -5,7 +5,7 @@ import { pathIntersectsRenderedLabel } from "lib/utils/pathIntersectsRenderedLab
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-smart-ring-radio-ground-label.input.json"
 
-test("smart-ring Radio pin 49 GND label overlaps the pin 45 trace", async () => {
+test("smart-ring Radio pin 49 GND label stops above the pin 45 trace", async () => {
   const solver = new SchematicTracePipelineSolver(
     inputProblem as unknown as InputProblem,
     { hideRatsNet: true },
@@ -25,10 +25,23 @@ test("smart-ring Radio pin 49 GND label overlaps the pin 45 trace", async () => 
       trace.pinIds.includes("schematic_port_165"),
   )!
 
-  // Record the current bug: the rail symbol extends through pin 45's wire,
-  // although its dedicated connector could end earlier above that wire.
+  // The whole symbol must clear pin 45's horizontal wire from above.
   expect(pathIntersectsRenderedLabel(groundTrace.tracePath, groundLabel)).toBe(
-    true,
+    false,
+  )
+  const pin45 = inputProblem.chips[0]!.pins.find(
+    (pin) => pin.pinId === "schematic_port_165",
+  )!
+  expect(groundLabel.center.y - groundLabel.height / 2).toBeGreaterThan(pin45.y)
+  const connector = traces.find(
+    (trace) =>
+      solver.availableNetOrientationSolver!.netLabelConnectorTraceIds.has(
+        trace.mspPairId,
+      ) && trace.pinIds.includes("schematic_port_169"),
+  )!
+  expect(connector.tracePath.at(-1)).toEqual(groundLabel.anchorPoint)
+  expect(Math.min(...connector.tracePath.map((point) => point.y))).toBe(
+    groundLabel.anchorPoint.y,
   )
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
