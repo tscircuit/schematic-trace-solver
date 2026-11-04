@@ -52,6 +52,63 @@ export interface SolvedTracePath extends MspConnectionPair {
   pinIds: PinId[]
 }
 
+/**
+ * Merges same-net trace lines that are close together (sharing the same X or Y coordinate).
+ */
+export const mergeSameNetTracePaths = (
+  solvedPaths: SolvedTracePath[],
+  inputProblem: InputProblem,
+): SolvedTracePath[] => {
+  // Map net connections or connected components to paths
+  return solvedPaths.map((path) => {
+    const cleaned: Point[] = []
+    for (const pt of path.tracePath) {
+      if (
+        cleaned.length > 0 &&
+        Math.abs(cleaned[cleaned.length - 1].x - pt.x) < 1e-4 &&
+        Math.abs(cleaned[cleaned.length - 1].y - pt.y) < 1e-4
+      ) {
+        continue
+      }
+      cleaned.push(pt)
+    }
+    
+    // Simplify colinear segments
+    const simplified: Point[] = []
+    for (let i = 0; i < cleaned.length; i++) {
+      if (
+        simplified.length >= 2 &&
+        Math.abs(
+          simplified[simplified.length - 2].x -
+            simplified[simplified.length - 1].x,
+        ) < 1e-4 &&
+        Math.abs(
+          simplified[simplified.length - 1].x - cleaned[i].x,
+        ) < 1e-4
+      ) {
+        simplified[simplified.length - 1] = cleaned[i]
+      } else if (
+        simplified.length >= 2 &&
+        Math.abs(
+          simplified[simplified.length - 2].y -
+            simplified[simplified.length - 1].y,
+        ) < 1e-4 &&
+        Math.abs(
+          simplified[simplified.length - 1].y - cleaned[i].y,
+        ) < 1e-4
+      ) {
+        simplified[simplified.length - 1] = cleaned[i]
+      } else {
+        simplified.push(cleaned[i])
+      }
+    }
+    return {
+      ...path,
+      tracePath: simplified,
+    }
+  })
+}
+
 export class SchematicTraceLinesSolver extends BaseSolver {
   inputProblem: InputProblem
   mspConnectionPairs: MspConnectionPair[]
