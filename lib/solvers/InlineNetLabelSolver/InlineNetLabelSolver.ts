@@ -1,21 +1,13 @@
-import { getLocalTraceLabelShifts } from "./getLocalTraceLabelShifts"
-import {
-  getOutputLabelCollisions,
-  sameOutputLabelCollision,
-  type OutputLabelCollision,
-} from "./getOutputLabelCollisions"
-import { getInlineLabelObstacles } from "./getInlineLabelObstacles"
-import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
 import type { Bounds, Point } from "@tscircuit/math-utils"
-import type { GraphicsObject, Rect, Text } from "graphics-debug"
 import type { ConnectivityMap } from "connectivity-map"
+import type { GraphicsObject, Rect, Text } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getPinDirection } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
-import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { CompletedTraceReroute } from "lib/solvers/TraceElbowTransitionSimplificationSolver/types"
 import type {
@@ -26,13 +18,21 @@ import type {
 } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
-import { isLabelRepresentedInline } from "./isLabelRepresentedInline"
+import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
 import { alignPortOnlyInlineNetLabelStubs } from "./alignPortOnlyInlineNetLabelStubs"
+import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
 import {
   type AxisAlignedSegment,
   getAxisAlignedSegments,
 } from "./getAxisAlignedSegments"
-import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
+import { getInlineLabelObstacles } from "./getInlineLabelObstacles"
+import { getLocalTraceLabelShifts } from "./getLocalTraceLabelShifts"
+import {
+  getOutputLabelCollisions,
+  type OutputLabelCollision,
+  sameOutputLabelCollision,
+} from "./getOutputLabelCollisions"
+import { isLabelRepresentedInline } from "./isLabelRepresentedInline"
 import { pushAnchoredNetLabelsAwayFromInlineLabels } from "./pushAnchoredNetLabelsAwayFromInlineLabels"
 import { pushInlineTerminalLabelsAwayFromAnchoredLabels } from "./pushInlineTerminalLabelsAwayFromAnchoredLabels"
 import { restoreReroutesAroundSupersededLabels } from "./restoreReroutesAroundSupersededLabels"
@@ -616,11 +616,13 @@ export class InlineNetLabelSolver extends BaseSolver {
     height: number,
     traces: SolvedTracePath[],
     ignoredTraceIds: Set<string>,
+    ownTrace?: SolvedTracePath,
   ): number[] {
     const normal = height / 2 + INLINE_NET_LABEL_TRACE_MARGIN
     const across = axis === "x" ? "y" : "x"
     const sign = side === "x+" || side === "y+" ? 1 : -1
     let gap = Infinity
+    let ownTraceCrossesNormal = false
     for (const trace of traces) {
       if (ignoredTraceIds.has(trace.mspPairId)) continue
       for (const segment of getAxisAlignedSegments(trace.tracePath)) {
@@ -633,13 +635,26 @@ export class InlineNetLabelSolver extends BaseSolver {
         )
           continue
         const distance = sign * (segment.start[across] - anchor[across])
-        if (distance > GEOMETRY_EPSILON) gap = Math.min(gap, distance)
+        if (distance > GEOMETRY_EPSILON) {
+          gap = Math.min(gap, distance)
+          if (
+            ownTrace &&
+            trace.mspPairId === ownTrace.mspPairId &&
+            distance >= normal - height / 2 - GEOMETRY_EPSILON &&
+            distance <= normal + height / 2 + GEOMETRY_EPSILON
+          ) {
+            ownTraceCrossesNormal = true
+          }
+        }
       }
     }
-    return gap > height + GEOMETRY_EPSILON &&
+    if (
+      gap > height + GEOMETRY_EPSILON &&
       gap / 2 < normal - GEOMETRY_EPSILON
-      ? [normal, gap / 2]
-      : [normal]
+    ) {
+      return ownTraceCrossesNormal ? [gap / 2] : [normal, gap / 2]
+    }
+    return [normal]
   }
 
   /**
@@ -834,6 +849,7 @@ export class InlineNetLabelSolver extends BaseSolver {
             height,
             this.traces,
             ignoredTraceIds,
+            trace,
           )) {
             const center =
               side === "y+"

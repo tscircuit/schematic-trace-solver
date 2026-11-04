@@ -6,36 +6,36 @@
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { InputProblem } from "lib/types/InputProblem"
-import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectionPairSolver"
-import {
-  SchematicTraceLinesSolver,
-  type SolvedTracePath,
-} from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
-import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { colorAvailableNetOrientationLabels } from "./colorAvailableNetOrientationLabels"
-import { visualizeInputProblem } from "./visualizeInputProblem"
-import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
-import { correctPinsInsideChips } from "./correctPinsInsideChip"
-import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
-import { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
-import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
 import { Example28Solver } from "../Example28Solver/Example28Solver"
 import {
   moveAttachedLabelsToReroutedTrace,
   moveNetLabelConnectorsToReroutedTraces,
 } from "../Example28Solver/labelMovement"
-import { AvailableNetOrientationSolver } from "../AvailableNetOrientationSolver/AvailableNetOrientationSolver"
-import { RailNetLabelCornerPlacementSolver } from "../RailNetLabelCornerPlacementSolver/RailNetLabelCornerPlacementSolver"
-import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
-import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
-import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
-import { UnroutedTraceRecoverySolver } from "../UnroutedTraceRecoverySolver/UnroutedTraceRecoverySolver"
-import { SameNetJunctionAlignmentSolver } from "../SameNetJunctionAlignmentSolver/SameNetJunctionAlignmentSolver"
-import { TraceElbowTransitionSimplificationSolver } from "../TraceElbowTransitionSimplificationSolver/TraceElbowTransitionSimplificationSolver"
 import { InlineNetLabelSolver } from "../InlineNetLabelSolver/InlineNetLabelSolver"
+import { LongDistancePairSolver } from "../LongDistancePairSolver/LongDistancePairSolver"
+import { MspConnectionPairSolver } from "../MspConnectionPairSolver/MspConnectionPairSolver"
+import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
+import { NetLabelPlacementSolver } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { NetLabelToTraceSolver } from "../NetLabelToTraceSolver/NetLabelToTraceSolver"
+import { NetLabelTraceCollisionSolver } from "../NetLabelTraceCollisionSolver/NetLabelTraceCollisionSolver"
+import { RailNetLabelCornerPlacementSolver } from "../RailNetLabelCornerPlacementSolver/RailNetLabelCornerPlacementSolver"
+import { SameNetJunctionAlignmentSolver } from "../SameNetJunctionAlignmentSolver/SameNetJunctionAlignmentSolver"
+import {
+  SchematicTraceLinesSolver,
+  type SolvedTracePath,
+} from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { TraceAnchoredNetLabelOverlapSolver } from "../TraceAnchoredNetLabelOverlapSolver/TraceAnchoredNetLabelOverlapSolver"
 import { findPerpendicularPathCrossings } from "../TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
+import { TraceCleanupSolver } from "../TraceCleanupSolver/TraceCleanupSolver"
+import { TraceElbowTransitionSimplificationSolver } from "../TraceElbowTransitionSimplificationSolver/TraceElbowTransitionSimplificationSolver"
+import type { MergedNetLabelObstacleSolver } from "../TraceLabelOverlapAvoidanceSolver/sub-solvers/LabelMergingSolver/LabelMergingSolver"
+import { TraceLabelOverlapAvoidanceSolver } from "../TraceLabelOverlapAvoidanceSolver/TraceLabelOverlapAvoidanceSolver"
+import { TraceOverlapShiftSolver } from "../TraceOverlapShiftSolver/TraceOverlapShiftSolver"
+import { UnroutedTraceRecoverySolver } from "../UnroutedTraceRecoverySolver/UnroutedTraceRecoverySolver"
+import { colorAvailableNetOrientationLabels } from "./colorAvailableNetOrientationLabels"
+import { correctPinsInsideChips } from "./correctPinsInsideChip"
+import { visualizeInputProblem } from "./visualizeInputProblem"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
   solverName: string
@@ -532,6 +532,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             inputProblem: instance.inputProblem,
             traces: connectorMovement.traces,
             netLabelPlacements,
+            allowSpanningDetours: true,
           },
         ]
       },
@@ -744,7 +745,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
     }
 
     const constructorParams = pipelineStepDef.getConstructorParams(this)
-    // @ts-ignore
+    // @ts-expect-error
     this.activeSubSolver = new pipelineStepDef.solverClass(...constructorParams)
     ;(this as any)[pipelineStepDef.solverName] = this.activeSubSolver
     this.timeSpentOnPhase[pipelineStepDef.solverName] = 0

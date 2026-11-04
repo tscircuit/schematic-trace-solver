@@ -2,17 +2,17 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import { SingleOverlapSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/SingleOverlapSolver/SingleOverlapSolver"
+import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import {
   getCenterFromAnchor,
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
-import { getColorFromString } from "lib/utils/getColorFromString"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { CompletedTraceReroute } from "lib/solvers/TraceElbowTransitionSimplificationSolver/types"
+import { SingleOverlapSolver } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/sub-solvers/SingleOverlapSolver/SingleOverlapSolver"
+import type { InputProblem } from "lib/types/InputProblem"
+import { getColorFromString } from "lib/utils/getColorFromString"
 
 const ON_PATH_EPS = 1e-6
 
@@ -161,6 +161,7 @@ export interface NetLabelTraceCollisionSolverParams {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  allowSpanningDetours?: boolean
 }
 
 const PADDING_BUFFER = 0.1
@@ -170,6 +171,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  allowSpanningDetours: boolean
 
   outputTraces: SolvedTracePath[]
   outputNetLabelPlacements: NetLabelPlacement[]
@@ -189,6 +191,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
     this.inputProblem = params.inputProblem
     this.traces = params.traces
     this.netLabelPlacements = params.netLabelPlacements
+    this.allowSpanningDetours = params.allowSpanningDetours ?? false
     this.outputTraces = [...params.traces]
     this.outputNetLabelPlacements = [...params.netLabelPlacements]
   }
@@ -294,6 +297,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
       problem: this.inputProblem,
       paddingBuffer: PADDING_BUFFER,
       detourCount,
+      allowSpanningDetours: this.allowSpanningDetours,
       tracesToAvoidOverlapping: this.outputTraces,
       netLabelPlacements: this.outputNetLabelPlacements,
     })
