@@ -18,17 +18,21 @@ const getMovableRailSegments = (
   const segments: UnassociatedRailSegment[] = []
   const path = trace.tracePath
 
-  for (let segmentIndex = 1; segmentIndex < path.length - 2; segmentIndex++) {
-    const previous = path[segmentIndex - 1]!
+  // segments touching a pin have only one neighbour; they are still rails, and they are the ones
+  // a neighbouring same-net run has to line up with
+  for (let segmentIndex = 0; segmentIndex < path.length - 1; segmentIndex++) {
+    const previous = path[segmentIndex - 1]
     const start = path[segmentIndex]!
     const end = path[segmentIndex + 1]!
-    const next = path[segmentIndex + 2]!
+    const next = path[segmentIndex + 2]
     const orientation = getRailOrientation(start, end)
     if (!orientation) continue
 
-    const previousOrientation = getRailOrientation(previous, start)
-    const nextOrientation = getRailOrientation(end, next)
-    if (!previousOrientation || !nextOrientation) continue
+    const previousOrientation = previous
+      ? getRailOrientation(previous, start)
+      : null
+    const nextOrientation = next ? getRailOrientation(end, next) : null
+    if (!previousOrientation && !nextOrientation) continue
     if (previousOrientation === orientation || nextOrientation === orientation)
       continue
 
