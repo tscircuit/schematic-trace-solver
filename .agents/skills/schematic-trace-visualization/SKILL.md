@@ -100,6 +100,7 @@ bun run debug:pipeline tests/assets/example17.json --svg --step-pngs
 ```
 
 The runner writes:
+
 - `logs.txt`
 - `stageNN-stageName.png`
 - `stageNN-stageName.graphics.json` unless `--no-json` is passed
