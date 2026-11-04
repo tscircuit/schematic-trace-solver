@@ -122,8 +122,10 @@ export const tracePathIntersectsBounds = (
 export const tracePathCrossesAnyTrace = (
   tracePath: Point[],
   traceMap: Record<string, SolvedTracePath>,
+  excludedGlobalConnNetId?: string,
 ) => {
   for (const trace of Object.values(traceMap)) {
+    if (trace.globalConnNetId === excludedGlobalConnNetId) continue
     const points = trace.tracePath
     for (let i = 0; i < tracePath.length - 1; i++) {
       for (let j = 0; j < points.length - 1; j++) {

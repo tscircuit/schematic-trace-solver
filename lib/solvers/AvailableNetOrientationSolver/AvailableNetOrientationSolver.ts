@@ -39,6 +39,7 @@ import {
   rectsOverlap,
   simplifyOrthogonalPath,
   tracePathIntersectsBounds,
+  tracePathCrossesAnyTrace,
 } from "./geometry"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
 import {
@@ -510,6 +511,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       if (traceAnchorCandidate) return traceAnchorCandidate
     }
 
+    let crossingAlignedCandidate: EvaluatedCandidate | null = null
     if (
       isTwoPinNet &&
       orientations.length === 1 &&
@@ -530,7 +532,26 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         outwardDistance: 0,
         stopOnTraceCollision: false,
       })
-      if (alignedCandidate) return alignedCandidate
+      if (alignedCandidate) {
+        // Alignment is a preference, not a reason to extend the rail through
+        // another net. Let the normal placement search try a local branch.
+        const connectorTrace = this.getCandidateConnectorTrace(
+          label,
+          alignedCandidate,
+          labelIndex,
+        )
+        if (
+          !tracePathCrossesAnyTrace(
+            connectorTrace,
+            this.traceMap,
+            label.globalConnNetId,
+          )
+        ) {
+          return alignedCandidate
+        }
+        alignedCandidate.selected = false
+        crossingAlignedCandidate = alignedCandidate
+      }
     }
 
     const rotatedCandidate = this.findValidRotatedCandidate(
@@ -578,11 +599,17 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (shiftedCandidate) return shiftedCandidate
 
-    return this.findValidLateralShiftedCandidate(
+    const lateralCandidate = this.findValidLateralShiftedCandidate(
       label,
       orientations[0]!,
       labelIndex,
     )
+    if (lateralCandidate) return lateralCandidate
+
+    // Wire crossings are allowed when no alternative placement is clear.
+    // Preserve the required orientation instead of leaving an invalid label.
+    if (crossingAlignedCandidate) crossingAlignedCandidate.selected = true
+    return crossingAlignedCandidate
   }
 
   private findValidCrowdedTopVerticalFanoutCandidate(
