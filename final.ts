@@ -10,9 +10,22 @@ for (const name of ["traceCleanupSolver", "traceCleanupSolver2"]) {
   for (const tr of t) {
     const p = tr.tracePath ?? []
     for (let i = 0; i < p.length - 1; i++) {
-      if (Math.abs(p[i].x - p[i + 1].x) < 1e-6 && /U2\.1/.test(tr.mspPairId)) verticals.push(`${tr.mspPairId}@${p[i].x.toFixed(2)}`)
+      if (Math.abs(p[i].x - p[i + 1].x) < 1e-6 && /U2\.1/.test(tr.mspPairId))
+        verticals.push(`${tr.mspPairId}@${p[i].x.toFixed(2)}`)
     }
   }
-  console.log(name, "traces:", t.length, "U2.1 vertical x:", verticals.join(" "))
+  console.log(
+    name,
+    "traces:",
+    t.length,
+    "U2.1 vertical x:",
+    verticals.join(" "),
+  )
 }
-console.log("final", (s.unroutedTraceRecoverySolver?.getOutput?.().allTracesMerged ?? []).filter((x: any) => /U2\.1/.test(x.mspPairId)).map((x: any) => x.tracePath.map((p: any) => p.x.toFixed(2)).join(",")).join(" | "))
+console.log(
+  "final",
+  (s.unroutedTraceRecoverySolver?.getOutput?.().allTracesMerged ?? [])
+    .filter((x: any) => /U2\.1/.test(x.mspPairId))
+    .map((x: any) => x.tracePath.map((p: any) => p.x.toFixed(2)).join(","))
+    .join(" | "),
+)
