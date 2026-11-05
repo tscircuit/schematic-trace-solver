@@ -47,5 +47,19 @@ test("bug-report-20260815T073240Z", () => {
       ),
     ).toBe(true)
   }
+
+  const gndPort5Label = junctionOutput.netLabelPlacements.find(
+    (label) =>
+      label.netId === "GND" && label.pinIds.includes("schematic_port_5"),
+  )!
+  const gndConnectorTrace = junctionOutput.traces.find(
+    (trace) => trace.mspPairId === "available-net-orientation-3-GND",
+  )!
+  expect(gndPort5Label.orientation).toBe("y-")
+  expect(gndPort5Label.anchorPoint.x).toBeGreaterThan(-4.5325)
+  expect(gndConnectorTrace.tracePath.every((point) => point.x > -4.5325)).toBe(
+    true,
+  )
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
