@@ -8,9 +8,11 @@ test("repro: PGA300 C6 trace routing", () => {
 
   solver.solve()
 
+  // both junctions are already aligned by the rail pass, so none are left for
+  // the junction pass
   expect(
     solver.sameNetJunctionAlignmentSolver!.stats.alignedJunctionCount,
-  ).toBe(2)
+  ).toBe(0)
 
   const alignedTraces = solver.sameNetJunctionAlignmentSolver!.outputTraces
   for (const [c6PinId, railY] of [
