@@ -599,12 +599,25 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (shiftedCandidate) return shiftedCandidate
 
-    const lateralCandidate = this.findValidLateralShiftedCandidate(
-      label,
-      orientations[0]!,
-      labelIndex,
-    )
-    if (lateralCandidate) return lateralCandidate
+    const lateralOrientations =
+      orientations.every(isXOrientation) &&
+      this.isOnShortPurelyHorizontalHostTrace(label, orientations[0]!) &&
+      this.getLateralColumnMaxDistance(
+        label,
+        orientations[0]!,
+        this.getSearchStartAnchor(label, orientations[0]!),
+      ) <= 0
+        ? orientations
+        : [orientations[0]!]
+
+    for (const orientation of lateralOrientations) {
+      const lateralCandidate = this.findValidLateralShiftedCandidate(
+        label,
+        orientation,
+        labelIndex,
+      )
+      if (lateralCandidate) return lateralCandidate
+    }
 
     // Wire crossings are allowed when no alternative placement is clear.
     // Preserve the required orientation instead of leaving an invalid label.
@@ -1116,6 +1129,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           baseAnchor,
         )
 
+        const isShortHorizontalTrace =
+          orientation !== this.getAvailableOrientations(label)[0] &&
+          isXOrientation(orientation) &&
+          maxSearchDistance > 0 &&
+          this.isOnShortPurelyHorizontalHostTrace(label, orientation)
+
         const candidate = this.findValidCandidateInShiftColumn({
           label,
           labelIndex,
@@ -1125,6 +1144,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           maxSearchDistance,
           outwardDistance: lateralOffset,
           phase: "lateral-shift",
+          connectorSource: isShortHorizontalTrace
+            ? { x: baseAnchor.x, y: label.anchorPoint.y }
+            : undefined,
+          startDistance: isShortHorizontalTrace ? 0 : undefined,
         })
 
         if (candidate) return candidate
@@ -1366,6 +1389,26 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         (Math.abs(second.x - targetAnchor.x) +
           Math.abs(second.y - targetAnchor.y)),
     )[0]
+  }
+
+  private isOnShortPurelyHorizontalHostTrace(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+  ) {
+    if (label.mspConnectionPairIds.length === 0) return false
+    const maxSpan = this.getSearchDistanceLimit(label, orientation)
+    return label.mspConnectionPairIds.every((traceId) => {
+      const hostTrace = this.traceMap[traceId]
+      if (!hostTrace || hostTrace.tracePath.length < 2) return false
+      const xs = hostTrace.tracePath.map((point) => point.x)
+      const span = Math.max(...xs) - Math.min(...xs)
+      return (
+        span < maxSpan &&
+        hostTrace.tracePath.every(
+          (point) => Math.abs(point.y - label.anchorPoint.y) <= EPS,
+        )
+      )
+    })
   }
 
   private isStandaloneSinglePinNetLabel(label: NetLabelPlacement) {
