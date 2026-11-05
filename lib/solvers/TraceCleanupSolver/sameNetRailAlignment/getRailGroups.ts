@@ -59,8 +59,11 @@ const canJoinRailGroup = (
   candidate.orientation === start.orientation &&
   candidate.componentId === start.componentId &&
   candidate.componentFacingDirection === start.componentFacingDirection &&
+  // a rail only joins its own trace when the two runs actually lie beside each other;
+  // otherwise the pin they share would merge a whole stair-step into one line
   (rangesTouchOrOverlap(current, candidate) ||
-    tracesSharePin(current, candidate, traceMap)) &&
+    (current.traceId !== candidate.traceId &&
+      tracesSharePin(current, candidate, traceMap))) &&
   corridorIsClear(current, candidate, obstacles)
 
 export const getRailGroups = (

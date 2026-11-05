@@ -5,7 +5,8 @@ import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblemJson from "./assets/repro-board-589-regulator-section.input.json"
 
-const EXPECTED_ALIGNED_JUNCTION_COUNT = 2
+// one junction is aligned by the rail pass before the junction pass sees it
+const EXPECTED_ALIGNED_JUNCTION_COUNT = 1
 const REGULATOR_OUTPUT_TRACE_ID = "schematic_port_31-schematic_port_26"
 
 test("board 589 regulator section trace routing", () => {

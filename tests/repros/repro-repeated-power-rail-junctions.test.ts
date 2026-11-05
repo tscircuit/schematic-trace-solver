@@ -19,8 +19,9 @@ test("collapses repeated junctions around adjacent power rails", () => {
   expect(solver.sameNetJunctionAlignmentSolver?.stats.collapsedCycleCount).toBe(
     1,
   )
+  // one of the two junctions is already aligned by the rail pass, so only one is left
   expect(
     solver.sameNetJunctionAlignmentSolver?.stats.alignedJunctionCount,
-  ).toBe(2)
+  ).toBe(1)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

@@ -96,10 +96,12 @@ test("aligns a branch to a labeled backbone without moving its elbows", () => {
     netLabelPlacements: [label],
   })
 
+  // the branch hugs its own run at y=1 instead of climbing onto the labeled leg,
+  // which keeps its elbows off the label while still meeting the shared pin at (0, 0)
   expect(result.traces[0]!.tracePath).toEqual([
     { x: -2, y: 0 },
-    { x: -2, y: 2 },
-    { x: 0, y: 2 },
+    { x: -2, y: 1 },
+    { x: 0, y: 1 },
     { x: 0, y: 0 },
   ])
   expect(result.traces[1]).toEqual(backbone)

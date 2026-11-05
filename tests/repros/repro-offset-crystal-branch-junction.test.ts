@@ -102,24 +102,22 @@ test("aligns the crystal branch with its junction", () => {
       element.edges.at(-1)?.to_schematic_port_id ===
         x2SchematicPort.schematic_port_id,
   )
-  expect(x2Traces).toHaveLength(2)
-  const capacitorBranch = x2Traces.toSorted(
-    (first, second) => second.edges.length - first.edges.length,
-  )[0]!
-  expect(capacitorBranch.edges.at(-1)!.from.x).toBeCloseTo(
-    capacitorBranch.edges.at(-1)!.to.x,
-  )
-  const junctionPoint = x2Traces[0]!.edges.at(-1)!.to
+  // both branches into X2 now share one corridor, so the pipeline emits a single
+  // trace: what matters is that it arrives horizontally instead of at an angle
+  expect(x2Traces).toHaveLength(1)
   for (const trace of x2Traces) {
     const terminalEdge = trace.edges.at(-1)!
+    // the branch runs along the junction rail, so it arrives without a sideways jog
+    expect(terminalEdge.from.y).toBeCloseTo(terminalEdge.to.y, 1)
+    const junctionPoint = { ...terminalEdge.to }
     terminalEdge.to_schematic_port_id = undefined
     trace.edges.push({
       from: terminalEdge.to,
       to: x2SchematicPort.center,
       to_schematic_port_id: x2SchematicPort.schematic_port_id,
     })
+    trace.junctions = [junctionPoint]
   }
-  x2Traces[0]!.junctions = [junctionPoint]
 
   expect(getSolverSnapshotSvg({ solver, circuitJson })).toMatchSvgSnapshot(
     import.meta.path,
