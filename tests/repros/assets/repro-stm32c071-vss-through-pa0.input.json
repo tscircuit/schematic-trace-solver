@@ -1,0 +1,73 @@
+{
+  "chips": [
+    {
+      "chipId": "U_MCU",
+      "center": { "x": 0.35, "y": 0 },
+      "width": 0.5,
+      "height": 0.5,
+      "pins": [
+        { "pinId": "U_MCU.PB7", "x": 0, "y": 0.2, "_facingDirection": "x-" },
+        { "pinId": "U_MCU.PC14", "x": 0, "y": 0.16, "_facingDirection": "x-" },
+        { "pinId": "U_MCU.PC15", "x": 0, "y": 0.12, "_facingDirection": "x-" },
+        { "pinId": "U_MCU.VDD", "x": 0, "y": 0.08, "_facingDirection": "x-" },
+        { "pinId": "U_MCU.VSS", "x": 0, "y": 0.04, "_facingDirection": "y-" },
+        { "pinId": "U_MCU.PF2", "x": 0, "y": 0, "_facingDirection": "x-" },
+        { "pinId": "U_MCU.PA0", "x": 0, "y": -0.04, "_facingDirection": "x-" },
+        { "pinId": "U_MCU.PA1", "x": 0, "y": -0.08, "_facingDirection": "x-" },
+        { "pinId": "U_MCU.PB3", "x": 0.7, "y": 0.2, "_facingDirection": "x+" },
+        { "pinId": "U_MCU.PA14", "x": 0.7, "y": 0.16, "_facingDirection": "x+" },
+        { "pinId": "U_MCU.PA13", "x": 0.7, "y": 0.12, "_facingDirection": "x+" },
+        { "pinId": "U_MCU.PA12", "x": 0.7, "y": 0.08, "_facingDirection": "x+" },
+        { "pinId": "U_MCU.PA11", "x": 0.7, "y": 0.04, "_facingDirection": "x+" },
+        { "pinId": "U_MCU.PA8", "x": 0.7, "y": 0, "_facingDirection": "x+" },
+        { "pinId": "U_MCU.PA7", "x": 0.7, "y": -0.04, "_facingDirection": "x+" },
+        { "pinId": "U_MCU.PA6", "x": 0.7, "y": -0.08, "_facingDirection": "x+" }
+      ]
+    },
+    {
+      "chipId": "C_MCU",
+      "center": { "x": -0.5, "y": 0.07 },
+      "width": 0.08,
+      "height": 0.28,
+      "pins": [
+        { "pinId": "C_MCU.1", "x": -0.5, "y": 0.2, "_facingDirection": "y+" },
+        { "pinId": "C_MCU.2", "x": -0.5, "y": -0.06, "_facingDirection": "x+" }
+      ]
+    },
+    {
+      "chipId": "GND_RAIL",
+      "center": { "x": -0.03, "y": -0.06 },
+      "width": 0.06,
+      "height": 0.06,
+      "pins": [
+        { "pinId": "GND_RAIL.1", "x": 0, "y": -0.06, "_facingDirection": "y+" }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "pinIds": ["C_MCU.1", "U_MCU.VDD"],
+      "netId": "V3V3"
+    },
+    {
+      "pinIds": ["C_MCU.2", "GND_RAIL.1"],
+      "netId": "VSS"
+    },
+    {
+      "pinIds": ["GND_RAIL.1", "U_MCU.VSS"],
+      "netId": "VSS"
+    }
+  ],
+  "netConnections": [
+    {
+      "netId": "SWD_NRST",
+      "pinIds": ["U_MCU.PF2"],
+      "netLabelWidth": 0.55,
+      "netLabelHeight": 0.08
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "SWD_NRST": ["x-"]
+  },
+  "maxMspPairDistance": 8
+}
