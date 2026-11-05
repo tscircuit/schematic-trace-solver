@@ -17,5 +17,9 @@ test("snapshots dense inline label refinement within the iteration budget", asyn
   }
   expect(solver.error).toBeNull()
   expect(solver.failed).toBe(false)
+  expect(solver.solved).toBe(true)
+  expect(
+    solver.inlineNetLabelSolver?.getOutput().inlineNetLabelPlacements.length,
+  ).toBeGreaterThan(0)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 }, 120000)
