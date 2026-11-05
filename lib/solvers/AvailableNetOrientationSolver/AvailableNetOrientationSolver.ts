@@ -1767,7 +1767,19 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     if (rectIntersectsAnyTextBox(bounds, this.inputProblem)) {
       return "text-collision"
     }
-    if (this.obstacleIndex.doesTraceCrossBoundsInterior(bounds)) {
+    if (
+      this.obstacleIndex.doesTraceCrossBoundsInterior(bounds) ||
+      // A placed label's connector must stay clear even along the new label's
+      // edge; otherwise collision cleanup adds a jog to that short connector.
+      this.obstacleIndex
+        .getTraceSegmentsInBounds(bounds)
+        .some(
+          ({ trace, start, end }) =>
+            this.netLabelConnectorTraceIds.has(trace.mspPairId) &&
+            trace.globalConnNetId !== label.globalConnNetId &&
+            tracePathIntersectsBounds([start, end], bounds),
+        )
+    ) {
       return "trace-collision"
     }
     if (this.isTraceTooCloseToLabel(bounds, label)) {

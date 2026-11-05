@@ -31,7 +31,11 @@ export const getSimplifiedRailConnectorCandidates = (params: {
   // attached to the connector must remain connected through the host rail.
   const attachments = getRemovableRailLabelConnectors({
     ...params,
-    rails: traces,
+    rails: traces.filter(
+      (trace) =>
+        label.mspConnectionPairIds.length === 0 ||
+        label.mspConnectionPairIds.includes(trace.mspPairId),
+    ),
   })
   for (const { connector, rail } of attachments) {
     const path = simplifyPath(connector.tracePath)

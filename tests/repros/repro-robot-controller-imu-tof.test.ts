@@ -56,7 +56,7 @@ test("repro robot controller IMU and ToF trace routing", async () => {
   const connectorTraces = output.traces.filter((trace) =>
     connectorIds.has(trace.mspPairId),
   )
-  expect(connectorTraces).toHaveLength(4)
+  expect(connectorTraces).toHaveLength(3)
   for (const trace of connectorTraces) {
     const endpoint = trace.tracePath.at(-1)!
     expect(

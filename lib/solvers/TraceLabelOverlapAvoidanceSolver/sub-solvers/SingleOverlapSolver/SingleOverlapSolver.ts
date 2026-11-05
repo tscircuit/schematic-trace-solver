@@ -92,14 +92,16 @@ export class SingleOverlapSolver extends BaseSolver {
     }
 
     this.queuedCandidatePaths = [...candidateByPath.values()].sort((a, b) => {
+      // Prefer fewer label collisions before path length so resolving one
+      // overlap does not repeatedly reroute the trace into its neighbor.
+      const overlapCountDifference =
+        getLabelOverlapCount(a) - getLabelOverlapCount(b)
+      if (overlapCountDifference !== 0) return overlapCountDifference
+
       const pathLengthDifference = getPathLength(a) - getPathLength(b)
       if (Math.abs(pathLengthDifference) >= PATH_LENGTH_EPSILON) {
         return pathLengthDifference
       }
-
-      const overlapCountDifference =
-        getLabelOverlapCount(a) - getLabelOverlapCount(b)
-      if (overlapCountDifference !== 0) return overlapCountDifference
 
       return a.length - b.length
     })

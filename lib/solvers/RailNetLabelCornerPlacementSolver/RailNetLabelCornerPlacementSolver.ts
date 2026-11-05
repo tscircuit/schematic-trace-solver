@@ -411,11 +411,6 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     const rails = this.traces.filter((trace) => {
       if (this.netLabelConnectorTraceIds.has(trace.mspPairId)) return false
       if (trace.globalConnNetId !== label.globalConnNetId) return false
-      if (
-        label.mspConnectionPairIds.length > 0 &&
-        !label.mspConnectionPairIds.includes(trace.mspPairId)
-      )
-        return false
       const original = this.originalTraces!.find(
         (item) => item.mspPairId === trace.mspPairId,
       )
