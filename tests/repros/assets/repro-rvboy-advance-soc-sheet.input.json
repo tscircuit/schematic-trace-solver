@@ -1,0 +1,2033 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_53",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 6.8,
+      "height": 13.199999999999987,
+      "pins": [
+        {
+          "pinId": "schematic_port_162",
+          "displayName": "MIPI_AVDD1V8",
+          "x": -3.4,
+          "y": 6.399999999999993,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_163",
+          "displayName": "GPIO3_C4",
+          "x": -3.4,
+          "y": 6.199999999999993,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_164",
+          "displayName": "GPIO3_C5",
+          "x": -3.4,
+          "y": 5.999999999999993,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_165",
+          "displayName": "GPIO3_C6",
+          "x": -3.4,
+          "y": 5.799999999999994,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_166",
+          "displayName": "GPIO3_C7",
+          "x": -3.4,
+          "y": 5.599999999999993,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_167",
+          "displayName": "GPIO3_D1",
+          "x": -3.4,
+          "y": 5.399999999999993,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_168",
+          "displayName": "GPIO3_D0",
+          "x": -3.4,
+          "y": 5.199999999999993,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_169",
+          "displayName": "GPIO3_D2",
+          "x": -3.4,
+          "y": 4.999999999999993,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_170",
+          "displayName": "GPIO3_D3",
+          "x": -3.4,
+          "y": 4.799999999999994,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_171",
+          "displayName": "DVDD1",
+          "x": -3.4,
+          "y": 4.599999999999993,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_172",
+          "displayName": "SD_DET",
+          "x": -3.4,
+          "y": 4.399999999999993,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_173",
+          "displayName": "SD_D1",
+          "x": -3.4,
+          "y": 4.199999999999994,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_174",
+          "displayName": "VCCIO4",
+          "x": -3.4,
+          "y": 3.9999999999999933,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_175",
+          "displayName": "SD_D0",
+          "x": -3.4,
+          "y": 3.799999999999993,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_176",
+          "displayName": "SD_CLK",
+          "x": -3.4,
+          "y": 3.599999999999993,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_177",
+          "displayName": "SD_CMD",
+          "x": -3.4,
+          "y": 3.399999999999993,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_178",
+          "displayName": "SD_D3",
+          "x": -3.4,
+          "y": 3.1999999999999926,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_179",
+          "displayName": "SD_D2",
+          "x": -3.4,
+          "y": 2.9999999999999925,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_180",
+          "displayName": "RTC_AVDD3V3",
+          "x": -3.4,
+          "y": 2.7999999999999923,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_181",
+          "displayName": "RTC_XOUT",
+          "x": -3.4,
+          "y": 2.599999999999992,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_182",
+          "displayName": "RTC_XIN",
+          "x": -3.4,
+          "y": 2.3999999999999924,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_183",
+          "displayName": "SARADC1",
+          "x": -3.4,
+          "y": 2.199999999999992,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_184",
+          "displayName": "SARADC0",
+          "x": -3.4,
+          "y": 1.999999999999992,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_185",
+          "displayName": "USB_AVDD1V8",
+          "x": -3.4,
+          "y": 1.7999999999999918,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_186",
+          "displayName": "USB_VBUSDET",
+          "x": -3.4,
+          "y": 1.5999999999999917,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_187",
+          "displayName": "USB_DM",
+          "x": -3.4,
+          "y": 1.3999999999999915,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_188",
+          "displayName": "USB_DP",
+          "x": -3.4,
+          "y": 1.1999999999999913,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_189",
+          "displayName": "USB_AVDD3V3",
+          "x": -3.4,
+          "y": 0.9999999999999911,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_190",
+          "displayName": "CODEC_LINEOUT",
+          "x": -3.4,
+          "y": 0.7999999999999909,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_191",
+          "displayName": "CODEC_VCM",
+          "x": -3.4,
+          "y": 0.5999999999999908,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_192",
+          "displayName": "CODEC_AVDD1V8",
+          "x": -3.4,
+          "y": 0.3999999999999906,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_193",
+          "displayName": "CODEC_MICBIAS",
+          "x": -3.4,
+          "y": 0.1999999999999904,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_194",
+          "displayName": "MIC0N",
+          "x": -3.4,
+          "y": -9.769962616701378e-15,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_195",
+          "displayName": "MIC0P",
+          "x": -3.4,
+          "y": -0.20000000000000995,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_196",
+          "displayName": "MIC1N",
+          "x": -3.4,
+          "y": -0.4000000000000101,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_197",
+          "displayName": "MIC1P",
+          "x": -3.4,
+          "y": -0.6000000000000103,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_198",
+          "displayName": "CODEC_AVSS",
+          "x": -3.4,
+          "y": -0.8000000000000105,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_199",
+          "displayName": "SPI1_CLK",
+          "x": -3.4,
+          "y": -1.0000000000000107,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_200",
+          "displayName": "FSPI_D3",
+          "x": -3.4,
+          "y": -1.2000000000000108,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_201",
+          "displayName": "SPI1_CS0",
+          "x": -3.4,
+          "y": -1.400000000000011,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_202",
+          "displayName": "FSPI_D0",
+          "x": -3.4,
+          "y": -1.6000000000000103,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_203",
+          "displayName": "FSPI_D1",
+          "x": -3.4,
+          "y": -1.8000000000000096,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_204",
+          "displayName": "VCCIO3",
+          "x": -3.4,
+          "y": -2.000000000000009,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_205",
+          "displayName": "FSPI_D2",
+          "x": -3.4,
+          "y": -2.200000000000008,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_206",
+          "displayName": "SPI1_MOSI",
+          "x": -3.4,
+          "y": -2.4000000000000075,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_207",
+          "displayName": "SPI1_MISO",
+          "x": -3.4,
+          "y": -2.6000000000000068,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_208",
+          "displayName": "FSPI_CS0",
+          "x": -3.4,
+          "y": -2.800000000000006,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_209",
+          "displayName": "FSPI_CLK",
+          "x": -3.4,
+          "y": -3.0000000000000053,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_210",
+          "displayName": "DDR_VDDQ1",
+          "x": -3.4,
+          "y": -3.2000000000000046,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_211",
+          "displayName": "DDR_VDDQ2",
+          "x": -3.4,
+          "y": -3.400000000000004,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_212",
+          "displayName": "DVDD2",
+          "x": -3.4,
+          "y": -3.600000000000003,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_213",
+          "displayName": "DRAM_ZQ",
+          "x": -3.4,
+          "y": -3.8000000000000025,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_214",
+          "displayName": "DDR_PLL_AVDD1V8",
+          "x": -3.4,
+          "y": -4.000000000000002,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_215",
+          "displayName": "DVDD3",
+          "x": -3.4,
+          "y": -4.200000000000001,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_216",
+          "displayName": "DVDD4",
+          "x": -3.4,
+          "y": -4.4,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_217",
+          "displayName": "DDR_VDDQ3",
+          "x": -3.4,
+          "y": -4.6,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_218",
+          "displayName": "TVSS",
+          "x": -3.4,
+          "y": -4.799999999999999,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_219",
+          "displayName": "GPIO0_A0",
+          "x": -3.4,
+          "y": -4.999999999999998,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_220",
+          "displayName": "GPIO0_A1",
+          "x": -3.4,
+          "y": -5.1999999999999975,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_221",
+          "displayName": "GPIO0_A2",
+          "x": -3.4,
+          "y": -5.399999999999997,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_222",
+          "displayName": "PMU_VCC3V3",
+          "x": -3.4,
+          "y": -5.599999999999996,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_223",
+          "displayName": "GPIO0_A3",
+          "x": -3.4,
+          "y": -5.799999999999995,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_224",
+          "displayName": "GPIO0_A4",
+          "x": -3.4,
+          "y": -5.999999999999995,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_225",
+          "displayName": "GPIO0_A5",
+          "x": -3.4,
+          "y": -6.199999999999994,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_226",
+          "displayName": "GPIO0_A6",
+          "x": -3.4,
+          "y": -6.399999999999993,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_227",
+          "displayName": "nPOR",
+          "x": 3.4,
+          "y": -6.299999999999994,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_228",
+          "displayName": "PMU_DVDD0V9",
+          "x": 3.4,
+          "y": -6.099999999999993,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_229",
+          "displayName": "OSC_XIN",
+          "x": 3.4,
+          "y": -5.899999999999993,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_230",
+          "displayName": "OSC_XOUT",
+          "x": 3.4,
+          "y": -5.699999999999994,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_231",
+          "displayName": "OSC_AVDD1V8",
+          "x": 3.4,
+          "y": -5.499999999999994,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_232",
+          "displayName": "PLL_DVDD0V9",
+          "x": 3.4,
+          "y": -5.299999999999994,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_233",
+          "displayName": "GPIO1_A0",
+          "x": 3.4,
+          "y": -5.099999999999993,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_234",
+          "displayName": "GPIO1_A1",
+          "x": 3.4,
+          "y": -4.899999999999993,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_235",
+          "displayName": "PWM0",
+          "x": 3.4,
+          "y": -4.699999999999994,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_236",
+          "displayName": "I2C0_SCL",
+          "x": 3.4,
+          "y": -4.499999999999994,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_237",
+          "displayName": "I2C0_SDA",
+          "x": 3.4,
+          "y": -4.299999999999994,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_238",
+          "displayName": "GPIO1_B0",
+          "x": 3.4,
+          "y": -4.099999999999994,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_239",
+          "displayName": "GPIO1_B1",
+          "x": 3.4,
+          "y": -3.8999999999999937,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_240",
+          "displayName": "UART2_TX",
+          "x": 3.4,
+          "y": -3.6999999999999935,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_241",
+          "displayName": "UART2_RX",
+          "x": 3.4,
+          "y": -3.4999999999999933,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_242",
+          "displayName": "VCCIO1",
+          "x": 3.4,
+          "y": -3.299999999999993,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_243",
+          "displayName": "DVDD5",
+          "x": 3.4,
+          "y": -3.099999999999993,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_244",
+          "displayName": "RGB_D1",
+          "x": 3.4,
+          "y": -2.899999999999993,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_245",
+          "displayName": "RGB_D0",
+          "x": 3.4,
+          "y": -2.6999999999999926,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_246",
+          "displayName": "RGB_CLK",
+          "x": 3.4,
+          "y": -2.4999999999999925,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_247",
+          "displayName": "RGB_VSYNC",
+          "x": 3.4,
+          "y": -2.2999999999999927,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_248",
+          "displayName": "RGB_HSYNC",
+          "x": 3.4,
+          "y": -2.0999999999999925,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_249",
+          "displayName": "VCCIO6",
+          "x": 3.4,
+          "y": -1.8999999999999924,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_250",
+          "displayName": "RGB_DE",
+          "x": 3.4,
+          "y": -1.6999999999999922,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_251",
+          "displayName": "RGB_D2",
+          "x": 3.4,
+          "y": -1.499999999999992,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_252",
+          "displayName": "RGB_D3",
+          "x": 3.4,
+          "y": -1.2999999999999918,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_253",
+          "displayName": "RGB_D4",
+          "x": 3.4,
+          "y": -1.0999999999999917,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_254",
+          "displayName": "RGB_D5",
+          "x": 3.4,
+          "y": -0.8999999999999915,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_255",
+          "displayName": "RGB_D6",
+          "x": 3.4,
+          "y": -0.6999999999999913,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_256",
+          "displayName": "RGB_D7",
+          "x": 3.4,
+          "y": -0.4999999999999911,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_257",
+          "displayName": "OTP_AVDD1V8",
+          "x": 3.4,
+          "y": -0.29999999999999094,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_258",
+          "displayName": "ETH_RXN",
+          "x": 3.4,
+          "y": -0.09999999999999076,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_259",
+          "displayName": "ETH_RXP",
+          "x": 3.4,
+          "y": 0.10000000000000941,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_260",
+          "displayName": "ETH_TXN",
+          "x": 3.4,
+          "y": 0.3000000000000096,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_261",
+          "displayName": "ETH_TXP",
+          "x": 3.4,
+          "y": 0.5000000000000098,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_262",
+          "displayName": "ETH_AVDD3V3",
+          "x": 3.4,
+          "y": 0.70000000000001,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_263",
+          "displayName": "ETH_REXT",
+          "x": 3.4,
+          "y": 0.9000000000000101,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_264",
+          "displayName": "DVDD6",
+          "x": 3.4,
+          "y": 1.1000000000000103,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_265",
+          "displayName": "RGB_D17",
+          "x": 3.4,
+          "y": 1.3000000000000105,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_266",
+          "displayName": "RGB_D16",
+          "x": 3.4,
+          "y": 1.5000000000000107,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_267",
+          "displayName": "RGB_D15",
+          "x": 3.4,
+          "y": 1.70000000000001,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_268",
+          "displayName": "RGB_D14",
+          "x": 3.4,
+          "y": 1.9000000000000092,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_269",
+          "displayName": "VCCIO5",
+          "x": 3.4,
+          "y": 2.1000000000000085,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_270",
+          "displayName": "RGB_D8",
+          "x": 3.4,
+          "y": 2.300000000000008,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_271",
+          "displayName": "RGB_D9",
+          "x": 3.4,
+          "y": 2.500000000000007,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_272",
+          "displayName": "RGB_D10",
+          "x": 3.4,
+          "y": 2.7000000000000064,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_273",
+          "displayName": "RGB_D11",
+          "x": 3.4,
+          "y": 2.9000000000000057,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_274",
+          "displayName": "RGB_D12",
+          "x": 3.4,
+          "y": 3.100000000000005,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_275",
+          "displayName": "RGB_D13",
+          "x": 3.4,
+          "y": 3.3000000000000043,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_276",
+          "displayName": "CPU_DVDD",
+          "x": 3.4,
+          "y": 3.5000000000000036,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_277",
+          "displayName": "DVDD7",
+          "x": 3.4,
+          "y": 3.700000000000003,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_278",
+          "displayName": "MIPI_D3N",
+          "x": 3.4,
+          "y": 3.900000000000002,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_279",
+          "displayName": "MIPI_D3P",
+          "x": 3.4,
+          "y": 4.100000000000001,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_280",
+          "displayName": "MIPI_CLK1N",
+          "x": 3.4,
+          "y": 4.300000000000001,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_281",
+          "displayName": "MIPI_CLK1P",
+          "x": 3.4,
+          "y": 4.5,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_282",
+          "displayName": "MIPI_D2N",
+          "x": 3.4,
+          "y": 4.699999999999999,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_283",
+          "displayName": "MIPI_D2P",
+          "x": 3.4,
+          "y": 4.899999999999999,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_284",
+          "displayName": "MIPI_D1N",
+          "x": 3.4,
+          "y": 5.099999999999998,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_285",
+          "displayName": "MIPI_D1P",
+          "x": 3.4,
+          "y": 5.299999999999997,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_286",
+          "displayName": "MIPI_CLK0N",
+          "x": 3.4,
+          "y": 5.4999999999999964,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_287",
+          "displayName": "MIPI_CLK0P",
+          "x": 3.4,
+          "y": 5.699999999999996,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_288",
+          "displayName": "MIPI_D0N",
+          "x": 3.4,
+          "y": 5.899999999999995,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_289",
+          "displayName": "MIPI_D0P",
+          "x": 3.4,
+          "y": 6.099999999999994,
+          "_facingDirection": "x+"
+        },
+        {
+          "pinId": "schematic_port_290",
+          "displayName": "EP",
+          "x": 3.4,
+          "y": 6.299999999999994,
+          "_facingDirection": "x+"
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "V1V8",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_162",
+        "schematic_port_214",
+        "schematic_port_257"
+      ]
+    },
+    {
+      "netId": "V0V9",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_171",
+        "schematic_port_212",
+        "schematic_port_215",
+        "schematic_port_216",
+        "schematic_port_228",
+        "schematic_port_232",
+        "schematic_port_243",
+        "schematic_port_264",
+        "schematic_port_276",
+        "schematic_port_277"
+      ]
+    },
+    {
+      "netId": "SD_DET",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_172"
+      ]
+    },
+    {
+      "netId": "SD_D1",
+      "isGround": false,
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_173"
+      ]
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_174",
+        "schematic_port_180",
+        "schematic_port_189",
+        "schematic_port_204",
+        "schematic_port_222",
+        "schematic_port_242",
+        "schematic_port_249",
+        "schematic_port_262",
+        "schematic_port_269"
+      ]
+    },
+    {
+      "netId": "SD_D0",
+      "isGround": false,
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_175"
+      ]
+    },
+    {
+      "netId": "SD_CLK_SOC",
+      "isGround": false,
+      "netLabelWidth": 1.32,
+      "anchoredNetLabelWidth": 1.32,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.88,
+      "pinIds": [
+        "schematic_port_176"
+      ]
+    },
+    {
+      "netId": "SD_CMD",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_177"
+      ]
+    },
+    {
+      "netId": "SD_D3",
+      "isGround": false,
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_178"
+      ]
+    },
+    {
+      "netId": "SD_D2",
+      "isGround": false,
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_179"
+      ]
+    },
+    {
+      "netId": "RTC_XOUT",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_181"
+      ]
+    },
+    {
+      "netId": "RTC_XIN",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_182"
+      ]
+    },
+    {
+      "netId": "RECOVERY",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_184"
+      ]
+    },
+    {
+      "netId": "USB_1V8",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.96,
+      "pinIds": [
+        "schematic_port_185"
+      ]
+    },
+    {
+      "netId": "USB_DET",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_186"
+      ]
+    },
+    {
+      "netId": "USB_DM",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_187"
+      ]
+    },
+    {
+      "netId": "USB_DP",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_188"
+      ]
+    },
+    {
+      "netId": "LINEOUT",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_190"
+      ]
+    },
+    {
+      "netId": "CODEC_VCM",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 1.2,
+      "pinIds": [
+        "schematic_port_191"
+      ]
+    },
+    {
+      "netId": "CODEC_1V8",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 1.2,
+      "pinIds": [
+        "schematic_port_192"
+      ]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_198",
+        "schematic_port_218",
+        "schematic_port_290"
+      ]
+    },
+    {
+      "netId": "LCD_SCLK",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_199"
+      ]
+    },
+    {
+      "netId": "FSPI_D3",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_200"
+      ]
+    },
+    {
+      "netId": "LCD_CS",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_201"
+      ]
+    },
+    {
+      "netId": "FSPI_D0",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_202"
+      ]
+    },
+    {
+      "netId": "FSPI_D1",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_203"
+      ]
+    },
+    {
+      "netId": "FSPI_D2",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_205"
+      ]
+    },
+    {
+      "netId": "LCD_MOSI",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_206"
+      ]
+    },
+    {
+      "netId": "FSPI_CS",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_208"
+      ]
+    },
+    {
+      "netId": "FSPI_CLK_SOC",
+      "isGround": false,
+      "netLabelWidth": 1.56,
+      "anchoredNetLabelWidth": 1.56,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.04,
+      "pinIds": [
+        "schematic_port_209"
+      ]
+    },
+    {
+      "netId": "V1V35",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.72,
+      "pinIds": [
+        "schematic_port_210",
+        "schematic_port_211",
+        "schematic_port_217"
+      ]
+    },
+    {
+      "netId": "DRAM_ZQ",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_213"
+      ]
+    },
+    {
+      "netId": "LCD_RESET",
+      "isGround": false,
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.8,
+      "pinIds": [
+        "schematic_port_219"
+      ]
+    },
+    {
+      "netId": "TOUCH_RESET",
+      "isGround": false,
+      "netLabelWidth": 1.44,
+      "anchoredNetLabelWidth": 1.44,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_220"
+      ]
+    },
+    {
+      "netId": "KEY_IRQ",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_221"
+      ]
+    },
+    {
+      "netId": "LCD_DC",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_223"
+      ]
+    },
+    {
+      "netId": "TOUCH_IRQ",
+      "isGround": false,
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.8,
+      "pinIds": [
+        "schematic_port_225"
+      ]
+    },
+    {
+      "netId": "RESET_N",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_227"
+      ]
+    },
+    {
+      "netId": "OSC_XIN",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_229"
+      ]
+    },
+    {
+      "netId": "OSC_XOUT",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_230"
+      ]
+    },
+    {
+      "netId": "OSC_1V8",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.96,
+      "pinIds": [
+        "schematic_port_231"
+      ]
+    },
+    {
+      "netId": "BACKLIGHT_PWM",
+      "isGround": false,
+      "netLabelWidth": 1.68,
+      "anchoredNetLabelWidth": 1.68,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 1.12,
+      "pinIds": [
+        "schematic_port_235"
+      ]
+    },
+    {
+      "netId": "I2C_SCL",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_236"
+      ]
+    },
+    {
+      "netId": "I2C_SDA",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_237"
+      ]
+    },
+    {
+      "netId": "UART_TX",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_240"
+      ]
+    },
+    {
+      "netId": "UART_RX",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_241"
+      ]
+    },
+    {
+      "netId": "RGB_D1",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_244"
+      ]
+    },
+    {
+      "netId": "RGB_D0",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_245"
+      ]
+    },
+    {
+      "netId": "RGB_CLK_SOC",
+      "isGround": false,
+      "netLabelWidth": 1.44,
+      "anchoredNetLabelWidth": 1.44,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_246"
+      ]
+    },
+    {
+      "netId": "RGB_VSYNC",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 1.2,
+      "pinIds": [
+        "schematic_port_247"
+      ]
+    },
+    {
+      "netId": "RGB_HSYNC",
+      "isGround": false,
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.8,
+      "pinIds": [
+        "schematic_port_248"
+      ]
+    },
+    {
+      "netId": "RGB_DE",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_250"
+      ]
+    },
+    {
+      "netId": "RGB_D2",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_251"
+      ]
+    },
+    {
+      "netId": "RGB_D3",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_252"
+      ]
+    },
+    {
+      "netId": "RGB_D4",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_253"
+      ]
+    },
+    {
+      "netId": "RGB_D5",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_254"
+      ]
+    },
+    {
+      "netId": "RGB_D6",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_255"
+      ]
+    },
+    {
+      "netId": "RGB_D7",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_256"
+      ]
+    },
+    {
+      "netId": "ETH_REXT",
+      "isGround": false,
+      "netLabelWidth": 1.08,
+      "anchoredNetLabelWidth": 1.08,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.72,
+      "pinIds": [
+        "schematic_port_263"
+      ]
+    },
+    {
+      "netId": "RGB_D17",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_265"
+      ]
+    },
+    {
+      "netId": "RGB_D16",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_266"
+      ]
+    },
+    {
+      "netId": "RGB_D15",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_267"
+      ]
+    },
+    {
+      "netId": "RGB_D14",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_268"
+      ]
+    },
+    {
+      "netId": "RGB_D8",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_270"
+      ]
+    },
+    {
+      "netId": "RGB_D9",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_271"
+      ]
+    },
+    {
+      "netId": "RGB_D10",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_272"
+      ]
+    },
+    {
+      "netId": "RGB_D11",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_273"
+      ]
+    },
+    {
+      "netId": "RGB_D12",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_274"
+      ]
+    },
+    {
+      "netId": "RGB_D13",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_275"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_53",
+      "center": {
+        "x": -2.5526999999999997,
+        "y": -6.729999999999993
+      },
+      "width": 0.8946000000000001,
+      "height": 0.17999999999999972,
+      "text": "RV1106G3"
+    },
+    {
+      "chipId": "schematic_component_53",
+      "center": {
+        "x": -2.6895,
+        "y": 6.714999999999993
+      },
+      "width": 0.7410000000000001,
+      "height": 0.2499999999999991,
+      "text": "U_SOC"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V0V9": [
+      "y+"
+    ],
+    "V1V35": [
+      "y+"
+    ],
+    "V1V8": [
+      "y+"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "OSC_1V8": [
+      "y+"
+    ],
+    "USB_1V8": [
+      "y+"
+    ],
+    "CODEC_1V8": [
+      "y+"
+    ],
+    "LINEOUT": [
+      "x-",
+      "x+"
+    ],
+    "SD_DET": [
+      "x-",
+      "x+"
+    ],
+    "SD_D1": [
+      "x-",
+      "x+"
+    ],
+    "SD_D0": [
+      "x-",
+      "x+"
+    ],
+    "SD_CLK_SOC": [
+      "x-",
+      "x+"
+    ],
+    "SD_CMD": [
+      "x-",
+      "x+"
+    ],
+    "SD_D3": [
+      "x-",
+      "x+"
+    ],
+    "SD_D2": [
+      "x-",
+      "x+"
+    ],
+    "RTC_XOUT": [
+      "x-",
+      "x+"
+    ],
+    "RTC_XIN": [
+      "x-",
+      "x+"
+    ],
+    "RECOVERY": [
+      "x-",
+      "x+"
+    ],
+    "USB_DET": [
+      "x-",
+      "x+"
+    ],
+    "USB_DM": [
+      "x-",
+      "x+"
+    ],
+    "USB_DP": [
+      "x-",
+      "x+"
+    ],
+    "CODEC_VCM": [
+      "y+"
+    ],
+    "LCD_SCLK": [
+      "x-",
+      "x+"
+    ],
+    "FSPI_D3": [
+      "x-",
+      "x+"
+    ],
+    "LCD_CS": [
+      "x-",
+      "x+"
+    ],
+    "FSPI_D0": [
+      "x-",
+      "x+"
+    ],
+    "FSPI_D1": [
+      "x-",
+      "x+"
+    ],
+    "FSPI_D2": [
+      "x-",
+      "x+"
+    ],
+    "LCD_MOSI": [
+      "x-",
+      "x+"
+    ],
+    "FSPI_CS": [
+      "x-",
+      "x+"
+    ],
+    "FSPI_CLK_SOC": [
+      "x-",
+      "x+"
+    ],
+    "DRAM_ZQ": [
+      "x-",
+      "x+"
+    ],
+    "LCD_RESET": [
+      "x-",
+      "x+"
+    ],
+    "TOUCH_RESET": [
+      "x-",
+      "x+"
+    ],
+    "KEY_IRQ": [
+      "x-",
+      "x+"
+    ],
+    "LCD_DC": [
+      "x-",
+      "x+"
+    ],
+    "TOUCH_IRQ": [
+      "x-",
+      "x+"
+    ],
+    "RESET_N": [
+      "x-",
+      "x+"
+    ],
+    "OSC_XIN": [
+      "x-",
+      "x+"
+    ],
+    "OSC_XOUT": [
+      "x-",
+      "x+"
+    ],
+    "BACKLIGHT_PWM": [
+      "x-",
+      "x+"
+    ],
+    "I2C_SCL": [
+      "x-",
+      "x+"
+    ],
+    "I2C_SDA": [
+      "x-",
+      "x+"
+    ],
+    "UART_TX": [
+      "x-",
+      "x+"
+    ],
+    "UART_RX": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D1": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D0": [
+      "x-",
+      "x+"
+    ],
+    "RGB_CLK_SOC": [
+      "x-",
+      "x+"
+    ],
+    "RGB_VSYNC": [
+      "y+"
+    ],
+    "RGB_HSYNC": [
+      "x-",
+      "x+"
+    ],
+    "RGB_DE": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D2": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D3": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D4": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D5": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D6": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D7": [
+      "x-",
+      "x+"
+    ],
+    "ETH_REXT": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D17": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D16": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D15": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D14": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D8": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D9": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D10": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D11": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D12": [
+      "x-",
+      "x+"
+    ],
+    "RGB_D13": [
+      "x-",
+      "x+"
+    ]
+  },
+  "maxMspPairDistance": 2.4
+}
