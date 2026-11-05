@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { getAnchoredNetLabelRenderedBounds } from "lib/solvers/InlineNetLabelSolver/getAnchoredNetLabelRenderedBounds"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
@@ -63,5 +64,31 @@ test("RP2040 Temperature Alarm connects the buzzer bottom port with a trace", as
         label.pinIds.length === 1 && label.pinIds[0] === buzzerNegative,
     ),
   ).toBe(false)
+  const buzzerPositive = "schematic_port_293"
+  const supplyLabel = output.netLabelPlacements.find(
+    (label) =>
+      label.netLabelText === "V3V3" && label.pinIds.includes(buzzerPositive),
+  )
+  const sinkLabel = output.netLabelPlacements.find(
+    (label) =>
+      label.netLabelText === "BUZZER_SINK" &&
+      label.pinIds.includes(buzzerNegative) &&
+      label.pinIds.includes(transistorDrain),
+  )
+  expect(supplyLabel).toBeDefined()
+  expect(sinkLabel).toBeDefined()
+  const supplyBounds = getAnchoredNetLabelRenderedBounds(supplyLabel!)
+  const sinkBounds = getAnchoredNetLabelRenderedBounds(sinkLabel!)
+  const overlapWidth = Math.max(
+    0,
+    Math.min(supplyBounds.maxX, sinkBounds.maxX) -
+      Math.max(supplyBounds.minX, sinkBounds.minX),
+  )
+  const overlapHeight = Math.max(
+    0,
+    Math.min(supplyBounds.maxY, sinkBounds.maxY) -
+      Math.max(supplyBounds.minY, sinkBounds.minY),
+  )
+  expect(overlapWidth * overlapHeight).toBe(0)
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
