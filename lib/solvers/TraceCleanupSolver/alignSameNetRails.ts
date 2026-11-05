@@ -31,6 +31,9 @@ export const alignSameNetRails = ({
   alignedRailGroupCount: number
   alignedTraceCount: number
 } => {
+  const originalPathById = new Map(
+    traces.map((trace) => [trace.mspPairId, trace.tracePath]),
+  )
   let outputTraces = [...traces]
   const seenTraceStates = new Set([getTraceStateKey(outputTraces)])
   const obstacles = getObstacleRects(inputProblem)

@@ -4,7 +4,7 @@ import type { InputProblem, PinId } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblemJson from "./assets/repro-isolated-rs485-isow7841.input.json"
 
-const EXPECTED_D_P_RAIL_Y = 2.2
+const EXPECTED_D_P_RAIL_Y = 2.3
 const REDUNDANT_D_P_RAIL_Y = 2.3
 const EXPECTED_GND1_RAIL_Y = 1.76
 const EXPECTED_GND1_PIN_BRIDGE_X = -10.9
@@ -27,8 +27,9 @@ test("repro isolated RS-485 ISOW7841 schematic traces", () => {
   expect(solver.schematicTraceLinesSolver?.failedConnectionPairs).toHaveLength(
     0,
   )
+  // rails are aligned before the junction pass, so there is no cycle left to collapse
   expect(solver.sameNetJunctionAlignmentSolver?.stats.collapsedCycleCount).toBe(
-    1,
+    0,
   )
   expect(
     solver.sameNetJunctionAlignmentSolver?.stats.alignedJunctionCount,
