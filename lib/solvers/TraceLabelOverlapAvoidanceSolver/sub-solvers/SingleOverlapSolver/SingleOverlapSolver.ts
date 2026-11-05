@@ -23,7 +23,6 @@ interface SingleOverlapSolverInput {
   netLabelPlacements?: NetLabelPlacement[]
 }
 
-const MAX_TRIES = 5
 const PATH_LENGTH_EPSILON = 1e-9
 
 const getPathLength = (points: Point[]) => {
@@ -51,7 +50,6 @@ export class SingleOverlapSolver extends BaseSolver {
   tracesToAvoidOverlapping: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   detourCount: number
-  _tried: number = 0
 
   constructor(solverInput: SingleOverlapSolverInput) {
     super()
@@ -121,13 +119,13 @@ export class SingleOverlapSolver extends BaseSolver {
   }
 
   override _step() {
-    // Failure conditions: no more candidates or exceeded max tries
-    if (this.queuedCandidatePaths.length === 0 || this._tried >= MAX_TRIES) {
+    // Ranking expresses preference, not validity. Exhaust the finite candidate
+    // queue so invalid preferred paths cannot hide a later valid detour.
+    if (this.queuedCandidatePaths.length === 0) {
       this.failed = true
       return
     }
 
-    this._tried++
     const nextCandidatePath = this.queuedCandidatePaths.shift()!
     const simplifiedPath = simplifyPath(nextCandidatePath)
 
