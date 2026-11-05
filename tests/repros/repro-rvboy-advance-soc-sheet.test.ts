@@ -56,6 +56,18 @@ test("rvboy advance complete SOC sheet", async () => {
     }),
   ).toHaveLength(0)
 
+  const vcmLabel = netLabelPlacements.find(
+    (label) => label.netId === "CODEC_VCM",
+  )!
+  const codecPowerLabel = netLabelPlacements.find(
+    (label) => label.netId === "CODEC_1V8",
+  )!
+  expect(vcmLabel.center.x + vcmLabel.width / 2).toBeLessThan(railX)
+  expect(codecPowerLabel.anchorPoint.x).toBeLessThan(vcmLabel.anchorPoint.x)
+  expect(
+    detectTraceLabelOverlap({ traces, netLabels: [vcmLabel, codecPowerLabel] }),
+  ).toHaveLength(0)
+
   // Core uses source net names as netId. Supply display text only after routing
   // so snapshot labels are readable without affecting any solver decisions.
   for (const connection of solver.inputProblem.netConnections) {

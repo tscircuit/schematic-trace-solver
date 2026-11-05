@@ -1,3 +1,4 @@
+import { findPerpendicularPathCrossings } from "lib/solvers/TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 import type { Point } from "@tscircuit/math-utils"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
@@ -91,7 +92,19 @@ export class SingleOverlapSolver extends BaseSolver {
       )
     }
 
+    const countCrossings = (path: Point[]) =>
+      this.tracesToAvoidOverlapping.reduce(
+        (sum, trace) =>
+          sum +
+          findPerpendicularPathCrossings(path, trace.tracePath, {
+            includeTerminalSegments: true,
+          }).length,
+        0,
+      )
     this.queuedCandidatePaths = [...candidateByPath.values()].sort((a, b) => {
+      // Avoid wrapping around another net just to clear a neighboring label.
+      const crossings = countCrossings(a) - countCrossings(b)
+      if (crossings !== 0) return crossings
       // Prefer fewer label collisions before path length so resolving one
       // overlap does not repeatedly reroute the trace into its neighbor.
       const overlapCountDifference =

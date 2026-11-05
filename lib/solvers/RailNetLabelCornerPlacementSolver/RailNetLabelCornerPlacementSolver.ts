@@ -1,3 +1,7 @@
+import {
+  getTerminalPortConnector,
+  moveCrossedPortLabelsOutward,
+} from "./moveCrossedPortLabelsOutward"
 import type { GraphicsObject } from "graphics-debug"
 import type { Point } from "@tscircuit/math-utils"
 import {
@@ -109,6 +113,22 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
 
     const candidate = this.queuedCornerCandidates.shift()
     if (!candidate) {
+      if (this.onlyOverlappingLabels && this.isLabelCrossedByTrace(label)) {
+        const moved = moveCrossedPortLabelsOutward({
+          inputProblem: this.inputProblem,
+          traces: this.traces,
+          netLabelPlacements: this.outputNetLabelPlacements,
+          netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
+          labelIndex,
+        })
+        if (moved) {
+          this.traces = moved.traces
+          this.outputNetLabelPlacements = moved.netLabelPlacements
+          this.traceMap = Object.fromEntries(
+            this.traces.map((trace) => [trace.mspPairId, trace]),
+          )
+        }
+      }
       this.shouldAdvanceToNextLabel = true
       return
     }
@@ -308,7 +328,14 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       label.orientation === "y+" || label.orientation === "y-"
     return (
       isVerticalRailLabel &&
-      (this.getSimplifiedConnectorCandidates(label).length > 0 ||
+      ((this.onlyOverlappingLabels &&
+        this.isLabelCrossedByTrace(label) &&
+        getTerminalPortConnector(
+          label,
+          this.traces,
+          this.netLabelConnectorTraceIds,
+        ) !== undefined) ||
+        this.getSimplifiedConnectorCandidates(label).length > 0 ||
         this.getCornerCandidatesForLabel(label).length > 0)
     )
   }
