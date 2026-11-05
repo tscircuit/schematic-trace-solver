@@ -80,6 +80,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   blockedStandaloneLabelIndex: number | null = null
   blockedStandaloneLabelTargetAnchorX: number | null = null
+  private hasCoLocatedPortOnlyLabels = false
+  private allowIgnoreInitialRailCornerLabelForConnector = false
   private traceMap: Record<string, SolvedTracePath>
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private maxSearchDistance: number
@@ -340,6 +342,33 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         })
         if (!hasWrongOrientation || !hasOverlap) continue
         for (const index of labelIndices) crowdedIndices.add(index)
+      }
+    }
+
+    for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
+      const a = this.outputNetLabelPlacements[i]!
+      if (!this.isPortOnlyLabel(a)) continue
+      if (this.getAvailableOrientations(a).length === 0) continue
+      for (let j = i + 1; j < this.outputNetLabelPlacements.length; j++) {
+        const b = this.outputNetLabelPlacements[j]!
+        if (!this.isPortOnlyLabel(b)) continue
+        if (this.getAvailableOrientations(b).length === 0) continue
+        if (
+          Math.abs(a.anchorPoint.x - b.anchorPoint.x) <= EPS &&
+          Math.abs(a.anchorPoint.y - b.anchorPoint.y) <= EPS
+        ) {
+          const aWrong = !this.getAvailableOrientations(a).includes(
+            a.orientation,
+          )
+          const bWrong = !this.getAvailableOrientations(b).includes(
+            b.orientation,
+          )
+          if (aWrong || bWrong) {
+            crowdedIndices.add(i)
+            crowdedIndices.add(j)
+            this.hasCoLocatedPortOnlyLabels = true
+          }
+        }
       }
     }
 
@@ -606,10 +635,110 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (lateralCandidate) return lateralCandidate
 
+    if (
+      this.hasCoLocatedPortOnlyLabels &&
+      this.isPortOnlyLabel(label) &&
+      orientations.length === 1 &&
+      isYOrientation(requiredOrientation)
+    ) {
+      const coLocatedCandidate = this.findValidCoLocatedBoardFallbackCandidate(
+        label,
+        requiredOrientation,
+        labelIndex,
+      )
+      if (coLocatedCandidate) return coLocatedCandidate
+    }
+
     // Wire crossings are allowed when no alternative placement is clear.
     // Preserve the required orientation instead of leaving an invalid label.
     if (crossingAlignedCandidate) crossingAlignedCandidate.selected = true
     return crossingAlignedCandidate
+  }
+
+  private findValidCoLocatedBoardFallbackCandidate(
+    label: NetLabelPlacement,
+    orientation: "y+" | "y-",
+    labelIndex: number,
+  ) {
+    const direction = dir(orientation)
+    const initialBaseAnchor = this.getSearchStartAnchor(label, orientation)
+    const outwardDirection = this.getPerpendicularOutwardDirection(
+      label.anchorPoint,
+      orientation,
+    )
+    if (outwardDirection.x === 0) return null
+    const maxSearchDistance = this.getSearchDistanceLimit(label, orientation)
+    const maxOutwardDistance = this.maxSearchDistance
+
+    this.allowIgnoreInitialRailCornerLabelForConnector = true
+    try {
+      const outwardDistances = new Set<number>()
+      for (
+        let outwardDistance = 0;
+        outwardDistance <= maxOutwardDistance + EPS;
+        outwardDistance += LABEL_SEARCH_STEP
+      ) {
+        outwardDistances.add(Number(outwardDistance.toFixed(6)))
+      }
+      const pin = this.pinMap[label.pinIds[0]!]
+      if (pin) {
+        for (const other of this.outputNetLabelPlacements) {
+          if (
+            !this.isPortOnlyLabel(other) ||
+            !isXOrientation(other.orientation)
+          ) {
+            continue
+          }
+          const otherPin = this.pinMap[other.pinIds[0]!]
+          if (
+            !otherPin ||
+            otherPin.chipId !== pin.chipId ||
+            Math.abs(otherPin.x - pin.x) > EPS
+          ) {
+            continue
+          }
+          const otherBounds = getRectBounds(
+            other.center,
+            other.width,
+            other.height,
+          )
+          const clearX =
+            outwardDirection.x < 0
+              ? otherBounds.minX - 2 * EPS
+              : otherBounds.maxX + 2 * EPS
+          const outwardDistance =
+            (clearX - initialBaseAnchor.x) * outwardDirection.x
+          if (
+            outwardDistance > 0 &&
+            outwardDistance <= maxOutwardDistance + EPS
+          ) {
+            outwardDistances.add(Number(outwardDistance.toFixed(6)))
+          }
+        }
+      }
+      for (const outwardDistance of [...outwardDistances].sort(
+        (a, b) => a - b,
+      )) {
+        const baseAnchor = {
+          x: initialBaseAnchor.x + outwardDirection.x * outwardDistance,
+          y: initialBaseAnchor.y + outwardDirection.y * outwardDistance,
+        }
+        const candidate = this.findValidCandidateInShiftColumn({
+          label,
+          labelIndex,
+          orientation,
+          direction,
+          baseAnchor,
+          maxSearchDistance,
+          outwardDistance,
+          stopOnTraceCollision: false,
+        })
+        if (candidate) return candidate
+      }
+    } finally {
+      this.allowIgnoreInitialRailCornerLabelForConnector = false
+    }
+    return null
   }
 
   private findValidCrowdedTopVerticalFanoutCandidate(
@@ -1686,6 +1815,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     for (const i of nearbyLabelIndices) {
       if (i === labelIndex) continue
       if (this.shouldIgnorePendingCrowdedLabel(labelIndex, i)) continue
+      if (
+        this.allowIgnoreInitialRailCornerLabelForConnector &&
+        this.overlapsInitialVerticalRailLabel(labelIndex, i)
+      ) {
+        continue
+      }
       const otherLabel = this.outputNetLabelPlacements[i]!
       if (
         tracePathIntersectsBounds(
@@ -2175,6 +2310,31 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.crowdedPortOnlyLabelIndices.has(labelIndex) &&
       this.crowdedPortOnlyLabelIndices.has(otherLabelIndex) &&
       this.queuedLabelIndices.includes(otherLabelIndex)
+    )
+  }
+
+  private overlapsInitialVerticalRailLabel(
+    labelIndex: number,
+    otherLabelIndex: number,
+  ) {
+    const initialLabel = this.netLabelPlacements[labelIndex]
+    const otherLabel = this.outputNetLabelPlacements[otherLabelIndex]
+    if (
+      !initialLabel ||
+      !otherLabel ||
+      !this.isPortOnlyLabel(initialLabel) ||
+      this.isPortOnlyLabel(otherLabel) ||
+      !isYOrientation(otherLabel.orientation)
+    ) {
+      return false
+    }
+    return rectsOverlap(
+      getRectBounds(
+        initialLabel.center,
+        initialLabel.width,
+        initialLabel.height,
+      ),
+      getRectBounds(otherLabel.center, otherLabel.width, otherLabel.height),
     )
   }
 
