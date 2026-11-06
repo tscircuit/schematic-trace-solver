@@ -8,5 +8,17 @@ test("bug-report-20260708T055430Z", () => {
 
   solver.solve()
 
+  const netLabelPlacements =
+    solver.availableNetOrientationSolver?.outputNetLabelPlacements ?? []
+  const leftVccLabel = netLabelPlacements.find(
+    (label) => label.netId === "VCC_3V3" && label.pinIds.includes("U_MCU.6"),
+  )
+  const leftGndLabel = netLabelPlacements.find(
+    (label) => label.netId === "GND" && label.pinIds.includes("U_MCU.5"),
+  )
+
+  expect(leftVccLabel?.orientation).toBe("y+")
+  expect(leftGndLabel?.orientation).toBe("y-")
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
