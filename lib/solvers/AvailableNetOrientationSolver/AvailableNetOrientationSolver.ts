@@ -2194,6 +2194,46 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.isGroundLabel(currentLabel),
     )
 
+    const allTwoPinChipsHaveFacing = this.inputProblem.chips
+      .filter((c) => c.pins.length === 2)
+      .every((c) => c.pins.every((p) => p._facingDirection !== undefined))
+
+    if (allTwoPinChipsHaveFacing) {
+      for (const qIdx of this.queuedLabelIndices) {
+        if (qIdx === labelIndex) continue
+        const pendingOther = this.outputNetLabelPlacements[qIdx]!
+        if (pendingOther.pinIds.length !== 1 || !pendingOther.netId) continue
+        const otherPin = this.pinMap[pendingOther.pinIds[0]!]
+        if (!otherPin) continue
+        const currentPin = currentLabel.pinIds
+          .map((id) => this.pinMap[id])
+          .find(
+            (p) =>
+              p &&
+              p.chipId === otherPin.chipId &&
+              Math.abs(p.x - otherPin.x) <= EPS,
+          )
+        if (!currentPin) continue
+        const chipHasRoutedTrace = this.inputProblem.directConnections.some(
+          (dc) =>
+            dc.pinIds.some(
+              (pid) => this.pinMap[pid]?.chipId === otherPin.chipId,
+            ),
+        )
+        if (!chipHasRoutedTrace) continue
+        const otherOrs =
+          this.inputProblem.availableNetLabelOrientations[pendingOther.netId]
+        if (
+          otherOrs?.length === 1 &&
+          otherOrs[0] === "y+" &&
+          pendingOther.anchorPoint.y >= bounds.minY - EPS &&
+          pendingOther.anchorPoint.y <= bounds.maxY + EPS
+        ) {
+          return true
+        }
+      }
+    }
+
     for (const i of nearbyLabelIndices) {
       if (i === labelIndex) continue
       if (this.shouldIgnorePendingCrowdedLabel(labelIndex, i)) continue
