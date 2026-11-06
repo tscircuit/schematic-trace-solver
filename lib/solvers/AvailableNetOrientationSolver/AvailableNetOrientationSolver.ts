@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -38,8 +39,8 @@ import {
   rangesOverlap,
   rectsOverlap,
   simplifyOrthogonalPath,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyTrace,
+  tracePathIntersectsBounds,
 } from "./geometry"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
 import {
@@ -58,7 +59,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -272,6 +272,63 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
     const hasSingleVerticalOrientation =
       orientations.length === 1 && isYOrientation(orientations[0]!)
+    if (
+      hasSingleVerticalOrientation &&
+      !this.isPortOnlyLabel(label) &&
+      !this.isGroundLabel(label) &&
+      label.pinIds.length === 2
+    ) {
+      const firstPin = this.pinMap[label.pinIds[0]!]
+      const secondPin = this.pinMap[label.pinIds[1]!]
+      const spansIntermediatePinOnSameSide =
+        firstPin !== undefined &&
+        secondPin !== undefined &&
+        firstPin.chipId === secondPin.chipId &&
+        Math.abs(firstPin.x - secondPin.x) <= EPS &&
+        Object.values(this.pinMap).some(
+          (pin) =>
+            pin.chipId === firstPin.chipId &&
+            Math.abs(pin.x - firstPin.x) <= EPS &&
+            pin.y > Math.min(firstPin.y, secondPin.y) + EPS &&
+            pin.y < Math.max(firstPin.y, secondPin.y) - EPS,
+        )
+      if (spansIntermediatePinOnSameSide) {
+        const labelChipId = firstPin.chipId
+        const bounds = getRectBounds(label.center, label.width, label.height)
+        const overlappingFixedPortOnlyLabels =
+          this.outputNetLabelPlacements.filter((otherLabel, otherIndex) => {
+            if (otherIndex === labelIndex) return false
+            if (otherLabel.globalConnNetId === label.globalConnNetId)
+              return false
+            if (!this.isPortOnlyLabel(otherLabel)) return false
+            if (this.pinMap[otherLabel.pinIds[0]!]?.chipId !== labelChipId)
+              return false
+            if (this.crowdedPortOnlyLabelIndices.has(otherIndex)) return false
+            const otherNetConnection = this.inputProblem.netConnections.find(
+              (connection) => connection.netId === otherLabel.netId,
+            )
+            if (otherNetConnection?.allowInlineNetLabel) return false
+            const otherOrientations = this.getAvailableOrientations(otherLabel)
+            if (
+              otherOrientations.length > 0 &&
+              !otherOrientations.includes(otherLabel.orientation)
+            ) {
+              return false
+            }
+            return rectsOverlap(
+              bounds,
+              getRectBounds(
+                otherLabel.center,
+                otherLabel.width,
+                otherLabel.height,
+              ),
+            )
+          })
+        if (overlappingFixedPortOnlyLabels.length >= 2) {
+          return true
+        }
+      }
+    }
     if (hasSingleVerticalOrientation && this.isGroundLabel(label)) {
       const bounds = getRectBounds(label.center, label.width, label.height)
       const overlapsHorizontalConstraintMismatch =
