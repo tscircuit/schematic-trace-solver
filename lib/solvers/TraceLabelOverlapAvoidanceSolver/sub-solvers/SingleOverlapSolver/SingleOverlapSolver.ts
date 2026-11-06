@@ -1,3 +1,4 @@
+import { findPerpendicularPathCrossings } from "lib/solvers/TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 import type { Point } from "@tscircuit/math-utils"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
@@ -22,7 +23,6 @@ interface SingleOverlapSolverInput {
   netLabelPlacements?: NetLabelPlacement[]
 }
 
-const MAX_TRIES = 5
 const PATH_LENGTH_EPSILON = 1e-9
 
 const getPathLength = (points: Point[]) => {
@@ -50,7 +50,6 @@ export class SingleOverlapSolver extends BaseSolver {
   tracesToAvoidOverlapping: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
   detourCount: number
-  _tried: number = 0
 
   constructor(solverInput: SingleOverlapSolverInput) {
     super()
@@ -91,28 +90,42 @@ export class SingleOverlapSolver extends BaseSolver {
       )
     }
 
+    const countCrossings = (path: Point[]) =>
+      this.tracesToAvoidOverlapping.reduce(
+        (sum, trace) =>
+          sum +
+          findPerpendicularPathCrossings(path, trace.tracePath, {
+            includeTerminalSegments: true,
+          }).length,
+        0,
+      )
     this.queuedCandidatePaths = [...candidateByPath.values()].sort((a, b) => {
+      // Avoid wrapping around another net just to clear a neighboring label.
+      const crossings = countCrossings(a) - countCrossings(b)
+      if (crossings !== 0) return crossings
+      // Prefer fewer label collisions before path length so resolving one
+      // overlap does not repeatedly reroute the trace into its neighbor.
+      const overlapCountDifference =
+        getLabelOverlapCount(a) - getLabelOverlapCount(b)
+      if (overlapCountDifference !== 0) return overlapCountDifference
+
       const pathLengthDifference = getPathLength(a) - getPathLength(b)
       if (Math.abs(pathLengthDifference) >= PATH_LENGTH_EPSILON) {
         return pathLengthDifference
       }
-
-      const overlapCountDifference =
-        getLabelOverlapCount(a) - getLabelOverlapCount(b)
-      if (overlapCountDifference !== 0) return overlapCountDifference
 
       return a.length - b.length
     })
   }
 
   override _step() {
-    // Failure conditions: no more candidates or exceeded max tries
-    if (this.queuedCandidatePaths.length === 0 || this._tried >= MAX_TRIES) {
+    // Ranking expresses preference, not validity. Exhaust the finite candidate
+    // queue so invalid preferred paths cannot hide a later valid detour.
+    if (this.queuedCandidatePaths.length === 0) {
       this.failed = true
       return
     }
 
-    this._tried++
     const nextCandidatePath = this.queuedCandidatePaths.shift()!
     const simplifiedPath = simplifyPath(nextCandidatePath)
 

@@ -1,3 +1,4 @@
+import { countPathIntersections } from "lib/solvers/Example28Solver/geometry"
 import type { GraphicsObject } from "graphics-debug"
 import type { Point } from "@tscircuit/math-utils"
 import {
@@ -40,7 +41,10 @@ import type {
 import { visualizeRailNetLabelCornerPlacementSolver } from "./visualize"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 import { getRemovableRailLabelConnectors } from "./getRemovableRailLabelConnectors"
-import { getStraightPortConnectorCandidate } from "./getStraightPortConnectorCandidate"
+import {
+  getStraightPortConnectorCandidate,
+  getOutwardPortConnectorCandidates,
+} from "./getStraightPortConnectorCandidate"
 import { getSimplifiedRailConnectorCandidates } from "./getSimplifiedRailConnectorCandidates"
 import { getShortenedRailConnectorCandidates } from "./getShortenedRailConnectorCandidates"
 
@@ -116,10 +120,18 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     const result = this.evaluateCornerCandidate(label, labelIndex, candidate)
     this.currentCandidateResults.push(result)
 
-    if (result.status !== "valid") return
+    if (result.status !== "valid") {
+      if (
+        !this.onlyOverlappingLabels ||
+        !this.tryApplyWithMovedNeighbors(labelIndex, result)
+      )
+        return
+      result.status = "valid"
+    } else {
+      this.applyCandidate(labelIndex, label, result)
+    }
 
     result.selected = true
-    this.applyCandidate(labelIndex, label, result)
     this.shouldAdvanceToNextLabel = true
   }
 
@@ -157,6 +169,9 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     this.queuedCornerCandidates = [
       ...this.getSimplifiedConnectorCandidates(label),
       ...this.getCornerCandidatesForLabel(label),
+      ...(this.onlyOverlappingLabels && this.isLabelCrossedByTrace(label)
+        ? this.getOutwardConnectorCandidates(label)
+        : []),
     ]
 
     return true
@@ -242,6 +257,117 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     return "valid"
   }
 
+  private getOutwardConnectorCandidates(label: NetLabelPlacement) {
+    return getOutwardPortConnectorCandidates({
+      label,
+      traces: this.traces,
+      netLabelPlacements: this.outputNetLabelPlacements,
+      netLabelConnectorTraceIds: this.netLabelConnectorTraceIds,
+      inputProblem: this.inputProblem,
+    })
+  }
+
+  /** Try neighboring connector candidates as one transaction. */
+  private tryApplyWithMovedNeighbors(
+    labelIndex: number,
+    candidate: EvaluatedCornerCandidate,
+    activeLabels: ReadonlySet<number> = new Set(),
+  ): boolean {
+    const trace = this.traceMap[candidate.traceId]!
+    if (
+      !candidate.reroutedTracePath ||
+      !this.netLabelConnectorTraceIds.has(trace.mspPairId) ||
+      trace.pinIds.length !== 1 ||
+      candidate.status === "chip-collision" ||
+      candidate.status === "text-collision" ||
+      activeLabels.has(labelIndex)
+    )
+      return false
+
+    const bounds = getRectBounds(
+      candidate.center,
+      candidate.width,
+      candidate.height,
+    )
+    const reroutedTraceMap = {
+      [trace.mspPairId]: { ...trace, tracePath: candidate.reroutedTracePath },
+    }
+    const blocksLabel = (other: NetLabelPlacement) => {
+      const otherBounds = getRectBounds(other.center, other.width, other.height)
+      return (
+        rectsOverlap(bounds, otherBounds) ||
+        traceCrossesBoundsInterior(otherBounds, reroutedTraceMap)
+      )
+    }
+    const blockers = this.outputNetLabelPlacements.flatMap((other, index) =>
+      index !== labelIndex && blocksLabel(other) ? [index] : [],
+    )
+    if (
+      blockers.length === 0 ||
+      blockers.some((index) => activeLabels.has(index))
+    )
+      return false
+
+    const saved = this.getOutput()
+    const originalTraceMap = { ...this.traceMap }
+    const restore = (state: typeof saved) => {
+      this.traces = state.traces
+      this.outputNetLabelPlacements = state.netLabelPlacements
+      this.traceMap = Object.fromEntries(
+        state.traces.map((trace) => [trace.mspPairId, trace]),
+      )
+    }
+    const isValidGroup = () => {
+      if (this.getCandidateStatus(bounds, labelIndex, candidate) !== "valid")
+        return false
+      return this.traces.every((moved) => {
+        const original = originalTraceMap[moved.mspPairId]!
+        return (
+          moved.tracePath === original.tracePath ||
+          this.traces.every(
+            (other) =>
+              other.globalConnNetId === moved.globalConnNetId ||
+              countPathIntersections(moved.tracePath, other.tracePath) <=
+                countPathIntersections(
+                  original.tracePath,
+                  originalTraceMap[other.mspPairId]!.tracePath,
+                ),
+          )
+        )
+      })
+    }
+    this.applyCandidate(
+      labelIndex,
+      saved.netLabelPlacements[labelIndex]!,
+      candidate,
+    )
+    const pendingLabels = new Set([...activeLabels, labelIndex])
+    const placeBlockers = (position: number): boolean => {
+      const index = blockers[position]
+      if (index === undefined) return isValidGroup()
+      const other = this.outputNetLabelPlacements[index]!
+      // An earlier dependency may already have moved this label clear.
+      if (!blocksLabel(other)) return placeBlockers(position + 1)
+      const beforeNeighbor = this.getOutput()
+      for (const next of this.getOutwardConnectorCandidates(other)) {
+        const result = this.evaluateCornerCandidate(other, index, next)
+        if (result.status === "valid") {
+          this.applyCandidate(index, other, result)
+        } else if (
+          !this.tryApplyWithMovedNeighbors(index, result, pendingLabels)
+        ) {
+          continue
+        }
+        if (placeBlockers(position + 1)) return true
+        restore(beforeNeighbor)
+      }
+      return false
+    }
+    if (placeBlockers(0)) return true
+    restore(saved)
+    return false
+  }
+
   private applyCandidate(
     labelIndex: number,
     label: NetLabelPlacement,
@@ -308,7 +434,10 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
       label.orientation === "y+" || label.orientation === "y-"
     return (
       isVerticalRailLabel &&
-      (this.getSimplifiedConnectorCandidates(label).length > 0 ||
+      ((this.onlyOverlappingLabels &&
+        this.isLabelCrossedByTrace(label) &&
+        this.getOutwardConnectorCandidates(label).length > 0) ||
+        this.getSimplifiedConnectorCandidates(label).length > 0 ||
         this.getCornerCandidatesForLabel(label).length > 0)
     )
   }
@@ -411,11 +540,6 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     const rails = this.traces.filter((trace) => {
       if (this.netLabelConnectorTraceIds.has(trace.mspPairId)) return false
       if (trace.globalConnNetId !== label.globalConnNetId) return false
-      if (
-        label.mspConnectionPairIds.length > 0 &&
-        !label.mspConnectionPairIds.includes(trace.mspPairId)
-      )
-        return false
       const original = this.originalTraces!.find(
         (item) => item.mspPairId === trace.mspPairId,
       )

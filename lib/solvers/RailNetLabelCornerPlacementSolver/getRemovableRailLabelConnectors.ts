@@ -57,11 +57,8 @@ export const getRemovableRailLabelConnectors = ({
       if (netLabelConnectorTraceIds.has(rail.mspPairId) || !isTraceLine(rail))
         continue
       if (rail.globalConnNetId !== label.globalConnNetId) continue
-      if (
-        label.mspConnectionPairIds.length > 0 &&
-        !label.mspConnectionPairIds.includes(rail.mspPairId)
-      )
-        continue
+      // Orientation placement can attach to an adjacent pair in a shared rail.
+      // Follow the connector's actual source, not only the label's original pair.
       if (!tracePathContainsPoint(rail.tracePath, source)) continue
       // Removing the connector must not strand another label, pin, or branch.
       if (

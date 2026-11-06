@@ -1,3 +1,4 @@
+import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import {
@@ -65,6 +66,26 @@ test("repro robot controller IMU and ToF trace routing", async () => {
           label.globalConnNetId === trace.globalConnNetId &&
           Math.abs(label.anchorPoint.x - endpoint.x) < EPS &&
           Math.abs(label.anchorPoint.y - endpoint.y) < EPS,
+      ),
+    ).toBe(true)
+  }
+  const powerConnection = inputProblem.netConnections.find(
+    (connection) => connection.netId === "V3V3_IMU",
+  )!
+  // Every separately wired power island needs its own attached label.
+  // Finding the name elsewhere on the sheet does not connect CS/VDD to power.
+  for (const component of getTraceConnectedPinComponents({
+    pinIds: powerConnection.pinIds,
+    traces: output.traces,
+  })) {
+    expect(
+      output.netLabelPlacements.some(
+        (label) =>
+          label.netId === powerConnection.netId &&
+          label.pinIds.some((pinId) => component.pinIds.includes(pinId)) &&
+          component.traces.some((trace) =>
+            tracePathContainsPoint(trace.tracePath, label.anchorPoint),
+          ),
       ),
     ).toBe(true)
   }
