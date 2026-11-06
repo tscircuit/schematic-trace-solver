@@ -11,6 +11,14 @@ import { getColorFromString } from "lib/utils/getColorFromString"
 import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
+import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
+import {
+  getCenterFromAnchor,
+  getDimsForOrientation,
+  getRectBounds,
+} from "./SingleNetLabelPlacementSolver/geometry"
+import { rectIntersectsAnyTrace } from "./SingleNetLabelPlacementSolver/collisions"
+import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 
 /**
  * A group of traces that have at least one overlapping segment and
@@ -337,6 +345,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
       this.queuedOverlappingSameNetTraceGroups.shift()
 
     if (!nextOverlappingSameNetTraceGroup) {
+      this.resolvePortOnlyOverlapsWithEndpointAxialFallback()
       this.solved = true
       return
     }
@@ -361,6 +370,143 @@ export class NetLabelPlacementSolver extends BaseSolver {
       netLabelWidth,
       netLabelHeight,
     })
+  }
+
+  private resolvePortOnlyOverlapsWithEndpointAxialFallback() {
+    const EPS = 1e-6
+    const boundsOverlap = (
+      a: { minX: number; minY: number; maxX: number; maxY: number },
+      b: { minX: number; minY: number; maxX: number; maxY: number },
+    ) =>
+      a.minX < b.maxX - 1e-9 &&
+      a.maxX > b.minX + 1e-9 &&
+      a.minY < b.maxY - 1e-9 &&
+      a.maxY > b.minY + 1e-9
+
+    const portOnlyLabels = this.netLabelPlacements.filter(
+      (label) => label.mspConnectionPairIds.length === 0,
+    )
+    if (portOnlyLabels.length === 0) return
+
+    const chipIndex =
+      this.inputProblem._chipObstacleSpatialIndex ??
+      new ChipObstacleSpatialIndex(this.inputProblem.chips)
+
+    for (let i = 0; i < this.netLabelPlacements.length; i++) {
+      const label = this.netLabelPlacements[i]!
+      if (label.mspConnectionPairIds.length !== 1) continue
+      const trace = this.inputTraceMap[label.mspConnectionPairIds[0]!]
+      if (!trace || trace.tracePath.length !== 2) continue
+
+      const labelBounds = getRectBounds(label.center, label.width, label.height)
+      const collidingPortLabels = portOnlyLabels.filter(
+        (portLabel) =>
+          portLabel.globalConnNetId !== label.globalConnNetId &&
+          boundsOverlap(
+            labelBounds,
+            getRectBounds(portLabel.center, portLabel.width, portLabel.height),
+          ),
+      )
+      if (collidingPortLabels.length === 0) continue
+
+      const [segStart, segEnd] = trace.tracePath as [Point, Point]
+      const isHorizontal = Math.abs(segStart.y - segEnd.y) < EPS
+      const isVertical = Math.abs(segStart.x - segEnd.x) < EPS
+      if (!isHorizontal && !isVertical) continue
+
+      const netLabelWidth =
+        label.orientation === "x+" || label.orientation === "x-"
+          ? label.width
+          : label.height
+      const netLabelHeight =
+        label.orientation === "x+" || label.orientation === "x-"
+          ? label.height
+          : label.width
+
+      const netKey = label.netId ?? label.globalConnNetId
+      const allowedOrientations = this.inputProblem
+        .availableNetLabelOrientations[netKey] ?? ["x+", "x-", "y+", "y-"]
+
+      const endpointCandidates: Array<{
+        anchor: Point
+        orientation: FacingDirection
+      }> = isHorizontal
+        ? [
+            {
+              anchor: segStart,
+              orientation: segStart.x < segEnd.x ? "x-" : "x+",
+            },
+            {
+              anchor: segEnd,
+              orientation: segEnd.x < segStart.x ? "x-" : "x+",
+            },
+          ]
+        : [
+            {
+              anchor: segStart,
+              orientation: segStart.y < segEnd.y ? "y-" : "y+",
+            },
+            {
+              anchor: segEnd,
+              orientation: segEnd.y < segStart.y ? "y-" : "y+",
+            },
+          ]
+
+      for (const { anchor, orientation } of endpointCandidates) {
+        if (!allowedOrientations.includes(orientation)) continue
+        const { width, height } = getDimsForOrientation({
+          orientation,
+          netLabelWidth,
+          netLabelHeight,
+        })
+        const center = getCenterFromAnchor(anchor, orientation, width, height)
+        const outward =
+          orientation === "x+"
+            ? { x: 1, y: 0 }
+            : orientation === "x-"
+              ? { x: -1, y: 0 }
+              : orientation === "y+"
+                ? { x: 0, y: 1 }
+                : { x: 0, y: -1 }
+        const testCenter = {
+          x: center.x + outward.x * 1e-4,
+          y: center.y + outward.y * 1e-4,
+        }
+        const bounds = getRectBounds(testCenter, width, height)
+        if (chipIndex.getChipsInBounds(bounds).length > 0) continue
+        if (rectIntersectsAnyTextBox(bounds, this.inputProblem)) continue
+        if (
+          rectIntersectsAnyTrace(bounds, this.inputTraceMap, trace.mspPairId, 0)
+            .hasIntersection
+        ) {
+          continue
+        }
+        if (
+          collidingPortLabels.some((portLabel) =>
+            boundsOverlap(
+              bounds,
+              getRectBounds(
+                portLabel.center,
+                portLabel.width,
+                portLabel.height,
+              ),
+            ),
+          )
+        ) {
+          continue
+        }
+
+        this.netLabelPlacements[i] = {
+          ...label,
+          orientation,
+          anchorPoint: anchor,
+          width,
+          height,
+          center,
+        }
+        break
+      }
+    }
   }
 
   override visualize(): GraphicsObject {
