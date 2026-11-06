@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { pathIntersectsAnyNetLabel } from "lib/solvers/SameNetJunctionAlignmentSolver/pathIntersectsAnyNetLabel"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { detectTraceLabelOverlap } from "lib/solvers/TraceLabelOverlapAvoidanceSolver/detectTraceLabelOverlap"
 import inputProblem from "./bug-report-20260730T061837Z.json"
 import "tests/fixtures/matcher"
 
@@ -9,7 +10,8 @@ test("bug-report-20260730T061837Z", () => {
 
   solver.solve()
 
-  const traces = solver.sameNetJunctionAlignmentSolver!.getOutput().traces
+  const { traces, netLabelPlacements } =
+    solver.sameNetJunctionAlignmentSolver!.getOutput()
   const vddBranch = traces.find(
     (trace) => trace.mspPairId === "schematic_port_39-schematic_port_34",
   )!
@@ -28,10 +30,15 @@ test("bug-report-20260730T061837Z", () => {
   expect(
     pathIntersectsAnyNetLabel({
       path: vddBranch.tracePath,
-      netLabelPlacements:
-        solver.sameNetJunctionAlignmentSolver!.getOutput().netLabelPlacements,
+      netLabelPlacements,
     }),
   ).toBe(false)
+  expect(
+    detectTraceLabelOverlap({
+      traces,
+      netLabels: netLabelPlacements,
+    }),
+  ).toHaveLength(0)
   expect(vbusBranch.tracePath[1]!.y).toBeCloseTo(0.9)
   expect(vbusBranch.tracePath[2]!.y).toBeCloseTo(0.9)
   expect(solver).toMatchSolverSnapshot(import.meta.path)
