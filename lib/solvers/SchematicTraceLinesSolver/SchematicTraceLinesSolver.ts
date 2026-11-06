@@ -1,282 +1,282 @@
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver";
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem";
-import { getBounds, type GraphicsObject } from "graphics-debug";
-import type { InputChip, InputProblem, PinId } from "lib/types/InputProblem";
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import { getBounds, type GraphicsObject } from "graphics-debug"
+import type { InputChip, InputProblem, PinId } from "lib/types/InputProblem"
 import type {
-	MspConnectionPair,
-	MspConnectionPairId,
-} from "../MspConnectionPairSolver/MspConnectionPairSolver";
-import type { ConnectivityMap } from "connectivity-map";
-import { SchematicTraceSingleLineSolver2 } from "./SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2";
-import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver";
-import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines";
-import type { Point } from "@tscircuit/math-utils";
-import { getPinDirectionCandidates } from "./SchematicTraceSingleLineSolver/getPinDirection";
+  MspConnectionPair,
+  MspConnectionPairId,
+} from "../MspConnectionPairSolver/MspConnectionPairSolver"
+import type { ConnectivityMap } from "connectivity-map"
+import { SchematicTraceSingleLineSolver2 } from "./SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
+import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
+import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
+import type { Point } from "@tscircuit/math-utils"
+import { getPinDirectionCandidates } from "./SchematicTraceSingleLineSolver/getPinDirection"
 
 const shouldPreferExteriorDetours = ({
-	connectionPair,
-	allConnectionPairs,
-	inputProblem,
+  connectionPair,
+  allConnectionPairs,
+  inputProblem,
 }: {
-	connectionPair: MspConnectionPair;
-	allConnectionPairs: MspConnectionPair[];
-	inputProblem: InputProblem;
+  connectionPair: MspConnectionPair
+  allConnectionPairs: MspConnectionPair[]
+  inputProblem: InputProblem
 }) => {
-	const [firstPin, secondPin] = connectionPair.pins;
-	const belongsToNetConnection = inputProblem.netConnections.some(
-		(netConnection) =>
-			netConnection.pinIds.includes(firstPin.pinId) &&
-			netConnection.pinIds.includes(secondPin.pinId),
-	);
-	if (belongsToNetConnection) return true;
+  const [firstPin, secondPin] = connectionPair.pins
+  const belongsToNetConnection = inputProblem.netConnections.some(
+    (netConnection) =>
+      netConnection.pinIds.includes(firstPin.pinId) &&
+      netConnection.pinIds.includes(secondPin.pinId),
+  )
+  if (belongsToNetConnection) return true
 
-	return allConnectionPairs.some((otherPair) => {
-		if (otherPair === connectionPair) return false;
+  return allConnectionPairs.some((otherPair) => {
+    if (otherPair === connectionPair) return false
 
-		const [otherFirstPin, otherSecondPin] = otherPair.pins;
-		const sameOrder =
-			firstPin.chipId === otherFirstPin.chipId &&
-			secondPin.chipId === otherSecondPin.chipId;
-		if (sameOrder) return true;
+    const [otherFirstPin, otherSecondPin] = otherPair.pins
+    const sameOrder =
+      firstPin.chipId === otherFirstPin.chipId &&
+      secondPin.chipId === otherSecondPin.chipId
+    if (sameOrder) return true
 
-		return (
-			firstPin.chipId === otherSecondPin.chipId &&
-			secondPin.chipId === otherFirstPin.chipId
-		);
-	});
-};
+    return (
+      firstPin.chipId === otherSecondPin.chipId &&
+      secondPin.chipId === otherFirstPin.chipId
+    )
+  })
+}
 
 export interface SolvedTracePath extends MspConnectionPair {
-	tracePath: Point[];
-	mspConnectionPairIds: MspConnectionPairId[];
-	pinIds: PinId[];
+  tracePath: Point[]
+  mspConnectionPairIds: MspConnectionPairId[]
+  pinIds: PinId[]
 }
 
 /**
  * Merges same-net trace lines that are close together (sharing the same X or Y coordinate).
  */
 export const mergeSameNetTracePaths = (
-	solvedPaths: SolvedTracePath[],
-	inputProblem: InputProblem,
+  solvedPaths: SolvedTracePath[],
+  inputProblem: InputProblem,
 ): SolvedTracePath[] => {
-	// Map net connections or connected components to paths
-	return solvedPaths.map((path) => {
-		const cleaned: Point[] = [];
-		for (const pt of path.tracePath) {
-			if (
-				cleaned.length > 0 &&
-				Math.abs(cleaned[cleaned.length - 1].x - pt.x) < 1e-4 &&
-				Math.abs(cleaned[cleaned.length - 1].y - pt.y) < 1e-4
-			) {
-				continue;
-			}
-			cleaned.push(pt);
-		}
+  // Map net connections or connected components to paths
+  return solvedPaths.map((path) => {
+    const cleaned: Point[] = []
+    for (const pt of path.tracePath) {
+      if (
+        cleaned.length > 0 &&
+        Math.abs(cleaned[cleaned.length - 1].x - pt.x) < 1e-4 &&
+        Math.abs(cleaned[cleaned.length - 1].y - pt.y) < 1e-4
+      ) {
+        continue
+      }
+      cleaned.push(pt)
+    }
 
-		// Simplify colinear segments
-		const simplified: Point[] = [];
-		for (let i = 0; i < cleaned.length; i++) {
-			if (
-				simplified.length >= 2 &&
-				Math.abs(
-					simplified[simplified.length - 2].x -
-						simplified[simplified.length - 1].x,
-				) < 1e-4 &&
-				Math.abs(simplified[simplified.length - 1].x - cleaned[i].x) < 1e-4
-			) {
-				simplified[simplified.length - 1] = cleaned[i];
-			} else if (
-				simplified.length >= 2 &&
-				Math.abs(
-					simplified[simplified.length - 2].y -
-						simplified[simplified.length - 1].y,
-				) < 1e-4 &&
-				Math.abs(simplified[simplified.length - 1].y - cleaned[i].y) < 1e-4
-			) {
-				simplified[simplified.length - 1] = cleaned[i];
-			} else {
-				simplified.push(cleaned[i]);
-			}
-		}
-		return {
-			...path,
-			tracePath: simplified,
-		};
-	});
-};
+    // Simplify colinear segments
+    const simplified: Point[] = []
+    for (let i = 0; i < cleaned.length; i++) {
+      if (
+        simplified.length >= 2 &&
+        Math.abs(
+          simplified[simplified.length - 2].x -
+            simplified[simplified.length - 1].x,
+        ) < 1e-4 &&
+        Math.abs(simplified[simplified.length - 1].x - cleaned[i].x) < 1e-4
+      ) {
+        simplified[simplified.length - 1] = cleaned[i]
+      } else if (
+        simplified.length >= 2 &&
+        Math.abs(
+          simplified[simplified.length - 2].y -
+            simplified[simplified.length - 1].y,
+        ) < 1e-4 &&
+        Math.abs(simplified[simplified.length - 1].y - cleaned[i].y) < 1e-4
+      ) {
+        simplified[simplified.length - 1] = cleaned[i]
+      } else {
+        simplified.push(cleaned[i])
+      }
+    }
+    return {
+      ...path,
+      tracePath: simplified,
+    }
+  })
+}
 
 export class SchematicTraceLinesSolver extends BaseSolver {
-	inputProblem: InputProblem;
-	mspConnectionPairs: MspConnectionPair[];
+  inputProblem: InputProblem
+  mspConnectionPairs: MspConnectionPair[]
 
-	dcConnMap: ConnectivityMap;
-	globalConnMap: ConnectivityMap;
+  dcConnMap: ConnectivityMap
+  globalConnMap: ConnectivityMap
 
-	queuedConnectionPairs: MspConnectionPair[];
-	chipMap: Record<string, InputChip>;
+  queuedConnectionPairs: MspConnectionPair[]
+  chipMap: Record<string, InputChip>
 
-	currentConnectionPair: MspConnectionPair | null = null;
-	retryingWithoutNetLabelClearance = false;
+  currentConnectionPair: MspConnectionPair | null = null
+  retryingWithoutNetLabelClearance = false
 
-	solvedTracePaths: Array<SolvedTracePath> = [];
-	failedConnectionPairs: Array<MspConnectionPair & { error?: string }> = [];
+  solvedTracePaths: Array<SolvedTracePath> = []
+  failedConnectionPairs: Array<MspConnectionPair & { error?: string }> = []
 
-	declare activeSubSolver: SchematicTraceSingleLineSolver2 | null;
+  declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
 
-	constructor(params: {
-		mspConnectionPairs: MspConnectionPair[];
-		chipMap: Record<string, InputChip>;
-		dcConnMap: ConnectivityMap;
-		globalConnMap: ConnectivityMap;
-		inputProblem: InputProblem;
-	}) {
-		super();
-		this.inputProblem = params.inputProblem;
-		this.mspConnectionPairs = params.mspConnectionPairs;
-		this.dcConnMap = params.dcConnMap;
-		this.globalConnMap = params.globalConnMap;
-		this.chipMap = params.chipMap;
+  constructor(params: {
+    mspConnectionPairs: MspConnectionPair[]
+    chipMap: Record<string, InputChip>
+    dcConnMap: ConnectivityMap
+    globalConnMap: ConnectivityMap
+    inputProblem: InputProblem
+  }) {
+    super()
+    this.inputProblem = params.inputProblem
+    this.mspConnectionPairs = params.mspConnectionPairs
+    this.dcConnMap = params.dcConnMap
+    this.globalConnMap = params.globalConnMap
+    this.chipMap = params.chipMap
 
-		this.queuedConnectionPairs = [...this.mspConnectionPairs];
-	}
+    this.queuedConnectionPairs = [...this.mspConnectionPairs]
+  }
 
-	override getConstructorParams(): ConstructorParameters<
-		typeof SchematicTraceLinesSolver
-	>[0] {
-		return {
-			inputProblem: this.inputProblem,
-			chipMap: this.chipMap,
-			mspConnectionPairs: this.mspConnectionPairs,
-			dcConnMap: this.dcConnMap,
-			globalConnMap: this.globalConnMap,
-		};
-	}
+  override getConstructorParams(): ConstructorParameters<
+    typeof SchematicTraceLinesSolver
+  >[0] {
+    return {
+      inputProblem: this.inputProblem,
+      chipMap: this.chipMap,
+      mspConnectionPairs: this.mspConnectionPairs,
+      dcConnMap: this.dcConnMap,
+      globalConnMap: this.globalConnMap,
+    }
+  }
 
-	override _step() {
-		if (this.activeSubSolver?.solved) {
-			this.solvedTracePaths.push({
-				...this.currentConnectionPair!,
-				pins: this.activeSubSolver.pins,
-				tracePath: this.activeSubSolver!.solvedTracePath!,
-				mspConnectionPairIds: [this.currentConnectionPair!.mspPairId],
-				pinIds: [
-					this.currentConnectionPair!.pins[0].pinId,
-					this.currentConnectionPair!.pins[1].pinId,
-				],
-			});
-			this.activeSubSolver = null;
-			this.currentConnectionPair = null;
-			this.retryingWithoutNetLabelClearance = false;
-		}
-		if (this.activeSubSolver?.failed) {
-			if (
-				this.currentConnectionPair &&
-				!this.retryingWithoutNetLabelClearance &&
-				this.activeSubSolver.hasAmbiguousPinDirections
-			) {
-				const connectionPair = this.currentConnectionPair;
-				this.retryingWithoutNetLabelClearance = true;
-				this.activeSubSolver = new SchematicTraceSingleLineSolver2({
-					inputProblem: this.inputProblem,
-					pins: connectionPair.pins.map((pin) => ({
-						...pin,
-					})) as MspConnectionPair["pins"],
-					connectionPair,
-					chipMap: this.chipMap,
-					preferExteriorDetours: shouldPreferExteriorDetours({
-						connectionPair,
-						allConnectionPairs: this.mspConnectionPairs,
-						inputProblem: this.inputProblem,
-					}),
-					reserveNetLabelClearance: false,
-				});
-				return;
-			}
+  override _step() {
+    if (this.activeSubSolver?.solved) {
+      this.solvedTracePaths.push({
+        ...this.currentConnectionPair!,
+        pins: this.activeSubSolver.pins,
+        tracePath: this.activeSubSolver!.solvedTracePath!,
+        mspConnectionPairIds: [this.currentConnectionPair!.mspPairId],
+        pinIds: [
+          this.currentConnectionPair!.pins[0].pinId,
+          this.currentConnectionPair!.pins[1].pinId,
+        ],
+      })
+      this.activeSubSolver = null
+      this.currentConnectionPair = null
+      this.retryingWithoutNetLabelClearance = false
+    }
+    if (this.activeSubSolver?.failed) {
+      if (
+        this.currentConnectionPair &&
+        !this.retryingWithoutNetLabelClearance &&
+        this.activeSubSolver.hasAmbiguousPinDirections
+      ) {
+        const connectionPair = this.currentConnectionPair
+        this.retryingWithoutNetLabelClearance = true
+        this.activeSubSolver = new SchematicTraceSingleLineSolver2({
+          inputProblem: this.inputProblem,
+          pins: connectionPair.pins.map((pin) => ({
+            ...pin,
+          })) as MspConnectionPair["pins"],
+          connectionPair,
+          chipMap: this.chipMap,
+          preferExteriorDetours: shouldPreferExteriorDetours({
+            connectionPair,
+            allConnectionPairs: this.mspConnectionPairs,
+            inputProblem: this.inputProblem,
+          }),
+          reserveNetLabelClearance: false,
+        })
+        return
+      }
 
-			// Record the failure for this connection and continue to the next pair
-			if (this.currentConnectionPair) {
-				this.failedConnectionPairs.push({
-					...this.currentConnectionPair,
-					error: this.activeSubSolver.error || undefined,
-				});
-			}
-			this.activeSubSolver = null;
-			this.currentConnectionPair = null;
-			this.retryingWithoutNetLabelClearance = false;
-			// Do not fail the whole solver; proceed to schedule the next pair
-		}
+      // Record the failure for this connection and continue to the next pair
+      if (this.currentConnectionPair) {
+        this.failedConnectionPairs.push({
+          ...this.currentConnectionPair,
+          error: this.activeSubSolver.error || undefined,
+        })
+      }
+      this.activeSubSolver = null
+      this.currentConnectionPair = null
+      this.retryingWithoutNetLabelClearance = false
+      // Do not fail the whole solver; proceed to schedule the next pair
+    }
 
-		if (this.activeSubSolver) {
-			this.activeSubSolver.step();
-			return;
-		}
+    if (this.activeSubSolver) {
+      this.activeSubSolver.step()
+      return
+    }
 
-		const connectionPair = this.queuedConnectionPairs.shift();
+    const connectionPair = this.queuedConnectionPairs.shift()
 
-		if (!connectionPair) {
-			this.solved = true;
-			return;
-		}
+    if (!connectionPair) {
+      this.solved = true
+      return
+    }
 
-		this.currentConnectionPair = connectionPair;
-		this.retryingWithoutNetLabelClearance = false;
+    this.currentConnectionPair = connectionPair
+    this.retryingWithoutNetLabelClearance = false
 
-		// Corner pins can legitimately face either adjacent edge. Keep their
-		// inferred direction local to this route so solving one branch cannot
-		// constrain a later branch that shares the same corner pin. Pins with one
-		// geometric direction retain the established shared representation.
-		const hasAmbiguousCornerPin = connectionPair.pins.some((pin) => {
-			if (pin._facingDirection) return false;
-			const chip = this.chipMap[pin.chipId];
-			return chip && getPinDirectionCandidates(pin, chip).length > 1;
-		});
-		const pins = hasAmbiguousCornerPin
-			? (connectionPair.pins.map((pin) => ({
-					...pin,
-				})) as MspConnectionPair["pins"])
-			: connectionPair.pins;
+    // Corner pins can legitimately face either adjacent edge. Keep their
+    // inferred direction local to this route so solving one branch cannot
+    // constrain a later branch that shares the same corner pin. Pins with one
+    // geometric direction retain the established shared representation.
+    const hasAmbiguousCornerPin = connectionPair.pins.some((pin) => {
+      if (pin._facingDirection) return false
+      const chip = this.chipMap[pin.chipId]
+      return chip && getPinDirectionCandidates(pin, chip).length > 1
+    })
+    const pins = hasAmbiguousCornerPin
+      ? (connectionPair.pins.map((pin) => ({
+          ...pin,
+        })) as MspConnectionPair["pins"])
+      : connectionPair.pins
 
-		this.activeSubSolver = new SchematicTraceSingleLineSolver2({
-			inputProblem: this.inputProblem,
-			pins,
-			connectionPair,
-			chipMap: this.chipMap,
-			preferExteriorDetours: shouldPreferExteriorDetours({
-				connectionPair,
-				allConnectionPairs: this.mspConnectionPairs,
-				inputProblem: this.inputProblem,
-			}),
-		});
-	}
+    this.activeSubSolver = new SchematicTraceSingleLineSolver2({
+      inputProblem: this.inputProblem,
+      pins,
+      connectionPair,
+      chipMap: this.chipMap,
+      preferExteriorDetours: shouldPreferExteriorDetours({
+        connectionPair,
+        allConnectionPairs: this.mspConnectionPairs,
+        inputProblem: this.inputProblem,
+      }),
+    })
+  }
 
-	override visualize(): GraphicsObject {
-		if (this.activeSubSolver) {
-			return this.activeSubSolver.visualize();
-		}
-		const graphics = visualizeInputProblem(this.inputProblem, {
-			chipAlpha: 0.1,
-			connectionAlpha: 0.1,
-		});
+  override visualize(): GraphicsObject {
+    if (this.activeSubSolver) {
+      return this.activeSubSolver.visualize()
+    }
+    const graphics = visualizeInputProblem(this.inputProblem, {
+      chipAlpha: 0.1,
+      connectionAlpha: 0.1,
+    })
 
-		for (const { mspPairId, tracePath } of this.solvedTracePaths) {
-			graphics.lines!.push({
-				points: tracePath,
-				strokeColor: "green",
-			});
-		}
+    for (const { mspPairId, tracePath } of this.solvedTracePaths) {
+      graphics.lines!.push({
+        points: tracePath,
+        strokeColor: "green",
+      })
+    }
 
-		// Indicate failed connection pairs with dashed red lines between their pins
-		for (const pair of this.failedConnectionPairs) {
-			graphics.lines!.push({
-				points: [
-					{ x: pair.pins[0].x, y: pair.pins[0].y },
-					{ x: pair.pins[1].x, y: pair.pins[1].y },
-				],
-				strokeColor: "red",
-				strokeDash: "4 2",
-			});
-		}
+    // Indicate failed connection pairs with dashed red lines between their pins
+    for (const pair of this.failedConnectionPairs) {
+      graphics.lines!.push({
+        points: [
+          { x: pair.pins[0].x, y: pair.pins[0].y },
+          { x: pair.pins[1].x, y: pair.pins[1].y },
+        ],
+        strokeColor: "red",
+        strokeDash: "4 2",
+      })
+    }
 
-		return graphics;
-	}
+    return graphics
+  }
 }
