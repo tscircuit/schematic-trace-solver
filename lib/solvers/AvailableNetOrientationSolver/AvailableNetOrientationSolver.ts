@@ -597,7 +597,32 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       orientations[0]!,
       labelIndex,
     )
-    if (shiftedCandidate) return shiftedCandidate
+    if (shiftedCandidate) {
+      const shiftedConnector = this.getCandidateConnectorTrace(
+        label,
+        shiftedCandidate,
+        labelIndex,
+      )
+      if (
+        tracePathCrossesAnyTrace(
+          shiftedConnector,
+          this.traceMap,
+          label.globalConnNetId,
+        )
+      ) {
+        shiftedCandidate.selected = false
+        const hostSegmentBranchCandidate =
+          this.findValidHostSegmentBranchCandidate(
+            label,
+            orientations[0]!,
+            labelIndex,
+            shiftedCandidate,
+          )
+        if (hostSegmentBranchCandidate) return hostSegmentBranchCandidate
+        shiftedCandidate.selected = true
+      }
+      return shiftedCandidate
+    }
 
     const lateralCandidate = this.findValidLateralShiftedCandidate(
       label,
@@ -1128,6 +1153,186 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         })
 
         if (candidate) return candidate
+      }
+    }
+
+    return null
+  }
+
+  private findValidHostSegmentBranchCandidate(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+    labelIndex: number,
+    fallbackCandidate: EvaluatedCandidate,
+  ): EvaluatedCandidate | null {
+    if (label.mspConnectionPairIds.length === 0) return null
+
+    const fallbackDisplacement =
+      Math.abs(fallbackCandidate.anchorPoint.x - label.anchorPoint.x) +
+      Math.abs(fallbackCandidate.anchorPoint.y - label.anchorPoint.y)
+
+    const { width, height } = getDimsForOrientation({
+      orientation,
+      netLabelWidth: getNetLabelWidthForConnection({
+        inputProblem: this.inputProblem,
+        netId: label.netId,
+        pinIds: label.pinIds,
+        isPortOnlyLabel: this.isPortOnlyLabel(label),
+      }),
+      netLabelHeight: this.getNetLabelHeight(label),
+    })
+    const direction = dir(orientation)
+
+    for (const traceId of label.mspConnectionPairIds) {
+      const hostTrace = this.traceMap[traceId]
+      if (!hostTrace) continue
+
+      for (let i = 0; i < hostTrace.tracePath.length - 1; i++) {
+        const start = hostTrace.tracePath[i]!
+        const end = hostTrace.tracePath[i + 1]!
+        const isParallel = isYOrientation(orientation)
+          ? Math.abs(start.x - end.x) <= EPS && Math.abs(start.y - end.y) > EPS
+          : Math.abs(start.y - end.y) <= EPS && Math.abs(start.x - end.x) > EPS
+        if (!isParallel) continue
+
+        if (isYOrientation(orientation)) {
+          if (Math.abs(start.x - label.anchorPoint.x) <= EPS) continue
+          const minY = Math.min(start.y, end.y)
+          const maxY = Math.max(start.y, end.y)
+          const segLength = maxY - minY
+          const startY = direction.y < 0 ? minY : maxY
+          const stepSign = direction.y < 0 ? 1 : -1
+          const baseOffset = width / 2 + LABEL_SEARCH_STEP
+
+          for (
+            let dist = LABEL_SEARCH_STEP;
+            dist <= segLength + EPS;
+            dist += LABEL_SEARCH_STEP
+          ) {
+            const y = Math.min(maxY, Math.max(minY, startY + stepSign * dist))
+            const connectorSource = { x: start.x, y }
+            const outwardDir = this.getPerpendicularOutwardDirection(
+              connectorSource,
+              orientation,
+            )
+            const primarySign =
+              outwardDir.x !== 0 ? Math.sign(outwardDir.x) : -1
+            for (const sign of [primarySign, -primarySign]) {
+              const lateralOffset = sign * baseOffset
+              const anchorPoint = {
+                x: connectorSource.x + lateralOffset,
+                y: connectorSource.y,
+              }
+              const displacement =
+                Math.abs(anchorPoint.x - label.anchorPoint.x) +
+                Math.abs(anchorPoint.y - label.anchorPoint.y)
+              if (displacement >= fallbackDisplacement - EPS) continue
+
+              const candidate = this.createCandidate(
+                label,
+                anchorPoint,
+                orientation,
+                connectorSource,
+              )
+              const result = this.evaluateCandidate(
+                candidate,
+                label,
+                labelIndex,
+                "lateral-shift",
+                dist,
+                lateralOffset,
+              )
+              this.recordCandidateResult(result)
+              if (result.status !== "valid") continue
+
+              const connectorTrace = this.getCandidateConnectorTrace(
+                label,
+                result,
+                labelIndex,
+              )
+              if (
+                tracePathCrossesAnyTrace(
+                  connectorTrace,
+                  this.traceMap,
+                  label.globalConnNetId,
+                )
+              ) {
+                continue
+              }
+
+              result.selected = true
+              return result
+            }
+          }
+        } else {
+          if (Math.abs(start.y - label.anchorPoint.y) <= EPS) continue
+          const minX = Math.min(start.x, end.x)
+          const maxX = Math.max(start.x, end.x)
+          const segLength = maxX - minX
+          const startX = direction.x < 0 ? minX : maxX
+          const stepSign = direction.x < 0 ? 1 : -1
+          const baseOffset = height / 2 + LABEL_SEARCH_STEP
+
+          for (
+            let dist = LABEL_SEARCH_STEP;
+            dist <= segLength + EPS;
+            dist += LABEL_SEARCH_STEP
+          ) {
+            const x = Math.min(maxX, Math.max(minX, startX + stepSign * dist))
+            const connectorSource = { x, y: start.y }
+            const outwardDir = this.getPerpendicularOutwardDirection(
+              connectorSource,
+              orientation,
+            )
+            const primarySign =
+              outwardDir.y !== 0 ? Math.sign(outwardDir.y) : -1
+            for (const sign of [primarySign, -primarySign]) {
+              const lateralOffset = sign * baseOffset
+              const anchorPoint = {
+                x: connectorSource.x,
+                y: connectorSource.y + lateralOffset,
+              }
+              const displacement =
+                Math.abs(anchorPoint.x - label.anchorPoint.x) +
+                Math.abs(anchorPoint.y - label.anchorPoint.y)
+              if (displacement >= fallbackDisplacement - EPS) continue
+              const candidate = this.createCandidate(
+                label,
+                anchorPoint,
+                orientation,
+                connectorSource,
+              )
+              const result = this.evaluateCandidate(
+                candidate,
+                label,
+                labelIndex,
+                "lateral-shift",
+                dist,
+                lateralOffset,
+              )
+              this.recordCandidateResult(result)
+              if (result.status !== "valid") continue
+
+              const connectorTrace = this.getCandidateConnectorTrace(
+                label,
+                result,
+                labelIndex,
+              )
+              if (
+                tracePathCrossesAnyTrace(
+                  connectorTrace,
+                  this.traceMap,
+                  label.globalConnNetId,
+                )
+              ) {
+                continue
+              }
+
+              result.selected = true
+              return result
+            }
+          }
+        }
       }
     }
 
