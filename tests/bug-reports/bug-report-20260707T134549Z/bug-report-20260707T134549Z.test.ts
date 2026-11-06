@@ -17,5 +17,15 @@ test("bug-report-20260707T134549Z", () => {
   )!
   expect(upperLoop.tracePath[1]!.x).toBeCloseTo(lowerLoop.tracePath[1]!.x, 6)
 
+  const { netLabelPlacements } = solver.netLabelToTraceSolver!.getOutput()
+  const vinInputLabel = netLabelPlacements.find((label) =>
+    label.pinIds.includes("V_IN.1"),
+  )!
+  const vinGroundLabel = netLabelPlacements.find((label) =>
+    label.pinIds.includes("V_IN.2"),
+  )!
+  expect(vinInputLabel.orientation).toBe("y+")
+  expect(vinGroundLabel.orientation).toBe("y-")
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
