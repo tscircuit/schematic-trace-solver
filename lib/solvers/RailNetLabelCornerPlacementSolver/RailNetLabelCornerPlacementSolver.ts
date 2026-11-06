@@ -1,14 +1,14 @@
-import type { GraphicsObject } from "graphics-debug"
 import type { Point } from "@tscircuit/math-utils"
+import type { GraphicsObject } from "graphics-debug"
+import {
+  LABEL_SEARCH_STEP,
+  WICK_CLEARANCE,
+} from "lib/solvers/AvailableNetOrientationSolver/constants"
 import {
   getMaxSearchDistance,
   segmentCrossesBoundsInterior,
   traceCrossesBoundsInterior,
 } from "lib/solvers/AvailableNetOrientationSolver/geometry"
-import {
-  LABEL_SEARCH_STEP,
-  WICK_CLEARANCE,
-} from "lib/solvers/AvailableNetOrientationSolver/constants"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { moveAttachedLabelsToReroutedTrace } from "lib/solvers/Example28Solver/labelMovement"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
@@ -22,6 +22,7 @@ import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/Schemati
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
 import type { InputProblem } from "lib/types/InputProblem"
 import { doesPathOverlapTraceStrokes } from "lib/utils/doesPathCoincideWithTraces"
+import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
 import {
   EPS,
   getDistance,
@@ -30,19 +31,18 @@ import {
   rectsOverlap,
   tracePathContainsPoint,
 } from "./geometry"
+import { getRemovableRailLabelConnectors } from "./getRemovableRailLabelConnectors"
+import { getShortenedRailConnectorCandidates } from "./getShortenedRailConnectorCandidates"
+import { getSimplifiedRailConnectorCandidates } from "./getSimplifiedRailConnectorCandidates"
+import { getStraightPortConnectorCandidate } from "./getStraightPortConnectorCandidate"
 import type {
   Bounds,
   CornerCandidateStatus,
   EvaluatedCornerCandidate,
-  TraceCornerCandidate,
   RailNetLabelCornerPlacementSolverParams,
+  TraceCornerCandidate,
 } from "./types"
 import { visualizeRailNetLabelCornerPlacementSolver } from "./visualize"
-import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
-import { getRemovableRailLabelConnectors } from "./getRemovableRailLabelConnectors"
-import { getStraightPortConnectorCandidate } from "./getStraightPortConnectorCandidate"
-import { getSimplifiedRailConnectorCandidates } from "./getSimplifiedRailConnectorCandidates"
-import { getShortenedRailConnectorCandidates } from "./getShortenedRailConnectorCandidates"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 
@@ -157,6 +157,7 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     this.queuedCornerCandidates = [
       ...this.getSimplifiedConnectorCandidates(label),
       ...this.getCornerCandidatesForLabel(label),
+      ...this.getExtendedHorizontalConnectorCandidates(label),
     ]
 
     return true
@@ -309,7 +310,8 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     return (
       isVerticalRailLabel &&
       (this.getSimplifiedConnectorCandidates(label).length > 0 ||
-        this.getCornerCandidatesForLabel(label).length > 0)
+        this.getCornerCandidatesForLabel(label).length > 0 ||
+        this.getExtendedHorizontalConnectorCandidates(label).length > 0)
     )
   }
 
@@ -584,6 +586,73 @@ export class RailNetLabelCornerPlacementSolver extends BaseSolver {
     }
 
     return []
+  }
+
+  private getExtendedHorizontalConnectorCandidates(
+    label: NetLabelPlacement,
+  ): TraceCornerCandidate[] {
+    if (
+      !this.onlyOverlappingLabels ||
+      label.pinIds.length !== 2 ||
+      !this.isConfiguredRailLabel(label) ||
+      !this.isLabelCrossedByTrace(label)
+    ) {
+      return []
+    }
+    const chipIds = new Set(
+      this.inputProblem.chips
+        .filter((chip) =>
+          chip.pins.some((pin) => label.pinIds.includes(pin.pinId)),
+        )
+        .map((chip) => chip.chipId),
+    )
+    if (chipIds.size !== 1) return []
+    const netConnection = this.inputProblem.netConnections.find(
+      (connection) => connection.netId === label.netId,
+    )
+    if (netConnection?.isGround) return []
+
+    const candidates: TraceCornerCandidate[] = []
+    for (const connector of this.traces) {
+      if (!this.netLabelConnectorTraceIds.has(connector.mspPairId)) continue
+      if (connector.globalConnNetId !== label.globalConnNetId) continue
+      const path = [...simplifyPath(connector.tracePath)]
+      if (path.length !== 2) continue
+      const reversed = this.pointsEqual(path[0]!, label.anchorPoint)
+      if (reversed) path.reverse()
+      if (!this.pointsEqual(path[1]!, label.anchorPoint)) continue
+
+      const previous = path[0]!
+      const anchor = label.anchorPoint
+      if (
+        Math.abs(previous.y - anchor.y) > EPS ||
+        Math.abs(anchor.x - previous.x) <= EPS
+      ) {
+        continue
+      }
+
+      const horizontalDirection = Math.sign(anchor.x - previous.x)
+      for (
+        let distance = LABEL_SEARCH_STEP;
+        distance <= label.width + EPS;
+        distance += LABEL_SEARCH_STEP
+      ) {
+        const anchorPoint = {
+          x: anchor.x + horizontalDirection * distance,
+          y: anchor.y,
+        }
+        const extendedPath = [previous, anchorPoint]
+        candidates.push({
+          anchorPoint,
+          traceId: connector.mspPairId,
+          distance,
+          pinAligned: true,
+          reroutedTracePath: reversed ? extendedPath.reverse() : extendedPath,
+        })
+      }
+    }
+
+    return candidates.sort((a, b) => a.distance - b.distance)
   }
 
   private isComponentAdjacentCorner(label: NetLabelPlacement, corner: Point) {
