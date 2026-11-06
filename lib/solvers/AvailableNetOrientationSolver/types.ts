@@ -44,6 +44,7 @@ export type CandidatePhase =
   | "outward-trace-anchor"
   | "shift"
   | "lateral-shift"
+  | "dogleg-shift"
 
 export type EvaluatedCandidate = CandidateLabel & {
   status: CandidateStatus
