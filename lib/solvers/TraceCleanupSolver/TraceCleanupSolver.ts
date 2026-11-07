@@ -7,6 +7,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { alignSameNetRails } from "./alignSameNetRails"
+import { mergeNearbySameNetSegments } from "./mergeNearbySameNetSegments"
 import { extendBranchesToTrimmedJunctions } from "./extendBranchesToTrimmedJunctions"
 
 export type TraceCleanupOperation =
@@ -41,6 +42,7 @@ const DEFAULT_OPERATIONS: readonly TraceCleanupOperation[] = [
   "untangling_traces",
   "minimizing_turns",
   "balancing_l_shapes",
+  "aligning_same_net_rails",
 ]
 
 /**
