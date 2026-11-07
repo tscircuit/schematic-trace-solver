@@ -1,6 +1,7 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import { alignSameNetJunctions } from "lib/solvers/SameNetJunctionAlignmentSolver/alignSameNetJunctions"
 import { getParallelNetLabelPolicy } from "lib/solvers/LongDistancePairSolver/getParallelNetLabelPolicy"
 import { doesPairCrossRestrictedCenterLines } from "lib/solvers/MspConnectionPairSolver/doesPairCrossRestrictedCenterLines"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
@@ -629,6 +630,51 @@ export class NetLabelToTraceSolver extends BaseSolver {
     )
   }
 
+  private hasRecoveredCloseParallelSameNetRail() {
+    for (const recoveredTrace of this.outputTraces) {
+      if (!this.recoveredTraceIds.has(recoveredTrace.mspPairId)) continue
+      for (const otherTrace of this.outputTraces) {
+        if (
+          otherTrace.mspPairId === recoveredTrace.mspPairId ||
+          otherTrace.globalConnNetId !== recoveredTrace.globalConnNetId ||
+          otherTrace.pinIds.length < 2
+        ) {
+          continue
+        }
+        for (let i = 0; i < recoveredTrace.tracePath.length - 1; i++) {
+          const a1 = recoveredTrace.tracePath[i]!
+          const a2 = recoveredTrace.tracePath[i + 1]!
+          const aHorizontal = Math.abs(a1.y - a2.y) <= 1e-6
+          const aVertical = Math.abs(a1.x - a2.x) <= 1e-6
+          if (aHorizontal === aVertical) continue
+          for (let j = 0; j < otherTrace.tracePath.length - 1; j++) {
+            const b1 = otherTrace.tracePath[j]!
+            const b2 = otherTrace.tracePath[j + 1]!
+            const bHorizontal = Math.abs(b1.y - b2.y) <= 1e-6
+            const bVertical = Math.abs(b1.x - b2.x) <= 1e-6
+            if (aHorizontal !== bHorizontal || aVertical !== bVertical) continue
+            const offset = aHorizontal
+              ? Math.abs(a1.y - b1.y)
+              : Math.abs(a1.x - b1.x)
+            if (
+              offset <= 1e-6 ||
+              offset > MAX_NAMED_NET_RECOVERY_PERPENDICULAR_OFFSET
+            ) {
+              continue
+            }
+            const overlap = aHorizontal
+              ? Math.min(Math.max(a1.x, a2.x), Math.max(b1.x, b2.x)) -
+                Math.max(Math.min(a1.x, a2.x), Math.min(b1.x, b2.x))
+              : Math.min(Math.max(a1.y, a2.y), Math.max(b1.y, b2.y)) -
+                Math.max(Math.min(a1.y, a2.y), Math.min(b1.y, b2.y))
+            if (overlap > 1e-6) return true
+          }
+        }
+      }
+    }
+    return false
+  }
+
   override _step() {
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
@@ -654,6 +700,38 @@ export class NetLabelToTraceSolver extends BaseSolver {
     }
 
     if (!candidate) {
+      if (
+        this.recoveredTraceIds.size > 0 &&
+        !this.options.onlyInlineDirectConnections &&
+        !this.options.onlyInlineConnections &&
+        this.hasRecoveredCloseParallelSameNetRail()
+      ) {
+        const netLabelConnectorTraceIds = new Set(
+          this.input.netLabelConnectorTraceIds ?? [],
+        )
+        for (const trace of this.outputTraces) {
+          if (trace.pinIds.length < 2) {
+            netLabelConnectorTraceIds.add(trace.mspPairId)
+          }
+        }
+        const aligned = alignSameNetJunctions({
+          inputProblem: this.inputProblem,
+          traces: this.outputTraces,
+          netLabelPlacements: this.outputNetLabelPlacements,
+          netLabelConnectorTraceIds,
+        })
+        const hitsInlineLabel = aligned.traces.some((trace, index) => {
+          const original = this.outputTraces[index]
+          if (original && original.tracePath === trace.tracePath) return false
+          return this.input.inlineNetLabelPlacements.some((label) =>
+            pathIntersectsRenderedLabel(trace.tracePath, label),
+          )
+        })
+        if (!hitsInlineLabel) {
+          this.outputTraces = aligned.traces
+          this.outputNetLabelPlacements = aligned.netLabelPlacements
+        }
+      }
       this.solved = true
       return
     }
