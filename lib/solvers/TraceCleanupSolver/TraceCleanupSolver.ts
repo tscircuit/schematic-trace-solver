@@ -198,6 +198,7 @@ export class TraceCleanupSolver extends BaseSolver {
       originalTrace,
       updatedTrace,
       traces: allTraces,
+      inputProblem: this.input.inputProblem,
     })
     if (!extendedTraces) return
     this.tracesMap = new Map(
