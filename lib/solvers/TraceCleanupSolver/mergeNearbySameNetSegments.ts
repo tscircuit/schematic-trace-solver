@@ -1,6 +1,6 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { ConnectivityMap } from "circuit-json-to-connectivity-map"
+import type { ConnectivityMap } from "connectivity-map"
 
 const EPS = 1e-4
 const DEFAULT_MERGE_DISTANCE = 0.06
@@ -21,11 +21,8 @@ const areSameNet = (
   traceB: SolvedTracePath,
   connMap: ConnectivityMap,
 ) => {
-  if (traceA.mspConnectionPairId === traceB.mspConnectionPairId) return true
-  return connMap.areIdsConnected(
-    traceA.mspConnectionPairId,
-    traceB.mspConnectionPairId,
-  )
+  if (traceA.mspPairId === traceB.mspPairId) return true
+  return connMap.areIdsConnected(traceA.mspPairId, traceB.mspPairId)
 }
 
 export const mergeNearbySameNetSegments = ({
@@ -47,25 +44,25 @@ export const mergeNearbySameNetSegments = ({
 
   const entries = Array.from(updated.values())
   for (let i = 0; i < entries.length; i++) {
-    const traceA = entries[i]
+    const traceA = entries[i]!
     const ptsA = traceA.tracePath
     for (let j = i + 1; j < entries.length; j++) {
-      const traceB = entries[j]
+      const traceB = entries[j]!
       if (!areSameNet(traceA, traceB, connMap)) continue
       const ptsB = traceB.tracePath
 
       for (let sa = 1; sa < ptsA.length - 2; sa++) {
-        const a1 = ptsA[sa]
-        const a2 = ptsA[sa + 1]
+        const a1 = ptsA[sa]!
+        const a2 = ptsA[sa + 1]!
         for (let sb = 1; sb < ptsB.length - 2; sb++) {
-          const b1 = ptsB[sb]
-          const b2 = ptsB[sb + 1]
+          const b1 = ptsB[sb]!
+          const b2 = ptsB[sb + 1]!
 
           if (
             isHorizontal(a1, a2) &&
             isHorizontal(b1, b2) &&
-            isVertical(ptsB[sb - 1], b1) &&
-            isVertical(b2, ptsB[sb + 2])
+            isVertical(ptsB[sb - 1]!, b1) &&
+            isVertical(b2, ptsB[sb + 2]!)
           ) {
             const dy = Math.abs(a1.y - b1.y)
             if (
@@ -79,8 +76,8 @@ export const mergeNearbySameNetSegments = ({
           } else if (
             isVertical(a1, a2) &&
             isVertical(b1, b2) &&
-            isHorizontal(ptsB[sb - 1], b1) &&
-            isHorizontal(b2, ptsB[sb + 2])
+            isHorizontal(ptsB[sb - 1]!, b1) &&
+            isHorizontal(b2, ptsB[sb + 2]!)
           ) {
             const dx = Math.abs(a1.x - b1.x)
             if (
