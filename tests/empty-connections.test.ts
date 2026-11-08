@@ -18,7 +18,12 @@ test("SchematicTracePipelineSolver handles empty connections without crashing", 
 
 test("ChipObstacleSpatialIndex handles empty chips array gracefully", () => {
   const index = new ChipObstacleSpatialIndex([])
-  const chipsInBounds = index.getChipsInBounds({ minX: 0, minY: 0, maxX: 10, maxY: 10 })
+  const chipsInBounds = index.getChipsInBounds({
+    minX: 0,
+    minY: 0,
+    maxX: 10,
+    maxY: 10,
+  })
   expect(chipsInBounds).toEqual([])
 
   const intersects = index.doesOrthogonalLineIntersectChip([
