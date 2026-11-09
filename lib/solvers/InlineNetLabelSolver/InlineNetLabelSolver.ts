@@ -19,10 +19,12 @@ import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementS
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { CompletedTraceReroute } from "lib/solvers/TraceElbowTransitionSimplificationSolver/types"
 import type {
+  InputChip,
   InputDirectConnection,
   InputNetConnection,
   InputProblem,
   PinId,
+  TextBoxes,
 } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
@@ -767,12 +769,21 @@ export class InlineNetLabelSolver extends BaseSolver {
           continue
         }
 
+        const stubEnd = trimTerminalStubFreeEndForObstacles({
+          start,
+          end,
+          textBounds: bounds,
+          chips: this.inputProblem.chips,
+          ownerChipId: inputChip?.chipId,
+          textBoxes: this.inputProblem.textBoxes,
+        })
+
         return {
           globalConnNetId,
           netId: connection.netId,
           netLabelText,
           pinIds: [pinId],
-          stubTracePath: [start, end],
+          stubTracePath: [start, stubEnd],
           axis,
           anchorPoint,
           center,
@@ -1772,8 +1783,122 @@ const getCollisionLimitedTerminalStubEnd = ({
   }
 
   if (availableLength + GEOMETRY_EPSILON < minimumLength) return null
-
   return isHorizontal
     ? { x: start.x + direction * availableLength, y: start.y }
     : { x: start.x, y: start.y + direction * availableLength }
+}
+
+/**
+ * Trims only the decorative wire tail beyond a placed inline terminal label's
+ * text bounds when the free end would otherwise poke into a non-owner chip or
+ * text box. Keeping `anchorPoint`, `side`, and `center` untouched preserves
+ * label placement while stopping the wire short of nearby symbols.
+ */
+const trimTerminalStubFreeEndForObstacles = ({
+  start,
+  end,
+  textBounds,
+  chips,
+  ownerChipId,
+  textBoxes = [],
+}: {
+  start: Point
+  end: Point
+  textBounds: Bounds
+  chips: InputChip[]
+  ownerChipId?: string
+  textBoxes?: TextBoxes[]
+}): Point => {
+  const isHorizontal = Math.abs(end.x - start.x) >= Math.abs(end.y - start.y)
+  const alongAxis = isHorizontal ? "x" : "y"
+  const acrossAxis = isHorizontal ? "y" : "x"
+  const direction = Math.sign(end[alongAxis] - start[alongAxis]) || 1
+  const currentLength = Math.abs(end[alongAxis] - start[alongAxis])
+  const textFarDistance = isHorizontal
+    ? direction > 0
+      ? textBounds.maxX - start.x
+      : start.x - textBounds.minX
+    : direction > 0
+      ? textBounds.maxY - start.y
+      : start.y - textBounds.minY
+
+  const obstacleBounds: Bounds[] = []
+  for (const chip of chips) {
+    if (chip.chipId === ownerChipId) continue
+    let minX = chip.center.x - chip.width / 2
+    let maxX = chip.center.x + chip.width / 2
+    let minY = chip.center.y - chip.height / 2
+    let maxY = chip.center.y + chip.height / 2
+
+    // A 2-pin passive's bounding box extends to its pin tips along the pin
+    // axis; inset that lead zone so only side-body approaches trim the tail.
+    if (chip.pins.length === 2) {
+      const leadInsetX = Math.min(0.18, chip.width / 4)
+      const leadInsetY = Math.min(0.18, chip.height / 4)
+      if (
+        isHorizontal &&
+        chip.pins.some(
+          (pin) =>
+            Math.abs(Math.abs(pin.x - chip.center.x) - chip.width / 2) <=
+            GEOMETRY_EPSILON,
+        )
+      ) {
+        minX += leadInsetX
+        maxX -= leadInsetX
+      } else if (
+        !isHorizontal &&
+        chip.pins.some(
+          (pin) =>
+            Math.abs(Math.abs(pin.y - chip.center.y) - chip.height / 2) <=
+            GEOMETRY_EPSILON,
+        )
+      ) {
+        minY += leadInsetY
+        maxY -= leadInsetY
+      }
+    }
+
+    obstacleBounds.push({ minX, maxX, minY, maxY })
+  }
+  for (const textBox of textBoxes) {
+    obstacleBounds.push(getTextBoxBounds(textBox))
+  }
+
+  let trimmedLength = currentLength
+  for (const rect of obstacleBounds) {
+    const rectMinAcross = isHorizontal ? rect.minY : rect.minX
+    const rectMaxAcross = isHorizontal ? rect.maxY : rect.maxX
+    if (
+      start[acrossAxis] <= rectMinAcross + GEOMETRY_EPSILON ||
+      start[acrossAxis] >= rectMaxAcross - GEOMETRY_EPSILON
+    ) {
+      continue
+    }
+
+    const rectMinAlong = isHorizontal ? rect.minX : rect.minY
+    const rectMaxAlong = isHorizontal ? rect.maxX : rect.maxY
+    const startAlong = (rectMinAlong - start[alongAxis]) * direction
+    const endAlong = (rectMaxAlong - start[alongAxis]) * direction
+    const minAlong = Math.min(startAlong, endAlong)
+    const maxAlong = Math.max(startAlong, endAlong)
+
+    if (
+      maxAlong > GEOMETRY_EPSILON &&
+      minAlong < currentLength - GEOMETRY_EPSILON &&
+      minAlong >= textFarDistance - GEOMETRY_EPSILON
+    ) {
+      trimmedLength = Math.min(
+        trimmedLength,
+        Math.max(
+          textFarDistance,
+          minAlong - INLINE_NET_LABEL_STUB_TRACE_CLEARANCE,
+        ),
+      )
+    }
+  }
+
+  if (trimmedLength >= currentLength - GEOMETRY_EPSILON) return end
+  return isHorizontal
+    ? { x: start.x + direction * trimmedLength, y: start.y }
+    : { x: start.x, y: start.y + direction * trimmedLength }
 }
