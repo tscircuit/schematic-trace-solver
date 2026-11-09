@@ -50,10 +50,10 @@ export const getNetLabelWidthForConnection = ({
 
   return getConfiguredWidth(
     [
-      inputProblem.directConnections.find((connection) =>
+      ...inputProblem.directConnections.filter((connection) =>
         connection.pinIds.some((pinId) => pinIds.includes(pinId)),
       ),
-      inputProblem.netConnections.find((connection) =>
+      ...inputProblem.netConnections.filter((connection) =>
         connection.pinIds.some((pinId) => pinIds.includes(pinId)),
       ),
     ],
