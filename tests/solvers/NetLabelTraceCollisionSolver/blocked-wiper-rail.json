@@ -1,0 +1,261 @@
+{
+  "inputProblem": {
+    "chips": [
+      {
+        "chipId": "schematic_component_0",
+        "center": {
+          "x": 10,
+          "y": 14
+        },
+        "width": 2.3999999999999986,
+        "height": 3.3999999999999986,
+        "pins": [
+          {
+            "pinId": "schematic_port_17",
+            "displayName": "AVCC",
+            "x": 11.2,
+            "y": 12.7,
+            "_facingDirection": "x+"
+          },
+          {
+            "pinId": "schematic_port_19",
+            "displayName": "AREF",
+            "x": 11.2,
+            "y": 13.1,
+            "_facingDirection": "x+"
+          },
+          {
+            "pinId": "schematic_port_24",
+            "displayName": "PC2",
+            "x": 11.2,
+            "y": 14.1,
+            "_facingDirection": "x+"
+          },
+          {
+            "pinId": "schematic_port_25",
+            "displayName": "PC3",
+            "x": 11.2,
+            "y": 14.299999999999999,
+            "_facingDirection": "x+"
+          }
+        ]
+      },
+      {
+        "chipId": "schematic_component_1",
+        "center": {
+          "x": 14,
+          "y": 14
+        },
+        "width": 0.7199999999999989,
+        "height": 0.8399999999999999,
+        "pins": [
+          {
+            "pinId": "schematic_port_32",
+            "displayName": "pos",
+            "x": 13.64,
+            "y": 14,
+            "_facingDirection": "x-"
+          }
+        ]
+      },
+      {
+        "chipId": "schematic_component_3",
+        "center": {
+          "x": 14,
+          "y": 16
+        },
+        "width": 1.0799999999999983,
+        "height": 0.8399999999999981,
+        "pins": [
+          {
+            "pinId": "schematic_port_36",
+            "displayName": "pos",
+            "x": 13.46,
+            "y": 16,
+            "_facingDirection": "x-"
+          }
+        ]
+      }
+    ],
+    "directConnections": [
+      {
+        "netId": "C_AREF.pin1 to U_MCU.AREF",
+        "netLabelWidth": 1.32,
+        "pinIds": [
+          "schematic_port_32",
+          "schematic_port_19"
+        ]
+      }
+    ],
+    "netConnections": [
+      {
+        "netId": "VCC_3V3",
+        "isGround": false,
+        "netLabelWidth": 0.42,
+        "netLabelHeight": 0.96,
+        "pinIds": [
+          "schematic_port_3",
+          "schematic_port_5",
+          "schematic_port_17",
+          "schematic_port_36"
+        ]
+      },
+      {
+        "netId": "X_SPEED_WIPER",
+        "isGround": false,
+        "netLabelWidth": 1.68,
+        "anchoredNetLabelWidth": 1.68,
+        "allowInlineNetLabel": true,
+        "inlineNetLabelHeight": 0.12,
+        "inlineNetLabelWidth": 1.12,
+        "pinIds": [
+          "schematic_port_24"
+        ]
+      },
+      {
+        "netId": "Y_SPEED_WIPER",
+        "isGround": false,
+        "netLabelWidth": 1.68,
+        "anchoredNetLabelWidth": 1.68,
+        "allowInlineNetLabel": true,
+        "inlineNetLabelHeight": 0.12,
+        "inlineNetLabelWidth": 1.12,
+        "pinIds": [
+          "schematic_port_25"
+        ]
+      }
+    ],
+    "textBoxes": [],
+    "availableNetLabelOrientations": {
+      "VCC_3V3": [
+        "y+"
+      ],
+      "X_SPEED_WIPER": [
+        "x-",
+        "x+"
+      ],
+      "Y_SPEED_WIPER": [
+        "x-",
+        "x+"
+      ]
+    },
+    "maxMspPairDistance": 2.4
+  },
+  "traces": [
+    {
+      "mspPairId": "schematic_port_36-schematic_port_17",
+      "dcConnNetId": "connectivity_net0",
+      "globalConnNetId": "connectivity_net0",
+      "pins": [
+        {
+          "pinId": "schematic_port_36",
+          "displayName": "pos",
+          "x": 13.46,
+          "y": 16,
+          "_facingDirection": "x-",
+          "chipId": "schematic_component_3"
+        },
+        {
+          "pinId": "schematic_port_17",
+          "displayName": "AVCC",
+          "x": 11.2,
+          "y": 12.7,
+          "_facingDirection": "x+",
+          "chipId": "schematic_component_0"
+        }
+      ],
+      "tracePath": [
+        {
+          "x": 13.46,
+          "y": 16
+        },
+        {
+          "x": 12.219000000000001,
+          "y": 16
+        },
+        {
+          "x": 12.219000000000001,
+          "y": 13.8
+        },
+        {
+          "x": 12.620999999999999,
+          "y": 13.8
+        },
+        {
+          "x": 12.620999999999999,
+          "y": 12.7
+        },
+        {
+          "x": 11.2,
+          "y": 12.7
+        }
+      ],
+      "mspConnectionPairIds": [
+        "schematic_port_36-schematic_port_17"
+      ],
+      "pinIds": [
+        "schematic_port_36",
+        "schematic_port_17"
+      ]
+    }
+  ],
+  "netLabelPlacements": [
+    {
+      "globalConnNetId": "connectivity_net2",
+      "netId": "C_AREF.pin1 to U_MCU.AREF",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_32"
+      ],
+      "orientation": "x-",
+      "anchorPoint": {
+        "x": 13.64,
+        "y": 14
+      },
+      "width": 1.32,
+      "height": 0.2,
+      "center": {
+        "x": 12.979000000000001,
+        "y": 14
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net9",
+      "netId": "X_SPEED_WIPER",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_24"
+      ],
+      "orientation": "x+",
+      "anchorPoint": {
+        "x": 11.2,
+        "y": 14.1
+      },
+      "width": 1.68,
+      "height": 0.2,
+      "center": {
+        "x": 12.040999999999999,
+        "y": 14.1
+      }
+    },
+    {
+      "globalConnNetId": "connectivity_net10",
+      "netId": "Y_SPEED_WIPER",
+      "mspConnectionPairIds": [],
+      "pinIds": [
+        "schematic_port_25"
+      ],
+      "orientation": "x+",
+      "anchorPoint": {
+        "x": 11.2,
+        "y": 14.299999999999999
+      },
+      "width": 1.68,
+      "height": 0.2,
+      "center": {
+        "x": 12.040999999999999,
+        "y": 14.299999999999999
+      }
+    }
+  ]
+}

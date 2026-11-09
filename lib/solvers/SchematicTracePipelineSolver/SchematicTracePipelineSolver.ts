@@ -532,6 +532,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
             inputProblem: instance.inputProblem,
             traces: connectorMovement.traces,
             netLabelPlacements,
+            allowObstacleAwareDetours: true,
           },
         ]
       },
