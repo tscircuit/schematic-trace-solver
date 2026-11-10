@@ -27,8 +27,8 @@ import {
   type InlineNetLabelPlacement,
   visualizeInlineNetLabelOutput,
 } from "../InlineNetLabelSolver/InlineNetLabelSolver"
-import { getSimpleConnectionPath } from "./getSimpleConnectionPath"
 import { findPerpendicularPathCrossings } from "../TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
+import { getSimpleConnectionPath } from "./getSimpleConnectionPath"
 import { reduceTraceCrossings } from "./reduceTraceCrossings"
 
 type GlobalConnNetId = NetLabelPlacement["globalConnNetId"]
@@ -51,6 +51,29 @@ interface CandidatePair {
 const RECOVERED_TRACE_PREFIX = "net-label-to-trace-"
 const MAX_NAMED_NET_RECOVERY_PERPENDICULAR_OFFSET = 0.05
 const MAX_ROUTED_COMPONENT_RECOVERY_PERPENDICULAR_OFFSET = 0.25
+const ORTHOGONAL_TOLERANCE = 1e-6
+
+const orthogonalizeTracePath = (tracePath: Point[]): Point[] => {
+  if (tracePath.length < 2) return tracePath
+  const orthogonalPath: Point[] = [tracePath[0]!]
+  for (let index = 0; index < tracePath.length - 1; index++) {
+    const start = tracePath[index]!
+    const end = tracePath[index + 1]!
+    const dx = Math.abs(end.x - start.x)
+    const dy = Math.abs(end.y - start.y)
+    if (dx > ORTHOGONAL_TOLERANCE && dy > ORTHOGONAL_TOLERANCE) {
+      if (dx >= dy) {
+        const midX = (start.x + end.x) / 2
+        orthogonalPath.push({ x: midX, y: start.y }, { x: midX, y: end.y })
+      } else {
+        const midY = (start.y + end.y) / 2
+        orthogonalPath.push({ x: start.x, y: midY }, { x: end.x, y: midY })
+      }
+    }
+    orthogonalPath.push(end)
+  }
+  return orthogonalPath
+}
 
 interface Options {
   /** Recover only explicit inline-eligible wires before terminal stub conversion. */
@@ -576,9 +599,16 @@ export class NetLabelToTraceSolver extends BaseSolver {
       )
         return
     }
+    const orthogonalTracePath = orthogonalizeTracePath(tracePath)
     if (
+      findFirstCollision(
+        orthogonalTracePath,
+        this.activeSubSolver!.obstacles,
+      ) ||
       doesTraceRecoveryPathConflict(tracePath, collisionTraces) ||
-      this.routeIntersectsRemainingLabels(tracePath, candidate)
+      doesTraceRecoveryPathConflict(orthogonalTracePath, collisionTraces) ||
+      this.routeIntersectsRemainingLabels(tracePath, candidate) ||
+      this.routeIntersectsRemainingLabels(orthogonalTracePath, candidate)
     ) {
       return
     }
@@ -654,6 +684,14 @@ export class NetLabelToTraceSolver extends BaseSolver {
     }
 
     if (!candidate) {
+      this.outputTraces = this.outputTraces.map((trace) =>
+        this.recoveredTraceIds.has(trace.mspPairId)
+          ? {
+              ...trace,
+              tracePath: orthogonalizeTracePath(trace.tracePath),
+            }
+          : trace,
+      )
       this.solved = true
       return
     }
