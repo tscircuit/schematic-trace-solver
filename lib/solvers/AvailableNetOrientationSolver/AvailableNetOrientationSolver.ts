@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -58,7 +59,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -80,6 +80,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   blockedStandaloneLabelIndex: number | null = null
   blockedStandaloneLabelTargetAnchorX: number | null = null
+  private crossingVerticalHeaderPairs: Array<{
+    lowerIdx: number
+    upperIdx: number
+    upperY: number
+  }> = []
   private traceMap: Record<string, SolvedTracePath>
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private maxSearchDistance: number
@@ -152,6 +157,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       labelIndices: indices,
       netLabelPlacements: this.outputNetLabelPlacements,
     })
+    this.orderCrossingVerticalHeaderPairs(orderedIndices)
 
     const blockedStandaloneLabelIndex = orderedIndices.find((index) => {
       const label = this.outputNetLabelPlacements[index]!
@@ -231,6 +237,59 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return orderedIndices
+  }
+
+  private orderCrossingVerticalHeaderPairs(orderedIndices: number[]) {
+    this.crossingVerticalHeaderPairs = []
+    for (let i = 0; i < orderedIndices.length; i++) {
+      for (let j = 0; j < orderedIndices.length; j++) {
+        if (i === j) continue
+        const upperIdx = orderedIndices[i]!
+        const lowerIdx = orderedIndices[j]!
+        const upper = this.outputNetLabelPlacements[upperIdx]!
+        const lower = this.outputNetLabelPlacements[lowerIdx]!
+        if (!this.isPortOnlyLabel(upper) || !this.isPortOnlyLabel(lower)) {
+          continue
+        }
+        const uPin = this.pinMap[upper.pinIds[0]!]
+        const lPin = this.pinMap[lower.pinIds[0]!]
+        if (!uPin || !lPin || uPin.chipId !== lPin.chipId) continue
+        if (Math.abs(uPin.x - lPin.x) > EPS) continue
+        if (uPin.y <= lPin.y + EPS || uPin.y - lPin.y > 0.35) continue
+        const chip = this.inputProblem.chips.find(
+          (candidate) => candidate.chipId === uPin.chipId,
+        )
+        if (!chip || chip.height <= chip.width) continue
+        const sidePins = chip.pins.filter(
+          (pin) => Math.abs(pin.x - uPin.x) <= EPS,
+        )
+        if (sidePins.length !== chip.pins.length || sidePins.length > 12) {
+          continue
+        }
+        const uAvail = this.getAvailableOrientations(upper)
+        const lAvail = this.getAvailableOrientations(lower)
+        if (
+          uAvail.length === 1 &&
+          uAvail[0] === "y-" &&
+          lAvail.length === 1 &&
+          lAvail[0] === "y+"
+        ) {
+          this.crossingVerticalHeaderPairs.push({
+            lowerIdx,
+            upperIdx,
+            upperY: uPin.y,
+          })
+        }
+      }
+    }
+    for (const pair of this.crossingVerticalHeaderPairs) {
+      const posUpper = orderedIndices.indexOf(pair.upperIdx)
+      const posLower = orderedIndices.indexOf(pair.lowerIdx)
+      if (posUpper >= 0 && posLower > posUpper) {
+        orderedIndices[posUpper] = pair.lowerIdx
+        orderedIndices[posLower] = pair.upperIdx
+      }
+    }
   }
 
   private sortCrowdedTopBankByPin(indices: number[]) {
@@ -1787,6 +1846,16 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
     if (this.intersectsAnyOtherNetLabel(bounds, labelIndex, label)) {
       return "netlabel-collision"
+    }
+    for (const pair of this.crossingVerticalHeaderPairs) {
+      if (
+        labelIndex === pair.lowerIdx &&
+        this.queuedLabelIndices.includes(pair.upperIdx) &&
+        bounds.minY < pair.upperY + LABEL_TRACE_CLEARANCE - EPS &&
+        bounds.maxY > pair.upperY - LABEL_TRACE_CLEARANCE + EPS
+      ) {
+        return "trace-clearance-violation"
+      }
     }
     return "valid"
   }
