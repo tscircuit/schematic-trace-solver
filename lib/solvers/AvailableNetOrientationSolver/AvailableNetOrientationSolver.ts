@@ -606,6 +606,30 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (lateralCandidate) return lateralCandidate
 
+    const labelChipId =
+      label.pinIds.length === 1
+        ? this.pinMap[label.pinIds[0]!]?.chipId
+        : undefined
+    const sharesPassiveWithGround =
+      this.inputProblem.directConnections.length === 0 &&
+      labelChipId !== undefined &&
+      this.outputNetLabelPlacements.some(
+        (other, idx) =>
+          idx !== labelIndex &&
+          this.isGroundLabel(other) &&
+          other.pinIds.some((pid) => this.pinMap[pid]?.chipId === labelChipId),
+      )
+    if (sharesPassiveWithGround) {
+      for (const orientation of orientations.slice(1)) {
+        const fallbackShifted = this.findValidShiftedCandidate(
+          label,
+          orientation,
+          labelIndex,
+        )
+        if (fallbackShifted) return fallbackShifted
+      }
+    }
+
     // Wire crossings are allowed when no alternative placement is clear.
     // Preserve the required orientation instead of leaving an invalid label.
     if (crossingAlignedCandidate) crossingAlignedCandidate.selected = true
