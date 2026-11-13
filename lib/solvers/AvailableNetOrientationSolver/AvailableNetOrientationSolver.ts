@@ -2183,10 +2183,24 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number,
     otherLabelIndex: number,
   ) {
-    return (
+    if (!this.queuedLabelIndices.includes(otherLabelIndex)) return false
+    if (
       this.crowdedPortOnlyLabelIndices.has(labelIndex) &&
-      this.crowdedPortOnlyLabelIndices.has(otherLabelIndex) &&
-      this.queuedLabelIndices.includes(otherLabelIndex)
+      this.crowdedPortOnlyLabelIndices.has(otherLabelIndex)
+    ) {
+      return true
+    }
+    const label = this.netLabelPlacements[labelIndex]
+    const otherLabel = this.netLabelPlacements[otherLabelIndex]
+    return Boolean(
+      label &&
+        otherLabel &&
+        this.isPortOnlyLabel(label) &&
+        this.isPortOnlyLabel(otherLabel) &&
+        Math.hypot(
+          label.anchorPoint.x - otherLabel.anchorPoint.x,
+          label.anchorPoint.y - otherLabel.anchorPoint.y,
+        ) <= 1e-4,
     )
   }
 
