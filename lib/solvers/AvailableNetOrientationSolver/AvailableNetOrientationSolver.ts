@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -58,7 +59,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -1741,10 +1741,28 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const { candidate, label, bounds } = params
     const pin = this.pinMap[label.pinIds[0]!]
     if (!pin || !isYOrientation(candidate.orientation)) return false
+    const chip = this.chipObstacleSpatialIndex.chips.find(
+      (c) => c.chipId === pin.chipId,
+    )
+    const sourceWithinChipVerticalSpan =
+      chip !== undefined &&
+      candidate.connectorSource !== undefined &&
+      (candidate.orientation === "y-"
+        ? candidate.connectorSource.y - candidate.height >
+          chip.bounds.minY + EPS
+        : candidate.connectorSource.y + candidate.height <
+          chip.bounds.maxY - EPS)
+    const overlapsChipVerticalSpan =
+      sourceWithinChipVerticalSpan &&
+      bounds.maxY > chip.bounds.minY + EPS &&
+      bounds.minY < chip.bounds.maxY - EPS
+    const tolerance = overlapsChipVerticalSpan
+      ? 0
+      : CONNECTED_PIN_ROW_OVERLAP_TOLERANCE
     if (candidate.anchorPoint.x < pin.x) {
-      return bounds.maxX <= pin.x + CONNECTED_PIN_ROW_OVERLAP_TOLERANCE + EPS
+      return bounds.maxX <= pin.x + tolerance + EPS
     }
-    return bounds.minX >= pin.x - CONNECTED_PIN_ROW_OVERLAP_TOLERANCE - EPS
+    return bounds.minX >= pin.x - tolerance - EPS
   }
 
   private getBoundsStatus(candidateBoundsCheck: {
