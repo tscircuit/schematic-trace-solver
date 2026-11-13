@@ -8,5 +8,21 @@ test("bug-report-20260707T140410Z", () => {
 
   solver.solve()
 
+  const output = solver.netLabelToTraceSolver!.getOutput()
+  expect(
+    output.traces.some(
+      (trace) =>
+        trace.pinIds.includes("R_NFAULT_PULLUP.2") &&
+        trace.pinIds.includes("U1.4"),
+    ),
+  ).toBe(true)
+  expect(
+    output.netLabelPlacements.some(
+      (label) =>
+        label.pinIds.includes("R_NFAULT_PULLUP.2") ||
+        label.pinIds.includes("U1.4"),
+    ),
+  ).toBe(false)
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

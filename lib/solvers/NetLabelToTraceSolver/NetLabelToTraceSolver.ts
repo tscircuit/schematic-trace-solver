@@ -98,6 +98,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
   private canRecoverParallelPair: ReturnType<typeof getParallelNetLabelPolicy>
   private queuedCandidates: CandidatePair[]
   private currentCandidate: CandidatePair | null = null
+  private retriedWithLabelObstacles = false
   declare activeSubSolver: SchematicTraceSingleLineSolver2 | null
 
   constructor(
@@ -544,10 +545,72 @@ export class NetLabelToTraceSolver extends BaseSolver {
     )
   }
 
-  private tryAcceptCurrentRoute() {
+  private doCandidateLabelsOverlap(candidate: CandidatePair) {
+    if (candidate.recoveryMode !== "fallback_labels") return false
+    const firstBounds = {
+      minX: candidate.firstLabel.center.x - candidate.firstLabel.width / 2,
+      maxX: candidate.firstLabel.center.x + candidate.firstLabel.width / 2,
+      minY: candidate.firstLabel.center.y - candidate.firstLabel.height / 2,
+      maxY: candidate.firstLabel.center.y + candidate.firstLabel.height / 2,
+    }
+    const secondBounds = {
+      minX: candidate.secondLabel.center.x - candidate.secondLabel.width / 2,
+      maxX: candidate.secondLabel.center.x + candidate.secondLabel.width / 2,
+      minY: candidate.secondLabel.center.y - candidate.secondLabel.height / 2,
+      maxY: candidate.secondLabel.center.y + candidate.secondLabel.height / 2,
+    }
+    return (
+      firstBounds.minX < secondBounds.maxX &&
+      firstBounds.maxX > secondBounds.minX &&
+      firstBounds.minY < secondBounds.maxY &&
+      firstBounds.maxY > secondBounds.minY
+    )
+  }
+
+  private getInputProblemWithCollidingLabelObstacles(
+    tracePath: Point[],
+    candidate: CandidatePair,
+  ): InputProblem {
+    const labelObstacleChips: InputChip[] = []
+
+    for (const label of this.outputNetLabelPlacements) {
+      if (label === candidate.firstLabel || label === candidate.secondLabel) {
+        continue
+      }
+      if (!pathIntersectsRenderedLabel(tracePath, label)) continue
+      labelObstacleChips.push({
+        chipId: `__net_label_obstacle_${labelObstacleChips.length}`,
+        center: label.center,
+        width: label.width,
+        height: label.height,
+        pins: [],
+      })
+    }
+
+    for (const label of this.input.inlineNetLabelPlacements) {
+      if (!pathIntersectsRenderedLabel(tracePath, label)) continue
+      const width = label.axis === "y" ? label.height : label.width
+      const height = label.axis === "y" ? label.width : label.height
+      labelObstacleChips.push({
+        chipId: `__net_label_obstacle_${labelObstacleChips.length}`,
+        center: label.center,
+        width,
+        height,
+        pins: [],
+      })
+    }
+
+    return {
+      ...this.inputProblem,
+      _chipObstacleSpatialIndex: undefined,
+      chips: [...this.inputProblem.chips, ...labelObstacleChips],
+    }
+  }
+
+  private tryAcceptCurrentRoute(): boolean {
     const candidate = this.currentCandidate
     let tracePath = this.activeSubSolver?.solvedTracePath
-    if (!candidate || !tracePath) return
+    if (!candidate || !tracePath) return false
 
     const retainedTraces = this.outputTraces.filter(
       (trace) => !this.isSupersededConnectorTrace(trace, candidate),
@@ -574,13 +637,34 @@ export class NetLabelToTraceSolver extends BaseSolver {
           0,
         ) > 1
       )
-        return
+        return false
+    }
+    const intersectsRemainingLabels = this.routeIntersectsRemainingLabels(
+      tracePath,
+      candidate,
+    )
+    if (
+      intersectsRemainingLabels &&
+      !candidate.simpleConnectionPath &&
+      !this.retriedWithLabelObstacles &&
+      this.doCandidateLabelsOverlap(candidate)
+    ) {
+      this.retriedWithLabelObstacles = true
+      this.activeSubSolver = new SchematicTraceSingleLineSolver2({
+        inputProblem: this.getInputProblemWithCollidingLabelObstacles(
+          tracePath,
+          candidate,
+        ),
+        pins: candidate.pins,
+        chipMap: this.chipMap,
+      })
+      return true
     }
     if (
       doesTraceRecoveryPathConflict(tracePath, collisionTraces) ||
-      this.routeIntersectsRemainingLabels(tracePath, candidate)
+      intersectsRemainingLabels
     ) {
-      return
+      return false
     }
 
     tracePath = reduceTraceCrossings({
@@ -615,6 +699,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
       )
     }
     this.stats.recoveredTraceCount++
+    return false
   }
 
   private areCandidatePinsAlreadyConnected(candidate: CandidatePair) {
@@ -633,12 +718,15 @@ export class NetLabelToTraceSolver extends BaseSolver {
     if (this.activeSubSolver) {
       this.activeSubSolver.step()
       if (this.activeSubSolver.solved) {
-        this.tryAcceptCurrentRoute()
-        this.activeSubSolver = null
-        this.currentCandidate = null
+        if (!this.tryAcceptCurrentRoute()) {
+          this.activeSubSolver = null
+          this.currentCandidate = null
+          this.retriedWithLabelObstacles = false
+        }
       } else if (this.activeSubSolver.failed) {
         this.activeSubSolver = null
         this.currentCandidate = null
+        this.retriedWithLabelObstacles = false
       }
       return
     }
@@ -659,6 +747,7 @@ export class NetLabelToTraceSolver extends BaseSolver {
     }
 
     this.currentCandidate = candidate
+    this.retriedWithLabelObstacles = false
     this.activeSubSolver = new SchematicTraceSingleLineSolver2({
       inputProblem: this.inputProblem,
       pins: candidate.pins,
