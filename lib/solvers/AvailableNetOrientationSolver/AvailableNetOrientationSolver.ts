@@ -1655,6 +1655,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       if (nonChipBoundsStatus !== "valid") return nonChipBoundsStatus
     }
 
+    if (
+      phase === "outward-trace-anchor" &&
+      label.pinIds.length === 2 &&
+      !this.hasPortOnlyLabelOnSameNet(label) &&
+      this.obstacleIndex.doesTraceIntersectBounds({
+        bounds,
+        excludedGlobalConnNetId: label.globalConnNetId,
+      })
+    ) {
+      return "trace-collision"
+    }
+
     const connectorTrace = this.getCandidateConnectorTrace(
       label,
       {
@@ -2038,17 +2050,63 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         this.inputProblem.availableNetLabelOrientations[connection.netId] ?? []
       if (
         availableOrientations.length !== 1 ||
-        availableOrientations[0] !== oppositeOrientation
+        !isYOrientation(availableOrientations[0]!)
       ) {
         return false
       }
 
       const connectionSide = this.getSingleChipSideForNetConnection(connection)
+      if (
+        connectionSide?.chipId !== currentSide.chipId ||
+        connectionSide.side !== currentSide.side
+      ) {
+        return false
+      }
+
+      if (availableOrientations[0] === oppositeOrientation) return true
+
+      const isConsecutiveMultiPinRail = (conn: InputNetConnection) =>
+        conn.pinIds.length > 2 &&
+        !this.connectionSpansIntermediatePinOnChipSide(conn, currentSide)
+      const isSpanningTwoPinRail = (conn: InputNetConnection) =>
+        conn.pinIds.length === 2 &&
+        this.connectionSpansIntermediatePinOnChipSide(conn, currentSide)
+
       return (
-        connectionSide?.chipId === currentSide.chipId &&
-        connectionSide.side === currentSide.side
+        (isConsecutiveMultiPinRail(currentConnection) &&
+          isSpanningTwoPinRail(connection)) ||
+        (isSpanningTwoPinRail(currentConnection) &&
+          isConsecutiveMultiPinRail(connection))
       )
     })
+  }
+
+  private connectionSpansIntermediatePinOnChipSide(
+    connection: InputNetConnection,
+    chipSide: { chipId: string; side: "left" | "right" },
+  ) {
+    const chip = this.chipObstacleSpatialIndex.chips.find(
+      (candidate) => candidate.chipId === chipSide.chipId,
+    )
+    if (!chip) return false
+
+    const sideX = chipSide.side === "left" ? chip.bounds.minX : chip.bounds.maxX
+    const connectionPins = connection.pinIds
+      .map((pinId) => this.pinMap[pinId])
+      .filter((pin): pin is InputPin & { chipId: string } => Boolean(pin))
+    if (connectionPins.length < 2) return false
+
+    const minY = Math.min(...connectionPins.map((pin) => pin.y))
+    const maxY = Math.max(...connectionPins.map((pin) => pin.y))
+    const connectionPinIdSet = new Set(connection.pinIds)
+
+    return chip.pins.some(
+      (pin) =>
+        !connectionPinIdSet.has(pin.pinId) &&
+        Math.abs(pin.x - sideX) <= EPS &&
+        pin.y > minY + EPS &&
+        pin.y < maxY - EPS,
+    )
   }
 
   private getSingleChipSideForNetConnection(
