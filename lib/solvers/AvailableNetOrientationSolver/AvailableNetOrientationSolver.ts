@@ -1660,7 +1660,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       {
         anchorPoint: candidate.anchorPoint,
         connectorSource:
-          phase === "lateral-shift" ? candidate.connectorSource : undefined,
+          phase === "lateral-shift" ||
+          (phase === "outward-trace-anchor" &&
+            this.isReducedHeightHorizontalFallback(label))
+            ? candidate.connectorSource
+            : undefined,
         orientation: candidate.orientation,
         phase,
       },
@@ -2016,6 +2020,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
   }
 
+  private isReducedHeightHorizontalFallback(label: NetLabelPlacement) {
+    if (this.isPortOnlyLabel(label) || !isXOrientation(label.orientation)) {
+      return false
+    }
+    const netLabelHeight = this.getNetLabelHeight(label)
+    return netLabelHeight !== undefined && label.height < netLabelHeight - EPS
+  }
+
   private hasOppositeVerticalRailOnSameChipSide(
     label: NetLabelPlacement,
     orientation: "y+" | "y-",
@@ -2025,38 +2037,80 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (!currentConnection) return false
 
+    const hasReducedHeightLabelInProblem = this.outputNetLabelPlacements.some(
+      (candidateLabel) =>
+        this.isReducedHeightHorizontalFallback(candidateLabel),
+    )
     const currentSide =
-      this.getSingleChipSideForNetConnection(currentConnection)
+      this.getSingleChipSideForNetConnection(currentConnection) ??
+      (hasReducedHeightLabelInProblem
+        ? this.getSingleChipSideForPinIds(label.pinIds)
+        : null)
     if (!currentSide) return false
 
     const oppositeOrientation = orientation === "y+" ? "y-" : "y+"
-    return this.inputProblem.netConnections.some((connection) => {
-      if (connection === currentConnection || connection.pinIds.length < 2) {
-        return false
-      }
-      const availableOrientations =
-        this.inputProblem.availableNetLabelOrientations[connection.netId] ?? []
-      if (
-        availableOrientations.length !== 1 ||
-        availableOrientations[0] !== oppositeOrientation
-      ) {
-        return false
-      }
+    return (
+      this.inputProblem.netConnections.some((connection) => {
+        if (connection === currentConnection || connection.pinIds.length < 2) {
+          return false
+        }
+        const availableOrientations =
+          this.inputProblem.availableNetLabelOrientations[connection.netId] ??
+          []
+        if (
+          availableOrientations.length !== 1 ||
+          availableOrientations[0] !== oppositeOrientation
+        ) {
+          return false
+        }
 
-      const connectionSide = this.getSingleChipSideForNetConnection(connection)
-      return (
-        connectionSide?.chipId === currentSide.chipId &&
-        connectionSide.side === currentSide.side
-      )
-    })
+        const connectionSide =
+          this.getSingleChipSideForNetConnection(connection)
+        return (
+          connectionSide?.chipId === currentSide.chipId &&
+          connectionSide.side === currentSide.side
+        )
+      }) ||
+      (hasReducedHeightLabelInProblem &&
+        this.outputNetLabelPlacements.some((otherLabel) => {
+          if (
+            otherLabel === label ||
+            otherLabel.globalConnNetId === label.globalConnNetId ||
+            otherLabel.pinIds.length < 2 ||
+            (!this.isReducedHeightHorizontalFallback(label) &&
+              !this.isReducedHeightHorizontalFallback(otherLabel))
+          ) {
+            return false
+          }
+          const availableOrientations =
+            this.getAvailableOrientations(otherLabel)
+          if (
+            availableOrientations.length !== 1 ||
+            availableOrientations[0] !== oppositeOrientation
+          ) {
+            return false
+          }
+          const otherSide = this.getSingleChipSideForPinIds(otherLabel.pinIds)
+          return (
+            otherSide?.chipId === currentSide.chipId &&
+            otherSide.side === currentSide.side
+          )
+        }))
+    )
   }
 
   private getSingleChipSideForNetConnection(
     connection: InputNetConnection,
   ): { chipId: string; side: "left" | "right" } | null {
-    if (connection.pinIds.length < 2) return null
+    return this.getSingleChipSideForPinIds(connection.pinIds)
+  }
 
-    const pins = connection.pinIds.map((pinId) => this.pinMap[pinId])
+  private getSingleChipSideForPinIds(
+    pinIds: readonly string[],
+  ): { chipId: string; side: "left" | "right" } | null {
+    if (pinIds.length < 2) return null
+
+    const pins = pinIds.map((pinId) => this.pinMap[pinId])
     if (pins.some((pin) => !pin)) return null
     const chipIds = new Set(pins.map((pin) => pin!.chipId))
     if (chipIds.size !== 1) return null

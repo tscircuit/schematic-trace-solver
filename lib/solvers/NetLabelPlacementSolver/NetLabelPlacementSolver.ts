@@ -318,6 +318,41 @@ export class NetLabelPlacementSolver extends BaseSolver {
         return
       }
 
+      const configuredOrientations = this.currentGroup
+        ? this.inputProblem.availableNetLabelOrientations[
+            this.currentGroup.netId ?? this.currentGroup.globalConnNetId
+          ]
+        : undefined
+      if (
+        this.triedAnyOrientationFallbackForCurrentGroup &&
+        this.activeSubSolver.netLabelHeight !== undefined &&
+        this.currentGroup &&
+        !this.currentGroup.portOnlyPinId &&
+        this.currentGroup.mspConnectionPairIds?.length === 1 &&
+        configuredOrientations?.length === 1 &&
+        configuredOrientations[0] === "y+" &&
+        this.currentGroup.overlappingTraces?.pins[0]?.chipId ===
+          this.currentGroup.overlappingTraces?.pins[1]?.chipId &&
+        this.overlappingSameNetTraceGroups.filter(
+          (g) => g.globalConnNetId === this.currentGroup?.globalConnNetId,
+        ).length === 2 &&
+        !this.overlappingSameNetTraceGroups.some(
+          (g) =>
+            g.globalConnNetId === this.currentGroup?.globalConnNetId &&
+            g.portOnlyPinId !== undefined,
+        )
+      ) {
+        const netLabelWidth = this.getNetLabelWidthForGroup(this.currentGroup)
+        this.activeSubSolver = new SingleNetLabelPlacementSolver({
+          inputProblem: this.inputProblem,
+          inputTraceMap: this.inputTraceMap,
+          overlappingSameNetTraceGroup: this.currentGroup,
+          availableOrientations: fullOrients,
+          netLabelWidth,
+        })
+        return
+      }
+
       // Record the failure for this group and continue to the next one
       if (this.currentGroup) {
         this.failedGroups.push(this.currentGroup)
