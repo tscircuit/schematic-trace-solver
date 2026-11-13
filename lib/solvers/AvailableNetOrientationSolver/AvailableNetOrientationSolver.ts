@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -38,8 +39,8 @@ import {
   rangesOverlap,
   rectsOverlap,
   simplifyOrthogonalPath,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyTrace,
+  tracePathIntersectsBounds,
 } from "./geometry"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
 import {
@@ -58,7 +59,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -605,6 +605,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       labelIndex,
     )
     if (lateralCandidate) return lateralCandidate
+
+    const doglegCandidate = this.findValidDoglegShiftedCandidate(
+      label,
+      orientations[0]!,
+      labelIndex,
+    )
+    if (doglegCandidate) return doglegCandidate
 
     // Wire crossings are allowed when no alternative placement is clear.
     // Preserve the required orientation instead of leaving an invalid label.
@@ -1304,11 +1311,116 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       ])
     }
 
-    return getConnectorTracePath(
+    const defaultTrace = getConnectorTracePath(
       label.anchorPoint,
       candidate.anchorPoint,
       candidate.orientation,
     )
+    if (
+      candidate.phase === "dogleg-shift" &&
+      this.isPortOnlyLabel(label) &&
+      isYOrientation(candidate.orientation) &&
+      this.getConnectorTraceStatus(defaultTrace, label, labelIndex) !== "valid"
+    ) {
+      const chipOutwardDir = this.getChipOutwardDirection(label.anchorPoint)
+      const orientDir = dir(candidate.orientation)
+      const totalVerticalDistance =
+        (candidate.anchorPoint.y - label.anchorPoint.y) * orientDir.y
+      if (chipOutwardDir.x !== 0 && totalVerticalDistance > LABEL_SEARCH_STEP) {
+        const outwardX =
+          label.anchorPoint.x + chipOutwardDir.x * LABEL_SEARCH_STEP
+        for (
+          let step = LABEL_SEARCH_STEP;
+          step <= totalVerticalDistance + EPS;
+          step += LABEL_SEARCH_STEP
+        ) {
+          const bendY = label.anchorPoint.y + orientDir.y * step
+          const doglegTrace = simplifyOrthogonalPath([
+            label.anchorPoint,
+            { x: outwardX, y: label.anchorPoint.y },
+            { x: outwardX, y: bendY },
+            { x: candidate.anchorPoint.x, y: bendY },
+            candidate.anchorPoint,
+          ])
+          if (
+            this.getConnectorTraceStatus(doglegTrace, label, labelIndex) ===
+              "valid" &&
+            !tracePathCrossesAnyTrace(doglegTrace, this.traceMap)
+          ) {
+            return doglegTrace
+          }
+        }
+      }
+    }
+
+    return defaultTrace
+  }
+
+  private findValidDoglegShiftedCandidate(
+    label: NetLabelPlacement,
+    orientation: FacingDirection,
+    labelIndex: number,
+  ) {
+    if (!this.isPortOnlyLabel(label) || !isYOrientation(orientation)) {
+      return null
+    }
+
+    const initialBaseAnchor = this.getSearchStartAnchor(label, orientation)
+    const startAnchorInsideChip =
+      this.chipObstacleSpatialIndex.getChipsInBounds({
+        minX: initialBaseAnchor.x - EPS,
+        minY: initialBaseAnchor.y - EPS,
+        maxX: initialBaseAnchor.x + EPS,
+        maxY: initialBaseAnchor.y + EPS,
+      }).length > 0
+    const currentBounds = getRectBounds(label.center, label.width, label.height)
+    const overlapsSameNetLabel = this.outputNetLabelPlacements.some(
+      (otherLabel, otherIndex) =>
+        otherIndex !== labelIndex &&
+        otherLabel.globalConnNetId === label.globalConnNetId &&
+        rectsOverlap(
+          currentBounds,
+          getRectBounds(otherLabel.center, otherLabel.width, otherLabel.height),
+        ),
+    )
+    if (!startAnchorInsideChip && !overlapsSameNetLabel) {
+      return null
+    }
+
+    const direction = dir(orientation)
+    const outwardDirection = this.getPerpendicularOutwardDirection(
+      label.anchorPoint,
+      orientation,
+    )
+    const maxSearchDistance = this.getSearchDistanceLimit(label, orientation)
+    const maxOutwardDistance =
+      outwardDirection.x === 0 && outwardDirection.y === 0
+        ? 0
+        : this.maxSearchDistance
+
+    for (
+      let outwardDistance = 0;
+      outwardDistance <= maxOutwardDistance + EPS;
+      outwardDistance += LABEL_SEARCH_STEP
+    ) {
+      const baseAnchor = {
+        x: initialBaseAnchor.x + outwardDirection.x * outwardDistance,
+        y: initialBaseAnchor.y + outwardDirection.y * outwardDistance,
+      }
+      const candidate = this.findValidCandidateInShiftColumn({
+        label,
+        labelIndex,
+        orientation,
+        direction,
+        baseAnchor,
+        maxSearchDistance,
+        outwardDistance,
+        phase: "dogleg-shift",
+      })
+      if (candidate) return candidate
+    }
+
+    return null
   }
 
   /**
@@ -1667,6 +1779,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       labelIndex,
     )
 
+    return this.getConnectorTraceStatus(connectorTrace, label, labelIndex)
+  }
+
+  private getConnectorTraceStatus(
+    connectorTrace: Point[],
+    label: NetLabelPlacement,
+    labelIndex: number,
+  ): CandidateStatus {
     if (this.obstacleIndex.doesTracePathCrossChip(connectorTrace)) {
       return "chip-collision"
     }
