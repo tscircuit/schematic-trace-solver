@@ -1,0 +1,486 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 3.8,
+      "height": 20,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "displayName": "VCC_PLL",
+          "x": -1.9,
+          "y": 8.35
+        },
+        {
+          "pinId": "schematic_port_1",
+          "displayName": "REFCLK_OUT",
+          "x": -1.9,
+          "y": 7.8500000000000005
+        },
+        {
+          "pinId": "schematic_port_2",
+          "displayName": "DXOUT",
+          "x": -1.9,
+          "y": 7.3500000000000005
+        },
+        {
+          "pinId": "schematic_port_3",
+          "displayName": "DXIN",
+          "x": -1.9,
+          "y": 6.8500000000000005
+        },
+        {
+          "pinId": "schematic_port_4",
+          "displayName": "X32KOUT",
+          "x": -1.9,
+          "y": 6.3500000000000005
+        },
+        {
+          "pinId": "schematic_port_5",
+          "displayName": "X32KIN",
+          "x": -1.9,
+          "y": 5.8500000000000005
+        },
+        {
+          "pinId": "schematic_port_6",
+          "displayName": "VCC_RTC",
+          "x": -1.9,
+          "y": 5.3500000000000005
+        },
+        {
+          "pinId": "schematic_port_7",
+          "displayName": "RESET",
+          "x": -1.9,
+          "y": 4.8500000000000005
+        },
+        {
+          "pinId": "schematic_port_8",
+          "displayName": "LDOA_OUT",
+          "x": -1.9,
+          "y": 4.3500000000000005
+        },
+        {
+          "pinId": "schematic_port_9",
+          "displayName": "LDO_IN",
+          "x": -1.9,
+          "y": 3.8500000000000005
+        },
+        {
+          "pinId": "schematic_port_10",
+          "displayName": "LDOB_OUT",
+          "x": -1.9,
+          "y": 3.3500000000000005
+        },
+        {
+          "pinId": "schematic_port_11",
+          "displayName": "VCC_PE",
+          "x": -1.9,
+          "y": 2.8500000000000005
+        },
+        {
+          "pinId": "schematic_port_12",
+          "displayName": "VDD_SYS0",
+          "x": -1.9,
+          "y": 2.3500000000000005
+        },
+        {
+          "pinId": "schematic_port_13",
+          "displayName": "DZQ",
+          "x": -1.9,
+          "y": 1.8500000000000005
+        },
+        {
+          "pinId": "schematic_port_14",
+          "displayName": "VCC_DRAM0",
+          "x": -1.9,
+          "y": 1.3500000000000005
+        },
+        {
+          "pinId": "schematic_port_15",
+          "displayName": "VCC_DRAM1",
+          "x": -1.9,
+          "y": 0.8500000000000005
+        },
+        {
+          "pinId": "schematic_port_16",
+          "displayName": "VDD18_DRAM",
+          "x": -1.9,
+          "y": 0.34999999999999964
+        },
+        {
+          "pinId": "schematic_port_17",
+          "displayName": "VDD_SYS1",
+          "x": -1.9,
+          "y": -0.15000000000000036
+        },
+        {
+          "pinId": "schematic_port_18",
+          "displayName": "VCC_LVDS",
+          "x": -1.9,
+          "y": -0.6500000000000004
+        },
+        {
+          "pinId": "schematic_port_19",
+          "displayName": "VCC_PD",
+          "x": -1.9,
+          "y": -1.1500000000000004
+        },
+        {
+          "pinId": "schematic_port_20",
+          "displayName": "VCC_TVOUT",
+          "x": -1.9,
+          "y": -1.6500000000000004
+        },
+        {
+          "pinId": "schematic_port_21",
+          "displayName": "TVOUT0",
+          "x": -1.9,
+          "y": -2.1500000000000004
+        },
+        {
+          "pinId": "schematic_port_22",
+          "displayName": "VDD_SYS2",
+          "x": -1.9,
+          "y": -2.6500000000000004
+        },
+        {
+          "pinId": "schematic_port_23",
+          "displayName": "VCC_IO",
+          "x": -1.9,
+          "y": -3.1500000000000004
+        },
+        {
+          "pinId": "schematic_port_24",
+          "displayName": "MICIN3P",
+          "x": -1.9,
+          "y": -3.6500000000000004
+        },
+        {
+          "pinId": "schematic_port_25",
+          "displayName": "MICIN3N",
+          "x": -1.9,
+          "y": -4.15
+        },
+        {
+          "pinId": "schematic_port_26",
+          "displayName": "AVCC",
+          "x": -1.9,
+          "y": -4.65
+        },
+        {
+          "pinId": "schematic_port_27",
+          "displayName": "VRA2",
+          "x": -1.9,
+          "y": -5.15
+        },
+        {
+          "pinId": "schematic_port_28",
+          "displayName": "AGND",
+          "x": -1.9,
+          "y": -5.65
+        },
+        {
+          "pinId": "schematic_port_29",
+          "displayName": "VRA1",
+          "x": -1.9,
+          "y": -6.15
+        },
+        {
+          "pinId": "schematic_port_30",
+          "displayName": "FMINR",
+          "x": -1.9,
+          "y": -6.65
+        },
+        {
+          "pinId": "schematic_port_31",
+          "displayName": "FMINL",
+          "x": -1.9,
+          "y": -7.15
+        },
+        {
+          "pinId": "schematic_port_32",
+          "displayName": "LINEINR",
+          "x": -1.9,
+          "y": -7.65
+        },
+        {
+          "pinId": "schematic_port_33",
+          "displayName": "LINEINL",
+          "x": -1.9,
+          "y": -8.15
+        },
+        {
+          "pinId": "schematic_port_34",
+          "displayName": "HPVCC",
+          "x": -1.9,
+          "y": -8.65
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "LDOA1V8",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.96,
+      "pinIds": [
+        "schematic_port_0",
+        "schematic_port_8",
+        "schematic_port_16",
+        "schematic_port_18",
+        "schematic_port_26",
+        "schematic_port_34"
+      ]
+    },
+    {
+      "netId": "REFCLK24M",
+      "isGround": false,
+      "netLabelWidth": 1.2,
+      "anchoredNetLabelWidth": 1.2,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.8,
+      "pinIds": [
+        "schematic_port_1"
+      ]
+    },
+    {
+      "netId": "DXOUT",
+      "isGround": false,
+      "netLabelWidth": 0.72,
+      "anchoredNetLabelWidth": 0.72,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.48,
+      "pinIds": [
+        "schematic_port_2"
+      ]
+    },
+    {
+      "netId": "DXIN",
+      "isGround": false,
+      "netLabelWidth": 0.6,
+      "anchoredNetLabelWidth": 0.6,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.4,
+      "pinIds": [
+        "schematic_port_3"
+      ]
+    },
+    {
+      "netId": "X32KOUT",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_4"
+      ]
+    },
+    {
+      "netId": "X32KIN",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_5"
+      ]
+    },
+    {
+      "netId": "VRTC1V8",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.96,
+      "pinIds": [
+        "schematic_port_6"
+      ]
+    },
+    {
+      "netId": "RESET_N",
+      "isGround": false,
+      "netLabelWidth": 0.96,
+      "anchoredNetLabelWidth": 0.96,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.64,
+      "pinIds": [
+        "schematic_port_7"
+      ]
+    },
+    {
+      "netId": "V3V3",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_9",
+        "schematic_port_11",
+        "schematic_port_19",
+        "schematic_port_20",
+        "schematic_port_23"
+      ]
+    },
+    {
+      "netId": "LDOB_OUT",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 1.08,
+      "pinIds": [
+        "schematic_port_10"
+      ]
+    },
+    {
+      "netId": "V0V9",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_12",
+        "schematic_port_17",
+        "schematic_port_22"
+      ]
+    },
+    {
+      "netId": "DDR_ZQ",
+      "isGround": false,
+      "netLabelWidth": 0.84,
+      "anchoredNetLabelWidth": 0.84,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelHeight": 0.12,
+      "inlineNetLabelWidth": 0.56,
+      "pinIds": [
+        "schematic_port_13"
+      ]
+    },
+    {
+      "netId": "V1V5",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_14",
+        "schematic_port_15"
+      ]
+    },
+    {
+      "netId": "VRA2",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_27"
+      ]
+    },
+    {
+      "netId": "GND",
+      "isGround": true,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.48,
+      "pinIds": [
+        "schematic_port_28"
+      ]
+    },
+    {
+      "netId": "VRA1",
+      "isGround": false,
+      "netLabelWidth": 0.42,
+      "netLabelHeight": 0.6,
+      "pinIds": [
+        "schematic_port_29"
+      ]
+    }
+  ],
+  "textBoxes": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -1.08,
+        "y": -10.13
+      },
+      "width": 0.84,
+      "height": 0.17999999999999972,
+      "text": "T113-S3"
+    },
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": -1.2000000000000002,
+        "y": 10.115
+      },
+      "width": 0.72,
+      "height": 0.25,
+      "text": "U_SOC"
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "GND": [
+      "y-"
+    ],
+    "V3V3": [
+      "y+"
+    ],
+    "V0V9": [
+      "y+"
+    ],
+    "V1V5": [
+      "y+"
+    ],
+    "VRTC1V8": [
+      "y+"
+    ],
+    "LDOA1V8": [
+      "y+"
+    ],
+    "LDOB_OUT": [
+      "y+"
+    ],
+    "REFCLK24M": [
+      "x-",
+      "x+"
+    ],
+    "DXOUT": [
+      "x-",
+      "x+"
+    ],
+    "DXIN": [
+      "x-",
+      "x+"
+    ],
+    "X32KOUT": [
+      "x-",
+      "x+"
+    ],
+    "X32KIN": [
+      "x-",
+      "x+"
+    ],
+    "RESET_N": [
+      "x-",
+      "x+"
+    ],
+    "DDR_ZQ": [
+      "x-",
+      "x+"
+    ],
+    "VRA2": [
+      "y+"
+    ],
+    "VRA1": [
+      "y+"
+    ]
+  },
+  "maxMspPairDistance": 4,
+  "_hideRatsNet": false
+}
