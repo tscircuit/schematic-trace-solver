@@ -44,6 +44,7 @@ import {
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
 import {
   extendVerticalTracePathAtInteriorPoint,
+  getGlobalConnNetIdByPinId,
   getPinMap,
   getTracePins,
   toNetLabelPlacementPatch,
@@ -85,6 +86,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private maxSearchDistance: number
   private pinMap: Record<string, InputPin & { chipId: string }>
   private obstacleIndex: AvailableNetOrientationObstacleIndex
+  private globalConnNetIdByPinId: Map<string, string>
 
   constructor(params: AvailableNetOrientationSolverParams) {
     super()
@@ -104,6 +106,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       chipObstacleSpatialIndex: this.chipObstacleSpatialIndex,
       netLabelPlacements: this.outputNetLabelPlacements,
       traces: this.traces,
+      pins: Object.values(this.pinMap),
+    })
+    this.globalConnNetIdByPinId = getGlobalConnNetIdByPinId({
+      traces: this.traces,
+      netLabelPlacements: this.netLabelPlacements,
     })
     this.crowdedPortOnlyLabelIndices = this.getCrowdedPortOnlyLabelIndices()
     this.queuedLabelIndices = this.getProcessableLabelIndices()
@@ -1671,6 +1678,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       return "chip-collision"
     }
 
+    // A connector running through another net's pin draws the two nets joined
+    if (this.tracePathPassesThroughOtherNetPin(connectorTrace, label)) {
+      return "pin-collision"
+    }
+
     for (const textBox of this.inputProblem.textBoxes ?? []) {
       if (
         tracePathIntersectsBounds(connectorTrace, getTextBoxBounds(textBox))
@@ -1698,6 +1710,19 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return "valid"
+  }
+
+  private tracePathPassesThroughOtherNetPin(
+    tracePath: Point[],
+    label: NetLabelPlacement,
+  ) {
+    return this.obstacleIndex.getPinsOnTracePath(tracePath).some((pin) => {
+      const pinGlobalConnNetId = this.globalConnNetIdByPinId.get(pin.pinId)
+      return (
+        pinGlobalConnNetId !== undefined &&
+        pinGlobalConnNetId !== label.globalConnNetId
+      )
+    })
   }
 
   private isAcceptableConnectedChipBoundaryOverlap(
