@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { pathIntersectsRenderedLabel } from "lib/utils/pathIntersectsRenderedLabel"
@@ -27,14 +28,27 @@ test("VREF trace clears a vertical passive GND label", async () => {
       trace.pinIds.includes("schematic_port_6") &&
       trace.pinIds.includes("schematic_port_8"),
   )!
+  const vrefRailTrace = traces.find(
+    (trace) =>
+      trace.pinIds.includes("schematic_port_5") &&
+      trace.pinIds.includes("schematic_port_6"),
+  )!
 
   expect(groundLabel).toBeDefined()
   expect(vrefTrace).toBeDefined()
+  expect(vrefRailTrace).toBeDefined()
   expect(vrefTrace.globalConnNetId).not.toBe(groundLabel.globalConnNetId)
   // The VREF route must approach the resistor without crossing its GND terminal.
   expect(pathIntersectsRenderedLabel(vrefTrace.tracePath, groundLabel)).toBe(
     false,
   )
+  // The C3 VREF branch must remain connected to the R1/R2 VREF rail after cleanup.
+  expect(
+    tracePathContainsPoint(
+      vrefRailTrace.tracePath,
+      vrefTrace.tracePath.at(-1)!,
+    ),
+  ).toBe(true)
   const alignedVrefBranch =
     solver.sameNetJunctionAlignmentSolver!.outputTraces.find(
       (trace) => trace.mspPairId === "schematic_port_22-schematic_port_0",
