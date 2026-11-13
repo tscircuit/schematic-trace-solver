@@ -3,20 +3,24 @@ import { ConnectivityMap } from "connectivity-map"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
-import inputProblem from "./assets/repro-pga300-redundant-ground-traces.input.json"
 
 // Full solver input captured from tscircuit/ti#117 at 067b6a2 using
 // `tsci build ... --schematic-only --disable-pcb --solver-debug`.
 // Only the debug serializer's { value_type: "undefined" } markers were removed.
+// Direct connections disable labels on fully routed nets to match core's display decision.
 const COMP = "schematic_port_10"
 const GND = "schematic_port_7"
 const C3_GND = "schematic_port_32"
 const R1_GND = "schematic_port_38"
 
 test("PGA300 preserves COMP to R1 without redundant ground branches", async () => {
-  const solver = new SchematicTracePipelineSolver(
-    inputProblem as unknown as InputProblem,
-  )
+  const inputProblem: InputProblem = await Bun.file(
+    new URL(
+      "./assets/repro-pga300-redundant-ground-traces.input.json",
+      import.meta.url,
+    ),
+  ).json()
+  const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
 
   expect(solver.solved).toBe(true)
@@ -56,6 +60,24 @@ test("PGA300 preserves COMP to R1 without redundant ground branches", async () =
   )!
   expect(emitterTrace).toBeDefined()
   for (const point of emitterTrace.tracePath) expect(point.x).toBeCloseTo(5.49)
+
+  const groundLabel = netLabelPlacements.find((label) =>
+    label.pinIds.includes("schematic_port_2"),
+  )!
+  expect(groundLabel).toBeDefined()
+  const connector = traces.find((trace) =>
+    trace.tracePath.some(
+      (point) =>
+        point.x === groundLabel.anchorPoint.x &&
+        point.y === groundLabel.anchorPoint.y,
+    ),
+  )!
+  expect(connector).toBeDefined()
+  expect(connector.tracePath).toHaveLength(2)
+  expect(connector.tracePath[0]!.y).toBeCloseTo(connector.tracePath[1]!.y)
+  expect(
+    solver.preAlignmentNetLabelTraceCollisionSolver!.completedReroutes,
+  ).toHaveLength(0)
 
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
