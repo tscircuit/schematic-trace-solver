@@ -7,6 +7,7 @@ import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/
 import type { InputProblem } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { alignSameNetJunctions } from "./alignSameNetJunctions"
+import { removeRedundantTerminalSegments } from "./removeRedundantTerminalSegments"
 import { placeGroundRailLabelsAtOuterEnd } from "./placeGroundRailLabelsAtOuterEnd"
 import { shortenSameSideRailToLabelAnchor } from "./shortenSameSideRailToLabelAnchor"
 
@@ -34,6 +35,11 @@ export class SameNetJunctionAlignmentSolver extends BaseSolver {
     const alignment = alignSameNetJunctions(this.input)
     this.outputTraces = shortenSameSideRailToLabelAnchor({
       traces: alignment.traces,
+      netLabelPlacements: alignment.netLabelPlacements,
+    })
+    this.outputTraces = removeRedundantTerminalSegments({
+      inputProblem: this.input.inputProblem,
+      traces: this.outputTraces,
       netLabelPlacements: alignment.netLabelPlacements,
     })
     this.outputNetLabelPlacements = placeGroundRailLabelsAtOuterEnd({

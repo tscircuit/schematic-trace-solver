@@ -67,7 +67,7 @@ function hasClosedPerimeter(traces: SolvedTracePath[], corners: Point[]) {
   )
 }
 
-test("repro: same-net rail routing retains two redundant closed loops", () => {
+test("same-net rails remove the redundant terminal loop and retain the interior junction repro", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem, {
     hideRatsNet: true,
   })
@@ -82,8 +82,8 @@ test("repro: same-net rail routing retains two redundant closed loops", () => {
   ]) {
     const rails = output.traces.filter((trace) => trace.userNetId === "LED_5V")
     expect(rails.length).toBeGreaterThan(0)
-    // These assertions intentionally pin the current bug. A fix should break
-    // each redundant perimeter while preserving all LED_5V terminal connections.
+    // The small interior junction loop remains a separate, unfixed repro.
+    // Only the redundant terminal rail in the larger loop is removed.
     expect(
       hasClosedPerimeter(rails, [
         { x: -0.6531666666666679, y: -7.660000000000003 },
@@ -99,7 +99,7 @@ test("repro: same-net rail routing retains two redundant closed loops", () => {
         { x: -0.6531666666666679, y: -8.060000000000002 },
         { x: -0.7541666666666675, y: -8.060000000000002 },
       ]),
-    ).toBe(true)
+    ).toBe(false)
   }
 
   expect(solver).toMatchSolverSnapshot(import.meta.path)
