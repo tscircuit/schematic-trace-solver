@@ -1,0 +1,150 @@
+<svg width="640" height="640" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="white" />
+  <g>
+    <circle data-type="point" data-label="J_USB.13
+x+" data-x="1.4500000000000002" data-y="0.10000000000000009" cx="547.5" cy="302.5" r="3" fill="hsl(9, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.14
+x+" data-x="1.4500000000000002" data-y="0.30000000000000004" cx="547.5" cy="267.5" r="3" fill="hsl(10, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.15
+x+" data-x="1.4500000000000002" data-y="0.5" cx="547.5" cy="232.5" r="3" fill="hsl(11, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.16
+x+" data-x="1.4500000000000002" data-y="0.7" cx="547.5" cy="197.5" r="3" fill="hsl(12, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.1
+x-" data-x="-1.4500000000000002" data-y="0.7" cx="39.99999999999997" cy="197.5" r="3" fill="hsl(138, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.2
+x-" data-x="-1.4500000000000002" data-y="0.49999999999999994" cx="39.99999999999997" cy="232.5" r="3" fill="hsl(139, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.3
+x-" data-x="-1.4500000000000002" data-y="0.29999999999999993" cx="39.99999999999997" cy="267.5" r="3" fill="hsl(140, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.4
+x-" data-x="-1.4500000000000002" data-y="0.09999999999999987" cx="39.99999999999997" cy="302.5" r="3" fill="hsl(141, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.5
+x-" data-x="-1.4500000000000002" data-y="-0.10000000000000009" cx="39.99999999999997" cy="337.5" r="3" fill="hsl(142, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.6
+x-" data-x="-1.4500000000000002" data-y="-0.30000000000000004" cx="39.99999999999997" cy="372.5" r="3" fill="hsl(143, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.7
+x-" data-x="-1.4500000000000002" data-y="-0.5" cx="39.99999999999997" cy="407.5" r="3" fill="hsl(144, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.8
+x-" data-x="-1.4500000000000002" data-y="-0.7" cx="39.99999999999997" cy="442.5" r="3" fill="hsl(145, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.9
+x+" data-x="1.4500000000000002" data-y="-0.7" cx="547.5" cy="442.5" r="3" fill="hsl(146, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.10
+x+" data-x="1.4500000000000002" data-y="-0.49999999999999994" cx="547.5" cy="407.5" r="3" fill="hsl(6, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.11
+x+" data-x="1.4500000000000002" data-y="-0.29999999999999993" cx="547.5" cy="372.5" r="3" fill="hsl(7, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="J_USB.12
+x+" data-x="1.4500000000000002" data-y="-0.09999999999999987" cx="547.5" cy="337.5" r="3" fill="hsl(8, 100%, 50%, 0.8)" />
+  </g>
+  <g>
+    <circle data-type="point" data-label="anchorPoint
+orientation: y-" data-x="1.6500000000000001" data-y="0.30000000000000004" cx="582.5" cy="267.5" r="3" fill="hsl(40, 100%, 50%, 0.9)" />
+  </g>
+  <g>
+    <polyline data-points="1.4500000000000002,0.30000000000000004 1.4500000000000002,0.5" data-type="line" data-label="" points="547.5,267.5 547.5,232.5" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
+  </g>
+  <g>
+    <polyline data-points="1.4500000000000002,0.30000000000000004 1.4500000000000002,0.7" data-type="line" data-label="" points="547.5,267.5 547.5,197.5" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
+  </g>
+  <g>
+    <polyline data-points="1.4500000000000002,0.5 1.4500000000000002,0.7" data-type="line" data-label="" points="547.5,232.5 547.5,197.5" fill="none" stroke="hsl(157, 100%, 50%, 0.8)" stroke-width="1" stroke-dasharray="4 2" />
+  </g>
+  <g>
+    <polyline data-points="1.4500000000000002,0.5 1.6500000000000001,0.5 1.6500000000000001,0.30000000000000004 1.4500000000000002,0.30000000000000004" data-type="line" data-label="" points="547.5,232.5 582.5,232.5 582.5,267.5 547.5,267.5" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
+    <polyline data-points="1.4500000000000002,0.7 1.6500000000000001,0.7 1.6500000000000001,0.5 1.4500000000000002,0.5" data-type="line" data-label="" points="547.5,197.5 582.5,197.5 582.5,232.5 547.5,232.5" fill="none" stroke="purple" stroke-width="1" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="schematic_component_0" data-x="0" data-y="0" x="39.99999999999997" y="162.50000000000003" width="507.5" height="315" fill="hsl(24, 100%, 50%, 0.8)" stroke="black" stroke-width="0.005714285714285714" />
+  </g>
+  <g>
+    <rect data-type="rect" data-label="netId: GND
+globalConnNetId: connectivity_net0" data-x="1.6500000000000001" data-y="0.06000000000000005" x="565" y="267.5" width="35" height="84" fill="#00000066" stroke="#000000" stroke-width="0.005714285714285714" />
+  </g>
+  <g id="crosshair" style="display: none">
+    <line id="crosshair-h" y1="0" y2="640" stroke="#666" stroke-width="0.5" />
+    <line id="crosshair-v" x1="0" x2="640" stroke="#666" stroke-width="0.5" /><text id="coordinates" font-family="monospace" font-size="12" fill="#666"></text>
+  </g>
+  <script>
+    <![CDATA[
+    document.currentScript.parentElement.addEventListener('mousemove', (e) => {
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const crosshair = svg.getElementById('crosshair');
+      const h = svg.getElementById('crosshair-h');
+      const v = svg.getElementById('crosshair-v');
+      const coords = svg.getElementById('coordinates');
+
+      crosshair.style.display = 'block';
+      h.setAttribute('x1', '0');
+      h.setAttribute('x2', '640');
+      h.setAttribute('y1', y);
+      h.setAttribute('y2', y);
+      v.setAttribute('x1', x);
+      v.setAttribute('x2', x);
+      v.setAttribute('y1', '0');
+      v.setAttribute('y2', '640');
+
+      // Calculate real coordinates using inverse transformation
+      const matrix = {
+        "a": 175,
+        "c": 0,
+        "e": 293.75,
+        "b": 0,
+        "d": -175,
+        "f": 320
+      };
+      // Manually invert and apply the affine transform
+      // Since we only use translate and scale, we can directly compute:
+      // x' = (x - tx) / sx
+      // y' = (y - ty) / sy
+      const sx = matrix.a;
+      const sy = matrix.d;
+      const tx = matrix.e;
+      const ty = matrix.f;
+      const realPoint = {
+        x: (x - tx) / sx,
+        y: (y - ty) / sy // Flip y back since we used negative scale
+      }
+
+      coords.textContent = `(${realPoint.x.toFixed(2)}, ${realPoint.y.toFixed(2)})`;
+      coords.setAttribute('x', (x + 5).toString());
+      coords.setAttribute('y', (y - 5).toString());
+    });
+    document.currentScript.parentElement.addEventListener('mouseleave', () => {
+      document.currentScript.parentElement.getElementById('crosshair').style.display = 'none';
+    });
+    ]]>
+  </script>
+</svg>
