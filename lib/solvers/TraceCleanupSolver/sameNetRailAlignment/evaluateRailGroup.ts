@@ -32,6 +32,8 @@ interface EvaluateRailGroupInput {
   netLabelPlacements: NetLabelPlacement[]
   obstacles: ObstacleRect[]
   eligibleTraceIds: ReadonlySet<string>
+  preserveWholeNetReadability?: boolean
+  allowFixedLabelLengthening?: boolean
 }
 
 const tracePathChanged = (
@@ -50,12 +52,22 @@ export const evaluateRailGroup = ({
   netLabelPlacements,
   obstacles,
   eligibleTraceIds,
+  preserveWholeNetReadability = false,
+  allowFixedLabelLengthening = true,
 }: EvaluateRailGroupInput): AlignmentCandidate | null => {
   const groupTraceIds = new Set(group.map((segment) => segment.traceId))
   const originalGroupTraces = traces.filter((trace) =>
     groupTraceIds.has(trace.mspPairId),
   )
   const baseline = getTraceGeometryMetrics(originalGroupTraces, traces)
+  const netBaseline = preserveWholeNetReadability
+    ? getTraceGeometryMetrics(
+        traces.filter(
+          (trace) => trace.globalConnNetId === group[0]!.globalConnNetId,
+        ),
+        traces,
+      )
+    : null
   const originalCoordinates = getDistinctCoordinates(
     group.map((segment) => segment.coordinate),
   )
@@ -148,7 +160,25 @@ export const evaluateRailGroup = ({
       // A fixed label anchor determines the rail coordinate. It may lengthen
       // endpoint legs, but it must still preserve turns and every safety gate.
       if (
-        options?.coordinateIsFixedByLabel
+        netBaseline &&
+        !(options?.coordinateIsFixedByLabel && allowFixedLabelLengthening)
+      ) {
+        const netMetrics = getTraceGeometryMetrics(
+          allCandidateTraces.filter(
+            (trace) => trace.globalConnNetId === group[0]!.globalConnNetId,
+          ),
+          allCandidateTraces,
+        )
+        if (
+          netMetrics.otherNetCrossings > netBaseline.otherNetCrossings ||
+          !isReadabilityImprovement(netMetrics, netBaseline)
+        ) {
+          continue
+        }
+      }
+
+      if (
+        options?.coordinateIsFixedByLabel && allowFixedLabelLengthening
           ? metrics.turnCount > baseline.turnCount
           : !isReadabilityImprovement(metrics, baseline)
       ) {
