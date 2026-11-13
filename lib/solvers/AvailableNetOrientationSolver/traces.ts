@@ -49,6 +49,24 @@ export const getPinMap = (inputProblem: InputProblem) => {
   return pinMap
 }
 
+export const getGlobalConnNetIdByPinId = (params: {
+  traces: SolvedTracePath[]
+  netLabelPlacements: NetLabelPlacement[]
+}) => {
+  const globalConnNetIdByPinId = new Map<string, string>()
+  for (const trace of params.traces) {
+    for (const pinId of trace.pinIds) {
+      globalConnNetIdByPinId.set(pinId, trace.globalConnNetId)
+    }
+  }
+  for (const label of params.netLabelPlacements) {
+    for (const pinId of label.pinIds) {
+      globalConnNetIdByPinId.set(pinId, label.globalConnNetId)
+    }
+  }
+  return globalConnNetIdByPinId
+}
+
 export const getTracePins = (
   label: NetLabelPlacement,
   pinMap: Record<string, InputPin & { chipId: string }>,
