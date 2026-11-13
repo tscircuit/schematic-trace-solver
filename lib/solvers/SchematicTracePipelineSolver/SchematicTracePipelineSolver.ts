@@ -719,6 +719,16 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   }
 
   override _step() {
+    if (
+      (!this.inputProblem.directConnections ||
+        this.inputProblem.directConnections.length === 0) &&
+      (!this.inputProblem.netConnections ||
+        this.inputProblem.netConnections.length === 0)
+    ) {
+      this.solved = true
+      return
+    }
+
     const pipelineStepDef = this.pipelineDef[this.currentPipelineStepIndex]
     if (!pipelineStepDef) {
       this.solved = true
