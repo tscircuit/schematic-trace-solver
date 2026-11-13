@@ -95,26 +95,26 @@ type ChipId = string
 type PinId = string
 
 const solver = new SchematicTracePipelineSolver({
-  chips: {
-    chipId: "U1",
-    center: { x: 0, y: 0 },
-    width: 1.6,
-    height: 0.6,
-    pins: [
-      {
-        pinId: "U1.1",
-        x: -0.8,
-        y: 0.2,
-      },
-      // ...
-    ],
-  },
+  chips: [
+    {
+      chipId: "U1",
+      center: { x: 0, y: 0 },
+      width: 1.6,
+      height: 0.6,
+      pins: [
+        {
+          pinId: "U1.1",
+          x: -0.8,
+          y: 0.2,
+        },
+      ],
+    },
+  ],
   directConnections: [
     {
       pinIds: ["U1.1", "C1.1"],
       netId: "VCC",
     },
-    // ...
   ],
   netConnections: [
     {
@@ -122,7 +122,6 @@ const solver = new SchematicTracePipelineSolver({
       netId: "GND",
       pinIds: ["U1.3", "C1.2", "C2.2"],
     },
-    // ...
   ],
   availableNetLabelOrientations: {
     VCC: ["y+", "y-"],
