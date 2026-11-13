@@ -6,6 +6,7 @@ import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { alignNearbySameNetSegments } from "./alignNearbySameNetSegments"
 import { alignSameNetRails } from "./alignSameNetRails"
 import { extendBranchesToTrimmedJunctions } from "./extendBranchesToTrimmedJunctions"
 
@@ -15,6 +16,7 @@ export type TraceCleanupOperation =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "aligning_same_net_rails"
+  | "aligning_nearby_same_net_segments"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -112,6 +114,9 @@ export class TraceCleanupSolver extends BaseSolver {
         break
       case "aligning_same_net_rails":
         this._runAlignSameNetRailsStep()
+        break
+      case "aligning_nearby_same_net_segments":
+        this._runAlignNearbySameNetSegmentsStep()
         break
     }
   }
@@ -221,6 +226,21 @@ export class TraceCleanupSolver extends BaseSolver {
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.stats.alignedRailGroupCount = alignment.alignedRailGroupCount
     this.stats.alignedTraceCount = alignment.alignedTraceCount
+    this._advancePipeline()
+  }
+
+  private _runAlignNearbySameNetSegmentsStep() {
+    const alignment = alignNearbySameNetSegments({
+      inputProblem: this.input.inputProblem,
+      traces: this.outputTraces,
+      netLabelPlacements: this.input.allLabelPlacements,
+      eligibleTraceIds: this.input.eligibleTraceIds,
+      maxDistance: this.input.paddingBuffer || undefined,
+    })
+    this.outputTraces = alignment.traces
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.stats.alignedNearbyGroupCount = alignment.alignedGroupCount
+    this.stats.alignedNearbyTraceCount = alignment.alignedTraceCount
     this._advancePipeline()
   }
 
