@@ -1,5 +1,11 @@
 import fs from "node:fs"
 import path from "node:path"
+import {
+  assertInputProblem,
+  normalizeBugReportInputProblem,
+} from "./normalizeBugReportJson"
+
+export { assertInputProblem, normalizeBugReportInputProblem }
 
 type IssueEvent = {
   issue: {
@@ -14,8 +20,6 @@ type JsonLinkCandidate = {
   label?: string
   url: string
 }
-
-const validDirections = new Set(["x+", "x-", "y+", "y-"])
 
 const repoRoot = process.cwd()
 const eventPath = process.env["GITHUB_EVENT_PATH"]
@@ -71,13 +75,13 @@ async function main() {
   }
 
   const jsonAttachment = await getJsonAttachment(body)
-  assertInputProblem(jsonAttachment.value)
+  const inputProblem = normalizeBugReportInputProblem(jsonAttachment.value)
 
   fs.mkdirSync(reportDirAbs, { recursive: true })
   fs.mkdirSync(path.join(repoRoot, siteReportDir), { recursive: true })
   fs.writeFileSync(
     path.join(repoRoot, jsonPath),
-    `${JSON.stringify(jsonAttachment.value, null, 2)}\n`,
+    `${JSON.stringify(inputProblem, null, 2)}\n`,
   )
   fs.writeFileSync(path.join(repoRoot, testPath), getTestFile(reportId))
   fs.writeFileSync(path.join(repoRoot, pagePath), getPageFile(reportId))
@@ -261,193 +265,6 @@ async function downloadGitHubUserAttachment(url: string, redirectCount = 0) {
   return content
 }
 
-function assertInputProblem(value: unknown) {
-  assertRecord(value, "input problem")
-  assertArray(value["chips"], "chips")
-  assertArray(value["directConnections"], "directConnections")
-  assertArray(value["netConnections"], "netConnections")
-  assertRecord(
-    value["availableNetLabelOrientations"],
-    "availableNetLabelOrientations",
-  )
-
-  for (let index = 0; index < value["chips"].length; index++) {
-    assertChip(value["chips"][index], `chips[${index}]`)
-  }
-
-  for (let index = 0; index < value["directConnections"].length; index++) {
-    assertDirectConnection(
-      value["directConnections"][index],
-      `directConnections[${index}]`,
-    )
-  }
-
-  for (let index = 0; index < value["netConnections"].length; index++) {
-    assertNetConnection(
-      value["netConnections"][index],
-      `netConnections[${index}]`,
-    )
-  }
-
-  for (const [netId, orientations] of Object.entries(
-    value["availableNetLabelOrientations"],
-  )) {
-    const pathName = `availableNetLabelOrientations.${netId}`
-    assertArray(orientations, pathName)
-
-    for (let index = 0; index < orientations.length; index++) {
-      const orientation = orientations[index]
-
-      if (
-        typeof orientation !== "string" ||
-        !validDirections.has(orientation)
-      ) {
-        throw new Error(
-          `${pathName}[${index}] must be one of x+, x-, y+, or y-`,
-        )
-      }
-    }
-  }
-
-  if ("textBoxes" in value && value["textBoxes"] !== undefined) {
-    assertArray(value["textBoxes"], "textBoxes")
-
-    for (let index = 0; index < value["textBoxes"].length; index++) {
-      assertTextBox(value["textBoxes"][index], `textBoxes[${index}]`)
-    }
-  }
-
-  if (
-    "maxMspPairDistance" in value &&
-    value["maxMspPairDistance"] !== undefined
-  ) {
-    assertFiniteNumber(value["maxMspPairDistance"], "maxMspPairDistance")
-  }
-}
-
-function assertChip(value: unknown, pathName: string) {
-  assertRecord(value, pathName)
-  assertString(value["chipId"], `${pathName}.chipId`)
-  assertPoint(value["center"], `${pathName}.center`)
-  assertFiniteNumber(value["width"], `${pathName}.width`)
-  assertFiniteNumber(value["height"], `${pathName}.height`)
-  assertArray(value["pins"], `${pathName}.pins`)
-
-  for (let index = 0; index < value["pins"].length; index++) {
-    assertPin(value["pins"][index], `${pathName}.pins[${index}]`)
-  }
-
-  if ("sectionId" in value && value["sectionId"] !== undefined) {
-    assertString(value["sectionId"], `${pathName}.sectionId`)
-  }
-}
-
-function assertPin(value: unknown, pathName: string) {
-  assertRecord(value, pathName)
-  assertString(value["pinId"], `${pathName}.pinId`)
-  assertFiniteNumber(value["x"], `${pathName}.x`)
-  assertFiniteNumber(value["y"], `${pathName}.y`)
-
-  if ("_facingDirection" in value && value["_facingDirection"] !== undefined) {
-    const direction = value["_facingDirection"]
-
-    if (typeof direction !== "string" || !validDirections.has(direction)) {
-      throw new Error(
-        `${pathName}._facingDirection must be one of x+, x-, y+, or y-`,
-      )
-    }
-  }
-}
-
-function assertDirectConnection(value: unknown, pathName: string) {
-  assertRecord(value, pathName)
-  assertArray(value["pinIds"], `${pathName}.pinIds`)
-
-  if (value["pinIds"].length !== 2) {
-    throw new Error(`${pathName}.pinIds must contain exactly 2 pin ids`)
-  }
-
-  assertString(value["pinIds"][0], `${pathName}.pinIds[0]`)
-  assertString(value["pinIds"][1], `${pathName}.pinIds[1]`)
-
-  if ("netId" in value && value["netId"] !== undefined) {
-    assertString(value["netId"], `${pathName}.netId`)
-  }
-
-  if ("netLabelWidth" in value && value["netLabelWidth"] !== undefined) {
-    assertFiniteNumber(value["netLabelWidth"], `${pathName}.netLabelWidth`)
-  }
-}
-
-function assertNetConnection(value: unknown, pathName: string) {
-  assertRecord(value, pathName)
-  assertString(value["netId"], `${pathName}.netId`)
-  assertArray(value["pinIds"], `${pathName}.pinIds`)
-
-  for (let index = 0; index < value["pinIds"].length; index++) {
-    assertString(value["pinIds"][index], `${pathName}.pinIds[${index}]`)
-  }
-
-  if ("netLabelWidth" in value && value["netLabelWidth"] !== undefined) {
-    assertFiniteNumber(value["netLabelWidth"], `${pathName}.netLabelWidth`)
-  }
-
-  if ("netLabelHeight" in value && value["netLabelHeight"] !== undefined) {
-    assertFiniteNumber(value["netLabelHeight"], `${pathName}.netLabelHeight`)
-  }
-}
-
-function assertTextBox(value: unknown, pathName: string) {
-  assertRecord(value, pathName)
-  assertPoint(value["center"], `${pathName}.center`)
-  assertFiniteNumber(value["width"], `${pathName}.width`)
-  assertFiniteNumber(value["height"], `${pathName}.height`)
-
-  if ("chipId" in value && value["chipId"] !== undefined) {
-    assertString(value["chipId"], `${pathName}.chipId`)
-  }
-
-  if ("text" in value && value["text"] !== undefined) {
-    assertString(value["text"], `${pathName}.text`)
-  }
-}
-
-function assertPoint(value: unknown, pathName: string) {
-  assertRecord(value, pathName)
-  assertFiniteNumber(value["x"], `${pathName}.x`)
-  assertFiniteNumber(value["y"], `${pathName}.y`)
-}
-
-function assertRecord(
-  value: unknown,
-  pathName: string,
-): asserts value is Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error(`${pathName} must be an object`)
-  }
-}
-
-function assertArray(
-  value: unknown,
-  pathName: string,
-): asserts value is unknown[] {
-  if (!Array.isArray(value)) {
-    throw new Error(`${pathName} must be an array`)
-  }
-}
-
-function assertString(value: unknown, pathName: string) {
-  if (typeof value !== "string") {
-    throw new Error(`${pathName} must be a string`)
-  }
-}
-
-function assertFiniteNumber(value: unknown, pathName: string) {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new Error(`${pathName} must be a finite number`)
-  }
-}
-
 function getTestFile(reportId: string) {
   return `import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
@@ -490,8 +307,10 @@ function getErrorMessage(error: unknown) {
   return String(error)
 }
 
-main().catch((error) => {
-  writeFailureSummary(error)
-  console.error(error)
-  process.exit(1)
-})
+if (import.meta.main) {
+  main().catch((error) => {
+    writeFailureSummary(error)
+    console.error(error)
+    process.exit(1)
+  })
+}
