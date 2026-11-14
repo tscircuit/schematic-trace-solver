@@ -37,6 +37,27 @@ const corridorIsClear = (
   )
 }
 
+const segmentWouldHitObstacleAtCoordinate = (
+  segment: RailSegment,
+  coordinate: number,
+  obstacles: ObstacleRect[],
+) => {
+  const [start, end]: [Point, Point] =
+    segment.orientation === "vertical"
+      ? [
+          { x: coordinate, y: segment.minAlong },
+          { x: coordinate, y: segment.maxAlong },
+        ]
+      : [
+          { x: segment.minAlong, y: coordinate },
+          { x: segment.maxAlong, y: coordinate },
+        ]
+
+  return obstacles.some((obstacle) =>
+    segmentIntersectsRect(start, end, obstacle),
+  )
+}
+
 const tracesSharePin = (
   a: RailSegment,
   b: RailSegment,
@@ -63,13 +84,24 @@ const canJoinRailGroup = (
     tracesSharePin(current, candidate, traceMap)) &&
   corridorIsClear(current, candidate, obstacles)
 
-export const getRailGroups = (
-  traces: SolvedTracePath[],
-  eligibleTraceIds: ReadonlySet<string>,
-  inputProblem: InputProblem,
-  obstacles: ObstacleRect[],
-  netLabelPlacements: NetLabelPlacement[],
-): RailSegment[][] => {
+interface RailGroupInput {
+  traces: SolvedTracePath[]
+  eligibleTraceIds: ReadonlySet<string>
+  inputProblem: InputProblem
+  obstacles: ObstacleRect[]
+  netLabelPlacements: NetLabelPlacement[]
+}
+
+function* iterateRailGroups(
+  {
+    traces,
+    eligibleTraceIds,
+    inputProblem,
+    obstacles,
+    netLabelPlacements,
+  }: RailGroupInput,
+  partialGroupsOnly: boolean,
+): Generator<RailSegment[]> {
   const chipMap = new Map(inputProblem.chips.map((chip) => [chip.chipId, chip]))
   const traceMap = new Map(traces.map((trace) => [trace.mspPairId, trace]))
   const eligibleTraces = traces.filter((trace) =>
@@ -126,21 +158,21 @@ export const getRailGroups = (
         .sort(),
     ].join("|")
 
-  const selectedGroups: RailSegment[][] = []
   const selectedGroupKeys = new Set<string>()
-  const addEligibleGroup = (
+  const acceptEligibleGroup = (
     group: RailSegment[],
     options?: { requireFixedLabel?: boolean },
   ) => {
     const traceCount = new Set(group.map((segment) => segment.traceId)).size
-    if (traceCount < 2) return
+    if (traceCount < 2) return false
 
     const fixedLabelCoordinate = getFixedLabelCoordinate(
       group,
       netLabelPlacements,
       traces,
     )
-    if (options?.requireFixedLabel && fixedLabelCoordinate === null) return
+    if (options?.requireFixedLabel && fixedLabelCoordinate === null)
+      return false
 
     const hasDifferentCoordinates = group.some(
       (segment) => !nearlyEqual(segment.coordinate, group[0]!.coordinate),
@@ -148,21 +180,79 @@ export const getRailGroups = (
     const hasDifferentFixedLabelCoordinate =
       fixedLabelCoordinate !== null &&
       !nearlyEqual(fixedLabelCoordinate, group[0]!.coordinate)
-    if (!hasDifferentCoordinates && !hasDifferentFixedLabelCoordinate) return
+    if (!hasDifferentCoordinates && !hasDifferentFixedLabelCoordinate)
+      return false
 
     const key = groupKey(group)
-    if (selectedGroupKeys.has(key)) return
+    if (selectedGroupKeys.has(key)) return false
     selectedGroupKeys.add(key)
-    selectedGroups.push(group)
+    return true
+  }
+
+  const selectGroups = function* (
+    groups: RailSegment[][],
+    options?: { requireFixedLabel?: boolean },
+  ): Generator<RailSegment[]> {
+    for (const group of groups) {
+      if (!partialGroupsOnly) {
+        if (acceptEligibleGroup(group, options)) yield group
+        continue
+      }
+
+      // Keep the partial fallback confined to the three-branch reproducer.
+      if (options?.requireFixedLabel) continue
+      const traceIds = new Set(group.map((segment) => segment.traceId))
+      if (traceIds.size !== 3) continue
+
+      // A partial fallback should be narrower than the maximal-group pass:
+      // consider only segment pairs that are directly connected under the
+      // original grouping rules. Pulling every segment from two traces into a
+      // fresh connected-component search can create a new bridge through
+      // another endpoint and move unrelated rails elsewhere in the net.
+      for (let firstIndex = 0; firstIndex < group.length - 1; firstIndex++) {
+        const first = group[firstIndex]!
+        for (const second of group.slice(firstIndex + 1)) {
+          if (first.traceId === second.traceId) continue
+          if (!tracesSharePin(first, second, traceMap)) continue
+          if (!canJoinRailGroup(first, first, second, traceMap, obstacles)) {
+            continue
+          }
+
+          // The partial fallback exists for a maximal three-trace group where
+          // one branch cannot join the clear pair because the same target rail
+          // would run through an obstacle. Do not treat any other rejection
+          // reason as permission to realign an unrelated pair.
+          const pairTraceIds = new Set([first.traceId, second.traceId])
+          const thirdTraceSegments = group.filter(
+            (segment) => !pairTraceIds.has(segment.traceId),
+          )
+          const thirdTraceBlocksCompleteAlignment = [
+            first.coordinate,
+            second.coordinate,
+          ].some((coordinate) =>
+            thirdTraceSegments.some((segment) =>
+              segmentWouldHitObstacleAtCoordinate(
+                segment,
+                coordinate,
+                obstacles,
+              ),
+            ),
+          )
+          if (!thirdTraceBlocksCompleteAlignment) continue
+
+          if (acceptEligibleGroup([first, second], options)) {
+            yield [first, second]
+          }
+        }
+      }
+    }
   }
 
   const primarySegments = eligibleTraces.flatMap((trace) =>
     getComponentSideRailSegments(trace, chipMap),
   )
   // Preserve the original nearest-endpoint grouping and its ordering.
-  for (const group of collectConnectedGroups(primarySegments)) {
-    addEligibleGroup(group)
-  }
+  yield* selectGroups(collectConnectedGroups(primarySegments))
 
   // Equal-distance endpoint associations can bridge a component chain, but
   // only a fixed label is allowed to opt that broader group into alignment.
@@ -172,9 +262,36 @@ export const getRailGroups = (
       maxMspPairDistance: inputProblem.maxMspPairDistance,
     }),
   )
-  for (const group of collectConnectedGroups(tiedEndpointSegments)) {
-    addEligibleGroup(group, { requireFixedLabel: true })
-  }
-
-  return selectedGroups
+  yield* selectGroups(collectConnectedGroups(tiedEndpointSegments), {
+    requireFixedLabel: true,
+  })
 }
+
+export const getRailGroups = (
+  traces: SolvedTracePath[],
+  eligibleTraceIds: ReadonlySet<string>,
+  inputProblem: InputProblem,
+  obstacles: ObstacleRect[],
+  netLabelPlacements: NetLabelPlacement[],
+): RailSegment[][] =>
+  Array.from(
+    iterateRailGroups(
+      {
+        traces,
+        eligibleTraceIds,
+        inputProblem,
+        obstacles,
+        netLabelPlacements,
+      },
+      false,
+    ),
+  )
+
+/**
+ * Lazily considers connected two-trace subsets after all complete groups have
+ * been rejected. Pair enumeration is bounded quadratically in trace count;
+ * each candidate still uses the original component, corridor and label gates.
+ */
+export const getPartialRailGroups = (
+  input: RailGroupInput,
+): Generator<RailSegment[]> => iterateRailGroups(input, true)

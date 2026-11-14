@@ -32,6 +32,8 @@ interface EvaluateRailGroupInput {
   netLabelPlacements: NetLabelPlacement[]
   obstacles: ObstacleRect[]
   eligibleTraceIds: ReadonlySet<string>
+  preserveWholeNetReadability?: boolean
+  allowFixedLabelLengthening?: boolean
 }
 
 const tracePathChanged = (
@@ -50,12 +52,22 @@ export const evaluateRailGroup = ({
   netLabelPlacements,
   obstacles,
   eligibleTraceIds,
+  preserveWholeNetReadability = false,
+  allowFixedLabelLengthening = true,
 }: EvaluateRailGroupInput): AlignmentCandidate | null => {
   const groupTraceIds = new Set(group.map((segment) => segment.traceId))
   const originalGroupTraces = traces.filter((trace) =>
     groupTraceIds.has(trace.mspPairId),
   )
   const baseline = getTraceGeometryMetrics(originalGroupTraces, traces)
+  const netBaseline = preserveWholeNetReadability
+    ? getTraceGeometryMetrics(
+        traces.filter(
+          (trace) => trace.globalConnNetId === group[0]!.globalConnNetId,
+        ),
+        traces,
+      )
+    : null
   const originalCoordinates = getDistinctCoordinates(
     group.map((segment) => segment.coordinate),
   )
@@ -140,6 +152,19 @@ export const evaluateRailGroup = ({
         continue
       }
 
+      // A local improvement can lose overlap with an untouched same-net rail.
+      // Judge partial alignments against the complete net as well. Fixed label
+      // coordinates retain their existing exception for longer endpoint legs.
+      if (netBaseline && !options?.coordinateIsFixedByLabel) {
+        const netMetrics = getTraceGeometryMetrics(
+          allCandidateTraces.filter(
+            (trace) => trace.globalConnNetId === group[0]!.globalConnNetId,
+          ),
+          allCandidateTraces,
+        )
+        if (!isReadabilityImprovement(netMetrics, netBaseline)) continue
+      }
+
       const metrics = getTraceGeometryMetrics(
         candidateTraces,
         allCandidateTraces,
@@ -148,7 +173,7 @@ export const evaluateRailGroup = ({
       // A fixed label anchor determines the rail coordinate. It may lengthen
       // endpoint legs, but it must still preserve turns and every safety gate.
       if (
-        options?.coordinateIsFixedByLabel
+        options?.coordinateIsFixedByLabel && allowFixedLabelLengthening
           ? metrics.turnCount > baseline.turnCount
           : !isReadabilityImprovement(metrics, baseline)
       ) {
