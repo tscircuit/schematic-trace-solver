@@ -7,6 +7,7 @@ import {
   DEFAULT_MAX_MSP_PAIR_DISTANCE,
   type MspConnectionPair,
 } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import {
   findFirstCollision,
@@ -227,17 +228,16 @@ const pathsIntersect = (firstPath: Point[], secondPath: Point[]): boolean => {
   return false
 }
 
-const connectionPairPinsAreAlreadyConnected = ({
-  connectionPair,
+const getConnectedSameNetTracesForPin = ({
+  pinId,
   sameNetTraces,
 }: {
-  connectionPair: MspConnectionPair
+  pinId: PinId
   sameNetTraces: SolvedTracePath[]
-}): boolean => {
-  const [firstPin, secondPin] = connectionPair.pins
+}): SolvedTracePath[] => {
   const connectedTraceIndexes = new Set(
     sameNetTraces.flatMap((trace, index) =>
-      trace.pinIds.includes(firstPin.pinId) ? [index] : [],
+      trace.pinIds.includes(pinId) ? [index] : [],
     ),
   )
 
@@ -261,9 +261,23 @@ const connectionPairPinsAreAlreadyConnected = ({
     }
   }
 
-  return [...connectedTraceIndexes].some((traceIndex) =>
-    sameNetTraces[traceIndex]!.pinIds.includes(secondPin.pinId),
+  return [...connectedTraceIndexes].map(
+    (traceIndex) => sameNetTraces[traceIndex]!,
   )
+}
+
+const connectionPairPinsAreAlreadyConnected = ({
+  connectionPair,
+  sameNetTraces,
+}: {
+  connectionPair: MspConnectionPair
+  sameNetTraces: SolvedTracePath[]
+}): boolean => {
+  const [firstPin, secondPin] = connectionPair.pins
+  return getConnectedSameNetTracesForPin({
+    pinId: firstPin.pinId,
+    sameNetTraces,
+  }).some((trace) => trace.pinIds.includes(secondPin.pinId))
 }
 
 const getJunctionCandidates = ({
@@ -350,6 +364,57 @@ const getJunctionCandidates = ({
   )
 }
 
+const doesTerminalSegmentExitEnclosingChipObstacle = ({
+  pin,
+  neighbor,
+  obstacle,
+}: {
+  pin: MspConnectionPair["pins"][number] | undefined
+  neighbor: Point
+  obstacle: ObstacleRect
+}): boolean => {
+  if (!pin?._facingDirection) return false
+  if (obstacle.kind !== "chip" || obstacle.chipId === pin.chipId) return false
+  if (
+    pin.x < obstacle.minX - COORDINATE_TOLERANCE ||
+    pin.x > obstacle.maxX + COORDINATE_TOLERANCE ||
+    pin.y < obstacle.minY - COORDINATE_TOLERANCE ||
+    pin.y > obstacle.maxY + COORDINATE_TOLERANCE
+  ) {
+    return false
+  }
+  if (segmentOverlapsRectBoundary(pin, neighbor, obstacle)) {
+    return false
+  }
+
+  switch (pin._facingDirection) {
+    case "x+":
+      return (
+        Math.abs(neighbor.y - pin.y) <= COORDINATE_TOLERANCE &&
+        obstacle.maxX - pin.x < pin.x - obstacle.minX - COORDINATE_TOLERANCE &&
+        neighbor.x > obstacle.maxX + COORDINATE_TOLERANCE
+      )
+    case "x-":
+      return (
+        Math.abs(neighbor.y - pin.y) <= COORDINATE_TOLERANCE &&
+        pin.x - obstacle.minX < obstacle.maxX - pin.x - COORDINATE_TOLERANCE &&
+        neighbor.x < obstacle.minX - COORDINATE_TOLERANCE
+      )
+    case "y+":
+      return (
+        Math.abs(neighbor.x - pin.x) <= COORDINATE_TOLERANCE &&
+        obstacle.maxY - pin.y < pin.y - obstacle.minY - COORDINATE_TOLERANCE &&
+        neighbor.y > obstacle.maxY + COORDINATE_TOLERANCE
+      )
+    case "y-":
+      return (
+        Math.abs(neighbor.x - pin.x) <= COORDINATE_TOLERANCE &&
+        pin.y - obstacle.minY < obstacle.maxY - pin.y - COORDINATE_TOLERANCE &&
+        neighbor.y < obstacle.minY - COORDINATE_TOLERANCE
+      )
+  }
+}
+
 const pathCollidesWithObstacles = ({
   path,
   obstacles,
@@ -414,15 +479,33 @@ const pathCollidesWithObstacles = ({
   const collision = findFirstCollision(path, obstacles, {
     excludeRectsForSegment: (segmentIndex) => {
       const excludedObstacles = new Set<ObstacleRect>()
-      if (segmentIndex === 0 && firstChipObstacle) {
-        excludedObstacles.add(firstChipObstacle)
+      if (segmentIndex === 0) {
+        if (firstChipObstacle) excludedObstacles.add(firstChipObstacle)
+        for (const obstacle of obstacles) {
+          if (
+            doesTerminalSegmentExitEnclosingChipObstacle({
+              pin: firstPathPin,
+              neighbor: path[1]!,
+              obstacle,
+            })
+          ) {
+            excludedObstacles.add(obstacle)
+          }
+        }
       }
-      if (
-        pathConnectsPairPins &&
-        segmentIndex === path.length - 2 &&
-        secondChipObstacle
-      ) {
-        excludedObstacles.add(secondChipObstacle)
+      if (pathConnectsPairPins && segmentIndex === path.length - 2) {
+        if (secondChipObstacle) excludedObstacles.add(secondChipObstacle)
+        for (const obstacle of obstacles) {
+          if (
+            doesTerminalSegmentExitEnclosingChipObstacle({
+              pin: lastPathPin,
+              neighbor: path[path.length - 2]!,
+              obstacle,
+            })
+          ) {
+            excludedObstacles.add(obstacle)
+          }
+        }
       }
       return excludedObstacles
     },
@@ -690,12 +773,58 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
       recoveredPath = tracePath
     }
     if (recoveredPath) {
-      this.solvedUnroutedTraces.push({
-        ...connectionPair,
-        tracePath: recoveredPath,
-        mspConnectionPairIds: [connectionPair.mspPairId],
-        pinIds: connectionPair.pins.map((pin) => pin.pinId),
-      })
+      const startPin = connectionPair.pins.find((pin) =>
+        pointsAreEqual(pin, recoveredPath[0]!),
+      )
+      const otherPin = startPin
+        ? connectionPair.pins.find((pin) => pin.pinId !== startPin.pinId)
+        : undefined
+      const endPoint = recoveredPath.at(-1)!
+      const endsAtOtherPin =
+        otherPin !== undefined && pointsAreEqual(endPoint, otherPin)
+      const junctionHostTrace =
+        !endsAtOtherPin && startPin
+          ? sameNetTraces.find((trace) =>
+              tracePathContainsPoint(trace.tracePath, endPoint),
+            )
+          : undefined
+      const joinedComponentTraces =
+        junctionHostTrace?.pinIds[0] !== undefined
+          ? getConnectedSameNetTracesForPin({
+              pinId: junctionHostTrace.pinIds[0],
+              sameNetTraces,
+            })
+          : []
+      const connectsPairPins =
+        endsAtOtherPin ||
+        !startPin ||
+        !junctionHostTrace ||
+        (otherPin !== undefined &&
+          joinedComponentTraces.some((trace) =>
+            trace.pinIds.includes(otherPin.pinId),
+          ))
+
+      if (connectsPairPins) {
+        this.solvedUnroutedTraces.push({
+          ...connectionPair,
+          tracePath: recoveredPath,
+          mspConnectionPairIds: [connectionPair.mspPairId],
+          pinIds: connectionPair.pins.map((pin) => pin.pinId),
+        })
+      } else {
+        const hostPin =
+          junctionHostTrace.pins.find((pin) => pin.pinId !== startPin.pinId) ??
+          junctionHostTrace.pins[0]!
+        const mspPairId = `${hostPin.pinId}-${startPin.pinId}`
+        this.solvedUnroutedTraces.push({
+          ...connectionPair,
+          mspPairId,
+          pins: [hostPin, startPin],
+          tracePath: recoveredPath,
+          mspConnectionPairIds: [mspPairId],
+          pinIds: [hostPin.pinId, startPin.pinId],
+        })
+      }
     }
   }
 

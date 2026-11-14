@@ -26,5 +26,37 @@ test("bug-report-20260825T045913Z", () => {
     alignedSharedPinBranch.tracePath[1]!.x,
   )
 
+  const pgndGlobalNetId =
+    solver.mspConnectionPairSolver!.globalConnMap.getNetConnectedToId("PGND")
+  const finalOutput = solver.netLabelToTraceSolver!.getOutput()
+  const pgndTraces = finalOutput.traces.filter(
+    (trace) => trace.globalConnNetId === pgndGlobalNetId,
+  )
+  const connectedOutputRailPins = new Set<string>(["schematic_port_45"])
+  let previousSize = 0
+  while (connectedOutputRailPins.size !== previousSize) {
+    previousSize = connectedOutputRailPins.size
+    for (const trace of pgndTraces) {
+      if (trace.pinIds.some((pinId) => connectedOutputRailPins.has(pinId))) {
+        for (const pinId of trace.pinIds) {
+          connectedOutputRailPins.add(pinId)
+        }
+      }
+    }
+  }
+  expect([...connectedOutputRailPins].sort()).toEqual([
+    "schematic_port_45",
+    "schematic_port_47",
+    "schematic_port_49",
+    "schematic_port_51",
+    "schematic_port_53",
+    "schematic_port_55",
+  ])
+
+  const pgndLabels = finalOutput.netLabelPlacements.filter(
+    (label) => label.netId === "PGND",
+  )
+  expect(pgndLabels).toHaveLength(2)
+
   expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
