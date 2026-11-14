@@ -156,6 +156,7 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
   private visited: Set<PathKey> = new Set()
   private inferredPinIndexes = new Set<number>()
   hasAmbiguousPinDirections = false
+  hasPinEnclosedByEndpointTextPadding = false
 
   constructor(params: {
     pins: MspConnectionPair["pins"]
@@ -193,6 +194,25 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
             endpointChipIds.has(obstacle.textBox.chipId),
         ),
     )
+    const pinBoundsEps = 1e-9
+    const pointInRect = (
+      point: Point,
+      rect: { minX: number; maxX: number; minY: number; maxY: number },
+    ) =>
+      point.x >= rect.minX - pinBoundsEps &&
+      point.x <= rect.maxX + pinBoundsEps &&
+      point.y >= rect.minY - pinBoundsEps &&
+      point.y <= rect.maxY + pinBoundsEps
+    this.hasPinEnclosedByEndpointTextPadding =
+      this.reserveNetLabelClearance &&
+      this.pins.some((pin) =>
+        [...this.endpointTextObstacles].some(
+          (obstacle) =>
+            obstacle.textBox.chipId === pin.chipId &&
+            pointInRect(pin, obstacle) &&
+            !pointInRect(pin, getTextBoxBounds(obstacle.textBox)),
+        ),
+      )
 
     const directionOptions = this.pins.map((pin, pinIndex) => {
       if (pin._facingDirection) return [pin._facingDirection]

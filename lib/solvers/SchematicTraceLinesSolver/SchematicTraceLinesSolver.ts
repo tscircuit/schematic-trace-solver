@@ -12,6 +12,47 @@ import type { Guideline } from "../GuidelinesSolver/GuidelinesSolver"
 import { visualizeGuidelines } from "../GuidelinesSolver/visualizeGuidelines"
 import type { Point } from "@tscircuit/math-utils"
 import { getPinDirectionCandidates } from "./SchematicTraceSingleLineSolver/getPinDirection"
+import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
+
+const connectionPairHasExplicitNetLabelConfig = ({
+  connectionPair,
+  inputProblem,
+}: {
+  connectionPair: MspConnectionPair
+  inputProblem: InputProblem
+}) => {
+  const pinIds = connectionPair.pins.map((pin) => pin.pinId)
+  if (
+    getNetLabelWidthForConnection({
+      inputProblem,
+      netId: connectionPair.userNetId,
+      pinIds,
+      isPortOnlyLabel: true,
+    }) !== undefined
+  ) {
+    return true
+  }
+
+  if (
+    inputProblem.netConnections.some(
+      (netConnection) =>
+        (connectionPair.userNetId !== undefined &&
+          netConnection.netId === connectionPair.userNetId) ||
+        netConnection.pinIds.some((pinId) => pinIds.includes(pinId)),
+    )
+  ) {
+    return true
+  }
+
+  return inputProblem.directConnections.some(
+    (directConnection) =>
+      ((connectionPair.userNetId !== undefined &&
+        directConnection.netId === connectionPair.userNetId) ||
+        directConnection.pinIds.every((pinId) => pinIds.includes(pinId))) &&
+      (directConnection.netLabelText !== undefined ||
+        directConnection.allowInlineNetLabel === true),
+  )
+}
 
 const shouldPreferExteriorDetours = ({
   connectionPair,
@@ -119,7 +160,12 @@ export class SchematicTraceLinesSolver extends BaseSolver {
       if (
         this.currentConnectionPair &&
         !this.retryingWithoutNetLabelClearance &&
-        this.activeSubSolver.hasAmbiguousPinDirections
+        (this.activeSubSolver.hasAmbiguousPinDirections ||
+          (this.activeSubSolver.hasPinEnclosedByEndpointTextPadding &&
+            !connectionPairHasExplicitNetLabelConfig({
+              connectionPair: this.currentConnectionPair,
+              inputProblem: this.inputProblem,
+            })))
       ) {
         const connectionPair = this.currentConnectionPair
         this.retryingWithoutNetLabelClearance = true
