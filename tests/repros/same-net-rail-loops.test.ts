@@ -67,7 +67,7 @@ function hasClosedPerimeter(traces: SolvedTracePath[], corners: Point[]) {
   )
 }
 
-test("same-net rails remove the redundant terminal loop and retain the interior junction repro", () => {
+test("same-net rails remove redundant terminal and interior loops", () => {
   const solver = new SchematicTracePipelineSolver(inputProblem, {
     hideRatsNet: true,
   })
@@ -82,8 +82,7 @@ test("same-net rails remove the redundant terminal loop and retain the interior 
   ]) {
     const rails = output.traces.filter((trace) => trace.userNetId === "LED_5V")
     expect(rails.length).toBeGreaterThan(0)
-    // The small interior junction loop remains a separate, unfixed repro.
-    // Only the redundant terminal rail in the larger loop is removed.
+    // Both the interior loop and the previously fixed terminal loop stay removed.
     expect(
       hasClosedPerimeter(rails, [
         { x: -0.6531666666666679, y: -7.660000000000003 },
@@ -91,7 +90,7 @@ test("same-net rails remove the redundant terminal loop and retain the interior 
         { x: -0.5760833333333354, y: -7.380000000000002 },
         { x: -0.6531666666666679, y: -7.380000000000002 },
       ]),
-    ).toBe(true)
+    ).toBe(false)
     expect(
       hasClosedPerimeter(rails, [
         { x: -0.7541666666666675, y: -9.340000000000005 },
