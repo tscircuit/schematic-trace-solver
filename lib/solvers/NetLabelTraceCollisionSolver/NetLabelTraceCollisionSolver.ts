@@ -14,6 +14,8 @@ import { getColorFromString } from "lib/utils/getColorFromString"
 import type { InputProblem } from "lib/types/InputProblem"
 import type { CompletedTraceReroute } from "lib/solvers/TraceElbowTransitionSimplificationSolver/types"
 
+import { findObstacleAwareDetour } from "./findObstacleAwareDetour"
+
 const ON_PATH_EPS = 1e-6
 
 function getClosestPointOnSegment(params: {
@@ -158,6 +160,7 @@ function detectTraceLabelOverlaps(
 }
 
 export interface NetLabelTraceCollisionSolverParams {
+  allowObstacleAwareDetours?: boolean
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
@@ -177,6 +180,8 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
 
   override activeSubSolver: SingleOverlapSolver | null = null
   private recentlyFailed = new Set<string>()
+  private allowObstacleAwareDetours: boolean
+  private attemptedObstacleAwarePaths = new Set<string>()
   private detourCounts = new Map<string, number>()
 
   private currentOverlap: {
@@ -186,6 +191,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
 
   constructor(params: NetLabelTraceCollisionSolverParams) {
     super()
+    this.allowObstacleAwareDetours = params.allowObstacleAwareDetours ?? false
     this.inputProblem = params.inputProblem
     this.traces = params.traces
     this.netLabelPlacements = params.netLabelPlacements
@@ -197,6 +203,7 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
     typeof NetLabelTraceCollisionSolver
   >[0] {
     return {
+      allowObstacleAwareDetours: this.allowObstacleAwareDetours,
       inputProblem: this.inputProblem,
       traces: this.traces,
       netLabelPlacements: this.netLabelPlacements,
@@ -210,32 +217,31 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
       if (this.activeSubSolver.solved) {
         const solvedPath = this.activeSubSolver.solvedTracePath
         if (solvedPath) {
-          this.completedReroutes.push({
-            initialTrace: {
-              ...this.activeSubSolver.initialTrace,
-              tracePath: this.activeSubSolver.initialTrace.tracePath.map(
-                (point) => ({ ...point }),
-              ),
-            },
-            reroutedTracePath: solvedPath.map((point) => ({ ...point })),
-            label: this.activeSubSolver.label,
-            detourCount: this.activeSubSolver.detourCount,
-          })
-          const idx = this.outputTraces.findIndex(
-            (t) => t.mspPairId === this.activeSubSolver!.initialTrace.mspPairId,
-          )
-          if (idx !== -1) {
-            const oldPath = this.outputTraces[idx]!.tracePath
-            this.outputTraces[idx] = {
-              ...this.outputTraces[idx],
-              tracePath: solvedPath,
-            }
-            this.reanchorLabelsOnMovedTrace(this.outputTraces[idx]!, oldPath)
-          }
+          this.applyReroute(this.activeSubSolver, solvedPath)
         }
         this.activeSubSolver = null
         this.currentOverlap = null
       } else if (this.activeSubSolver.failed) {
+        const subSolver = this.activeSubSolver
+        const pathKey = `${subSolver.initialTrace.mspPairId}:${JSON.stringify(subSolver.initialTrace.tracePath)}`
+        if (
+          this.allowObstacleAwareDetours &&
+          !this.attemptedObstacleAwarePaths.has(pathKey)
+        ) {
+          this.attemptedObstacleAwarePaths.add(pathKey)
+          const detour = findObstacleAwareDetour({
+            trace: subSolver.initialTrace,
+            inputProblem: this.inputProblem,
+            traces: this.outputTraces,
+            labels: this.outputNetLabelPlacements,
+          })
+          if (detour) {
+            this.applyReroute(subSolver, detour)
+            this.activeSubSolver = null
+            this.currentOverlap = null
+            return
+          }
+        }
         const key = this.getOverlapKey(
           this.activeSubSolver.initialTrace,
           this.activeSubSolver.label,
@@ -297,6 +303,25 @@ export class NetLabelTraceCollisionSolver extends BaseSolver {
       tracesToAvoidOverlapping: this.outputTraces,
       netLabelPlacements: this.outputNetLabelPlacements,
     })
+  }
+
+  private applyReroute(solver: SingleOverlapSolver, path: Point[]) {
+    this.completedReroutes.push({
+      initialTrace: {
+        ...solver.initialTrace,
+        tracePath: solver.initialTrace.tracePath.map((point) => ({ ...point })),
+      },
+      reroutedTracePath: path.map((point) => ({ ...point })),
+      label: solver.label,
+      detourCount: solver.detourCount,
+    })
+    const index = this.outputTraces.findIndex(
+      (trace) => trace.mspPairId === solver.initialTrace.mspPairId,
+    )
+    if (index === -1) return
+    const oldPath = this.outputTraces[index]!.tracePath
+    this.outputTraces[index] = { ...this.outputTraces[index]!, tracePath: path }
+    this.reanchorLabelsOnMovedTrace(this.outputTraces[index]!, oldPath)
   }
 
   /**
