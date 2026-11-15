@@ -6,7 +6,13 @@
     "indentStyle": "space"
   },
   "files": {
-    "includes": ["**", "!**/cosmos-export", "!**/dist", "!**/package.json"]
+    "includes": [
+      "**",
+      "!**/.github/workflows/bun-pver-release.yml",
+      "!**/cosmos-export",
+      "!**/dist",
+      "!**/package.json"
+    ]
   },
   "javascript": {
     "formatter": {
