@@ -1,0 +1,56 @@
+{
+  "chips": [
+    {
+      "chipId": "U1",
+      "center": { "x": 0, "y": 0.2 },
+      "width": 1.4,
+      "height": 1,
+      "pins": [
+        {
+          "pinId": "U1.minus",
+          "x": -0.7,
+          "y": 0.4,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.plus",
+          "x": -0.7,
+          "y": 0.2,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "U1.swclk",
+          "x": -0.7,
+          "y": 0,
+          "_facingDirection": "x-"
+        }
+      ]
+    }
+  ],
+  "directConnections": [],
+  "netConnections": [
+    {
+      "netId": "D_MINUS",
+      "pinIds": ["U1.minus"],
+      "netLabelWidth": 0.96
+    },
+    {
+      "netId": "D_PLUS",
+      "pinIds": ["U1.plus"],
+      "netLabelWidth": 0.84
+    },
+    {
+      "netId": "SWCLK",
+      "pinIds": ["U1.swclk"],
+      "netLabelWidth": 0.48,
+      "allowInlineNetLabel": true,
+      "inlineNetLabelWidth": 0.48,
+      "inlineNetLabelHeight": 0.12
+    }
+  ],
+  "availableNetLabelOrientations": {
+    "D_MINUS": ["x-"],
+    "D_PLUS": ["x-"],
+    "SWCLK": ["x-"]
+  }
+}
