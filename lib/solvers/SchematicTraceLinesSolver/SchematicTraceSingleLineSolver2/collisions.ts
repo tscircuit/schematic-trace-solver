@@ -3,6 +3,13 @@ import type { RectBounds } from "./rect"
 
 const EPS = 1e-9
 
+/**
+ * Segments skewed by less than this tolerance are intended axis-aligned runs
+ * (e.g. a pin coordinate slightly off the routing grid) and must still be
+ * checked against obstacles along their dominant axis.
+ */
+const NEARLY_AXIS_ALIGNED_TOLERANCE = 1e-3
+
 export const isVertical = (a: Point, b: Point, eps = EPS) =>
   Math.abs(a.x - b.x) < eps
 export const isHorizontal = (a: Point, b: Point, eps = EPS) =>
@@ -16,7 +23,27 @@ export const segmentIntersectsRect = <TRect extends RectBounds>(
 ): boolean => {
   const vert = isVertical(a, b, eps)
   const horz = isHorizontal(a, b, eps)
-  if (!vert && !horz) return false
+  if (!vert && !horz) {
+    const dx = Math.abs(a.x - b.x)
+    const dy = Math.abs(a.y - b.y)
+    if (dx < NEARLY_AXIS_ALIGNED_TOLERANCE && dx < dy) {
+      return segmentIntersectsRect(
+        { x: a.x, y: a.y },
+        { x: a.x, y: b.y },
+        r,
+        eps,
+      )
+    }
+    if (dy < NEARLY_AXIS_ALIGNED_TOLERANCE && dy < dx) {
+      return segmentIntersectsRect(
+        { x: a.x, y: a.y },
+        { x: b.x, y: a.y },
+        r,
+        eps,
+      )
+    }
+    return false
+  }
 
   if (vert) {
     const x = a.x
