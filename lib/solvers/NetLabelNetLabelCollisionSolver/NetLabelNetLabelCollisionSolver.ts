@@ -1,5 +1,6 @@
 import { getAnchoredNetLabelRenderedBounds } from "../InlineNetLabelSolver/getAnchoredNetLabelRenderedBounds"
 import type { GraphicsObject } from "graphics-debug"
+import Flatbush from "flatbush"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
@@ -219,12 +220,24 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
   private findNextCollidingPair():
     | [NetLabelPlacement, NetLabelPlacement]
     | null {
+    if (this.outputNetLabelPlacements.length === 0) return null
     const labels = [
       ...this.outputNetLabelPlacements,
       ...(this.params.fixedNetLabelPlacements ?? []),
     ]
+    const labelBounds = labels.map((label) => this.labelBounds(label))
+    const spatialIndex = new Flatbush(labels.length)
+    for (const bounds of labelBounds) {
+      spatialIndex.add(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY)
+    }
+    spatialIndex.finish()
     for (let i = 0; i < this.outputNetLabelPlacements.length; i++) {
-      for (let j = i + 1; j < labels.length; j++) {
+      const bounds = labelBounds[i]!
+      const nearbyIndices = spatialIndex
+        .search(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY)
+        .filter((j) => j > i)
+        .sort((a, b) => a - b)
+      for (const j of nearbyIndices) {
         const a = labels[i]!
         const b = labels[j]!
         if (
@@ -232,9 +245,9 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
           !this.params.fixedNetLabelPlacements?.includes(b)
         )
           continue
+        if (!boundsOverlap(labelBounds[i]!, labelBounds[j]!)) continue
         if (this.skippedCollisionKeys.has(this.collisionKey(a, b))) continue
-        if (boundsOverlap(this.labelBounds(a), this.labelBounds(b)))
-          return [a, b]
+        return [a, b]
       }
     }
     return null
