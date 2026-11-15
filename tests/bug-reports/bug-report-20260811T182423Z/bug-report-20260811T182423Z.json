@@ -1,0 +1,65 @@
+{
+  "chips": [
+    {
+      "chipId": "schematic_component_0",
+      "center": {
+        "x": 10,
+        "y": 0
+      },
+      "width": 0.6000000000000014,
+      "height": 0.6799999999999999,
+      "pins": [
+        {
+          "pinId": "schematic_port_0",
+          "x": 9.7,
+          "y": 0,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_1",
+          "x": 10.3,
+          "y": 0,
+          "_facingDirection": "x+"
+        }
+      ]
+    },
+    {
+      "chipId": "schematic_component_1",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 0.72,
+      "height": 0.84,
+      "pins": [
+        {
+          "pinId": "schematic_port_2",
+          "x": -0.36,
+          "y": 0,
+          "_facingDirection": "x-"
+        },
+        {
+          "pinId": "schematic_port_3",
+          "x": 0.36,
+          "y": 0,
+          "_facingDirection": "x+"
+        }
+      ]
+    }
+  ],
+  "directConnections": [
+    {
+      "netId": ".C1 > .pin1 to R1.pin1",
+      "netLabelWidth": 0.96,
+      "pinIds": [
+        "schematic_port_3",
+        "schematic_port_0"
+      ]
+    }
+  ],
+  "netConnections": [],
+  "textBoxes": [],
+  "availableNetLabelOrientations": {},
+  "maxMspPairDistance": 2,
+  "_hideRatsNet": false
+}
