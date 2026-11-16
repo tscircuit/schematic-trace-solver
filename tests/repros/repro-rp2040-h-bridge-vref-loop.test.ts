@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-rp2040-h-bridge-vref-loop.input.json"
@@ -21,6 +22,18 @@ test("RP2040 motor controller H-bridge reference trace", async () => {
       trace.pinIds.includes("schematic_port_169"),
   )
   expect(referenceTrace).toBeDefined()
+
+  const { pins, tracePath } = referenceTrace!
+  const pinY = Math.max(...pins.map((pin) => pin.y))
+  const bridgeY = Math.max(...tracePath.map((point) => point.y))
+  expect(bridgeY - pinY).toBeLessThanOrEqual(0.25)
+  expect(
+    [...output.netLabelPlacements, ...output.inlineNetLabelPlacements].some(
+      (label) =>
+        label.netLabelText === "DRV_VREF" &&
+        tracePathContainsPoint(tracePath, label.anchorPoint),
+    ),
+  ).toBe(true)
 
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })

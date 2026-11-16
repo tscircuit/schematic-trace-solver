@@ -40,6 +40,8 @@ import {
 
 type PathKey = string
 
+const DEFAULT_ELBOW_OVERSHOOT = 0.2
+
 const calculateElbowForPins = ({
   pin1,
   pin2,
@@ -104,13 +106,16 @@ const getInitialPathForPins = ({
   const defaultElbow = calculateElbowForPins({
     pin1,
     pin2,
-    overshoot: 0.2,
+    overshoot: DEFAULT_ELBOW_OVERSHOOT,
   })
   const routingDistance = Math.abs(pin1.x - pin2.x) + Math.abs(pin1.y - pin2.y)
   const adaptiveElbow = calculateElbowForPins({
     pin1,
     pin2,
-    overshoot: Math.min(0.2, Math.max(0.02, routingDistance / 4)),
+    overshoot: Math.min(
+      DEFAULT_ELBOW_OVERSHOOT,
+      Math.max(0.02, routingDistance / 4),
+    ),
   })
   const adaptiveElbowIsShorter =
     getPathLength(adaptiveElbow) < getPathLength(defaultElbow)
@@ -468,18 +473,33 @@ export class SchematicTraceSingleLineSolver2 extends BaseSolver {
             : segIndex === lastSegIndex - 1
               ? lastSegIndex - 2
               : null
-        if (
-          adjacentEndpointSegIndex !== null &&
-          adjacentEndpointSegIndex >= 0 &&
-          adjacentEndpointSegIndex < lastSegIndex &&
-          this.isSegmentOutsidePinBand(
-            path[adjacentEndpointSegIndex]!,
-            path[adjacentEndpointSegIndex + 1]!,
+        // Keep an explicit U between nearby pins on the same side compact.
+        // The net label can be placed after routing.
+        const isSameSidePinBridge =
+          path === this.baseElbow &&
+          path.length === 4 &&
+          segIndex === 1 &&
+          PA.chipId === PB.chipId &&
+          directions[0] === directions[1] &&
+          Math.abs(PA.x - PB.x) + Math.abs(PA.y - PB.y) <=
+            DEFAULT_ELBOW_OVERSHOOT + endpointEpsilon &&
+          this.inputProblem.directConnections.some(
+            ({ pinIds }) =>
+              pinIds.includes(PA.pinId) && pinIds.includes(PB.pinId),
           )
+        if (
+          isSameSidePinBridge ||
+          (adjacentEndpointSegIndex !== null &&
+            adjacentEndpointSegIndex >= 0 &&
+            adjacentEndpointSegIndex < lastSegIndex &&
+            this.isSegmentOutsidePinBand(
+              path[adjacentEndpointSegIndex]!,
+              path[adjacentEndpointSegIndex + 1]!,
+            ))
         ) {
           for (const textObstacle of this.endpointTextObstacles) {
-            // Outside-pin-band routing may cross label padding around endpoint
-            // text, but the actual text bounds remain a hard obstacle.
+            // These routes may cross label padding around endpoint text.
+            // The actual text bounds remain a hard obstacle.
             const textBounds = getTextBoxBounds(textObstacle.textBox)
             if (!segmentIntersectsRect(segmentStart, segmentEnd, textBounds)) {
               excludedRects.add(textObstacle)
