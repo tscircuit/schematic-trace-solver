@@ -632,8 +632,6 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
     const pinConnectionCandidates = getPinConnectionCandidates({
       connectionPair,
       obstacles,
-      // Legacy wire-only consumers can opt into interior recovery, while the
-      // default pipeline retains its label fallback for these connections.
       channelObstacles: this.inputProblem.allowInteriorChannelRecovery
         ? obstacles
         : [],

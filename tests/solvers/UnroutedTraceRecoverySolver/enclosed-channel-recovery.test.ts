@@ -4,48 +4,49 @@ import { findFirstCollision } from "lib/solvers/SchematicTraceLinesSolver/Schema
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import { UnroutedTraceRecoverySolver } from "lib/solvers/UnroutedTraceRecoverySolver/UnroutedTraceRecoverySolver"
-import type { InputProblem } from "lib/types/InputProblem"
+import type { InputPin, InputProblem } from "lib/types/InputProblem"
+import { getLastStepSvg } from "tests/fixtures/getLastStepSvg"
 
-const makeFixture = (offset: number, vertical: boolean, blocked: boolean) => {
+const makeFixture = (axis: "x" | "y" = "x", offset = 0, blocked = false) => {
+  const point = (x: number, y: number) =>
+    axis === "x" ? { x, y } : { x: y, y: x }
   const pins: MspConnectionPair["pins"] = [
-    { pinId: "a", chipId: "left", x: -4, y: 0, _facingDirection: "x+" },
-    { pinId: "b", chipId: "right", x: 4, y: offset, _facingDirection: "x-" },
+    {
+      pinId: "a",
+      chipId: "left",
+      ...point(-4, 0),
+      _facingDirection: `${axis}+`,
+    },
+    {
+      pinId: "b",
+      chipId: "right",
+      ...point(4, offset),
+      _facingDirection: `${axis}-`,
+    },
   ]
+  const chip = (
+    chipId: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    pins: InputPin[] = [],
+  ) => ({
+    chipId,
+    center: point(x, y),
+    width: axis === "x" ? width : height,
+    height: axis === "x" ? height : width,
+    pins,
+  })
   const inputProblem: InputProblem = {
     chips: [
-      {
-        chipId: "left",
-        center: { x: -5, y: 0 },
-        width: 1,
-        height: 1,
-        pins: [pins[0]],
-      },
-      {
-        chipId: "right",
-        center: { x: 5, y: offset },
-        width: 1,
-        height: 1,
-        pins: [pins[1]],
-      },
-      {
-        chipId: "blocker",
-        center: { x: 0, y: 0 },
-        width: 2,
-        height: blocked ? 10 : 3,
-        pins: [],
-      },
-      ...[
-        { x: 0, y: -5, width: 20, height: 0.1 },
-        { x: 0, y: 5, width: 20, height: 0.1 },
-        { x: -10, y: 0, width: 0.1, height: 10 },
-        { x: 10, y: 0, width: 0.1, height: 10 },
-      ].map(({ x, y, width, height }, index) => ({
-        chipId: `border-${index}`,
-        center: { x, y },
-        width,
-        height,
-        pins: [],
-      })),
+      chip("left", -5, 0, 1, 1, [pins[0]]),
+      chip("right", 5, offset, 1, 1, [pins[1]]),
+      chip("blocker", 0, 0, 2, blocked ? 10 : 3),
+      chip("border-0", 0, -5, 20, 0.1),
+      chip("border-1", 0, 5, 20, 0.1),
+      chip("border-2", -10, 0, 0.1, 10),
+      chip("border-3", 10, 0, 0.1, 10),
     ],
     directConnections: [{ pinIds: ["a", "b"] }],
     netConnections: [],
@@ -53,111 +54,76 @@ const makeFixture = (offset: number, vertical: boolean, blocked: boolean) => {
     maxMspPairDistance: 20,
     allowInteriorChannelRecovery: true,
   }
-  if (vertical) {
-    for (const chip of inputProblem.chips) {
-      chip.center = { x: chip.center.y, y: chip.center.x }
-      ;[chip.width, chip.height] = [chip.height, chip.width]
-      for (const pin of chip.pins) {
-        ;[pin.x, pin.y] = [pin.y, pin.x]
-        pin._facingDirection = pin._facingDirection === "x+" ? "y+" : "y-"
-      }
-    }
-  }
-  const connectionPair: MspConnectionPair = {
-    mspPairId: "a-b",
-    dcConnNetId: "net",
-    globalConnNetId: "net",
-    pins,
-  }
-  return { inputProblem, connectionPair }
-}
-
-for (const vertical of [false, true]) {
-  for (const offset of [0, 1]) {
-    test(`recovers an enclosed ${vertical ? "vertical" : "horizontal"} connection with offset ${offset}`, () => {
-      const { inputProblem, connectionPair } = makeFixture(
-        offset,
-        vertical,
-        false,
-      )
-      const solver = new UnroutedTraceRecoverySolver({
-        inputProblem,
-        failedConnectionPairs: [connectionPair],
-        alreadySolvedTraces: [],
-      })
-      solver.solve()
-      expect(solver.solved).toBe(true)
-      const traces = solver.getOutput().newTraces
-      expect(traces).toHaveLength(1)
-      const path = traces[0]!.tracePath
-      expect(path[0]).toMatchObject({
-        x: connectionPair.pins[0].x,
-        y: connectionPair.pins[0].y,
-      })
-      expect(path.at(-1)).toMatchObject({
-        x: connectionPair.pins[1].x,
-        y: connectionPair.pins[1].y,
-      })
-      expect(
-        findFirstCollision(path, getObstacleRects(inputProblem)),
-      ).toBeNull()
-      const axis = vertical ? "y" : "x"
-      expect(path[1]![axis]).toBeGreaterThan(path[0]![axis])
-      expect(path.at(-2)![axis]).toBeLessThan(path.at(-1)![axis])
-      for (let i = 1; i < path.length; i++) {
-        expect(
-          path[i]!.x === path[i - 1]!.x || path[i]!.y === path[i - 1]!.y,
-        ).toBe(true)
-        expect(Math.abs(path[i]!.x)).toBeLessThan(vertical ? 4.95 : 9.95)
-        expect(Math.abs(path[i]!.y)).toBeLessThan(vertical ? 9.95 : 4.95)
-      }
-    })
-  }
-}
-
-test("does not recover through a fully blocked enclosure", () => {
-  const { inputProblem, connectionPair } = makeFixture(0, false, true)
-  const solver = new UnroutedTraceRecoverySolver({
+  return {
     inputProblem,
-    failedConnectionPairs: [connectionPair],
+    failedConnectionPairs: [
+      { mspPairId: "a-b", dcConnNetId: "net", globalConnNetId: "net", pins },
+    ],
     alreadySolvedTraces: [],
-  })
+  }
+}
+
+const recover = (fixture = makeFixture()) => {
+  const solver = new UnroutedTraceRecoverySolver(fixture)
   solver.solve()
   expect(solver.solved).toBe(true)
-  expect(solver.getOutput().newTraces).toHaveLength(0)
+  return solver.getOutput().newTraces
+}
+
+test.each([
+  ["x", 0],
+  ["x", 1],
+  ["y", 0],
+  ["y", 1],
+] as const)(
+  "recovers an enclosed connection (axis=%s, offset=%i)",
+  (axis, offset) => {
+    const fixture = makeFixture(axis, offset)
+    const traces = recover(fixture)
+    expect(traces).toHaveLength(1)
+    const path = traces[0].tracePath
+    expect([path[0], path.at(-1)]).toMatchObject(
+      fixture.failedConnectionPairs[0].pins.map(({ x, y }) => ({ x, y })),
+    )
+    expect(
+      findFirstCollision(path, getObstacleRects(fixture.inputProblem)),
+    ).toBeNull()
+    expect(path[1][axis]).toBeGreaterThan(path[0][axis])
+    expect(path.at(-2)![axis]).toBeLessThan(path.at(-1)![axis])
+    for (let i = 1; i < path.length; i++) {
+      expect(path[i].x === path[i - 1].x || path[i].y === path[i - 1].y).toBe(
+        true,
+      )
+      expect(Math.abs(path[i].x)).toBeLessThan(axis === "x" ? 9.95 : 4.95)
+      expect(Math.abs(path[i].y)).toBeLessThan(axis === "x" ? 4.95 : 9.95)
+    }
+  },
+)
+
+test("does not recover through a fully blocked enclosure", () => {
+  expect(recover(makeFixture("x", 0, true))).toHaveLength(0)
 })
 
-test("pipeline recovery connects enclosed pins after single-line routing fails", () => {
-  const { inputProblem } = makeFixture(0, false, false)
-  const solver = new SchematicTracePipelineSolver(inputProblem)
-  for (
-    let i = 0;
-    i < 1000 &&
-    solver.getCurrentPhase() !== "traceOverlapShiftSolver" &&
-    !solver.failed &&
-    !solver.solved;
-    i++
-  )
-    solver.step()
-  expect(solver.getCurrentPhase()).toBe("traceOverlapShiftSolver")
+test("pipeline recovery connects enclosed pins after single-line routing fails", async () => {
+  const solver = new SchematicTracePipelineSolver(makeFixture().inputProblem)
+  solver.solve()
+  expect(solver.solved).toBe(true)
   expect(solver.schematicTraceLinesSolver!.failedConnectionPairs).toHaveLength(
     1,
   )
-  expect(
-    solver.unroutedTraceRecoverySolver!.getOutput().newTraces,
-  ).toHaveLength(1)
+  const recovery = solver.unroutedTraceRecoverySolver!
+  expect(recovery.getOutput().newTraces).toHaveLength(1)
+  const svg = getLastStepSvg(recovery.visualize()).replace(/[ \t]+$/gm, "")
+  await expect(svg).toMatchSvgSnapshot(import.meta.path)
 })
 
-for (const enabled of [undefined, false]) {
-  test(`preserves label fallback when interior recovery is ${enabled}`, () => {
-    const { inputProblem, connectionPair } = makeFixture(0, false, false)
-    inputProblem.allowInteriorChannelRecovery = enabled
-    const solver = new UnroutedTraceRecoverySolver({
-      inputProblem,
-      failedConnectionPairs: [connectionPair],
-      alreadySolvedTraces: [],
-    })
-    solver.solve()
-    expect(solver.getOutput().newTraces).toHaveLength(0)
-  })
-}
+test.each(["omitted", "false"])(
+  "preserves label fallback when interior recovery is %s",
+  (option) => {
+    const fixture = makeFixture()
+    if (option === "omitted")
+      delete fixture.inputProblem.allowInteriorChannelRecovery
+    else fixture.inputProblem.allowInteriorChannelRecovery = false
+    expect(recover(fixture)).toHaveLength(0)
+  },
+)

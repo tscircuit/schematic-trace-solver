@@ -143,9 +143,8 @@ export interface InputProblem {
 
   availableNetLabelOrientations: Record<NetId, FacingDirection[]>
   /**
-   * Include obstacle-adjacent channels in the initial recovery search, even
-   * before a route is found. Defaults to false to preserve label fallback.
-   * Useful for consumers that require continuous wires rather than net labels.
+   * Include obstacle-adjacent pin channels in the initial recovery search.
+   * Defaults to false to preserve net-label fallback.
    */
   allowInteriorChannelRecovery?: boolean
   maxMspPairDistance?: number
