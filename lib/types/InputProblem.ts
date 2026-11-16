@@ -142,6 +142,12 @@ export interface InputProblem {
   textBoxes?: Array<TextBoxes>
 
   availableNetLabelOrientations: Record<NetId, FacingDirection[]>
+  /**
+   * Include obstacle-adjacent channels in the initial recovery search, even
+   * before a route is found. Defaults to false to preserve label fallback.
+   * Useful for consumers that require continuous wires rather than net labels.
+   */
+  allowInteriorChannelRecovery?: boolean
   maxMspPairDistance?: number
 
   _chipObstacleSpatialIndex?: ChipObstacleSpatialIndex
