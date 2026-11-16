@@ -8,7 +8,9 @@ import inputProblem from "./assets/repro-rp2040-h-bridge-vref-loop.input.json"
 // Keep the H-bridge and its current-reference passives from the motor_driver
 // sheet so the AVREF–BVREF wire still shares a net with the remote divider.
 test("RP2040 motor controller H-bridge reference trace", async () => {
-  const solver = new SchematicTracePipelineSolver(inputProblem as InputProblem)
+  const solver = new SchematicTracePipelineSolver(
+    inputProblem as unknown as InputProblem,
+  )
   solver.solve()
   expect(solver.solved).toBe(true)
 
