@@ -5,9 +5,9 @@ import type { InputProblem } from "lib/types/InputProblem"
 import "tests/fixtures/matcher"
 import inputProblem from "./assets/repro-rp2040-h-bridge-vref-loop.input.json"
 
-// Captured from imrishabh18/rp2040-motor-controller v1.0.55 using core 0.0.2285.
-// Keep the H-bridge and its current-reference passives from the motor_driver
-// sheet so the AVREF–BVREF wire still shares a net with the remote divider.
+// Captured from the final motor_driver routing pass of
+// imrishabh18/rp2040-motor-controller v1.0.55 using core 0.0.2285.
+// The fixture retains the H-bridge, its annotations, and the reference divider.
 test("RP2040 motor controller H-bridge reference trace", async () => {
   const solver = new SchematicTracePipelineSolver(
     inputProblem as unknown as InputProblem,
