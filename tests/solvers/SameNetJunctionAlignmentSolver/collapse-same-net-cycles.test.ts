@@ -182,3 +182,80 @@ test("does not lengthen a trace to reuse shared donor geometry", () => {
 
   expect(result.traces[0]).toEqual(traces[0])
 })
+
+for (const reverse of [false, true]) {
+  test(`collapses an internal loop without shared pins (reverse=${reverse})`, () => {
+    const donorPath = [
+      { x: 0, y: -1 },
+      { x: 0, y: 5 },
+    ]
+    const traces = [
+      createTraceFixture({
+        mspPairId: "detour",
+        pinIds: ["a", "b"],
+        tracePath: [
+          { x: -1, y: 0 },
+          { x: 2, y: 0 },
+          { x: 2, y: 4 },
+          { x: -1, y: 4 },
+        ],
+      }),
+      createTraceFixture({
+        mspPairId: "rail",
+        pinIds: ["c", "d"],
+        tracePath: reverse ? donorPath.reverse() : donorPath,
+      }),
+    ]
+    const result = collapseSameNetCycles({ traces, netLabelPlacements: [] })
+    expect(result.collapsedCycleCount).toBe(1)
+    expect(result.traces[0]!.tracePath).toEqual([
+      { x: -1, y: 0 },
+      { x: 0, y: 0 },
+      { x: 0, y: 4 },
+      { x: -1, y: 4 },
+    ])
+    expect(result.traces[1]).toEqual(traces[1])
+
+    const otherNet = { ...traces[1]!, globalConnNetId: "different-net" }
+    expect(
+      collapseSameNetCycles({
+        traces: [traces[0]!, otherNet],
+        netLabelPlacements: [],
+      }).traces,
+    ).toEqual([traces[0]!, otherNet])
+  })
+}
+
+test("keeps a branch attached to the interior detour", () => {
+  const traces = [
+    createTraceFixture({
+      mspPairId: "detour",
+      pinIds: ["a", "b"],
+      tracePath: [
+        { x: -1, y: 0 },
+        { x: 2, y: 0 },
+        { x: 2, y: 4 },
+        { x: -1, y: 4 },
+      ],
+    }),
+    createTraceFixture({
+      mspPairId: "rail",
+      pinIds: ["c", "d"],
+      tracePath: [
+        { x: 0, y: -1 },
+        { x: 0, y: 5 },
+      ],
+    }),
+    createTraceFixture({
+      mspPairId: "branch",
+      pinIds: ["e", "f"],
+      tracePath: [
+        { x: 2, y: 2 },
+        { x: 3, y: 2 },
+      ],
+    }),
+  ]
+  const result = collapseSameNetCycles({ traces, netLabelPlacements: [] })
+  expect(result.collapsedCycleCount).toBe(0)
+  expect(result.traces).toEqual(traces)
+})

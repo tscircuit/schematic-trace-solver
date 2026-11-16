@@ -1,4 +1,6 @@
 import type { Point } from "@tscircuit/math-utils"
+import { getSegmentIntersection } from "@tscircuit/math-utils/line-intersections"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type {
   AnyCircuitElement,
   SchematicBox,
@@ -732,36 +734,57 @@ const getJunctionsByTraceIndex = (
   traces: SnapshotTrace[],
   getTraceNetName: (trace: SnapshotTrace) => string | undefined,
 ) => {
-  const traceIndexesByNetPoint = new Map<
-    string,
-    { point: Point; traceIndexes: Set<number> }
-  >()
-
-  for (const [traceIndex, trace] of traces.entries()) {
-    const netKey = trace.globalConnNetId ?? getTraceNetName(trace) ?? "unknown"
-    for (const key of new Set(trace.tracePath.map(pointKey))) {
-      const netPointKey = `${netKey}:${key}`
-      const entry = traceIndexesByNetPoint.get(netPointKey) ?? {
-        point: trace.tracePath.find((point) => pointKey(point) === key)!,
-        traceIndexes: new Set<number>(),
-      }
-      entry.traceIndexes.add(traceIndex)
-      traceIndexesByNetPoint.set(netPointKey, entry)
-    }
-  }
-
+  const segments = traces.flatMap((trace, traceIndex) =>
+    trace.tracePath.slice(1).map((to, index) => ({
+      from: trace.tracePath[index]!,
+      to,
+      traceIndex,
+      netKey:
+        trace.globalConnNetId ??
+        getTraceNetName(trace) ??
+        `trace-${traceIndex}`,
+    })),
+  )
   const junctionsByTraceIndex = new Map<number, Point[]>()
-  for (const {
-    point: sharedPoint,
-    traceIndexes,
-  } of traceIndexesByNetPoint.values()) {
-    if (traceIndexes.size < 2) continue
-    const traceIndex = Math.min(...traceIndexes)
-    const junctions = junctionsByTraceIndex.get(traceIndex) ?? []
-    if (!junctions.some((point) => pointKey(point) === pointKey(sharedPoint))) {
-      junctions.push(sharedPoint)
+  const segmentsByNet = Map.groupBy(segments, (segment) => segment.netKey)
+  for (const netSegments of segmentsByNet.values()) {
+    const candidates = new Map<string, Point>()
+    for (const [index, segment] of netSegments.entries()) {
+      candidates.set(pointKey(segment.from), segment.from)
+      candidates.set(pointKey(segment.to), segment.to)
+      for (const other of netSegments.slice(index + 1)) {
+        const point = getSegmentIntersection(
+          segment.from,
+          segment.to,
+          other.from,
+          other.to,
+        )
+        if (point) candidates.set(pointKey(point), point)
+      }
     }
-    junctionsByTraceIndex.set(traceIndex, junctions)
+    for (const point of candidates.values()) {
+      const directions = new Set<string>()
+      let traceIndex: number | undefined
+      for (const segment of netSegments) {
+        if (!tracePathContainsPoint([segment.from, segment.to], point)) continue
+        traceIndex ??= segment.traceIndex
+        for (const end of [segment.from, segment.to]) {
+          const dx = end.x - point.x
+          const dy = end.y - point.y
+          const length = Math.hypot(dx, dy)
+          if (length < 1e-6) continue
+          directions.add(
+            `${(dx / length).toFixed(6)},${(dy / length).toFixed(6)}`,
+          )
+        }
+      }
+      // Overlapping routes count as one visible wire. A bend has only two
+      // directions; a T-junction or connected crossing has at least three.
+      if (directions.size < 3 || traceIndex === undefined) continue
+      const junctions = junctionsByTraceIndex.get(traceIndex) ?? []
+      junctions.push(point)
+      junctionsByTraceIndex.set(traceIndex, junctions)
+    }
   }
 
   return junctionsByTraceIndex

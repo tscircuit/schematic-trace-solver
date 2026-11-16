@@ -283,8 +283,76 @@ const getBestCycleCollapseCandidate = ({
     )
   }
 
+  // Do not detach a pin or a branch that joins the replaced part.
+  const contacts = sameNetTraces
+    .filter((other) => other.mspPairId !== targetTrace.mspPairId)
+    .flatMap((other) => [
+      ...other.pins,
+      ...other.tracePath.filter((point) =>
+        tracePathContainsPoint(targetTrace.tracePath, point),
+      ),
+      ...getPerpendicularPathCrossings(
+        targetTrace.tracePath,
+        other.tracePath,
+      ).map(({ intersectionPoint }) => intersectionPoint),
+    ])
+
   for (const donorTrace of sameNetTraces) {
     if (donorTrace.mspPairId === targetTrace.mspPairId) continue
+    // An internal loop can rejoin another trace without sharing a physical pin.
+    // Reuse the existing same-net route between two crossings instead of drawing
+    // a second path between them.
+    for (const donorPath of [
+      donorTrace.tracePath,
+      [...donorTrace.tracePath].reverse(),
+    ]) {
+      const crossings = getPerpendicularPathCrossings(
+        targetTrace.tracePath,
+        donorPath,
+      )
+      for (const start of crossings) {
+        for (const end of crossings) {
+          if (
+            start.targetSegmentIndex >= end.targetSegmentIndex ||
+            start.donorSegmentIndex > end.donorSegmentIndex
+          )
+            continue
+          if (start.donorSegmentIndex === end.donorSegmentIndex) {
+            const origin = donorPath[start.donorSegmentIndex]!
+            if (
+              Math.hypot(
+                start.intersectionPoint.x - origin.x,
+                start.intersectionPoint.y - origin.y,
+              ) >=
+              Math.hypot(
+                end.intersectionPoint.x - origin.x,
+                end.intersectionPoint.y - origin.y,
+              )
+            )
+              continue
+          }
+          const tracePath = simplifyPath([
+            ...targetTrace.tracePath.slice(0, start.targetSegmentIndex + 1),
+            start.intersectionPoint,
+            ...donorPath.slice(
+              start.donorSegmentIndex + 1,
+              end.donorSegmentIndex + 1,
+            ),
+            end.intersectionPoint,
+            ...targetTrace.tracePath.slice(end.targetSegmentIndex + 1),
+          ])
+          if (
+            contacts.some(
+              (point) =>
+                tracePathContainsPoint(targetTrace.tracePath, point) &&
+                !tracePathContainsPoint(tracePath, point),
+            )
+          )
+            continue
+          considerTracePath(tracePath)
+        }
+      }
+    }
     const sharedPin = getSharedPin({
       donorTrace,
       branchTrace: targetTrace,
