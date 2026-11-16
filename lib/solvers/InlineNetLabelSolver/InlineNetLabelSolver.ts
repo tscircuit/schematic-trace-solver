@@ -25,6 +25,7 @@ import type {
   PinId,
 } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
+import { getInlineNetLabelSize } from "lib/utils/getInlineNetLabelSize"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
 import { isLabelRepresentedInline } from "./isLabelRepresentedInline"
 import { alignPortOnlyInlineNetLabelStubs } from "./alignPortOnlyInlineNetLabelStubs"
@@ -37,7 +38,10 @@ import { pushAnchoredNetLabelsAwayFromInlineLabels } from "./pushAnchoredNetLabe
 import { pushInlineTerminalLabelsAwayFromAnchoredLabels } from "./pushInlineTerminalLabelsAwayFromAnchoredLabels"
 import { restoreReroutesAroundSupersededLabels } from "./restoreReroutesAroundSupersededLabels"
 
-export const DEFAULT_INLINE_NET_LABEL_HEIGHT = 0.18
+export {
+  DEFAULT_INLINE_NET_LABEL_HEIGHT,
+  estimateInlineNetLabelWidth,
+} from "lib/utils/getInlineNetLabelSize"
 
 /**
  * Preferred gap between a trace and its inline text. A tighter parallel-wire
@@ -674,13 +678,7 @@ export class InlineNetLabelSolver extends BaseSolver {
     )
     const inputPin = inputChip?.pins.find((pin) => pin.pinId === pinId)
 
-    const height =
-      connection.inlineNetLabelHeight ?? DEFAULT_INLINE_NET_LABEL_HEIGHT
-    const netLabelText = connection.netLabelText?.trim() || undefined
-    const width =
-      connection.inlineNetLabelWidth ??
-      connection.netLabelWidth ??
-      estimateInlineNetLabelWidth(netLabelText ?? connection.netId, height)
+    const { height, netLabelText, width } = getInlineNetLabelSize(connection)
 
     // Leave a small wire tail at both ends of the text so it unmistakably
     // reads as a label on a trace rather than free-standing text.
@@ -799,13 +797,7 @@ export class InlineNetLabelSolver extends BaseSolver {
     const segments = getAxisAlignedSegments(trace.tracePath)
     if (segments.length === 0) return null
 
-    const height =
-      connection.inlineNetLabelHeight ?? DEFAULT_INLINE_NET_LABEL_HEIGHT
-    const netLabelText = connection.netLabelText?.trim() || undefined
-    const width =
-      connection.inlineNetLabelWidth ??
-      connection.netLabelWidth ??
-      estimateInlineNetLabelWidth(netLabelText ?? connection.netId!, height)
+    const { height, netLabelText, width } = getInlineNetLabelSize(connection)
 
     const offset = height / 2 + INLINE_NET_LABEL_TRACE_MARGIN
 
@@ -1617,18 +1609,6 @@ export const visualizeInlineNetLabelOutput = ({
   }
 
   return graphics
-}
-
-/**
- * Mirrors the net label text width used by @tscircuit/core so a label that core
- * did not measure for us still reserves a sane amount of space.
- */
-export const estimateInlineNetLabelWidth = (
-  text: string,
-  fontSize = DEFAULT_INLINE_NET_LABEL_HEIGHT,
-) => {
-  const fontScale = fontSize / 0.18
-  return text.length * 0.12 * fontScale + 0.12 * fontScale
 }
 
 /**

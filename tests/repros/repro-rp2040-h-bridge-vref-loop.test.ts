@@ -1,0 +1,48 @@
+import { expect, test } from "bun:test"
+import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import type { InputProblem } from "lib/types/InputProblem"
+import "tests/fixtures/matcher"
+import inputProblem from "./assets/repro-rp2040-h-bridge-vref-loop.input.json"
+
+// Captured from the final motor_driver routing pass of
+// imrishabh18/rp2040-motor-controller v1.0.55 using core 0.0.2285.
+// The fixture retains the H-bridge, its annotations, and the reference divider.
+test("RP2040 motor controller H-bridge reference trace", async () => {
+  const solver = new SchematicTracePipelineSolver(
+    inputProblem as unknown as InputProblem,
+  )
+  solver.solve()
+  expect(solver.solved).toBe(true)
+
+  const output = solver.netLabelToTraceSolver!.getOutput()
+  const referenceTrace = output.traces.find(
+    (trace) =>
+      trace.pinIds.includes("schematic_port_168") &&
+      trace.pinIds.includes("schematic_port_169"),
+  )
+  expect(referenceTrace).toBeDefined()
+
+  const { pins, tracePath } = referenceTrace!
+  const pinY = Math.max(...pins.map((pin) => pin.y))
+  const bridgeY = Math.max(...tracePath.map((point) => point.y))
+  expect(bridgeY - pinY).toBeLessThanOrEqual(0.85)
+  const inlineLabel = output.inlineNetLabelPlacements.find(
+    (label) =>
+      label.netLabelText === "DRV_VREF" &&
+      label.mspPairId === referenceTrace!.mspPairId &&
+      !label.stubTracePath,
+  )
+  expect(inlineLabel).toBeDefined()
+  expect(inlineLabel!.axis).toBe("y")
+  expect(tracePathContainsPoint(tracePath, inlineLabel!.anchorPoint)).toBe(true)
+  expect(
+    output.netLabelPlacements.some(
+      (label) =>
+        label.netLabelText === "DRV_VREF" &&
+        label.pinIds.some((pinId) => referenceTrace!.pinIds.includes(pinId)),
+    ),
+  ).toBe(false)
+
+  await expect(solver).toMatchSolverSnapshot(import.meta.path)
+})
