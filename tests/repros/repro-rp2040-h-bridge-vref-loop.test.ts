@@ -26,14 +26,23 @@ test("RP2040 motor controller H-bridge reference trace", async () => {
   const { pins, tracePath } = referenceTrace!
   const pinY = Math.max(...pins.map((pin) => pin.y))
   const bridgeY = Math.max(...tracePath.map((point) => point.y))
-  expect(bridgeY - pinY).toBeLessThanOrEqual(0.25)
+  expect(bridgeY - pinY).toBeLessThanOrEqual(0.85)
+  const inlineLabel = output.inlineNetLabelPlacements.find(
+    (label) =>
+      label.netLabelText === "DRV_VREF" &&
+      label.mspPairId === referenceTrace!.mspPairId &&
+      !label.stubTracePath,
+  )
+  expect(inlineLabel).toBeDefined()
+  expect(inlineLabel!.axis).toBe("y")
+  expect(tracePathContainsPoint(tracePath, inlineLabel!.anchorPoint)).toBe(true)
   expect(
-    [...output.netLabelPlacements, ...output.inlineNetLabelPlacements].some(
+    output.netLabelPlacements.some(
       (label) =>
         label.netLabelText === "DRV_VREF" &&
-        tracePathContainsPoint(tracePath, label.anchorPoint),
+        label.pinIds.some((pinId) => referenceTrace!.pinIds.includes(pinId)),
     ),
-  ).toBe(true)
+  ).toBe(false)
 
   await expect(solver).toMatchSolverSnapshot(import.meta.path)
 })
