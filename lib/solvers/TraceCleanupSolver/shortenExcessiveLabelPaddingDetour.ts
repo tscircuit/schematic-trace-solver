@@ -1,8 +1,9 @@
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { SchematicTraceSingleLineSolver2 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
+import {
+  MIN_EXCESSIVE_DETOUR_LENGTH_RATIO,
+  SchematicTraceSingleLineSolver2,
+} from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/SchematicTraceSingleLineSolver2"
 import type { InputChip, InputProblem } from "lib/types/InputProblem"
-
-const MIN_EXCESSIVE_DETOUR_LENGTH_RATIO = 2.5
 
 const getTracePathLength = (
   tracePath: SolvedTracePath["tracePath"],
