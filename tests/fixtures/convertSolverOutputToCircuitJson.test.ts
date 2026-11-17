@@ -295,3 +295,96 @@ test("solver snapshot Circuit JSON is semantic and omits the rats nest", () => {
   expect(svg).not.toContain(">schematic_port_hidden</text>")
   expect(svg).not.toContain("schematic_port_opaque")
 })
+
+for (const { name, paths, nets, expected } of [
+  {
+    name: "overlapping bends with a T-junction inside a segment",
+    paths: [
+      [
+        { x: 0, y: 0 },
+        { x: 0, y: 2 },
+        { x: 2, y: 2 },
+        { x: 2, y: 4 },
+      ],
+      [
+        { x: 4, y: 2 },
+        { x: 0, y: 2 },
+        { x: 0, y: 0 },
+      ],
+    ],
+    nets: ["power", "power"],
+    expected: [{ x: 2, y: 2 }],
+  },
+  {
+    name: "connected interior crossing",
+    paths: [
+      [
+        { x: -1, y: 0 },
+        { x: 1, y: 0 },
+      ],
+      [
+        { x: 0, y: -1 },
+        { x: 0, y: 1 },
+      ],
+    ],
+    nets: ["power", "power"],
+    expected: [{ x: 0, y: 0 }],
+  },
+  {
+    name: "different-net crossing",
+    paths: [
+      [
+        { x: -1, y: 0 },
+        { x: 1, y: 0 },
+      ],
+      [
+        { x: 0, y: -1 },
+        { x: 0, y: 1 },
+      ],
+    ],
+    nets: ["power", "signal"],
+    expected: [],
+  },
+  {
+    name: "overlapping straight wires",
+    paths: [
+      [
+        { x: 0, y: 0 },
+        { x: 2, y: 0 },
+      ],
+      [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 2, y: 0 },
+      ],
+    ],
+    nets: ["power", "power"],
+    expected: [],
+  },
+]) {
+  test(`snapshot junctions: ${name}`, () => {
+    class JunctionSolver extends BaseSolver {
+      inputProblem: InputProblem = {
+        availableNetLabelOrientations: {},
+        chips: [],
+        directConnections: [],
+        netConnections: [],
+      }
+      getOutput() {
+        return {
+          traces: paths.map((tracePath, i) => ({
+            tracePath,
+            globalConnNetId: nets[i],
+          })),
+        }
+      }
+    }
+    const traces = convertSolverOutputToCircuitJson(
+      new JunctionSolver(),
+    ).filter(
+      (element): element is SchematicTrace =>
+        element.type === "schematic_trace",
+    )
+    expect(traces.flatMap((trace) => trace.junctions ?? [])).toEqual(expected)
+  })
+}
