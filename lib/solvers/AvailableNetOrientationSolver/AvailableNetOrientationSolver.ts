@@ -77,6 +77,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   currentLabel: NetLabelPlacement | null = null
   currentCandidateResults: EvaluatedCandidate[] = []
   private crowdedPortOnlyLabelIndices = new Set<number>()
+  private overlappingVerticalPortOnlyLabelIndices = new Set<number>()
+  private pendingIgnoredSameSideRailPairs = new Set<string>()
 
   blockedStandaloneLabelIndex: number | null = null
   blockedStandaloneLabelTargetAnchorX: number | null = null
@@ -152,6 +154,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       labelIndices: indices,
       netLabelPlacements: this.outputNetLabelPlacements,
     })
+    this.orderInwardFacingSameSideVerticalRails(orderedIndices)
 
     const blockedStandaloneLabelIndex = orderedIndices.find((index) => {
       const label = this.outputNetLabelPlacements[index]!
@@ -283,6 +286,35 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           return otherBounds ? rectsOverlap(bounds, otherBounds) : false
         })
       if (overlapsHorizontalConstraintMismatch) return true
+
+      if (this.isPortOnlyLabel(label)) {
+        const overlapsOtherVerticalPortOnlyLabel =
+          this.outputNetLabelPlacements.some((otherLabel, otherIndex) => {
+            if (otherIndex === labelIndex) return false
+            if (otherLabel.globalConnNetId === label.globalConnNetId)
+              return false
+            if (!this.isPortOnlyLabel(otherLabel)) return false
+            const otherOrientations = this.getAvailableOrientations(otherLabel)
+            if (
+              otherOrientations.length !== 1 ||
+              !isYOrientation(otherOrientations[0]!)
+            ) {
+              return false
+            }
+            return rectsOverlap(
+              bounds,
+              getRectBounds(
+                otherLabel.center,
+                otherLabel.width,
+                otherLabel.height,
+              ),
+            )
+          })
+        if (overlapsOtherVerticalPortOnlyLabel) {
+          this.overlappingVerticalPortOnlyLabelIndices.add(labelIndex)
+          return true
+        }
+      }
     }
 
     if (!this.crowdedPortOnlyLabelIndices.has(labelIndex)) return false
@@ -1114,6 +1146,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           label,
           orientation,
           baseAnchor,
+          labelIndex,
         )
 
         const candidate = this.findValidCandidateInShiftColumn({
@@ -1284,12 +1317,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     if (candidate.phase === "lateral-shift") {
-      const chipOutwardDir = this.crowdedPortOnlyLabelIndices.has(labelIndex)
-        ? this.getChipOutwardDirection(label.anchorPoint)
-        : (() => {
-            const orientDir = dir(candidate.orientation)
-            return { x: -orientDir.x, y: -orientDir.y }
-          })()
+      const chipOutwardDir =
+        this.crowdedPortOnlyLabelIndices.has(labelIndex) ||
+        this.overlappingVerticalPortOnlyLabelIndices.has(labelIndex)
+          ? this.getChipOutwardDirection(label.anchorPoint)
+          : (() => {
+              const orientDir = dir(candidate.orientation)
+              return { x: -orientDir.x, y: -orientDir.y }
+            })()
       const kickedSource = {
         x: label.anchorPoint.x + chipOutwardDir.x * LABEL_SEARCH_STEP,
         y: label.anchorPoint.y + chipOutwardDir.y * LABEL_SEARCH_STEP,
@@ -1510,7 +1545,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     label: NetLabelPlacement,
     orientation: FacingDirection,
     baseAnchor: Point,
+    labelIndex?: number,
   ) {
+    if (
+      labelIndex !== undefined &&
+      this.overlappingVerticalPortOnlyLabelIndices.has(labelIndex)
+    ) {
+      return this.getSearchDistanceLimit(label, orientation)
+    }
     const availableOrientations = this.getAvailableOrientations(label)
     const isSingleVerticalOrientation =
       availableOrientations.length === 1 &&
@@ -2179,10 +2221,104 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return getRectBounds(label.center, label.width, label.height)
   }
 
+  private orderInwardFacingSameSideVerticalRails(orderedIndices: number[]) {
+    for (let i = 0; i < orderedIndices.length; i++) {
+      const firstIndex = orderedIndices[i]!
+      const firstLabel = this.outputNetLabelPlacements[firstIndex]!
+      if (
+        this.isPortOnlyLabel(firstLabel) ||
+        !this.isOutwardHorizontalFallback(firstLabel)
+      ) {
+        continue
+      }
+      const firstOrientations = this.getAvailableOrientations(firstLabel)
+      if (firstOrientations.length !== 1 || firstOrientations[0] !== "y-") {
+        continue
+      }
+      const firstSide = this.getSingleChipSideForPinIds(firstLabel.pinIds)
+      if (!firstSide) continue
+
+      for (let j = i + 1; j < orderedIndices.length; j++) {
+        const secondIndex = orderedIndices[j]!
+        const secondLabel = this.outputNetLabelPlacements[secondIndex]!
+        if (
+          this.isPortOnlyLabel(secondLabel) ||
+          !this.isOutwardHorizontalFallback(secondLabel)
+        ) {
+          continue
+        }
+        const secondOrientations = this.getAvailableOrientations(secondLabel)
+        if (secondOrientations.length !== 1 || secondOrientations[0] !== "y+") {
+          continue
+        }
+        const secondSide = this.getSingleChipSideForPinIds(secondLabel.pinIds)
+        if (
+          !secondSide ||
+          secondSide.chipId !== firstSide.chipId ||
+          secondSide.side !== firstSide.side
+        ) {
+          continue
+        }
+        if (firstLabel.anchorPoint.y <= secondLabel.anchorPoint.y + EPS) {
+          continue
+        }
+        const outwardSign = firstSide.side === "right" ? 1 : -1
+        const isSecondRailFurtherOutward =
+          (secondLabel.anchorPoint.x - firstLabel.anchorPoint.x) * outwardSign >
+          EPS
+        if (!isSecondRailFurtherOutward) continue
+
+        orderedIndices[i] = secondIndex
+        orderedIndices[j] = firstIndex
+        this.pendingIgnoredSameSideRailPairs.add(`${secondIndex}:${firstIndex}`)
+        break
+      }
+    }
+  }
+
+  private getSingleChipSideForPinIds(
+    pinIds: string[],
+  ): { chipId: string; side: "left" | "right" } | null {
+    if (pinIds.length < 2) return null
+
+    const pins = pinIds.map((pinId) => this.pinMap[pinId])
+    if (pins.some((pin) => !pin)) return null
+    const chipIds = new Set(pins.map((pin) => pin!.chipId))
+    if (chipIds.size !== 1) return null
+
+    const chipId = pins[0]!.chipId
+    const chip = this.chipObstacleSpatialIndex.chips.find(
+      (candidate) => candidate.chipId === chipId,
+    )
+    if (!chip) return null
+
+    const sides = new Set(
+      pins.map((pin) => {
+        if (Math.abs(pin!.x - chip.bounds.minX) <= EPS) return "left"
+        if (Math.abs(pin!.x - chip.bounds.maxX) <= EPS) return "right"
+        return null
+      }),
+    )
+    if (sides.size !== 1 || sides.has(null)) return null
+
+    return {
+      chipId,
+      side: [...sides][0] as "left" | "right",
+    }
+  }
+
   private shouldIgnorePendingCrowdedLabel(
     labelIndex: number,
     otherLabelIndex: number,
   ) {
+    if (
+      this.pendingIgnoredSameSideRailPairs.has(
+        `${labelIndex}:${otherLabelIndex}`,
+      ) &&
+      this.queuedLabelIndices.includes(otherLabelIndex)
+    ) {
+      return true
+    }
     return (
       this.crowdedPortOnlyLabelIndices.has(labelIndex) &&
       this.crowdedPortOnlyLabelIndices.has(otherLabelIndex) &&
