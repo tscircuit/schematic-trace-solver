@@ -62,6 +62,41 @@ export const alignSameNetRails = ({
       })
       if (applied) break
     }
+
+    if (!applied) {
+      const maxTraceCount = Math.max(
+        0,
+        ...groups.map(
+          (group) => new Set(group.map((segment) => segment.traceId)).size,
+        ),
+      )
+
+      for (let k = maxTraceCount - 1; k >= 2; k--) {
+        const subsetGroups = getRailGroups(
+          outputTraces,
+          eligibleTraceIds,
+          inputProblem,
+          obstacles,
+          netLabelPlacements,
+          { targetSubsetSize: k },
+        )
+
+        for (const subsetGroup of subsetGroups) {
+          applied = evaluateRailGroup({
+            inputProblem,
+            group: subsetGroup,
+            traces: outputTraces,
+            netLabelPlacements,
+            obstacles,
+            eligibleTraceIds,
+            preserveWholeNetReadability: true,
+            allowFixedLabelLengthening: false,
+          })
+          if (applied) break
+        }
+        if (applied) break
+      }
+    }
     if (!applied) break
 
     const candidateStateKey = getTraceStateKey(applied.traces)
