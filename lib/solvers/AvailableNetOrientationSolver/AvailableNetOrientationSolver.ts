@@ -493,11 +493,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         labelIndex,
       )
       if (hostRailCandidate) {
-        const canUseHostRail = this.canPlaceVerticalLabelOnHostRail(
-          hostRailCandidate,
+        const canUseHostRail = this.canPlaceVerticalLabelOnHostRail({
+          candidate: hostRailCandidate,
           label,
-          requiredOrientation,
-        )
+          orientation: requiredOrientation,
+        })
         if (canUseHostRail) return hostRailCandidate
         hostRailCandidate.selected = false
       }
@@ -1837,11 +1837,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
   }
 
-  private canPlaceVerticalLabelOnHostRail(
-    candidate: CandidateLabel,
-    label: NetLabelPlacement,
-    orientation: FacingDirection,
-  ) {
+  private canPlaceVerticalLabelOnHostRail({
+    candidate,
+    label,
+    orientation,
+  }: {
+    candidate: CandidateLabel
+    label: NetLabelPlacement
+    orientation: FacingDirection
+  }) {
     // The rail end can sit on any pairwise trace of the continuous rail, not
     // only on the trace that originally hosted the label.
     const { railTraceIds } = this.getTraceAnchorCandidates(label, orientation)
