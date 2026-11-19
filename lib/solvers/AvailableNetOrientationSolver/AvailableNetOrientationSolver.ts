@@ -484,8 +484,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       orientations.length === 1 &&
       isYOrientation(requiredOrientation) &&
       this.isOutwardHorizontalFallback(label) &&
-      this.hasTraceContinuingInOrientation(label, requiredOrientation) &&
-      (isDistanceSplitVerticalRail || isPairedSameSidePowerRail)
+      (isDistanceSplitVerticalRail || isPairedSameSidePowerRail) &&
+      this.hasTraceContinuingInOrientation(label, requiredOrientation, {
+        includeSegmentInteriors: !netConnection?.isGround,
+      })
     ) {
       const hostRailCandidate = this.findValidTraceAnchorCandidate(
         label,
@@ -731,23 +733,28 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private hasTraceContinuingInOrientation(
     label: NetLabelPlacement,
     orientation: "y+" | "y-",
+    { includeSegmentInteriors = false } = {},
   ) {
     const direction = dir(orientation)
+    const anchor = label.anchorPoint
     return Object.values(this.traceMap).some((trace) => {
       if (trace.globalConnNetId !== label.globalConnNetId) return false
       const path = trace.tracePath
-      return path.some((point, pointIndex) => {
-        if (
-          Math.abs(point.x - label.anchorPoint.x) > EPS ||
-          Math.abs(point.y - label.anchorPoint.y) > EPS
-        ) {
-          return false
-        }
-        return [path[pointIndex - 1], path[pointIndex + 1]].some(
-          (neighbor) =>
-            neighbor &&
-            Math.abs(neighbor.x - point.x) <= EPS &&
-            (neighbor.y - point.y) * direction.y > EPS,
+      return path.slice(1).some((end, index) => {
+        const start = path[index]!
+        if (Math.abs(start.x - end.x) > EPS) return false
+
+        const [near, far] =
+          (end.y - start.y) * direction.y > 0 ? [start, end] : [end, start]
+        const hasForwardSegment = (far.y - anchor.y) * direction.y > EPS
+        const startsAtAnchor =
+          Math.abs(near.x - anchor.x) <= EPS &&
+          Math.abs(near.y - anchor.y) <= EPS
+        return (
+          hasForwardSegment &&
+          (startsAtAnchor ||
+            (includeSegmentInteriors &&
+              tracePathContainsPoint([near, far], anchor)))
         )
       })
     })
