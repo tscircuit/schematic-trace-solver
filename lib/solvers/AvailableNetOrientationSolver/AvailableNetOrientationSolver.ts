@@ -496,6 +496,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         const canUseHostRail = this.canPlaceVerticalLabelOnHostRail(
           hostRailCandidate,
           label,
+          requiredOrientation,
         )
         if (canUseHostRail) return hostRailCandidate
         hostRailCandidate.selected = false
@@ -982,6 +983,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
     return {
       points,
+      railTraceIds: connectedTraceIds,
       // Prefer the nearest bend when the outward row is on a trace directly
       // adjacent to the label's host. Deeper transitive chains keep their
       // stable trace ordering.
@@ -1838,8 +1840,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private canPlaceVerticalLabelOnHostRail(
     candidate: CandidateLabel,
     label: NetLabelPlacement,
+    orientation: FacingDirection,
   ) {
-    const isOnHostRail = label.mspConnectionPairIds.some((traceId) => {
+    // The rail end can sit on any pairwise trace of the continuous rail, not
+    // only on the trace that originally hosted the label.
+    const { railTraceIds } = this.getTraceAnchorCandidates(label, orientation)
+    const isOnHostRail = [...railTraceIds].some((traceId) => {
       const trace = this.traceMap[traceId]
       return (
         trace && tracePathContainsPoint(trace.tracePath, candidate.anchorPoint)
@@ -1881,8 +1887,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       return false
     }
 
+    // Only pins on the rail's side of the component can be covered by a label
+    // placed beside that side.
     return chip.pins.every(
       (pin) =>
+        Math.abs(pin.x - hostPin.x) > EPS ||
         label.pinIds.includes(pin.pinId) ||
         pin.y <= labelBounds.minY + EPS ||
         pin.y >= labelBounds.maxY - EPS,

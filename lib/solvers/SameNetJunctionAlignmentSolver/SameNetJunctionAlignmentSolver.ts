@@ -7,6 +7,7 @@ import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/
 import type { InputProblem } from "lib/types/InputProblem"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { alignSameNetJunctions } from "./alignSameNetJunctions"
+import { attachConnectorGroundLabelsToRailEnd } from "./attachConnectorGroundLabelsToRailEnd"
 import { removeRedundantTerminalSegments } from "./removeRedundantTerminalSegments"
 import { placeGroundRailLabelsAtOuterEnd } from "./placeGroundRailLabelsAtOuterEnd"
 import { shortenSameSideRailToLabelAnchor } from "./shortenSameSideRailToLabelAnchor"
@@ -42,10 +43,17 @@ export class SameNetJunctionAlignmentSolver extends BaseSolver {
       traces: this.outputTraces,
       netLabelPlacements: alignment.netLabelPlacements,
     })
-    this.outputNetLabelPlacements = placeGroundRailLabelsAtOuterEnd({
+    const attachedGroundLabels = attachConnectorGroundLabelsToRailEnd({
       inputProblem: this.input.inputProblem,
       traces: this.outputTraces,
       netLabelPlacements: alignment.netLabelPlacements,
+      netLabelConnectorTraceIds: this.input.netLabelConnectorTraceIds,
+    })
+    this.outputTraces = attachedGroundLabels.traces
+    this.outputNetLabelPlacements = placeGroundRailLabelsAtOuterEnd({
+      inputProblem: this.input.inputProblem,
+      traces: this.outputTraces,
+      netLabelPlacements: attachedGroundLabels.netLabelPlacements,
     })
     this.stats.alignedJunctionCount = alignment.alignedJunctionCount
     this.stats.collapsedCycleCount = alignment.collapsedCycleCount
