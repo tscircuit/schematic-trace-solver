@@ -1,31 +1,39 @@
+import { traceCrossesBoundsInterior } from "lib/solvers/AvailableNetOrientationSolver/geometry"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import {
+  getCenterFromAnchor,
+  getRectBounds,
+} from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
+import {
+  rectsOverlap,
+  tracePathContainsPoint,
+} from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import {
   isHorizontal,
   isVertical,
   nearlyEqual,
+  RAIL_ALIGNMENT_EPSILON,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { getRemovableRailLabelConnectors } from "lib/solvers/RailNetLabelCornerPlacementSolver/getRemovableRailLabelConnectors"
 import type { InputProblem } from "lib/types/InputProblem"
 import { getGroundNetIds } from "lib/utils/getGroundNetIds"
-import {
-  getClearGroundLabelCenter,
-  getLowestConnectedColumnY,
-  hasSharedGroundRail,
-} from "./groundRailLabelPlacement"
 
 /** Place shared ground labels at a clear end of their connected rail. */
 export const placeGroundRailLabelsAtOuterEnd = ({
   inputProblem,
   traces,
   netLabelPlacements,
+  netLabelConnectorTraceIds,
 }: {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  /** When given, a label on its own connector stub can move to its rail. */
+  netLabelConnectorTraceIds?: ReadonlySet<string>
 }): NetLabelPlacement[] => {
   const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
   const groundNetIds = getGroundNetIds(inputProblem, netConnMap)
@@ -86,15 +94,26 @@ export const placeGroundRailLabelsAtOuterEnd = ({
             !tracePathContainsPoint(rail.tracePath, label.anchorPoint))
         )
           continue
-        const center = getClearGroundLabelCenter({
-          label,
-          labelIndex: index,
+        const center = getCenterFromAnchor(
           anchorPoint,
-          obstacles,
-          traceMap,
-          netLabelPlacements: output,
-        })
-        if (!center) continue
+          label.orientation,
+          label.width,
+          label.height,
+        )
+        const bounds = getRectBounds(center, label.width, label.height)
+        if (
+          obstacles.some((obstacle) => rectsOverlap(bounds, obstacle)) ||
+          traceCrossesBoundsInterior(bounds, traceMap) ||
+          output.some(
+            (other, otherIndex) =>
+              otherIndex !== index &&
+              rectsOverlap(
+                bounds,
+                getRectBounds(other.center, other.width, other.height),
+              ),
+          )
+        )
+          continue
         output[index] = {
           ...label,
           anchorPoint,
@@ -110,32 +129,116 @@ export const placeGroundRailLabelsAtOuterEnd = ({
     const label = output[index]!
     if (label.orientation !== "y-" || !groundNetIds.has(label.globalConnNetId))
       continue
-    if (!hasSharedGroundRail(inputProblem, netConnMap, label.globalConnNetId))
-      continue
+    const hasSharedRail = inputProblem.netConnections.some(
+      (candidate) =>
+        candidate.pinIds.length > 2 &&
+        netConnMap.getNetConnectedToId(candidate.netId) ===
+          label.globalConnNetId,
+    )
+    if (!hasSharedRail) continue
 
     // Follow only the continuous column attached to this label. Separate
     // ground branches may share an x coordinate without sharing a rail.
-    const lowestY = getLowestConnectedColumnY({
-      traces,
-      globalConnNetId: label.globalConnNetId,
-      x: label.anchorPoint.x,
-      startY: label.anchorPoint.y,
-    })
-    if (nearlyEqual(lowestY, label.anchorPoint.y)) continue
-    const anchorPoint = { x: label.anchorPoint.x, y: lowestY }
+    const getLowestColumnY = (x: number, startY: number) => {
+      const columnSegments = traces
+        .filter((trace) => trace.globalConnNetId === label.globalConnNetId)
+        .flatMap((trace) =>
+          trace.tracePath.slice(1).flatMap((end, pointIndex) => {
+            const start = trace.tracePath[pointIndex]!
+            return nearlyEqual(start.x, x) && nearlyEqual(end.x, x)
+              ? [
+                  {
+                    minY: Math.min(start.y, end.y),
+                    maxY: Math.max(start.y, end.y),
+                  },
+                ]
+              : []
+          }),
+        )
+        .sort((a, b) => b.maxY - a.maxY)
+      let lowestY = startY
+      for (const segment of columnSegments) {
+        if (
+          segment.maxY + RAIL_ALIGNMENT_EPSILON >= lowestY &&
+          segment.minY < lowestY
+        ) {
+          lowestY = segment.minY
+        }
+      }
+      return lowestY
+    }
 
-    // Keep the original anchor when the ground symbol would collide.
-    const center = getClearGroundLabelCenter({
-      label,
-      labelIndex: index,
+    const columns = [{ x: label.anchorPoint.x, startY: label.anchorPoint.y }]
+    // A label hung from its own connector stub belongs to the rail the stub
+    // branches from, so that rail's columns are part of the label's rail.
+    if (netLabelConnectorTraceIds) {
+      for (const { rail } of getRemovableRailLabelConnectors({
+        label,
+        traces,
+        rails: traces,
+        netLabelPlacements: output,
+        netLabelConnectorTraceIds,
+        inputProblem,
+      })) {
+        const path = simplifyPath(rail.tracePath)
+        for (let pointIndex = 1; pointIndex < path.length; pointIndex++) {
+          const start = path[pointIndex - 1]!
+          const end = path[pointIndex]!
+          if (!isVertical(start, end)) continue
+          columns.push({ x: start.x, startY: Math.max(start.y, end.y) })
+        }
+      }
+    }
+    let anchorPoint = label.anchorPoint
+    for (const column of columns) {
+      const y = getLowestColumnY(column.x, column.startY)
+      if (y < anchorPoint.y - RAIL_ALIGNMENT_EPSILON) {
+        anchorPoint = { x: column.x, y }
+      }
+    }
+    if (anchorPoint === label.anchorPoint) continue
+    const movesToRail = !nearlyEqual(anchorPoint.x, label.anchorPoint.x)
+    const railHostTrace = movesToRail
+      ? traces.find(
+          (trace) =>
+            trace.globalConnNetId === label.globalConnNetId &&
+            !netLabelConnectorTraceIds?.has(trace.mspPairId) &&
+            tracePathContainsPoint(trace.tracePath, anchorPoint),
+        )
+      : undefined
+    if (movesToRail && !railHostTrace) continue
+
+    const center = getCenterFromAnchor(
       anchorPoint,
-      obstacles,
-      traceMap,
-      netLabelPlacements: output,
-    })
-    if (!center) continue
+      label.orientation,
+      label.width,
+      label.height,
+    )
+    const bounds = getRectBounds(center, label.width, label.height)
+    // Keep the original anchor when the ground symbol would collide.
+    if (
+      obstacles.some((obstacle) => rectsOverlap(bounds, obstacle)) ||
+      traceCrossesBoundsInterior(bounds, traceMap) ||
+      output.some(
+        (other, otherIndex) =>
+          otherIndex !== index &&
+          rectsOverlap(
+            bounds,
+            getRectBounds(other.center, other.width, other.height),
+          ),
+      )
+    )
+      continue
 
-    output[index] = { ...label, anchorPoint, center }
+    output[index] = railHostTrace
+      ? {
+          ...label,
+          anchorPoint,
+          center,
+          mspConnectionPairIds: [railHostTrace.mspPairId],
+          pinIds: [...railHostTrace.pinIds],
+        }
+      : { ...label, anchorPoint, center }
   }
   return output
 }
