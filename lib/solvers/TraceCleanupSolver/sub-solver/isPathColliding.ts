@@ -23,12 +23,21 @@ export const isPathColliding = (
     return { isColliding: false }
   }
 
+  // Find the trace we are currently evaluating
+  const targetTrace = allTraces.find((t) => t.mspPairId === traceIdToExclude)
+
   for (let i = 0; i < path.length - 1; i++) {
     const pathSegP1 = path[i]
     const pathSegQ1 = path[i + 1]
 
     for (const existingTrace of allTraces) {
-      if (existingTrace.mspPairId === traceIdToExclude) {
+      // Skip if it's the same trace OR they belong to the same net.
+      const isSameNet =
+        targetTrace &&
+        targetTrace.globalConnNetId !== undefined &&
+        targetTrace.globalConnNetId === existingTrace.globalConnNetId
+
+      if (existingTrace.mspPairId === traceIdToExclude || isSameNet) {
         continue // Skip self-collision check
       }
 
