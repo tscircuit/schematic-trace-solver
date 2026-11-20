@@ -40,6 +40,8 @@ export const getSimplifiedRailConnectorCandidates = (params: {
   for (const { connector, rail } of attachments) {
     const path = simplifyPath(connector.tracePath)
     if (countTurns(path) < 2) continue
+    const originalSource =
+      getDistance(path[0]!, label.anchorPoint) <= EPS ? path.at(-1)! : path[0]!
 
     for (const source of getTraceCorners(simplifyPath(rail.tracePath))) {
       const anchor = label.anchorPoint
@@ -50,9 +52,16 @@ export const getSimplifiedRailConnectorCandidates = (params: {
         { x: anchor.x, y: source.y },
         anchor,
       ])
+      const replacesMultiBendDetourAlongSameRailColumn =
+        countTurns(reroutedTracePath) <= 1 &&
+        countTurns(path) >= 3 &&
+        Math.abs(source.x - originalSource.x) <= EPS &&
+        Math.abs(anchor.y - source.y) <=
+          Math.abs(originalSource.y - source.y) + EPS
       if (
         countTurns(reroutedTracePath) >= countTurns(path) ||
-        getPathLength(reroutedTracePath) > getPathLength(path) + EPS
+        (!replacesMultiBendDetourAlongSameRailColumn &&
+          getPathLength(reroutedTracePath) > getPathLength(path) + EPS)
       )
         continue
       if (
