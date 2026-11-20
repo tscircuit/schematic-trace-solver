@@ -12,8 +12,10 @@ import {
 } from "./findIntersectionsWithObstacles"
 import {
   generateLShapeRerouteCandidates,
+  generateOppositeSideCShapeDetours,
   generatePerimeterCornerTraceDetours,
   generatePerpendicularTraceDetours,
+  isSixPointCShapePath,
 } from "./generateLShapeRerouteCandidates"
 import { isPathColliding, type CollisionInfo } from "./isPathColliding"
 import {
@@ -36,6 +38,7 @@ import {
   isPathCollidingWithChipInterior,
 } from "../../Example28Solver/geometry"
 import { getObstacleRects } from "../../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
+import { findFirstCollision } from "../../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 
 interface TraceCrossing {
   trace: SolvedTracePath
@@ -106,11 +109,25 @@ export class UntangleTraceSubsolver extends BaseSolver {
     | "candidate_evaluation" = "idle"
   private lShapeJustProcessed = false
   private bestRouteFound: Point[] | null = null
+  private chipPinCountById = new Map<string, number>()
+  private pinIncidentTraceCount = new Map<string, number>()
 
   constructor(solverInput: UntangleTraceSubsolverInput) {
     super()
     this.input = solverInput
     this.visualizationMode = "l_shapes"
+
+    for (const chip of this.input.inputProblem.chips) {
+      this.chipPinCountById.set(chip.chipId, chip.pins.length)
+    }
+    for (const trace of this.input.allTraces) {
+      for (const pinId of trace.pinIds) {
+        this.pinIncidentTraceCount.set(
+          pinId,
+          (this.pinIncidentTraceCount.get(pinId) ?? 0) + 1,
+        )
+      }
+    }
 
     this.chipObstacleSpatialIndex =
       this.input.inputProblem._chipObstacleSpatialIndex ??
@@ -183,6 +200,47 @@ export class UntangleTraceSubsolver extends BaseSolver {
     return `${crossing.trace.mspPairId}:${crossing.segmentIndex}:${crossing.otherTrace.mspPairId}:${crossing.otherSegmentIndex}`
   }
 
+  private _isTwoPinParallelCShapeBundle(
+    first: SolvedTracePath,
+    second: SolvedTracePath,
+  ) {
+    if (first.pins.length !== 2 || second.pins.length !== 2) return false
+    if (
+      !isSixPointCShapePath(first.tracePath) ||
+      !isSixPointCShapePath(second.tracePath)
+    ) {
+      return false
+    }
+    const firstChipA = first.pins[0]!.chipId
+    const firstChipB = first.pins[1]!.chipId
+    if (firstChipA === firstChipB) return false
+    const secondChipA = second.pins[0]!.chipId
+    const secondChipB = second.pins[1]!.chipId
+    const sharesSameTwoChips =
+      (firstChipA === secondChipA && firstChipB === secondChipB) ||
+      (firstChipA === secondChipB && firstChipB === secondChipA)
+    if (!sharesSameTwoChips) return false
+    if (
+      this.chipPinCountById.get(firstChipA) !== 2 ||
+      this.chipPinCountById.get(firstChipB) !== 2
+    ) {
+      return false
+    }
+    for (const pinId of first.pinIds) {
+      const expectedCount = second.pinIds.includes(pinId) ? 2 : 1
+      if ((this.pinIncidentTraceCount.get(pinId) ?? 0) > expectedCount) {
+        return false
+      }
+    }
+    for (const pinId of second.pinIds) {
+      const expectedCount = first.pinIds.includes(pinId) ? 2 : 1
+      if ((this.pinIncidentTraceCount.get(pinId) ?? 0) > expectedCount) {
+        return false
+      }
+    }
+    return true
+  }
+
   private _isTraceBundle(first: SolvedTracePath, second: SolvedTracePath) {
     const componentPair = (trace: SolvedTracePath) =>
       trace.pins
@@ -190,6 +248,8 @@ export class UntangleTraceSubsolver extends BaseSolver {
         .sort()
         .join(":")
     if (componentPair(first) !== componentPair(second)) return false
+
+    if (this._isTwoPinParallelCShapeBundle(first, second)) return true
 
     return Object.values(this.input.mergedLabelNetIdMap).some(
       (netIds) =>
@@ -246,7 +306,33 @@ export class UntangleTraceSubsolver extends BaseSolver {
     const chipBounds = this.chipObstacleSpatialIndex.chips.map(
       (chip) => chip.bounds,
     )
+    const getEndpointChipBounds = (trace: SolvedTracePath) => {
+      const endpointChipIds = new Set(trace.pins.map((pin) => pin.chipId))
+      return this.chipObstacleSpatialIndex.chips
+        .filter((chip) => endpointChipIds.has(chip.chipId))
+        .map((chip) => chip.bounds)
+    }
+    const isTwoPinCShapeBundle = this._isTwoPinParallelCShapeBundle(
+      crossing.trace,
+      crossing.otherTrace,
+    )
     const candidates = [
+      ...(isTwoPinCShapeBundle
+        ? [
+            ...generateOppositeSideCShapeDetours({
+              trace: crossing.trace,
+              chipBounds,
+              endpointChipBounds: getEndpointChipBounds(crossing.trace),
+              clearance: this.input.paddingBuffer,
+            }),
+            ...generateOppositeSideCShapeDetours({
+              trace: crossing.otherTrace,
+              chipBounds,
+              endpointChipBounds: getEndpointChipBounds(crossing.otherTrace),
+              clearance: this.input.paddingBuffer,
+            }),
+          ]
+        : []),
       ...generatePerpendicularTraceDetours({
         trace: crossing.trace,
         segmentIndex: crossing.segmentIndex,
@@ -276,8 +362,12 @@ export class UntangleTraceSubsolver extends BaseSolver {
         clearance: this.input.paddingBuffer,
       }),
     ]
-    const chipObstacles = getObstacleRects(this.input.inputProblem).filter(
+    const allObstacles = getObstacleRects(this.input.inputProblem)
+    const chipObstacles = allObstacles.filter(
       (obstacle) => obstacle.kind === "chip",
+    )
+    const textObstacles = allObstacles.filter(
+      (obstacle) => obstacle.kind === "text_box",
     )
     // Prefer a globally clear route. If the initial bundle detour transfers
     // the crossing, continue rip-up/reroute from that moved trace until clear.
@@ -293,6 +383,8 @@ export class UntangleTraceSubsolver extends BaseSolver {
       .filter(
         (candidate) =>
           !isPathCollidingWithChipInterior(candidate.path, chipObstacles) &&
+          (!isTwoPinCShapeBundle ||
+            findFirstCollision(candidate.path, textObstacles) === null) &&
           !isPathColliding(
             candidate.path,
             [crossing.trace, crossing.otherTrace],
