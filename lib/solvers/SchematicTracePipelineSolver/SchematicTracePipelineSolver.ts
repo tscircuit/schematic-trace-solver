@@ -35,6 +35,7 @@ import { SameNetJunctionAlignmentSolver } from "../SameNetJunctionAlignmentSolve
 import { TraceElbowTransitionSimplificationSolver } from "../TraceElbowTransitionSimplificationSolver/TraceElbowTransitionSimplificationSolver"
 import { InlineNetLabelSolver } from "../InlineNetLabelSolver/InlineNetLabelSolver"
 import { NetLabelToTraceSolver } from "../NetLabelToTraceSolver/NetLabelToTraceSolver"
+import { PortOnlyNetLabelCollisionSolver } from "../PortOnlyNetLabelCollisionSolver/PortOnlyNetLabelCollisionSolver"
 import { findPerpendicularPathCrossings } from "../TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 
 type PipelineStep<T extends new (...args: any[]) => BaseSolver> = {
@@ -103,6 +104,7 @@ export class SchematicTracePipelineSolver extends BaseSolver {
   traceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   preAlignmentTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
   finalTraceElbowTransitionSimplificationSolver?: TraceElbowTransitionSimplificationSolver
+  portOnlyNetLabelCollisionSolver?: PortOnlyNetLabelCollisionSolver
   sameNetJunctionAlignmentSolver?: SameNetJunctionAlignmentSolver
   inlineDirectTraceRecoverySolver?: NetLabelToTraceSolver
   inlineNetLabelSolver?: InlineNetLabelSolver
@@ -671,14 +673,31 @@ export class SchematicTracePipelineSolver extends BaseSolver {
       },
     ),
     definePipelineStep(
-      "netLabelToTraceSolver",
-      NetLabelToTraceSolver,
+      "portOnlyNetLabelCollisionSolver",
+      PortOnlyNetLabelCollisionSolver,
       (instance) => {
         const inlineOutput = instance.inlineNetLabelSolver!.getOutput()
         return [
           {
             inputProblem: instance.inputProblem,
-            ...inlineOutput,
+            traces: inlineOutput.traces,
+            netLabelPlacements: inlineOutput.netLabelPlacements,
+            inlineNetLabelPlacements: inlineOutput.inlineNetLabelPlacements,
+            netLabelConnectorTraceIds: inlineOutput.netLabelConnectorTraceIds,
+          },
+        ]
+      },
+    ),
+    definePipelineStep(
+      "netLabelToTraceSolver",
+      NetLabelToTraceSolver,
+      (instance) => {
+        const portOnlyOutput =
+          instance.portOnlyNetLabelCollisionSolver!.getOutput()
+        return [
+          {
+            inputProblem: instance.inputProblem,
+            ...portOnlyOutput,
           },
         ]
       },
