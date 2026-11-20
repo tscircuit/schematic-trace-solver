@@ -21,6 +21,10 @@ export class ChipObstacleSpatialIndex {
     }))
 
     this.spatialIndexIdToChip = new Map()
+    if (this.chips.length === 0) {
+      this.spatialIndex = null as any
+      return
+    }
     this.spatialIndex = new Flatbush(chips.length)
 
     for (const chip of this.chips) {
@@ -37,6 +41,9 @@ export class ChipObstacleSpatialIndex {
   }
 
   getChipsInBounds(bounds: Bounds): Array<InputChip & { bounds: Bounds }> {
+    if (!this.spatialIndex || this.chips.length === 0) {
+      return []
+    }
     const chipSpatialIndexIds = this.spatialIndex.search(
       bounds.minX,
       bounds.minY,
