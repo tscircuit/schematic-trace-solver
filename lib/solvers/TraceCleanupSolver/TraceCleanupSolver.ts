@@ -7,6 +7,7 @@ import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/Sche
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { alignSameNetRails } from "./alignSameNetRails"
+export { mergeNearbySameNetSegments } from "./mergeNearbySameNetSegments"
 import { extendBranchesToTrimmedJunctions } from "./extendBranchesToTrimmedJunctions"
 
 export type TraceCleanupOperation =
