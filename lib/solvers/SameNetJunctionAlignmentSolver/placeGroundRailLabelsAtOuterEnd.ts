@@ -18,6 +18,7 @@ import {
   RAIL_ALIGNMENT_EPSILON,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { getRemovableRailLabelConnectors } from "lib/solvers/RailNetLabelCornerPlacementSolver/getRemovableRailLabelConnectors"
 import type { InputProblem } from "lib/types/InputProblem"
 import { getGroundNetIds } from "lib/utils/getGroundNetIds"
 
@@ -26,10 +27,13 @@ export const placeGroundRailLabelsAtOuterEnd = ({
   inputProblem,
   traces,
   netLabelPlacements,
+  netLabelConnectorTraceIds,
 }: {
   inputProblem: InputProblem
   traces: SolvedTracePath[]
   netLabelPlacements: NetLabelPlacement[]
+  /** When given, a label on its own connector stub can move to its rail. */
+  netLabelConnectorTraceIds?: ReadonlySet<string>
 }): NetLabelPlacement[] => {
   const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
   const groundNetIds = getGroundNetIds(inputProblem, netConnMap)
@@ -135,34 +139,74 @@ export const placeGroundRailLabelsAtOuterEnd = ({
 
     // Follow only the continuous column attached to this label. Separate
     // ground branches may share an x coordinate without sharing a rail.
-    const columnSegments = traces
-      .filter((trace) => trace.globalConnNetId === label.globalConnNetId)
-      .flatMap((trace) =>
-        trace.tracePath.slice(1).flatMap((end, pointIndex) => {
-          const start = trace.tracePath[pointIndex]!
-          return nearlyEqual(start.x, label.anchorPoint.x) &&
-            nearlyEqual(end.x, label.anchorPoint.x)
-            ? [
-                {
-                  minY: Math.min(start.y, end.y),
-                  maxY: Math.max(start.y, end.y),
-                },
-              ]
-            : []
-        }),
-      )
-      .sort((a, b) => b.maxY - a.maxY)
-    let lowestY = label.anchorPoint.y
-    for (const segment of columnSegments) {
-      if (
-        segment.maxY + RAIL_ALIGNMENT_EPSILON >= lowestY &&
-        segment.minY < lowestY
-      ) {
-        lowestY = segment.minY
+    const getLowestColumnY = (x: number, startY: number) => {
+      const columnSegments = traces
+        .filter((trace) => trace.globalConnNetId === label.globalConnNetId)
+        .flatMap((trace) =>
+          trace.tracePath.slice(1).flatMap((end, pointIndex) => {
+            const start = trace.tracePath[pointIndex]!
+            return nearlyEqual(start.x, x) && nearlyEqual(end.x, x)
+              ? [
+                  {
+                    minY: Math.min(start.y, end.y),
+                    maxY: Math.max(start.y, end.y),
+                  },
+                ]
+              : []
+          }),
+        )
+        .sort((a, b) => b.maxY - a.maxY)
+      let lowestY = startY
+      for (const segment of columnSegments) {
+        if (
+          segment.maxY + RAIL_ALIGNMENT_EPSILON >= lowestY &&
+          segment.minY < lowestY
+        ) {
+          lowestY = segment.minY
+        }
+      }
+      return lowestY
+    }
+
+    const columns = [{ x: label.anchorPoint.x, startY: label.anchorPoint.y }]
+    // A label hung from its own connector stub belongs to the rail the stub
+    // branches from, so that rail's columns are part of the label's rail.
+    if (netLabelConnectorTraceIds) {
+      for (const { rail } of getRemovableRailLabelConnectors({
+        label,
+        traces,
+        rails: traces,
+        netLabelPlacements: output,
+        netLabelConnectorTraceIds,
+        inputProblem,
+      })) {
+        const path = simplifyPath(rail.tracePath)
+        for (let pointIndex = 1; pointIndex < path.length; pointIndex++) {
+          const start = path[pointIndex - 1]!
+          const end = path[pointIndex]!
+          if (!isVertical(start, end)) continue
+          columns.push({ x: start.x, startY: Math.max(start.y, end.y) })
+        }
       }
     }
-    if (nearlyEqual(lowestY, label.anchorPoint.y)) continue
-    const anchorPoint = { x: label.anchorPoint.x, y: lowestY }
+    let anchorPoint = label.anchorPoint
+    for (const column of columns) {
+      const y = getLowestColumnY(column.x, column.startY)
+      if (y < anchorPoint.y - RAIL_ALIGNMENT_EPSILON) {
+        anchorPoint = { x: column.x, y }
+      }
+    }
+    if (anchorPoint === label.anchorPoint) continue
+    const movesToRail = !nearlyEqual(anchorPoint.x, label.anchorPoint.x)
+    const railHostTrace = movesToRail
+      ? traces.find(
+          (trace) =>
+            trace.globalConnNetId === label.globalConnNetId &&
+            !netLabelConnectorTraceIds?.has(trace.mspPairId) &&
+            tracePathContainsPoint(trace.tracePath, anchorPoint),
+        )
+      : undefined
+    if (movesToRail && !railHostTrace) continue
 
     const center = getCenterFromAnchor(
       anchorPoint,
@@ -186,7 +230,15 @@ export const placeGroundRailLabelsAtOuterEnd = ({
     )
       continue
 
-    output[index] = { ...label, anchorPoint, center }
+    output[index] = railHostTrace
+      ? {
+          ...label,
+          anchorPoint,
+          center,
+          mspConnectionPairIds: [railHostTrace.mspPairId],
+          pinIds: [...railHostTrace.pinIds],
+        }
+      : { ...label, anchorPoint, center }
   }
   return output
 }

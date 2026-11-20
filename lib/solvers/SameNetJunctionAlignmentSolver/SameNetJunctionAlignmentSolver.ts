@@ -2,6 +2,7 @@ import type { GraphicsObject, Rect } from "graphics-debug"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem } from "lib/types/InputProblem"
@@ -46,7 +47,25 @@ export class SameNetJunctionAlignmentSolver extends BaseSolver {
       inputProblem: this.input.inputProblem,
       traces: this.outputTraces,
       netLabelPlacements: alignment.netLabelPlacements,
+      netLabelConnectorTraceIds: this.input.netLabelConnectorTraceIds,
     })
+    // A ground label moved from its connector stub onto its rail leaves the
+    // stub without a label; drop it.
+    const movedLabelAnchors = alignment.netLabelPlacements.flatMap(
+      (label, index) => {
+        const moved = this.outputNetLabelPlacements[index]!
+        return moved.mspConnectionPairIds === label.mspConnectionPairIds
+          ? []
+          : [label.anchorPoint]
+      },
+    )
+    this.outputTraces = this.outputTraces.filter(
+      (trace) =>
+        !this.input.netLabelConnectorTraceIds.has(trace.mspPairId) ||
+        !movedLabelAnchors.some((anchor) =>
+          tracePathContainsPoint(trace.tracePath, anchor),
+        ),
+    )
     this.stats.alignedJunctionCount = alignment.alignedJunctionCount
     this.stats.collapsedCycleCount = alignment.collapsedCycleCount
     this.solved = true
