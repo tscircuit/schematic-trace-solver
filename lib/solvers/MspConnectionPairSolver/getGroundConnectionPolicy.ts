@@ -1,5 +1,6 @@
 import { ConnectivityMap } from "connectivity-map"
 import type { InputProblem, PinId } from "lib/types/InputProblem"
+import { getGroundNetIds } from "lib/utils/getGroundNetIds"
 import { getPinDirection } from "../SchematicTraceLinesSolver/SchematicTraceSingleLineSolver/getPinDirection"
 import { getConnectivityMapsFromInputProblem } from "./getConnectivityMapFromInputProblem"
 
@@ -10,7 +11,9 @@ const MAX_LOCAL_GROUND_BRANCH_OFFSET = 1
 /** Avoid return wires between staggered, net-only ground-facing branches. */
 export const getGroundConnectionPolicy = (inputProblem: InputProblem) => {
   const { netConnMap } = getConnectivityMapsFromInputProblem(inputProblem)
-  const groundNetId = netConnMap.getNetConnectedToId("GND")
+  const groundNetIds = getGroundNetIds(inputProblem, netConnMap, {
+    includeDefaultGroundName: true,
+  })
   // Net identifiers do not constitute physical edges: two separate direct
   // connections may have the same netId without requesting a wire between them.
   const physicalConnMap = new ConnectivityMap({})
@@ -32,29 +35,36 @@ export const getGroundConnectionPolicy = (inputProblem: InputProblem) => {
       chip.pins.map((pin) => [pin.pinId, { pin, chip }] as const),
     ),
   )
-  const groundFacingPins = [...pins.values()].filter(
-    ({ pin, chip }) =>
+  const groundFacingPins = [...pins.values()].filter(({ pin, chip }) => {
+    const globalNetId = netConnMap.getNetConnectedToId(pin.pinId)
+    return (
       chip.pins.length === 2 &&
-      netConnMap.getNetConnectedToId(pin.pinId) === groundNetId &&
-      (pin._facingDirection ?? getPinDirection(pin, chip)) === "y-",
-  )
+      globalNetId !== undefined &&
+      groundNetIds.has(globalNetId) &&
+      (pin._facingDirection ?? getPinDirection(pin, chip)) === "y-"
+    )
+  })
   // A deliberately wired, level bank of two-pin loads already has its own
   // shared return rail. Do not extend that rail to independent lower branches
   // just to reduce the number of GND symbols. Other ground topologies retain
   // their existing routing behavior.
-  const hasExplicitParallelGroundRail = groundFacingPins.some(({ pin: a }) => {
+  const parallelRailGroundNetIds = new Set<string>()
+  for (const { pin: a } of groundFacingPins) {
+    const globalNetId = netConnMap.getNetConnectedToId(a.pinId)
     const group = physicalConnMap.getNetConnectedToId(a.pinId)
-    return (
-      group !== undefined &&
-      groundFacingPins.some(
-        ({ pin: b }) =>
-          a.pinId !== b.pinId &&
-          Math.abs(a.y - b.y) < 1e-6 &&
-          Math.abs(a.x - b.x) > 1e-6 &&
-          physicalConnMap.getNetConnectedToId(b.pinId) === group,
-      )
+    if (!globalNetId || group === undefined) continue
+    const sharesLevelRail = groundFacingPins.some(
+      ({ pin: b }) =>
+        a.pinId !== b.pinId &&
+        Math.abs(a.y - b.y) < 1e-6 &&
+        Math.abs(a.x - b.x) > 1e-6 &&
+        netConnMap.getNetConnectedToId(b.pinId) === globalNetId &&
+        physicalConnMap.getNetConnectedToId(b.pinId) === group,
     )
-  })
+    if (sharesLevelRail) {
+      parallelRailGroundNetIds.add(globalNetId)
+    }
+  }
   const areSeparateExplicitGroundIslands = (
     firstPinId: PinId,
     secondPinId: PinId,
@@ -87,7 +97,7 @@ export const getGroundConnectionPolicy = (inputProblem: InputProblem) => {
       physicalConnMap.getNetConnectedToId(secondPinId) ?? `pin:${secondPinId}`
     return firstPhysicalGroup !== secondPhysicalGroup
   }
-  if (!hasExplicitParallelGroundRail) {
+  if (parallelRailGroundNetIds.size === 0) {
     return (firstPinId: PinId, secondPinId: PinId) =>
       !areSeparateExplicitGroundIslands(firstPinId, secondPinId)
   }
@@ -106,9 +116,9 @@ export const getGroundConnectionPolicy = (inputProblem: InputProblem) => {
     const secondGlobalNetId = netConnMap.getNetConnectedToId(secondPinId)
     if (areSeparateExplicitGroundIslands(firstPinId, secondPinId)) return false
     if (
-      !groundNetId ||
-      firstGlobalNetId !== groundNetId ||
-      secondGlobalNetId !== groundNetId
+      !firstGlobalNetId ||
+      firstGlobalNetId !== secondGlobalNetId ||
+      !parallelRailGroundNetIds.has(firstGlobalNetId)
     ) {
       return true
     }

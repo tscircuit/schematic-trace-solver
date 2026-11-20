@@ -87,6 +87,24 @@ test("does not apply the ground rule to power or signal nets", () => {
   expect(getGroundConnectionPolicy(inputProblem)("B.2", "C.2")).toBe(true)
 })
 
+test("applies the local-ground branch rule to non-GND nets marked isGround", () => {
+  const inputProblem = createParallelGroundRailProblem()
+  inputProblem.netConnections[0]!.netId = "AGND"
+  inputProblem.netConnections[0]!.isGround = true
+  inputProblem.availableNetLabelOrientations = { AGND: ["y-"] }
+  // Direct connections establish the explicit A.2-B.2 parallel rail; keep C.2
+  // on the same net without creating an explicit island split on U.GND/C.2/D.2.
+  inputProblem.directConnections = [{ pinIds: ["A.2", "B.2"] }]
+  expect(getGroundConnectionPolicy(inputProblem)("A.2", "B.2")).toBe(true)
+  expect(getGroundConnectionPolicy(inputProblem)("B.2", "C.2")).toBe(false)
+})
+
+test("does not treat a manually named GND net with isGround=false as ground", () => {
+  const inputProblem = createParallelGroundRailProblem()
+  inputProblem.netConnections[0]!.isGround = false
+  expect(getGroundConnectionPolicy(inputProblem)("B.2", "C.2")).toBe(true)
+})
+
 test("infers ground-facing pins when explicit directions are absent", () => {
   const inputProblem = createParallelGroundRailProblem()
   for (const chip of inputProblem.chips) {
