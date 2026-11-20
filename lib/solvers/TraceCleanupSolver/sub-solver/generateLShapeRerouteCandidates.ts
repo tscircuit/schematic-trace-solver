@@ -175,6 +175,109 @@ export const generatePerimeterCornerTraceDetours = ({
   return candidates
 }
 
+export const isSixPointCShapePath = (path: readonly Point[]): boolean => {
+  if (path.length !== 6) return false
+  const [p0, p1, p2, p3, p4, p5] = path as [
+    Point,
+    Point,
+    Point,
+    Point,
+    Point,
+    Point,
+  ]
+  const verticalTrunk =
+    isVertical(p0, p1) &&
+    Math.abs(p1.y - p2.y) < EPS &&
+    isVertical(p2, p3) &&
+    Math.abs(p3.y - p4.y) < EPS &&
+    isVertical(p4, p5)
+  if (verticalTrunk) return true
+
+  return (
+    Math.abs(p0.y - p1.y) < EPS &&
+    isVertical(p1, p2) &&
+    Math.abs(p2.y - p3.y) < EPS &&
+    isVertical(p3, p4) &&
+    Math.abs(p4.y - p5.y) < EPS
+  )
+}
+
+export const generateOppositeSideCShapeDetours = ({
+  trace,
+  chipBounds,
+  endpointChipBounds = [],
+  clearance,
+}: Omit<
+  PerpendicularTraceDetourInput,
+  "segmentIndex" | "obstacleStart" | "obstacleEnd"
+> & {
+  endpointChipBounds?: Bounds[]
+}): TraceDetourCandidate[] => {
+  if (!isSixPointCShapePath(trace.tracePath) || chipBounds.length === 0) {
+    return []
+  }
+  const [p0, p1, p2, p3, p4, p5] = trace.tracePath as [
+    Point,
+    Point,
+    Point,
+    Point,
+    Point,
+    Point,
+  ]
+  const trunkIsVertical = isVertical(p2, p3)
+  if (trunkIsVertical) {
+    const minY = Math.min(p1.y, p4.y)
+    const maxY = Math.max(p1.y, p4.y)
+    const relevantBounds = [
+      ...endpointChipBounds,
+      ...chipBounds.filter(
+        (bounds) => bounds.maxY >= minY - EPS && bounds.minY <= maxY + EPS,
+      ),
+    ]
+    const sourceBounds = relevantBounds.length > 0 ? relevantBounds : chipBounds
+    const channelXs = [
+      Math.min(...sourceBounds.map((bounds) => bounds.minX)) - clearance,
+      Math.max(...sourceBounds.map((bounds) => bounds.maxX)) + clearance,
+    ]
+    return channelXs.map((channelX) => ({
+      traceId: trace.mspPairId,
+      path: simplifyPath([
+        p0,
+        p1,
+        { x: channelX, y: p1.y },
+        { x: channelX, y: p4.y },
+        p4,
+        p5,
+      ]),
+    }))
+  }
+
+  const minX = Math.min(p1.x, p4.x)
+  const maxX = Math.max(p1.x, p4.x)
+  const relevantBounds = [
+    ...endpointChipBounds,
+    ...chipBounds.filter(
+      (bounds) => bounds.maxX >= minX - EPS && bounds.minX <= maxX + EPS,
+    ),
+  ]
+  const sourceBounds = relevantBounds.length > 0 ? relevantBounds : chipBounds
+  const channelYs = [
+    Math.min(...sourceBounds.map((bounds) => bounds.minY)) - clearance,
+    Math.max(...sourceBounds.map((bounds) => bounds.maxY)) + clearance,
+  ]
+  return channelYs.map((channelY) => ({
+    traceId: trace.mspPairId,
+    path: simplifyPath([
+      p0,
+      p1,
+      { x: p1.x, y: channelY },
+      { x: p4.x, y: channelY },
+      p4,
+      p5,
+    ]),
+  }))
+}
+
 export const generatePerpendicularTraceDetours = ({
   trace,
   segmentIndex,
