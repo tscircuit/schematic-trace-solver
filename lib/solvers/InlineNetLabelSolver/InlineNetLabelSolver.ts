@@ -1,3 +1,4 @@
+import { getCompactInlineLabelLoop } from "./getCompactInlineLabelLoop"
 import { getLocalTraceLabelShifts } from "./getLocalTraceLabelShifts"
 import {
   getOutputLabelCollisions,
@@ -136,6 +137,11 @@ export interface InlineNetLabelOutput {
 type InlineOutput = Omit<InlineNetLabelOutput, "inputProblem">
 
 type InlineEligibleConnection = InputDirectConnection | InputNetConnection
+interface InlinePlacementObstacles {
+  traces: SolvedTracePath[]
+  anchored: NetLabelPlacement[]
+  inline: InlineNetLabelPlacement[]
+}
 
 type QueuedInlineConnection =
   | { kind: "direct_connection"; connection: InputDirectConnection }
@@ -398,6 +404,13 @@ export class InlineNetLabelSolver extends BaseSolver {
       this.stepTraceRefinement()
       return
     }
+    if (this.input.resolveTraceCollisions) {
+      this.postProcessedOutput = this.compactInlineLabelLoops(
+        this.postProcessedOutput,
+      )
+      this.inlineNetLabelPlacements =
+        this.postProcessedOutput.inlineNetLabelPlacements
+    }
     this.solved = true
     this.stats.inlineNetLabelCount = this.inlineNetLabelPlacements.length
   }
@@ -655,11 +668,7 @@ export class InlineNetLabelSolver extends BaseSolver {
     pinId: PinId,
     knownGlobalConnNetId?: string,
     ignoredTraceIds = new Set<string>(),
-    obstacles?: {
-      traces: SolvedTracePath[]
-      anchored: NetLabelPlacement[]
-      inline: InlineNetLabelPlacement[]
-    },
+    obstacles?: InlinePlacementObstacles,
   ): InlineNetLabelPlacement | null {
     if (!connection.netId) return null
 
@@ -788,11 +797,13 @@ export class InlineNetLabelSolver extends BaseSolver {
     trace,
     pinIds,
     ignoredTraceIds = new Set<string>(),
+    obstacles,
   }: {
     connection: InlineEligibleConnection
     trace: SolvedTracePath
     pinIds: PinId[]
     ignoredTraceIds?: Set<string>
+    obstacles?: InlinePlacementObstacles
   }): InlineNetLabelPlacement | null {
     const segments = getAxisAlignedSegments(trace.tracePath)
     if (segments.length === 0) return null
@@ -824,7 +835,7 @@ export class InlineNetLabelSolver extends BaseSolver {
             side,
             width,
             height,
-            this.traces,
+            obstacles?.traces ?? this.traces,
             ignoredTraceIds,
           )) {
             const center =
@@ -858,6 +869,7 @@ export class InlineNetLabelSolver extends BaseSolver {
                 ownTrace: trace,
                 ownGlobalConnNetId: trace.globalConnNetId,
                 ignoredTraceIds,
+                obstacles,
               })
             )
               continue
@@ -893,6 +905,7 @@ export class InlineNetLabelSolver extends BaseSolver {
       offset,
       pinIds,
       ignoredTraceIds,
+      obstacles,
     })
     if (spanPlacement) return spanPlacement
 
@@ -916,6 +929,7 @@ export class InlineNetLabelSolver extends BaseSolver {
     offset,
     pinIds,
     ignoredTraceIds,
+    obstacles,
   }: {
     trace: SolvedTracePath
     connection: InlineEligibleConnection
@@ -925,6 +939,7 @@ export class InlineNetLabelSolver extends BaseSolver {
     offset: number
     pinIds: PinId[]
     ignoredTraceIds: Set<string>
+    obstacles?: InlinePlacementObstacles
   }): InlineNetLabelPlacement | null {
     const path = trace.tracePath
     if (path.length < 2) return null
@@ -1001,6 +1016,7 @@ export class InlineNetLabelSolver extends BaseSolver {
             ownTrace: trace,
             ownGlobalConnNetId: trace.globalConnNetId,
             ignoredTraceIds,
+            obstacles,
           })
         )
           continue
@@ -1063,11 +1079,7 @@ export class InlineNetLabelSolver extends BaseSolver {
       ownTrace?: SolvedTracePath
       ownGlobalConnNetId: string
       ignoredTraceIds?: Set<string>
-      obstacles?: {
-        traces: SolvedTracePath[]
-        anchored: NetLabelPlacement[]
-        inline: InlineNetLabelPlacement[]
-      }
+      obstacles?: InlinePlacementObstacles
     },
   ): boolean {
     for (const chip of this.inputProblem.chips) {
@@ -1324,6 +1336,92 @@ export class InlineNetLabelSolver extends BaseSolver {
           !blockedPlacementKeys.has(getInlinePlacementKey(placement)),
       )
     }
+  }
+
+  private compactInlineLabelLoops(initial: InlineOutput): InlineOutput {
+    let output = initial
+    const { terminalTraces } = getInlineLabelObstacles(
+      this.inputProblem,
+      initial.inlineNetLabelPlacements,
+    )
+    for (const [index, label] of initial.inlineNetLabelPlacements.entries()) {
+      if (!label.mspPairId || label.stubTracePath) continue
+      const trace = output.traces.find(
+        ({ mspPairId }) => mspPairId === label.mspPairId,
+      )
+      if (!trace || trace.tracePath.length !== 4) continue
+      const obstacles = [
+        ...output.traces.filter((other) => other !== trace),
+        ...terminalTraces,
+      ]
+      const path = getCompactInlineLabelLoop(
+        this.inputProblem,
+        trace,
+        label,
+        obstacles,
+      )
+      if (!path) continue
+
+      const detachedAnchor = output.netLabelPlacements.some(
+        (anchored) =>
+          anchored.globalConnNetId === trace.globalConnNetId &&
+          tracePathContainsPoint(trace.tracePath, anchored.anchorPoint) &&
+          !tracePathContainsPoint(path, anchored.anchorPoint),
+      )
+      const otherLabels = output.inlineNetLabelPlacements.filter(
+        (_, i) => i !== index,
+      )
+      const detachedInlineAnchor = otherLabels.some(
+        (inline) =>
+          inline.mspPairId === trace.mspPairId &&
+          !tracePathContainsPoint(path, inline.anchorPoint),
+      )
+      if (detachedAnchor || detachedInlineAnchor) continue
+
+      const connection = [
+        ...this.inputProblem.netConnections,
+        ...this.inputProblem.directConnections,
+      ].find(
+        (connection) =>
+          connection.netId === label.netId && connection.allowInlineNetLabel,
+      )
+      if (!connection) continue
+      const compactTrace = { ...trace, tracePath: path }
+      const placement = this.computeInlinePlacement({
+        connection,
+        trace: compactTrace,
+        pinIds: label.pinIds,
+        obstacles: {
+          traces: [...obstacles, compactTrace],
+          anchored: output.netLabelPlacements,
+          inline: otherLabels,
+        },
+      })
+      if (!placement) continue
+
+      const candidate = {
+        ...output,
+        traces: output.traces.map((other) =>
+          other === trace ? compactTrace : other,
+        ),
+        inlineNetLabelPlacements: output.inlineNetLabelPlacements.map(
+          (other, i) => (i === index ? placement : other),
+        ),
+      }
+      const previousCollisions = getOutputLabelCollisions(output)
+      if (
+        getOutputLabelCollisions(candidate).some(
+          (collision) =>
+            !previousCollisions.some((previous) =>
+              sameOutputLabelCollision(collision, previous),
+            ),
+        )
+      )
+        continue
+
+      output = candidate
+    }
+    return output
   }
 
   /** Enumerate nearby moves in the existing order; collect one proposal per step. */
