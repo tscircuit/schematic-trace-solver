@@ -4,6 +4,7 @@ import type { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleS
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { segmentIntersectsRect } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import type { InputPin } from "lib/types/InputProblem"
 import { EPS } from "./constants"
 import { segmentCrossesBoundsInterior } from "./geometry"
 
@@ -18,14 +19,40 @@ export class AvailableNetOrientationObstacleIndex {
   private labelIndex: Flatbush | null = null
   private traceSegmentIndex: Flatbush | null = null
   private traceSegments: IndexedTraceSegment[] = []
+  private pinIndex: Flatbush | null = null
+  private pins: InputPin[] = []
 
   constructor(params: {
     chipObstacleSpatialIndex: ChipObstacleSpatialIndex
     netLabelPlacements: NetLabelPlacement[]
     traces: SolvedTracePath[]
+    pins?: InputPin[]
   }) {
     this.chipObstacleSpatialIndex = params.chipObstacleSpatialIndex
+    this.pins = params.pins ?? []
+    this.pinIndex = this.buildPinIndex(this.pins)
     this.rebuild(params)
+  }
+
+  /** Pins lying on any segment of the trace path, including its endpoints. */
+  getPinsOnTracePath(tracePath: Point[]) {
+    const pinsOnPath: InputPin[] = []
+    if (!this.pinIndex) return pinsOnPath
+    for (let pointIndex = 0; pointIndex < tracePath.length - 1; pointIndex++) {
+      const start = tracePath[pointIndex]!
+      const end = tracePath[pointIndex + 1]!
+      const searchBounds = getPaddedBounds(getSegmentBounds(start, end), EPS)
+      for (const pinIndex of this.pinIndex.search(
+        searchBounds.minX,
+        searchBounds.minY,
+        searchBounds.maxX,
+        searchBounds.maxY,
+      )) {
+        const pin = this.pins[pinIndex]!
+        if (isPointOnAxisAlignedSegment(pin, start, end)) pinsOnPath.push(pin)
+      }
+    }
+    return pinsOnPath
   }
 
   rebuild(params: {
@@ -146,6 +173,17 @@ export class AvailableNetOrientationObstacleIndex {
     return traceSegments
   }
 
+  private buildPinIndex(pins: InputPin[]) {
+    if (pins.length === 0) return null
+
+    const pinIndex = new Flatbush(pins.length)
+    for (const pin of pins) {
+      pinIndex.add(pin.x, pin.y, pin.x, pin.y)
+    }
+    pinIndex.finish()
+    return pinIndex
+  }
+
   private buildTraceSegmentIndex(traceSegments: IndexedTraceSegment[]) {
     if (traceSegments.length === 0) return null
 
@@ -170,6 +208,24 @@ function getSegmentBounds(start: Point, end: Point): Bounds {
     maxX: Math.max(start.x, end.x),
     maxY: Math.max(start.y, end.y),
   }
+}
+
+function isPointOnAxisAlignedSegment(point: Point, start: Point, end: Point) {
+  const isHorizontal = Math.abs(start.y - end.y) < EPS
+  const isVertical = Math.abs(start.x - end.x) < EPS
+  if (isHorizontal && Math.abs(point.y - start.y) < EPS) {
+    return (
+      point.x >= Math.min(start.x, end.x) - EPS &&
+      point.x <= Math.max(start.x, end.x) + EPS
+    )
+  }
+  if (isVertical && Math.abs(point.x - start.x) < EPS) {
+    return (
+      point.y >= Math.min(start.y, end.y) - EPS &&
+      point.y <= Math.max(start.y, end.y) + EPS
+    )
+  }
+  return false
 }
 
 function getPaddedBounds(bounds: Bounds, padding: number): Bounds {

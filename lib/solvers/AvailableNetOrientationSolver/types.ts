@@ -31,6 +31,7 @@ export type CandidateLabel = {
 export type CandidateStatus =
   | "valid"
   | "chip-collision"
+  | "pin-collision"
   | "text-collision"
   | "trace-collision"
   | "trace-clearance-violation"
