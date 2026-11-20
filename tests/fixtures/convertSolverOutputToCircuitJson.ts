@@ -946,10 +946,12 @@ export const convertSolverOutputToCircuitJson = (
         type: "schematic_text",
         schematic_text_id: `schematic_text_box_${textBoxIndex}`,
         text: textBox.text,
-        font_size: Math.max(0.08, Math.min(0.18, textBox.height)),
-        position: textBox.center,
-        rotation: 0,
-        anchor: "center",
+        font_size:
+          textBox.textPlacement?.fontSize ??
+          Math.max(0.08, Math.min(0.18, textBox.height)),
+        position: textBox.textPlacement?.position ?? textBox.center,
+        rotation: textBox.textPlacement?.rotation ?? 0,
+        anchor: textBox.textPlacement?.anchor ?? "center",
         color: "#7e22ce",
       } satisfies SchematicText)
     }

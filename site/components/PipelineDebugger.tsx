@@ -1,7 +1,7 @@
 import { SchematicTracePipelineSolver } from "lib/solvers/SchematicTracePipelineSolver/SchematicTracePipelineSolver"
 import type { InputProblem } from "lib/types/InputProblem"
 import { useMemo, useReducer } from "react"
-import { InteractiveGraphics } from "graphics-debug/react"
+import { InteractiveGraphicsCanvas } from "graphics-debug/react"
 import { SolverToolbar } from "./SolverToolbar"
 import { PipelineStageTable } from "./PipelineStageTable"
 
@@ -21,7 +21,8 @@ export const PipelineDebugger = ({
   return (
     <div>
       <SolverToolbar triggerRender={() => incRenderCount()} solver={solver} />
-      <InteractiveGraphics graphics={solver.visualize()} />
+      {/* Canvas preserves world-unit text sizes and rotation when zooming. */}
+      <InteractiveGraphicsCanvas graphics={solver.visualize()} />
       <PipelineStageTable
         triggerRender={() => incRenderCount()}
         pipelineSolver={solver}
