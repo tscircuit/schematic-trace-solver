@@ -1673,6 +1673,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       return "chip-collision"
     }
 
+    if (this.doesTracePathPassThroughForeignPin(connectorTrace, label)) {
+      return "chip-collision"
+    }
+
     for (const textBox of this.inputProblem.textBoxes ?? []) {
       if (
         tracePathIntersectsBounds(connectorTrace, getTextBoxBounds(textBox))
@@ -1700,6 +1704,51 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return "valid"
+  }
+
+  private doesTracePathPassThroughForeignPin(
+    tracePath: Point[],
+    label: NetLabelPlacement,
+  ): boolean {
+    if (tracePath.length < 2) return false
+    const sameNetPinIds = new Set<string>(label.pinIds)
+    if (label.netId) {
+      for (const netConn of this.inputProblem.netConnections) {
+        if (netConn.netId === label.netId) {
+          for (const pinId of netConn.pinIds) sameNetPinIds.add(pinId)
+        }
+      }
+    }
+    for (const trace of this.traces) {
+      if (trace.globalConnNetId !== label.globalConnNetId) continue
+      for (const pinId of trace.pinIds ?? []) sameNetPinIds.add(pinId)
+      for (const pin of trace.pins) sameNetPinIds.add(pin.pinId)
+    }
+
+    for (const pin of Object.values(this.pinMap)) {
+      if (sameNetPinIds.has(pin.pinId)) continue
+      for (let i = 0; i < tracePath.length - 1; i++) {
+        const a = tracePath[i]!
+        const b = tracePath[i + 1]!
+        const dx = b.x - a.x
+        const dy = b.y - a.y
+        const lenSq = dx * dx + dy * dy
+        if (lenSq <= EPS * EPS) {
+          if (Math.hypot(pin.x - a.x, pin.y - a.y) <= EPS) return true
+          continue
+        }
+        const t = Math.max(
+          0,
+          Math.min(1, ((pin.x - a.x) * dx + (pin.y - a.y) * dy) / lenSq),
+        )
+        const projX = a.x + t * dx
+        const projY = a.y + t * dy
+        if (Math.hypot(pin.x - projX, pin.y - projY) <= EPS) {
+          return true
+        }
+      }
+    }
+    return false
   }
 
   private isAcceptableConnectedChipBoundaryOverlap(
