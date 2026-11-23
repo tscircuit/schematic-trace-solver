@@ -8,6 +8,7 @@ import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { alignSameNetRails } from "./alignSameNetRails"
 import { extendBranchesToTrimmedJunctions } from "./extendBranchesToTrimmedJunctions"
+import { mergeCloseSameNetRails } from "./mergeCloseSameNetRails"
 
 export type TraceCleanupOperation =
   | "untangling_traces"
@@ -15,6 +16,7 @@ export type TraceCleanupOperation =
   | "minimizing_turns"
   | "balancing_l_shapes"
   | "aligning_same_net_rails"
+  | "merging_close_same_net_rails"
 
 /**
  * Defines the input structure for the TraceCleanupSolver.
@@ -112,6 +114,9 @@ export class TraceCleanupSolver extends BaseSolver {
         break
       case "aligning_same_net_rails":
         this._runAlignSameNetRailsStep()
+        break
+      case "merging_close_same_net_rails":
+        this._runMergeCloseSameNetRailsStep()
         break
     }
   }
@@ -221,6 +226,20 @@ export class TraceCleanupSolver extends BaseSolver {
     this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
     this.stats.alignedRailGroupCount = alignment.alignedRailGroupCount
     this.stats.alignedTraceCount = alignment.alignedTraceCount
+    this._advancePipeline()
+  }
+
+  private _runMergeCloseSameNetRailsStep() {
+    const merge = mergeCloseSameNetRails({
+      traces: this.outputTraces,
+      eligibleTraceIds:
+        this.input.eligibleTraceIds ??
+        new Set(this.outputTraces.map((trace) => trace.mspPairId)),
+    })
+    this.outputTraces = merge.traces
+    this.tracesMap = new Map(this.outputTraces.map((t) => [t.mspPairId, t]))
+    this.stats.mergedCloseRailGroupCount = merge.mergedRailGroupCount
+    this.stats.mergedCloseTraceCount = merge.mergedTraceCount
     this._advancePipeline()
   }
 
