@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test"
+import { LongDistancePairSolver } from "lib/solvers/LongDistancePairSolver/LongDistancePairSolver"
 import { MspConnectionPairSolver } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import { NetLabelPlacementSolver } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
@@ -67,4 +68,25 @@ test("cross-section input connections are not visualized as future traces", () =
   ]
 
   expect(visualizeInputProblem(netConnectionProblem).lines).toHaveLength(0)
+})
+
+test("net-label-only connections do not create physical trace pairs", () => {
+  const inputProblem = createInputProblem()
+  inputProblem.directConnections = []
+  inputProblem.netConnections = [{ netId: "SIG", pinIds: ["U1.1", "U2.1"] }]
+  inputProblem.availableNetLabelOrientations = {
+    SIG: ["x+", "x-"],
+  }
+
+  const mspSolver = new MspConnectionPairSolver({ inputProblem })
+  mspSolver.solve()
+  expect(mspSolver.mspConnectionPairs).toHaveLength(0)
+
+  const longDistanceSolver = new LongDistancePairSolver({
+    inputProblem,
+    alreadySolvedTraces: [],
+    primaryMspConnectionPairs: [],
+  })
+  longDistanceSolver.solve()
+  expect(longDistanceSolver.getOutput().newTraces).toHaveLength(0)
 })
