@@ -82,6 +82,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
   failedGroups: Array<OverlappingSameNetTraceGroup> = []
   currentGroup: OverlappingSameNetTraceGroup | null = null
   triedAnyOrientationFallbackForCurrentGroup = false
+  triedHorizontalThicknessFallbackForCurrentGroup = false
 
   constructor(params: {
     inputProblem: InputProblem
@@ -282,12 +283,102 @@ export class NetLabelPlacementSolver extends BaseSolver {
     )?.netLabelHeight
   }
 
+  private shouldRetryInterleavedVerticalGroupWithHorizontalThickness(
+    group: OverlappingSameNetTraceGroup,
+  ): boolean {
+    if (!group.overlappingTraces) return false
+
+    const netId = group.netId ?? group.globalConnNetId
+    const configuredOrientations =
+      this.inputProblem.availableNetLabelOrientations[netId] ?? []
+    if (
+      configuredOrientations.length === 0 ||
+      !configuredOrientations.every((o) => o === "y+" || o === "y-")
+    ) {
+      return false
+    }
+    if (this.getNetLabelHeightForGroup(group) === undefined) return false
+
+    // Only retry when this routed island covers a strict subset of the net's
+    // pins, so omitting its label would leave the island electrically disconnected.
+    const netConnection = this.inputProblem.netConnections.find(
+      (connection) => connection.netId === netId,
+    )
+    const connectedComponentPinIds = new Set<string>()
+    for (const pairId of group.mspConnectionPairIds ?? []) {
+      const trace = this.inputTraceMap[pairId]
+      for (const pin of trace?.pins ?? []) {
+        connectedComponentPinIds.add(pin.pinId)
+      }
+    }
+    for (const pin of group.overlappingTraces.pins) {
+      connectedComponentPinIds.add(pin.pinId)
+    }
+    if (
+      !netConnection ||
+      netConnection.pinIds.length <= connectedComponentPinIds.size
+    ) {
+      return false
+    }
+
+    // Must be a vertical same-side trace group on a single chip whose span is
+    // interleaved with another routed trace group on that same chip side.
+    const pins = group.overlappingTraces.pins
+    if (pins.length < 2) return false
+    const sideX = pins[0]!.x
+    if (!pins.every((pin) => Math.abs(pin.x - sideX) <= 1e-3)) return false
+    const sameChip = this.inputProblem.chips.find((chip) =>
+      pins.every((groupPin) =>
+        chip.pins.some((chipPin) => chipPin.pinId === groupPin.pinId),
+      ),
+    )
+    if (!sameChip) return false
+
+    const minY = Math.min(...pins.map((pin) => pin.y))
+    const maxY = Math.max(...pins.map((pin) => pin.y))
+
+    // Do not place a vertical-rail anchor across an unrouted port-only label
+    // pinned inside [minY, maxY] on the same chip side, since port-only labels
+    // are not represented in inputTraceMap during trace-collision checks.
+    const portOnlyPinIds = new Set(
+      this.overlappingSameNetTraceGroups
+        .map((other) => other.portOnlyPinId)
+        .filter((pinId): pinId is string => pinId !== undefined),
+    )
+    const hasPortOnlyLabelInSpan = sameChip.pins.some(
+      (chipPin) =>
+        portOnlyPinIds.has(chipPin.pinId) &&
+        Math.abs(chipPin.x - sideX) <= 1e-3 &&
+        chipPin.y > minY + 1e-3 &&
+        chipPin.y < maxY - 1e-3,
+    )
+    if (hasPortOnlyLabelInSpan) return false
+
+    return this.overlappingSameNetTraceGroups.some((other) => {
+      if (other === group || !other.overlappingTraces) return false
+      const otherPins = other.overlappingTraces.pins
+      if (
+        otherPins.length < 2 ||
+        !otherPins.every((pin) => Math.abs(pin.x - sideX) <= 1e-3)
+      ) {
+        return false
+      }
+      const otherMinY = Math.min(...otherPins.map((pin) => pin.y))
+      const otherMaxY = Math.max(...otherPins.map((pin) => pin.y))
+      return (
+        (minY < otherMinY && otherMinY < maxY && maxY < otherMaxY) ||
+        (otherMinY < minY && minY < otherMaxY && otherMaxY < maxY)
+      )
+    })
+  }
+
   override _step() {
     if (this.activeSubSolver?.solved) {
       this.netLabelPlacements.push(this.activeSubSolver.netLabelPlacement!)
       this.activeSubSolver = null
       this.currentGroup = null
       this.triedAnyOrientationFallbackForCurrentGroup = false
+      this.triedHorizontalThicknessFallbackForCurrentGroup = false
       return
     }
 
@@ -318,6 +409,30 @@ export class NetLabelPlacementSolver extends BaseSolver {
         return
       }
 
+      // Vertical-only nets store their horizontal symbol/text span in
+      // netLabelHeight. When even full-orientation retry fails because that
+      // vertical-symbol span was applied as vertical thickness on x+/x-
+      // candidates, retry x+/x- with default horizontal label thickness.
+      if (
+        !this.triedHorizontalThicknessFallbackForCurrentGroup &&
+        this.currentGroup &&
+        this.shouldRetryInterleavedVerticalGroupWithHorizontalThickness(
+          this.currentGroup,
+        )
+      ) {
+        this.triedHorizontalThicknessFallbackForCurrentGroup = true
+        const netLabelWidth = this.getNetLabelWidthForGroup(this.currentGroup)
+        this.activeSubSolver = new SingleNetLabelPlacementSolver({
+          inputProblem: this.inputProblem,
+          inputTraceMap: this.inputTraceMap,
+          overlappingSameNetTraceGroup: this.currentGroup,
+          availableOrientations: ["x+", "x-"],
+          netLabelWidth,
+          netLabelHeight: undefined,
+        })
+        return
+      }
+
       // Record the failure for this group and continue to the next one
       if (this.currentGroup) {
         this.failedGroups.push(this.currentGroup)
@@ -325,6 +440,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
       this.activeSubSolver = null
       this.currentGroup = null
       this.triedAnyOrientationFallbackForCurrentGroup = false
+      this.triedHorizontalThicknessFallbackForCurrentGroup = false
       return
     }
 
@@ -347,6 +463,7 @@ export class NetLabelPlacementSolver extends BaseSolver {
 
     this.currentGroup = nextOverlappingSameNetTraceGroup
     this.triedAnyOrientationFallbackForCurrentGroup = false
+    this.triedHorizontalThicknessFallbackForCurrentGroup = false
 
     const netLabelWidth = this.getNetLabelWidthForGroup(this.currentGroup)
     const netLabelHeight = this.getNetLabelHeightForGroup(this.currentGroup)
