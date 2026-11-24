@@ -1224,18 +1224,19 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     distance?: number,
     outwardDistance?: number,
   ): EvaluatedCandidate {
+    const status = this.getCandidateStatus({
+      candidate,
+      label,
+      labelIndex,
+      phase,
+    })
     return {
       ...candidate,
       phase,
       distance,
       outwardDistance,
       selected: false,
-      status: this.getCandidateStatus({
-        candidate,
-        label,
-        labelIndex,
-        phase,
-      }),
+      status,
     }
   }
 
@@ -1256,10 +1257,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     label: NetLabelPlacement,
     candidate: Pick<
       EvaluatedCandidate,
-      "anchorPoint" | "connectorSource" | "orientation" | "phase"
+      | "anchorPoint"
+      | "connectorSource"
+      | "connectorTracePath"
+      | "orientation"
+      | "phase"
     >,
     labelIndex: number,
   ) {
+    if (candidate.connectorTracePath) {
+      return candidate.connectorTracePath
+    }
+
     if (
       this.crowdedPortOnlyLabelIndices.has(labelIndex) &&
       this.getChipSideForPoint(label.anchorPoint) === "top" &&
@@ -1657,24 +1666,50 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       if (nonChipBoundsStatus !== "valid") return nonChipBoundsStatus
     }
 
-    const connectorTrace = this.getCandidateConnectorTrace(
+    let connectorTrace = this.getCandidateConnectorTrace(
       label,
       {
         anchorPoint: candidate.anchorPoint,
         connectorSource:
           phase === "lateral-shift" ? candidate.connectorSource : undefined,
+        connectorTracePath: candidate.connectorTracePath,
         orientation: candidate.orientation,
         phase,
       },
       labelIndex,
     )
 
+    if (
+      !candidate.connectorTracePath &&
+      this.doesTracePathPassThroughForeignPin(connectorTrace, label)
+    ) {
+      const detourTrace = this.findForeignPinAvoidanceConnectorTrace({
+        candidate,
+        label,
+        labelIndex,
+        phase,
+      })
+      if (!detourTrace) {
+        return "pin-collision"
+      }
+      candidate.connectorTracePath = detourTrace
+      connectorTrace = detourTrace
+    }
+
+    return this.getConnectorTraceStatus(connectorTrace, label, labelIndex)
+  }
+
+  private getConnectorTraceStatus(
+    connectorTrace: Point[],
+    label: NetLabelPlacement,
+    labelIndex: number,
+  ): CandidateStatus {
     if (this.obstacleIndex.doesTracePathCrossChip(connectorTrace)) {
       return "chip-collision"
     }
 
     if (this.doesTracePathPassThroughForeignPin(connectorTrace, label)) {
-      return "chip-collision"
+      return "pin-collision"
     }
 
     for (const textBox of this.inputProblem.textBoxes ?? []) {
@@ -1706,11 +1741,287 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return "valid"
   }
 
-  private doesTracePathPassThroughForeignPin(
+  private findForeignPinAvoidanceConnectorTrace(params: {
+    candidate: CandidateLabel
+    label: NetLabelPlacement
+    labelIndex: number
+    phase: CandidatePhase
+  }): Point[] | null {
+    const { candidate, label, labelIndex, phase } = params
+    const source =
+      phase === "lateral-shift" && candidate.connectorSource
+        ? candidate.connectorSource
+        : label.anchorPoint
+    const target = candidate.anchorPoint
+    const orientation = candidate.orientation
+    const orientDir = dir(orientation)
+
+    const candidatePaths: Point[][] = []
+
+    if (isYOrientation(orientation)) {
+      const dx = target.x - source.x
+      const dy = target.y - source.y
+      if (Math.abs(dx) <= EPS) return null
+
+      const bendYs: number[] = []
+      const sameDirDist = dy * orientDir.y
+      if (sameDirDist >= LABEL_SEARCH_STEP * 2 - EPS) {
+        for (
+          let step = LABEL_SEARCH_STEP;
+          step <= sameDirDist - LABEL_SEARCH_STEP + EPS;
+          step += LABEL_SEARCH_STEP
+        ) {
+          bendYs.push(source.y + orientDir.y * step)
+        }
+      }
+      if (bendYs.length === 0) {
+        bendYs.push(
+          source.y + orientDir.y * LABEL_SEARCH_STEP,
+          source.y + orientDir.y * (LABEL_SEARCH_STEP * 2),
+        )
+      }
+
+      const stepDirX = dx > 0 ? 1 : -1
+      const absDx = Math.abs(dx)
+      const kickDists = [
+        LABEL_SEARCH_STEP * 2,
+        LABEL_SEARCH_STEP,
+        LABEL_SEARCH_STEP * 3,
+        LABEL_SEARCH_STEP * 4,
+      ].filter((d) => d < absDx - EPS)
+
+      for (const bendY of bendYs) {
+        for (const kickDist of kickDists) {
+          const kickX = source.x + stepDirX * kickDist
+          candidatePaths.push(
+            simplifyOrthogonalPath([
+              source,
+              { x: kickX, y: source.y },
+              { x: kickX, y: bendY },
+              { x: target.x, y: bendY },
+              target,
+            ]),
+          )
+        }
+      }
+      for (const bendY of bendYs) {
+        candidatePaths.push(
+          simplifyOrthogonalPath([
+            source,
+            { x: source.x, y: bendY },
+            { x: target.x, y: bendY },
+            target,
+          ]),
+        )
+      }
+    } else if (isXOrientation(orientation)) {
+      const dx = target.x - source.x
+      const dy = target.y - source.y
+      if (Math.abs(dy) <= EPS) return null
+
+      const bendXs: number[] = []
+      const sameDirDist = dx * orientDir.x
+      if (sameDirDist >= LABEL_SEARCH_STEP * 2 - EPS) {
+        for (
+          let step = LABEL_SEARCH_STEP;
+          step <= sameDirDist - LABEL_SEARCH_STEP + EPS;
+          step += LABEL_SEARCH_STEP
+        ) {
+          bendXs.push(source.x + orientDir.x * step)
+        }
+      }
+      if (bendXs.length === 0) {
+        bendXs.push(
+          source.x + orientDir.x * LABEL_SEARCH_STEP,
+          source.x + orientDir.x * (LABEL_SEARCH_STEP * 2),
+        )
+      }
+
+      const stepDirY = dy > 0 ? 1 : -1
+      const absDy = Math.abs(dy)
+      const kickDists = [
+        LABEL_SEARCH_STEP * 2,
+        LABEL_SEARCH_STEP,
+        LABEL_SEARCH_STEP * 3,
+        LABEL_SEARCH_STEP * 4,
+      ].filter((d) => d < absDy - EPS)
+
+      for (const bendX of bendXs) {
+        for (const kickDist of kickDists) {
+          const kickY = source.y + stepDirY * kickDist
+          candidatePaths.push(
+            simplifyOrthogonalPath([
+              source,
+              { x: source.x, y: kickY },
+              { x: bendX, y: kickY },
+              { x: bendX, y: target.y },
+              target,
+            ]),
+          )
+        }
+      }
+      for (const bendX of bendXs) {
+        candidatePaths.push(
+          simplifyOrthogonalPath([
+            source,
+            { x: bendX, y: source.y },
+            { x: bendX, y: target.y },
+            target,
+          ]),
+        )
+      }
+    }
+
+    let fallbackPath: Point[] | null = null
+    for (const path of candidatePaths) {
+      if (this.getConnectorTraceStatus(path, label, labelIndex) !== "valid") {
+        continue
+      }
+      if (
+        this.doesTracePathCollinearlyOverlapDifferentNetTrace(
+          path,
+          label.globalConnNetId,
+        )
+      ) {
+        continue
+      }
+      if (
+        !this.isDetourTooCloseToParallelForeignTraceOrPin(
+          path,
+          label,
+          LABEL_SEARCH_STEP - EPS,
+        )
+      ) {
+        return path
+      }
+      if (!fallbackPath) {
+        fallbackPath = path
+      }
+    }
+
+    return fallbackPath
+  }
+
+  private doesTracePathCollinearlyOverlapDifferentNetTrace(
+    tracePath: Point[],
+    globalConnNetId: string,
+  ): boolean {
+    for (const trace of this.traces) {
+      if (trace.globalConnNetId === globalConnNetId) continue
+      const other = trace.tracePath
+      for (let i = 0; i < tracePath.length - 1; i++) {
+        const a1 = tracePath[i]!
+        const a2 = tracePath[i + 1]!
+        const aVert = Math.abs(a1.x - a2.x) <= EPS
+        const aHoriz = Math.abs(a1.y - a2.y) <= EPS
+        for (let j = 0; j < other.length - 1; j++) {
+          const b1 = other[j]!
+          const b2 = other[j + 1]!
+          if (aVert && Math.abs(b1.x - b2.x) <= EPS) {
+            if (
+              Math.abs(a1.x - b1.x) <= EPS &&
+              rangesOverlap(
+                Math.min(a1.y, a2.y),
+                Math.max(a1.y, a2.y),
+                Math.min(b1.y, b2.y),
+                Math.max(b1.y, b2.y),
+              )
+            ) {
+              return true
+            }
+          } else if (aHoriz && Math.abs(b1.y - b2.y) <= EPS) {
+            if (
+              Math.abs(a1.y - b1.y) <= EPS &&
+              rangesOverlap(
+                Math.min(a1.x, a2.x),
+                Math.max(a1.x, a2.x),
+                Math.min(b1.x, b2.x),
+                Math.max(b1.x, b2.x),
+              )
+            ) {
+              return true
+            }
+          }
+        }
+      }
+    }
+    return false
+  }
+
+  private isDetourTooCloseToParallelForeignTraceOrPin(
     tracePath: Point[],
     label: NetLabelPlacement,
+    minClearance: number,
   ): boolean {
-    if (tracePath.length < 2) return false
+    const sameNetPinIds = this.getSameNetPinIds(label)
+    for (let i = 0; i < tracePath.length - 1; i++) {
+      const a1 = tracePath[i]!
+      const a2 = tracePath[i + 1]!
+      // Skip clearance check on the initial stub leaving the source pin against nearby pins/traces
+      // except foreign pin collision (already checked above).
+      if (i > 0) {
+        for (const pin of Object.values(this.pinMap)) {
+          if (sameNetPinIds.has(pin.pinId)) continue
+          const dx = a2.x - a1.x
+          const dy = a2.y - a1.y
+          const lenSq = dx * dx + dy * dy
+          const t =
+            lenSq <= EPS * EPS
+              ? 0
+              : Math.max(
+                  0,
+                  Math.min(
+                    1,
+                    ((pin.x - a1.x) * dx + (pin.y - a1.y) * dy) / lenSq,
+                  ),
+                )
+          const dist = Math.hypot(
+            pin.x - (a1.x + t * dx),
+            pin.y - (a1.y + t * dy),
+          )
+          if (dist < minClearance) return true
+        }
+      }
+      const aVert = Math.abs(a1.x - a2.x) <= EPS
+      const aHoriz = Math.abs(a1.y - a2.y) <= EPS
+      for (const trace of this.traces) {
+        if (trace.globalConnNetId === label.globalConnNetId) continue
+        const other = trace.tracePath
+        for (let j = 0; j < other.length - 1; j++) {
+          const b1 = other[j]!
+          const b2 = other[j + 1]!
+          if (aVert && Math.abs(b1.x - b2.x) <= EPS) {
+            if (
+              Math.abs(a1.x - b1.x) < minClearance &&
+              rangesOverlap(
+                Math.min(a1.y, a2.y),
+                Math.max(a1.y, a2.y),
+                Math.min(b1.y, b2.y),
+                Math.max(b1.y, b2.y),
+              )
+            ) {
+              return true
+            }
+          } else if (aHoriz && Math.abs(b1.y - b2.y) <= EPS) {
+            if (
+              Math.abs(a1.y - b1.y) < minClearance &&
+              rangesOverlap(
+                Math.min(a1.x, a2.x),
+                Math.max(a1.x, a2.x),
+                Math.min(b1.x, b2.x),
+                Math.max(b1.x, b2.x),
+              )
+            ) {
+              return true
+            }
+          }
+        }
+      }
+    }
+    return false
+  }
+
+  private getSameNetPinIds(label: NetLabelPlacement): Set<string> {
     const sameNetPinIds = new Set<string>(label.pinIds)
     if (label.netId) {
       for (const netConn of this.inputProblem.netConnections) {
@@ -1724,6 +2035,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       for (const pinId of trace.pinIds ?? []) sameNetPinIds.add(pinId)
       for (const pin of trace.pins) sameNetPinIds.add(pin.pinId)
     }
+    return sameNetPinIds
+  }
+
+  private doesTracePathPassThroughForeignPin(
+    tracePath: Point[],
+    label: NetLabelPlacement,
+  ): boolean {
+    if (tracePath.length < 2) return false
+    const sameNetPinIds = this.getSameNetPinIds(label)
 
     for (const pin of Object.values(this.pinMap)) {
       if (sameNetPinIds.has(pin.pinId)) continue
