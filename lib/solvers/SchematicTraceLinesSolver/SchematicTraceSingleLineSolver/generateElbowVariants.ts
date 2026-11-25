@@ -286,7 +286,11 @@ export const generateElbowVariants = ({
     if (needsUTurn) {
       const expandedElbow = expandToUTurn(elbow)
       // Recursively call with the expanded path
-      return generateElbowVariants({ baseElbow: expandedElbow, guidelines, maxVariants })
+      return generateElbowVariants({
+        baseElbow: expandedElbow,
+        guidelines,
+        maxVariants,
+      })
     }
   }
 

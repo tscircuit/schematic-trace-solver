@@ -116,7 +116,11 @@ test("generateElbowVariants - maxVariants is respected for U-turn expanded paths
     { orientation: "horizontal", x: undefined, y: 2.5 },
   ]
 
-  const result = generateElbowVariants({ baseElbow, guidelines, maxVariants: 3 })
+  const result = generateElbowVariants({
+    baseElbow,
+    guidelines,
+    maxVariants: 3,
+  })
 
   expect(result.elbowVariants.length).toBeLessThanOrEqual(3)
 })
