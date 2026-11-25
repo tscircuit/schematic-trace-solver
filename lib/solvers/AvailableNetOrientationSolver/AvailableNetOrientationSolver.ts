@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -38,8 +39,8 @@ import {
   rangesOverlap,
   rectsOverlap,
   simplifyOrthogonalPath,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyTrace,
+  tracePathIntersectsBounds,
 } from "./geometry"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
 import {
@@ -58,7 +59,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -1756,6 +1756,16 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     const orientation = candidate.orientation
     const orientDir = dir(orientation)
 
+    // Foreign-pin avoidance detours are intended for local pin clearance,
+    // not rescuing multi-unit cross-schematic connector runs.
+    const MAX_FOREIGN_PIN_DETOUR_MANHATTAN = 3.0
+    if (
+      Math.abs(target.x - source.x) + Math.abs(target.y - source.y) >
+      MAX_FOREIGN_PIN_DETOUR_MANHATTAN + EPS
+    ) {
+      return null
+    }
+
     const candidatePaths: Point[][] = []
 
     if (isYOrientation(orientation)) {
@@ -1890,6 +1900,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           path,
           label,
           LABEL_SEARCH_STEP - EPS,
+          LABEL_SEARCH_STEP - EPS,
         )
       ) {
         return path
@@ -1951,7 +1962,8 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private isDetourTooCloseToParallelForeignTraceOrPin(
     tracePath: Point[],
     label: NetLabelPlacement,
-    minClearance: number,
+    minPinClearance: number,
+    minTraceClearance: number = minPinClearance,
   ): boolean {
     const sameNetPinIds = this.getSameNetPinIds(label)
     for (let i = 0; i < tracePath.length - 1; i++) {
@@ -1979,7 +1991,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
             pin.x - (a1.x + t * dx),
             pin.y - (a1.y + t * dy),
           )
-          if (dist < minClearance) return true
+          if (dist < minPinClearance) return true
         }
       }
       const aVert = Math.abs(a1.x - a2.x) <= EPS
@@ -1992,7 +2004,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
           const b2 = other[j + 1]!
           if (aVert && Math.abs(b1.x - b2.x) <= EPS) {
             if (
-              Math.abs(a1.x - b1.x) < minClearance &&
+              Math.abs(a1.x - b1.x) < minTraceClearance &&
               rangesOverlap(
                 Math.min(a1.y, a2.y),
                 Math.max(a1.y, a2.y),
@@ -2004,7 +2016,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
             }
           } else if (aHoriz && Math.abs(b1.y - b2.y) <= EPS) {
             if (
-              Math.abs(a1.y - b1.y) < minClearance &&
+              Math.abs(a1.y - b1.y) < minTraceClearance &&
               rangesOverlap(
                 Math.min(a1.x, a2.x),
                 Math.max(a1.x, a2.x),
