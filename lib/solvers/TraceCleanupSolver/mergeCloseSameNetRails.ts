@@ -1,6 +1,9 @@
 import type { Point } from "@tscircuit/math-utils"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import { getRailOrientation, nearlyEqual } from "./sameNetRailAlignment/geometry"
+import {
+  getRailOrientation,
+  nearlyEqual,
+} from "./sameNetRailAlignment/geometry"
 import type { RailOrientation } from "./sameNetRailAlignment/types"
 
 /**
@@ -46,9 +49,7 @@ export interface MergeCloseSameNetRailsResult {
 
 const DEFAULT_MAX_COORDINATE_DELTA = 0.2
 
-const collectSegments = (
-  trace: SolvedTracePath,
-): CloseSameNetRailSegment[] => {
+const collectSegments = (trace: SolvedTracePath): CloseSameNetRailSegment[] => {
   const segments: CloseSameNetRailSegment[] = []
   const path = trace.tracePath
   for (let i = 0; i < path.length - 1; i++) {
@@ -196,4 +197,4 @@ export const mergeCloseSameNetRails = ({
     mergedRailGroupCount,
     mergedTraceCount: mergedTraceIds.size,
   }
-}
+}

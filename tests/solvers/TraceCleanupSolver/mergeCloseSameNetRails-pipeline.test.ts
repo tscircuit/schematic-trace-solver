@@ -97,4 +97,4 @@ test("TraceCleanupSolver leaves different-net close rails untouched", () => {
   expect(output[0]!.tracePath[1]!.y).toBe(2)
   expect(output[1]!.tracePath[1]!.y).toBe(2.1)
   expect(solver.stats.mergedCloseRailGroupCount ?? 0).toBe(0)
-})
+})

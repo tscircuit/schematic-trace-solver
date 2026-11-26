@@ -136,4 +136,4 @@ test("respects eligibleTraceIds filter", () => {
   })
 
   expect(result.mergedRailGroupCount).toBe(0)
-})
+})
