@@ -107,6 +107,45 @@ for (const mirror of [1, -1]) {
         secondPass.solve()
         expect(secondPass.getOutput()).toEqual(output)
       })
+
+      test(`replaces shallow 4-bend detour with 1-turn L-connector along same rail column, mirror=${mirror}, direction=${direction}, reversed=${reversed}`, () => {
+        const fixture = createFixture(mirror, direction, reversed)
+        const point = (x: number, y: number) => ({
+          x: x * mirror,
+          y: y * direction,
+        })
+        const lowerPin = { pinId: "U.2", chipId: "U", ...point(0, -0.4) }
+        fixture.inputProblem.chips[0]!.pins[1] = lowerPin
+        fixture.traces[0]!.pins[1] = lowerPin
+        fixture.traces[0]!.tracePath = [
+          point(0, 0),
+          point(0.2, 0),
+          point(0.2, -0.4),
+          point(0, -0.4),
+        ]
+        fixture.traces[1]!.tracePath = [
+          point(0.2, 0),
+          point(0.5, 0),
+          point(0.5, -0.11),
+          point(1.5, -0.11),
+          point(1.5, 0),
+          point(2, 0),
+        ]
+        if (reversed) {
+          fixture.traces[0]!.tracePath.reverse()
+          fixture.traces[1]!.tracePath.reverse()
+        }
+        fixture.originalTraces = structuredClone(fixture.traces)
+
+        const solver = new RailNetLabelCornerPlacementSolver(fixture)
+        solver.solve()
+        const output = solver.getOutput()
+        expect(output.traces[1]!.tracePath).toEqual([
+          point(0.2, -0.4),
+          point(2, -0.4),
+          fixture.netLabelPlacements[0]!.anchorPoint,
+        ])
+      })
     }
   }
 }
