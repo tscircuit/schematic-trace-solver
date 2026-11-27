@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -38,8 +39,8 @@ import {
   rangesOverlap,
   rectsOverlap,
   simplifyOrthogonalPath,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyTrace,
+  tracePathIntersectsBounds,
 } from "./geometry"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
 import {
@@ -58,7 +59,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -84,6 +84,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private maxSearchDistance: number
   private pinMap: Record<string, InputPin & { chipId: string }>
+  private allPins: (InputPin & { chipId: string })[]
+  private cachedForeignPinsLabel: NetLabelPlacement | null = null
+  private cachedForeignPinsTraceCount = -1
+  private cachedForeignPins: (InputPin & { chipId: string })[] = []
   private obstacleIndex: AvailableNetOrientationObstacleIndex
 
   constructor(params: AvailableNetOrientationSolverParams) {
@@ -96,6 +100,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.traces.map((trace) => [trace.mspPairId, trace]),
     )
     this.pinMap = getPinMap(params.inputProblem)
+    this.allPins = Object.values(this.pinMap)
     this.chipObstacleSpatialIndex =
       params.inputProblem._chipObstacleSpatialIndex ??
       new ChipObstacleSpatialIndex(params.inputProblem.chips)
@@ -1224,18 +1229,19 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     distance?: number,
     outwardDistance?: number,
   ): EvaluatedCandidate {
+    const status = this.getCandidateStatus({
+      candidate,
+      label,
+      labelIndex,
+      phase,
+    })
     return {
       ...candidate,
       phase,
       distance,
       outwardDistance,
       selected: false,
-      status: this.getCandidateStatus({
-        candidate,
-        label,
-        labelIndex,
-        phase,
-      }),
+      status,
     }
   }
 
@@ -1256,10 +1262,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     label: NetLabelPlacement,
     candidate: Pick<
       EvaluatedCandidate,
-      "anchorPoint" | "connectorSource" | "orientation" | "phase"
+      | "anchorPoint"
+      | "connectorSource"
+      | "connectorTracePath"
+      | "orientation"
+      | "phase"
     >,
     labelIndex: number,
   ) {
+    if (candidate.connectorTracePath) {
+      return candidate.connectorTracePath
+    }
+
     if (
       this.crowdedPortOnlyLabelIndices.has(labelIndex) &&
       this.getChipSideForPoint(label.anchorPoint) === "top" &&
@@ -1663,14 +1677,51 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         anchorPoint: candidate.anchorPoint,
         connectorSource:
           phase === "lateral-shift" ? candidate.connectorSource : undefined,
+        connectorTracePath: candidate.connectorTracePath,
         orientation: candidate.orientation,
         phase,
       },
       labelIndex,
     )
 
+    if (
+      !candidate.connectorTracePath &&
+      this.doesTracePathPassThroughForeignPin(connectorTrace, label)
+    ) {
+      const detourTrace = this.findForeignPinAvoidanceConnectorTrace({
+        candidate,
+        label,
+        labelIndex,
+        phase,
+      })
+      if (!detourTrace) {
+        return "pin-collision"
+      }
+      candidate.connectorTracePath = detourTrace
+      return "valid"
+    }
+
+    return this.getConnectorTraceStatus(connectorTrace, label, labelIndex)
+  }
+
+  private getConnectorTraceStatus(
+    connectorTrace: Point[],
+    label: NetLabelPlacement,
+    labelIndex: number,
+    foreignPins?: (InputPin & { chipId: string })[],
+  ): CandidateStatus {
     if (this.obstacleIndex.doesTracePathCrossChip(connectorTrace)) {
       return "chip-collision"
+    }
+
+    if (
+      this.doesTracePathPassThroughForeignPin(
+        connectorTrace,
+        label,
+        foreignPins,
+      )
+    ) {
+      return "pin-collision"
     }
 
     for (const textBox of this.inputProblem.textBoxes ?? []) {
@@ -1700,6 +1751,444 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     return "valid"
+  }
+
+  private findForeignPinAvoidanceConnectorTrace(params: {
+    candidate: CandidateLabel
+    label: NetLabelPlacement
+    labelIndex: number
+    phase: CandidatePhase
+  }): Point[] | null {
+    const { candidate, label, labelIndex, phase } = params
+    const source =
+      phase === "lateral-shift" && candidate.connectorSource
+        ? candidate.connectorSource
+        : label.anchorPoint
+    const target = candidate.anchorPoint
+    const orientation = candidate.orientation
+    const orientDir = dir(orientation)
+
+    // Foreign-pin avoidance detours are intended for local pin clearance,
+    // not rescuing multi-unit cross-schematic connector runs.
+    const MAX_FOREIGN_PIN_DETOUR_MANHATTAN = 3.0
+    if (
+      Math.abs(target.x - source.x) + Math.abs(target.y - source.y) >
+      MAX_FOREIGN_PIN_DETOUR_MANHATTAN + EPS
+    ) {
+      return null
+    }
+
+    const candidatePaths: Point[][] = []
+
+    if (isYOrientation(orientation)) {
+      const dx = target.x - source.x
+      const dy = target.y - source.y
+      if (Math.abs(dx) <= EPS) return null
+
+      const bendYs: number[] = []
+      const sameDirDist = dy * orientDir.y
+      if (sameDirDist >= LABEL_SEARCH_STEP * 2 - EPS) {
+        for (
+          let step = LABEL_SEARCH_STEP;
+          step <= sameDirDist - LABEL_SEARCH_STEP + EPS;
+          step += LABEL_SEARCH_STEP
+        ) {
+          bendYs.push(source.y + orientDir.y * step)
+        }
+      }
+      if (bendYs.length === 0) {
+        bendYs.push(
+          source.y + orientDir.y * LABEL_SEARCH_STEP,
+          source.y + orientDir.y * (LABEL_SEARCH_STEP * 2),
+        )
+      }
+
+      const stepDirX = dx > 0 ? 1 : -1
+      const absDx = Math.abs(dx)
+      const kickDists = [
+        LABEL_SEARCH_STEP * 2,
+        LABEL_SEARCH_STEP,
+        LABEL_SEARCH_STEP * 3,
+        LABEL_SEARCH_STEP * 4,
+      ].filter((d) => d < absDx - EPS)
+
+      for (const bendY of bendYs) {
+        for (const kickDist of kickDists) {
+          const kickX = source.x + stepDirX * kickDist
+          candidatePaths.push(
+            simplifyOrthogonalPath([
+              source,
+              { x: kickX, y: source.y },
+              { x: kickX, y: bendY },
+              { x: target.x, y: bendY },
+              target,
+            ]),
+          )
+        }
+      }
+      for (const bendY of bendYs) {
+        candidatePaths.push(
+          simplifyOrthogonalPath([
+            source,
+            { x: source.x, y: bendY },
+            { x: target.x, y: bendY },
+            target,
+          ]),
+        )
+      }
+    } else if (isXOrientation(orientation)) {
+      const dx = target.x - source.x
+      const dy = target.y - source.y
+      if (Math.abs(dy) <= EPS) return null
+
+      const bendXs: number[] = []
+      const sameDirDist = dx * orientDir.x
+      if (sameDirDist >= LABEL_SEARCH_STEP * 2 - EPS) {
+        for (
+          let step = LABEL_SEARCH_STEP;
+          step <= sameDirDist - LABEL_SEARCH_STEP + EPS;
+          step += LABEL_SEARCH_STEP
+        ) {
+          bendXs.push(source.x + orientDir.x * step)
+        }
+      }
+      if (bendXs.length === 0) {
+        bendXs.push(
+          source.x + orientDir.x * LABEL_SEARCH_STEP,
+          source.x + orientDir.x * (LABEL_SEARCH_STEP * 2),
+        )
+      }
+
+      const stepDirY = dy > 0 ? 1 : -1
+      const absDy = Math.abs(dy)
+      const kickDists = [
+        LABEL_SEARCH_STEP * 2,
+        LABEL_SEARCH_STEP,
+        LABEL_SEARCH_STEP * 3,
+        LABEL_SEARCH_STEP * 4,
+      ].filter((d) => d < absDy - EPS)
+
+      for (const bendX of bendXs) {
+        for (const kickDist of kickDists) {
+          const kickY = source.y + stepDirY * kickDist
+          candidatePaths.push(
+            simplifyOrthogonalPath([
+              source,
+              { x: source.x, y: kickY },
+              { x: bendX, y: kickY },
+              { x: bendX, y: target.y },
+              target,
+            ]),
+          )
+        }
+      }
+      for (const bendX of bendXs) {
+        candidatePaths.push(
+          simplifyOrthogonalPath([
+            source,
+            { x: bendX, y: source.y },
+            { x: bendX, y: target.y },
+            target,
+          ]),
+        )
+      }
+    }
+
+    if (candidatePaths.length === 0) return null
+
+    // Compute the union bounding box of all candidate detour paths once and
+    // pre-filter foreign pins and foreign trace segments to this local region.
+    let boxMinX = Infinity
+    let boxMaxX = -Infinity
+    let boxMinY = Infinity
+    let boxMaxY = -Infinity
+    for (const path of candidatePaths) {
+      for (const pt of path) {
+        if (pt.x < boxMinX) boxMinX = pt.x
+        if (pt.x > boxMaxX) boxMaxX = pt.x
+        if (pt.y < boxMinY) boxMinY = pt.y
+        if (pt.y > boxMaxY) boxMaxY = pt.y
+      }
+    }
+    const localMargin = LABEL_SEARCH_STEP + EPS
+    const pMinX = boxMinX - localMargin
+    const pMaxX = boxMaxX + localMargin
+    const pMinY = boxMinY - localMargin
+    const pMaxY = boxMaxY + localMargin
+
+    const allForeignPins = this.getForeignPinsForLabel(label)
+    const localForeignPins: (InputPin & { chipId: string })[] = []
+    for (const pin of allForeignPins) {
+      if (
+        pin.x >= pMinX &&
+        pin.x <= pMaxX &&
+        pin.y >= pMinY &&
+        pin.y <= pMaxY
+      ) {
+        localForeignPins.push(pin)
+      }
+    }
+
+    const localForeignVertSegs: { x: number; minY: number; maxY: number }[] = []
+    const localForeignHorizSegs: { y: number; minX: number; maxX: number }[] =
+      []
+    for (const trace of this.traces) {
+      if (trace.globalConnNetId === label.globalConnNetId) continue
+      const other = trace.tracePath
+      for (let j = 0; j < other.length - 1; j++) {
+        const b1 = other[j]!
+        const b2 = other[j + 1]!
+        if (Math.abs(b1.x - b2.x) <= EPS) {
+          if (b1.x < pMinX || b1.x > pMaxX) continue
+          const minY = Math.min(b1.y, b2.y)
+          const maxY = Math.max(b1.y, b2.y)
+          if (maxY < pMinY || minY > pMaxY) continue
+          localForeignVertSegs.push({ x: b1.x, minY, maxY })
+        } else if (Math.abs(b1.y - b2.y) <= EPS) {
+          if (b1.y < pMinY || b1.y > pMaxY) continue
+          const minX = Math.min(b1.x, b2.x)
+          const maxX = Math.max(b1.x, b2.x)
+          if (maxX < pMinX || minX > pMaxX) continue
+          localForeignHorizSegs.push({ y: b1.y, minX, maxX })
+        }
+      }
+    }
+
+    let fallbackPath: Point[] | null = null
+    for (const path of candidatePaths) {
+      if (
+        this.getConnectorTraceStatus(
+          path,
+          label,
+          labelIndex,
+          localForeignPins,
+        ) !== "valid"
+      ) {
+        continue
+      }
+      if (
+        this.doesTracePathCollinearlyOverlapSegments(
+          path,
+          localForeignVertSegs,
+          localForeignHorizSegs,
+        )
+      ) {
+        continue
+      }
+      if (
+        !this.isDetourTooCloseToLocalForeignTraceOrPin(
+          path,
+          localForeignPins,
+          localForeignVertSegs,
+          localForeignHorizSegs,
+          LABEL_SEARCH_STEP - EPS,
+          LABEL_SEARCH_STEP - EPS,
+        )
+      ) {
+        return path
+      }
+      if (!fallbackPath) {
+        fallbackPath = path
+      }
+    }
+
+    return fallbackPath
+  }
+
+  private doesTracePathCollinearlyOverlapSegments(
+    tracePath: Point[],
+    vertSegs: { x: number; minY: number; maxY: number }[],
+    horizSegs: { y: number; minX: number; maxX: number }[],
+  ): boolean {
+    for (let i = 0; i < tracePath.length - 1; i++) {
+      const a1 = tracePath[i]!
+      const a2 = tracePath[i + 1]!
+      if (Math.abs(a1.x - a2.x) <= EPS) {
+        const aMinY = Math.min(a1.y, a2.y)
+        const aMaxY = Math.max(a1.y, a2.y)
+        for (const seg of vertSegs) {
+          if (
+            Math.abs(a1.x - seg.x) <= EPS &&
+            rangesOverlap(aMinY, aMaxY, seg.minY, seg.maxY)
+          ) {
+            return true
+          }
+        }
+      } else if (Math.abs(a1.y - a2.y) <= EPS) {
+        const aMinX = Math.min(a1.x, a2.x)
+        const aMaxX = Math.max(a1.x, a2.x)
+        for (const seg of horizSegs) {
+          if (
+            Math.abs(a1.y - seg.y) <= EPS &&
+            rangesOverlap(aMinX, aMaxX, seg.minX, seg.maxX)
+          ) {
+            return true
+          }
+        }
+      }
+    }
+    return false
+  }
+
+  private isDetourTooCloseToLocalForeignTraceOrPin(
+    tracePath: Point[],
+    localForeignPins: (InputPin & { chipId: string })[],
+    vertSegs: { x: number; minY: number; maxY: number }[],
+    horizSegs: { y: number; minX: number; maxX: number }[],
+    minPinClearance: number,
+    minTraceClearance: number = minPinClearance,
+  ): boolean {
+    const minPinClearanceSq = minPinClearance * minPinClearance
+    for (let i = 0; i < tracePath.length - 1; i++) {
+      const a1 = tracePath[i]!
+      const a2 = tracePath[i + 1]!
+      // Skip clearance check on the initial stub leaving the source pin against nearby pins/traces
+      // except foreign pin collision (already checked above).
+      if (i > 0 && localForeignPins.length > 0) {
+        const segMinX = Math.min(a1.x, a2.x) - minPinClearance
+        const segMaxX = Math.max(a1.x, a2.x) + minPinClearance
+        const segMinY = Math.min(a1.y, a2.y) - minPinClearance
+        const segMaxY = Math.max(a1.y, a2.y) + minPinClearance
+        const dx = a2.x - a1.x
+        const dy = a2.y - a1.y
+        const lenSq = dx * dx + dy * dy
+        for (const pin of localForeignPins) {
+          if (
+            pin.x < segMinX ||
+            pin.x > segMaxX ||
+            pin.y < segMinY ||
+            pin.y > segMaxY
+          ) {
+            continue
+          }
+          const t =
+            lenSq <= EPS * EPS
+              ? 0
+              : Math.max(
+                  0,
+                  Math.min(
+                    1,
+                    ((pin.x - a1.x) * dx + (pin.y - a1.y) * dy) / lenSq,
+                  ),
+                )
+          const px = pin.x - (a1.x + t * dx)
+          const py = pin.y - (a1.y + t * dy)
+          if (px * px + py * py < minPinClearanceSq) return true
+        }
+      }
+      if (Math.abs(a1.x - a2.x) <= EPS) {
+        const aMinY = Math.min(a1.y, a2.y)
+        const aMaxY = Math.max(a1.y, a2.y)
+        for (const seg of vertSegs) {
+          if (
+            Math.abs(a1.x - seg.x) < minTraceClearance &&
+            rangesOverlap(aMinY, aMaxY, seg.minY, seg.maxY)
+          ) {
+            return true
+          }
+        }
+      } else if (Math.abs(a1.y - a2.y) <= EPS) {
+        const aMinX = Math.min(a1.x, a2.x)
+        const aMaxX = Math.max(a1.x, a2.x)
+        for (const seg of horizSegs) {
+          if (
+            Math.abs(a1.y - seg.y) < minTraceClearance &&
+            rangesOverlap(aMinX, aMaxX, seg.minX, seg.maxX)
+          ) {
+            return true
+          }
+        }
+      }
+    }
+    return false
+  }
+
+  private getForeignPinsForLabel(
+    label: NetLabelPlacement,
+  ): (InputPin & { chipId: string })[] {
+    if (
+      this.cachedForeignPinsLabel === label &&
+      this.cachedForeignPinsTraceCount === this.traces.length
+    ) {
+      return this.cachedForeignPins
+    }
+    const sameNetPinIds = new Set<string>(label.pinIds)
+    if (label.netId) {
+      for (const netConn of this.inputProblem.netConnections) {
+        if (netConn.netId === label.netId) {
+          for (const pinId of netConn.pinIds) sameNetPinIds.add(pinId)
+        }
+      }
+    }
+    for (const trace of this.traces) {
+      if (trace.globalConnNetId !== label.globalConnNetId) continue
+      for (const pinId of trace.pinIds ?? []) sameNetPinIds.add(pinId)
+      for (const pin of trace.pins) sameNetPinIds.add(pin.pinId)
+    }
+    const foreignPins: (InputPin & { chipId: string })[] = []
+    for (const pin of this.allPins) {
+      if (!sameNetPinIds.has(pin.pinId)) foreignPins.push(pin)
+    }
+    this.cachedForeignPinsLabel = label
+    this.cachedForeignPinsTraceCount = this.traces.length
+    this.cachedForeignPins = foreignPins
+    return foreignPins
+  }
+
+  private doesTracePathPassThroughForeignPin(
+    tracePath: Point[],
+    label: NetLabelPlacement,
+    foreignPins?: (InputPin & { chipId: string })[],
+  ): boolean {
+    if (tracePath.length < 2) return false
+    const pins = foreignPins ?? this.getForeignPinsForLabel(label)
+    if (pins.length === 0) return false
+
+    let minX = tracePath[0]!.x
+    let maxX = minX
+    let minY = tracePath[0]!.y
+    let maxY = minY
+    for (let i = 1; i < tracePath.length; i++) {
+      const pt = tracePath[i]!
+      if (pt.x < minX) minX = pt.x
+      if (pt.x > maxX) maxX = pt.x
+      if (pt.y < minY) minY = pt.y
+      if (pt.y > maxY) maxY = pt.y
+    }
+    const bMinX = minX - EPS
+    const bMaxX = maxX + EPS
+    const bMinY = minY - EPS
+    const bMaxY = maxY + EPS
+    const epsSq = EPS * EPS
+
+    for (const pin of pins) {
+      if (pin.x < bMinX || pin.x > bMaxX || pin.y < bMinY || pin.y > bMaxY) {
+        continue
+      }
+      for (let i = 0; i < tracePath.length - 1; i++) {
+        const a = tracePath[i]!
+        const b = tracePath[i + 1]!
+        const dx = b.x - a.x
+        const dy = b.y - a.y
+        const lenSq = dx * dx + dy * dy
+        if (lenSq <= epsSq) {
+          const px = pin.x - a.x
+          const py = pin.y - a.y
+          if (px * px + py * py <= epsSq) return true
+          continue
+        }
+        const t = Math.max(
+          0,
+          Math.min(1, ((pin.x - a.x) * dx + (pin.y - a.y) * dy) / lenSq),
+        )
+        const px = pin.x - (a.x + t * dx)
+        const py = pin.y - (a.y + t * dy)
+        if (px * px + py * py <= epsSq) {
+          return true
+        }
+      }
+    }
+    return false
   }
 
   private isAcceptableConnectedChipBoundaryOverlap(

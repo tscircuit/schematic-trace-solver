@@ -23,6 +23,7 @@ export type CandidateLabel = {
   orientation: FacingDirection
   anchorPoint: Point
   connectorSource?: Point
+  connectorTracePath?: Point[]
   center: Point
   width: number
   height: number
@@ -31,6 +32,7 @@ export type CandidateLabel = {
 export type CandidateStatus =
   | "valid"
   | "chip-collision"
+  | "pin-collision"
   | "text-collision"
   | "trace-collision"
   | "trace-clearance-violation"
