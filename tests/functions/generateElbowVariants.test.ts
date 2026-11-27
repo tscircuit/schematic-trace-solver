@@ -96,3 +96,31 @@ test.skip("generateElbowVariants - multiple segments with guidelines", () => {
   // Should generate multiple variants
   expect(result.elbowVariants.length).toBeGreaterThan(1)
 })
+
+test("generateElbowVariants - maxVariants is respected for U-turn expanded paths", () => {
+  // This 4-point elbow overshoots: the start segment faces x+ but end.x < p1.x,
+  // so generateElbowVariants expands it into a U-turn path and recurses.
+  const baseElbow: Point[] = [
+    { x: 0, y: 0 },
+    { x: 2, y: 0 },
+    { x: 2, y: 1 },
+    { x: 1, y: 1 },
+  ]
+
+  const guidelines: Guideline[] = [
+    { orientation: "vertical", x: 0.5, y: undefined },
+    { orientation: "vertical", x: 1.5, y: undefined },
+    { orientation: "vertical", x: 2.5, y: undefined },
+    { orientation: "horizontal", x: undefined, y: 0.5 },
+    { orientation: "horizontal", x: undefined, y: 1.5 },
+    { orientation: "horizontal", x: undefined, y: 2.5 },
+  ]
+
+  const result = generateElbowVariants({
+    baseElbow,
+    guidelines,
+    maxVariants: 3,
+  })
+
+  expect(result.elbowVariants.length).toBeLessThanOrEqual(3)
+})
