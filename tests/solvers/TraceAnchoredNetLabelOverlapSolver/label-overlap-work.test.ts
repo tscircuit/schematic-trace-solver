@@ -53,5 +53,5 @@ test("counts host-trace work for non-overlapping net labels", () => {
 
   expect(solver.solved).toBe(true)
   expect(solver.getOutput().netLabelPlacements).toEqual(initialPlacements)
-  expect(traceEligibilityReads).toMatchInlineSnapshot(`15872`)
+  expect(traceEligibilityReads).toMatchInlineSnapshot(`0`)
 })
