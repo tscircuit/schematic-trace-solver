@@ -21,11 +21,11 @@ import {
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
 import type { InputProblem, PinId } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
+import { getGroundNetIds } from "lib/utils/getGroundNetIds"
 import { getTraceChannelJunctions } from "./getTraceChannelJunctions"
 
 const ROUTE_CLEARANCE = 0.2
 const COORDINATE_TOLERANCE = 1e-9
-const GROUND_NET_ID = "GND"
 
 const pointsAreEqual = (firstPoint: Point, secondPoint: Point): boolean => {
   return (
@@ -563,7 +563,7 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
   private failedConnectionPairs: MspConnectionPair[]
   private queuedConnectionPairs: MspConnectionPair[]
   private maxConnectionDistance: number
-  private groundGlobalConnNetId?: string
+  private groundGlobalConnNetIds: Set<string>
   public solvedUnroutedTraces: SolvedTracePath[] = []
 
   constructor(
@@ -583,8 +583,11 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
     const { netConnMap } = getConnectivityMapsFromInputProblem(
       this.inputProblem,
     )
-    this.groundGlobalConnNetId =
-      netConnMap.getNetConnectedToId(GROUND_NET_ID) ?? undefined
+    this.groundGlobalConnNetIds = getGroundNetIds(
+      this.inputProblem,
+      netConnMap,
+      { includeDefaultGroundName: true },
+    )
   }
 
   override getConstructorParams() {
@@ -597,7 +600,7 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
       this.solved = true
       return
     }
-    if (connectionPair.globalConnNetId === this.groundGlobalConnNetId) {
+    if (this.groundGlobalConnNetIds.has(connectionPair.globalConnNetId)) {
       return
     }
     if (

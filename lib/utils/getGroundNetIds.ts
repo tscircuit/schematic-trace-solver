@@ -5,12 +5,27 @@ import type { InputProblem } from "lib/types/InputProblem"
 export const getGroundNetIds = (
   inputProblem: InputProblem,
   netConnMap: ConnectivityMap,
+  opts?: { includeDefaultGroundName?: boolean },
 ): Set<string> => {
   const groundNetIds = new Set<string>()
+  const explicitlyNonGroundNetIds = new Set<string>()
   for (const connection of inputProblem.netConnections) {
-    if (!connection.isGround) continue
     const netId = netConnMap.getNetConnectedToId(connection.netId)
-    if (netId) groundNetIds.add(netId)
+    if (!netId) continue
+    if (connection.isGround === true) {
+      groundNetIds.add(netId)
+    } else if (connection.isGround === false) {
+      explicitlyNonGroundNetIds.add(netId)
+    }
+  }
+  if (opts?.includeDefaultGroundName) {
+    const defaultGroundNetId = netConnMap.getNetConnectedToId("GND")
+    if (
+      defaultGroundNetId &&
+      !explicitlyNonGroundNetIds.has(defaultGroundNetId)
+    ) {
+      groundNetIds.add(defaultGroundNetId)
+    }
   }
   return groundNetIds
 }
