@@ -1,0 +1,6 @@
+import { UntanglingSolver } from "./solvers/UntanglingSolver.ts"
+
+const traces = this.traceLinesSolver.solve(pairwiseConnections)
+const untangledTraces = new UntanglingSolver().solve(traces)
+
+return untangledTraces
