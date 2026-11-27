@@ -16,7 +16,12 @@ export const segmentIntersectsRect = <TRect extends RectBounds>(
 ): boolean => {
   const vert = isVertical(a, b, eps)
   const horz = isHorizontal(a, b, eps)
-  if (!vert && !horz) return false
+  if (!vert && !horz) {
+    // Near-axis-aligned segments (jittered pin coordinates) previously fell
+    // through as collision-free here. Slanted segments must still be tested
+    // against the rect instead of being declared collision-free.
+    return segmentIntersectsRectSlanted(a, b, r, eps)
+  }
 
   if (vert) {
     const x = a.x
@@ -33,6 +38,46 @@ export const segmentIntersectsRect = <TRect extends RectBounds>(
     const overlap = Math.min(segMaxX, r.maxX) - Math.max(segMinX, r.minX)
     return overlap > eps
   }
+}
+
+/**
+ * General segment/AABB intersection via slab (Liang-Barsky) clipping.
+ * Only used for non-axis-aligned segments; axis-aligned fast paths above
+ * keep the historical overlap semantics (strictly inside counts, touching
+ * an edge does not).
+ */
+const segmentIntersectsRectSlanted = <TRect extends RectBounds>(
+  a: Point,
+  b: Point,
+  r: TRect,
+  eps = EPS,
+): boolean => {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  let tMin = 0
+  let tMax = 1
+  const clip = (p: number, q: number): boolean => {
+    if (Math.abs(p) <= eps) return q > eps
+    const t = q / p
+    if (p < 0) {
+      if (t > tMax) return false
+      if (t > tMin) tMin = t
+    } else {
+      if (t < tMin) return false
+      if (t < tMax) tMax = t
+    }
+    return true
+  }
+
+  if (!clip(-dx, a.x - r.minX)) return false
+  if (!clip(dx, r.maxX - a.x)) return false
+  if (!clip(-dy, a.y - r.minY)) return false
+  if (!clip(dy, r.maxY - a.y)) return false
+
+  // A degenerate intersection interval (tMin ~= tMax) means the segment
+  // merely touches an edge or corner — matching the axis-aligned paths'
+  // "touching does not count" semantics, require a real overlap.
+  return tMax - tMin > eps
 }
 
 export const segmentOverlapsRectBoundary = <TRect extends RectBounds>(
