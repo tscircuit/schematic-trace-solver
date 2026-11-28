@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -38,10 +39,12 @@ import {
   rangesOverlap,
   rectsOverlap,
   simplifyOrthogonalPath,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyTrace,
+  tracePathIntersectsBounds,
 } from "./geometry"
+import { includeHorizontalConstraintMismatches } from "./include-horizontal-constraint-mismatches"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
+import { shouldIgnorePendingCrowdedLabel } from "./should-ignore-pending-crowded-label"
 import {
   extendVerticalTracePathAtInteriorPoint,
   getPinMap,
@@ -58,7 +61,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -2166,19 +2168,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndices: number[],
     include: boolean,
   ) {
-    if (!include) return [...labelIndices].sort((a, b) => a - b)
-
-    const result = new Set(labelIndices)
-    for (let index = 0; index < this.outputNetLabelPlacements.length; index++) {
-      if (
-        this.getHorizontalConstraintMismatchBounds(
-          this.outputNetLabelPlacements[index]!,
-        )
-      ) {
-        result.add(index)
-      }
-    }
-    return [...result].sort((a, b) => a - b)
+    return includeHorizontalConstraintMismatches({
+      labelIndices,
+      include,
+      outputNetLabelPlacements: this.outputNetLabelPlacements,
+      getHorizontalConstraintMismatchBounds: (label) =>
+        this.getHorizontalConstraintMismatchBounds(label),
+    })
   }
 
   private getLabelBoundsForCollisionWithGround(
@@ -2196,11 +2192,14 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number,
     otherLabelIndex: number,
   ) {
-    return (
-      this.crowdedPortOnlyLabelIndices.has(labelIndex) &&
-      this.crowdedPortOnlyLabelIndices.has(otherLabelIndex) &&
-      this.queuedLabelIndices.includes(otherLabelIndex)
-    )
+    return shouldIgnorePendingCrowdedLabel({
+      labelIndex,
+      otherLabelIndex,
+      queuedLabelIndices: this.queuedLabelIndices,
+      crowdedPortOnlyLabelIndices: this.crowdedPortOnlyLabelIndices,
+      netLabelPlacements: this.netLabelPlacements,
+      isPortOnlyLabel: (label) => this.isPortOnlyLabel(label),
+    })
   }
 
   private intersectsAnyOtherNetLabel(
