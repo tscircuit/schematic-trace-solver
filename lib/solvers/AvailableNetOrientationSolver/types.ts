@@ -52,3 +52,9 @@ export type EvaluatedCandidate = CandidateLabel & {
   distance?: number
   outwardDistance?: number
 }
+
+export type CrossingVerticalHeaderPair = {
+  lowerIdx: number
+  upperIdx: number
+  upperY: number
+}
