@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -38,10 +39,12 @@ import {
   rangesOverlap,
   rectsOverlap,
   simplifyOrthogonalPath,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyTrace,
+  tracePathIntersectsBounds,
 } from "./geometry"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
+import { sharesChipBoundary } from "./shares-chip-boundary"
+import { sharesPassiveWithGroundLabel } from "./shares-passive-with-ground-label"
 import {
   extendVerticalTracePathAtInteriorPoint,
   getPinMap,
@@ -58,7 +61,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -606,6 +608,26 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       labelIndex,
     )
     if (lateralCandidate) return lateralCandidate
+
+    if (
+      sharesPassiveWithGroundLabel({
+        label,
+        labelIndex,
+        inputProblem: this.inputProblem,
+        outputNetLabelPlacements: this.outputNetLabelPlacements,
+        pinMap: this.pinMap,
+        isGroundLabel: (candidate) => this.isGroundLabel(candidate),
+      })
+    ) {
+      for (const secondaryOrientation of orientations.slice(1)) {
+        const fallbackShifted = this.findValidShiftedCandidate(
+          label,
+          secondaryOrientation,
+          labelIndex,
+        )
+        if (fallbackShifted) return fallbackShifted
+      }
+    }
 
     // Wire crossings are allowed when no alternative placement is clear.
     // Preserve the required orientation instead of leaving an invalid label.
@@ -2241,49 +2263,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private sharesChipBoundary(bounds: Bounds) {
-    const boundarySearchBounds = {
-      minX: bounds.minX - WICK_CLEARANCE - EPS,
-      minY: bounds.minY - WICK_CLEARANCE - EPS,
-      maxX: bounds.maxX + WICK_CLEARANCE + EPS,
-      maxY: bounds.maxY + WICK_CLEARANCE + EPS,
-    }
-    const nearbyChips =
-      this.chipObstacleSpatialIndex.getChipsInBounds(boundarySearchBounds)
-
-    for (const chip of nearbyChips) {
-      const chipBounds = chip.bounds
-      const adjacentToVerticalSide =
-        Math.abs(bounds.minX - chipBounds.maxX) <= WICK_CLEARANCE + EPS ||
-        Math.abs(bounds.maxX - chipBounds.minX) <= WICK_CLEARANCE + EPS
-      const adjacentToHorizontalSide =
-        Math.abs(bounds.minY - chipBounds.maxY) <= WICK_CLEARANCE + EPS ||
-        Math.abs(bounds.maxY - chipBounds.minY) <= WICK_CLEARANCE + EPS
-
-      if (
-        adjacentToVerticalSide &&
-        rangesOverlap(
-          bounds.minY,
-          bounds.maxY,
-          chipBounds.minY,
-          chipBounds.maxY,
-        )
-      ) {
-        return true
-      }
-      if (
-        adjacentToHorizontalSide &&
-        rangesOverlap(
-          bounds.minX,
-          bounds.maxX,
-          chipBounds.minX,
-          chipBounds.maxX,
-        )
-      ) {
-        return true
-      }
-    }
-
-    return false
+    return sharesChipBoundary({
+      bounds,
+      chipObstacleSpatialIndex: this.chipObstacleSpatialIndex,
+    })
   }
 
   private getChipSideForPoint(point: Point) {
