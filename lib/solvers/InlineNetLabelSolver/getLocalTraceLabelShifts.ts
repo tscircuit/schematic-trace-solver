@@ -1,19 +1,21 @@
 import type { Bounds, Point } from "@tscircuit/math-utils"
 import { getSegmentIntersection } from "@tscircuit/math-utils/line-intersections"
-import type { InputProblem } from "lib/types/InputProblem"
-import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import { segmentIntersectsRect } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { minimizeTurnsWithFilteredLabels } from "lib/solvers/TraceCleanupSolver/minimizeTurnsWithFilteredLabels"
 import { preservesLabelAnchors } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/preservesLabelAnchors"
+import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
+import type { InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
 import { boundsOverlap, getTextBoxBounds } from "lib/utils/textBoxBounds"
+import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
+import { getExtendedTerminalTipBounds } from "./get-extended-terminal-tip-bounds"
 import { getAnchoredNetLabelRenderedBounds } from "./getAnchoredNetLabelRenderedBounds"
 import {
   getInlineLabelObstacles,
   getInlineTerminalBounds,
 } from "./getInlineLabelObstacles"
-import { NetLabelNetLabelCollisionSolver } from "../NetLabelNetLabelCollisionSolver/NetLabelNetLabelCollisionSolver"
+import { hasMovedAnchoredLabelCollision } from "./has-moved-anchored-label-collision"
 import type {
   InlineNetLabelOutput,
   InlineNetLabelPlacement,
@@ -58,7 +60,12 @@ export function* getLocalTraceLabelShifts(
   )
   const terminalBounds = placements.flatMap((label) => {
     const bounds = getInlineTerminalBounds(label)
-    return bounds ? [{ label, bounds }] : []
+    const tipBounds = getExtendedTerminalTipBounds({
+      label,
+      traces: output.traces,
+      netLabelConnectorTraceIds: output.netLabelConnectorTraceIds,
+    })
+    return bounds ? [{ label, bounds, tipBounds }] : []
   })
   const obstacles = [
     ...inputProblem.chips.map((chip) => ({
@@ -107,7 +114,14 @@ export function* getLocalTraceLabelShifts(
             ({ label }) =>
               !trace.pinIds.some((pinId) => label.pinIds.includes(pinId)),
           )
-          .map(({ bounds }) => bounds),
+          .flatMap(({ label, bounds, tipBounds }) =>
+            tipBounds &&
+            output.netLabelConnectorTraceIds?.has(trace.mspPairId) &&
+            axis === label.axis &&
+            label.globalConnNetId !== trace.globalConnNetId
+              ? [bounds, tipBounds]
+              : [bounds],
+          ),
       ]
       const attachedLabelBounds = output.netLabelPlacements
         .filter(
@@ -212,7 +226,7 @@ export function* getLocalTraceLabelShifts(
         const shiftedPaths = traces
           .filter((other, index) => other !== output.traces[index])
           .map((other) => other.tracePath)
-        let labels = output.netLabelPlacements.map((label) => {
+        const labels = output.netLabelPlacements.map((label) => {
           if (
             label.globalConnNetId !== trace.globalConnNetId ||
             !onRail(label.anchorPoint)
@@ -443,38 +457,18 @@ export function* getLocalTraceLabelShifts(
           if (blocked) break
         }
         if (blocked) continue
-        for (const [index, label] of labels.entries()) {
-          if (label === output.netLabelPlacements[index]) continue
-          const bounds = getAnchoredNetLabelRenderedBounds(label)
-          if (
-            obstacles.some((obstacle) => boundsOverlap(bounds, obstacle)) ||
-            inlineBounds.some((other) => boundsOverlap(bounds, other))
-          ) {
-            blocked = true
-            break
-          }
-          if (
-            labels.some(
-              (other, j) =>
-                index !== j &&
-                boundsOverlap(bounds, getAnchoredNetLabelRenderedBounds(other)),
-            )
-          ) {
-            blocked = true
-            break
-          }
-          if (
-            [...traces, ...terminalTraces].some(
-              (other) =>
-                other.globalConnNetId !== label.globalConnNetId &&
-                hits(other.tracePath, bounds),
-            )
-          ) {
-            blocked = true
-            break
-          }
+        if (
+          hasMovedAnchoredLabelCollision({
+            labels,
+            originalLabels: output.netLabelPlacements,
+            obstacles,
+            inlineBounds,
+            allTraces: [...traces, ...terminalTraces],
+          })
+        ) {
+          continue
         }
-        if (!blocked) yield { ...output, traces, netLabelPlacements: labels }
+        yield { ...output, traces, netLabelPlacements: labels }
       }
     }
   }
