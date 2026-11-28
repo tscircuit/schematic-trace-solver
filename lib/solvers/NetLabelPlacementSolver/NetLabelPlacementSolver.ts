@@ -1,16 +1,18 @@
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { InputProblem, PinId } from "lib/types/InputProblem"
-import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
-import { SingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver/SingleNetLabelPlacementSolver"
-import type { FacingDirection } from "lib/utils/dir"
 import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
-import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
-import { getColorFromString } from "lib/utils/getColorFromString"
-import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
-import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { getTraceConnectedPinComponents } from "lib/solvers/SchematicTraceLinesSolver/getTraceConnectedPinComponents"
+import type { InputProblem, PinId } from "lib/types/InputProblem"
+import type { FacingDirection } from "lib/utils/dir"
+import { getColorFromString } from "lib/utils/getColorFromString"
+import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
+import { getConnectivityMapsFromInputProblem } from "../MspConnectionPairSolver/getConnectivityMapFromInputProblem"
+import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnectionPairSolver"
+import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
+import { visualizeInputProblem } from "../SchematicTracePipelineSolver/visualizeInputProblem"
+import { createFallbackTraceGroupLabelPlacement } from "./createFallbackTraceGroupLabelPlacement"
+import { getNetLabelHeightForGroup } from "./getNetLabelHeightForGroup"
+import { SingleNetLabelPlacementSolver } from "./SingleNetLabelPlacementSolver/SingleNetLabelPlacementSolver"
 
 /**
  * A group of traces that have at least one overlapping segment and
@@ -58,6 +60,7 @@ export interface NetLabelPlacement {
    * and the orientation.
    */
   center: Point
+  requiresCollisionResolution?: boolean
 }
 
 /**
@@ -79,17 +82,22 @@ export class NetLabelPlacementSolver extends BaseSolver {
   declare activeSubSolver: SingleNetLabelPlacementSolver | null
 
   netLabelPlacements: Array<NetLabelPlacement> = []
+  deferredFallbackPlacements: Array<NetLabelPlacement> = []
   failedGroups: Array<OverlappingSameNetTraceGroup> = []
   currentGroup: OverlappingSameNetTraceGroup | null = null
   triedAnyOrientationFallbackForCurrentGroup = false
+  allowObstructedRailFallback: boolean
 
   constructor(params: {
     inputProblem: InputProblem
     inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
+    allowObstructedRailFallback?: boolean
   }) {
     super()
     this.inputProblem = params.inputProblem
     this.inputTraceMap = params.inputTraceMap
+    this.allowObstructedRailFallback =
+      params.allowObstructedRailFallback ?? false
 
     this.overlappingSameNetTraceGroups =
       this.computeOverlappingSameNetTraceGroups()
@@ -265,21 +273,10 @@ export class NetLabelPlacementSolver extends BaseSolver {
   private getNetLabelHeightForGroup(
     group: OverlappingSameNetTraceGroup,
   ): number | undefined {
-    if (group.netId) {
-      const ncHeight = this.inputProblem.netConnections.find(
-        (nc) => nc.netId === group.netId,
-      )?.netLabelHeight
-      if (ncHeight !== undefined) return ncHeight
-    }
-
-    const pinIds = group.overlappingTraces?.pins.map((p) => p.pinId) ?? []
-    if (group.portOnlyPinId) {
-      pinIds.push(group.portOnlyPinId)
-    }
-
-    return this.inputProblem.netConnections.find((nc) =>
-      nc.pinIds.some((pid) => pinIds.includes(pid)),
-    )?.netLabelHeight
+    return (
+      getNetLabelHeightForGroup({ inputProblem: this.inputProblem, group }) ??
+      undefined
+    )
   }
 
   override _step() {
@@ -292,13 +289,11 @@ export class NetLabelPlacementSolver extends BaseSolver {
     }
 
     if (this.activeSubSolver?.failed) {
-      // Retry once with all orientations as a fallback before failing
       const fullOrients: FacingDirection[] = ["x+", "x-", "y+", "y-"]
       const currOrients = this.activeSubSolver.availableOrientations
       const isAlreadyFull =
         currOrients.length === 4 &&
         fullOrients.every((o) => currOrients.includes(o))
-
       if (
         !this.triedAnyOrientationFallbackForCurrentGroup &&
         !isAlreadyFull &&
@@ -317,10 +312,19 @@ export class NetLabelPlacementSolver extends BaseSolver {
         })
         return
       }
-
-      // Record the failure for this group and continue to the next one
       if (this.currentGroup) {
-        this.failedGroups.push(this.currentGroup)
+        const fallbackPlacement = this.allowObstructedRailFallback
+          ? createFallbackTraceGroupLabelPlacement({
+              inputProblem: this.inputProblem,
+              group: this.currentGroup,
+              testedCandidates: this.activeSubSolver.testedCandidates,
+            })
+          : null
+        if (fallbackPlacement) {
+          this.deferredFallbackPlacements.push(fallbackPlacement)
+        } else {
+          this.failedGroups.push(this.currentGroup)
+        }
       }
       this.activeSubSolver = null
       this.currentGroup = null
@@ -337,6 +341,10 @@ export class NetLabelPlacementSolver extends BaseSolver {
       this.queuedOverlappingSameNetTraceGroups.shift()
 
     if (!nextOverlappingSameNetTraceGroup) {
+      if (this.deferredFallbackPlacements.length > 0) {
+        this.netLabelPlacements.push(...this.deferredFallbackPlacements)
+        this.deferredFallbackPlacements = []
+      }
       this.solved = true
       return
     }
