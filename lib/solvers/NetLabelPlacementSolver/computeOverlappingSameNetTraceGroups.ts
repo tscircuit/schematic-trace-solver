@@ -5,16 +5,6 @@ import type { MspConnectionPairId } from "../MspConnectionPairSolver/MspConnecti
 import type { SolvedTracePath } from "../SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { OverlappingSameNetTraceGroup } from "./NetLabelPlacementSolver"
 
-function getTracePathManhattanLength(path: SolvedTracePath): number {
-  let sum = 0
-  const pts = path.tracePath
-  for (let i = 0; i < pts.length - 1; i++) {
-    sum +=
-      Math.abs(pts[i + 1]!.x - pts[i]!.x) + Math.abs(pts[i + 1]!.y - pts[i]!.y)
-  }
-  return sum
-}
-
 export function computeOverlappingSameNetTraceGroups(params: {
   inputProblem: InputProblem
   inputTraceMap: Record<MspConnectionPairId, SolvedTracePath>
@@ -90,11 +80,17 @@ export function computeOverlappingSameNetTraceGroups(params: {
         if (compTraces.some((trace) => trace.suppressNetLabel)) continue
 
         let rep = compTraces[0]!
-        let repLen = getTracePathManhattanLength(rep)
-        for (let i = 1; i < compTraces.length; i++) {
-          const len = getTracePathManhattanLength(compTraces[i]!)
+        let repLen = -1
+        for (const candidateTrace of compTraces) {
+          let len = 0
+          const pts = candidateTrace.tracePath
+          for (let j = 0; j < pts.length - 1; j++) {
+            len +=
+              Math.abs(pts[j + 1]!.x - pts[j]!.x) +
+              Math.abs(pts[j + 1]!.y - pts[j]!.y)
+          }
           if (len > repLen) {
-            rep = compTraces[i]!
+            rep = candidateTrace
             repLen = len
           }
         }
