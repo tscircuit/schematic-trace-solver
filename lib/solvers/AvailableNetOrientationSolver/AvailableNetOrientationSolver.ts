@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,8 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
+import { canPlaceVerticalLabelOnHostRail } from "./can-place-vertical-label-on-host-rail"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -38,10 +40,11 @@ import {
   rangesOverlap,
   rectsOverlap,
   simplifyOrthogonalPath,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyTrace,
+  tracePathIntersectsBounds,
 } from "./geometry"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
+import { staysOutsideConnectedPinRow } from "./stays-outside-connected-pin-row"
 import {
   extendVerticalTracePathAtInteriorPoint,
   getPinMap,
@@ -58,11 +61,9 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
-const CONNECTED_PIN_ROW_OVERLAP_TOLERANCE = 0.1
 
 export class AvailableNetOrientationSolver extends BaseSolver {
   inputProblem: InputProblem
@@ -1740,13 +1741,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     label: NetLabelPlacement
     bounds: Bounds
   }) {
-    const { candidate, label, bounds } = params
-    const pin = this.pinMap[label.pinIds[0]!]
-    if (!pin || !isYOrientation(candidate.orientation)) return false
-    if (candidate.anchorPoint.x < pin.x) {
-      return bounds.maxX <= pin.x + CONNECTED_PIN_ROW_OVERLAP_TOLERANCE + EPS
-    }
-    return bounds.minX >= pin.x - CONNECTED_PIN_ROW_OVERLAP_TOLERANCE - EPS
+    return staysOutsideConnectedPinRow({
+      ...params,
+      pinMap: this.pinMap,
+      chipObstacleSpatialIndex: this.chipObstacleSpatialIndex,
+    })
   }
 
   private getBoundsStatus(candidateBoundsCheck: {
@@ -1846,60 +1845,15 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     label: NetLabelPlacement
     orientation: FacingDirection
   }) {
-    // The rail end can sit on any pairwise trace of the continuous rail, not
-    // only on the trace that originally hosted the label.
     const { railTraceIds } = this.getTraceAnchorCandidates(label, orientation)
-    const isOnHostRail = [...railTraceIds].some((traceId) => {
-      const trace = this.traceMap[traceId]
-      return (
-        trace && tracePathContainsPoint(trace.tracePath, candidate.anchorPoint)
-      )
+    return canPlaceVerticalLabelOnHostRail({
+      candidate,
+      label,
+      railTraceIds,
+      traceMap: this.traceMap,
+      pinMap: this.pinMap,
+      chipObstacleSpatialIndex: this.chipObstacleSpatialIndex,
     })
-    if (!isOnHostRail) return false
-
-    const hostPin = this.pinMap[label.pinIds[0]!]
-    if (!hostPin) return false
-    if (
-      label.pinIds.some(
-        (pinId) => this.pinMap[pinId]?.chipId !== hostPin.chipId,
-      )
-    ) {
-      return false
-    }
-
-    const chip = this.chipObstacleSpatialIndex.chips.find(
-      (chip) => chip.chipId === hostPin.chipId,
-    )
-    if (!chip) return false
-
-    const labelBounds = getRectBounds(
-      candidate.center,
-      candidate.width,
-      candidate.height,
-    )
-    if (
-      labelBounds.minY < chip.bounds.minY - EPS ||
-      labelBounds.maxY > chip.bounds.maxY + EPS
-    ) {
-      return false
-    }
-
-    if (
-      candidate.anchorPoint.x >= chip.bounds.minX - EPS &&
-      candidate.anchorPoint.x <= chip.bounds.maxX + EPS
-    ) {
-      return false
-    }
-
-    // Only pins on the rail's side of the component can be covered by a label
-    // placed beside that side.
-    return chip.pins.every(
-      (pin) =>
-        Math.abs(pin.x - hostPin.x) > EPS ||
-        label.pinIds.includes(pin.pinId) ||
-        pin.y <= labelBounds.minY + EPS ||
-        pin.y >= labelBounds.maxY - EPS,
-    )
   }
 
   private getTextBlockedMultiPinRailTraces(
