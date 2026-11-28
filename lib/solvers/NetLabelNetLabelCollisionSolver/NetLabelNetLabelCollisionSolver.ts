@@ -1,22 +1,24 @@
-import { getAnchoredNetLabelRenderedBounds } from "../InlineNetLabelSolver/getAnchoredNetLabelRenderedBounds"
 import type { GraphicsObject } from "graphics-debug"
+import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
-import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
-import type { InputProblem } from "lib/types/InputProblem"
-import type { FacingDirection } from "lib/utils/dir"
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { rectIntersectsAnyTrace } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
 import {
-  getDimsForOrientation,
   getCenterFromAnchor,
+  getDimsForOrientation,
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
-import { rectIntersectsAnyTrace } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/collisions"
-import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type { InputProblem } from "lib/types/InputProblem"
+import type { FacingDirection } from "lib/utils/dir"
 import { getColorFromString } from "lib/utils/getColorFromString"
 import { rectIntersectsAnyTextBox } from "lib/utils/textBoxBounds"
+import { getAnchoredNetLabelRenderedBounds } from "../InlineNetLabelSolver/getAnchoredNetLabelRenderedBounds"
+import { isAnchoredAtBottomOfSharedVerticalHostSegment } from "./is-anchored-at-bottom-of-shared-vertical-host-segment"
+import { sampleAnchorsAlongSegment } from "./sample-anchors-along-segment"
 
 type CandidateStatus =
   | "ok"
@@ -27,7 +29,6 @@ type CandidateStatus =
 
 const ANCHOR_TRACE_CLEARANCE = 1e-4
 const SEGMENT_PARALLEL_EPS = 1e-6
-const CANDIDATE_STEP = 0.1
 
 const OUTWARD_DIR: Record<FacingDirection, { x: number; y: number }> = {
   "x+": { x: 1, y: 0 },
@@ -74,22 +75,6 @@ function boundsOverlap(
     a.minY < b.maxY - 1e-9 &&
     a.maxY > b.minY + 1e-9
   )
-}
-
-function sampleAnchorsAlongSegment(
-  a: { x: number; y: number },
-  b: { x: number; y: number },
-): Array<{ x: number; y: number }> {
-  const dx = b.x - a.x
-  const dy = b.y - a.y
-  const len = Math.sqrt(dx * dx + dy * dy)
-  const steps = Math.max(1, Math.round(len / CANDIDATE_STEP))
-  const anchors: Array<{ x: number; y: number }> = []
-  for (let k = 0; k <= steps; k++) {
-    const t = k / steps
-    anchors.push({ x: a.x + t * dx, y: a.y + t * dy })
-  }
-  return anchors
 }
 
 export interface NetLabelNetLabelCollisionSolverParams {
@@ -363,7 +348,19 @@ export class NetLabelNetLabelCollisionSolver extends BaseSolver {
     const allowedOrientations = label.netId
       ? this.inputProblem.availableNetLabelOrientations[label.netId]
       : undefined
-    return isAnchoredOnConnector && allowedOrientations?.length
+    const preserveOrientation =
+      Boolean(allowedOrientations?.length) &&
+      (isAnchoredOnConnector ||
+        (Boolean(this.params.useRenderedLabelBounds) &&
+          allowedOrientations?.length === 1 &&
+          allowedOrientations[0] === "y-" &&
+          label.orientation === "y-" &&
+          isAnchoredAtBottomOfSharedVerticalHostSegment({
+            label,
+            traceMap: this.traceMap,
+            traces: this.traces,
+          })))
+    return preserveOrientation && allowedOrientations
       ? candidates.filter((candidate) =>
           allowedOrientations.includes(candidate.orientation),
         )
