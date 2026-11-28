@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -38,10 +39,14 @@ import {
   rangesOverlap,
   rectsOverlap,
   simplifyOrthogonalPath,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyTrace,
+  tracePathIntersectsBounds,
 } from "./geometry"
+import { getCrowdedTopVerticalFanoutAnchorX } from "./get-crowded-top-vertical-fanout-anchor-x"
+import { getNearestChipSide } from "./get-nearest-chip-side"
+import { includeHorizontalConstraintMismatches } from "./include-horizontal-constraint-mismatches"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
+import { overlapsInitialHorizontalTraceLabel } from "./overlaps-initial-horizontal-trace-label"
 import {
   extendVerticalTracePathAtInteriorPoint,
   getPinMap,
@@ -58,7 +63,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -80,6 +84,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
 
   blockedStandaloneLabelIndex: number | null = null
   blockedStandaloneLabelTargetAnchorX: number | null = null
+  private allowIgnoreInitialHorizontalTraceLabelForConnector = false
   private traceMap: Record<string, SolvedTracePath>
   private chipObstacleSpatialIndex: ChipObstacleSpatialIndex
   private maxSearchDistance: number
@@ -432,7 +437,10 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       labelIndex === null ? null : this.outputNetLabelPlacements[labelIndex]!
   }
 
-  private findCorrectedCandidate(label: NetLabelPlacement, labelIndex: number) {
+  private findCorrectedCandidate(
+    label: NetLabelPlacement,
+    labelIndex: number,
+  ): EvaluatedCandidate | null {
     const orientations = this.getAvailableOrientations(label)
     const requiredOrientation = orientations[0]!
 
@@ -607,6 +615,20 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (lateralCandidate) return lateralCandidate
 
+    if (
+      !this.allowIgnoreInitialHorizontalTraceLabelForConnector &&
+      this.isPortOnlyLabel(label) &&
+      orientations.length === 1 &&
+      isYOrientation(requiredOrientation)
+    ) {
+      this.allowIgnoreInitialHorizontalTraceLabelForConnector = true
+      try {
+        return this.findCorrectedCandidate(label, labelIndex)
+      } finally {
+        this.allowIgnoreInitialHorizontalTraceLabelForConnector = false
+      }
+    }
+
     // Wire crossings are allowed when no alternative placement is clear.
     // Preserve the required orientation instead of leaving an invalid label.
     if (crossingAlignedCandidate) crossingAlignedCandidate.selected = true
@@ -618,14 +640,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number,
     orientation: "y+" | "y-",
   ) {
-    const pin = this.pinMap[label.pinIds[0]!]
-    const chip = pin
-      ? this.chipObstacleSpatialIndex.chips.find(
-          (candidate) => candidate.chipId === pin.chipId,
-        )
-      : undefined
-    if (!chip) return null
-
     const { width, height } = getDimsForOrientation({
       orientation,
       netLabelWidth: getNetLabelWidthForConnection({
@@ -636,39 +650,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       }),
       netLabelHeight: this.getNetLabelHeight(label),
     })
-
-    const nextPinToRight = this.outputNetLabelPlacements
-      .map((otherLabel, index) => ({
-        index,
-        pin: this.pinMap[otherLabel.pinIds[0]!],
-      }))
-      .filter(
-        ({ index, pin: otherPin }) =>
-          this.crowdedPortOnlyLabelIndices.has(index) &&
-          otherPin?.chipId === pin.chipId &&
-          otherPin.x > pin.x + EPS,
-      )
-      .sort((a, b) => a.pin!.x - b.pin!.x)[0]?.pin
-
-    // A down-facing label uses the terminal right-hand escape. Interior
-    // down-facing labels fall back to the general search instead of crossing
-    // the remaining pin corridors.
-    if (orientation === "y-" && nextPinToRight) return null
-
-    const anchorX =
-      orientation === "y-"
-        ? Math.max(
-            label.anchorPoint.x + LABEL_SEARCH_STEP,
-            chip.bounds.maxX + width / 2 + LABEL_TRACE_CLEARANCE,
-          )
-        : Math.min(
-            label.anchorPoint.x,
-            (nextPinToRight?.x ?? chip.bounds.maxX) -
-              LABEL_SEARCH_STEP -
-              width / 2,
-          )
-
-    let highestPlacedLabelY = chip.bounds.maxY
+    const fanout = getCrowdedTopVerticalFanoutAnchorX({
+      label,
+      orientation,
+      width,
+      pinMap: this.pinMap,
+      chips: this.chipObstacleSpatialIndex.chips,
+      outputNetLabelPlacements: this.outputNetLabelPlacements,
+      crowdedPortOnlyLabelIndices: this.crowdedPortOnlyLabelIndices,
+    })
+    if (!fanout) return null
+    const { chipBounds, anchorX } = fanout
+    let highestPlacedLabelY = chipBounds.maxY
     let lowestUpFacingLabelY = Number.POSITIVE_INFINITY
     let highestUpFacingLabelY = Number.NEGATIVE_INFINITY
     for (let index = 0; index < this.outputNetLabelPlacements.length; index++) {
@@ -1688,6 +1681,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     for (const i of nearbyLabelIndices) {
       if (i === labelIndex) continue
       if (this.shouldIgnorePendingCrowdedLabel(labelIndex, i)) continue
+      if (
+        this.allowIgnoreInitialHorizontalTraceLabelForConnector &&
+        overlapsInitialHorizontalTraceLabel({
+          labelIndex,
+          otherLabelIndex: i,
+          netLabelPlacements: this.netLabelPlacements,
+          outputNetLabelPlacements: this.outputNetLabelPlacements,
+          isPortOnlyLabel: (candidate) => this.isPortOnlyLabel(candidate),
+        })
+      ) {
+        continue
+      }
       const otherLabel = this.outputNetLabelPlacements[i]!
       if (
         tracePathIntersectsBounds(
@@ -2166,19 +2171,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndices: number[],
     include: boolean,
   ) {
-    if (!include) return [...labelIndices].sort((a, b) => a - b)
-
-    const result = new Set(labelIndices)
-    for (let index = 0; index < this.outputNetLabelPlacements.length; index++) {
-      if (
-        this.getHorizontalConstraintMismatchBounds(
-          this.outputNetLabelPlacements[index]!,
-        )
-      ) {
-        result.add(index)
-      }
-    }
-    return [...result].sort((a, b) => a - b)
+    return includeHorizontalConstraintMismatches({
+      labelIndices,
+      include,
+      outputNetLabelPlacements: this.outputNetLabelPlacements,
+      getHorizontalConstraintMismatchBounds: (label) =>
+        this.getHorizontalConstraintMismatchBounds(label),
+    })
   }
 
   private getLabelBoundsForCollisionWithGround(
@@ -2393,19 +2392,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private getNearestChipSide(point: Point) {
-    let nearestSide: ChipSide | null = null
-    let nearestDistance = Number.POSITIVE_INFINITY
-
-    for (const chip of this.chipObstacleSpatialIndex.chips) {
-      for (const [side, distance] of getSideDistances(point, chip.bounds)) {
-        if (distance < nearestDistance) {
-          nearestSide = side
-          nearestDistance = distance
-        }
-      }
-    }
-
-    return nearestSide
+    return getNearestChipSide(point, this.chipObstacleSpatialIndex.chips)
   }
 
   override visualize(): GraphicsObject {
