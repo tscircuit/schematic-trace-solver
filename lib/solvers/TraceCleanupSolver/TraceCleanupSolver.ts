@@ -1,13 +1,13 @@
-import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject, Line } from "graphics-debug"
-import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
-import { balanceZShapes } from "./balanceZShapes"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
+import type { InputProblem } from "lib/types/InputProblem"
 import type { NetLabelPlacement } from "../NetLabelPlacementSolver/NetLabelPlacementSolver"
 import { alignSameNetRails } from "./alignSameNetRails"
+import { balanceZShapes } from "./balanceZShapes"
 import { extendBranchesToTrimmedJunctions } from "./extendBranchesToTrimmedJunctions"
+import { minimizeTurnsWithFilteredLabels } from "./minimizeTurnsWithFilteredLabels"
 
 export type TraceCleanupOperation =
   | "untangling_traces"
@@ -30,9 +30,9 @@ export interface TraceCleanupSolverInput {
   netLabelConnectorTraceIds?: ReadonlySet<string>
 }
 
-import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 import { is4PointRectangle } from "./is4PointRectangle"
 import { rerouteGeneratedNetLabelConnectorCrossings } from "./rerouteGeneratedNetLabelConnectorCrossings"
+import { UntangleTraceSubsolver } from "./sub-solver/UntangleTraceSubsolver"
 
 /**
  * Represents the different stages or steps within the trace cleanup pipeline.
@@ -198,6 +198,9 @@ export class TraceCleanupSolver extends BaseSolver {
       originalTrace,
       updatedTrace,
       traces: allTraces,
+      inputProblem: this.input.inputProblem,
+      allLabelPlacements: this.input.allLabelPlacements,
+      mergedLabelNetIdMap: this.input.mergedLabelNetIdMap,
     })
     if (!extendedTraces) return
     this.tracesMap = new Map(
