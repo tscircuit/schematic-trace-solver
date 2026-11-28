@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,20 +10,15 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
-import type {
-  ChipId,
-  InputNetConnection,
-  InputPin,
-  InputProblem,
-} from "lib/types/InputProblem"
+import type { ChipId, InputPin, InputProblem } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
 import { getNetLabelWidthForConnection } from "lib/utils/getNetLabelWidthForConnection"
 import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -38,9 +34,10 @@ import {
   rangesOverlap,
   rectsOverlap,
   simplifyOrthogonalPath,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyTrace,
+  tracePathIntersectsBounds,
 } from "./geometry"
+import { hasPairedVerticalRailOnSameChipSide } from "./hasPairedVerticalRailOnSameChipSide"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
 import {
   extendVerticalTracePathAtInteriorPoint,
@@ -58,7 +55,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -470,7 +466,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     const isPairedSameSidePowerRail =
       isYOrientation(requiredOrientation) &&
-      this.hasOppositeVerticalRailOnSameChipSide(label, requiredOrientation)
+      hasPairedVerticalRailOnSameChipSide({
+        label,
+        orientation: requiredOrientation,
+        inputProblem: this.inputProblem,
+        pinMap: this.pinMap,
+        chips: this.chipObstacleSpatialIndex.chips,
+      })
     if (textBlockedMultiPinRailTraces) {
       const nearbyCandidate = this.findValidNearbyRailCandidate(
         label,
@@ -2027,72 +2029,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         otherLabel.globalConnNetId === label.globalConnNetId &&
         this.isPortOnlyLabel(otherLabel),
     )
-  }
-
-  private hasOppositeVerticalRailOnSameChipSide(
-    label: NetLabelPlacement,
-    orientation: "y+" | "y-",
-  ) {
-    const currentConnection = this.inputProblem.netConnections.find(
-      (connection) => connection.netId === label.netId,
-    )
-    if (!currentConnection) return false
-
-    const currentSide =
-      this.getSingleChipSideForNetConnection(currentConnection)
-    if (!currentSide) return false
-
-    const oppositeOrientation = orientation === "y+" ? "y-" : "y+"
-    return this.inputProblem.netConnections.some((connection) => {
-      if (connection === currentConnection || connection.pinIds.length < 2) {
-        return false
-      }
-      const availableOrientations =
-        this.inputProblem.availableNetLabelOrientations[connection.netId] ?? []
-      if (
-        availableOrientations.length !== 1 ||
-        availableOrientations[0] !== oppositeOrientation
-      ) {
-        return false
-      }
-
-      const connectionSide = this.getSingleChipSideForNetConnection(connection)
-      return (
-        connectionSide?.chipId === currentSide.chipId &&
-        connectionSide.side === currentSide.side
-      )
-    })
-  }
-
-  private getSingleChipSideForNetConnection(
-    connection: InputNetConnection,
-  ): { chipId: string; side: "left" | "right" } | null {
-    if (connection.pinIds.length < 2) return null
-
-    const pins = connection.pinIds.map((pinId) => this.pinMap[pinId])
-    if (pins.some((pin) => !pin)) return null
-    const chipIds = new Set(pins.map((pin) => pin!.chipId))
-    if (chipIds.size !== 1) return null
-
-    const chipId = pins[0]!.chipId
-    const chip = this.chipObstacleSpatialIndex.chips.find(
-      (candidate) => candidate.chipId === chipId,
-    )
-    if (!chip) return null
-
-    const sides = new Set(
-      pins.map((pin) => {
-        if (Math.abs(pin!.x - chip.bounds.minX) <= EPS) return "left"
-        if (Math.abs(pin!.x - chip.bounds.maxX) <= EPS) return "right"
-        return null
-      }),
-    )
-    if (sides.size !== 1 || sides.has(null)) return null
-
-    return {
-      chipId,
-      side: [...sides][0] as "left" | "right",
-    }
   }
 
   private isPortOnlyLabel(label: NetLabelPlacement) {
