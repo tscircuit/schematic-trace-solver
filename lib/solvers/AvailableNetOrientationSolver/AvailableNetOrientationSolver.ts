@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,8 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
+import { blocksQueuedSameColumnUpwardRailLabel } from "./blocks-queued-same-column-upward-rail-label"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -38,9 +40,10 @@ import {
   rangesOverlap,
   rectsOverlap,
   simplifyOrthogonalPath,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyTrace,
+  tracePathIntersectsBounds,
 } from "./geometry"
+import { getOutsideChipSide } from "./get-outside-chip-side"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
 import {
   extendVerticalTracePathAtInteriorPoint,
@@ -58,7 +61,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -2219,6 +2221,20 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       this.isGroundLabel(currentLabel),
     )
 
+    if (
+      blocksQueuedSameColumnUpwardRailLabel({
+        bounds,
+        labelIndex,
+        currentLabel,
+        inputProblem: this.inputProblem,
+        queuedLabelIndices: this.queuedLabelIndices,
+        outputNetLabelPlacements: this.outputNetLabelPlacements,
+        pinMap: this.pinMap,
+      })
+    ) {
+      return true
+    }
+
     for (const i of nearbyLabelIndices) {
       if (i === labelIndex) continue
       if (this.shouldIgnorePendingCrowdedLabel(labelIndex, i)) continue
@@ -2358,38 +2374,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private getOutsideChipSide(point: Point) {
-    let nearestSide: ChipSide | null = null
-    let nearestDistanceSq = Number.POSITIVE_INFINITY
-
-    for (const chip of this.chipObstacleSpatialIndex.chips) {
-      const bounds = chip.bounds
-      const dx =
-        point.x < bounds.minX - EPS
-          ? bounds.minX - point.x
-          : point.x > bounds.maxX + EPS
-            ? point.x - bounds.maxX
-            : 0
-      const dy =
-        point.y < bounds.minY - EPS
-          ? bounds.minY - point.y
-          : point.y > bounds.maxY + EPS
-            ? point.y - bounds.maxY
-            : 0
-
-      if (dx === 0 && dy === 0) continue
-
-      const distanceSq = dx ** 2 + dy ** 2
-      if (distanceSq >= nearestDistanceSq) continue
-
-      nearestDistanceSq = distanceSq
-      if (dx > 0) {
-        nearestSide = point.x < bounds.minX ? "left" : "right"
-      } else {
-        nearestSide = point.y < bounds.minY ? "bottom" : "top"
-      }
-    }
-
-    return nearestSide
+    return getOutsideChipSide(point, this.chipObstacleSpatialIndex)
   }
 
   private getNearestChipSide(point: Point) {
