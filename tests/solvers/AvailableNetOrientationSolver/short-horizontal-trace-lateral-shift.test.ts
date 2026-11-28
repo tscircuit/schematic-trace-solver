@@ -7,9 +7,8 @@ import type { InputProblem } from "lib/types/InputProblem"
 import input from "../../bug-reports/bug-report-20260707T134722Z/bug-report-20260707T134722Z.json"
 
 test("branches a horizontal net label laterally from a short horizontal trace", () => {
-  const solver = new SchematicTracePipelineSolver(
-    input as unknown as InputProblem,
-  )
+  const inputProblem: InputProblem = JSON.parse(JSON.stringify(input))
+  const solver = new SchematicTracePipelineSolver(inputProblem)
   solver.solve()
   expect(solver.solved).toBe(true)
 
