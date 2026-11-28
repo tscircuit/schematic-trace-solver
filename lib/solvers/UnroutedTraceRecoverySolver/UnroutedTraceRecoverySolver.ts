@@ -1,5 +1,5 @@
 import type { Point } from "@tscircuit/math-utils"
-import { distance, doSegmentsIntersect } from "@tscircuit/math-utils"
+import { distance } from "@tscircuit/math-utils"
 import { calculateElbow } from "calculate-elbow"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import { getConnectivityMapsFromInputProblem } from "lib/solvers/MspConnectionPairSolver/getConnectivityMapFromInputProblem"
@@ -10,8 +10,6 @@ import {
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import {
   findFirstCollision,
-  isHorizontal,
-  isVertical,
   segmentOverlapsRectBoundary,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import {
@@ -19,9 +17,13 @@ import {
   type ObstacleRect,
 } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import type { InputProblem, PinId } from "lib/types/InputProblem"
+import type { InputProblem } from "lib/types/InputProblem"
 import { dir, type FacingDirection } from "lib/utils/dir"
+import { buildRecoveredTraceEntry } from "./build-recovered-trace-entry"
+import { doesTerminalSegmentExitEnclosingChipObstacle } from "./does-terminal-segment-exit-enclosing-chip-obstacle"
+import { getConnectedSameNetTracesForPin } from "./get-connected-same-net-traces-for-pin"
 import { getTraceChannelJunctions } from "./getTraceChannelJunctions"
+import { pathCrossesExistingTraces } from "./path-crosses-existing-traces"
 
 const ROUTE_CLEARANCE = 0.2
 const COORDINATE_TOLERANCE = 1e-9
@@ -205,28 +207,6 @@ const getUnconnectedPins = ({
   return connectionPair.pins.filter((pin) => !connectedPinIds.has(pin.pinId))
 }
 
-const pathsIntersect = (firstPath: Point[], secondPath: Point[]): boolean => {
-  for (let firstIndex = 0; firstIndex < firstPath.length - 1; firstIndex++) {
-    for (
-      let secondIndex = 0;
-      secondIndex < secondPath.length - 1;
-      secondIndex++
-    ) {
-      if (
-        doSegmentsIntersect(
-          firstPath[firstIndex]!,
-          firstPath[firstIndex + 1]!,
-          secondPath[secondIndex]!,
-          secondPath[secondIndex + 1]!,
-        )
-      ) {
-        return true
-      }
-    }
-  }
-  return false
-}
-
 const connectionPairPinsAreAlreadyConnected = ({
   connectionPair,
   sameNetTraces,
@@ -235,35 +215,10 @@ const connectionPairPinsAreAlreadyConnected = ({
   sameNetTraces: SolvedTracePath[]
 }): boolean => {
   const [firstPin, secondPin] = connectionPair.pins
-  const connectedTraceIndexes = new Set(
-    sameNetTraces.flatMap((trace, index) =>
-      trace.pinIds.includes(firstPin.pinId) ? [index] : [],
-    ),
-  )
-
-  let previousSize = -1
-  while (connectedTraceIndexes.size !== previousSize) {
-    previousSize = connectedTraceIndexes.size
-    for (let traceIndex = 0; traceIndex < sameNetTraces.length; traceIndex++) {
-      if (connectedTraceIndexes.has(traceIndex)) continue
-      const trace = sameNetTraces[traceIndex]!
-      const connectsToComponent = [...connectedTraceIndexes].some(
-        (connectedTraceIndex) => {
-          const connectedTrace = sameNetTraces[connectedTraceIndex]!
-          return (
-            trace.pinIds.some((pinId) =>
-              connectedTrace.pinIds.includes(pinId),
-            ) || pathsIntersect(trace.tracePath, connectedTrace.tracePath)
-          )
-        },
-      )
-      if (connectsToComponent) connectedTraceIndexes.add(traceIndex)
-    }
-  }
-
-  return [...connectedTraceIndexes].some((traceIndex) =>
-    sameNetTraces[traceIndex]!.pinIds.includes(secondPin.pinId),
-  )
+  return getConnectedSameNetTracesForPin({
+    pinId: firstPin.pinId,
+    sameNetTraces,
+  }).some((trace) => trace.pinIds.includes(secondPin.pinId))
 }
 
 const getJunctionCandidates = ({
@@ -411,18 +366,42 @@ const pathCollidesWithObstacles = ({
   ) {
     return true
   }
+  const secondPoint = path[1]
+  const penultimatePoint = path[path.length - 2]
+  const firstTerminalExclusions =
+    firstPathPin && secondPoint
+      ? obstacles.filter((obstacle) =>
+          doesTerminalSegmentExitEnclosingChipObstacle({
+            pin: firstPathPin,
+            neighbor: secondPoint,
+            obstacle,
+          }),
+        )
+      : []
+  const lastTerminalExclusions =
+    pathConnectsPairPins && lastPathPin && penultimatePoint
+      ? obstacles.filter((obstacle) =>
+          doesTerminalSegmentExitEnclosingChipObstacle({
+            pin: lastPathPin,
+            neighbor: penultimatePoint,
+            obstacle,
+          }),
+        )
+      : []
   const collision = findFirstCollision(path, obstacles, {
     excludeRectsForSegment: (segmentIndex) => {
       const excludedObstacles = new Set<ObstacleRect>()
-      if (segmentIndex === 0 && firstChipObstacle) {
-        excludedObstacles.add(firstChipObstacle)
+      if (segmentIndex === 0) {
+        if (firstChipObstacle) excludedObstacles.add(firstChipObstacle)
+        for (const obstacle of firstTerminalExclusions) {
+          excludedObstacles.add(obstacle)
+        }
       }
-      if (
-        pathConnectsPairPins &&
-        segmentIndex === path.length - 2 &&
-        secondChipObstacle
-      ) {
-        excludedObstacles.add(secondChipObstacle)
+      if (pathConnectsPairPins && segmentIndex === path.length - 2) {
+        if (secondChipObstacle) excludedObstacles.add(secondChipObstacle)
+        for (const obstacle of lastTerminalExclusions) {
+          excludedObstacles.add(obstacle)
+        }
       }
       return excludedObstacles
     },
@@ -448,113 +427,6 @@ const hasParallelFailedConnection = ({
       connectionChipIds.has(pin.chipId),
     )
   })
-}
-
-const segmentsOverlapBeyondEndpoint = ({
-  firstStart,
-  firstEnd,
-  secondStart,
-  secondEnd,
-}: {
-  firstStart: Point
-  firstEnd: Point
-  secondStart: Point
-  secondEnd: Point
-}): boolean => {
-  if (
-    isHorizontal(firstStart, firstEnd) &&
-    isHorizontal(secondStart, secondEnd)
-  ) {
-    const overlapLength =
-      Math.min(
-        Math.max(firstStart.x, firstEnd.x),
-        Math.max(secondStart.x, secondEnd.x),
-      ) -
-      Math.max(
-        Math.min(firstStart.x, firstEnd.x),
-        Math.min(secondStart.x, secondEnd.x),
-      )
-    return overlapLength > COORDINATE_TOLERANCE
-  }
-  if (isVertical(firstStart, firstEnd) && isVertical(secondStart, secondEnd)) {
-    const overlapLength =
-      Math.min(
-        Math.max(firstStart.y, firstEnd.y),
-        Math.max(secondStart.y, secondEnd.y),
-      ) -
-      Math.max(
-        Math.min(firstStart.y, firstEnd.y),
-        Math.min(secondStart.y, secondEnd.y),
-      )
-    return overlapLength > COORDINATE_TOLERANCE
-  }
-  return false
-}
-
-const getAllowedJunctionPoints = ({
-  connectionPair,
-  existingTrace,
-}: {
-  connectionPair: MspConnectionPair
-  existingTrace: SolvedTracePath
-}): Point[] => {
-  const existingPinIds = new Set<PinId>(existingTrace.pinIds)
-  return connectionPair.pins.filter((pin) => existingPinIds.has(pin.pinId))
-}
-
-const pathCrossesExistingTraces = ({
-  path,
-  connectionPair,
-  existingTraces,
-}: {
-  path: Point[]
-  connectionPair: MspConnectionPair
-  existingTraces: SolvedTracePath[]
-}): boolean => {
-  for (const existingTrace of existingTraces) {
-    if (existingTrace.globalConnNetId === connectionPair.globalConnNetId) {
-      continue
-    }
-    const allowedJunctionPoints = getAllowedJunctionPoints({
-      connectionPair,
-      existingTrace,
-    })
-    for (let pathIndex = 0; pathIndex < path.length - 1; pathIndex++) {
-      const pathStart = path[pathIndex]!
-      const pathEnd = path[pathIndex + 1]!
-      for (
-        let traceIndex = 0;
-        traceIndex < existingTrace.tracePath.length - 1;
-        traceIndex++
-      ) {
-        const traceStart = existingTrace.tracePath[traceIndex]!
-        const traceEnd = existingTrace.tracePath[traceIndex + 1]!
-        if (!doSegmentsIntersect(pathStart, pathEnd, traceStart, traceEnd)) {
-          continue
-        }
-        const intersectionIsAllowedJunction = allowedJunctionPoints.some(
-          (junctionPoint) =>
-            (pointsAreEqual(pathStart, junctionPoint) ||
-              pointsAreEqual(pathEnd, junctionPoint)) &&
-            (pointsAreEqual(traceStart, junctionPoint) ||
-              pointsAreEqual(traceEnd, junctionPoint)),
-        )
-        if (
-          intersectionIsAllowedJunction &&
-          !segmentsOverlapBeyondEndpoint({
-            firstStart: pathStart,
-            firstEnd: pathEnd,
-            secondStart: traceStart,
-            secondEnd: traceEnd,
-          })
-        ) {
-          continue
-        }
-        return true
-      }
-    }
-  }
-  return false
 }
 
 export class UnroutedTraceRecoverySolver extends BaseSolver {
@@ -690,12 +562,13 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
       recoveredPath = tracePath
     }
     if (recoveredPath) {
-      this.solvedUnroutedTraces.push({
-        ...connectionPair,
-        tracePath: recoveredPath,
-        mspConnectionPairIds: [connectionPair.mspPairId],
-        pinIds: connectionPair.pins.map((pin) => pin.pinId),
-      })
+      this.solvedUnroutedTraces.push(
+        buildRecoveredTraceEntry({
+          connectionPair,
+          recoveredPath,
+          sameNetTraces,
+        }),
+      )
     }
   }
 

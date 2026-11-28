@@ -20,7 +20,7 @@ globalConnNetId: connectivity_net23" data-x="-2.636425938235294" data-y="15.1900
 globalConnNetId: connectivity_net23" data-x="-3.7064553500000006" data-y="9.278500000000001" x="223.8700073429089" y="249.75875113938656" width="9.521547430978387" height="8.331354002106139" fill="#ef444466" stroke="#ef4444" stroke-width="0.05041197383928571"/></g><g><rect data-type="rect" data-label="netId: VCC
 globalConnNetId: connectivity_net23" data-x="-2.29045535" data-y="1.1059999999999994" x="251.95857226429519" y="411.87301443036745" width="9.521547430978359" height="8.331354002106082" fill="#ef444466" stroke="#ef4444" stroke-width="0.05041197383928571"/></g><g><rect data-type="rect" data-label="netId: VREF
 globalConnNetId: connectivity_net24" data-x="-6.32545535" data-y="10.835" x="170.7278707437609" y="218.8831499387244" width="11.90193428872297" height="8.33135400210611" fill="#ef444466" stroke="#ef4444" stroke-width="0.05041197383928571"/></g><g><rect data-type="rect" data-label="netId: VREF
-globalConnNetId: connectivity_net24" data-x="-7.339455349999999" data-y="6.66" x="150.61360179581908" y="301.7007760310884" width="11.90193428872297" height="8.331354002106082" fill="#ef444466" stroke="#ef4444" stroke-width="0.05041197383928571"/></g><g><rect data-type="rect" data-label="netId: MK1.OUT to C5.pin1
+globalConnNetId: connectivity_net24" data-x="-6.182955350000001" data-y="8.625" x="173.55458013733255" y="262.7219412355207" width="11.90193428872297" height="8.331354002106082" fill="#ef444466" stroke="#ef4444" stroke-width="0.05041197383928571"/></g><g><rect data-type="rect" data-label="netId: MK1.OUT to C5.pin1
 globalConnNetId: connectivity_net1" data-x="0.049544649999998525" data-y="8.5425" x="301.1532339910168" y="264.06090884300204" width="3.967311429574295" height="8.926450716542206" fill="hsl(40, 100%, 50%, 0.35)" stroke="black" stroke-width="0.05041197383928571"/></g><g><rect data-type="rect" data-label="netId: PREAMP
 globalConnNetId: connectivity_net26" data-x="-0.528455350000001" data-y="6.135000000000001" x="283.340005672228" y="314.29698981998695" width="16.662708004212163" height="3.967311429574295" fill="hsl(80, 100%, 50%, 0.35)" stroke="black" stroke-width="0.05041197383928571"/></g><g><rect data-type="rect" data-label="netId: AUDIO_ADC
 globalConnNetId: connectivity_net29" data-x="-0.34845535000000094" data-y="5.935000000000001" x="283.340005672228" y="318.2643012495612" width="23.80386857744594" height="3.9673114295743517" fill="hsl(80, 100%, 50%, 0.35)" stroke="black" stroke-width="0.05041197383928571"/></g><g><rect data-type="rect" data-label="netId: U2.PA4 to R7.pin1
@@ -195,7 +195,7 @@ orientation: y+" data-x="-2.636425938235294" data-y="14.980000000000002" cx="249
 orientation: y+" data-x="-3.7064553500000006" data-y="9.0685" cx="228.6307810583981" cy="258.0901051414927" r="3" fill="hsl(80, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: y+" data-x="-2.29045535" data-y="0.8959999999999994" cx="256.71934597978435" cy="420.20436843247353" r="3" fill="hsl(80, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: y+" data-x="-6.32545535" data-y="10.625" cx="176.67883788812236" cy="227.2145039408305" r="3" fill="hsl(80, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
-orientation: y+" data-x="-7.339455349999999" data-y="6.45" cx="156.56456894018055" cy="310.0321300331945" r="3" fill="hsl(80, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
+orientation: y+" data-x="-6.182955350000001" data-y="8.415" cx="179.50554728169402" cy="271.0532952376268" r="3" fill="hsl(80, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: y+" data-x="0.049544649999998525" data-y="8.3175" cx="303.1368897058039" cy="272.98735955954425" r="3" fill="hsl(40, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: x+" data-x="-0.9494553500000009" data-y="6.135000000000001" cx="283.32016911508015" cy="316.28064553477407" r="3" fill="hsl(80, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
 orientation: x+" data-x="-0.9494553500000009" data-y="5.935000000000001" cx="283.32016911508015" cy="320.24795696434836" r="3" fill="hsl(80, 100%, 50%, 0.9)"/></g><g><circle data-type="point" data-label="anchorPoint
@@ -364,13 +364,13 @@ AUDIO_ADC" data-x="-2.54945535" data-y="0.5949999999999993" cx="251.581677678485
     L 304.91356640048815,209.3949637949282
     Z
   " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.805685453684px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_18__stack1" x="300.88513913206816" y="207.944729978297" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="7.251169083155999px" transform="rotate(-90 300.88513913206816 207.944729978297)">XX</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_19__stack1" d="
-    M 260.0368866302895,379.75715297641
-    L 256.0084593618695,377.5818022514632
-    L 256.0084593618695,363.76698233896155
-    L 264.06531389870946,363.76698233896155
-    L 264.06531389870946,377.5818022514632
+    M 306.6256479895667,300.59855715195704
+    L 302.5972207211467,298.42320642701026
+    L 302.5972207211467,284.6083865145086
+    L 310.6540752579867,284.6083865145086
+    L 310.6540752579867,298.42320642701026
     Z
-  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.805685453684px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_19__stack1" x="260.0368866302895" y="376.131568434832" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="7.251169083155999px" transform="rotate(-90 260.0368866302895 376.131568434832)">XX</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_20__stack1" d="
+  " fill="rgba(255, 255, 255, 0.6)" stroke="rgb(132, 0, 0)" stroke-width="0.805685453684px"/><text class="net-label-text sch-net-label-text" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_19__stack1" x="306.6256479895667" y="296.97297261037903" fill="rgb(132, 0, 0)" text-anchor="start" dominant-baseline="central" font-family="sans-serif" font-variant-numeric="tabular-nums" font-size="7.251169083155999px" transform="rotate(-90 306.6256479895667 296.97297261037903)">XX</text><path class="net-label sch-net-label" data-circuit-json-type="schematic_net_label" data-schematic-net-label-id="schematic_net_label_20__stack1" d="
     M 557.6973774938432,304.5262737386665
     L 553.6689502254231,302.3509230137197
     L 553.6689502254231,288.53610310121803
