@@ -1,15 +1,16 @@
 import type { Point } from "@tscircuit/math-utils"
-import type { PinId } from "lib/types/InputProblem"
-import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
+import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import {
   nearlyEqual,
   pointsEqual,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
-import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import type { PinId } from "lib/types/InputProblem"
 import { getSharedPin } from "./getSharedPin"
+import { isDegenerateCollapsedPath } from "./isDegenerateCollapsedPath"
 
 const getSegmentAxis = (start: Point, end: Point) => {
   if (nearlyEqual(start.x, end.x)) return "y" as const
@@ -90,19 +91,25 @@ export const collapseRedundantSharedEndpointStubs = ({
   multiPinNetPinIds: ReadonlySet<PinId>
 }) => {
   const outputTraces = [...traces]
+  const droppedTraceIds = new Set<MspConnectionPairId>()
 
   for (let firstIndex = 0; firstIndex < outputTraces.length; firstIndex++) {
-    if (netLabelConnectorTraceIds.has(outputTraces[firstIndex]!.mspPairId))
+    if (
+      netLabelConnectorTraceIds.has(outputTraces[firstIndex]!.mspPairId) ||
+      droppedTraceIds.has(outputTraces[firstIndex]!.mspPairId)
+    )
       continue
     for (
       let secondIndex = firstIndex + 1;
       secondIndex < outputTraces.length;
       secondIndex++
     ) {
+      if (droppedTraceIds.has(outputTraces[firstIndex]!.mspPairId)) break
       const firstTrace = outputTraces[firstIndex]!
       const secondTrace = outputTraces[secondIndex]!
       if (
         netLabelConnectorTraceIds.has(secondTrace.mspPairId) ||
+        droppedTraceIds.has(secondTrace.mspPairId) ||
         firstTrace.globalConnNetId !== secondTrace.globalConnNetId
       ) {
         continue
@@ -180,7 +187,11 @@ export const collapseRedundantSharedEndpointStubs = ({
           branchPoint,
         })
         if (!collapsedTrace) continue
-        outputTraces[traceIndexToCollapse] = collapsedTrace
+        if (isDegenerateCollapsedPath(collapsedTrace.tracePath)) {
+          droppedTraceIds.add(traceToCollapse.mspPairId)
+        } else {
+          outputTraces[traceIndexToCollapse] = collapsedTrace
+        }
         continue
       }
       if (firstPath.length < 3 || secondPath.length < 3) continue
@@ -265,9 +276,13 @@ export const collapseRedundantSharedEndpointStubs = ({
         branchPoint,
       })
       if (!collapsedTrace) continue
-      outputTraces[traceIndexToCollapse] = collapsedTrace
+      if (isDegenerateCollapsedPath(collapsedTrace.tracePath)) {
+        droppedTraceIds.add(traceToCollapse.mspPairId)
+      } else {
+        outputTraces[traceIndexToCollapse] = collapsedTrace
+      }
     }
   }
 
-  return outputTraces
+  return outputTraces.filter((trace) => !droppedTraceIds.has(trace.mspPairId))
 }
