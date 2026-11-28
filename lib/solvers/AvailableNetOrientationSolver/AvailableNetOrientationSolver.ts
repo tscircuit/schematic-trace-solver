@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -38,10 +39,11 @@ import {
   rangesOverlap,
   rectsOverlap,
   simplifyOrthogonalPath,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyTrace,
+  tracePathIntersectsBounds,
 } from "./geometry"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
+import { sortCrowdedTopBankByPin } from "./sortCrowdedTopBankByPin"
 import {
   extendVerticalTracePathAtInteriorPoint,
   getPinMap,
@@ -58,7 +60,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -77,6 +78,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   currentLabel: NetLabelPlacement | null = null
   currentCandidateResults: EvaluatedCandidate[] = []
   private crowdedPortOnlyLabelIndices = new Set<number>()
+  private unresolvedFallbackLabelIndices = new Set<number>()
 
   blockedStandaloneLabelIndex: number | null = null
   blockedStandaloneLabelTargetAnchorX: number | null = null
@@ -146,7 +148,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         indices.push(i)
       }
     }
-    this.sortCrowdedTopBankByPin(indices)
+    sortCrowdedTopBankByPin({
+      indices,
+      crowdedPortOnlyLabelIndices: this.crowdedPortOnlyLabelIndices,
+      outputNetLabelPlacements: this.outputNetLabelPlacements,
+      pinMap: this.pinMap,
+      getChipSideForPoint: (point) => this.getChipSideForPoint(point),
+    })
 
     const orderedIndices = orderRoutedLabelsBeforeOverlappingPortLabels({
       labelIndices: indices,
@@ -233,39 +241,20 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     return orderedIndices
   }
 
-  private sortCrowdedTopBankByPin(indices: number[]) {
-    const slotsByChip = new Map<ChipId, number[]>()
-
-    for (let slot = 0; slot < indices.length; slot++) {
-      const labelIndex = indices[slot]!
-      if (!this.crowdedPortOnlyLabelIndices.has(labelIndex)) continue
-      const label = this.outputNetLabelPlacements[labelIndex]!
-      if (this.getChipSideForPoint(label.anchorPoint) !== "top") continue
-      const pin = this.pinMap[label.pinIds[0]!]
-      if (!pin) continue
-      const slots = slotsByChip.get(pin.chipId) ?? []
-      slots.push(slot)
-      slotsByChip.set(pin.chipId, slots)
-    }
-
-    for (const slots of slotsByChip.values()) {
-      const labelIndices = slots
-        .map((slot) => indices[slot]!)
-        .sort((a, b) => {
-          const aPin = this.pinMap[this.outputNetLabelPlacements[a]!.pinIds[0]!]
-          const bPin = this.pinMap[this.outputNetLabelPlacements[b]!.pinIds[0]!]
-          return aPin!.x - bPin!.x
-        })
-      for (let position = 0; position < slots.length; position++) {
-        indices[slots[position]!] = labelIndices[position]!
-      }
-    }
-  }
-
   private shouldProcessLabel(label: NetLabelPlacement, labelIndex: number) {
     const orientations = this.getAvailableOrientations(label)
     if (orientations.length === 0) return false
     if (!orientations.includes(label.orientation)) return true
+    if (
+      label.requiresCollisionResolution &&
+      this.getBoundsStatus({
+        bounds: getRectBounds(label.center, label.width, label.height),
+        labelIndex,
+        label,
+      }) !== "valid"
+    ) {
+      return true
+    }
     if (this.getTextBlockedMultiPinRailTraces(label, orientations[0]!)) {
       return true
     }
@@ -352,7 +341,12 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     this.currentCandidateResults = []
 
     const candidate = this.findCorrectedCandidate(label, labelIndex)
-    if (!candidate) return
+    if (!candidate) {
+      if (label.requiresCollisionResolution) {
+        this.unresolvedFallbackLabelIndices.add(labelIndex)
+      }
+      return
+    }
 
     this.applyCandidate(label, candidate, labelIndex)
   }
@@ -420,6 +414,11 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private finish() {
+    if (this.unresolvedFallbackLabelIndices.size > 0) {
+      this.outputNetLabelPlacements = this.outputNetLabelPlacements.filter(
+        (_, index) => !this.unresolvedFallbackLabelIndices.has(index),
+      )
+    }
     this.currentLabelIndex = null
     this.currentLabel = null
     this.currentCandidateResults = []
