@@ -32,7 +32,6 @@ import {
 import {
   getConnectorTracePath,
   getMaxSearchDistance,
-  getSideDistances,
   isXOrientation,
   isYOrientation,
   rangesOverlap,
@@ -59,6 +58,12 @@ import type {
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
 import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
+import { findDoglegPortOnlyConnectorTrace } from "./find-dogleg-port-only-connector-trace"
+import { getChipSideForPoint } from "./get-chip-side-for-point"
+import { getContainingChipSide } from "./get-containing-chip-side"
+import { getCrowdedTopVerticalFanoutAnchorX } from "./get-crowded-top-vertical-fanout-anchor-x"
+import { getPerpendicularOutwardDirection } from "./get-perpendicular-outward-direction"
+import { shouldTryDoglegPortOnlyShift } from "./should-try-dogleg-port-only-shift"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -607,6 +612,16 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     )
     if (lateralCandidate) return lateralCandidate
 
+    const primaryOrientation = orientations[0]
+    if (primaryOrientation) {
+      const doglegCandidate = this.findValidDoglegShiftedCandidate({
+        label,
+        orientation: primaryOrientation,
+        labelIndex,
+      })
+      if (doglegCandidate) return doglegCandidate
+    }
+
     // Wire crossings are allowed when no alternative placement is clear.
     // Preserve the required orientation instead of leaving an invalid label.
     if (crossingAlignedCandidate) crossingAlignedCandidate.selected = true
@@ -618,14 +633,6 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     labelIndex: number,
     orientation: "y+" | "y-",
   ) {
-    const pin = this.pinMap[label.pinIds[0]!]
-    const chip = pin
-      ? this.chipObstacleSpatialIndex.chips.find(
-          (candidate) => candidate.chipId === pin.chipId,
-        )
-      : undefined
-    if (!chip) return null
-
     const { width, height } = getDimsForOrientation({
       orientation,
       netLabelWidth: getNetLabelWidthForConnection({
@@ -637,38 +644,19 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       netLabelHeight: this.getNetLabelHeight(label),
     })
 
-    const nextPinToRight = this.outputNetLabelPlacements
-      .map((otherLabel, index) => ({
-        index,
-        pin: this.pinMap[otherLabel.pinIds[0]!],
-      }))
-      .filter(
-        ({ index, pin: otherPin }) =>
-          this.crowdedPortOnlyLabelIndices.has(index) &&
-          otherPin?.chipId === pin.chipId &&
-          otherPin.x > pin.x + EPS,
-      )
-      .sort((a, b) => a.pin!.x - b.pin!.x)[0]?.pin
+    const fanout = getCrowdedTopVerticalFanoutAnchorX({
+      label,
+      orientation,
+      width,
+      pinMap: this.pinMap,
+      chips: this.chipObstacleSpatialIndex.chips,
+      outputNetLabelPlacements: this.outputNetLabelPlacements,
+      crowdedPortOnlyLabelIndices: this.crowdedPortOnlyLabelIndices,
+    })
+    if (!fanout) return null
+    const { chipBounds, anchorX } = fanout
 
-    // A down-facing label uses the terminal right-hand escape. Interior
-    // down-facing labels fall back to the general search instead of crossing
-    // the remaining pin corridors.
-    if (orientation === "y-" && nextPinToRight) return null
-
-    const anchorX =
-      orientation === "y-"
-        ? Math.max(
-            label.anchorPoint.x + LABEL_SEARCH_STEP,
-            chip.bounds.maxX + width / 2 + LABEL_TRACE_CLEARANCE,
-          )
-        : Math.min(
-            label.anchorPoint.x,
-            (nextPinToRight?.x ?? chip.bounds.maxX) -
-              LABEL_SEARCH_STEP -
-              width / 2,
-          )
-
-    let highestPlacedLabelY = chip.bounds.maxY
+    let highestPlacedLabelY = chipBounds.maxY
     let lowestUpFacingLabelY = Number.POSITIVE_INFINITY
     let highestUpFacingLabelY = Number.NEGATIVE_INFINITY
     for (let index = 0; index < this.outputNetLabelPlacements.length; index++) {
@@ -1306,11 +1294,96 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       ])
     }
 
-    return getConnectorTracePath(
+    const defaultTrace = getConnectorTracePath(
       label.anchorPoint,
       candidate.anchorPoint,
       candidate.orientation,
     )
+    if (
+      candidate.phase === "dogleg-shift" &&
+      this.isPortOnlyLabel(label) &&
+      isYOrientation(candidate.orientation) &&
+      this.getConnectorTraceStatus({
+        connectorTrace: defaultTrace,
+        label,
+        labelIndex,
+      }) !== "valid"
+    ) {
+      const doglegTrace = findDoglegPortOnlyConnectorTrace({
+        labelAnchor: label.anchorPoint,
+        targetAnchor: candidate.anchorPoint,
+        orientation: candidate.orientation,
+        chipOutwardDir: this.getChipOutwardDirection(label.anchorPoint),
+        traceMap: this.traceMap,
+        isValidConnectorTrace: (path) =>
+          this.getConnectorTraceStatus({
+            connectorTrace: path,
+            label,
+            labelIndex,
+          }) === "valid",
+      })
+      if (doglegTrace) return doglegTrace
+    }
+
+    return defaultTrace
+  }
+
+  private findValidDoglegShiftedCandidate({
+    label,
+    orientation,
+    labelIndex,
+  }: {
+    label: NetLabelPlacement
+    orientation: FacingDirection
+    labelIndex: number
+  }) {
+    if (!this.isPortOnlyLabel(label) || !isYOrientation(orientation)) {
+      return null
+    }
+    const initialBaseAnchor = this.getSearchStartAnchor(label, orientation)
+    if (
+      !shouldTryDoglegPortOnlyShift({
+        label,
+        labelIndex,
+        initialBaseAnchor,
+        chipObstacleSpatialIndex: this.chipObstacleSpatialIndex,
+        outputNetLabelPlacements: this.outputNetLabelPlacements,
+      })
+    ) {
+      return null
+    }
+    const direction = dir(orientation)
+    const outwardDirection = this.getPerpendicularOutwardDirection(
+      label.anchorPoint,
+      orientation,
+    )
+    const maxSearchDistance = this.getSearchDistanceLimit(label, orientation)
+    const maxOutwardDistance =
+      outwardDirection.x === 0 && outwardDirection.y === 0
+        ? 0
+        : this.maxSearchDistance
+
+    for (
+      let outwardDistance = 0;
+      outwardDistance <= maxOutwardDistance + EPS;
+      outwardDistance += LABEL_SEARCH_STEP
+    ) {
+      const candidate = this.findValidCandidateInShiftColumn({
+        label,
+        labelIndex,
+        orientation,
+        direction,
+        baseAnchor: {
+          x: initialBaseAnchor.x + outwardDirection.x * outwardDistance,
+          y: initialBaseAnchor.y + outwardDirection.y * outwardDistance,
+        },
+        maxSearchDistance,
+        outwardDistance,
+        phase: "dogleg-shift",
+      })
+      if (candidate) return candidate
+    }
+    return null
   }
 
   /**
@@ -1669,6 +1742,18 @@ export class AvailableNetOrientationSolver extends BaseSolver {
       labelIndex,
     )
 
+    return this.getConnectorTraceStatus({ connectorTrace, label, labelIndex })
+  }
+
+  private getConnectorTraceStatus({
+    connectorTrace,
+    label,
+    labelIndex,
+  }: {
+    connectorTrace: Point[]
+    label: NetLabelPlacement
+    labelIndex: number
+  }): CandidateStatus {
     if (this.obstacleIndex.doesTracePathCrossChip(connectorTrace)) {
       return "chip-collision"
     }
@@ -2287,125 +2372,40 @@ export class AvailableNetOrientationSolver extends BaseSolver {
   }
 
   private getChipSideForPoint(point: Point) {
-    const containingSide = this.getContainingChipSide(point)
-    if (containingSide) return containingSide
+    return getChipSideForPoint({
+      point,
+      chips: this.chipObstacleSpatialIndex.chips,
+    })
+  }
 
-    const side = this.getOutsideChipSide(point)
-    if (side) return side
-
-    return this.getNearestChipSide(point)
+  private getContainingChipSide(point: Point) {
+    return getContainingChipSide({
+      point,
+      chips: this.chipObstacleSpatialIndex.chips,
+    })
   }
 
   private getPerpendicularOutwardDirection(
     point: Point,
     orientation: FacingDirection,
   ) {
-    const chipSide = this.getChipSideForPoint(point)
-    if (isYOrientation(orientation) && chipSide === "left") {
-      return { x: -1, y: 0 }
-    }
-    if (isYOrientation(orientation) && chipSide === "right") {
-      return { x: 1, y: 0 }
-    }
-    if (isXOrientation(orientation) && chipSide === "bottom") {
-      return { x: 0, y: -1 }
-    }
-    if (isXOrientation(orientation) && chipSide === "top") {
-      return { x: 0, y: 1 }
-    }
-    return { x: 0, y: 0 }
+    return getPerpendicularOutwardDirection({
+      chipSide: this.getChipSideForPoint(point),
+      orientation,
+    })
   }
 
   private getChipOutwardDirection(point: Point) {
-    switch (this.getChipSideForPoint(point)) {
-      case "left":
-        return { x: -1, y: 0 }
-      case "right":
-        return { x: 1, y: 0 }
-      case "bottom":
-        return { x: 0, y: -1 }
-      case "top":
-        return { x: 0, y: 1 }
-      default:
-        return { x: 0, y: 0 }
-    }
-  }
-
-  private getContainingChipSide(point: Point) {
-    let nearestSide: ChipSide | null = null
-    let nearestDistance = Number.POSITIVE_INFINITY
-
-    for (const chip of this.chipObstacleSpatialIndex.chips) {
-      const bounds = chip.bounds
-      if (
-        point.x < bounds.minX - EPS ||
-        point.x > bounds.maxX + EPS ||
-        point.y < bounds.minY - EPS ||
-        point.y > bounds.maxY + EPS
-      ) {
-        continue
-      }
-
-      for (const [side, distance] of getSideDistances(point, bounds)) {
-        if (distance < nearestDistance) {
-          nearestSide = side
-          nearestDistance = distance
-        }
-      }
-    }
-
-    return nearestSide
-  }
-
-  private getOutsideChipSide(point: Point) {
-    let nearestSide: ChipSide | null = null
-    let nearestDistanceSq = Number.POSITIVE_INFINITY
-
-    for (const chip of this.chipObstacleSpatialIndex.chips) {
-      const bounds = chip.bounds
-      const dx =
-        point.x < bounds.minX - EPS
-          ? bounds.minX - point.x
-          : point.x > bounds.maxX + EPS
-            ? point.x - bounds.maxX
-            : 0
-      const dy =
-        point.y < bounds.minY - EPS
-          ? bounds.minY - point.y
-          : point.y > bounds.maxY + EPS
-            ? point.y - bounds.maxY
-            : 0
-
-      if (dx === 0 && dy === 0) continue
-
-      const distanceSq = dx ** 2 + dy ** 2
-      if (distanceSq >= nearestDistanceSq) continue
-
-      nearestDistanceSq = distanceSq
-      if (dx > 0) {
-        nearestSide = point.x < bounds.minX ? "left" : "right"
-      } else {
-        nearestSide = point.y < bounds.minY ? "bottom" : "top"
-      }
-    }
-
-    return nearestSide
-  }
-
-  private getNearestChipSide(point: Point) {
-    let nearestSide: ChipSide | null = null
-    let nearestDistance = Number.POSITIVE_INFINITY
-
-    for (const chip of this.chipObstacleSpatialIndex.chips) {
-      for (const [side, distance] of getSideDistances(point, chip.bounds)) {
-        if (distance < nearestDistance) {
-          nearestSide = side
-          nearestDistance = distance
-        }
-      }
-    }
-
-    return nearestSide
+    const side = this.getChipSideForPoint(point)
+    return side === "left"
+      ? { x: -1, y: 0 }
+      : side === "right"
+        ? { x: 1, y: 0 }
+        : side === "bottom"
+          ? { x: 0, y: -1 }
+          : side === "top"
+            ? { x: 0, y: 1 }
+            : { x: 0, y: 0 }
   }
 
   override visualize(): GraphicsObject {
