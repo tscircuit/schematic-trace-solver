@@ -632,7 +632,9 @@ export class UnroutedTraceRecoverySolver extends BaseSolver {
     const pinConnectionCandidates = getPinConnectionCandidates({
       connectionPair,
       obstacles,
-      channelObstacles: [],
+      channelObstacles: this.inputProblem.allowInteriorChannelRecovery
+        ? obstacles
+        : [],
     })
     const candidates = [...junctionCandidates, ...pinConnectionCandidates].sort(
       (firstPath, secondPath) =>
