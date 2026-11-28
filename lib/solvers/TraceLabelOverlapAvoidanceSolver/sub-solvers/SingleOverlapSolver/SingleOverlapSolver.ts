@@ -1,17 +1,18 @@
-import { findPerpendicularPathCrossings } from "lib/solvers/TraceCleanupSolver/sub-solver/findIntersectionsWithObstacles"
 import type { Point } from "@tscircuit/math-utils"
-import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
-import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
-import type { InputProblem } from "lib/types/InputProblem"
 import type { GraphicsObject } from "graphics-debug"
+import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { isPathCollidingWithObstacles } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/collisions"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import { visualizeInputProblem } from "lib/solvers/SchematicTracePipelineSolver/visualizeInputProblem"
-import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
-import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
+import type { InputProblem } from "lib/types/InputProblem"
 import { doesPathCoincideWithTraces } from "lib/utils/doesPathCoincideWithTraces"
+import type { NetLabelPlacement } from "../../../NetLabelPlacementSolver/NetLabelPlacementSolver"
+import { detectTraceLabelOverlap } from "../../detectTraceLabelOverlap"
+import { generateRerouteCandidates } from "../../rerouteCollidingTrace"
+import { getFallbackSpanningCandidates } from "./getFallbackSpanningCandidates"
+import { rankDetourCandidates } from "./rankDetourCandidates"
 
 interface SingleOverlapSolverInput {
   trace: SolvedTracePath
@@ -21,18 +22,6 @@ interface SingleOverlapSolverInput {
   detourCount: number
   tracesToAvoidOverlapping?: SolvedTracePath[]
   netLabelPlacements?: NetLabelPlacement[]
-}
-
-const PATH_LENGTH_EPSILON = 1e-9
-
-const getPathLength = (points: Point[]) => {
-  let length = 0
-  for (let pointIndex = 0; pointIndex < points.length - 1; pointIndex++) {
-    const point = points[pointIndex]!
-    const nextPoint = points[pointIndex + 1]!
-    length += Math.abs(nextPoint.x - point.x) + Math.abs(nextPoint.y - point.y)
-  }
-  return length
 }
 
 /**
@@ -72,14 +61,8 @@ export class SingleOverlapSolver extends BaseSolver {
 
     const candidates = generateRerouteCandidates({
       ...solverInput,
-      paddingBuffer: effectivePadding, // Use the calculated, larger padding
+      paddingBuffer: effectivePadding,
     })
-
-    const getLabelOverlapCount = (path: Point[]) =>
-      detectTraceLabelOverlap({
-        traces: [{ ...this.initialTrace, tracePath: path }],
-        netLabels: this.netLabelPlacements,
-      }).length
 
     const candidateByPath = new Map<string, Point[]>()
     for (const candidate of candidates) {
@@ -90,32 +73,33 @@ export class SingleOverlapSolver extends BaseSolver {
       )
     }
 
-    const countCrossings = (path: Point[]) =>
-      this.tracesToAvoidOverlapping.reduce(
-        (sum, trace) =>
-          sum +
-          findPerpendicularPathCrossings(path, trace.tracePath, {
-            includeTerminalSegments: true,
-          }).length,
-        0,
-      )
-    this.queuedCandidatePaths = [...candidateByPath.values()].sort((a, b) => {
-      // Avoid wrapping around another net just to clear a neighboring label.
-      const crossings = countCrossings(a) - countCrossings(b)
-      if (crossings !== 0) return crossings
-      // Prefer fewer label collisions before path length so resolving one
-      // overlap does not repeatedly reroute the trace into its neighbor.
-      const overlapCountDifference =
-        getLabelOverlapCount(a) - getLabelOverlapCount(b)
-      if (overlapCountDifference !== 0) return overlapCountDifference
+    const fallbackCandidates = getFallbackSpanningCandidates({
+      initialTrace: this.initialTrace,
+      label: this.label,
+      problem: this.problem,
+      paddingBuffer: effectivePadding,
+      detourCount: this.detourCount,
+    }).filter(
+      (candidate) =>
+        !candidateByPath.has(
+          candidate.map((point) => `${point.x},${point.y}`).join(";"),
+        ),
+    )
 
-      const pathLengthDifference = getPathLength(a) - getPathLength(b)
-      if (Math.abs(pathLengthDifference) >= PATH_LENGTH_EPSILON) {
-        return pathLengthDifference
-      }
-
-      return a.length - b.length
-    })
+    this.queuedCandidatePaths = [
+      ...rankDetourCandidates({
+        candidates: [...candidateByPath.values()],
+        initialTrace: this.initialTrace,
+        tracesToAvoidOverlapping: this.tracesToAvoidOverlapping,
+        netLabelPlacements: this.netLabelPlacements,
+      }),
+      ...rankDetourCandidates({
+        candidates: fallbackCandidates,
+        initialTrace: this.initialTrace,
+        tracesToAvoidOverlapping: this.tracesToAvoidOverlapping,
+        netLabelPlacements: this.netLabelPlacements,
+      }),
+    ]
   }
 
   override _step() {
