@@ -9,6 +9,7 @@ import {
   rectsOverlap,
   tracePathContainsPoint,
 } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
+import { getRemovableRailLabelConnectors } from "lib/solvers/RailNetLabelCornerPlacementSolver/getRemovableRailLabelConnectors"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import { getObstacleRects } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceSingleLineSolver2/rect"
 import {
@@ -18,9 +19,9 @@ import {
   RAIL_ALIGNMENT_EPSILON,
 } from "lib/solvers/TraceCleanupSolver/sameNetRailAlignment/geometry"
 import { simplifyPath } from "lib/solvers/TraceCleanupSolver/simplifyPath"
-import { getRemovableRailLabelConnectors } from "lib/solvers/RailNetLabelCornerPlacementSolver/getRemovableRailLabelConnectors"
 import type { InputProblem } from "lib/types/InputProblem"
 import { getGroundNetIds } from "lib/utils/getGroundNetIds"
+import { findSharedGroundRailColumnX } from "./find-shared-ground-rail-column-x"
 
 /** Place shared ground labels at a clear end of their connected rail. */
 export const placeGroundRailLabelsAtOuterEnd = ({
@@ -137,11 +138,22 @@ export const placeGroundRailLabelsAtOuterEnd = ({
     )
     if (!hasSharedRail) continue
 
+    const netTraces = traces.filter(
+      (trace) => trace.globalConnNetId === label.globalConnNetId,
+    )
+    const currentBounds = getRectBounds(label.center, label.width, label.height)
+    const sharedColumnX = findSharedGroundRailColumnX({
+      label,
+      labelIndex: index,
+      output,
+      netTraces,
+      traceMap,
+    })
+
     // Follow only the continuous column attached to this label. Separate
     // ground branches may share an x coordinate without sharing a rail.
     const getLowestColumnY = (x: number, startY: number) => {
-      const columnSegments = traces
-        .filter((trace) => trace.globalConnNetId === label.globalConnNetId)
+      const columnSegments = netTraces
         .flatMap((trace) =>
           trace.tracePath.slice(1).flatMap((end, pointIndex) => {
             const start = trace.tracePath[pointIndex]!
@@ -168,7 +180,7 @@ export const placeGroundRailLabelsAtOuterEnd = ({
       return lowestY
     }
 
-    const columns = [{ x: label.anchorPoint.x, startY: label.anchorPoint.y }]
+    const columns = [{ x: sharedColumnX, startY: label.anchorPoint.y }]
     // A label hung from its own connector stub belongs to the rail the stub
     // branches from, so that rail's columns are part of the label's rail.
     if (netLabelConnectorTraceIds) {
@@ -189,15 +201,21 @@ export const placeGroundRailLabelsAtOuterEnd = ({
         }
       }
     }
-    let anchorPoint = label.anchorPoint
+    let anchorPoint = { x: sharedColumnX, y: label.anchorPoint.y }
     for (const column of columns) {
       const y = getLowestColumnY(column.x, column.startY)
       if (y < anchorPoint.y - RAIL_ALIGNMENT_EPSILON) {
         anchorPoint = { x: column.x, y }
       }
     }
-    if (anchorPoint === label.anchorPoint) continue
-    const movesToRail = !nearlyEqual(anchorPoint.x, label.anchorPoint.x)
+    if (
+      nearlyEqual(anchorPoint.x, label.anchorPoint.x) &&
+      nearlyEqual(anchorPoint.y, label.anchorPoint.y)
+    )
+      continue
+    const movesToRail =
+      !nearlyEqual(anchorPoint.x, label.anchorPoint.x) &&
+      nearlyEqual(sharedColumnX, label.anchorPoint.x)
     const railHostTrace = movesToRail
       ? traces.find(
           (trace) =>
@@ -219,14 +237,23 @@ export const placeGroundRailLabelsAtOuterEnd = ({
     if (
       obstacles.some((obstacle) => rectsOverlap(bounds, obstacle)) ||
       traceCrossesBoundsInterior(bounds, traceMap) ||
-      output.some(
-        (other, otherIndex) =>
-          otherIndex !== index &&
-          rectsOverlap(
-            bounds,
-            getRectBounds(other.center, other.width, other.height),
-          ),
-      )
+      output.some((other, otherIndex) => {
+        if (otherIndex === index) return false
+        const otherBounds = getRectBounds(
+          other.center,
+          other.width,
+          other.height,
+        )
+        if (!rectsOverlap(bounds, otherBounds)) return false
+        if (!rectsOverlap(currentBounds, otherBounds)) return true
+        const currentOverlapX =
+          Math.min(currentBounds.maxX, otherBounds.maxX) -
+          Math.max(currentBounds.minX, otherBounds.minX)
+        const nextOverlapX =
+          Math.min(bounds.maxX, otherBounds.maxX) -
+          Math.max(bounds.minX, otherBounds.minX)
+        return nextOverlapX >= currentOverlapX - RAIL_ALIGNMENT_EPSILON
+      })
     )
       continue
 
