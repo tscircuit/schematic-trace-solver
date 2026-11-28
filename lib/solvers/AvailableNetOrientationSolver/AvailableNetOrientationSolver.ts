@@ -2,6 +2,7 @@ import type { Point } from "@tscircuit/math-utils"
 import type { GraphicsObject } from "graphics-debug"
 import { ChipObstacleSpatialIndex } from "lib/data-structures/ChipObstacleSpatialIndex"
 import { BaseSolver } from "lib/solvers/BaseSolver/BaseSolver"
+import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { NetLabelPlacement } from "lib/solvers/NetLabelPlacementSolver/NetLabelPlacementSolver"
 import {
   getCenterFromAnchor,
@@ -9,7 +10,6 @@ import {
   getRectBounds,
 } from "lib/solvers/NetLabelPlacementSolver/SingleNetLabelPlacementSolver/geometry"
 import { tracePathContainsPoint } from "lib/solvers/RailNetLabelCornerPlacementSolver/geometry"
-import type { MspConnectionPairId } from "lib/solvers/MspConnectionPairSolver/MspConnectionPairSolver"
 import type { SolvedTracePath } from "lib/solvers/SchematicTraceLinesSolver/SchematicTraceLinesSolver"
 import type {
   ChipId,
@@ -23,6 +23,7 @@ import {
   getTextBoxBounds,
   rectIntersectsAnyTextBox,
 } from "lib/utils/textBoxBounds"
+import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 import {
   EPS,
   LABEL_SEARCH_STEP,
@@ -38,9 +39,10 @@ import {
   rangesOverlap,
   rectsOverlap,
   simplifyOrthogonalPath,
-  tracePathIntersectsBounds,
   tracePathCrossesAnyTrace,
+  tracePathIntersectsBounds,
 } from "./geometry"
+import { getContinuingTraceEndpoint } from "./get-continuing-trace-endpoint"
 import { orderRoutedLabelsBeforeOverlappingPortLabels } from "./orderRoutedLabelsBeforeOverlappingPortLabels"
 import {
   extendVerticalTracePathAtInteriorPoint,
@@ -58,7 +60,6 @@ import type {
   EvaluatedCandidate,
 } from "./types"
 import { visualizeAvailableNetOrientationSolver } from "./visualize"
-import { AvailableNetOrientationObstacleIndex } from "./AvailableNetOrientationObstacleIndex"
 
 const LABEL_TRACE_CLEARANCE = 0.1
 const MIN_DOWNWARD_GROUND_RAIL_EXTENSION = 0.2
@@ -513,12 +514,17 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     }
 
     let crossingAlignedCandidate: EvaluatedCandidate | null = null
-    if (
+    const continuingEndpoint =
       isTwoPinNet &&
       orientations.length === 1 &&
-      isYOrientation(requiredOrientation) &&
-      this.hasTraceContinuingInOrientation(label, requiredOrientation)
-    ) {
+      isYOrientation(requiredOrientation)
+        ? getContinuingTraceEndpoint({
+            label,
+            orientation: requiredOrientation,
+            traceMap: this.traceMap,
+          })
+        : null
+    if (continuingEndpoint && isYOrientation(requiredOrientation)) {
       // Keep two-pin vertical net labels aligned with the existing trace.
       const alignedCandidate = this.findValidCandidateInShiftColumn({
         label,
@@ -532,6 +538,7 @@ export class AvailableNetOrientationSolver extends BaseSolver {
         maxSearchDistance: this.maxSearchDistance,
         outwardDistance: 0,
         stopOnTraceCollision: false,
+        connectorSource: continuingEndpoint,
       })
       if (alignedCandidate) {
         // Alignment is a preference, not a reason to extend the rail through
@@ -733,25 +740,13 @@ export class AvailableNetOrientationSolver extends BaseSolver {
     label: NetLabelPlacement,
     orientation: "y+" | "y-",
   ) {
-    const direction = dir(orientation)
-    return Object.values(this.traceMap).some((trace) => {
-      if (trace.globalConnNetId !== label.globalConnNetId) return false
-      const path = trace.tracePath
-      return path.some((point, pointIndex) => {
-        if (
-          Math.abs(point.x - label.anchorPoint.x) > EPS ||
-          Math.abs(point.y - label.anchorPoint.y) > EPS
-        ) {
-          return false
-        }
-        return [path[pointIndex - 1], path[pointIndex + 1]].some(
-          (neighbor) =>
-            neighbor &&
-            Math.abs(neighbor.x - point.x) <= EPS &&
-            (neighbor.y - point.y) * direction.y > EPS,
-        )
-      })
-    })
+    return (
+      getContinuingTraceEndpoint({
+        label,
+        orientation,
+        traceMap: this.traceMap,
+      }) !== null
+    )
   }
 
   private findValidRotatedCandidate(
